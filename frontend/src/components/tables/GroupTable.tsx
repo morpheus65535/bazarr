@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Table } from "react-bootstrap";
 import {
   TableOptions,
@@ -13,6 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 
 interface Props<T extends object = {}> {
+  emptyText?: string;
   options: TableOptions<T>;
 }
 
@@ -83,27 +84,50 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     prepareRow,
   } = instance;
 
-  const header = (
-    <thead>
-      {headerGroups.map((headerGroup) => (
-        <tr {...headerGroup.getHeaderGroupProps()}>
-          {headerGroup.headers
-            .filter((col) => !col.isGrouped)
-            .map((col) => (
-              <th {...col.getHeaderProps()}>{col.render("Header")}</th>
-            ))}
-        </tr>
-      ))}
-    </thead>
+  const header = useMemo(
+    () => (
+      <thead>
+        {headerGroups.map((headerGroup) => (
+          <tr {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers
+              .filter((col) => !col.isGrouped)
+              .map((col) => (
+                <th {...col.getHeaderProps()}>{col.render("Header")}</th>
+              ))}
+          </tr>
+        ))}
+      </thead>
+    ),
+    [headerGroups]
   );
 
-  const body = (
-    <tbody {...getTableBodyProps()}>
-      {rows.map((row) => {
-        prepareRow(row);
-        return renderRow(row);
-      })}
-    </tbody>
+  const colCount = useMemo(() => {
+    return headerGroups.reduce(
+      (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
+      0
+    );
+  }, [headerGroups]);
+
+  const empty = rows.length === 0;
+
+  const body = useMemo(
+    () => (
+      <tbody {...getTableBodyProps()}>
+        {props.emptyText && empty ? (
+          <tr>
+            <td colSpan={colCount} className="text-center">
+              {props.emptyText}
+            </td>
+          </tr>
+        ) : (
+          rows.map((row) => {
+            prepareRow(row);
+            return renderRow(row);
+          })
+        )}
+      </tbody>
+    ),
+    [getTableBodyProps, prepareRow, rows, colCount, empty, props.emptyText]
   );
 
   return (

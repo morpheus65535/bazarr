@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pagination, Row, Col, Container, Table } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
@@ -30,19 +30,22 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     state: { pageIndex, pageSize },
   } = instance;
 
-  const header = (
-    <thead>
-      {headerGroups.map((headerGroup) => (
-        <tr {...headerGroup.getHeaderGroupProps()}>
-          {headerGroup.headers.map((col) => (
-            <th {...col.getHeaderProps()}>{col.render("Header")}</th>
-          ))}
-        </tr>
-      ))}
-    </thead>
+  const header = useMemo(
+    () => (
+      <thead>
+        {headerGroups.map((headerGroup) => (
+          <tr {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers.map((col) => (
+              <th {...col.getHeaderProps()}>{col.render("Header")}</th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+    ),
+    [headerGroups]
   );
 
-  const colCount = React.useMemo<number>(() => {
+  const colCount = useMemo(() => {
     return headerGroups.reduce(
       (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
       0
@@ -51,42 +54,40 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
 
   const empty = rows.length === 0;
 
-  const body = (
-    <tbody {...getTableBodyProps()}>
-      {props.emptyText && empty ? (
-        <tr>
-          <td colSpan={colCount} className="text-center">
-            {props.emptyText}
-          </td>
-        </tr>
-      ) : (
-        page.map(
-          (row): JSX.Element => {
-            prepareRow(row);
-            return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map((cell) => (
-                  <td
-                    className={cell.column.className}
-                    {...cell.getCellProps()}
-                  >
-                    {cell.render("Cell")}
-                  </td>
-                ))}
-              </tr>
-            );
-          }
-        )
-      )}
-    </tbody>
+  const body = useMemo(
+    () => (
+      <tbody {...getTableBodyProps()}>
+        {props.emptyText && empty ? (
+          <tr>
+            <td colSpan={colCount} className="text-center">
+              {props.emptyText}
+            </td>
+          </tr>
+        ) : (
+          page.map(
+            (row): JSX.Element => {
+              prepareRow(row);
+              return (
+                <tr {...row.getRowProps()}>
+                  {row.cells.map((cell) => (
+                    <td
+                      className={cell.column.className}
+                      {...cell.getCellProps()}
+                    >
+                      {cell.render("Cell")}
+                    </td>
+                  ))}
+                </tr>
+              );
+            }
+          )
+        )}
+      </tbody>
+    ),
+    [colCount, empty, getTableBodyProps, page, prepareRow, props.emptyText]
   );
 
-  const start = empty ? 0 : pageSize * pageIndex + 1;
-  const end = Math.min(pageSize * (pageIndex + 1), rows.length);
-
-  const buttonClass = "";
-
-  const pageButtons = React.useMemo(() => {
+  const pageButtons = useMemo(() => {
     return [...Array(pageCount).keys()]
       .map((idx) => {
         if (
@@ -99,7 +100,6 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           return (
             <Pagination.Item
               key={idx}
-              className={buttonClass}
               active={pageIndex === idx}
               onClick={() => gotoPage(idx)}
             >
@@ -114,11 +114,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
             return [];
           } else {
             return (
-              <Pagination.Ellipsis
-                key={idx}
-                className={buttonClass}
-                disabled
-              ></Pagination.Ellipsis>
+              <Pagination.Ellipsis key={idx} disabled></Pagination.Ellipsis>
             );
           }
         } else {
@@ -127,34 +123,48 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
       });
   }, [pageCount, pageIndex, gotoPage]);
 
-  const pageControlEnabled = props.pageControl ?? true;
+  const pageControl = useMemo(() => {
+    const start = empty ? 0 : pageSize * pageIndex + 1;
+    const end = Math.min(pageSize * (pageIndex + 1), rows.length);
+    const pageControlEnabled = props.pageControl ?? true;
 
-  const pageControl = (
-    <Container fluid hidden={!pageControlEnabled}>
-      <Row>
-        <Col className="d-flex align-items-center justify-content-start">
-          <span>
-            Show {start} to {end} of {rows.length} entries
-          </span>
-        </Col>
-        <Col className="d-flex justify-content-end">
-          <Pagination className="m-0" hidden={pageCount <= 1}>
-            <Pagination.Prev
-              className={buttonClass}
-              onClick={previousPage}
-              disabled={!canPreviousPage}
-            ></Pagination.Prev>
-            {pageButtons}
-            <Pagination.Next
-              className={buttonClass}
-              onClick={nextPage}
-              disabled={!canNextPage}
-            ></Pagination.Next>
-          </Pagination>
-        </Col>
-      </Row>
-    </Container>
-  );
+    return (
+      <Container fluid hidden={!pageControlEnabled}>
+        <Row>
+          <Col className="d-flex align-items-center justify-content-start">
+            <span>
+              Show {start} to {end} of {rows.length} entries
+            </span>
+          </Col>
+          <Col className="d-flex justify-content-end">
+            <Pagination className="m-0" hidden={pageCount <= 1}>
+              <Pagination.Prev
+                onClick={previousPage}
+                disabled={!canPreviousPage}
+              ></Pagination.Prev>
+              {pageButtons}
+              <Pagination.Next
+                onClick={nextPage}
+                disabled={!canNextPage}
+              ></Pagination.Next>
+            </Pagination>
+          </Col>
+        </Row>
+      </Container>
+    );
+  }, [
+    empty,
+    pageIndex,
+    pageSize,
+    previousPage,
+    canPreviousPage,
+    canNextPage,
+    nextPage,
+    pageButtons,
+    pageCount,
+    rows.length,
+    props.pageControl,
+  ]);
 
   return (
     <React.Fragment>

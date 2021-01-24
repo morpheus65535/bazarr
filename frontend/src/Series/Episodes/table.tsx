@@ -163,7 +163,12 @@ const Table: FunctionComponent<Props> = (props) => {
         state={props.episodeList}
         exist={(item) => item.has(id)}
       >
-        {(data) => <GroupTable options={options}></GroupTable>}
+        {(data) => (
+          <GroupTable
+            emptyText="No Episode Found For This Series"
+            options={options}
+          ></GroupTable>
+        )}
       </AsyncStateOverlay>
       <SubtitleToolModal
         size="lg"
