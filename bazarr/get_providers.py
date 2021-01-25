@@ -133,6 +133,11 @@ def get_providers_auth():
                           'timeout': int(settings.opensubtitles.timeout) or 15,
                           'skip_wrong_fps': settings.opensubtitles.getboolean('skip_wrong_fps'),
                           },
+        'opensubtitlescom': {'username': settings.opensubtitlescom.username,
+                             'password': settings.opensubtitlescom.password,
+                             'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
+                             'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
+                             },
         'podnapisi': {
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
