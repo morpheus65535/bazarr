@@ -62,7 +62,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     return (
       <Selector
         {...selector}
-        multiple={true}
+        multiple
         options={items}
         defaultKey={selection}
         onMultiSelect={(k) => {

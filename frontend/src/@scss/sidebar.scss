@@ -61,6 +61,7 @@
 }
 
 $sidebar-bg-color: #3a3f51;
+$sidebar-active-color: #252833;
 
 .sidebar-overlay {
   display: none;
@@ -102,27 +103,46 @@ $sidebar-bg-color: #3a3f51;
     height: $header-height;
   }
 
+  @mixin active {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 3px;
+    z-index: 10;
+    background-color: var(--primary);
+  }
+
+  .sidebar-collapse-box {
+    position: relative;
+    &.active {
+      &::before {
+        @include active();
+      }
+    }
+  }
+
   .sidebar-button {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
 
-    border-top: none;
-    border-bottom: none;
-    border-right: none;
+    border: none;
+    outline: none;
 
     color: white;
     background-color: $sidebar-bg-color;
 
     &:hover {
-      background-color: #252833;
+      background-color: $sidebar-active-color !important;
     }
 
     &:active,
     &:focus {
       color: white;
       background-color: $sidebar-bg-color;
-      outline: none;
     }
 
     .icon {
@@ -130,25 +150,15 @@ $sidebar-bg-color: #3a3f51;
       width: 1.5rem;
     }
 
-    @mixin child {
-      border-left-style: solid;
-      border-left-width: 3px !important;
-      border-bottom: none;
-    }
-
     &.sb-active {
-      background-color: #252833;
-      border-left-color: var(--primary) !important;
-      @include child();
+      background-color: $sidebar-active-color;
+      &::before {
+        @include active();
+      }
     }
 
     &.sb-collapse {
-      border-left-color: var(--primary);
-      @include child();
-    }
-
-    &.sb-action {
-      border-bottom: none;
+      padding-left: 3rem;
     }
   }
 }

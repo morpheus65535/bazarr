@@ -1,15 +1,26 @@
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 
-interface SidebarDef {
+type SidebarDefinition = LinkItemType | CollapseItemType;
+
+type LinkItemType = {
   icon: IconDefinition;
   name: string;
-  badge?: string;
-  to?: string;
-  children?: Child[];
-}
+  link: string;
+};
 
-interface Child {
+type CollapseItemType = {
+  icon: IconDefinition;
   name: string;
-  badge?: string;
-  to: string;
-}
+  children: {
+    name: string;
+    link: string;
+  }[];
+};
+
+type BadgeProvider = {
+  [parent: string]: ChildBadgeProvider | number;
+};
+
+type ChildBadgeProvider = {
+  [child: string]: number;
+};

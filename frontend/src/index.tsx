@@ -10,7 +10,10 @@ import store from "./@redux/store";
 
 ReactDOM.render(
   <Provider store={store}>
+    {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
+    {/* <React.StrictMode> */}
     <App />
+    {/* </React.StrictMode> */}
   </Provider>,
   document.getElementById("root")
 );

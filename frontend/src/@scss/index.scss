@@ -27,28 +27,26 @@
     }
   }
 
-  input {
-    &:matches([type="text"]) {
-      // Fake Material Design Style
-      padding: 0;
-      transition: none;
-      color: white;
-      border-radius: 0;
-      border: none;
-      border-bottom: {
-        color: white;
-        width: 1px;
-        style: solid;
-      }
-      background-color: transparent;
+  input[type="text"] {
+    // Fake Material Design Style
+    padding: 0;
+    transition: none;
+    color: white;
+    border-radius: 0;
+    border: none;
+    border-bottom: {
+      color: white !important;
+      width: 1px !important;
+      style: solid !important;
+    }
+    background-color: transparent;
 
-      &::placeholder {
-        color: lightgray;
-      }
+    &::placeholder {
+      color: lightgray;
+    }
 
-      &:focus {
-        box-shadow: none;
-      }
+    &:focus {
+      box-shadow: none;
     }
   }
 }

@@ -1,27 +1,33 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, {
+  FunctionComponent,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { connect } from "react-redux";
-import { SidebarDef } from "./types";
-import {
-  faPlay,
-  faFilm,
-  faExclamationTriangle,
-  faCogs,
-  faLaptop,
-  faClock,
-} from "@fortawesome/free-solid-svg-icons";
-import { Accordion, ListGroup, Container, Image } from "react-bootstrap";
-
-import SidebarItem from "./SidebarItem";
+import { ListGroup, Container, Image } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 
+import {
+  BadgesContext,
+  ActiveKeyContext,
+  LinkItem,
+  CollapseItem,
+} from "./items";
+
+import { SidebarList } from "./list";
+
 import logo from "../@static/logo128.png";
+import { BadgeProvider } from "./types";
+
+import { SidebarToggleContext } from "../App";
 
 interface Props {
   movies_badge: number;
   episodes_badge: number;
   providers_badge: number;
   open?: boolean;
-  onToggle?: () => void;
 }
 
 function mapStateToProps({ badges }: StoreState) {
@@ -37,121 +43,36 @@ const Sidebar: FunctionComponent<Props> = ({
   episodes_badge,
   providers_badge,
   open,
-  onToggle,
 }) => {
-  const sidebar = useMemo<SidebarDef[]>(
-    () => [
-      {
-        icon: faPlay,
-        name: "Series",
-        to: "/series",
+  const toggle = useContext(SidebarToggleContext);
+
+  const badges = useMemo<BadgeProvider>(
+    () => ({
+      Wanted: {
+        Series: episodes_badge,
+        Movies: movies_badge,
       },
-      {
-        icon: faFilm,
-        name: "Movies",
-        to: "/movies",
+      System: {
+        Providers: providers_badge,
       },
-      {
-        icon: faClock,
-        name: "History",
-        children: [
-          {
-            name: "Series",
-            to: "/history/series",
-          },
-          {
-            name: "Movies",
-            to: "/history/movies",
-          },
-        ],
-      },
-      {
-        icon: faExclamationTriangle,
-        name: "Wanted",
-        badge:
-          movies_badge + episodes_badge === 0
-            ? undefined
-            : (movies_badge + episodes_badge).toString(),
-        children: [
-          {
-            name: "Series",
-            to: "/wanted/series",
-            badge: episodes_badge === 0 ? undefined : episodes_badge.toString(),
-          },
-          {
-            name: "Movies",
-            to: "/wanted/movies",
-            badge: movies_badge === 0 ? undefined : movies_badge.toString(),
-          },
-        ],
-      },
-      {
-        icon: faCogs,
-        name: "Settings",
-        children: [
-          {
-            name: "General",
-            to: "/settings/general",
-          },
-          {
-            name: "Languages",
-            to: "/settings/languages",
-          },
-          {
-            name: "Providers",
-            to: "/settings/providers",
-          },
-          {
-            name: "Subtitles",
-            to: "/settings/subtitles",
-          },
-          {
-            name: "Sonarr",
-            to: "/settings/sonarr",
-          },
-          {
-            name: "Radarr",
-            to: "/settings/radarr",
-          },
-          {
-            name: "Schedular",
-            to: "/settings/schedular",
-          },
-        ],
-      },
-      {
-        icon: faLaptop,
-        name: "System",
-        badge: providers_badge === 0 ? undefined : providers_badge.toString(),
-        children: [
-          {
-            name: "Tasks",
-            to: "/system/tasks",
-          },
-          {
-            name: "Logs",
-            to: "/system/logs",
-          },
-          {
-            name: "Providers",
-            to: "/system/providers",
-            badge:
-              providers_badge === 0 ? undefined : providers_badge.toString(),
-          },
-          {
-            name: "Status",
-            to: "/system/status",
-          },
-        ],
-      },
-    ],
-    [movies_badge, episodes_badge, providers_badge]
+    }),
+    [episodes_badge, movies_badge, providers_badge]
   );
 
   const history = useHistory();
 
-  const path = history.location.pathname.split("/");
-  const active = path.length >= 2 ? path[1] : "";
+  const [activeKey, setActiveKey] = useState("");
+
+  useEffect(() => {
+    const path = history.location.pathname.split("/");
+    console.log(path);
+    const len = path.length;
+    if (len >= 3) {
+      setActiveKey(path[len - 2]);
+    } else {
+      setActiveKey(path[len - 1]);
+    }
+  }, [history.location.pathname]);
 
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];
@@ -161,25 +82,31 @@ const Sidebar: FunctionComponent<Props> = ({
     overlay.push("open");
   }
 
+  const sidebarItems = useMemo(
+    () =>
+      SidebarList.map((v) => {
+        if ("children" in v) {
+          return <CollapseItem key={v.name} {...v}></CollapseItem>;
+        } else {
+          return <LinkItem key={v.link} {...v}></LinkItem>;
+        }
+      }),
+    []
+  );
+
   return (
     <React.Fragment>
       <aside className={cls.join(" ")}>
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image alt="brand" src={logo} width="32" height="32"></Image>
         </Container>
-        <Accordion defaultActiveKey={active}>
-          <ListGroup variant="flush">
-            {sidebar.map((def) => (
-              <SidebarItem
-                key={def.name}
-                def={def}
-                onClick={onToggle}
-              ></SidebarItem>
-            ))}
-          </ListGroup>
-        </Accordion>
+        <ActiveKeyContext.Provider value={[activeKey, setActiveKey]}>
+          <BadgesContext.Provider value={badges}>
+            <ListGroup variant="flush">{sidebarItems}</ListGroup>
+          </BadgesContext.Provider>
+        </ActiveKeyContext.Provider>
       </aside>
-      <div className={overlay.join(" ")} onClick={onToggle}></div>
+      <div className={overlay.join(" ")} onClick={toggle}></div>
     </React.Fragment>
   );
 };

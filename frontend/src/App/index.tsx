@@ -15,6 +15,9 @@ import { connect } from "react-redux";
 
 import { LoadingIndicator } from "../components";
 
+// Sidebar Toggle
+export const SidebarToggleContext = React.createContext<() => void>(() => {});
+
 interface Props {
   bootstrap: () => void;
   initialized: boolean;
@@ -50,13 +53,15 @@ const App: FunctionComponent<Props> = ({ bootstrap, initialized }) => {
     <React.Fragment>
       <BrowserRouter basename={baseUrl}>
         <Container fluid className="p-0">
-          <Row noGutters className="header-container">
-            <Header onToggle={toggleSidebar}></Header>
-          </Row>
-          <Row noGutters className="flex-nowrap">
-            <Sidebar open={sidebar} onToggle={toggleSidebar}></Sidebar>
-            <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
-          </Row>
+          <SidebarToggleContext.Provider value={toggleSidebar}>
+            <Row noGutters className="header-container">
+              <Header></Header>
+            </Row>
+            <Row noGutters className="flex-nowrap">
+              <Sidebar open={sidebar}></Sidebar>
+              <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+            </Row>
+          </SidebarToggleContext.Provider>
         </Container>
       </BrowserRouter>
     </React.Fragment>

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from "react";
+import React, { FunctionComponent, useCallback, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faHeart, faBars } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -17,12 +17,13 @@ import { connect } from "react-redux";
 
 import { SearchResult, SearchBar } from "../components";
 
+import { SidebarToggleContext } from ".";
+
 import logo from "../@static/logo128.png";
 
 interface Props {
   movies: Movie[];
   series: Series[];
-  onToggle?: () => void;
 }
 
 function mapStateToProps({ series, movie }: StoreState) {
@@ -33,7 +34,9 @@ function mapStateToProps({ series, movie }: StoreState) {
 }
 
 const Header: FunctionComponent<Props> = (props) => {
-  const { series, movies, onToggle } = props;
+  const { series, movies } = props;
+
+  const toggleSidebar = useContext(SidebarToggleContext);
 
   const searchSeries = useCallback(
     (text: string): SearchResult[] => {
@@ -87,7 +90,11 @@ const Header: FunctionComponent<Props> = (props) => {
           <Image alt="brand" src={logo} width="32" height="32"></Image>
         </Navbar.Brand>
       </div>
-      <Button variant="light" className="mx-2 m-0 d-md-none" onClick={onToggle}>
+      <Button
+        variant="light"
+        className="mx-2 m-0 d-md-none"
+        onClick={toggleSidebar}
+      >
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
       </Button>
       <Container fluid>
