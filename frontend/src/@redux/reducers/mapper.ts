@@ -7,19 +7,18 @@ export function mapToAsyncState<Payload>(
   if (action.payload.loading) {
     return {
       updating: true,
-      lastResult: undefined,
       items: defVal,
     };
   } else if (action.error !== undefined) {
     return {
       updating: false,
-      lastResult: action.payload.item as string,
+      error: action.payload.item as string,
       items: defVal,
     };
   } else {
     return {
       updating: false,
-      lastResult: undefined,
+      error: undefined,
       items: action.payload.item as Payload,
     };
   }
@@ -34,13 +33,12 @@ export function updateAsyncList<T, ID extends keyof T>(
     return {
       ...state,
       updating: true,
-      lastResult: undefined,
     };
   } else if (action.error !== undefined) {
     return {
       ...state,
       updating: false,
-      lastResult: action.payload.item as string,
+      error: action.payload.item as string,
     };
   } else {
     const list = [...(state.items as T[])];

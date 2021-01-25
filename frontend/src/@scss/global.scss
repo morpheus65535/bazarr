@@ -17,7 +17,8 @@
   }
 
   input {
-    &:matches([type="text"]) {
+    &[type="text"],
+    &[type="password"] {
       &:active,
       &:focus {
         border-color: $theme-color;

@@ -33,7 +33,7 @@ const reducer = handleActions<SeriesState, any>(
     },
     [UPDATE_SERIES_EPISODE_LIST]: {
       next(state, action: AsyncAction<Episode[]>) {
-        const { updating, lastResult, items } = mapToAsyncState(action, []);
+        const { updating, error, items } = mapToAsyncState(action, []);
 
         if (items.length > 0) {
           const id = items[0].sonarrSeriesId;
@@ -43,7 +43,7 @@ const reducer = handleActions<SeriesState, any>(
             ...state,
             episodeList: {
               updating,
-              lastResult,
+              error,
               items: list,
             },
           };
@@ -53,7 +53,7 @@ const reducer = handleActions<SeriesState, any>(
             episodeList: {
               ...state.episodeList,
               updating,
-              lastResult,
+              error,
             },
           };
         }

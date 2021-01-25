@@ -17,7 +17,7 @@ export function updateAsyncState<T>(
     .catch((err) => {
       setter({
         updating: false,
-        lastResult: err,
+        error: err,
         items: defaultVal,
       });
     });

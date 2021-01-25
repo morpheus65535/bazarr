@@ -65,7 +65,6 @@ const Sidebar: FunctionComponent<Props> = ({
 
   useEffect(() => {
     const path = history.location.pathname.split("/");
-    console.log(path);
     const len = path.length;
     if (len >= 3) {
       setActiveKey(path[len - 2]);
