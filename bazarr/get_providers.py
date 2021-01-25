@@ -7,6 +7,7 @@ import pretty
 import time
 import socket
 import requests
+import ast
 
 from get_args import args
 from config import settings
@@ -87,7 +88,8 @@ def get_providers():
     changed = False
     providers_list = []
     if settings.general.enabled_providers:
-        for provider in settings.general.enabled_providers.lower().split(','):
+        providers = ast.literal_eval(settings.general.enabled_providers)
+        for provider in providers:
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
             providers_list.append(provider)
             
@@ -237,8 +239,9 @@ def throttled_count(name):
 def update_throttled_provider():
     changed = False
     if settings.general.enabled_providers:
+        providers = ast.literal_eval(settings.general.enabled_providers)
         for provider in list(tp):
-            if provider not in settings.general.enabled_providers:
+            if provider not in providers:
                 del tp[provider]
                 settings.general.throtteled_providers = str(tp)
                 changed = True
@@ -266,7 +269,8 @@ def list_throttled_providers():
     update_throttled_provider()
     throttled_providers = []
     if settings.general.enabled_providers:
-        for provider in settings.general.enabled_providers.lower().split(','):
+        providers = ast.literal_eval(settings.general.enabled_providers)
+        for provider in providers:
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
             throttled_providers.append([provider, reason, pretty.date(until)])
     return throttled_providers
