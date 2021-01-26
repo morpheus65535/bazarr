@@ -1743,8 +1743,8 @@ class BlacklistSeries(Resource):
 
     @authenticate
     def post(self):
-        sonarr_series_id = int(request.form.get('sonarr_series_id'))
-        sonarr_episode_id = int(request.form.get('sonarr_episode_id'))
+        sonarr_series_id = int(request.args.get('seriesid'))
+        sonarr_episode_id = int(request.args.get('episodeid'))
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
@@ -1820,7 +1820,7 @@ class BlacklistMovies(Resource):
 
     @authenticate
     def post(self):
-        radarr_id = int(request.form.get('radarr_id'))
+        radarr_id = int(request.args.get('radarrid'))
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')

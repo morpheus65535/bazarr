@@ -4,10 +4,17 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { BasicTable, AsyncStateOverlay, HistoryIcon } from "../../components";
+import {
+  BasicTable,
+  AsyncStateOverlay,
+  HistoryIcon,
+  SeriesBlacklistButton,
+} from "../../components";
+import { updateHistorySeriesList } from "../../@redux/actions";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;
+  update: () => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -17,9 +24,7 @@ function mapStateToProps({ series }: StoreState) {
   };
 }
 
-const Table: FunctionComponent<Props> = (props) => {
-  const { seriesHistory } = props;
-
+const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
   const columns: Column<SeriesHistory>[] = useMemo<Column<SeriesHistory>[]>(
     () => [
       {
@@ -59,13 +64,22 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "description",
       },
       {
-        accessor: "sonarrEpisodeId",
+        accessor: "subs_id",
         Cell: (row) => {
-          return null;
+          const original = row.row.original;
+
+          return (
+            <SeriesBlacklistButton
+              seriesid={original.sonarrSeriesId}
+              episodeid={original.sonarrEpisodeId}
+              update={update}
+              {...original}
+            ></SeriesBlacklistButton>
+          );
         },
       },
     ],
-    []
+    [update]
   );
 
   return (
@@ -81,4 +95,6 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, { update: updateHistorySeriesList })(
+  Table
+);

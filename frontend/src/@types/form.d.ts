@@ -26,3 +26,19 @@ interface SeriesDownloadForm {
   sonarrEpisodeId: number;
   title: string;
 }
+
+interface BlacklistAddForm {
+  provider: string;
+  subs_id: string;
+  // code2
+  language: string;
+  forced: boolean;
+  hi: boolean;
+  video_path: string;
+  subtitles_path: string;
+}
+
+interface BlacklistDeleteForm {
+  provider: string;
+  subs_id: string;
+}

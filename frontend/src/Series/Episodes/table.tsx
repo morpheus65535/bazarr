@@ -28,29 +28,18 @@ import { SubtitleAction } from "./components";
 interface Props {
   series: Series;
   episodeList: AsyncState<Map<number, Episode[]>>;
-  profileList: LanguagesProfile[];
 }
 
-function mapStateToProps({ series, system }: StoreState) {
+function mapStateToProps({ series }: StoreState) {
   return {
     episodeList: series.episodeList,
-    profileList: system.languagesProfiles.items,
   };
 }
 
-const Table: FunctionComponent<Props> = ({
-  series,
-  episodeList,
-  profileList,
-}) => {
+const Table: FunctionComponent<Props> = ({ series, episodeList }) => {
   const id = series.sonarrSeriesId;
   const list = episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
-
-  const profile = useMemo(
-    () => profileList.find((v) => v.profileId === series.profileId),
-    [profileList, series.profileId]
-  );
 
   const showModal = useShowModal();
 
@@ -110,7 +99,6 @@ const Table: FunctionComponent<Props> = ({
                 seriesid={seriesid}
                 episodeid={episodeid}
                 subtitle={val}
-                profile={profile}
               ></SubtitleAction>
             ));
 
@@ -127,7 +115,6 @@ const Table: FunctionComponent<Props> = ({
                 seriesid={seriesid}
                 episodeid={episodeid}
                 subtitle={val}
-                profile={profile}
               ></SubtitleAction>
             ));
 
@@ -163,7 +150,7 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [showModal, profile]
+    [showModal]
   );
 
   const maxSeason = useMemo(

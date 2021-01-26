@@ -5,6 +5,8 @@ interface Badge {
 interface Language {
   code2: string;
   name: string;
+  hi?: boolean;
+  forced?: boolean;
 }
 
 interface LanguagesProfileItem {
@@ -118,4 +120,24 @@ interface SubtitleNameInfo {
   filename: string;
   episode: number;
   season: number;
+}
+
+interface BlacklistItem {
+  language: Language;
+  provider: string;
+  timestamp: string;
+  raw_timestamp: number;
+  subs_id: string;
+}
+
+interface MovieBlacklist extends BlacklistItem {
+  radarrId: number;
+  title: string;
+}
+
+interface SeriesBlacklist extends BlacklistItem {
+  episodeTitle: string;
+  episode_number: string;
+  seriesTitle: string;
+  sonarrSeriesId: number;
 }

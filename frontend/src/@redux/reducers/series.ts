@@ -5,6 +5,7 @@ import {
   UPDATE_SERIES_WANTED_LIST,
   UPDATE_SERIES_HISTORY_LIST,
   UPDATE_SERIES_INFO,
+  UPDATE_SERIES_BLACKLIST,
 } from "../constants";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
 
@@ -79,12 +80,21 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
+    [UPDATE_SERIES_BLACKLIST]: {
+      next(state, action: AsyncAction<SeriesBlacklist[]>) {
+        return {
+          ...state,
+          blacklist: mapToAsyncState(action, state.blacklist.items),
+        };
+      },
+    },
   },
   {
     seriesList: { updating: false, items: [] },
     wantedSeriesList: { updating: false, items: [] },
     episodeList: { updating: false, items: new Map() },
     historyList: { updating: false, items: [] },
+    blacklist: { updating: true, items: [] },
   }
 );
 

@@ -4,6 +4,7 @@ import {
   UPDATE_MOVIE_LIST,
   UPDATE_MOVIE_WANTED_LIST,
   UPDATE_MOVIE_INFO,
+  UPDATE_MOVIES_BLACKLIST as UPDATE_MOVIE_BLACKLIST,
 } from "../constants";
 
 import { mapToAsyncState, updateAsyncList } from "./mapper";
@@ -44,11 +45,20 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
+    [UPDATE_MOVIE_BLACKLIST]: {
+      next(state, action: AsyncAction<MovieBlacklist[]>) {
+        return {
+          ...state,
+          blacklist: mapToAsyncState(action, state.blacklist.items),
+        };
+      },
+    },
   },
   {
     movieList: { updating: false, items: [] },
     wantedMovieList: { updating: false, items: [] },
     historyList: { updating: false, items: [] },
+    blacklist: { updating: true, items: [] },
   }
 );
 

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 
 import { Badge } from "react-bootstrap";
@@ -16,7 +16,6 @@ interface Props {
   episodeid: number;
   missing?: boolean;
   subtitle: Subtitle;
-  profile?: LanguagesProfile;
   update: (id: number) => void;
 }
 
@@ -25,19 +24,10 @@ const Action: FunctionComponent<Props> = ({
   episodeid,
   missing,
   subtitle,
-  profile,
   update,
 }) => {
   // hi, forced
-  const [hi, forced] = useMemo(() => {
-    const item = profile?.items.find((v) => v.language === subtitle.code2);
-
-    if (item) {
-      return [item.hi === "True", item.forced === "True"];
-    } else {
-      return [false, false];
-    }
-  }, [profile?.items, subtitle.code2]);
+  const { hi, forced } = subtitle;
 
   const path = subtitle.path;
 

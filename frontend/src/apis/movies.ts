@@ -22,6 +22,35 @@ class MovieApi {
     return apis.delete(`/movies${path}`, form, params);
   }
 
+  async blacklist(): Promise<Array<MovieBlacklist>> {
+    return new Promise<Array<MovieBlacklist>>((resolve, reject) => {
+      this.get<DataWrapper<Array<MovieBlacklist>>>("/blacklist")
+        .then((res) => {
+          resolve(res.data.data);
+        })
+        .catch(reject);
+    });
+  }
+
+  async addBlacklist(radarrid: number, form: BlacklistAddForm): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.postForm<void>("/blacklist", form, { radarrid })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async deleteBlacklist(
+    all?: boolean,
+    form?: BlacklistDeleteForm
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.delete<void>("/blacklist", form, { all })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
   async movies(id?: number): Promise<Array<Movie>> {
     return new Promise<Array<Movie>>((resolve, reject) => {
       this.get<DataWrapper<Array<Movie>>>("", { radarrid: id })

@@ -18,6 +18,43 @@ class SeriesApi {
     return apis.patch(`/series${path}`, form, params);
   }
 
+  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.delete(`/series${path}`, form, params);
+  }
+
+  async blacklist(): Promise<Array<SeriesBlacklist>> {
+    return new Promise<Array<SeriesBlacklist>>((resolve, reject) => {
+      this.get<DataWrapper<Array<SeriesBlacklist>>>("/blacklist")
+        .then((res) => {
+          resolve(res.data.data);
+        })
+        .catch(reject);
+    });
+  }
+
+  async addBlacklist(
+    seriesid: number,
+    episodeid: number,
+    form: BlacklistAddForm
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.postForm<void>("/blacklist", form, { seriesid, episodeid })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async deleteBlacklist(
+    all?: boolean,
+    form?: BlacklistDeleteForm
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.delete<void>("/blacklist", form, { all })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
   async series(id?: number): Promise<Array<Series>> {
     return new Promise<Array<Series>>((resolve, reject) => {
       this.get<DataWrapper<Array<Series>>>("", { seriesid: id })

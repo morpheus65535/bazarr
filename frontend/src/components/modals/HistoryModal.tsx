@@ -1,8 +1,19 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import BasicModal, { BasicModalProps } from "./BasicModal";
 import { Column } from "react-table";
-import { BasicTable, HistoryIcon, AsyncStateOverlay } from "..";
-
+import {
+  BasicTable,
+  HistoryIcon,
+  AsyncStateOverlay,
+  SeriesBlacklistButton,
+  MoviesBlacklistButton,
+} from "..";
 import { updateAsyncState } from "../../utilites";
 import { MoviesApi, EpisodesApi } from "../../apis";
 import { usePayload } from "./provider";
@@ -19,11 +30,15 @@ export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
     items: [],
   });
 
-  useEffect(() => {
+  const update = useCallback(() => {
     if (movie) {
       updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
     }
   }, [movie]);
+
+  useEffect(() => {
+    update();
+  }, [update]);
 
   const columns = useMemo<Column<MovieHistory>[]>(
     () => [
@@ -52,13 +67,19 @@ export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
       },
       {
         // Actions
-        accessor: "radarrId",
+        accessor: "subs_id",
         Cell: (row) => {
-          return null;
+          const original = row.row.original;
+          return (
+            <MoviesBlacklistButton
+              update={update}
+              {...original}
+            ></MoviesBlacklistButton>
+          );
         },
       },
     ],
-    []
+    [update]
   );
 
   return (
@@ -88,7 +109,7 @@ export const EpisodeHistoryModal: FunctionComponent<
     items: [],
   });
 
-  useEffect(() => {
+  const update = useCallback(() => {
     if (episode) {
       updateAsyncState(
         EpisodesApi.history(episode.sonarrEpisodeId),
@@ -97,6 +118,8 @@ export const EpisodeHistoryModal: FunctionComponent<
       );
     }
   }, [episode]);
+
+  useEffect(() => update(), [update]);
 
   const columns = useMemo<Column<EpisodeHistory>[]>(
     () => [
@@ -125,13 +148,22 @@ export const EpisodeHistoryModal: FunctionComponent<
       },
       {
         // Actions
-        accessor: "sonarrEpisodeId",
+        accessor: "subs_id",
         Cell: (row) => {
-          return null;
+          const original = row.row.original;
+          return (
+            <SeriesBlacklistButton
+              seriesid={original.sonarrSeriesId}
+              episodeid={original.sonarrEpisodeId}
+              path={original.video_path}
+              update={update}
+              {...original}
+            ></SeriesBlacklistButton>
+          );
         },
       },
     ],
-    []
+    [update]
   );
 
   return (

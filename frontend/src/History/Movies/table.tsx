@@ -1,13 +1,18 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-
-import { BasicTable, AsyncStateOverlay, HistoryIcon } from "../../components";
+import {
+  BasicTable,
+  AsyncStateOverlay,
+  HistoryIcon,
+  MoviesBlacklistButton,
+} from "../../components";
+import { updateHistoryMovieList } from "../../@redux/actions";
 
 interface Props {
   movieHistory: AsyncState<MovieHistory[]>;
+  update: () => void;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -17,9 +22,7 @@ function mapStateToProps({ movie }: StoreState) {
   };
 }
 
-const Table: FunctionComponent<Props> = (props) => {
-  const { movieHistory } = props;
-
+const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   const columns: Column<MovieHistory>[] = useMemo<Column<MovieHistory>[]>(
     () => [
       {
@@ -51,13 +54,19 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "description",
       },
       {
-        accessor: "radarrId",
+        accessor: "subs_id",
         Cell: (row) => {
-          return null;
+          const original = row.row.original;
+          return (
+            <MoviesBlacklistButton
+              update={update}
+              {...original}
+            ></MoviesBlacklistButton>
+          );
         },
       },
     ],
-    []
+    [update]
   );
 
   return (
@@ -73,4 +82,6 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, { update: updateHistoryMovieList })(
+  Table
+);

@@ -8,6 +8,7 @@ import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
 import HistoryRouter from "../History/Router";
+import BlacklistRouter from "../Blacklist/Router";
 
 const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
   return (
@@ -27,6 +28,9 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
         </Route>
         <Route path="/history">
           <HistoryRouter></HistoryRouter>
+        </Route>
+        <Route path="/blacklist">
+          <BlacklistRouter></BlacklistRouter>
         </Route>
         <Route path="/settings">
           <SettingRouter></SettingRouter>

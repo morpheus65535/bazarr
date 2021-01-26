@@ -4,6 +4,7 @@ import {
   UPDATE_MOVIE_LIST,
   UPDATE_MOVIE_WANTED_LIST,
   UPDATE_MOVIE_INFO,
+  UPDATE_MOVIES_BLACKLIST,
 } from "../constants";
 import { updateBadgeMovies, updateBadges } from "./badges";
 import { createAsyncAction, createCombineAction } from "./utils";
@@ -34,3 +35,8 @@ export const updateMovie = createAsyncAction(UPDATE_MOVIE_INFO, (id: number) =>
 export const updateMovieInfo = createCombineAction((id: number) => {
   return [updateMovie(id), updateBadges()];
 });
+
+export const updateMovieBlacklist = createAsyncAction(
+  UPDATE_MOVIES_BLACKLIST,
+  () => MoviesApi.blacklist()
+);

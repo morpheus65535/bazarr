@@ -4,6 +4,7 @@ import {
   UPDATE_SERIES_EPISODE_LIST,
   UPDATE_SERIES_HISTORY_LIST,
   UPDATE_SERIES_INFO,
+  UPDATE_SERIES_BLACKLIST,
 } from "../constants";
 
 import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
@@ -45,3 +46,8 @@ export const updateSeriesInfo = createCombineAction((id: number) => [
   updateEpisodeList(id),
   updateBadges(),
 ]);
+
+export const updateSeriesBlacklist = createAsyncAction(
+  UPDATE_SERIES_BLACKLIST,
+  () => SeriesApi.blacklist()
+);

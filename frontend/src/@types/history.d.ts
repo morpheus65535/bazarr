@@ -17,6 +17,7 @@ interface BasicHistory {
 interface EpisodeHistory extends BasicHistory {
   sonarrEpisodeId: number;
   sonarrSeriesId: number;
+  video_path: string;
 }
 
 interface ExtendHistory extends BasicHistory {

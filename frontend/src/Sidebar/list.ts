@@ -6,6 +6,7 @@ import {
   faCogs,
   faLaptop,
   faClock,
+  faFileExcel,
 } from "@fortawesome/free-solid-svg-icons";
 
 export const SidebarList: SidebarDefinition[] = [
@@ -30,6 +31,20 @@ export const SidebarList: SidebarDefinition[] = [
       {
         name: "Movies",
         link: "/history/movies",
+      },
+    ],
+  },
+  {
+    icon: faFileExcel,
+    name: "Blacklist",
+    children: [
+      {
+        name: "Series",
+        link: "/blacklist/series",
+      },
+      {
+        name: "Movies",
+        link: "/blacklist/movies",
       },
     ],
   },
