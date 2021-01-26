@@ -1,11 +1,12 @@
 import React, { FunctionComponent } from "react";
 import { Row } from "react-bootstrap";
 
-import ContentHeaderButton from "./Button";
+import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
 
 declare type Header = FunctionComponent & {
   Button: typeof ContentHeaderButton;
+  AsyncButton: typeof ContentHeaderAsyncButton;
   Group: typeof ContentHeaderGroup;
 };
 
@@ -22,5 +23,6 @@ export const ContentHeader: Header = (props) => {
 
 ContentHeader.Button = ContentHeaderButton;
 ContentHeader.Group = ContentHeaderGroup;
+ContentHeader.AsyncButton = ContentHeaderAsyncButton;
 
 export default ContentHeader;

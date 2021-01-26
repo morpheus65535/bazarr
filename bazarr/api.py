@@ -1614,11 +1614,11 @@ class HistoryStats(Resource):
 
         return jsonify(data_series=sorted_data_series, data_movies=sorted_data_movies)
 
-
+# GET: Get Wanted Series
+# PATCH: Search All Wanted Series
 class WantedSeries(Resource):
     @authenticate
     def get(self):
-
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -1658,7 +1658,13 @@ class WantedSeries(Resource):
 
         return jsonify(data=data)
 
+    @authenticate
+    def patch(self):
+        wanted_search_missing_subtitles_series()
+        return '', 204
 
+# GET: Get Wanted Movies
+# PATCH: Search All Wanted Movies
 class WantedMovies(Resource):
     @authenticate
     def get(self):
@@ -1695,19 +1701,11 @@ class WantedMovies(Resource):
 
         return jsonify(data=data)
 
-
-class SearchWantedSeries(Resource):
     @authenticate
-    def get(self):
-        wanted_search_missing_subtitles_series()
-        return '', 200
-
-
-class SearchWantedMovies(Resource):
-    @authenticate
-    def get(self):
+    def patch(self):
         wanted_search_missing_subtitles_movies()
-        return '', 200
+        return '', 204
+
 
 # GET: get blacklist
 # POST: add blacklist
@@ -1983,8 +1981,6 @@ api.add_resource(HistoryStats, '/history/stats')
 
 api.add_resource(WantedSeries, '/series/wanted')
 api.add_resource(WantedMovies, '/movies/wanted')
-api.add_resource(SearchWantedSeries, '/series/wanted/search')
-api.add_resource(SearchWantedMovies, '/movies/wanted/search')
 
 api.add_resource(BlacklistSeries, '/series/blacklist')
 api.add_resource(BlacklistMovies, '/movies/blacklist')

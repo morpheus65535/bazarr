@@ -47,7 +47,7 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
             profileid: id,
           })
         }
-        success={() => {
+        onSuccess={() => {
           closeModal();
           onSuccess && onSuccess(item!);
         }}

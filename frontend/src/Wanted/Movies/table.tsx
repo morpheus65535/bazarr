@@ -1,26 +1,31 @@
-import React, { useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
+import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { BasicTable, AsyncStateOverlay, ActionBadge } from "../../components";
+import { BasicTable, AsyncStateOverlay, AsyncButton } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
+import { updateWantedMovies } from "../../@redux/actions";
+
+import { MoviesApi } from "../../apis";
+
 interface Props {
   wanted: AsyncState<WantedMovie[]>;
-  //   search: (id: string) => void;
+  update: () => void;
 }
 
-function mapStateToProps({ movie }: StoreState): Props {
+function mapStateToProps({ movie }: StoreState) {
   const { wantedMovieList } = movie;
   return {
     wanted: wantedMovieList,
   };
 }
 
-function Table(props: Props): JSX.Element {
+const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   const columns: Column<WantedMovie>[] = useMemo<Column<WantedMovie>[]>(
     () => [
       {
@@ -39,20 +44,37 @@ function Table(props: Props): JSX.Element {
         Header: "Missing",
         accessor: "missing_subtitles",
         Cell: (row) => {
+          const wanted = row.row.original;
+          const hi = wanted.hearing_impaired;
+          const movieid = wanted.radarrId;
+
           return row.value.map((item, idx) => (
-            <ActionBadge key={idx} onClick={() => {}}>
+            <AsyncButton
+              as={Badge}
+              key={idx}
+              className="px-1"
+              variant="secondary"
+              promise={() =>
+                MoviesApi.downloadSubtitles(movieid, {
+                  hi,
+                  language: item.code2,
+                  forced: false,
+                })
+              }
+              onSuccess={update}
+            >
               <span className="mr-1">{item.code2}</span>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
-            </ActionBadge>
+            </AsyncButton>
           ));
         },
       },
     ],
-    []
+    [update]
   );
 
   return (
-    <AsyncStateOverlay state={props.wanted}>
+    <AsyncStateOverlay state={wanted}>
       {(data) => (
         <BasicTable
           emptyText="No Missing Movies Subtitles"
@@ -62,6 +84,6 @@ function Table(props: Props): JSX.Element {
       )}
     </AsyncStateOverlay>
   );
-}
+};
 
-export default connect(mapStateToProps, {})(Table);
+export default connect(mapStateToProps, { update: updateWantedMovies })(Table);

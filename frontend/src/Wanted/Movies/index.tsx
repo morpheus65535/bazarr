@@ -3,13 +3,15 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
-import { updateWantedMovieList } from "../../@redux/actions";
+import { updateWantedMovies } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import Table from "./table";
 
 import { ContentHeader } from "../../components";
+
+import { MoviesApi } from "../../apis";
 
 interface Props {
   update: () => void;
@@ -24,7 +26,13 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
         <title>Wanted Movies - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeader.Button icon={faSearch}>Search All</ContentHeader.Button>
+        <ContentHeader.AsyncButton
+          promise={() => MoviesApi.searchAllWanted()}
+          onSuccess={update}
+          icon={faSearch}
+        >
+          Search All
+        </ContentHeader.AsyncButton>
       </ContentHeader>
       <Row>
         <Table></Table>
@@ -33,6 +41,4 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: updateWantedMovieList })(
-  WantedMoviesView
-);
+export default connect(null, { update: updateWantedMovies })(WantedMoviesView);

@@ -246,7 +246,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
             disabled={!canUpload}
             onChange={setUpload}
             promise={() => uploadSubtitles(subtitleInfoList)}
-            success={() => {
+            onSuccess={() => {
               closeModal();
               update(series.sonarrSeriesId);
             }}

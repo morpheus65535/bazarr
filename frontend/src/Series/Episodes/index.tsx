@@ -71,9 +71,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const showModal = useShowModal();
 
-  const [scan, setScan] = useState(false);
-  const [search, setSearch] = useState(false);
-
   useEffect(() => {
     update(id);
   }, [update, id]);
@@ -89,33 +86,21 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
-          <ContentHeader.Button
+          <ContentHeader.AsyncButton
             icon={faSync}
-            updating={scan}
-            onClick={() => {
-              setScan(true);
-              SeriesApi.scanDisk(id).finally(() => {
-                setScan(false);
-                update(id);
-              });
-            }}
+            promise={() => SeriesApi.scanDisk(id)}
+            onSuccess={() => update(id)}
           >
             Scan Disk
-          </ContentHeader.Button>
-          <ContentHeader.Button
+          </ContentHeader.AsyncButton>
+          <ContentHeader.AsyncButton
             icon={faSearch}
-            updating={search}
+            promise={() => SeriesApi.searchMissing(id)}
+            onSuccess={() => update(id)}
             disabled={item.episodeFileCount === 0 ?? false}
-            onClick={() => {
-              setSearch(true);
-              SeriesApi.searchMissing(id).finally(() => {
-                setSearch(false);
-                update(id);
-              });
-            }}
           >
             Search
-          </ContentHeader.Button>
+          </ContentHeader.AsyncButton>
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
@@ -137,7 +122,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table id={id}></Table>
+        <Table series={item}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"

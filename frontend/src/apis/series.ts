@@ -50,6 +50,14 @@ class SeriesApi {
     });
   }
 
+  async searchAllWanted(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/wanted")
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
   async scanDisk(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.patch("/disk", undefined, { seriesid: id })

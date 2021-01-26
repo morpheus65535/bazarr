@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = (props) => {
                     forced: original.forced,
                   })
                 }
-                success={() => update(movie.radarrId)}
+                onSuccess={() => update(movie.radarrId)}
                 variant="light"
                 size="sm"
               >
@@ -80,7 +80,7 @@ const Table: FunctionComponent<Props> = (props) => {
                     path: original.path ?? "",
                   })
                 }
-                success={() => update(movie.radarrId)}
+                onSuccess={() => update(movie.radarrId)}
               >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
               </AsyncButton>

@@ -57,9 +57,6 @@ const MovieDetailView: FunctionComponent<Props> = ({
 
   const showModal = useShowModal();
 
-  const [scan, setScan] = useState(false);
-  const [search, setSearch] = useState(false);
-
   if (!item) {
     return <LoadingIndicator></LoadingIndicator>;
   }
@@ -73,36 +70,20 @@ const MovieDetailView: FunctionComponent<Props> = ({
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
-          <ContentHeader.Button
+          <ContentHeader.AsyncButton
             icon={faSync}
-            updating={scan}
-            onClick={() => {
-              setScan(true);
-              if (item) {
-                MoviesApi.scanDisk(item.radarrId).finally(() => {
-                  setScan(false);
-                  update(item.radarrId);
-                });
-              }
-            }}
+            promise={() => MoviesApi.scanDisk(item.radarrId)}
+            onSuccess={() => update(item.radarrId)}
           >
             Scan Disk
-          </ContentHeader.Button>
-          <ContentHeader.Button
+          </ContentHeader.AsyncButton>
+          <ContentHeader.AsyncButton
             icon={faSearch}
-            updating={search}
-            onClick={() => {
-              setSearch(true);
-              if (item) {
-                MoviesApi.searchMissing(item.radarrId).finally(() => {
-                  setSearch(false);
-                  update(item.radarrId);
-                });
-              }
-            }}
+            promise={() => MoviesApi.searchMissing(item.radarrId)}
+            onSuccess={() => update(item.radarrId)}
           >
             Search
-          </ContentHeader.Button>
+          </ContentHeader.AsyncButton>
           <ContentHeader.Button icon={faUser}>Manual</ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}

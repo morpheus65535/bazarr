@@ -11,9 +11,9 @@ import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 
 export const ActionBadge: FunctionComponent<{
+  icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
-}> = (props) => {
-  const { children, onClick } = props;
+}> = ({ icon, onClick }) => {
   return (
     <Button
       as={Badge}
@@ -21,32 +21,10 @@ export const ActionBadge: FunctionComponent<{
       variant="secondary"
       onClick={onClick}
     >
-      {children}
+      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
     </Button>
   );
 };
-
-export const ActionIconBadge: FunctionComponent<{
-  icon: IconDefinition;
-  onClick?: (e: MouseEvent) => void;
-}> = ({ icon, onClick }) => {
-  return (
-    <ActionBadge onClick={onClick}>
-      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-    </ActionBadge>
-  );
-};
-
-interface AsyncButtonProps<T> {
-  variant?: ButtonProps["variant"];
-  size?: ButtonProps["size"];
-  disabled?: boolean;
-  onChange?: (v: boolean) => void;
-
-  promise: () => Promise<T>;
-  success?: (result: T) => void;
-  error?: () => void;
-}
 
 export const ActionIcon: FunctionComponent<{
   icon: IconDefinition;
@@ -59,13 +37,28 @@ export const ActionIcon: FunctionComponent<{
   );
 };
 
+interface AsyncButtonProps<T> {
+  as?: ButtonProps["as"];
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+
+  className?: string;
+  disabled?: boolean;
+  onChange?: (v: boolean) => void;
+
+  promise: () => Promise<T>;
+  onSuccess?: (result: T) => void;
+  error?: () => void;
+}
+
 export function AsyncButton<T>(
   props: PropsWithChildren<AsyncButtonProps<T>>
 ): JSX.Element {
   const {
     children,
+    className,
     promise,
-    success,
+    onSuccess: success,
     error,
     onChange,
     disabled,
@@ -76,6 +69,7 @@ export function AsyncButton<T>(
 
   return (
     <Button
+      className={className}
       disabled={loading || disabled}
       {...button}
       onClick={() => {

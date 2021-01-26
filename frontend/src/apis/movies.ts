@@ -54,6 +54,14 @@ class MovieApi {
     });
   }
 
+  async searchAllWanted(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/wanted")
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
   async history(id: number): Promise<Array<MovieHistory>> {
     return new Promise<Array<MovieHistory>>((resolve, reject) => {
       this.get<DataWrapper<Array<MovieHistory>>>("/history", {

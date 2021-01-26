@@ -31,8 +31,6 @@ const SystemProvidersView: FunctionComponent<Props> = (props) => {
     update();
   }, [update]);
 
-  const [resetting, setReset] = useState(false);
-
   return (
     <Container fluid>
       <Helmet>
@@ -42,19 +40,13 @@ const SystemProvidersView: FunctionComponent<Props> = (props) => {
         <ContentHeader.Button updating={loading} icon={faSync} onClick={update}>
           Refresh
         </ContentHeader.Button>
-        <ContentHeader.Button
+        <ContentHeader.AsyncButton
           icon={faTrash}
-          updating={resetting}
-          onClick={() => {
-            setReset(true);
-            ProvidersApi.reset().finally(() => {
-              setReset(false);
-              update();
-            });
-          }}
+          promise={() => ProvidersApi.reset()}
+          onSuccess={update}
         >
           Reset
-        </ContentHeader.Button>
+        </ContentHeader.AsyncButton>
       </ContentHeader>
       <Row>
         <Table></Table>

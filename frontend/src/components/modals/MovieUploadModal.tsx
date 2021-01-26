@@ -61,7 +61,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
           language: language!.code2!,
         })
       }
-      success={() => {
+      onSuccess={() => {
         closeModal();
         update(movie.radarrId);
       }}

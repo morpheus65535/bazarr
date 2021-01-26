@@ -5,7 +5,7 @@ import {
   UPDATE_MOVIE_WANTED_LIST,
   UPDATE_MOVIE_INFO,
 } from "../constants";
-import { updateBadges } from "./badges";
+import { updateBadgeMovies, updateBadges } from "./badges";
 import { createAsyncAction, createCombineAction } from "./utils";
 
 export const updateMovieList = createAsyncAction(UPDATE_MOVIE_LIST, () =>
@@ -16,6 +16,11 @@ export const updateWantedMovieList = createAsyncAction(
   UPDATE_MOVIE_WANTED_LIST,
   () => MoviesApi.wanted()
 );
+
+export const updateWantedMovies = createCombineAction(() => [
+  updateWantedMovieList(),
+  updateBadgeMovies(),
+]);
 
 export const updateHistoryMovieList = createAsyncAction(
   UPDATE_MOVIE_HISTORY_LIST,

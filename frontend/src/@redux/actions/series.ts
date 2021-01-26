@@ -9,7 +9,7 @@ import {
 import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
 import { createAsyncAction, createCombineAction } from "./utils";
 
-import { updateBadges } from "./badges";
+import { updateBadges, updateBadgeSeries } from "./badges";
 
 export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
   SeriesApi.series()
@@ -19,6 +19,11 @@ export const updateWantedSeriesList = createAsyncAction(
   UPDATE_SERIES_WANTED_LIST,
   () => SeriesApi.wanted()
 );
+
+export const updateWantedSeries = createCombineAction(() => [
+  updateWantedSeriesList(),
+  updateBadgeSeries(),
+]);
 
 export const updateEpisodeList = createAsyncAction(
   UPDATE_SERIES_EPISODE_LIST,

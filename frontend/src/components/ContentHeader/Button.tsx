@@ -1,4 +1,9 @@
-import React, { FunctionComponent, MouseEvent } from "react";
+import React, {
+  FunctionComponent,
+  MouseEvent,
+  PropsWithChildren,
+  useState,
+} from "react";
 import { Button } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -38,5 +43,31 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
     </Button>
   );
 };
+
+type CHAsyncButtonProps<T extends () => Promise<any>> = {
+  promise: T;
+  onSuccess?: (item: PromiseType<ReturnType<T>>) => void;
+} & Omit<CHButtonProps, "updating" | "updatingIcon" | "onClick">;
+
+export function ContentHeaderAsyncButton<T extends () => Promise<any>>(
+  props: PropsWithChildren<CHAsyncButtonProps<T>>
+): JSX.Element {
+  const { promise, onSuccess, ...button } = props;
+
+  const [updating, setUpdate] = useState(false);
+
+  return (
+    <ContentHeaderButton
+      updating={updating}
+      onClick={() => {
+        setUpdate(true);
+        promise()
+          .then(onSuccess)
+          .finally(() => setUpdate(false));
+      }}
+      {...button}
+    ></ContentHeaderButton>
+  );
+}
 
 export default ContentHeaderButton;

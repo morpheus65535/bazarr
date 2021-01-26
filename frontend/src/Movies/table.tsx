@@ -6,7 +6,7 @@ import { Badge } from "react-bootstrap";
 
 import {
   BasicTable,
-  ActionIconBadge,
+  ActionBadge,
   AsyncStateOverlay,
   ItemEditorModal,
   useShowModal,
@@ -115,10 +115,10 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "radarrId",
         Cell: (row) => (
-          <ActionIconBadge
+          <ActionBadge
             icon={faWrench}
             onClick={(e) => showModal("edit", row.row.original)}
-          ></ActionIconBadge>
+          ></ActionBadge>
         ),
       },
     ],

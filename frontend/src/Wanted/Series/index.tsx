@@ -3,11 +3,13 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
-import { updateWantedSeriesList } from "../../@redux/actions";
+import { updateWantedSeries } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import { ContentHeader } from "../../components";
+
+import { SeriesApi } from "../../apis";
 
 import Table from "./table";
 
@@ -23,7 +25,13 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update }) => {
         <title>Wanted Series - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeader.Button icon={faSearch}>Search All</ContentHeader.Button>
+        <ContentHeader.AsyncButton
+          promise={() => SeriesApi.searchAllWanted()}
+          onSuccess={update}
+          icon={faSearch}
+        >
+          Search All
+        </ContentHeader.AsyncButton>
       </ContentHeader>
       <Row>
         <Table></Table>
@@ -33,5 +41,5 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update }) => {
 };
 
 export default connect(null, {
-  update: updateWantedSeriesList,
+  update: updateWantedSeries,
 })(WantedSeriesView);
