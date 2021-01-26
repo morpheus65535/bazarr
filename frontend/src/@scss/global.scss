@@ -16,6 +16,11 @@
     }
   }
 
+  .badge-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+
   input {
     &[type="text"],
     &[type="password"] {

@@ -63,6 +63,7 @@ const Table: FunctionComponent<Props> = (props) => {
 
           return (
             <FontAwesomeIcon
+              title={monitored ? "monitored" : "unmonitored"}
               icon={monitored ? faBookmark : farBookmark}
             ></FontAwesomeIcon>
           );
@@ -86,8 +87,10 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "exist",
         Cell: (row) => {
           const exist = row.value;
+          const { path } = row.row.original;
           return (
             <FontAwesomeIcon
+              title={path}
               icon={exist ? faCheck : faExclamationTriangle}
             ></FontAwesomeIcon>
           );
@@ -110,6 +113,13 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           const profileId = row.value;
           return getProfile(profileId)?.name ?? "";
+        },
+      },
+      {
+        accessor: "missing_subtitles",
+        Cell: (row) => {
+          const missing = row.value;
+          return missing.map((v) => <Badge variant="warning">{v.code2}</Badge>);
         },
       },
       {

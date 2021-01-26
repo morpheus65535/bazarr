@@ -90,6 +90,9 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     <Container
       fluid
       style={{
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "top center",
         backgroundImage: `url('${item.fanart}')`,
       }}
     >

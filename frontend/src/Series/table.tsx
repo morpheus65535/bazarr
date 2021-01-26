@@ -72,8 +72,10 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "exist",
         Cell: (row) => {
           const exist = row.value;
+          const { path } = row.row.original;
           return (
             <FontAwesomeIcon
+              title={path}
               icon={exist ? faCheck : faExclamationTriangle}
             ></FontAwesomeIcon>
           );

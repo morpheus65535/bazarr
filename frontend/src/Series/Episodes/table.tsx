@@ -61,6 +61,7 @@ const Table: FunctionComponent<Props> = ({
         Cell: (row) => {
           return (
             <FontAwesomeIcon
+              title={row.value ? "monitored" : "unmonitored"}
               icon={row.value ? faBookmark : farBookmark}
             ></FontAwesomeIcon>
           );

@@ -79,8 +79,18 @@ const Table: FunctionComponent = () => {
         accessor: "items",
         Cell: (row) => {
           const items = row.value;
+          const cutoff = row.row.original.cutoff;
           return items.map((v) => (
-            <Badge key={v.id} className="mx-1" variant="secondary">
+            <Badge
+              key={v.id}
+              className="mx-1"
+              title={
+                v.id === cutoff
+                  ? "Ignore others if this one is avaliable"
+                  : undefined
+              }
+              variant={v.id === cutoff ? "primary" : "secondary"}
+            >
               {v.language}
             </Badge>
           ));
