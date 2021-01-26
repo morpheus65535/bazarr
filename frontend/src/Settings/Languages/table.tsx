@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
-import { ActionIcon, BasicTable } from "../../components";
+import { ActionIcon, BasicTable, useShowModal } from "../../components";
 
 import { useLanguagesProfile } from ".";
 
@@ -21,43 +21,16 @@ const Table: FunctionComponent = () => {
 
   const [profiles, setProfiles] = useState(originalProfiles);
 
-  const update = useUpdate();
-
-  const [modal, setModal] = useState(false);
-
-  const [active, setActive] = useState<LanguagesProfile>({
-    profileId: -1,
-    name: "",
-    items: [],
-    cutoff: null,
-  });
-
-  const showModal = useCallback(
-    (profile: LanguagesProfile | undefined = undefined) => {
-      if (profile === undefined) {
-        const id =
-          1 +
-          profiles.reduce<number>(
-            (val, prof) => Math.max(prof.profileId, val),
-            0
-          );
-        profile = {
-          profileId: id,
-          name: "",
-          items: [],
-          cutoff: null,
-        };
-      }
-
-      setActive(profile);
-      setModal(true);
-    },
+  const nextProfileId = useMemo(
+    () =>
+      1 +
+      profiles.reduce<number>((val, prof) => Math.max(prof.profileId, val), 0),
     [profiles]
   );
 
-  const hideModal = useCallback(() => {
-    setModal(false);
-  }, []);
+  const update = useUpdate();
+
+  const showModal = useShowModal();
 
   const submitProfiles = useCallback(
     (list: LanguagesProfile[]) => {
@@ -123,7 +96,7 @@ const Table: FunctionComponent = () => {
               <ActionIcon
                 icon={faWrench}
                 onClick={() => {
-                  showModal(profile);
+                  showModal("profile", profile);
                 }}
               ></ActionIcon>
               <ActionIcon
@@ -145,16 +118,22 @@ const Table: FunctionComponent = () => {
         columns={columns}
         data={profiles}
       ></BasicTable>
-      <Button block variant="light" onClick={() => showModal()}>
+      <Button
+        block
+        variant="light"
+        onClick={() => {
+          const profile = {
+            profileId: nextProfileId,
+            name: "",
+            items: [],
+            cutoff: null,
+          };
+          showModal("profile", profile);
+        }}
+      >
         Add New Profile
       </Button>
-      <Modal
-        key={active?.profileId ?? 0}
-        profile={active}
-        update={updateProfile}
-        show={modal}
-        onClose={hideModal}
-      ></Modal>
+      <Modal update={updateProfile} modalKey="profile"></Modal>
     </React.Fragment>
   );
 };

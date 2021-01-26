@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column, TableOptions } from "react-table";
 
@@ -20,6 +20,7 @@ import {
   AsyncStateOverlay,
   SubtitleToolModal,
   EpisodeHistoryModal,
+  useShowModal,
 } from "../../components";
 
 interface Props {
@@ -38,17 +39,7 @@ const Table: FunctionComponent<Props> = (props) => {
   const list = props.episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
 
-  const [modal, setModal] = useState<string>("");
-  const [modalItem, setModalItem] = useState<Episode | undefined>(undefined);
-
-  const closeModal = () => {
-    setModal("");
-  };
-
-  const showModal = (key: string, item: Episode) => {
-    setModalItem(item);
-    setModal(key);
-  };
+  const showModal = useShowModal();
 
   const columns: Column<Episode>[] = useMemo<Column<Episode>[]>(
     () => [
@@ -123,19 +114,20 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "sonarrEpisodeId",
         className: "d-flex flex-nowrap",
         Cell: (row) => {
+          const episode = row.row.original;
           return (
             <React.Fragment>
               <ActionIconBadge icon={faUser}></ActionIconBadge>
               <ActionIconBadge
                 icon={faHistory}
                 onClick={() => {
-                  showModal("history", row.row.original);
+                  showModal("history", episode);
                 }}
               ></ActionIconBadge>
               <ActionIconBadge
                 icon={faBriefcase}
                 onClick={() => {
-                  showModal("tools", row.row.original);
+                  showModal("tools", episode);
                 }}
               ></ActionIconBadge>
             </React.Fragment>
@@ -143,7 +135,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    []
+    [showModal]
   );
 
   const maxSeason = useMemo(
@@ -182,19 +174,8 @@ const Table: FunctionComponent<Props> = (props) => {
           ></GroupTable>
         )}
       </AsyncStateOverlay>
-      <SubtitleToolModal
-        size="lg"
-        show={modal === "tools"}
-        title={`Tools - ${modalItem?.title}`}
-        subtitles={modalItem?.subtitles ?? []}
-        onClose={closeModal}
-      ></SubtitleToolModal>
-      <EpisodeHistoryModal
-        size="lg"
-        show={modal === "history"}
-        episode={modalItem}
-        onClose={closeModal}
-      ></EpisodeHistoryModal>
+      <SubtitleToolModal size="lg" modalKey="tools"></SubtitleToolModal>
+      <EpisodeHistoryModal size="lg" modalKey="history"></EpisodeHistoryModal>
     </React.Fragment>
   );
 };

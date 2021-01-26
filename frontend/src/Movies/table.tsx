@@ -1,9 +1,4 @@
-import React, {
-  FunctionComponent,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -14,6 +9,7 @@ import {
   ActionIconBadge,
   AsyncStateOverlay,
   ItemEditorModal,
+  useShowModal,
 } from "../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -46,8 +42,7 @@ function mapStateToProps({ movie, system }: StoreState) {
 const Table: FunctionComponent<Props> = (props) => {
   const { movies, profiles, update } = props;
 
-  const [modal, setModal] = useState<string>("");
-  const [item, setItem] = useState<Movie | undefined>(undefined);
+  const showModal = useShowModal();
 
   const getProfile = useCallback(
     (id?: number) => {
@@ -58,15 +53,6 @@ const Table: FunctionComponent<Props> = (props) => {
     },
     [profiles]
   );
-
-  const showModal = useCallback((key: string, item: Movie) => {
-    setItem(item);
-    setModal(key);
-  }, []);
-
-  const hideModal = useCallback(() => {
-    setModal("");
-  }, []);
 
   const columns: Column<Movie>[] = useMemo<Column<Movie>[]>(
     () => [
@@ -151,16 +137,11 @@ const Table: FunctionComponent<Props> = (props) => {
         )}
       </AsyncStateOverlay>
       <ItemEditorModal
-        show={modal === "edit"}
-        title={item?.title}
-        key={item?.title}
-        item={item}
-        onClose={hideModal}
-        submit={(form) => MoviesApi.modify(item!.radarrId, form)}
-        onSuccess={() => {
-          hideModal();
-          update(item!.radarrId);
-        }}
+        modalKey="edit"
+        submit={(item, form) =>
+          MoviesApi.modify((item as Movie).radarrId, form)
+        }
+        onSuccess={(item) => update((item as Movie).radarrId)}
       ></ItemEditorModal>
     </React.Fragment>
   );

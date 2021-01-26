@@ -25,6 +25,7 @@ import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 import LanguageSelector from "../LanguageSelector";
+import { useCloseModal, useIsShow } from "./provider";
 
 enum SubtitleState {
   update,
@@ -53,6 +54,8 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   const { series, episodesList, avaliableLanguages, update, ...modal } = props;
 
   const [uploading, setUpload] = useState(false);
+
+  const closeModal = useCloseModal();
 
   const [subtitleInfoList, setSubtitleInfo] = useState<SubtitleInfo[]>([]);
 
@@ -213,11 +216,13 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   const canUpload = tableShow && isValid && language?.code2 !== undefined;
 
+  const show = useIsShow(modal.modalKey);
+
   useEffect(() => {
-    if (modal.show) {
+    if (show) {
       setFiles([]);
     }
-  }, [modal.show, setFiles]);
+  }, [show, setFiles]);
 
   const footer = useMemo(
     () => (
@@ -242,7 +247,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
             onChange={setUpload}
             promise={() => uploadSubtitles(subtitleInfoList)}
             success={() => {
-              modal.onClose();
+              closeModal();
               update(series.sonarrSeriesId);
             }}
           >
@@ -258,12 +263,12 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
       tableShow,
       setFiles,
       canUpload,
-      modal,
       series,
       subtitleInfoList,
       update,
       uploadSubtitles,
       updateLanguage,
+      closeModal,
     ]
   );
 

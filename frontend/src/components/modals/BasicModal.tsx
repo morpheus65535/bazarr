@@ -1,17 +1,22 @@
 import React, { FunctionComponent } from "react";
 import { Modal } from "react-bootstrap";
 
+import { useIsShow } from ".";
+import { useCloseModal } from "./provider";
+
 export interface BasicModalProps {
+  modalKey: string;
   size?: "sm" | "lg" | "xl";
   closeable?: boolean;
-  show: boolean;
   title?: string;
-  onClose: () => void;
   footer?: JSX.Element;
 }
 
 export const BasicModal: FunctionComponent<BasicModalProps> = (props) => {
-  const { size, closeable, show, title, onClose, children, footer } = props;
+  const { size, closeable, modalKey, title, children, footer } = props;
+
+  const show = useIsShow(modalKey);
+  const closeModal = useCloseModal();
 
   const canClose = closeable !== undefined ? closeable : true;
 
@@ -20,7 +25,7 @@ export const BasicModal: FunctionComponent<BasicModalProps> = (props) => {
       centered
       size={size}
       show={show}
-      onHide={onClose}
+      onHide={closeModal}
       backdrop={canClose ? undefined : "static"}
     >
       <Modal.Header closeButton={canClose}>{title}</Modal.Header>

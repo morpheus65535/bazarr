@@ -25,6 +25,7 @@ import {
   SubtitleToolModal,
   MovieHistoryModal,
   MovieUploadModal,
+  useShowModal,
 } from "../../components";
 
 import Table from "./table";
@@ -56,7 +57,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
   const id = Number.parseInt(match.params.id);
   const item = list.find((val) => val.radarrId === id);
 
-  const [modal, setModal] = useState("");
+  const showModal = useShowModal();
 
   const [scan, setScan] = useState(false);
   const [search, setSearch] = useState(false);
@@ -109,15 +110,13 @@ const MovieDetailView: FunctionComponent<Props> = ({
           {allowEdit && editButton}
           <ContentHeaderButton
             icon={faHistory}
-            onClick={() => {
-              setModal("history");
-            }}
+            onClick={() => showModal("history", item)}
           >
             History
           </ContentHeaderButton>
           <ContentHeaderButton
             icon={faToolbox}
-            onClick={() => setModal("tools")}
+            onClick={() => showModal("tools", item)}
           >
             Tools
           </ContentHeaderButton>
@@ -127,17 +126,20 @@ const MovieDetailView: FunctionComponent<Props> = ({
           <ContentHeaderButton
             disabled={!allowEdit}
             icon={faCloudUploadAlt}
-            onClick={() => setModal("upload")}
+            onClick={() => showModal("upload")}
           >
             Upload
           </ContentHeaderButton>
-          <ContentHeaderButton icon={faWrench} onClick={() => setModal("edit")}>
+          <ContentHeaderButton
+            icon={faWrench}
+            onClick={() => showModal("edit", item)}
+          >
             Edit Movie
           </ContentHeaderButton>
         </ContentHeaderGroup>
       </ContentHeader>
     ),
-    [allowEdit, editButton, item, scan, update]
+    [allowEdit, editButton, item, scan, update, showModal]
   );
 
   if (item) {
@@ -154,33 +156,15 @@ const MovieDetailView: FunctionComponent<Props> = ({
           <Table movie={item}></Table>
         </Row>
         <ItemEditorModal
-          show={modal === "edit"}
-          item={item}
-          onClose={() => setModal("")}
-          submit={(form) => MoviesApi.modify(item!.radarrId, form)}
-          onSuccess={() => {
-            setModal("");
-            update(id);
-          }}
+          modalKey="edit"
+          submit={(item, form) =>
+            MoviesApi.modify((item as Movie).radarrId, form)
+          }
+          onSuccess={() => update(id)}
         ></ItemEditorModal>
-        <SubtitleToolModal
-          size="lg"
-          show={modal === "tools"}
-          title={item.title}
-          subtitles={item.subtitles}
-          onClose={() => setModal("")}
-        ></SubtitleToolModal>
-        <MovieHistoryModal
-          size="lg"
-          show={modal === "history"}
-          movie={item}
-          onClose={() => setModal("")}
-        ></MovieHistoryModal>
-        <MovieUploadModal
-          show={modal === "upload"}
-          onClose={() => setModal("")}
-          movie={item}
-        ></MovieUploadModal>
+        <SubtitleToolModal size="lg" modalKey="tools"></SubtitleToolModal>
+        <MovieHistoryModal size="lg" modalKey="history"></MovieHistoryModal>
+        <MovieUploadModal modalKey="upload" movie={item}></MovieUploadModal>
       </Container>
     );
   } else {

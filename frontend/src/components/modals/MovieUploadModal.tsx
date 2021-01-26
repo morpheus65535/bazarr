@@ -4,6 +4,8 @@ import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { AsyncButton, FileForm } from "..";
 
+import { useCloseModal } from ".";
+
 import { Container, Form } from "react-bootstrap";
 
 import { MoviesApi } from "../../apis";
@@ -27,6 +29,8 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   props
 ) => {
   const { movie, avaliableLanguages, update, ...modal } = props;
+
+  const closeModal = useCloseModal();
 
   const [uploading, setUpload] = useState(false);
 
@@ -58,7 +62,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
         })
       }
       success={() => {
-        modal.onClose();
+        closeModal();
         update(movie.radarrId);
       }}
     >

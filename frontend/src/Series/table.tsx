@@ -1,15 +1,11 @@
-import React, {
-  FunctionComponent,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import {
   BasicTable,
   ActionIconBadge,
   AsyncStateOverlay,
   ItemEditorModal,
+  useShowModal,
 } from "../components";
 
 import { connect } from "react-redux";
@@ -44,8 +40,7 @@ function mapStateToProps({ series, system }: StoreState) {
 const Table: FunctionComponent<Props> = (props) => {
   const { series, profiles, update } = props;
 
-  const [modal, setModal] = useState<string>("");
-  const [item, setItem] = useState<Series | undefined>(undefined);
+  const showModal = useShowModal();
 
   const getProfile = useCallback(
     (id?: number) => {
@@ -56,15 +51,6 @@ const Table: FunctionComponent<Props> = (props) => {
     },
     [profiles]
   );
-
-  const showModal = useCallback((key: string, item: Series) => {
-    setItem(item);
-    setModal(key);
-  }, []);
-
-  const hideModal = useCallback(() => {
-    setModal("");
-  }, []);
 
   const columns: Column<Series>[] = useMemo<Column<Series>[]>(
     () => [
@@ -158,28 +144,26 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 
   return (
-    <React.Fragment>
-      <AsyncStateOverlay state={series}>
-        {(data) => (
+    <AsyncStateOverlay state={series}>
+      {(data) => (
+        <React.Fragment>
           <BasicTable
             emptyText="No Series Found"
             columns={columns}
             data={data}
           ></BasicTable>
-        )}
-      </AsyncStateOverlay>
-      <ItemEditorModal
-        show={modal === "edit"}
-        onClose={hideModal}
-        key={item?.title}
-        item={item}
-        submit={(form) => SeriesApi.modify(item!.sonarrSeriesId, form)}
-        onSuccess={() => {
-          hideModal();
-          update(item!.sonarrSeriesId);
-        }}
-      ></ItemEditorModal>
-    </React.Fragment>
+          <ItemEditorModal
+            modalKey="edit"
+            submit={(item, form) =>
+              SeriesApi.modify((item as Series).sonarrSeriesId, form)
+            }
+            onSuccess={(item) => {
+              update((item as Series).sonarrSeriesId);
+            }}
+          ></ItemEditorModal>
+        </React.Fragment>
+      )}
+    </AsyncStateOverlay>
   );
 };
 

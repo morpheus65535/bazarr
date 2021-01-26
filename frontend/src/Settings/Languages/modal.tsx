@@ -3,6 +3,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useEffect,
 } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Column } from "react-table";
@@ -13,6 +14,8 @@ import {
   BasicModalProps,
   Selector,
   LanguageSelector,
+  useCloseModal,
+  usePayload,
 } from "../../components";
 import { Input, Message } from "../components";
 
@@ -20,7 +23,6 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEnabledLanguages } from ".";
 
 interface Props {
-  profile: LanguagesProfile;
   update: (profile: LanguagesProfile) => void;
 }
 
@@ -32,11 +34,28 @@ const cutoffOptions: LooseObject = {
 const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   props
 ) => {
-  const { profile, update, ...modal } = props;
+  const { update, ...modal } = props;
+
+  const profile = usePayload<LanguagesProfile>();
+
+  const closeModal = useCloseModal();
 
   const languages = useEnabledLanguages();
 
-  const [current, setProfile] = useState(profile);
+  const [current, setProfile] = useState(
+    profile ?? {
+      profileId: -1,
+      name: "",
+      items: [],
+      cutoff: null,
+    }
+  );
+
+  useEffect(() => {
+    if (profile) {
+      setProfile(profile);
+    }
+  }, [profile]);
 
   const cutoff = useMemo(() => {
     const options = { ...cutoffOptions };
@@ -109,14 +128,14 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
     () => (
       <Button
         onClick={() => {
-          modal.onClose();
+          closeModal();
           update(current);
         }}
       >
         Save
       </Button>
     ),
-    [update, modal, current]
+    [update, current, closeModal]
   );
 
   const columns = useMemo<Column<LanguagesProfileItem>[]>(
@@ -217,7 +236,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         <Form.Control
           type="text"
           placeholder="Name"
-          defaultValue={current?.name}
+          defaultValue={profile?.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}
@@ -238,9 +257,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         <Selector
           nullKey="disabled"
           options={cutoff}
-          defaultKey={
-            current.cutoff !== null ? current.cutoff.toString() : undefined
-          }
+          defaultKey={profile?.cutoff ? profile.cutoff.toString() : undefined}
           onSelect={(k) => {
             let num: number | null = parseInt(k);
             if (isNaN(num)) {

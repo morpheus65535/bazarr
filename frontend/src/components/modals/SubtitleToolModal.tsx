@@ -3,12 +3,13 @@ import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { Column } from "react-table";
 import { BasicTable } from "..";
+import { usePayload } from "./provider";
 
-interface Props {
-  subtitles: Subtitle[];
-}
+interface Props {}
 
-const Table: FunctionComponent<Props> = ({ subtitles }) => {
+const Table: FunctionComponent<Props> = () => {
+  const episode = usePayload<Episode>();
+
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
       {
@@ -46,8 +47,8 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
   );
 
   const data: Subtitle[] = useMemo<Subtitle[]>(
-    () => subtitles.filter((val) => val.path !== null),
-    [subtitles]
+    () => episode?.subtitles.filter((val) => val.path !== null) ?? [],
+    [episode]
   );
 
   return (
@@ -60,8 +61,9 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
 };
 
 const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
+  const episode = usePayload<Episode>();
   return (
-    <BasicModal {...props}>
+    <BasicModal title={`Tools - ${episode?.title ?? ""}`} {...props}>
       <Table {...props}></Table>
     </BasicModal>
   );

@@ -4,3 +4,4 @@ export { default as MovieUploadModal } from "./MovieUploadModal";
 export { default as SeriesUploadModal } from "./SeriesUploadModal";
 export * from "./BasicModal";
 export * from "./HistoryModal";
+export * from "./provider";

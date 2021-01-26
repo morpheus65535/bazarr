@@ -5,15 +5,14 @@ import { BasicTable, HistoryIcon, AsyncStateOverlay } from "..";
 
 import { updateAsyncState } from "../../utilites";
 import { MoviesApi, EpisodesApi } from "../../apis";
+import { usePayload } from "./provider";
 
-interface MovieHistoryProps {
-  movie: Movie;
-}
+export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
+  props
+) => {
+  const { ...modal } = props;
 
-export const MovieHistoryModal: FunctionComponent<
-  BasicModalProps & MovieHistoryProps
-> = (props) => {
-  const { movie, ...modal } = props;
+  const movie = usePayload<Movie>();
 
   const [history, setHistory] = useState<AsyncState<MovieHistory[]>>({
     updating: false,
@@ -21,10 +20,10 @@ export const MovieHistoryModal: FunctionComponent<
   });
 
   useEffect(() => {
-    if (modal.show) {
+    if (movie) {
       updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
     }
-  }, [movie, modal.show]);
+  }, [movie]);
 
   const columns = useMemo<Column<MovieHistory>[]>(
     () => [
@@ -63,7 +62,7 @@ export const MovieHistoryModal: FunctionComponent<
   );
 
   return (
-    <BasicModal title={`History - ${movie.title}`} {...modal}>
+    <BasicModal title={`History - ${movie?.title ?? ""}`} {...modal}>
       <AsyncStateOverlay state={history}>
         {(data) => (
           <BasicTable
@@ -77,14 +76,13 @@ export const MovieHistoryModal: FunctionComponent<
   );
 };
 
-interface EpisodeHistoryProps {
-  episode?: Episode;
-}
+interface EpisodeHistoryProps {}
 
 export const EpisodeHistoryModal: FunctionComponent<
   BasicModalProps & EpisodeHistoryProps
 > = (props) => {
-  const { episode } = props;
+  const episode = usePayload<Episode>();
+
   const [history, setHistory] = useState<AsyncState<EpisodeHistory[]>>({
     updating: false,
     items: [],

@@ -1,21 +1,16 @@
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { connect } from "react-redux";
 import { Container, Form } from "react-bootstrap";
 
 import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { Selector, AsyncButton } from "../";
+import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
   profiles: LanguagesProfile[];
-  item?: ExtendItem;
-  submit: (form: ItemModifyForm) => Promise<void>;
-  onSuccess?: () => void;
+  submit: (item: ExtendItem, form: ItemModifyForm) => Promise<void>;
+  onSuccess?: (item: ExtendItem) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -25,14 +20,11 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
-  const { item, profiles, onSuccess, submit, ...modal } = props;
+  const { profiles, onSuccess, submit, ...modal } = props;
 
-  const submitForm = useCallback(
-    (form: ItemModifyForm) => {
-      return submit(form);
-    },
-    [submit]
-  );
+  const item = usePayload<ExtendItem>();
+
+  const closeModal = useCloseModal();
 
   const profileOptions = useMemo<Pair[]>(
     () =>
@@ -41,21 +33,29 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
       }),
     [profiles]
   );
-  const [id, setId] = useState(item?.profileId);
+  const [id, setId] = useState<number | undefined>(undefined);
+
   const [updating, setUpdating] = useState(false);
 
-  const footer = (
-    <AsyncButton
-      onChange={setUpdating}
-      promise={() =>
-        submitForm({
-          profileid: id,
-        })
-      }
-      success={onSuccess}
-    >
-      Save
-    </AsyncButton>
+  const footer = useMemo(
+    () => (
+      <AsyncButton
+        disabled={id === undefined}
+        onChange={setUpdating}
+        promise={() =>
+          submit(item!, {
+            profileid: id,
+          })
+        }
+        success={() => {
+          closeModal();
+          onSuccess && onSuccess(item!);
+        }}
+      >
+        Save
+      </AsyncButton>
+    ),
+    [closeModal, id, item, onSuccess, submit]
   );
 
   return (
@@ -80,7 +80,7 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
             <Selector
               nullKey="None"
               options={profileOptions}
-              defaultKey={id?.toString()}
+              defaultKey={item?.profileId?.toString()}
               onSelect={(k) => {
                 const id = parseInt(k);
 

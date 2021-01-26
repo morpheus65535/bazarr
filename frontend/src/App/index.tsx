@@ -13,7 +13,7 @@ import Header from "./Header";
 import { bootstrap } from "../@redux/actions";
 import { connect } from "react-redux";
 
-import { LoadingIndicator } from "../components";
+import { LoadingIndicator, ModalProvider } from "../components";
 
 // Sidebar Toggle
 export const SidebarToggleContext = React.createContext<() => void>(() => {});
@@ -59,7 +59,9 @@ const App: FunctionComponent<Props> = ({ bootstrap, initialized }) => {
             </Row>
             <Row noGutters className="flex-nowrap">
               <Sidebar open={sidebar}></Sidebar>
-              <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+              <ModalProvider>
+                <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+              </ModalProvider>
             </Row>
           </SidebarToggleContext.Provider>
         </Container>
