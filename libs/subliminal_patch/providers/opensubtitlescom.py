@@ -112,7 +112,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             raise ConfigurationError('Api_key must be specified')
 
         if not all((username, password)):
-                raise ConfigurationError('Username and password must be specified')
+            raise ConfigurationError('Username and password must be specified')
 
         self.session = Session()
         self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
@@ -156,7 +156,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             elif r.status_code == 401:
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
             elif r.status_code == 429:
-                    raise TooManyRequests()
+                raise TooManyRequests()
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
         finally:
