@@ -4,7 +4,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { Column } from "react-table";
 import {
   ActionIcon,
@@ -14,12 +14,12 @@ import {
   Selector,
   LanguageSelector,
 } from "../../components";
-import { Input, Text, Message, Check } from "../components";
+import { Input, Message } from "../components";
 
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useEnabledLanguages } from ".";
 
 interface Props {
-  languages: Language[];
   profile: LanguagesProfile;
   update: (profile: LanguagesProfile) => void;
 }
@@ -32,7 +32,9 @@ const cutoffOptions: LooseObject = {
 const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   props
 ) => {
-  const { profile, update, languages, ...modal } = props;
+  const { profile, update, ...modal } = props;
+
+  const languages = useEnabledLanguages();
 
   const [current, setProfile] = useState(profile);
 
@@ -54,7 +56,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   );
 
   const updateItem = useCallback(
-    (item: LangaugesProfileItem) => {
+    (item: LanguagesProfileItem) => {
       const list = [...current.items];
       const idx = list.findIndex((v) => v.id === item.id);
 
@@ -74,7 +76,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
     if (languages.length > 0) {
       const language = languages[0].code2;
 
-      const item: LangaugesProfileItem = {
+      const item: LanguagesProfileItem = {
         id,
         language,
         audio_exclude: "False",
@@ -117,7 +119,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
     [update, modal, current]
   );
 
-  const columns = useMemo<Column<LangaugesProfileItem>[]>(
+  const columns = useMemo<Column<LanguagesProfileItem>[]>(
     () => [
       {
         Header: "ID",
@@ -151,13 +153,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         Cell: (row) => {
           const item = row.row.original;
           return (
-            <Check
-              defaultValue={row.value === "True"}
+            <Form.Check
+              defaultChecked={row.value === "True"}
               onChange={(v) => {
-                item.forced = v ? "True" : "False";
+                item.forced = v.target.checked ? "True" : "False";
                 updateItem(item);
               }}
-            ></Check>
+            ></Form.Check>
           );
         },
       },
@@ -167,13 +169,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         Cell: (row) => {
           const item = row.row.original;
           return (
-            <Check
-              defaultValue={row.value === "True"}
+            <Form.Check
+              defaultChecked={row.value === "True"}
               onChange={(v) => {
-                item.hi = v ? "True" : "False";
+                item.hi = v.target.checked ? "True" : "False";
                 updateItem(item);
               }}
-            ></Check>
+            ></Form.Check>
           );
         },
       },
@@ -183,13 +185,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         Cell: (row) => {
           const item = row.row.original;
           return (
-            <Check
-              defaultValue={row.value === "True"}
+            <Form.Check
+              defaultChecked={row.value === "True"}
               onChange={(v) => {
-                item.audio_exclude = v ? "True" : "False";
+                item.audio_exclude = v.target.checked ? "True" : "False";
                 updateItem(item);
               }}
-            ></Check>
+            ></Form.Check>
           );
         },
       },
@@ -211,13 +213,15 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
 
   return (
     <BasicModal size="lg" title="Languages Profile" footer={footer} {...modal}>
-      <Input name="Name">
-        <Text
+      <Input>
+        <Form.Control
+          type="text"
+          placeholder="Name"
           defaultValue={current?.name}
           onChange={(v) => {
-            updateProfile("name", v.toString());
+            updateProfile("name", v.target.value);
           }}
-        ></Text>
+        ></Form.Control>
       </Input>
       <Input>
         <BasicTable

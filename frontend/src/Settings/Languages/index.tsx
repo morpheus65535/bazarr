@@ -1,8 +1,7 @@
-import React, { FunctionComponent, useState, useMemo } from "react";
+import React, { FunctionComponent, useContext } from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
-
-import { LanguageSelector } from "../../components";
+import { isArray } from "lodash";
 
 import Table from "./table";
 
@@ -11,11 +10,39 @@ import {
   Message,
   Input,
   Check,
-  Selector,
   CollapseBox,
+  SettingsProvider,
+  useLatest,
 } from "../components";
 
-import SettingTemplate from "../components/template";
+import { LanguageSelector, ProfileSelector } from "./components";
+
+import { enabledLanguageKey, languageProfileKey } from "../keys";
+
+const EnabledLanguageContext = React.createContext<Language[]>([]);
+const LanguagesProfileContext = React.createContext<LanguagesProfile[]>([]);
+
+export function useEnabledLanguages() {
+  const list = useContext(EnabledLanguageContext);
+  const latest = useLatest<Language[]>(enabledLanguageKey, isArray);
+
+  if (latest) {
+    return latest;
+  } else {
+    return list;
+  }
+}
+
+export function useLanguagesProfile() {
+  const list = useContext(LanguagesProfileContext);
+  const latest = useLatest<LanguagesProfile[]>(languageProfileKey, isArray);
+
+  if (latest) {
+    return latest;
+  } else {
+    return list;
+  }
+}
 
 interface Props {
   languages: Language[];
@@ -32,135 +59,83 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
-  const [enabled, setEnabled] = useState(props.enabled);
-  const [profiles, setProfiles] = useState(props.profiles);
-
-  const profileOptions = useMemo<Pair[]>(
-    () =>
-      profiles.map<Pair>((v) => {
-        return { key: v.profileId.toString(), value: v.name };
-      }),
-    [profiles]
-  );
+  const { languages, enabled, profiles } = props;
 
   return (
-    <SettingTemplate title="Languages - Bazarr (Settings)">
-      {(settings, update) => (
-        <Container>
-          <Group header="Subtitles Language">
-            <Input>
-              <Check
-                label="Single Language"
-                defaultValue={settings.general.single_language}
-                onChange={(v) => update(v, "settings-general-single_language")}
-              ></Check>
-              <Message type="info">
-                Download a single Subtitles file without adding the language
-                code to the filename.
-              </Message>
-              <Message type="warning">
-                We don't recommend enabling this option unless absolutely
-                required (ie: media player not supporting language code in
-                subtitles filename). Results may vary.
-              </Message>
-            </Input>
-            <Input name="Languages Filter">
-              <LanguageSelector
-                multiple
-                defaultSelect={enabled}
-                options={props.languages}
-                onChange={(val: Language[]) => {
-                  setEnabled(val);
-                  const langs = val.map((v) => v.code2);
-                  update(langs, "languages-enabled");
-                }}
-              ></LanguageSelector>
-            </Input>
-          </Group>
-          <Group header="Languages Profiles">
-            <Table
-              languages={enabled}
-              profiles={profiles}
-              setProfiles={(profiles: LanguagesProfile[]) => {
-                setProfiles(profiles);
-
-                update(JSON.stringify(profiles), "languages-profiles");
-              }}
-            ></Table>
-          </Group>
-          <Group header="Default Settings">
-            <CollapseBox
-              indent
-              defaultOpen={settings.general.serie_default_enabled}
-              control={(change) => (
-                <Input>
-                  <Check
-                    label="Series"
-                    defaultValue={settings.general.serie_default_enabled}
-                    onChange={(v) => {
-                      change(v);
-                      update(v, "settings-general-serie_default_enabled");
-                    }}
-                  ></Check>
-                  <Message type="info">
-                    Apply only to Series added to Bazarr after enabling this
-                    option.
-                  </Message>
-                </Input>
-              )}
-            >
-              <Input name="Profile">
-                <Selector
-                  options={profileOptions}
-                  nullKey="None"
-                  defaultKey={settings.general.serie_default_profile?.toString()}
-                  onSelect={(v) => {
-                    update(
-                      v === "None" ? "" : v,
-                      "settings-general-serie_default_profile"
-                    );
-                  }}
-                ></Selector>
+    <SettingsProvider title="Languages - Bazarr (Settings)">
+      <EnabledLanguageContext.Provider value={enabled}>
+        <LanguagesProfileContext.Provider value={profiles}>
+          <Container>
+            <Group header="Subtitles Language">
+              <Input>
+                <Check
+                  label="Single Language"
+                  settingKey="settings-general-single_language"
+                ></Check>
+                <Message type="info">
+                  Download a single Subtitles file without adding the language
+                  code to the filename.
+                </Message>
+                <Message type="warning">
+                  We don't recommend enabling this option unless absolutely
+                  required (ie: media player not supporting language code in
+                  subtitles filename). Results may vary.
+                </Message>
               </Input>
-            </CollapseBox>
-            <CollapseBox
-              indent
-              defaultOpen={settings.general.movie_default_enabled}
-              control={(change) => (
-                <Input>
-                  <Check
-                    label="Movies"
-                    defaultValue={settings.general.movie_default_enabled}
-                    onChange={(v) => {
-                      change(v);
-                      update(v, "settings-general-movie_default_enabled");
-                    }}
-                  ></Check>
-                  <Message type="info">
-                    Apply only to Movies added to Bazarr after enabling this
-                    option.
-                  </Message>
-                </Input>
-              )}
-            >
-              <Input name="Profile">
-                <Selector
-                  options={profileOptions}
-                  nullKey="None"
-                  defaultKey={settings.general.movie_default_profile?.toString()}
-                  onSelect={(v) => {
-                    update(
-                      v === "None" ? "" : v,
-                      "settings-general-movie_default_profile"
-                    );
-                  }}
-                ></Selector>
+              <Input name="Languages Filter">
+                <LanguageSelector
+                  settingKey={enabledLanguageKey}
+                  options={languages}
+                ></LanguageSelector>
               </Input>
-            </CollapseBox>
-          </Group>
-        </Container>
-      )}
-    </SettingTemplate>
+            </Group>
+            <Group header="Languages Profiles">
+              <Table></Table>
+            </Group>
+            <Group header="Default Settings">
+              <CollapseBox>
+                <CollapseBox.Control>
+                  <Input>
+                    <Check
+                      label="Series"
+                      settingKey="settings-general-serie_default_enabled"
+                    ></Check>
+                    <Message type="info">
+                      Apply only to Series added to Bazarr after enabling this
+                      option.
+                    </Message>
+                  </Input>
+                </CollapseBox.Control>
+                <CollapseBox.Content indent>
+                  <Input name="Profile">
+                    <ProfileSelector settingKey="settings-general-serie_default_profile"></ProfileSelector>
+                  </Input>
+                </CollapseBox.Content>
+              </CollapseBox>
+              <CollapseBox>
+                <CollapseBox.Control>
+                  <Input>
+                    <Check
+                      label="Movies"
+                      settingKey="settings-general-movie_default_enabled"
+                    ></Check>
+                    <Message type="info">
+                      Apply only to Movies added to Bazarr after enabling this
+                      option.
+                    </Message>
+                  </Input>
+                </CollapseBox.Control>
+                <CollapseBox.Content>
+                  <Input name="Profile">
+                    <ProfileSelector settingKey="settings-general-movie_default_profile"></ProfileSelector>
+                  </Input>
+                </CollapseBox.Content>
+              </CollapseBox>
+            </Group>
+          </Container>
+        </LanguagesProfileContext.Provider>
+      </EnabledLanguageContext.Provider>
+    </SettingsProvider>
   );
 };
 

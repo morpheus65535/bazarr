@@ -1,5 +1,15 @@
 import Axios, { AxiosInstance } from "axios";
 
+type UrlTestResponse =
+  | {
+      status: true;
+      version: string;
+    }
+  | {
+      status: false;
+      error: string;
+    };
+
 class RequestUtils {
   private axios!: AxiosInstance;
 
@@ -22,8 +32,12 @@ class RequestUtils {
     this.axios.defaults.headers.common["x-api-key"] = apikey;
   }
 
-  urlTest<T>(protocol: string, url: string, params?: any): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
+  urlTest(
+    protocol: string,
+    url: string,
+    params?: any
+  ): Promise<UrlTestResponse> {
+    return new Promise<UrlTestResponse>((resolve, reject) => {
       this.axios
         .get(`test/${protocol}/${url}api/system/status`, { params })
         .then((result) => resolve(result.data))

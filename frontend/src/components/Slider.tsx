@@ -4,7 +4,7 @@ import "rc-slider/assets/index.css";
 
 type TooltipsOptions = boolean | "Always";
 
-interface SliderProps {
+export interface SliderProps {
   tooltips?: TooltipsOptions;
   min?: number;
   max?: number;

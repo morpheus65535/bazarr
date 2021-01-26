@@ -1,6 +1,5 @@
-import React, { FunctionComponent } from "react";
-import { Container, Button } from "react-bootstrap";
-import { connect } from "react-redux";
+import React, { FunctionComponent, useCallback } from "react";
+import { Container, Button, InputGroup } from "react-bootstrap";
 
 import {
   Check,
@@ -10,217 +9,144 @@ import {
   Message,
   Text,
   CollapseBox,
+  SettingsProvider,
 } from "../components";
-
-import SettingTemplate from "../components/template";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faClipboard } from "@fortawesome/free-solid-svg-icons";
 
-interface Props {
-  languages: Language[];
-  enabled: Language[];
-}
+import { proxyOptions, securityOptions } from "./options";
 
-function mapStateToProps({ system }: StoreState) {
-  return {
-    languages: system.languages.items,
-    enabled: system.enabledLanguage.items,
-  };
-}
-
-const securityOptions = {
-  None: "None",
-  Basic: "Basic",
-  Form: "Form",
-};
-
-const proxyOptions = {
-  none: "None",
-  socks5: "Socks5",
-  http: "HTTP(S)",
-};
-
-const SettingsGeneralView: FunctionComponent<Props> = (props) => {
+const SettingsGeneralView: FunctionComponent = () => {
+  const baseUrlOverride = useCallback((settings: SystemSettings) => {
+    return settings.general.base_url?.slice(1) ?? "";
+  }, []);
   return (
-    <SettingTemplate title="General - Bazarr (Settings)">
-      {(settings, update) => (
-        <Container>
-          <Group header="Host">
-            <Input name="Address">
+    <SettingsProvider title="General - Bazarr (Settings)">
+      <Container>
+        <Group header="Host">
+          <Input name="Address">
+            <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
+            <Message type="info">
+              Valid IPv4 address or '0.0.0.0' for all interfaces
+            </Message>
+          </Input>
+          <Input name="Port">
+            <Text placeholder={6767} settingKey="settings-general-port"></Text>
+          </Input>
+          <Input name="Base URL">
+            <InputGroup>
+              <InputGroup.Prepend>
+                <InputGroup.Text>/</InputGroup.Text>
+              </InputGroup.Prepend>
               <Text
-                placeholder="0.0.0.0"
-                defaultValue={settings.general.ip}
-                onChange={(v) => update(v, "settings-general-ip")}
+                settingKey="settings-general-base_url"
+                override={baseUrlOverride}
+                preprocess={(v) => "/" + v}
               ></Text>
-              <Message type="info">
-                Valid IPv4 address or '0.0.0.0' for all interfaces
-              </Message>
-            </Input>
-            <Input name="Port">
-              <Text
-                placeholder={6767}
-                defaultValue={settings.general.port}
-                onChange={(v) => update(v, "settings-general-port")}
-              ></Text>
-            </Input>
-            <Input name="Base URL">
-              <Text
-                prefix="/"
-                defaultValue={settings.general.base_url?.slice(1)}
-                onChange={(v) => update("/" + v, "settings-general-base_url")}
-              ></Text>
-              <Message type="info">Reverse proxy support</Message>
-            </Input>
-          </Group>
-          <Group header="Security">
-            <CollapseBox
-              indent
-              defaultOpen={
-                settings.auth.type !== undefined &&
-                settings.auth.type !== "None"
-              }
-              control={(change) => (
-                <Input name="Authentication">
-                  <Selector
-                    options={securityOptions}
-                    defaultKey={settings.auth.type}
-                    onSelect={(v) => {
-                      change(v !== "None");
-                      update(v, "settings-auth-type");
-                    }}
-                    nullKey="None"
-                  ></Selector>
-                </Input>
-              )}
-            >
+            </InputGroup>
+            <Message type="info">Reverse proxy support</Message>
+          </Input>
+        </Group>
+        <Group header="Security">
+          <CollapseBox>
+            <CollapseBox.Control>
+              <Input name="Authentication">
+                <Selector
+                  options={securityOptions}
+                  settingKey="settings-auth-type"
+                  nullKey="None"
+                ></Selector>
+              </Input>
+            </CollapseBox.Control>
+            <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
               <Input name="Username">
-                <Text
-                  defaultValue={settings.auth.username}
-                  onChange={(v) => update(v, "settings-auth-username")}
-                ></Text>
+                <Text settingKey="settings-auth-username"></Text>
               </Input>
               <Input name="Password">
-                <Text
-                  password
-                  defaultValue={settings.auth.password}
-                  onChange={(v) => update(v, "settings-auth-password")}
-                ></Text>
+                <Text password settingKey="settings-auth-password"></Text>
               </Input>
-            </CollapseBox>
-            <Input name="API Key">
-              <Text
-                disabled
-                postfix={() => (
-                  <React.Fragment>
-                    <Button disabled variant="light">
-                      <FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>
-                    </Button>
-                    <Button disabled variant="danger">
-                      <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
-                    </Button>
-                  </React.Fragment>
-                )}
-                defaultValue={settings.auth.apikey}
-                onChange={(v) => update(v, "settings-auth-apikey")}
-              ></Text>
-            </Input>
-          </Group>
-          <Group header="Proxy">
-            <CollapseBox
-              indent
-              defaultOpen={
-                settings.proxy.type !== undefined &&
-                settings.proxy.type !== "none"
-              }
-              control={(change) => (
-                <Input>
-                  <Selector
-                    defaultKey={settings.proxy.type}
-                    options={proxyOptions}
-                    nullKey="none"
-                    onSelect={(v) => {
-                      change(v !== "none");
-                      update(v, "settings-proxy-type");
-                    }}
-                  ></Selector>
-                </Input>
-              )}
-            >
+            </CollapseBox.Content>
+          </CollapseBox>
+          <Input name="API Key">
+            <InputGroup>
+              <Text disabled settingKey="settings-auth-apikey"></Text>
+              <InputGroup.Append>
+                <Button disabled variant="light">
+                  <FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>
+                </Button>
+                <Button disabled variant="danger">
+                  <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
+                </Button>
+              </InputGroup.Append>
+            </InputGroup>
+          </Input>
+        </Group>
+        <Group header="Proxy">
+          <CollapseBox>
+            <CollapseBox.Control>
+              <Input>
+                <Selector
+                  settingKey="settings-proxy-type"
+                  options={proxyOptions}
+                  nullKey="none"
+                ></Selector>
+              </Input>
+            </CollapseBox.Control>
+            <CollapseBox.Content on={(k) => k !== "" && k !== "none"}>
               <Input name="Host">
-                <Text
-                  defaultValue={settings.proxy.url}
-                  onChange={(v) => update(v, "settings-proxy-url")}
-                ></Text>
+                <Text settingKey="settings-proxy-url"></Text>
               </Input>
               <Input name="Port">
-                <Text
-                  defaultValue={settings.proxy.port}
-                  onChange={(v) => update(v, "settings-proxy-port")}
-                ></Text>
+                <Text settingKey="settings-proxy-port"></Text>
               </Input>
               <Input name="Username">
-                <Text
-                  defaultValue={settings.proxy.username}
-                  onChange={(v) => update(v, "settings-proxy-username")}
-                ></Text>
+                <Text settingKey="settings-proxy-username"></Text>
               </Input>
               <Input name="Password">
-                <Text
-                  password
-                  defaultValue={settings.proxy.password}
-                  onChange={(v) => update(v, "settings-proxy-password")}
-                ></Text>
+                <Text password settingKey="settings-proxy-password"></Text>
                 <Message type="info">
                   You only need to enter a username and password if one is
                   required. Leave them blank otherwise
                 </Message>
               </Input>
               <Input name="Ignored Addresses">
-                <Text
-                  defaultValue={settings.proxy.exclude.join(",")}
-                  onChange={(v) => update(v, "settings-proxy-exclude")}
-                ></Text>
+                <Text settingKey="settings-proxy-exclude"></Text>
                 <Message type="info">
                   Use ',' as a separator, and '*.' as a wildcard for subdomains
                 </Message>
               </Input>
-            </CollapseBox>
-          </Group>
-          <Group header="Logging">
-            <Input>
-              <Check
-                label="Debug"
-                defaultValue={settings.general.debug}
-                onChange={(v) => update(v, "settings-general-debug")}
-              ></Check>
-              <Message type="info">
-                Debug logging should only be enabled temporarily
-              </Message>
-            </Input>
-          </Group>
-          <Group header="Analytics">
-            <Input>
-              <Check
-                label="Enable"
-                defaultValue={settings.analytics.enabled}
-                onChange={(v) => update(v, "settings-analytics-enabled")}
-              ></Check>
-              <Message type="info">
-                Send anonymous usage information, nothing that can identify you.
-                This includes information on which providers you use, what
-                languages you search for, Bazarr, Python, Sonarr, Radarr and
-                what OS version you are using. We will use this information to
-                prioritize features and bug fixes. Please, keep this enabled as
-                this is the only way we have to better understand how you use
-                Bazarr.
-              </Message>
-            </Input>
-          </Group>
-        </Container>
-      )}
-    </SettingTemplate>
+            </CollapseBox.Content>
+          </CollapseBox>
+        </Group>
+        <Group header="Logging">
+          <Input>
+            <Check label="Debug" settingKey="settings-general-debug"></Check>
+            <Message type="info">
+              Debug logging should only be enabled temporarily
+            </Message>
+          </Input>
+        </Group>
+        <Group header="Analytics">
+          <Input>
+            <Check
+              label="Enable"
+              settingKey="settings-analytics-enabled"
+            ></Check>
+            <Message type="info">
+              Send anonymous usage information, nothing that can identify you.
+              This includes information on which providers you use, what
+              languages you search for, Bazarr, Python, Sonarr, Radarr and what
+              OS version you are using. We will use this information to
+              prioritize features and bug fixes. Please, keep this enabled as
+              this is the only way we have to better understand how you use
+              Bazarr.
+            </Message>
+          </Input>
+        </Group>
+      </Container>
+    </SettingsProvider>
   );
 };
 
-export default connect(mapStateToProps)(SettingsGeneralView);
+export default SettingsGeneralView;

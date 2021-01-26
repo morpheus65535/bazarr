@@ -49,7 +49,7 @@ export const UpdateSystemSettings = createAsyncAction(
   () => SystemApi.settings()
 );
 
-export const UpdateAfterSettings = createCombineAction(() => [
+export const UpdateSettingsRelative = createCombineAction(() => [
   UpdateSystemSettings(),
   updateLanguagesProfileList(),
   updateEnabledLanguages(),

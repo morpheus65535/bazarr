@@ -1,72 +1,51 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useCallback, useState } from "react";
+import { isString, isBoolean, isNumber } from "lodash";
 
 import { Button } from "react-bootstrap";
 
+import { useLatest } from "./hooks";
+
 import { UtilsApi } from "../../apis";
 
-type TestResponse =
-  | {
-      status: true;
-      version: string;
-    }
-  | {
-      status: false;
-      error: string;
-    };
-
-export interface TestUrl {
-  address: string;
-  port: string;
-  url: string;
-  apikey: string;
-  ssl: boolean;
-}
-
-interface TestUrlButtonProps {
-  url: TestUrl;
-}
-
-export const TestUrlButton: FunctionComponent<TestUrlButtonProps> = ({
-  url,
-}) => {
-  function buildRequest(
-    props: TestUrl
-  ): { protocol: string; url: string; params: LooseObject } {
-    const request = {
-      protocol: props.ssl ? "https" : "http",
-      url: `${props.address}:${props.port}${props.url}`,
-      params: {
-        apikey: props.apikey,
-      },
-    };
-
-    if (!request.url.endsWith("/")) {
-      request.url += "/";
-    }
-
-    return request;
-  }
-
+export const URLTestButton: FunctionComponent<{
+  category: "sonarr" | "radarr";
+}> = ({ category }) => {
   const [title, setTitle] = useState("Test");
   const [variant, setVar] = useState("primary");
 
-  const click = () => {
-    const request = buildRequest(url);
+  const address = useLatest<string>(`settings-${category}-ip`, isString);
+  const port = useLatest<number>(`settings-${category}-port`, isNumber);
+  const url = useLatest<string>(`settings-${category}-base_url`, isString);
+  const apikey = useLatest<string>(`settings-${category}-apikey`, isString);
+  const ssl = useLatest<boolean>(`settings-${category}-ssl`, isBoolean);
 
-    UtilsApi.urlTest<TestResponse>(
-      request.protocol,
-      request.url,
-      request.params
-    ).then((result) => {
-      if (result.status) {
-        setTitle(`Version: ${result.version}`);
-        setVar("success");
-      } else {
-        setTitle(result.error);
-        setVar("danger");
+  const click = useCallback(() => {
+    if (address && port && apikey && ssl !== undefined) {
+      const request = {
+        protocol: ssl ? "https" : "http",
+        url: `${address}:${port}${url ?? ""}`,
+        params: {
+          apikey: apikey,
+        },
+      };
+
+      if (!request.url.endsWith("/")) {
+        request.url += "/";
       }
-    });
-  };
+
+      UtilsApi.urlTest(request.protocol, request.url, request.params).then(
+        (result) => {
+          if (result.status) {
+            setTitle(`Version: ${result.version}`);
+            setVar("success");
+          } else {
+            setTitle(result.error);
+            setVar("danger");
+          }
+        }
+      );
+    }
+  }, [address, port, url, apikey, ssl]);
 
   return (
     <Button
@@ -82,3 +61,8 @@ export const TestUrlButton: FunctionComponent<TestUrlButtonProps> = ({
 
 export * from "./container";
 export * from "./items";
+export * from "./hooks";
+export * from "./provider";
+export * from "./collapse";
+export { default as SettingsProvider } from "./provider";
+export { default as CollapseBox } from "./collapse";

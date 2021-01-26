@@ -7,7 +7,7 @@ interface Language {
   name: string;
 }
 
-interface LangaugesProfileItem {
+interface LanguagesProfileItem {
   id: number;
   audio_exclude: PythonBoolean;
   forced: PythonBoolean;
@@ -19,7 +19,7 @@ interface LanguagesProfile {
   name: string;
   profileId: number;
   cutoff: number | null;
-  items: LangaugesProfileItem[];
+  items: LanguagesProfileItem[];
 }
 
 interface Subtitle extends Language {

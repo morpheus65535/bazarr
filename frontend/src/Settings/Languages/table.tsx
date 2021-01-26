@@ -9,19 +9,20 @@ import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
 import { ActionIcon, BasicTable } from "../../components";
 
+import { useLanguagesProfile } from ".";
+
 import Modal from "./modal";
+import { useUpdate } from "../components";
 
-interface Props {
-  languages: Language[];
-  profiles: LanguagesProfile[];
-  setProfiles: (profiles: LanguagesProfile[]) => void;
-}
+import { languageProfileKey } from "../keys";
 
-const Table: FunctionComponent<Props> = ({
-  languages,
-  profiles,
-  setProfiles,
-}) => {
+const Table: FunctionComponent = () => {
+  const originalProfiles = useLanguagesProfile();
+
+  const [profiles, setProfiles] = useState(originalProfiles);
+
+  const update = useUpdate();
+
   const [modal, setModal] = useState(false);
 
   const [active, setActive] = useState<LanguagesProfile>({
@@ -58,6 +59,14 @@ const Table: FunctionComponent<Props> = ({
     setModal(false);
   }, []);
 
+  const submitProfiles = useCallback(
+    (list: LanguagesProfile[]) => {
+      update(list, languageProfileKey);
+      setProfiles(list);
+    },
+    [update]
+  );
+
   const updateProfile = useCallback(
     (profile: LanguagesProfile) => {
       const list = [...profiles];
@@ -68,9 +77,9 @@ const Table: FunctionComponent<Props> = ({
       } else {
         list.push(profile);
       }
-      setProfiles(list);
+      submitProfiles(list);
     },
-    [profiles, setProfiles]
+    [profiles, submitProfiles]
   );
 
   const removeProfile = useCallback(
@@ -80,10 +89,10 @@ const Table: FunctionComponent<Props> = ({
 
       if (idx !== -1) {
         list.splice(idx, 1);
-        setProfiles(list);
+        submitProfiles(list);
       }
     },
-    [profiles, setProfiles]
+    [profiles, submitProfiles]
   );
 
   const columns = useMemo<Column<LanguagesProfile>[]>(
@@ -141,7 +150,6 @@ const Table: FunctionComponent<Props> = ({
       </Button>
       <Modal
         key={active?.profileId ?? 0}
-        languages={languages}
         profile={active}
         update={updateProfile}
         show={modal}

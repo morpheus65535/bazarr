@@ -24,9 +24,7 @@ function AsyncStateOverlay<T>(props: PropsWithChildren<Params<T>>) {
   } else if (state.items === null || state.items === undefined) {
     return null;
   } else {
-    return (
-      <React.Fragment>{children && children(state.items!)}</React.Fragment>
-    );
+    return children ? children(state.items!) : null;
   }
 }
 

@@ -16,3 +16,5 @@ interface DataWrapper<T> {
 }
 
 type PromiseType<T> = T extends Promise<infer D> ? D : T;
+
+type AsyncPayload<T> = T extends AsyncState<infer D> ? D : T;

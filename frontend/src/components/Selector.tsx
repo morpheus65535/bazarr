@@ -17,12 +17,12 @@ type SelectorBasic<T extends string | string[]> = {
   options: LooseObject | Pair[];
   disabled?: boolean;
   defaultKey?: T;
+  nullKey?: string;
   onSelect?: (key: string) => void;
   onMultiSelect?: (keys: string[]) => void;
 };
 
 export type SingleSelectorProps = {
-  nullKey?: string;
   multiple?: false;
 } & SelectorBasic<string>;
 
