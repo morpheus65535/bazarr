@@ -101,6 +101,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       >
         <Col sm="auto">
           <Image
+            className="d-none d-sm-block"
             style={{
               maxHeight: 250,
             }}

@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { Helmet } from "react-helmet";
 
-import { ContentHeader, ContentHeaderButton } from "../components";
+import { ContentHeader } from "../components";
 import Table from "./table";
 
 interface Props {}
@@ -15,7 +15,7 @@ const SeriesView: FunctionComponent<Props> = () => {
         <title>Series - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
+        <ContentHeader.Button icon={faList}>Mass Edit</ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

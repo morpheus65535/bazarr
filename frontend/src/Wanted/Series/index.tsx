@@ -7,7 +7,7 @@ import { updateWantedSeriesList } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
-import { ContentHeader, ContentHeaderButton } from "../../components";
+import { ContentHeader } from "../../components";
 
 import Table from "./table";
 
@@ -23,7 +23,7 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update }) => {
         <title>Wanted Series - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton icon={faSearch}>Search All</ContentHeaderButton>
+        <ContentHeader.Button icon={faSearch}>Search All</ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

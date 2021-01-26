@@ -9,7 +9,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import Table from "./table";
 
-import { ContentHeader, ContentHeaderButton } from "../../components";
+import { ContentHeader } from "../../components";
 
 interface Props {
   update: () => void;
@@ -24,7 +24,7 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
         <title>Wanted Movies - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton icon={faSearch}>Search All</ContentHeaderButton>
+        <ContentHeader.Button icon={faSearch}>Search All</ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

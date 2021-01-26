@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
-import { ContentHeader, ContentHeaderButton } from "../components";
+import { ContentHeader } from "../components";
 
 import Table from "./table";
 
@@ -16,7 +16,7 @@ const MovieView: FunctionComponent<Props> = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
+        <ContentHeader.Button icon={faList}>Mass Edit</ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

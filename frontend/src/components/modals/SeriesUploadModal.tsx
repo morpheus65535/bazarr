@@ -19,7 +19,7 @@ import {
 
 import BasicModal, { BasicModalProps } from "./BasicModal";
 
-import { AsyncButton, FileForm, BasicTable, OverlayIcon } from "..";
+import { AsyncButton, FileForm, BasicTable, MessageIcon } from "..";
 
 import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
@@ -411,12 +411,12 @@ const Table: FunctionComponent<TableProps> = (props) => {
           }
 
           return (
-            <OverlayIcon
+            <MessageIcon
               messages={stateText}
               color={color}
               icon={icon}
               spin={state === SubtitleState.update}
-            ></OverlayIcon>
+            ></MessageIcon>
           );
         },
       },

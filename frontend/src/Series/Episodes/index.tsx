@@ -18,8 +18,6 @@ import { updateSeriesInfo } from "../../@redux/actions";
 
 import {
   ContentHeader,
-  ContentHeaderButton,
-  ContentHeaderGroup,
   ItemOverview,
   ItemEditorModal,
   SeriesUploadModal,
@@ -80,76 +78,77 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     update(id);
   }, [update, id]);
 
-  if (item) {
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>{item.title} - Bazarr (Series)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeaderGroup pos="start">
-            <ContentHeaderButton
-              icon={faSync}
-              updating={scan}
-              onClick={() => {
-                setScan(true);
-                SeriesApi.scanDisk(id).finally(() => {
-                  setScan(false);
-                  update(id);
-                });
-              }}
-            >
-              Scan Disk
-            </ContentHeaderButton>
-            <ContentHeaderButton
-              icon={faSearch}
-              updating={search}
-              onClick={() => {
-                setSearch(true);
-                SeriesApi.searchMissing(id).finally(() => {
-                  setSearch(false);
-                  update(id);
-                });
-              }}
-            >
-              Search
-            </ContentHeaderButton>
-          </ContentHeaderGroup>
-          <ContentHeaderGroup pos="end">
-            <ContentHeaderButton
-              disabled={item?.episodeFileCount === 0 ?? false}
-              icon={faCloudUploadAlt}
-              onClick={() => showModal("upload")}
-            >
-              Upload
-            </ContentHeaderButton>
-            <ContentHeaderButton
-              icon={faWrench}
-              onClick={() => showModal("edit", item)}
-            >
-              Edit Series
-            </ContentHeaderButton>
-          </ContentHeaderGroup>
-        </ContentHeader>
-        <Row>
-          <ItemOverview item={item} details={details}></ItemOverview>
-        </Row>
-        <Row>
-          <Table id={id}></Table>
-        </Row>
-        <ItemEditorModal
-          modalKey="edit"
-          submit={(item, form) =>
-            SeriesApi.modify((item as Series).sonarrSeriesId, form)
-          }
-          onSuccess={(item) => update((item as Series).sonarrSeriesId)}
-        ></ItemEditorModal>
-        <SeriesUploadModal series={item} modalKey="upload"></SeriesUploadModal>
-      </Container>
-    );
-  } else {
+  if (!item) {
     return <LoadingIndicator></LoadingIndicator>;
   }
+
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>{item.title} - Bazarr (Series)</title>
+      </Helmet>
+      <ContentHeader>
+        <ContentHeader.Group pos="start">
+          <ContentHeader.Button
+            icon={faSync}
+            updating={scan}
+            onClick={() => {
+              setScan(true);
+              SeriesApi.scanDisk(id).finally(() => {
+                setScan(false);
+                update(id);
+              });
+            }}
+          >
+            Scan Disk
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            icon={faSearch}
+            updating={search}
+            disabled={item.episodeFileCount === 0 ?? false}
+            onClick={() => {
+              setSearch(true);
+              SeriesApi.searchMissing(id).finally(() => {
+                setSearch(false);
+                update(id);
+              });
+            }}
+          >
+            Search
+          </ContentHeader.Button>
+        </ContentHeader.Group>
+        <ContentHeader.Group pos="end">
+          <ContentHeader.Button
+            disabled={item.episodeFileCount === 0 ?? false}
+            icon={faCloudUploadAlt}
+            onClick={() => showModal("upload")}
+          >
+            Upload
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            icon={faWrench}
+            onClick={() => showModal("edit", item)}
+          >
+            Edit Series
+          </ContentHeader.Button>
+        </ContentHeader.Group>
+      </ContentHeader>
+      <Row>
+        <ItemOverview item={item} details={details}></ItemOverview>
+      </Row>
+      <Row>
+        <Table id={id}></Table>
+      </Row>
+      <ItemEditorModal
+        modalKey="edit"
+        submit={(item, form) =>
+          SeriesApi.modify((item as Series).sonarrSeriesId, form)
+        }
+        onSuccess={(item) => update((item as Series).sonarrSeriesId)}
+      ></ItemEditorModal>
+      <SeriesUploadModal series={item} modalKey="upload"></SeriesUploadModal>
+    </Container>
+  );
 };
 
 export default withRouter(

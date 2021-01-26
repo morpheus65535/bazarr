@@ -9,11 +9,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import {
-  ContentHeader,
-  ContentHeaderButton,
-  LoadingIndicator,
-} from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 
@@ -34,8 +30,14 @@ const SettingsContext = React.createContext<SystemSettings | undefined>(
 );
 
 export function useSettings(): SystemSettings {
-  // Force Unwrap Here
-  return useContext(SettingsContext)!;
+  const settings = useContext(SettingsContext);
+  if (process.env.NODE_ENV === "development") {
+    console.assert(
+      settings !== undefined,
+      "useSettings hook was invoked outside of SettingsProvider!"
+    );
+  }
+  return settings!;
 }
 
 export function useUpdate(): UpdateFunctionType {
@@ -68,7 +70,7 @@ interface Props {
   title: string;
   settings: AsyncState<SystemSettings | undefined>;
   update: () => void;
-  children: JSX.Element;
+  children: JSX.Element | JSX.Element[];
 }
 
 const SettingsProvider: FunctionComponent<Props> = (props) => {
@@ -104,35 +106,37 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     });
   }, [stagedChange, update]);
 
-  if (settings.items === undefined) {
-    return <LoadingIndicator></LoadingIndicator>;
-  }
-
   return (
-    <Container fluid>
-      <Helmet>
-        <title>{title}</title>
-      </Helmet>
-      <Prompt
-        when={Object.keys(stagedChange).length > 0}
-        message="You have unsaved changes, are you sure you want to leave?"
-      ></Prompt>
-      <ContentHeader>
-        <ContentHeaderButton
-          icon={faSave}
-          updating={updating}
-          disabled={Object.keys(stagedChange).length === 0}
-          onClick={submit}
-        >
-          Save
-        </ContentHeaderButton>
-      </ContentHeader>
-      <SettingsContext.Provider value={settings.items}>
-        <UpdateChangeContext.Provider value={[stagedChange, updateChange]}>
-          <Row className="p-4">{children}</Row>
-        </UpdateChangeContext.Provider>
-      </SettingsContext.Provider>
-    </Container>
+    <AsyncStateOverlay state={settings}>
+      {(items) => (
+        <Container fluid>
+          <Helmet>
+            <title>{title}</title>
+          </Helmet>
+          <Prompt
+            when={Object.keys(stagedChange).length > 0}
+            message="You have unsaved changes, are you sure you want to leave?"
+          ></Prompt>
+          <ContentHeader>
+            <ContentHeader.Button
+              icon={faSave}
+              updating={updating}
+              disabled={Object.keys(stagedChange).length === 0}
+              onClick={submit}
+            >
+              Save
+            </ContentHeader.Button>
+          </ContentHeader>
+          <SettingsContext.Provider value={items}>
+            <UpdateChangeContext.Provider value={[stagedChange, updateChange]}>
+              <Row className="p-4">
+                <Container>{children}</Container>
+              </Row>
+            </UpdateChangeContext.Provider>
+          </SettingsContext.Provider>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 

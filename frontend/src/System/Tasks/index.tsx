@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
-import { ContentHeader, ContentHeaderButton } from "../../components";
+import { ContentHeader } from "../../components";
 
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 
@@ -31,9 +31,9 @@ const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
         <title>Tasks - Bazarr (System)</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton updating={loading} icon={faSync} onClick={update}>
+        <ContentHeader.Button updating={loading} icon={faSync} onClick={update}>
           Refresh
-        </ContentHeaderButton>
+        </ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

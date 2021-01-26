@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState, useMemo } from "react";
 import { useHistory } from "react-router";
 
-import { Dropdown, Form, FormControlProps } from "react-bootstrap";
+import { Dropdown, Form } from "react-bootstrap";
 
 import { throttle } from "lodash";
 
@@ -38,12 +38,10 @@ const ResultItem: FunctionComponent<ResultItemProps> = ({
 interface Props {
   className?: string;
   onSearch: (text: string) => SearchResult[];
-  size?: FormControlProps["size"];
 }
 
 export const SearchBar: FunctionComponent<Props> = ({
   onSearch,
-  size,
   className,
 }) => {
   const [text, setText] = useState("");
@@ -76,7 +74,7 @@ export const SearchBar: FunctionComponent<Props> = ({
     <Dropdown show={text.length !== 0} className={className}>
       <Form.Control
         type="text"
-        size={size}
+        size="sm"
         placeholder="Search..."
         onChange={(e) => search(e.target.value)}
       ></Form.Control>

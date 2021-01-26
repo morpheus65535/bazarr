@@ -4,7 +4,12 @@ import { Row } from "react-bootstrap";
 import ContentHeaderButton from "./Button";
 import ContentHeaderGroup from "./Group";
 
-export const ContentHeader: FunctionComponent = (props) => {
+declare type Header = FunctionComponent & {
+  Button: typeof ContentHeaderButton;
+  Group: typeof ContentHeaderGroup;
+};
+
+export const ContentHeader: Header = (props) => {
   const { children } = props;
   return (
     <Row className="content-header">
@@ -15,12 +20,7 @@ export const ContentHeader: FunctionComponent = (props) => {
   );
 };
 
-export default ContentHeader;
-export { ContentHeaderButton, ContentHeaderGroup };
+ContentHeader.Button = ContentHeaderButton;
+ContentHeader.Group = ContentHeaderGroup;
 
-// declare type Header = typeof ContentHeader & {
-//   Button: typeof ContentHeaderButton;
-//   Group: typeof ContentHeaderGroup;
-// };
-// declare const Header: Header;
-// export default Header;
+export default ContentHeader;

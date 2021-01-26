@@ -100,7 +100,7 @@ const Header: FunctionComponent<Props> = (props) => {
       <Container fluid>
         <Row noGutters className="flex-grow-1">
           <Col xs={6} sm={4} className="d-flex align-items-center">
-            <SearchBar size="sm" onSearch={search}></SearchBar>
+            <SearchBar onSearch={search}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <Button

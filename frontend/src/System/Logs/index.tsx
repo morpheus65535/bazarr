@@ -6,7 +6,7 @@ import { Helmet } from "react-helmet";
 import { UpdateSystemLogs } from "../../@redux/actions";
 
 import { faTrash, faDownload, faSync } from "@fortawesome/free-solid-svg-icons";
-import { ContentHeader, ContentHeaderButton } from "../../components";
+import { ContentHeader } from "../../components";
 
 import Table from "./table";
 
@@ -35,16 +35,16 @@ const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
         <title>Providers - Bazarr (System)</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeaderButton
+        <ContentHeader.Button
           updating={loading}
           icon={faSync}
           disabled={loading}
           onClick={update}
         >
           Refresh
-        </ContentHeaderButton>
-        <ContentHeaderButton icon={faDownload}>Download</ContentHeaderButton>
-        <ContentHeaderButton
+        </ContentHeader.Button>
+        <ContentHeader.Button icon={faDownload}>Download</ContentHeader.Button>
+        <ContentHeader.Button
           updating={resetting}
           icon={faTrash}
           onClick={() => {
@@ -56,7 +56,7 @@ const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
           }}
         >
           Empty
-        </ContentHeaderButton>
+        </ContentHeader.Button>
       </ContentHeader>
       <Row>
         <Table></Table>

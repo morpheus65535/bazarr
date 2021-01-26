@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useCallback } from "react";
-import { Container, InputGroup } from "react-bootstrap";
+import { InputGroup } from "react-bootstrap";
 
 import {
   Check,
@@ -29,89 +29,87 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
 
   return (
     <SettingsProvider title="Sonarr - Bazarr (Settings)">
-      <Container>
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Group header="Use Sonarr">
-              <Input>
-                <Check
-                  label="Enabled"
-                  settingKey="settings-general-use_sonarr"
-                ></Check>
-              </Input>
-            </Group>
-          </CollapseBox.Control>
-          <CollapseBox.Content indent={false}>
-            <Group header="Host">
-              <Input name="Address">
-                <Text settingKey="settings-sonarr-ip"></Text>
-                <Message type="info">Hostname or IPv4 Address</Message>
-              </Input>
-              <Input name="Port">
-                <Text settingKey="settings-sonarr-port"></Text>
-              </Input>
-              <Input name="Base URL">
-                <InputGroup>
-                  <InputGroup.Prepend>
-                    <InputGroup.Text>/</InputGroup.Text>
-                  </InputGroup.Prepend>
-                  <Text
-                    settingKey="settings-sonarr-base_url"
-                    override={baseUrlOverride}
-                    preprocess={(v) => "/" + v}
-                  ></Text>
-                </InputGroup>
-              </Input>
-              <Input name="API Key">
-                <Text settingKey="settings-sonarr-apikey"></Text>
-              </Input>
-              <Input>
-                <Check label="SSL" settingKey="settings-sonarr-ssl"></Check>
-              </Input>
-              <Input>
-                <URLTestButton category="sonarr"></URLTestButton>
-              </Input>
-            </Group>
-            <Group header="Options">
-              <Input name="Minimum Score">
-                <Slider settingKey="settings-general-minimum_score"></Slider>
-              </Input>
-              <Input name="Excluded Tags">
+      <CollapseBox>
+        <CollapseBox.Control>
+          <Group header="Use Sonarr">
+            <Input>
+              <Check
+                label="Enabled"
+                settingKey="settings-general-use_sonarr"
+              ></Check>
+            </Input>
+          </Group>
+        </CollapseBox.Control>
+        <CollapseBox.Content indent={false}>
+          <Group header="Host">
+            <Input name="Address">
+              <Text settingKey="settings-sonarr-ip"></Text>
+              <Message type="info">Hostname or IPv4 Address</Message>
+            </Input>
+            <Input name="Port">
+              <Text settingKey="settings-sonarr-port"></Text>
+            </Input>
+            <Input name="Base URL">
+              <InputGroup>
+                <InputGroup.Prepend>
+                  <InputGroup.Text>/</InputGroup.Text>
+                </InputGroup.Prepend>
                 <Text
-                  // TODO: Currently Unusable
-                  disabled
-                  settingKey="settings-sonarr-excluded_tags"
+                  settingKey="settings-sonarr-base_url"
+                  override={baseUrlOverride}
+                  preprocess={(v) => "/" + v}
                 ></Text>
-                <Message type="info">
-                  Episodes from series with those tags (case sensitive) in
-                  Sonarr will be excluded from automatic download of subtitles.
-                </Message>
-              </Input>
-              <Input name="Excluded Series Types">
-                <Selector
-                  settingKey="settings-sonarr-excluded_series_types"
-                  multiple
-                  options={seriesTypeOptions}
-                ></Selector>
-                <Message type="info">
-                  Episodes from series with those types in Sonarr will be
-                  excluded from automatic download of subtitles.
-                </Message>
-              </Input>
-              <Input>
-                <Check
-                  label="Download Only Monitored"
-                  settingKey="settings-sonarr-only_monitored"
-                ></Check>
-                <Message type="info">
-                  Automatic download of subtitles will only happen for monitored
-                  episodes in Sonarr.
-                </Message>
-              </Input>
-            </Group>
-          </CollapseBox.Content>
-        </CollapseBox>
-      </Container>
+              </InputGroup>
+            </Input>
+            <Input name="API Key">
+              <Text settingKey="settings-sonarr-apikey"></Text>
+            </Input>
+            <Input>
+              <Check label="SSL" settingKey="settings-sonarr-ssl"></Check>
+            </Input>
+            <Input>
+              <URLTestButton category="sonarr"></URLTestButton>
+            </Input>
+          </Group>
+          <Group header="Options">
+            <Input name="Minimum Score">
+              <Slider settingKey="settings-general-minimum_score"></Slider>
+            </Input>
+            <Input name="Excluded Tags">
+              <Text
+                // TODO: Currently Unusable
+                disabled
+                settingKey="settings-sonarr-excluded_tags"
+              ></Text>
+              <Message type="info">
+                Episodes from series with those tags (case sensitive) in Sonarr
+                will be excluded from automatic download of subtitles.
+              </Message>
+            </Input>
+            <Input name="Excluded Series Types">
+              <Selector
+                settingKey="settings-sonarr-excluded_series_types"
+                multiple
+                options={seriesTypeOptions}
+              ></Selector>
+              <Message type="info">
+                Episodes from series with those types in Sonarr will be excluded
+                from automatic download of subtitles.
+              </Message>
+            </Input>
+            <Input>
+              <Check
+                label="Download Only Monitored"
+                settingKey="settings-sonarr-only_monitored"
+              ></Check>
+              <Message type="info">
+                Automatic download of subtitles will only happen for monitored
+                episodes in Sonarr.
+              </Message>
+            </Input>
+          </Group>
+        </CollapseBox.Content>
+      </CollapseBox>
     </SettingsProvider>
   );
 };

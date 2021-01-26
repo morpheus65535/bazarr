@@ -12,8 +12,6 @@ import {
 } from "@fortawesome/react-fontawesome";
 import { Spinner, Form, OverlayTrigger, Popover } from "react-bootstrap";
 import {
-  faCheck,
-  faTimes,
   faTrash,
   faDownload,
   faUser,
@@ -61,11 +59,11 @@ export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
   }
 };
 
-interface OverlayIconProps extends FontAwesomeIconProps {
+interface MessageIconProps extends FontAwesomeIconProps {
   messages: string[];
 }
 
-export const OverlayIcon: FunctionComponent<OverlayIconProps> = (props) => {
+export const MessageIcon: FunctionComponent<MessageIconProps> = (props) => {
   const { messages, ...iconProps } = props;
 
   const popover = (
@@ -87,18 +85,10 @@ export const OverlayIcon: FunctionComponent<OverlayIconProps> = (props) => {
 
 export const LoadingIndicator: FunctionComponent = ({ children }) => {
   return (
-    <div className="d-flex flex-column flex-grow-1 align-items-center justify-content-center py-5">
+    <div className="d-flex flex-column flex-grow-1 align-items-center py-5">
       <Spinner animation="border" className="mb-2"></Spinner>
       {children}
     </div>
-  );
-};
-
-export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
-  props
-) => {
-  return (
-    <FontAwesomeIcon icon={props.value ? faCheck : faTimes}></FontAwesomeIcon>
   );
 };
 
