@@ -30,7 +30,8 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from knowit import api
 from subsyncer import subsync
 from guessit import guessit
-from database import database, dict_mapper, get_exclusion_clause
+from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
+    get_desired_languages
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -71,7 +72,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         return video
 
     except Exception as e:
-        logging.exception("BAZARR Error trying to get video information for this file: " + path)
+        logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
@@ -304,44 +305,48 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
 
 
-def manual_search(path, language, hi, forced, providers, providers_auth, sceneName, title, media_type):
+def manual_search(path, profileId, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
     final_subtitles = []
 
-    initial_hi = True if hi == "True" else False
-    if hi == "True":
-        hi = "force HI"
-    else:
-        hi = "force non-HI"
+    initial_language_set = set()
     language_set = set()
 
-    if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True
-        providers_auth['subscene']['only_foreign'] = True
-        providers_auth['opensubtitles']['only_foreign'] = True
-    else:
-        providers_auth['podnapisi']['only_foreign'] = False
-        providers_auth['subscene']['only_foreign'] = False
-        providers_auth['opensubtitles']['only_foreign'] = False
+    # where [3] is items list of dict(id, lang, forced, hi)
+    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
 
-    for lang in ast.literal_eval(language):
+    for language in language_items:
+        lang_id, lang, forced, hi, audio_exclude = language.values()
+
         lang = alpha3_from_alpha2(lang)
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(lang)
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        language_set.add(lang_obj)
+        if forced == "True":
+            lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        if forced != "True":
-            lang_obj_hi = Language.rebuild(lang_obj, hi=True)
-            language_set.add(lang_obj_hi)
+            providers_auth['podnapisi']['also_foreign'] = True
+            providers_auth['opensubtitles']['also_foreign'] = True
+
+        if hi == "True":
+            lang_obj = Language.rebuild(lang_obj, hi=True)
+
+        initial_language_set.add(lang_obj)
+
+    language_set = initial_language_set.copy()
+    for language in language_set.copy():
+        lang_obj_for_hi = language
+        if not language.forced and not language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=True)
+        elif not language.forced and language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=False)
+        else:
+            continue
+        language_set.add(lang_obj_hi)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
@@ -365,6 +370,22 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                blacklist=get_blacklist(media_type=media_type),
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
+
+                if 'subscene' in providers:
+                    subscene_language_set = set()
+                    for language in language_set:
+                        if language.forced:
+                            subscene_language_set.add(language)
+                    if len(subscene_language_set):
+                        providers_auth['subscene']['only_foreign'] = True
+                        subtitles_subscene = list_all_subtitles([video], subscene_language_set,
+                                                                providers=['subscene'],
+                                                                provider_configs=providers_auth,
+                                                                blacklist=get_blacklist(media_type=media_type),
+                                                                throttle_callback=provider_throttle,
+                                                                language_hook=None)  # fixme
+                        providers_auth['subscene']['only_foreign'] = False
+                        subtitles[video] += subtitles_subscene[video]
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
@@ -389,6 +410,20 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                     if can_verify_series and not {"series", "season", "episode"}.issubset(matches):
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
+
+                initial_hi_match = False
+                for language in initial_language_set:
+                    if s.language.basename == language.basename and \
+                            s.language.forced == language.forced and \
+                            s.language.hi == language.hi:
+                        initial_hi = language.hi
+                        initial_hi_match = True
+                        break
+                if not initial_hi_match:
+                    initial_hi = None
+
+                if initial_hi_match:
+                    matches.add('hearing_impaired')
 
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
@@ -680,19 +715,12 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 def series_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                        "table_shows.seriesType, table_episodes.audio_language FROM table_episodes "
-                                        "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                        "table_shows.seriesType, table_episodes.audio_language, table_shows.title "
+                                        "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
                                         "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=? and "
                                         "missing_subtitles!='[]'" + get_exclusion_clause('series'), (no,))
     if not episodes_details:
         logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
-        return
-
-    series_details = database.execute(
-        "SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId=?",
-        (no,), only_one=True)
-    if not series_details:
-        logging.debug("BAZARR no series with that sonarrSeriesId can be found in database:", str(no))
         return
 
     providers_list = get_providers()
@@ -704,15 +732,21 @@ def series_download_subtitles(no):
         if providers_list:
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               episode['audio_language'],
-                                               series_details['hearing_impaired'],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode['scene_name']),
-                                               series_details['title'],
+                                               episode['title'],
                                                'series')
                     if result is not None:
                         message = result[0]
@@ -740,10 +774,9 @@ def series_download_subtitles(no):
 def episode_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                        "table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, "
-                                        "table_shows.forced, table_episodes.audio_language, table_shows.seriesType FROM "
-                                        "table_episodes LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
-                                        "table_shows.sonarrSeriesId WHERE sonarrEpisodeId=?" +
+                                        "table_shows.title, table_shows.sonarrSeriesId, table_episodes.audio_language, "
+                                        "table_shows.seriesType FROM table_episodes LEFT JOIN table_shows on "
+                                        "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId WHERE sonarrEpisodeId=?" +
                                         get_exclusion_clause('series'), (no,))
     if not episodes_details:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
@@ -756,10 +789,16 @@ def episode_download_subtitles(no):
         if providers_list:
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               episode['audio_language'],
-                                               episode['hearing_impaired'],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
@@ -791,7 +830,7 @@ def episode_download_subtitles(no):
 
 def movies_download_subtitles(no):
     movies = database.execute(
-        "SELECT path, missing_subtitles, audio_language, radarrId, sceneName, hearing_impaired, title, forced, tags, "
+        "SELECT path, missing_subtitles, audio_language, radarrId, sceneName, title, tags, "
         "monitored FROM table_movies WHERE radarrId=?" + get_exclusion_clause('movie'), (no,))
     if not len(movies):
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
@@ -810,10 +849,16 @@ def movies_download_subtitles(no):
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
         if providers_list:
             if language is not None:
+                audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                if len(audio_language_list) > 0:
+                    audio_language = audio_language_list[0]['name']
+                else:
+                    audio_language = 'None'
+
                 result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
                                            str(alpha3_from_alpha2(language.split(':')[0])),
-                                           movie['audio_language'],
-                                           movie['hearing_impaired'],
+                                           audio_language,
+                                           "True" if language.endswith(':hi') else "False",
                                            "True" if language.endswith(':forced') else "False",
                                            providers_list,
                                            providers_auth,
@@ -845,8 +890,8 @@ def movies_download_subtitles(no):
 def wanted_download_subtitles(path, l, count_episodes):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, "
-                                        "table_shows.hearing_impaired, table_episodes.audio_language, table_episodes.scene_name,"
-                                        "table_episodes.failedAttempts, table_shows.title, table_shows.forced "
+                                        "table_episodes.audio_language, table_episodes.scene_name,"
+                                        "table_episodes.failedAttempts, table_shows.title "
                                         "FROM table_episodes LEFT JOIN table_shows on "
                                         "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
                                         "WHERE table_episodes.path=? and table_episodes.missing_subtitles!='[]'",
@@ -874,10 +919,16 @@ def wanted_download_subtitles(path, l, count_episodes):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]):
+                        audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                        if len(audio_language_list) > 0:
+                            audio_language = audio_language_list[0]['name']
+                        else:
+                            audio_language = 'None'
+
                         result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   episode['audio_language'],
-                                                   episode['hearing_impaired'],
+                                                   audio_language,
+                                                   "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
@@ -910,8 +961,8 @@ def wanted_download_subtitles(path, l, count_episodes):
 
 def wanted_download_subtitles_movie(path, l, count_movies):
     movies_details = database.execute(
-        "SELECT path, missing_subtitles, radarrId, hearing_impaired, audio_language, sceneName, "
-        "failedAttempts, title, forced FROM table_movies WHERE path = ? "
+        "SELECT path, missing_subtitles, radarrId, audio_language, sceneName, "
+        "failedAttempts, title FROM table_movies WHERE path = ? "
         "AND missing_subtitles != '[]'", (path_mappings.path_replace_reverse_movie(path),))
 
     providers_list = get_providers()
@@ -936,10 +987,16 @@ def wanted_download_subtitles_movie(path, l, count_movies):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                        if len(audio_language_list) > 0:
+                            audio_language = audio_language_list[0]['name']
+                        else:
+                            audio_language = 'None'
+
                         result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   movie['audio_language'],
-                                                   movie['hearing_impaired'],
+                                                   audio_language,
+                                                   "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
@@ -1144,17 +1201,17 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
-                                               "table_history.score, table_shows.hearing_impaired, "
-                                               "table_episodes.audio_language, table_episodes.scene_name, table_episodes.title,"
-                                               "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
-                                               "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
-                                               "table_shows.languages, table_shows.forced, table_shows.tags, "
-                                               "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
-                                               "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
-                                               "table_episodes on table_episodes.sonarrEpisodeId = "
-                                               "table_history.sonarrEpisodeId WHERE action IN "
-                                               "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score"
-                                               " is not null" + get_exclusion_clause('series') + " GROUP BY "
+                                               "table_history.score, table_shows.tags, table_shows.profileId, "
+                                               "table_episodes.audio_language, table_episodes.scene_name, "
+                                               "table_episodes.title, table_episodes.sonarrSeriesId, "
+                                               "table_episodes.sonarrEpisodeId, MAX(table_history.timestamp) "
+                                               "as timestamp, table_episodes.monitored, table_shows.seriesType FROM "
+                                               "table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                               "table_history.sonarrSeriesId INNER JOIN table_episodes on "
+                                               "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
+                                               "action IN (" + ','.join(map(str, query_actions)) +
+                                               ") AND timestamp > ? AND score is not null" +
+                                               get_exclusion_clause('series') + " GROUP BY "
                                                "table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
         upgradable_episodes_not_perfect = []
@@ -1177,13 +1234,13 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.hearing_impaired, "
+                                             "table_history_movie.score, table_movies.profileId, "
                                              "table_movies.audio_language, table_movies.sceneName, table_movies.title, "
                                              "table_movies.radarrId, MAX(table_history_movie.timestamp) as timestamp, "
-                                             "table_movies.languages, table_movies.forced, table_movies.tags, "
-                                             "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
-                                             "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
-                                             "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
+                                             "table_movies.tags, table_movies.monitored FROM table_history_movie INNER "
+                                             "JOIN table_movies on table_movies.radarrId = "
+                                             "table_history_movie.radarrId WHERE action  IN (" +
+                                             ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
                                              "is not null" + get_exclusion_clause('movie') + " GROUP BY "
                                              "table_history_movie.video_path, table_history_movie.language",
                                              (minimum_timestamp,))
@@ -1210,110 +1267,113 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
-            if episode['languages'] in [None, 'None', '[]']:
-                continue
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode['languages']:
-                desired_languages = ast.literal_eval(str(episode['languages']))
-                if episode['forced'] == "True":
-                    forced_languages = [l + ":forced" for l in desired_languages]
-                elif episode['forced'] == "Both":
-                    forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
+            if episode['language'].endswith('forced'):
+                language = episode['language'].split(':')[0]
+                is_forced = True
+                is_hi = False
+            elif episode['language'].endswith('hi'):
+                language = episode['language'].split(':')[0]
+                is_forced = False
+                is_hi = True
+            else:
+                language = episode['language'].split(':')[0]
+                is_forced = False
+                is_hi = False
+
+            audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+            if len(audio_language_list) > 0:
+                audio_language = audio_language_list[0]['name']
+            else:
+                audio_language = 'None'
+
+            result = download_subtitle(path_mappings.path_replace(episode['video_path']),
+                                       str(alpha3_from_alpha2(language)),
+                                       audio_language,
+                                       is_hi,
+                                       is_forced,
+                                       providers_list,
+                                       providers_auth,
+                                       str(episode['scene_name']),
+                                       episode['title'],
+                                       'series',
+                                       forced_minimum_score=int(episode['score']),
+                                       is_upgrade=True)
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
                 else:
-                    forced_languages = desired_languages
-
-                if episode['language'] in forced_languages:
-                    if episode['language'].endswith('forced'):
-                        language = episode['language'].split(':')[0]
-                        is_forced = "True"
-                    else:
-                        language = episode['language']
-                        is_forced = "False"
-
-                    result = download_subtitle(path_mappings.path_replace(episode['video_path']),
-                                               str(alpha3_from_alpha2(language)),
-                                               episode['audio_language'],
-                                               episode['hearing_impaired'],
-                                               is_forced,
-                                               providers_list,
-                                               providers_auth,
-                                               str(episode['scene_name']),
-                                               episode['title'],
-                                               'series',
-                                               forced_minimum_score=int(episode['score']),
-                                               is_upgrade=True)
-                    if result is not None:
-                        message = result[0]
-                        path = result[1]
-                        forced = result[5]
-                        if result[8]:
-                            language_code = result[2] + ":hi"
-                        elif forced:
-                            language_code = result[2] + ":forced"
-                        else:
-                            language_code = result[2]
-                        provider = result[3]
-                        score = result[4]
-                        subs_id = result[6]
-                        subs_path = result[7]
-                        store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
-                        history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                    language_code, provider, score, subs_id, subs_path)
-                        send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+                    language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                subs_id = result[6]
+                subs_path = result[7]
+                store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
+                history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
+                            language_code, provider, score, subs_id, subs_path)
+                send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
-            if movie['languages'] in [None, 'None', '[]']:
-                continue
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
                 return
-            if movie['languages']:
-                desired_languages = ast.literal_eval(str(movie['languages']))
-                if movie['forced'] == "True":
-                    forced_languages = [l + ":forced" for l in desired_languages]
-                elif movie['forced'] == "Both":
-                    forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
-                else:
-                    forced_languages = desired_languages
+            if not providers:
+                logging.info("BAZARR All providers are throttled")
+                return
+            if episode['language'].endswith('forced'):
+                language = episode['language'].split(':')[0]
+                is_forced = True
+                is_hi = False
+            elif episode['language'].endswith('hi'):
+                language = episode['language'].split(':')[0]
+                is_forced = False
+                is_hi = True
+            else:
+                language = episode['language'].split(':')[0]
+                is_forced = False
+                is_hi = False
 
-                if movie['language'] in forced_languages:
-                    if movie['language'].endswith('forced'):
-                        language = movie['language'].split(':')[0]
-                        is_forced = "True"
-                    else:
-                        language = movie['language']
-                        is_forced = "False"
+            audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+            if len(audio_language_list) > 0:
+                audio_language = audio_language_list[0]['name']
+            else:
+                audio_language = 'None'
 
-                    result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
-                                               str(alpha3_from_alpha2(language)),
-                                               movie['audio_language'],
-                                               movie['hearing_impaired'],
-                                               is_forced,
-                                               providers_list,
-                                               providers_auth,
-                                               str(movie['sceneName']),
-                                               movie['title'],
-                                               'movie',
-                                               forced_minimum_score=int(movie['score']),
-                                               is_upgrade=True)
-                    if result is not None:
-                        message = result[0]
-                        path = result[1]
-                        forced = result[5]
-                        language_code = result[2] + ":forced" if forced else result[2]
-                        provider = result[3]
-                        score = result[4]
-                        subs_id = result[6]
-                        subs_path = result[7]
-                        store_subtitles_movie(movie['video_path'],
-                                              path_mappings.path_replace_movie(movie['video_path']))
-                        history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
-                        send_notifications_movie(movie['radarrId'], message)
+            result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
+                                       str(alpha3_from_alpha2(language)),
+                                       audio_language,
+                                       is_hi,
+                                       is_forced,
+                                       providers_list,
+                                       providers_auth,
+                                       str(movie['sceneName']),
+                                       movie['title'],
+                                       'movie',
+                                       forced_minimum_score=int(movie['score']),
+                                       is_upgrade=True)
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else result[2]
+                provider = result[3]
+                score = result[4]
+                subs_id = result[6]
+                subs_path = result[7]
+                store_subtitles_movie(movie['video_path'],
+                                      path_mappings.path_replace_movie(movie['video_path']))
+                history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
+                send_notifications_movie(movie['radarrId'], message)
 
 
 def postprocessing(command, path):

@@ -143,7 +143,7 @@ class YavkaNetProvider(Provider):
         
         # Search on first 25 rows only
         for row in rows[:25]:
-            element = row.find('a', {'class': 'selector'})
+            element = row.select_one('a.balon, a.selector')
             if element:
                 link = element.get('href')
                 notes = re.sub(r'(?s)<p.*><img [A-z0-9=\'/\. :;#]*>(.*)</p>', r"\1", element.get('content'))

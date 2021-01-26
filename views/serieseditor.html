@@ -16,38 +16,17 @@
         <tr>
             <th></th>
             <th>Name</th>
-            <th>Audio Profile</th>
-            <th>Subtitles Languages</th>
-            <th>Hearing-Impaired</th>
-            <th>Forced</th>
+            <th>Audio Profile Languages</th>
+            <th>Languages Profile</th>
         </tr>
         </thead>
     </table>
 
-    <nav id="edit_bar" class="navbar fixed-bottom navbar-dark bg-dark">
+    <nav id="edit_bar" class="navbar fixed-bottom navbar-dark bg-dark justify-content-end">
         <div class="form-check form-check-inline">
             <div class="form-group" style="margin-bottom: 0px;">
-                <label for="languages_select">Language(s): </label>
-                <select class="selectpicker" id="languages_select" name="languages" title="No change" multiple></select>
-            </div>
-        </div>
-        <div class="form-check form-check-inline">
-            <div class="form-group" style="margin-bottom: 0px;">
-                <label for="hi_select">Hearing-Impaired: </label>
-                <select class="selectpicker show-tick" id="hi_select" name="hi" title="No change" multiple>
-                    <option value="False">False</option>
-                    <option value="True">True</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-check form-check-inline">
-            <div class="form-group" style="margin-bottom: 0px;">
-                <label for="forced_select">Forced: </label>
-                <select class="selectpicker show-tick" id="forced_select" name="forced" title="No change" multiple>
-                    <option value="False">False</option>
-                    <option value="True">True</option>
-                    <option value="Both">Both</option>
-                </select>
+                <label for="languages_select">Languages Profile: </label>
+                <select class="selectpicker" id="languages_select" name="languages"></select>
             </div>
         </div>
         <div class="form-check form-check-inline">
@@ -114,25 +93,19 @@
                             return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.title + '</a>'
                         }
                     },
-                    {data: "audio_language.name"},
                     {
-                        data: "languages",
+                        data: 'audio_language',
                         render: function (data) {
-                            if (data && data !== 'None') {
-                                var languages = '';
-                                data.forEach(appendFunc);
-                                return languages;
-                            } else {
-                                return null;
-                            }
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
 
                             function appendFunc(value) {
-                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
                             }
                         }
                     },
-                    {data: "hearing_impaired", className: "dt-center"},
-                    {data: "forced", className: "dt-center"}
+                    {data: "profileId.name", className: "dt-center"}
                 ]
             });
 
@@ -174,19 +147,11 @@
                 }
             });
 
-            if ('{{settings.general.single_language}}' === 'True') {
-                $('#languages_select').selectpicker({maxOptions: 1});
-            }
-            $('#hi_select').selectpicker({maxOptions: 1});
-            $('#forced_select').selectpicker({maxOptions: 1});
-
             $('#save_button').on('click', function (e) {
                 e.preventDefault();
                 const values = {
                     seriesid: table.rows({selected: true}).ids().toArray(),
-                    languages: $('#languages_select').val(),
-                    hi: $('#hi_select').val(),
-                    forced: $('#forced_select').val()
+                    languages: $('#languages_select').val()
                 };
 
                 $.ajax({
@@ -202,9 +167,7 @@
                     },
                     success: function () {
                         table.rows().deselect();
-                        $('#languages_select').selectpicker('val', '');
-                        $('#hi_select').selectpicker('val', '');
-                        $('#forced_select').selectpicker('val', '');
+                        $('#languages_select').selectpicker('val', 'None');
                     }
                 });
             });
@@ -212,11 +175,11 @@
 
         function getEnabledLanguages() {
             $.ajax({
-                url: "{{ url_for('api.languages') }}?enabled=true",
+                url: "{{ url_for('api.languagesprofiles') }}",
                 success: function (data) {
                     $('#languages_select').append('<option value="None">None</option>');
-                    $.each(data, function (i, item) {
-                        $('#languages_select').append('<option value="' + item.code2 + '">' + item.name + '</option>');
+                    $.each(data['data'], function (i, item) {
+                        $('#languages_select').append('<option value="' + item.profileId + '">' + item.name + '</option>');
                     });
                     $("#languages_select").selectpicker("refresh");
                 }
