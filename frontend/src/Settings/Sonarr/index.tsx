@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
-
+import { seriesTypeOptions } from "./options";
 import {
   Check,
   Group,
@@ -15,12 +15,6 @@ import {
 } from "../components";
 
 interface Props {}
-
-const seriesTypeOptions = {
-  standard: "Standard",
-  anime: "Anime",
-  daily: "Daily",
-};
 
 const SettingsSonarrView: FunctionComponent<Props> = () => {
   const baseUrlOverride = useCallback((settings: SystemSettings) => {
@@ -57,7 +51,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 <Text
                   settingKey="settings-sonarr-base_url"
                   override={baseUrlOverride}
-                  preprocess={(v) => "/" + v}
+                  beforeStaged={(v) => "/" + v}
                 ></Text>
               </InputGroup>
             </Input>

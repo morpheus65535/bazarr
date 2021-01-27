@@ -1,16 +1,36 @@
-export const folderOptions = {
-  current: "AlongSide Media File",
-  relative: "Relative Path to Media File",
-  absolute: "Absolute Path",
-};
+export const folderOptions: SelectorOption<string>[] = [
+  {
+    label: "AlongSide Media File",
+    value: "current",
+  },
+  {
+    label: "Relative Path to Media File",
+    value: "relative",
+  },
+  {
+    label: "Absolute Path",
+    value: "absolute",
+  },
+];
 
-export const antiCaptchaOption = {
-  none: "None",
-  anticaptcha: "Anti-Captcha",
-  deathbycaptcha: "Death by Captcha",
-};
+export const antiCaptchaOption: SelectorOption<string>[] = [
+  {
+    label: "Anti-Captcha",
+    value: "anticaptcha",
+  },
+  {
+    label: "Death by Captcha",
+    value: "deathbycaptcha",
+  },
+];
 
-export const colorOptions = {
-  white: "White",
-  lightgray: "Light Gray",
-};
+export const colorOptions: SelectorOption<string>[] = [
+  {
+    label: "White",
+    value: "white",
+  },
+  {
+    label: "Light Gray",
+    value: "lightgray",
+  },
+];

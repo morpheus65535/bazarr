@@ -16,9 +16,9 @@ export const LanguageSelector: FunctionComponent<
   return (
     <CLanguageSelector
       multiple
-      defaultSelect={enabled}
+      defaultValue={enabled}
       options={options}
-      onChange={(val: Language[]) => {
+      onChange={(val) => {
         update(val, settingKey);
       }}
     ></CLanguageSelector>
@@ -32,20 +32,20 @@ export const ProfileSelector: FunctionComponent<
 > = ({ settingKey }) => {
   const profiles = useLanguagesProfile();
 
-  const profileOptions = useMemo<Pair[]>(
+  const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
-      profiles.map<Pair>((v) => {
-        return { key: v.profileId.toString(), value: v.name };
+      profiles.map((v) => {
+        return { label: v.name, value: v.profileId };
       }),
     [profiles]
   );
 
   return (
     <Selector
+      clearable
       options={profileOptions}
-      nullKey="None"
       settingKey={settingKey}
-      preprocess={(v: string) => (v === "None" ? "" : v)}
+      beforeStaged={(v) => (v === undefined ? "" : v)}
     ></Selector>
   );
 };

@@ -230,7 +230,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
         <LanguageSelector
           disabled={uploading}
           options={avaliableLanguages}
-          defaultSelect={language}
+          defaultValue={language}
           onChange={updateLanguage}
         ></LanguageSelector>
         <div>

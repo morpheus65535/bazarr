@@ -48,3 +48,14 @@ td {
     display: none;
   }
 }
+
+.custom-selector {
+  .selector__control {
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0.25rem;
+  }
+  .selector__control--is-focused {
+    border-color: var(--primary) !important;
+  }
+}

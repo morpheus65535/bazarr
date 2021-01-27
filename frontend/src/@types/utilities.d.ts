@@ -6,9 +6,13 @@ type LooseObject = {
   [key: string]: any;
 };
 
-type Pair = {
+type StrictObject<T> = {
+  [key: string]: T;
+};
+
+type Pair<T = string> = {
   key: string;
-  value: string;
+  value: T;
 };
 
 interface DataWrapper<T> {
@@ -18,3 +22,14 @@ interface DataWrapper<T> {
 type PromiseType<T> = T extends Promise<infer D> ? D : T;
 
 type AsyncPayload<T> = T extends AsyncState<infer D> ? D : T;
+
+type Override<T, U> = T & Omit<U, keyof T>;
+
+type SelectorOption<PAYLOAD> = {
+  label: string;
+  value: PAYLOAD;
+};
+
+type SelectorValueType<T, M extends boolean> = M extends true
+  ? ReadonlyArray<T>
+  : T | undefined;

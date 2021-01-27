@@ -19,11 +19,12 @@ import {
 
 const SettingsSchedularView: FunctionComponent = () => {
   const timeOptions = useMemo(() => {
-    let object: LooseObject = {};
-    Array(24)
+    return Array(24)
       .fill(undefined)
-      .map((_, idx) => (object[idx.toString()] = `${idx}:00`));
-    return object;
+      .map<SelectorOption<number>>((_, idx) => ({
+        label: `${idx}:00`,
+        value: idx,
+      }));
   }, []);
 
   return (

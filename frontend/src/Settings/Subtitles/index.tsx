@@ -87,7 +87,6 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 disabled
                 settingKey="settings-general-anti_captcha_provider"
                 options={antiCaptchaOption}
-                nullKey="none"
               ></Selector>
             </Input>
           </CollapseBox.Control>

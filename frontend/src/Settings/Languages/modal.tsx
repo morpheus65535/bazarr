@@ -12,24 +12,18 @@ import {
   BasicTable,
   BasicModal,
   BasicModalProps,
-  Selector,
   LanguageSelector,
   useCloseModal,
   usePayload,
+  Selector,
 } from "../../components";
 import { Input, Message } from "../components";
-
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useEnabledLanguages } from ".";
-
+import { cutoffOptions } from "./options";
 interface Props {
   update: (profile: LanguagesProfile) => void;
 }
-
-const cutoffOptions: LooseObject = {
-  disabled: "Disabled",
-  "65535": "Any",
-};
 
 const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   props
@@ -57,11 +51,16 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
     }
   }, [profile]);
 
-  const cutoff = useMemo(() => {
-    const options = { ...cutoffOptions };
-    current.items.forEach((v) => {
-      options[v.id] = `ID ${v.id}`;
-    });
+  const cutoff: SelectorOption<number>[] = useMemo(() => {
+    const options = [...cutoffOptions];
+
+    const newOptions = current.items.map<SelectorOption<number>>((v) => ({
+      label: `ID ${v.id} (${v.language})`,
+      value: v.id,
+    }));
+
+    options.push(...newOptions);
+
     return options;
   }, [current.items]);
 
@@ -155,12 +154,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
           ]);
           return (
             <LanguageSelector
-              variant="light"
               options={languages}
-              defaultSelect={lang}
-              onChange={(l: Language) => {
-                item.language = l.code2;
-                updateItem(item);
+              defaultValue={lang}
+              onChange={(l) => {
+                if (l) {
+                  item.language = l.code2;
+                  updateItem(item);
+                }
               }}
             ></LanguageSelector>
           );
@@ -255,15 +255,12 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
       </Input>
       <Input name="Cutoff">
         <Selector
-          nullKey="disabled"
           options={cutoff}
-          defaultKey={profile?.cutoff ? profile.cutoff.toString() : undefined}
-          onSelect={(k) => {
-            let num: number | null = parseInt(k);
-            if (isNaN(num)) {
+          defaultValue={profile?.cutoff}
+          onChange={(num) => {
+            if (num === undefined) {
               num = null;
             }
-
             updateProfile("cutoff", num);
           }}
         ></Selector>

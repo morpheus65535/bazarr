@@ -41,7 +41,7 @@ const SettingsGeneralView: FunctionComponent = () => {
             <Text
               settingKey="settings-general-base_url"
               override={baseUrlOverride}
-              preprocess={(v) => "/" + v}
+              beforeStaged={(v) => "/" + v}
             ></Text>
           </InputGroup>
           <Message type="info">Reverse proxy support</Message>
@@ -52,9 +52,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input name="Authentication">
               <Selector
+                clearable
                 options={securityOptions}
                 settingKey="settings-auth-type"
-                nullKey="None"
+                beforeStaged={(v) => (v === undefined ? "None" : v)}
               ></Selector>
             </Input>
           </CollapseBox.Control>
@@ -86,9 +87,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input>
               <Selector
+                clearable
                 settingKey="settings-proxy-type"
                 options={proxyOptions}
-                nullKey="none"
+                beforeStaged={(v) => (v === undefined ? "None" : v)}
               ></Selector>
             </Input>
           </CollapseBox.Control>

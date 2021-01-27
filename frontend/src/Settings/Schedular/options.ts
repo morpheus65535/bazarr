@@ -1,40 +1,40 @@
-export const seriesSyncOptions = {
-  "1": "1 Minute",
-  "5": "5 Minutes",
-  "15": "15 Minutes",
-  "60": "1 Hour",
-  "180": "3 Hours",
-};
+export const seriesSyncOptions: SelectorOption<number>[] = [
+  { label: "1 Minute", value: 1 },
+  { label: "5 Minutes", value: 5 },
+  { label: "15 Minutes", value: 15 },
+  { label: "1 Hour", value: 60 },
+  { label: "3 Hours", value: 180 },
+];
 
-export const episodesSyncOptions = {
-  "5": "5 Minutes",
-  "15": "15 Minutes",
-  "60": "1 Hour",
-  "180": "3 Hours",
-  "360": "6 Hours",
-};
+export const episodesSyncOptions: SelectorOption<number>[] = [
+  { label: "5 Minutes", value: 5 },
+  { label: "15 Minutes", value: 15 },
+  { label: "1 Hour", value: 60 },
+  { label: "3 Hours", value: 180 },
+  { label: "6 Hours", value: 360 },
+];
 
 export const moviesSyncOptions = episodesSyncOptions;
 
-export const diskUpdateOptions = {
-  Manually: "Manually",
-  Daily: "Daily",
-  Weekly: "Weekly",
-};
+export const diskUpdateOptions: SelectorOption<string>[] = [
+  { label: "Manually", value: "Manually" },
+  { label: "Daily", value: "Daily" },
+  { label: "Weekly", value: "Weekly" },
+];
 
-export const dayOptions = {
-  "0": "Monday",
-  "1": "Tuesday",
-  "2": "Wednesday",
-  "3": "Thursday",
-  "4": "Friday",
-  "5": "Saturday",
-  "6": "Sunday",
-};
+export const dayOptions: SelectorOption<number>[] = [
+  { label: "Monday", value: 0 },
+  { label: "Tuesday", value: 1 },
+  { label: "Wednesday", value: 2 },
+  { label: "Thursday", value: 3 },
+  { label: "Friday", value: 4 },
+  { label: "Saturday", value: 5 },
+  { label: "Sunday", value: 6 },
+];
 
-export const upgradeOptions = {
-  "3": "3 Hours",
-  "6": "6 Hours",
-  "12": "12 Hours",
-  "24": "24 Hours",
-};
+export const upgradeOptions: SelectorOption<number>[] = [
+  { label: "3 Hours", value: 3 },
+  { label: "6 Hours", value: 6 },
+  { label: "12 Hours", value: 12 },
+  { label: "24 Hours", value: 24 },
+];

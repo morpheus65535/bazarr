@@ -1,10 +1,8 @@
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { connect } from "react-redux";
 import { Container, Form } from "react-bootstrap";
-
 import BasicModal, { BasicModalProps } from "./BasicModal";
-
-import { Selector, AsyncButton } from "../";
+import { AsyncButton, Selector } from "../";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
@@ -26,10 +24,10 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
 
   const closeModal = useCloseModal();
 
-  const profileOptions = useMemo<Pair[]>(
+  const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
-      profiles.map<Pair>((v) => {
-        return { key: v.profileId.toString(), value: v.name };
+      profiles.map((v) => {
+        return { label: v.name, value: v.profileId };
       }),
     [profiles]
   );
@@ -40,7 +38,6 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
   const footer = useMemo(
     () => (
       <AsyncButton
-        disabled={id === undefined}
         onChange={setUpdating}
         promise={() =>
           submit(item!, {
@@ -78,18 +75,10 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
           <Form.Group>
             <Form.Label>Languages Profiles</Form.Label>
             <Selector
-              nullKey="None"
+              clearable
               options={profileOptions}
-              defaultKey={item?.profileId?.toString()}
-              onSelect={(k) => {
-                const id = parseInt(k);
-
-                if (!isNaN(id)) {
-                  setId(id);
-                } else {
-                  setId(undefined);
-                }
-              }}
+              defaultValue={item?.profileId}
+              onChange={setId}
             ></Selector>
           </Form.Group>
         </Form>

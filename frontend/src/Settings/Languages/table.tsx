@@ -8,13 +8,11 @@ import React, {
 import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
 import { ActionIcon, BasicTable, useShowModal } from "../../components";
-
 import { useLanguagesProfile } from ".";
-
 import Modal from "./modal";
 import { useUpdate } from "../components";
-
 import { languageProfileKey } from "../keys";
+import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
   const originalProfiles = useLanguagesProfile();
@@ -80,20 +78,23 @@ const Table: FunctionComponent = () => {
         Cell: (row) => {
           const items = row.value;
           const cutoff = row.row.original.cutoff;
-          return items.map((v) => (
-            <Badge
-              key={v.id}
-              className="mx-1"
-              title={
-                v.id === cutoff
-                  ? "Ignore others if this one is avaliable"
-                  : undefined
-              }
-              variant={v.id === cutoff ? "primary" : "secondary"}
-            >
-              {v.language}
-            </Badge>
-          ));
+          return items.map((v) => {
+            const isCutoff = v.id === cutoff || cutoff === anyCutoff;
+            return (
+              <Badge
+                key={v.id}
+                className="mx-1"
+                title={
+                  isCutoff
+                    ? "Ignore others if this one is avaliable"
+                    : undefined
+                }
+                variant={isCutoff ? "primary" : "secondary"}
+              >
+                {v.language}
+              </Badge>
+            );
+          });
         },
       },
       {

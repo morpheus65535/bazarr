@@ -50,7 +50,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
                 <Text
                   settingKey="settings-radarr-base_url"
                   override={baseUrlOverride}
-                  preprocess={(v) => "/" + v}
+                  beforeStaged={(v) => "/" + v}
                 ></Text>
               </InputGroup>
             </Input>

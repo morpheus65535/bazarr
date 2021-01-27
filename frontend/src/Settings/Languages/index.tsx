@@ -1,9 +1,7 @@
 import React, { FunctionComponent, useContext } from "react";
 import { connect } from "react-redux";
 import { isArray } from "lodash";
-
 import Table from "./table";
-
 import {
   Group,
   Message,

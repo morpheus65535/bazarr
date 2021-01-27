@@ -83,8 +83,12 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
             <Form.Label>Language</Form.Label>
             <LanguageSelector
               options={avaliableLanguages}
-              defaultSelect={language}
-              onChange={setLanguage}
+              defaultValue={language}
+              onChange={(lang) => {
+                if (lang) {
+                  setLanguage(lang);
+                }
+              }}
             ></LanguageSelector>
           </Form.Group>
           <Form.Group>

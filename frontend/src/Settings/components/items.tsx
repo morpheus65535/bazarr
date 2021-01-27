@@ -1,16 +1,12 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Form } from "react-bootstrap";
-
 import {
   Slider as CSlider,
   SliderProps as CSliderProps,
   Selector as CSelector,
-  SingleSelectorProps as CSingleSelectorProps,
-  MultiSelectorProps as CMultiSelectorProps,
+  SelectorProps as CSelectorProps,
 } from "../../components";
-
 import { useUpdate, useExtract, useCollapse } from ".";
-
 import { isBoolean, isNumber, isString, isArray } from "lodash";
 
 export const Message: FunctionComponent<{
@@ -25,8 +21,8 @@ export const Message: FunctionComponent<{
 export interface BasicInput<T> {
   disabled?: boolean;
   settingKey: string;
-  override?: (v: SystemSettings) => T;
-  preprocess?: (v: T) => T;
+  override?: (v: SystemSettings) => NonNullable<T>;
+  beforeStaged?: (v: T) => any;
 }
 
 export interface TextProps extends BasicInput<React.ReactText> {
@@ -37,7 +33,7 @@ export interface TextProps extends BasicInput<React.ReactText> {
 export const Text: FunctionComponent<TextProps> = ({
   placeholder,
   disabled,
-  preprocess,
+  beforeStaged,
   override,
   password,
   settingKey,
@@ -59,8 +55,8 @@ export const Text: FunctionComponent<TextProps> = ({
       defaultValue={defaultValue}
       onChange={(e) => {
         const val = e.currentTarget.value;
-        const value = preprocess ? preprocess(val) : val;
-        collapse(value.toString());
+        collapse(val.toString());
+        const value = beforeStaged ? beforeStaged(val) : val;
         update(value, settingKey);
       }}
     ></Form.Control>
@@ -104,31 +100,22 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-type RemoveSelector<T> = Omit<T, "onSelect" | "onMultiSelect" | "defaultKey">;
+type SelectorProps<T, M extends boolean> = BasicInput<SelectorValueType<T, M>> &
+  CSelectorProps<T, M>;
 
-type SingleSelectorProps = BasicInput<string> &
-  RemoveSelector<CSingleSelectorProps>;
-
-type MultiSelectorProps = BasicInput<string[]> &
-  RemoveSelector<CMultiSelectorProps>;
-
-type SelectorProps = SingleSelectorProps | MultiSelectorProps;
-
-export const Selector: FunctionComponent<SelectorProps> = (props) => {
+export function Selector<
+  T extends string | string[] | number | number[],
+  M extends boolean = false
+>(props: SelectorProps<T, M>) {
   const update = useUpdate();
   const collapse = useCollapse();
 
-  const { settingKey, override, preprocess, ...selector } = props;
+  const { settingKey, override, beforeStaged, ...selector } = props;
 
-  let defaultValue = useExtract<string | string[]>(
+  const defaultValue = useExtract<T>(
     settingKey,
-    (v): v is string | string[] => isString(v) || isNumber(v) || isArray(v),
-    override
+    (v): v is T => isString(v) || isNumber(v) || isArray(v)
   );
-
-  if (isNumber(defaultValue)) {
-    defaultValue = defaultValue.toString();
-  }
 
   useEffect(() => {
     if (typeof defaultValue === "string") {
@@ -138,23 +125,21 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
 
   return (
     <CSelector
-      // TODO: Force as any, fix later
-      defaultKey={defaultValue as any}
-      onSelect={(v) => {
-        collapse(v);
-        // TODO: Force as any, fix later
-        v = preprocess ? (preprocess(v as any) as string) : v;
-        update(v, settingKey);
-      }}
-      onMultiSelect={(v) => {
-        // TODO: Force as any, fix later
-        v = preprocess ? (preprocess(v as any) as string[]) : v;
-        update(v, settingKey);
-      }}
       {...selector}
+      // TODO: Force as any
+      defaultValue={defaultValue as any}
+      onChange={(v) => {
+        if (v === undefined) {
+          collapse("");
+        } else if (typeof v === "string") {
+          collapse(v);
+        }
+        v = beforeStaged ? beforeStaged(v) : v;
+        update(v, settingKey);
+      }}
     ></CSelector>
   );
-};
+}
 
 type SliderProps = {} & BasicInput<number> &
   Omit<CSliderProps, "onChange" | "onAfterChange">;

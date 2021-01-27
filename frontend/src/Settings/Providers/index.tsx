@@ -1,26 +1,35 @@
-import React, { FunctionComponent } from "react";
-
+import React, { FunctionComponent, useMemo } from "react";
+import { ProviderList } from "./list";
+import { capitalize } from "lodash";
 import {
   Group,
   Input,
   Text,
   Message,
   Check,
+  Selector,
   SettingsProvider,
 } from "../components";
-
-import {
-  ProviderSelector,
-  UsernamePasswordInput,
-  ProviderSection,
-} from "./components";
+import { UsernamePasswordInput, ProviderSection } from "./components";
 
 const SettingsProvidersView: FunctionComponent = () => {
+  const providers = useMemo<SelectorOption<string>[]>(
+    () =>
+      ProviderList.map((v) => ({
+        label: v.name ?? capitalize(v.key),
+        value: v.key,
+      })),
+    []
+  );
   return (
     <SettingsProvider title="Providers - Bazarr (Settings)">
       <Group header="Providers">
         <Input>
-          <ProviderSelector></ProviderSelector>
+          <Selector
+            multiple
+            settingKey="settings-general-enabled_providers"
+            options={providers}
+          ></Selector>
         </Input>
       </Group>
       <ProviderSection providerKey="addic7ed">

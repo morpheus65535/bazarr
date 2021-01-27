@@ -1,34 +1,8 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { ProviderList } from "./list";
-import {
-  Selector,
-  Input,
-  Text,
-  Group,
-  Message,
-  useLatest,
-} from "../components";
+import { Input, Text, Group, Message, useLatest } from "../components";
 
 import { capitalize, isArray } from "lodash";
-
-export const ProviderSelector: FunctionComponent = () => {
-  const providers = useMemo<Pair[]>(
-    () =>
-      ProviderList.map((v) => ({
-        key: v.key,
-        value: v.name ? v.name : capitalize(v.key),
-      })),
-    []
-  );
-
-  return (
-    <Selector
-      multiple
-      settingKey="settings-general-enabled_providers"
-      options={providers}
-    ></Selector>
-  );
-};
 
 export const UsernamePasswordInput: FunctionComponent<{
   settingKey: keyof SystemSettings;
