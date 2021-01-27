@@ -39,8 +39,12 @@ export function useExtract<T>(
   return extractValue;
 }
 
-export function useLatest<T>(key: string, validate: (v: any) => v is T) {
-  const extractValue = useExtract<T>(key, validate);
+export function useLatest<T>(
+  key: string,
+  validate: (v: any) => v is T,
+  override?: (settings: SystemSettings) => T
+) {
+  const extractValue = useExtract<T>(key, validate, override);
   const stagedValue = useStaged();
   if (key in stagedValue) {
     return stagedValue[key] as T;

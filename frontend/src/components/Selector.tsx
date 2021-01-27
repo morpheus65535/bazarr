@@ -10,6 +10,7 @@ export interface SelectorProps<T, M extends boolean> {
   onChange?: (k: SelectorValueType<T, M>) => void;
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
+  value?: SelectorValueType<T, M>;
 }
 
 export function Selector<T = string, M extends boolean = false>(
@@ -23,6 +24,7 @@ export function Selector<T = string, M extends boolean = false>(
     multiple,
     onChange,
     defaultValue,
+    value,
   } = props;
 
   const nameFromItems = useCallback(
@@ -32,33 +34,44 @@ export function Selector<T = string, M extends boolean = false>(
     [options]
   );
 
-  const value = useMemo(() => {
-    if (defaultValue) {
-      if (multiple) {
-        return (defaultValue as SelectorValueType<T, true>).map((v) => ({
-          label: label ? label(v) : nameFromItems(v) ?? "Unknown",
-          value: v,
-        }));
-      } else {
-        const v = defaultValue as SelectorValueType<T, false>;
-        if (v) {
-          return {
+  // TODO: Force as any
+  const wrapper = useCallback(
+    (value: SelectorValueType<T, M> | undefined): any => {
+      if (value) {
+        if (multiple) {
+          return (value as SelectorValueType<T, true>).map((v) => ({
             label: label ? label(v) : nameFromItems(v) ?? "Unknown",
             value: v,
-          };
+          }));
+        } else {
+          const v = value as SelectorValueType<T, false>;
+          if (v) {
+            return {
+              label: label ? label(v) : nameFromItems(v) ?? "Unknown",
+              value: v,
+            };
+          }
         }
+      } else {
+        return undefined;
       }
-    } else {
-      return undefined;
-    }
-  }, [defaultValue, label, multiple, nameFromItems]);
+    },
+    [label, multiple, nameFromItems]
+  );
+
+  const defaultWrapper = useMemo(() => wrapper(defaultValue), [
+    defaultValue,
+    wrapper,
+  ]);
+
+  const valueWrapper = useMemo(() => wrapper(value), [wrapper, value]);
 
   return (
     <ReactSelect
       isMulti={multiple}
       closeMenuOnSelect={!multiple}
-      // TODO: Force as any
-      defaultValue={value as any}
+      defaultValue={defaultWrapper}
+      value={valueWrapper}
       isClearable={clearable}
       isDisabled={disabled}
       options={options}

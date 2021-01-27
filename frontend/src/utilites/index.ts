@@ -1,3 +1,6 @@
+import { ReactText } from "react";
+import { isString, isNumber } from "lodash";
+
 export function updateAsyncState<T>(
   promise: Promise<T>,
   setter: (state: AsyncState<T>) => void,
@@ -21,4 +24,8 @@ export function updateAsyncState<T>(
         items: defaultVal,
       });
     });
+}
+
+export function isReactText(v: any): v is ReactText {
+  return isString(v) || isNumber(v);
 }

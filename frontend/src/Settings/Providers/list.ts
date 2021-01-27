@@ -1,19 +1,46 @@
+import { ReactText } from "react";
+
+type AvaliableType = ReactText | boolean;
 export interface ProviderInfo {
   key: string;
   name?: string;
   description?: string;
+  message?: string;
+  defaultKey?: {
+    [key: string]: AvaliableType;
+  };
+  keyNameOverride?: {
+    [key: string]: string;
+  };
 }
 
-// type ProviderKey =
-
-export const ProviderList: ProviderInfo[] = [
-  { key: "addic7ed", description: "Requires Anti-Captcha Provider" },
+export const ProviderList: Readonly<ProviderInfo[]> = [
+  {
+    key: "addic7ed",
+    description: "Requires Anti-Captcha Provider",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
+  },
   { key: "argenteam", description: "Spanish Subtitles Provider" },
-  { key: "assrt", description: "Chinese Subtitles Provider" },
+  {
+    key: "assrt",
+    description: "Chinese Subtitles Provider",
+    defaultKey: {
+      token: "",
+    },
+  },
   {
     key: "betaseries",
     name: "BetaSeries",
     description: "French / English Provider for TV Shows Only",
+    defaultKey: {
+      token: "",
+    },
+    keyNameOverride: {
+      token: "API KEY",
+    },
   },
   {
     key: "bsplayer",
@@ -34,18 +61,47 @@ export const ProviderList: ProviderInfo[] = [
     key: "legendasdivx",
     name: "LegendasDivx",
     description: "Brazilian / Portuguese Subtitles Provider",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
   },
   {
     key: "legendastv",
     name: "LegendasTV",
     description: "Brazilian / Portuguese Subtitles Provider",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
-  { key: "napisy24", description: "Polish Subtitles Provider" },
+  {
+    key: "napisy24",
+    description: "Polish Subtitles Provider",
+    message:
+      "The provided credentials must have API access. Leave empty to use the defaults.",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
+  },
   { key: "nekur", description: "Latvian Subtitles Provider" },
   {
     key: "opensubtitles",
     name: "OpenSubtitles.org",
+    defaultKey: {
+      username: "",
+      password: "",
+      vip: false,
+      ssl: false,
+      skip_wrong_fps: false,
+    },
+    keyNameOverride: {
+      vip: "VIP",
+      ssl: "Use SSL",
+      skip_wrong_fps: "Skip Wrong FPS",
+    },
   },
   { key: "podnapisi" },
   {
@@ -74,7 +130,14 @@ export const ProviderList: ProviderInfo[] = [
     name: "Subs4Series",
     description: "Greek Subtitles Provider",
   },
-  { key: "subscene", description: "Requires Anti-Captcha Provider" },
+  {
+    key: "subscene",
+    description: "Requires Anti-Captcha Provider",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
+  },
   { key: "subscenter" },
   {
     key: "subsunacs",
@@ -93,7 +156,13 @@ export const ProviderList: ProviderInfo[] = [
   },
   { key: "sucha", description: "Spanish Subtitles Provider" },
   { key: "supersubtitles" },
-  { key: "titlovi" },
+  {
+    key: "titlovi",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
+  },
   { key: "titrari", name: "Titrari.ro" },
   {
     key: "tusubtitulo",
@@ -102,7 +171,15 @@ export const ProviderList: ProviderInfo[] = [
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },
-  { key: "xsubs", name: "XSubs", description: "Greek Subtitles Provider" },
+  {
+    key: "xsubs",
+    name: "XSubs",
+    description: "Greek Subtitles Provider",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
+  },
   {
     key: "yavka",
     name: "Yavka.net",

@@ -22,6 +22,9 @@ export function useShowModal() {
   const update = useContext(PayloadContext)[1];
   return useCallback(
     <T,>(key: string, payload?: T) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(`modal ${key} sending payload`, payload);
+      }
       update(payload);
       modal(key);
     },
@@ -38,7 +41,7 @@ export function useCloseModal() {
   }, [modal, payload]);
 }
 
-export function useIsShow(key: string) {
+export function useIsModalShow(key: string) {
   const currentKey = useContext(ModalContext)[0];
   return key === currentKey;
 }
@@ -47,6 +50,19 @@ export function usePayload<T>(): T | undefined {
   const payload = useContext(PayloadContext)[0];
   return payload as T;
 }
+
+// export function useWhenModalShow(
+//   key: string,
+//   callback: React.EffectCallback,
+//   deps: string
+// ) {
+//   const show = useIsModalShow(key);
+//   useEffect(() => {
+//     if (show) {
+//       callback();
+//     }
+//   }, [show, callback]);
+// }
 
 interface Props {
   value?: [string, any];

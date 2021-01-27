@@ -25,7 +25,7 @@ import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 import LanguageSelector from "../LanguageSelector";
-import { useCloseModal, useIsShow } from "./provider";
+import { useCloseModal, useIsModalShow } from "./provider";
 
 enum SubtitleState {
   update,
@@ -216,7 +216,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   const canUpload = tableShow && isValid && language?.code2 !== undefined;
 
-  const show = useIsShow(modal.modalKey);
+  const show = useIsModalShow(modal.modalKey);
 
   useEffect(() => {
     if (show) {

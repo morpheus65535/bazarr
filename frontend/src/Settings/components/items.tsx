@@ -6,8 +6,9 @@ import {
   Selector as CSelector,
   SelectorProps as CSelectorProps,
 } from "../../components";
-import { useUpdate, useExtract, useCollapse } from ".";
+import { useUpdate, useLatest, useCollapse } from ".";
 import { isBoolean, isNumber, isString, isArray } from "lodash";
+import { isReactText } from "../../utilites";
 
 export const Message: FunctionComponent<{
   type: "warning" | "info";
@@ -38,9 +39,9 @@ export const Text: FunctionComponent<TextProps> = ({
   password,
   settingKey,
 }) => {
-  const defaultValue = useExtract<React.ReactText>(
+  const defaultValue = useLatest<React.ReactText>(
     settingKey,
-    (v): v is React.ReactText => isString(v) || isNumber(v),
+    isReactText,
     override
   );
 
@@ -78,7 +79,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   const update = useUpdate();
   const collapse = useCollapse();
 
-  const defaultValue = useExtract<boolean>(settingKey, isBoolean, override);
+  const defaultValue = useLatest<boolean>(settingKey, isBoolean, override);
 
   useEffect(() => {
     collapse(defaultValue ?? false);
@@ -112,7 +113,7 @@ export function Selector<
 
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const defaultValue = useExtract<T>(
+  const defaultValue = useLatest<T>(
     settingKey,
     (v): v is T => isString(v) || isNumber(v) || isArray(v)
   );
@@ -149,7 +150,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 
   const update = useUpdate();
 
-  const defaultValue = useExtract<number>(settingKey, isNumber, override);
+  const defaultValue = useLatest<number>(settingKey, isNumber, override);
 
   return (
     <CSlider

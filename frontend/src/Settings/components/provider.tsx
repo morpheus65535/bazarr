@@ -21,9 +21,11 @@ import { enabledLanguageKey, languageProfileKey } from "../keys";
 
 type UpdateFunctionType = (v: any, k?: string) => void;
 
-const UpdateChangeContext = React.createContext<
-  [LooseObject, UpdateFunctionType]
->([{}, (v: any, k?: string) => {}]);
+export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
+  (v: any, k?: string) => {}
+);
+
+export const StagedChangesContext = React.createContext<LooseObject>({});
 
 const SettingsContext = React.createContext<SystemSettings | undefined>(
   undefined
@@ -41,11 +43,11 @@ export function useSettings(): SystemSettings {
 }
 
 export function useUpdate(): UpdateFunctionType {
-  return useContext(UpdateChangeContext)[1];
+  return useContext(UpdateChangeContext);
 }
 
 export function useStaged(): LooseObject {
-  return useContext(UpdateChangeContext)[0];
+  return useContext(StagedChangesContext);
 }
 
 function beforeSubmit(settings: LooseObject) {
@@ -128,10 +130,12 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
             </ContentHeader.Button>
           </ContentHeader>
           <SettingsContext.Provider value={items}>
-            <UpdateChangeContext.Provider value={[stagedChange, updateChange]}>
-              <Row className="p-4">
-                <Container>{children}</Container>
-              </Row>
+            <UpdateChangeContext.Provider value={updateChange}>
+              <StagedChangesContext.Provider value={stagedChange}>
+                <Row className="p-4">
+                  <Container>{children}</Container>
+                </Row>
+              </StagedChangesContext.Provider>
             </UpdateChangeContext.Provider>
           </SettingsContext.Provider>
         </Container>

@@ -103,7 +103,7 @@ const Table: FunctionComponent = () => {
           const profile = row.row.original;
 
           return (
-            <React.Fragment>
+            <div className="d-flex flex-nowrap">
               <ActionIcon
                 icon={faWrench}
                 onClick={() => {
@@ -114,7 +114,7 @@ const Table: FunctionComponent = () => {
                 icon={faTrash}
                 onClick={() => removeProfile(profile.profileId)}
               ></ActionIcon>
-            </React.Fragment>
+            </div>
           );
         },
       },
