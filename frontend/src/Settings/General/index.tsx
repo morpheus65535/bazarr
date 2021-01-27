@@ -21,6 +21,7 @@ const SettingsGeneralView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: SystemSettings) => {
     return settings.general.base_url?.slice(1) ?? "";
   }, []);
+
   return (
     <SettingsProvider title="General - Bazarr (Settings)">
       <Group header="Host">
@@ -112,7 +113,10 @@ const SettingsGeneralView: FunctionComponent = () => {
               </Message>
             </Input>
             <Input name="Ignored Addresses">
-              <Text settingKey="settings-proxy-exclude"></Text>
+              <Text
+                settingKey="settings-proxy-exclude"
+                override={(settings) => settings.proxy.exclude.join(",")}
+              ></Text>
               <Message type="info">
                 Use ',' as a separator, and '*.' as a wildcard for subdomains
               </Message>

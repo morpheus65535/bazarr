@@ -3,6 +3,7 @@ import { isArray } from "lodash";
 import ReactSelect from "react-select";
 
 export interface SelectorProps<T, M extends boolean> {
+  className?: string;
   options: SelectorOption<T>[];
   disabled?: boolean;
   clearable?: boolean;
@@ -17,6 +18,7 @@ export function Selector<T = string, M extends boolean = false>(
   props: SelectorProps<T, M>
 ) {
   const {
+    className,
     label,
     disabled,
     clearable,
@@ -68,6 +70,7 @@ export function Selector<T = string, M extends boolean = false>(
 
   return (
     <ReactSelect
+      isSearchable={options.length >= 10}
       isMulti={multiple}
       closeMenuOnSelect={!multiple}
       defaultValue={defaultWrapper}
@@ -75,7 +78,7 @@ export function Selector<T = string, M extends boolean = false>(
       isClearable={clearable}
       isDisabled={disabled}
       options={options}
-      className="custom-selector"
+      className={`custom-selector ${className ?? ""}`}
       classNamePrefix="selector"
       onChange={(v) => {
         if (onChange) {

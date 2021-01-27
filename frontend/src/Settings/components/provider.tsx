@@ -8,16 +8,12 @@ import { Prompt } from "react-router";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
-
-import { AsyncStateOverlay, ContentHeader } from "../../components";
-
+import { ContentHeader } from "../../components";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-
 import { SystemApi } from "../../apis";
-
 import { UpdateSettingsRelative } from "../../@redux/actions";
-
 import { enabledLanguageKey, languageProfileKey } from "../keys";
+import { SettingsContext } from "../Router";
 
 type UpdateFunctionType = (v: any, k?: string) => void;
 
@@ -26,10 +22,6 @@ export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
 );
 
 export const StagedChangesContext = React.createContext<LooseObject>({});
-
-const SettingsContext = React.createContext<SystemSettings | undefined>(
-  undefined
-);
 
 export function useSettings(): SystemSettings {
   const settings = useContext(SettingsContext);
@@ -62,21 +54,14 @@ function beforeSubmit(settings: LooseObject) {
   }
 }
 
-function mapStateToProps({ system }: StoreState) {
-  return {
-    settings: system.settings,
-  };
-}
-
 interface Props {
   title: string;
-  settings: AsyncState<SystemSettings | undefined>;
   update: () => void;
   children: JSX.Element | JSX.Element[];
 }
 
 const SettingsProvider: FunctionComponent<Props> = (props) => {
-  const { settings, children, title, update } = props;
+  const { children, title, update } = props;
 
   const [stagedChange, setChange] = useState<LooseObject>({});
 
@@ -109,41 +94,35 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   }, [stagedChange, update]);
 
   return (
-    <AsyncStateOverlay state={settings}>
-      {(items) => (
-        <Container fluid>
-          <Helmet>
-            <title>{title}</title>
-          </Helmet>
-          <Prompt
-            when={Object.keys(stagedChange).length > 0}
-            message="You have unsaved changes, are you sure you want to leave?"
-          ></Prompt>
-          <ContentHeader>
-            <ContentHeader.Button
-              icon={faSave}
-              updating={updating}
-              disabled={Object.keys(stagedChange).length === 0}
-              onClick={submit}
-            >
-              Save
-            </ContentHeader.Button>
-          </ContentHeader>
-          <SettingsContext.Provider value={items}>
-            <UpdateChangeContext.Provider value={updateChange}>
-              <StagedChangesContext.Provider value={stagedChange}>
-                <Row className="p-4">
-                  <Container>{children}</Container>
-                </Row>
-              </StagedChangesContext.Provider>
-            </UpdateChangeContext.Provider>
-          </SettingsContext.Provider>
-        </Container>
-      )}
-    </AsyncStateOverlay>
+    <Container fluid>
+      <Helmet>
+        <title>{title}</title>
+      </Helmet>
+      <Prompt
+        when={Object.keys(stagedChange).length > 0}
+        message="You have unsaved changes, are you sure you want to leave?"
+      ></Prompt>
+      <ContentHeader>
+        <ContentHeader.Button
+          icon={faSave}
+          updating={updating}
+          disabled={Object.keys(stagedChange).length === 0}
+          onClick={submit}
+        >
+          Save
+        </ContentHeader.Button>
+      </ContentHeader>
+      <UpdateChangeContext.Provider value={updateChange}>
+        <StagedChangesContext.Provider value={stagedChange}>
+          <Row className="p-4">
+            <Container>{children}</Container>
+          </Row>
+        </StagedChangesContext.Provider>
+      </UpdateChangeContext.Provider>
+    </Container>
   );
 };
 
-export default connect(mapStateToProps, { update: UpdateSettingsRelative })(
+export default connect(undefined, { update: UpdateSettingsRelative })(
   SettingsProvider
 );

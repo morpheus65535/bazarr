@@ -227,12 +227,14 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   const footer = useMemo(
     () => (
       <div className="d-flex flex-row flex-grow-1 justify-content-between">
-        <LanguageSelector
-          disabled={uploading}
-          options={avaliableLanguages}
-          defaultValue={language}
-          onChange={updateLanguage}
-        ></LanguageSelector>
+        <div style={{ width: "10rem" }}>
+          <LanguageSelector
+            disabled={uploading}
+            options={avaliableLanguages}
+            defaultValue={language}
+            onChange={updateLanguage}
+          ></LanguageSelector>
+        </div>
         <div>
           <Button
             hidden={!tableShow || uploading}

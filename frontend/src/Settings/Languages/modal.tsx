@@ -153,16 +153,18 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
             code,
           ]);
           return (
-            <LanguageSelector
-              options={languages}
-              defaultValue={lang}
-              onChange={(l) => {
-                if (l) {
-                  item.language = l.code2;
-                  updateItem(item);
-                }
-              }}
-            ></LanguageSelector>
+            <div style={{ width: "8rem" }}>
+              <LanguageSelector
+                options={languages}
+                defaultValue={lang}
+                onChange={(l) => {
+                  if (l) {
+                    item.language = l.code2;
+                    updateItem(item);
+                  }
+                }}
+              ></LanguageSelector>
+            </div>
           );
         },
       },

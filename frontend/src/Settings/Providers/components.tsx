@@ -58,7 +58,7 @@ export const ProviderCard: FunctionComponent<{ providerKey?: string }> = ({
     <Card className="provider-card" onClick={() => showModal(ModalKey, info)}>
       {info ? (
         <Card.Body>
-          <Card.Title>{info.key}</Card.Title>
+          <Card.Title>{info.name ?? capitalize(info.key)}</Card.Title>
           <Card.Subtitle className="text-nowrap small">
             {info.description}
           </Card.Subtitle>
@@ -276,6 +276,11 @@ export const ProviderModal: FunctionComponent = () => {
             </Col>
           </Row>
           {modification}
+          <Row hidden={info?.message === undefined}>
+            <Col>
+              <Message type="info">{info?.message}</Message>
+            </Col>
+          </Row>
         </Container>
       </UpdateChangeContext.Provider>
     </BasicModal>
