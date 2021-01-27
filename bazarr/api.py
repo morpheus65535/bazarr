@@ -295,12 +295,15 @@ class SystemReleases(Resource):
         releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
-                releases = ast.literal_eval(f.read())
-            for release in releases:
-                release[1] = release[1].replace('- ', '')
-                release[1] = release[1].split('\r\n')
-                release[1].pop(0)
-                release.append(True if release[0].lstrip('v') == os.environ["BAZARR_VERSION"] else False)
+                releases = json.loads(f.read())
+            releases = releases[:5]
+            for i, release in enumerate(releases):
+                body = release['body'].replace('- ', '').split('\r\n')[1:]
+                releases[i] = {"body": body,
+                               "name": release['name'],
+                               "date": release['date'][:10],
+                               "prerelease": release['prerelease'],
+                               "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"] else False}
 
         except Exception as e:
             logging.exception(
