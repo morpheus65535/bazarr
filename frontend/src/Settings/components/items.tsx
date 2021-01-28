@@ -1,4 +1,4 @@
-import React, { FunctionComponent, FunctionComponentFactory } from "react";
+import React, { FunctionComponent } from "react";
 import { Form } from "react-bootstrap";
 import {
   Slider as CSlider,

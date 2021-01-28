@@ -5,11 +5,11 @@ import { Column } from "react-table";
 import { BasicTable } from "..";
 import { usePayload } from "./provider";
 
-interface Props {}
+interface Props {
+  episode?: Episode;
+}
 
-const Table: FunctionComponent<Props> = () => {
-  const episode = usePayload<Episode>();
-
+const Table: FunctionComponent<Props> = ({ episode }) => {
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
       {
@@ -61,10 +61,10 @@ const Table: FunctionComponent<Props> = () => {
 };
 
 const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
-  const episode = usePayload<Episode>();
+  const episode = usePayload<Episode>(props.modalKey);
   return (
     <BasicModal title={`Tools - ${episode?.title ?? ""}`} {...props}>
-      <Table {...props}></Table>
+      <Table episode={episode} {...props}></Table>
     </BasicModal>
   );
 };

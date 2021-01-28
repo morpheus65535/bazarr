@@ -10,7 +10,13 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import { Spinner, Form, OverlayTrigger, Popover } from "react-bootstrap";
+import {
+  Spinner,
+  Form,
+  OverlayTrigger,
+  Popover,
+  SpinnerProps,
+} from "react-bootstrap";
 import {
   faTrash,
   faDownload,
@@ -85,10 +91,12 @@ export const MessageIcon: FunctionComponent<MessageIconProps> = (props) => {
   );
 };
 
-export const LoadingIndicator: FunctionComponent = ({ children }) => {
+export const LoadingIndicator: FunctionComponent<{
+  animation?: SpinnerProps["animation"];
+}> = ({ children, animation: style }) => {
   return (
     <div className="d-flex flex-column flex-grow-1 align-items-center py-5">
-      <Spinner animation="border" className="mb-2"></Spinner>
+      <Spinner animation={style ?? "border"} className="mb-2"></Spinner>
       {children}
     </div>
   );

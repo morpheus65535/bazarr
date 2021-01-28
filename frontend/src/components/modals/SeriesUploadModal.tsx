@@ -16,16 +16,19 @@ import {
   faExclamationTriangle,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-
 import BasicModal, { BasicModalProps } from "./BasicModal";
-
-import { AsyncButton, FileForm, BasicTable, MessageIcon } from "..";
-
+import {
+  AsyncButton,
+  FileForm,
+  BasicTable,
+  MessageIcon,
+  LanguageSelector,
+  useCloseModal,
+  usePayload,
+  useWhenModalShow,
+} from "..";
 import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
-
-import LanguageSelector from "../LanguageSelector";
-import { useCloseModal, useWhenModalShow } from "./provider";
 
 enum SubtitleState {
   update,
@@ -35,7 +38,6 @@ enum SubtitleState {
 }
 
 interface MovieProps {
-  series: Series;
   episodesList: AsyncState<Map<number, Episode[]>>;
   avaliableLanguages: Language[];
   update: (id: number) => void;
@@ -51,7 +53,9 @@ function mapStateToProps({ system, series }: StoreState) {
 const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   props
 ) => {
-  const { series, episodesList, avaliableLanguages, update, ...modal } = props;
+  const { episodesList, avaliableLanguages, update, ...modal } = props;
+
+  const series = usePayload<Series>(modal.modalKey);
 
   const [uploading, setUpload] = useState(false);
 
@@ -59,27 +63,36 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   const [subtitleInfoList, setSubtitleInfo] = useState<SubtitleInfo[]>([]);
 
-  const [language, setLanguage] = useState<Language | undefined>(() => {
-    const lang = series.languages.length > 0 ? series.languages[0] : undefined;
-    if (lang) {
-      return avaliableLanguages.find((v) => v.code2 === lang.code2);
+  const [language, setLanguage] = useState<Language | undefined>(undefined);
+
+  useWhenModalShow(modal.modalKey, () => {
+    if (series) {
+      const lang =
+        series.languages.length > 0 ? series.languages[0] : undefined;
+      if (lang) {
+        setLanguage(lang);
+      }
     }
-    return undefined;
   });
 
   const filelist = useMemo(() => subtitleInfoList.map((v) => v.file), [
     subtitleInfoList,
   ]);
 
-  const episodes = useMemo(
-    () => episodesList.items.get(series.sonarrSeriesId) ?? [],
-    [episodesList, series.sonarrSeriesId]
-  );
+  const episodes = useMemo(() => {
+    if (series) {
+      return episodesList.items.get(series.sonarrSeriesId) ?? [];
+    }
+    return undefined;
+  }, [episodesList, series]);
 
   const [maxSeason, maxEpisode] = useMemo(() => {
-    const season = episodes.reduce((v, e) => Math.max(v, e.season), 0);
-    const episode = episodes.reduce((v, e) => Math.max(v, e.episode), 0);
-    return [season, episode];
+    if (episodes) {
+      const season = episodes.reduce((v, e) => Math.max(v, e.season), 0);
+      const episode = episodes.reduce((v, e) => Math.max(v, e.episode), 0);
+      return [season, episode];
+    }
+    return [0, 0];
   }, [episodes]);
 
   const validItem = useCallback(
@@ -96,9 +109,10 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
       }
 
       if (
-        !info.instance ||
-        info.season !== info.instance.season ||
-        info.episode !== info.instance.episode
+        episodes &&
+        (!info.instance ||
+          info.season !== info.instance.season ||
+          info.episode !== info.instance.episode)
       ) {
         info.instance = episodes.find(
           (e) => e.season === info.season && e.episode === info.episode
@@ -173,6 +187,10 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   const uploadSubtitles = useCallback(
     async (list: SubtitleInfo[]) => {
+      if (series === undefined) {
+        return;
+      }
+
       const { sonarrSeriesId } = series;
       const langCode = language?.code2;
 
@@ -227,7 +245,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
           <LanguageSelector
             disabled={uploading}
             options={avaliableLanguages}
-            defaultValue={language}
+            value={language}
             onChange={updateLanguage}
           ></LanguageSelector>
         </div>
@@ -246,7 +264,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
             promise={() => uploadSubtitles(subtitleInfoList)}
             onSuccess={() => {
               closeModal();
-              update(series.sonarrSeriesId);
+              update(series!.sonarrSeriesId);
             }}
           >
             Upload
@@ -273,7 +291,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   return (
     <BasicModal
       size="lg"
-      title={`Upload - ${series.title}`}
+      title={`Upload - ${series?.title}`}
       closeable={!uploading}
       footer={footer}
       {...modal}

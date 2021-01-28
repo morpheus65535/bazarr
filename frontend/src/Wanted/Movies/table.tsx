@@ -52,7 +52,7 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
             <AsyncButton
               as={Badge}
               key={idx}
-              className="px-1"
+              className="px-1 mr-2"
               variant="secondary"
               promise={() =>
                 MoviesApi.downloadSubtitles(movieid, {
@@ -63,7 +63,7 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
               }
               onSuccess={update}
             >
-              <span className="mr-1">{item.code2}</span>
+              <span className="pr-1">{item.code2}</span>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

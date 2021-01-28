@@ -23,7 +23,7 @@ export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
 ) => {
   const { ...modal } = props;
 
-  const movie = usePayload<Movie>();
+  const movie = usePayload<Movie>(modal.modalKey);
 
   const [history, setHistory] = useState<AsyncState<MovieHistory[]>>({
     updating: false,
@@ -102,7 +102,7 @@ interface EpisodeHistoryProps {}
 export const EpisodeHistoryModal: FunctionComponent<
   BasicModalProps & EpisodeHistoryProps
 > = (props) => {
-  const episode = usePayload<Episode>();
+  const episode = usePayload<Episode>(props.modalKey);
 
   const [history, setHistory] = useState<AsyncState<EpisodeHistory[]>>({
     updating: false,

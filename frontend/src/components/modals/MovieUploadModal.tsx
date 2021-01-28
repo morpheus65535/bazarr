@@ -1,20 +1,18 @@
 import React, { FunctionComponent, useState, useMemo } from "react";
 import { connect } from "react-redux";
 import BasicModal, { BasicModalProps } from "./BasicModal";
-
-import { AsyncButton, FileForm } from "..";
-
-import { useCloseModal } from ".";
-
+import {
+  AsyncButton,
+  FileForm,
+  useCloseModal,
+  usePayload,
+  useWhenModalShow,
+  LanguageSelector,
+} from "..";
 import { Container, Form } from "react-bootstrap";
-
 import { MoviesApi } from "../../apis";
 import { updateMovieInfo } from "../../@redux/actions";
-
-import LanguageSelector from "../LanguageSelector";
-
 interface MovieProps {
-  movie: Movie;
   avaliableLanguages: Language[];
   update: (id: number) => void;
 }
@@ -28,20 +26,23 @@ function mapStateToProps({ system }: StoreState) {
 const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   props
 ) => {
-  const { movie, avaliableLanguages, update, ...modal } = props;
+  const { avaliableLanguages, update, ...modal } = props;
+
+  const movie = usePayload<Movie>(modal.modalKey);
 
   const closeModal = useCloseModal();
 
   const [uploading, setUpload] = useState(false);
 
-  const [language, setLanguage] = useState<Language | undefined>(() => {
-    const lang = movie.languages.length > 0 ? movie.languages[0] : undefined;
-    if (lang) {
-      return avaliableLanguages.find((v) => v.code2 === lang.code2);
-    }
+  const [language, setLanguage] = useState<Language | undefined>(undefined);
 
-    return undefined;
+  useWhenModalShow(modal.modalKey, () => {
+    if (movie) {
+      const lang = movie.languages.length > 0 ? movie.languages[0] : undefined;
+      setLanguage(lang);
+    }
   });
+
   const [file, setFile] = useState<File | undefined>(undefined);
   const [forced, setForced] = useState(false);
 
@@ -54,7 +55,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
       disabled={!canUpload}
       onChange={setUpload}
       promise={() =>
-        MoviesApi.uploadSubtitles(movie.radarrId, {
+        MoviesApi.uploadSubtitles(movie!.radarrId, {
           file: file!,
           forced,
           hi: false,
@@ -63,7 +64,9 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
       }
       onSuccess={() => {
         closeModal();
-        update(movie.radarrId);
+        if (movie) {
+          update(movie.radarrId);
+        }
       }}
     >
       Upload
@@ -72,7 +75,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   return (
     <BasicModal
-      title={`Upload - ${movie.title}`}
+      title={`Upload - ${movie?.title}`}
       closeable={!uploading}
       footer={footer}
       {...modal}
@@ -83,7 +86,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
             <Form.Label>Language</Form.Label>
             <LanguageSelector
               options={avaliableLanguages}
-              defaultValue={language}
+              value={language}
               onChange={(lang) => {
                 if (lang) {
                   setLanguage(lang);

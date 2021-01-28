@@ -448,23 +448,25 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                             if s_item.strip():
                                 releases.append(s_item)
 
-                if len(releases) == 0:
-                    releases = ['n/a']
-
                 if s.uploader and s.uploader.strip():
                     s_uploader = s.uploader.strip()
                 else:
-                    s_uploader = 'n/a'
+                    s_uploader = None
 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
-                         score_without_hash=score_without_hash, forced=str(s.language.forced),
-                         language=str(s.language.basename), hearing_impaired=str(s.hearing_impaired),
+                         score_without_hash=score_without_hash,
+                         forced=str(s.language.forced),
+                         language=str(s.language.basename),
+                         hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
-                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
-                         release_info=releases, uploader=s_uploader))
+                         url=s.page_link,
+                         matches=list(matches),
+                         dont_matches=list(not_matched),
+                         release_info=releases,
+                         uploader=s_uploader))
 
             final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
                                      reverse=True)

@@ -30,7 +30,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const profile = usePayload<LanguagesProfile>();
+  const profile = usePayload<LanguagesProfile>(modal.modalKey);
 
   const closeModal = useCloseModal();
 

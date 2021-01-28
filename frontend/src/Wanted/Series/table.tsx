@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
             <AsyncButton
               as={Badge}
               key={idx}
-              className="mx-1"
+              className="mx-1 mr-2"
               variant="secondary"
               promise={() =>
                 EpisodesApi.downloadSubtitles(seriesid, episodeid, {

@@ -20,7 +20,7 @@ function mapStateToProps({ system }: StoreState) {
 const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
   const { profiles, onSuccess, submit, ...modal } = props;
 
-  const item = usePayload<ExtendItem>();
+  const item = usePayload<ExtendItem>(modal.modalKey);
 
   const closeModal = useCloseModal();
 

@@ -42,3 +42,11 @@ interface BlacklistDeleteForm {
   provider: string;
   subs_id: string;
 }
+
+interface ManualDownloadForm {
+  language: string;
+  hi: PythonBoolean;
+  forced: PythonBoolean;
+  provider: string;
+  subtitle: any;
+}

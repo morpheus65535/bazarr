@@ -141,3 +141,20 @@ interface SeriesBlacklist extends BlacklistItem {
   seriesTitle: string;
   sonarrSeriesId: number;
 }
+
+interface ManualSearchResult {
+  matches: string[];
+  dont_matches: string[];
+  language: string;
+  forced: PythonBoolean;
+  hearing_impaired: PythonBoolean;
+  orig_score: number;
+  provider: string;
+  release_info: string[];
+  score: number;
+  score_without_hash: number;
+  // TODO: Remove this on server side
+  subtitle: any;
+  uploader?: string;
+  url?: string;
+}

@@ -2,7 +2,6 @@ import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
-
 import {
   faSync,
   faHistory,
@@ -12,9 +11,7 @@ import {
   faSearch,
   faCloudUploadAlt,
 } from "@fortawesome/free-solid-svg-icons";
-
 import { Container, Row } from "react-bootstrap";
-
 import {
   ContentHeader,
   ItemEditorModal,
@@ -25,10 +22,13 @@ import {
   MovieUploadModal,
   useShowModal,
 } from "../../components";
-
 import Table from "./table";
-import { MoviesApi } from "../../apis";
+import { MoviesApi, ProvidersApi } from "../../apis";
 import { updateMovieInfo } from "../../@redux/actions";
+import {
+  ManualSearchModal,
+  ManualSearchPayload,
+} from "../../components/modals/ManualSearchModal";
 
 interface Params {
   id: string;
@@ -84,7 +84,18 @@ const MovieDetailView: FunctionComponent<Props> = ({
           >
             Search
           </ContentHeader.AsyncButton>
-          <ContentHeader.Button icon={faUser}>Manual</ContentHeader.Button>
+          <ContentHeader.Button
+            icon={faUser}
+            onClick={() =>
+              showModal<ManualSearchPayload>("manual-search", {
+                id: item.radarrId,
+                title: item.title,
+                promise: (id) => ProvidersApi.movies(id),
+              })
+            }
+          >
+            Manual
+          </ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}
             onClick={() => showModal("history", item)}
@@ -103,7 +114,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           <ContentHeader.Button
             disabled={!allowEdit}
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload")}
+            onClick={() => showModal("upload", item)}
           >
             Upload
           </ContentHeader.Button>
@@ -128,9 +139,29 @@ const MovieDetailView: FunctionComponent<Props> = ({
         }
         onSuccess={() => update(id)}
       ></ItemEditorModal>
-      <SubtitleToolModal size="lg" modalKey="tools"></SubtitleToolModal>
-      <MovieHistoryModal size="lg" modalKey="history"></MovieHistoryModal>
-      <MovieUploadModal modalKey="upload" movie={item}></MovieUploadModal>
+      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
+      <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
+      <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
+      <ManualSearchModal
+        modalKey="manual-search"
+        onDownload={() => update(item.radarrId)}
+        onSelect={(id, result) => {
+          const {
+            language,
+            hearing_impaired,
+            forced,
+            provider,
+            subtitle,
+          } = result;
+          return ProvidersApi.downloadMovieSubtitle(id, {
+            language,
+            hi: hearing_impaired,
+            forced,
+            provider,
+            subtitle,
+          });
+        }}
+      ></ManualSearchModal>
     </Container>
   );
 };

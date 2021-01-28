@@ -1,9 +1,7 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column, TableOptions } from "react-table";
-
 import { connect } from "react-redux";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBookmark,
@@ -11,9 +9,7 @@ import {
   faBriefcase,
   faHistory,
 } from "@fortawesome/free-solid-svg-icons";
-
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-
 import {
   GroupTable,
   ActionBadge,
@@ -22,12 +18,18 @@ import {
   EpisodeHistoryModal,
   useShowModal,
 } from "../../components";
-
 import { SubtitleAction } from "./components";
+import { ProvidersApi } from "../../apis";
+import {
+  ManualSearchModal,
+  ManualSearchPayload,
+} from "../../components/modals/ManualSearchModal";
+import { updateSeriesInfo } from "../../@redux/actions";
 
 interface Props {
   series: Series;
   episodeList: AsyncState<Map<number, Episode[]>>;
+  update: (id: number) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -36,7 +38,7 @@ function mapStateToProps({ series }: StoreState) {
   };
 }
 
-const Table: FunctionComponent<Props> = ({ series, episodeList }) => {
+const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
   const id = series.sonarrSeriesId;
   const list = episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
@@ -130,9 +132,19 @@ const Table: FunctionComponent<Props> = ({ series, episodeList }) => {
         className: "d-flex flex-nowrap",
         Cell: (row) => {
           const episode = row.row.original;
+          const id = row.value;
           return (
             <React.Fragment>
-              <ActionBadge icon={faUser}></ActionBadge>
+              <ActionBadge
+                icon={faUser}
+                onClick={() =>
+                  showModal<ManualSearchPayload>("manual-search", {
+                    id,
+                    title: episode.title,
+                    promise: (id) => ProvidersApi.episodes(id),
+                  })
+                }
+              ></ActionBadge>
               <ActionBadge
                 icon={faHistory}
                 onClick={() => {
@@ -186,10 +198,34 @@ const Table: FunctionComponent<Props> = ({ series, episodeList }) => {
           ></GroupTable>
         )}
       </AsyncStateOverlay>
-      <SubtitleToolModal size="lg" modalKey="tools"></SubtitleToolModal>
-      <EpisodeHistoryModal size="lg" modalKey="history"></EpisodeHistoryModal>
+      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
+      <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
+      <ManualSearchModal
+        modalKey="manual-search"
+        onDownload={() => update(series.sonarrSeriesId)}
+        onSelect={(id, result) => {
+          const {
+            language,
+            hearing_impaired,
+            forced,
+            provider,
+            subtitle,
+          } = result;
+          return ProvidersApi.downloadEpisodeSubtitle(
+            series.sonarrSeriesId,
+            id,
+            {
+              language,
+              hi: hearing_impaired,
+              forced,
+              provider,
+              subtitle,
+            }
+          );
+        }}
+      ></ManualSearchModal>
     </React.Fragment>
   );
 };
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, { update: updateSeriesInfo })(Table);

@@ -1218,8 +1218,8 @@ class ProviderEpisodes(Resource):
     @authenticate
     def post(self):
         # Manual Download
-        sonarrSeriesId = request.form.get('seriesid')
-        sonarrEpisodeId = request.form.get('episodeid')
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
         episodeInfo = database.execute("SELECT title, path, scene_name FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']

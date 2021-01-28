@@ -46,9 +46,10 @@ export function useIsModalShow(key: string) {
   return key === currentKey;
 }
 
-export function usePayload<T>(): T | undefined {
+export function usePayload<T>(key: string): T | undefined {
   const payload = useContext(PayloadContext)[0];
-  return payload as T;
+  const show = useIsModalShow(key);
+  return show ? (payload as T) : undefined;
 }
 
 export function useWhenModalShow(key: string, callback: React.EffectCallback) {

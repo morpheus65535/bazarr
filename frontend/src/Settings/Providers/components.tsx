@@ -90,7 +90,7 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 export const ProviderModal: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo | undefined>();
+  const payload = usePayload<ProviderInfo | undefined>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
 

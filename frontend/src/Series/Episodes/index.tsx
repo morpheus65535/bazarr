@@ -106,7 +106,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             disabled={item.episodeFileCount === 0 ?? false}
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload")}
+            onClick={() => showModal("upload", item)}
           >
             Upload
           </ContentHeader.Button>
@@ -131,7 +131,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         }
         onSuccess={(item) => update((item as Series).sonarrSeriesId)}
       ></ItemEditorModal>
-      <SeriesUploadModal series={item} modalKey="upload"></SeriesUploadModal>
+      <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
     </Container>
   );
 };
