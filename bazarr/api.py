@@ -1118,14 +1118,14 @@ class ProviderMovies(Resource):
     def get(self):
         # Manual Search
         radarrId = request.args.get('radarrid')
-        movieInfo = database.execute("SELECT title, path, sceneName FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+        movieInfo = database.execute("SELECT title, path, sceneName, profileId FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
         title = movieInfo['title']
         moviePath = movieInfo['path']
         sceneName = movieInfo['sceneName']
+        profileId = movieInfo['profileId']
         if sceneName is None: sceneName = "None"
 
-        profileId = request.args.getlist('profileid')
         
         providers_list = get_providers()
         providers_auth = get_providers_auth()
@@ -1194,14 +1194,17 @@ class ProviderEpisodes(Resource):
     def get(self):
         # Manual Search
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language, sonarrSeriesId FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
         sceneName = episodeInfo['scene_name']
-        if sceneName is None: sceneName = "None"
+        seriesId = episodeInfo['sonarrSeriesId']
 
-        profileId = request.args.get('profileid')
+        seriesInfo = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId=?", (seriesId,), only_one=True)
+
+        profileId = seriesInfo['profileId']
+        if sceneName is None: sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()

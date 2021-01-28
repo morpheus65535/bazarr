@@ -321,10 +321,9 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_items = get_profiles_list(profile_id=int(profileId))['items']
 
     for language in language_items:
-        lang_id, lang, forced, hi, audio_exclude = language.values()
+        id, language, forced, hi, audio_exclude = language.values()
 
-    for lang in language:
-        lang = alpha3_from_alpha2(lang)
+        lang = alpha3_from_alpha2(language)
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')

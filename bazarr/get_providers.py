@@ -86,8 +86,9 @@ def provider_pool():
 
 def get_providers():
     changed = False
-    providers_list = get_array_from(settings.general.enabled_providers)
-    for provider in providers_list:
+    providers_list = []
+    providers = get_array_from(settings.general.enabled_providers)
+    for provider in providers:
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
         providers_list.append(provider)
         
