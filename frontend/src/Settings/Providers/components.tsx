@@ -3,7 +3,6 @@ import React, {
   useMemo,
   useState,
   useCallback,
-  useEffect,
 } from "react";
 import { Card, Col, Row, Container, Button } from "react-bootstrap";
 import { ProviderList, ProviderInfo } from "./list";
@@ -12,8 +11,8 @@ import {
   usePayload,
   BasicModal,
   Selector,
-  useIsModalShow,
   useCloseModal,
+  useWhenModalShow,
 } from "../../components";
 import {
   Group,
@@ -144,14 +143,10 @@ export const ProviderModal: FunctionComponent = () => {
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
 
-  const show = useIsModalShow(ModalKey);
-
-  useEffect(() => {
-    if (show) {
-      setInfo(payload);
-      setChange({});
-    }
-  }, [show, payload]);
+  useWhenModalShow(ModalKey, () => {
+    setInfo(payload);
+    setChange({});
+  });
 
   const canSave = useMemo(() => {
     if (payload === undefined) {

@@ -25,7 +25,7 @@ import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 import LanguageSelector from "../LanguageSelector";
-import { useCloseModal, useIsModalShow } from "./provider";
+import { useCloseModal, useWhenModalShow } from "./provider";
 
 enum SubtitleState {
   update,
@@ -216,13 +216,9 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
 
   const canUpload = tableShow && isValid && language?.code2 !== undefined;
 
-  const show = useIsModalShow(modal.modalKey);
-
-  useEffect(() => {
-    if (show) {
-      setFiles([]);
-    }
-  }, [show, setFiles]);
+  useWhenModalShow(modal.modalKey, () => {
+    setFiles([]);
+  });
 
   const footer = useMemo(
     () => (

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Form } from "react-bootstrap";
 import {
   Slider as CSlider,
@@ -8,7 +8,7 @@ import {
 } from "../../components";
 import { useUpdate, useLatest, useCollapse } from ".";
 import { isBoolean, isNumber, isString, isArray } from "lodash";
-import { isReactText } from "../../utilites";
+import { isReactText, useOnShow } from "../../utilites";
 
 export const Message: FunctionComponent<{
   type?: "warning" | "info";
@@ -81,9 +81,9 @@ export const Check: FunctionComponent<CheckProps> = ({
 
   const defaultValue = useLatest<boolean>(settingKey, isBoolean, override);
 
-  useEffect(() => {
+  useOnShow(() => {
     collapse(defaultValue ?? false);
-  }, [defaultValue, collapse]);
+  });
 
   return (
     <Form.Check
@@ -120,11 +120,11 @@ export function Selector<
     (v): v is T => isString(v) || isNumber(v) || isArray(v)
   );
 
-  useEffect(() => {
+  useOnShow(() => {
     if (typeof defaultValue === "string") {
       collapse(defaultValue);
     }
-  }, [defaultValue, collapse]);
+  });
 
   return (
     <CSelector

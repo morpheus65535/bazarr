@@ -51,18 +51,15 @@ export function usePayload<T>(): T | undefined {
   return payload as T;
 }
 
-// export function useWhenModalShow(
-//   key: string,
-//   callback: React.EffectCallback,
-//   deps: string
-// ) {
-//   const show = useIsModalShow(key);
-//   useEffect(() => {
-//     if (show) {
-//       callback();
-//     }
-//   }, [show, callback]);
-// }
+export function useWhenModalShow(key: string, callback: React.EffectCallback) {
+  const show = useIsModalShow(key);
+
+  useEffect(() => {
+    if (show) {
+      return callback();
+    }
+  }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
+}
 
 interface Props {
   value?: [string, any];
