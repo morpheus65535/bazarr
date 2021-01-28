@@ -183,11 +183,13 @@ raw_keys = ['movie_default_forced', 'serie_default_forced']
 array_keys = ['excluded_tags',
                 'subzero_mods',
                 'excluded_series_types',
-                'serie_default_language',
-                'movie_default_language',
-                'path_mappings',
                 'enabled_providers',
+                'path_mappings',
                 'path_mappings_movie']
+
+str_keys = ['chmod']
+
+none_keys = ['', 'None', 'null', 'undefined']
 
 def get_settings():
     result = dict()
@@ -206,7 +208,7 @@ def get_settings():
 
             if key not in raw_keys:
                 # Do some postprocessings
-                if value == '' or value == 'None':
+                if value in none_keys:
                     if key in array_keys:
                         value = []
                     else:
@@ -221,10 +223,11 @@ def get_settings():
                     value = value.split(',')
                     pass
                 else:
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        pass
+                    if key not in str_keys:
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            pass
             
             values_dict[key] = value
         
@@ -244,7 +247,7 @@ def save_settings(settings_items):
 
     # Subzero Mods
     update_subzero = False
-    subzero_mods = settings.general.subzero_mods.strip().split(',')
+    subzero_mods = get_array_from(settings.general.subzero_mods)
 
     if len(subzero_mods) == 1 and subzero_mods[0] == '':
         subzero_mods = []
@@ -253,12 +256,14 @@ def save_settings(settings_items):
 
         settings_keys = key.split('-')
         
-        # Make sure that text based form values aren't pass as list unless they are language list
+        # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
+            if value in none_keys:
+                value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value == [''] or value == ['null'] or value == ['undefined']:
+        if settings_keys[-1] in array_keys and value[0] in none_keys :
             value = []
 
         if value == 'true':
@@ -420,6 +425,14 @@ def url_radarr_short():
 
     return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
 
+def get_array_from(property):
+    if property:
+        if '[' in property:
+            return ast.literal_eval(property)
+        else:
+            return property.split(',')
+    else:
+        return []
 
 def configure_captcha_func():
     # set anti-captcha provider and key

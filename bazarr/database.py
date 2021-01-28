@@ -10,7 +10,7 @@ from sqlite3worker import Sqlite3Worker
 
 from get_args import args
 from helper import path_mappings
-from config import settings
+from config import settings, get_array_from
 
 global profile_id_list
 profile_id_list = []
@@ -228,7 +228,7 @@ def get_exclusion_clause(type):
             where_clause += ' AND table_movies.monitored = "True"'
 
     if type == 'series':
-        typesList = ast.literal_eval(settings.sonarr.excluded_series_types)
+        typesList = get_array_from(settings.sonarr.excluded_series_types)
         for type in typesList:
             where_clause += ' AND table_shows.seriesType != "' + type + '"'
 

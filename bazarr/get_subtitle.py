@@ -21,7 +21,7 @@ from subliminal_patch.score import compute_score
 from subliminal_patch.subtitle import Subtitle
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
     alpha2_from_language, alpha3_from_language
-from config import settings
+from config import settings, get_array_from
 from helper import path_mappings, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, get_binary, get_blacklist, notify_sonarr, notify_radarr
@@ -187,7 +187,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.info("BAZARR All providers are throttled")
             return None
 
-        subz_mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.items():
@@ -487,7 +487,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
-    subtitle.mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+    subtitle.mods = get_array_from(settings.general.subzero_mods)
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
@@ -644,7 +644,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     sub = Subtitle(
         lang_obj,
-        mods=settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        mods = get_array_from(settings.general.subzero_mods)
     )
 
     sub.content = subtitle.read()

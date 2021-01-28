@@ -1935,7 +1935,7 @@ api.add_resource(BadgesMovies, '/badges/movies')
 api.add_resource(BadgesProviders, '/badges/providers')
 api.add_resource(Notifications, '/notifications')
 
-# Search action happens in frondend
+# Search action happens in frontend
 # api.add_resource(Search, '/search')
 
 api.add_resource(Providers, '/providers')

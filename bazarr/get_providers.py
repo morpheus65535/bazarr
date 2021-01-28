@@ -10,7 +10,7 @@ import requests
 import ast
 
 from get_args import args
-from config import settings
+from config import settings, get_array_from
 from event_handler import event_stream
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.providers.opensubtitles import DownloadLimitReached
@@ -86,24 +86,22 @@ def provider_pool():
 
 def get_providers():
     changed = False
-    providers_list = []
-    if settings.general.enabled_providers:
-        providers = ast.literal_eval(settings.general.enabled_providers)
-        for provider in providers:
-            reason, until, throttle_desc = tp.get(provider, (None, None, None))
-            providers_list.append(provider)
-            
-            if reason:
-                now = datetime.datetime.now()
-                if now < until:
-                    logging.debug("Not using %s until %s, because of: %s", provider,
-                                  until.strftime("%y/%m/%d %H:%M"), reason)
-                    providers_list.remove(provider)
-                else:
-                    logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
-                    del tp[provider]
-                    settings.general.throtteled_providers = str(tp)
-                    changed = True
+    providers_list = get_array_from(settings.general.enabled_providers)
+    for provider in providers_list:
+        reason, until, throttle_desc = tp.get(provider, (None, None, None))
+        providers_list.append(provider)
+        
+        if reason:
+            now = datetime.datetime.now()
+            if now < until:
+                logging.debug("Not using %s until %s, because of: %s", provider,
+                                until.strftime("%y/%m/%d %H:%M"), reason)
+                providers_list.remove(provider)
+            else:
+                logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
+                del tp[provider]
+                settings.general.throtteled_providers = str(tp)
+                changed = True
         
         if changed:
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -238,25 +236,25 @@ def throttled_count(name):
 
 def update_throttled_provider():
     changed = False
-    if settings.general.enabled_providers:
-        providers = ast.literal_eval(settings.general.enabled_providers)
-        for provider in list(tp):
-            if provider not in providers:
+    providers_list = get_array_from(settings.general.enabled_providers)
+
+    for provider in list(tp):
+        if provider not in providers_list:
+            del tp[provider]
+            settings.general.throtteled_providers = str(tp)
+            changed = True
+
+        reason, until, throttle_desc = tp.get(provider, (None, None, None))
+
+        if reason:
+            now = datetime.datetime.now()
+            if now < until:
+                pass
+            else:
+                logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                 del tp[provider]
                 settings.general.throtteled_providers = str(tp)
                 changed = True
-
-            reason, until, throttle_desc = tp.get(provider, (None, None, None))
-
-            if reason:
-                now = datetime.datetime.now()
-                if now < until:
-                    pass
-                else:
-                    logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
-                    del tp[provider]
-                    settings.general.throtteled_providers = str(tp)
-                    changed = True
         
         if changed:
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -268,11 +266,10 @@ def update_throttled_provider():
 def list_throttled_providers():
     update_throttled_provider()
     throttled_providers = []
-    if settings.general.enabled_providers:
-        providers = ast.literal_eval(settings.general.enabled_providers)
-        for provider in providers:
-            reason, until, throttle_desc = tp.get(provider, (None, None, None))
-            throttled_providers.append([provider, reason, pretty.date(until)])
+    providers = get_array_from(settings.general.enabled_providers)
+    for provider in providers:
+        reason, until, throttle_desc = tp.get(provider, (None, None, None))
+        throttled_providers.append([provider, reason, pretty.date(until)])
     return throttled_providers
 
 
