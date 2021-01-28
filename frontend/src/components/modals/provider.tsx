@@ -62,6 +62,21 @@ export function useWhenModalShow(key: string, callback: React.EffectCallback) {
   }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
+export function useWhenPayloadUpdate(
+  key: string,
+  callback: React.EffectCallback
+) {
+  const [last, setLast] = useState<any>(undefined);
+  const payload = usePayload(key);
+
+  useWhenModalShow(key, () => {
+    if (payload !== last) {
+      setLast(payload);
+      callback();
+    }
+  });
+}
+
 interface Props {
   value?: [string, any];
 }

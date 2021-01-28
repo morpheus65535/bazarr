@@ -11,6 +11,7 @@ import {
   BasicTable,
   AsyncButton,
   LoadingIndicator,
+  useWhenPayloadUpdate,
 } from "..";
 import { Column } from "react-table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -30,16 +31,16 @@ import {
   Col,
   Dropdown,
 } from "react-bootstrap";
-import { useWhenModalShow } from "./provider";
+import { ProvidersApi } from "../../apis";
 
-export interface ManualSearchPayload {
-  title: string;
-  id: number;
-  promise: (id: number) => Promise<ManualSearchResult[]>;
+function isMovie(v: any): v is Movie {
+  return "radarrId" in v;
 }
 
+type SupportType = Movie | Episode;
+
 interface Props {
-  onSelect: (id: number, result: ManualSearchResult) => Promise<void>;
+  onSelect: (item: SupportType, result: ManualSearchResult) => Promise<void>;
   onDownload?: () => void;
 }
 
@@ -52,33 +53,30 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
   const [searching, setSearch] = useState(false);
   const [start, setStart] = useState(false);
 
-  const payload = usePayload<ManualSearchPayload>(modal.modalKey);
+  const item = usePayload<SupportType>(modal.modalKey);
 
   const search = useCallback(() => {
-    if (payload) {
-      const { id, promise } = payload;
+    if (item) {
       setStart(true);
       setSearch(true);
-      promise(id)
-        .then((data) => setResult(data))
-        .finally(() => setSearch(false));
+      let promise: Promise<ManualSearchResult[]>;
+      if (isMovie(item)) {
+        promise = ProvidersApi.movies(item.radarrId);
+      } else {
+        promise = ProvidersApi.episodes(item.sonarrEpisodeId);
+      }
+      promise.then((data) => setResult(data)).finally(() => setSearch(false));
     }
-  }, [payload]);
+  }, [item]);
 
-  const [lastId, setId] = useState<number | undefined>(undefined);
-
-  useWhenModalShow(modal.modalKey, () => {
-    const id = payload?.id;
-    if (id !== lastId) {
-      cancel();
-      setId(id);
-    }
-  });
-
-  const cancel = useCallback(() => {
+  const reset = useCallback(() => {
     setStart(false);
     setSearch(false);
   }, []);
+
+  useWhenPayloadUpdate(modal.modalKey, () => {
+    reset();
+  });
 
   const columns = useMemo<Column<ManualSearchResult>[]>(
     () => [
@@ -90,7 +88,7 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
             <AsyncButton
               size="sm"
               variant="light"
-              promise={() => onSelect(payload!.id, result)}
+              promise={() => onSelect(item!, result)}
               onSuccess={onDownload}
             >
               <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
@@ -171,7 +169,7 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
         },
       },
     ],
-    [onSelect, payload, onDownload]
+    [onSelect, item, onDownload]
   );
 
   const content = useMemo<JSX.Element>(() => {
@@ -198,20 +196,27 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
 
   const footer = useMemo(
     () => (
-      <Button variant="danger" disabled={!start} onClick={cancel}>
+      <Button variant="danger" disabled={!start} onClick={reset}>
         Reset
       </Button>
     ),
-    [start, cancel]
+    [start, reset]
   );
 
+  const title = useMemo(() => {
+    let title = "Unknown";
+    if (item) {
+      if (isMovie(item)) {
+        title = item.title;
+      } else {
+        title = item.title;
+      }
+    }
+    return `Search - ${title}`;
+  }, [item]);
+
   return (
-    <BasicModal
-      size={start ? "xl" : "lg"}
-      title={`Search - ${payload?.title ?? "Unknown"}`}
-      footer={footer}
-      {...modal}
-    >
+    <BasicModal size="xl" title={title} footer={footer} {...modal}>
       {content}
     </BasicModal>
   );

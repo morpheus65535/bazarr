@@ -115,7 +115,6 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           <Container fluid>
             <Row className="text-white">
               <h1>{item.title}</h1>
-              {/* TODO: Tooltip */}
             </Row>
             <Row className="text-white">{detailBadges}</Row>
             <Row className="text-white">{audioBadges}</Row>

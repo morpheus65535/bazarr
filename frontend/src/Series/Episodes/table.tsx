@@ -20,10 +20,7 @@ import {
 } from "../../components";
 import { SubtitleAction } from "./components";
 import { ProvidersApi } from "../../apis";
-import {
-  ManualSearchModal,
-  ManualSearchPayload,
-} from "../../components/modals/ManualSearchModal";
+import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 interface Props {
@@ -132,18 +129,11 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         className: "d-flex flex-nowrap",
         Cell: (row) => {
           const episode = row.row.original;
-          const id = row.value;
           return (
             <React.Fragment>
               <ActionBadge
                 icon={faUser}
-                onClick={() =>
-                  showModal<ManualSearchPayload>("manual-search", {
-                    id,
-                    title: episode.title,
-                    promise: (id) => ProvidersApi.episodes(id),
-                  })
-                }
+                onClick={() => showModal<Episode>("manual-search", episode)}
               ></ActionBadge>
               <ActionBadge
                 icon={faHistory}
@@ -203,7 +193,8 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
       <ManualSearchModal
         modalKey="manual-search"
         onDownload={() => update(series.sonarrSeriesId)}
-        onSelect={(id, result) => {
+        onSelect={(item, result) => {
+          item = item as Episode;
           const {
             language,
             hearing_impaired,
@@ -212,8 +203,8 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
             subtitle,
           } = result;
           return ProvidersApi.downloadEpisodeSubtitle(
-            series.sonarrSeriesId,
-            id,
+            item.sonarrSeriesId,
+            item.sonarrEpisodeId,
             {
               language,
               hi: hearing_impaired,

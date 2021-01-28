@@ -25,10 +25,7 @@ import {
 import Table from "./table";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import { updateMovieInfo } from "../../@redux/actions";
-import {
-  ManualSearchModal,
-  ManualSearchPayload,
-} from "../../components/modals/ManualSearchModal";
+import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 
 interface Params {
   id: string;
@@ -86,13 +83,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           </ContentHeader.AsyncButton>
           <ContentHeader.Button
             icon={faUser}
-            onClick={() =>
-              showModal<ManualSearchPayload>("manual-search", {
-                id: item.radarrId,
-                title: item.title,
-                promise: (id) => ProvidersApi.movies(id),
-              })
-            }
+            onClick={() => showModal<Movie>("manual-search", item)}
           >
             Manual
           </ContentHeader.Button>
@@ -145,7 +136,8 @@ const MovieDetailView: FunctionComponent<Props> = ({
       <ManualSearchModal
         modalKey="manual-search"
         onDownload={() => update(item.radarrId)}
-        onSelect={(id, result) => {
+        onSelect={(item, result) => {
+          item = item as Movie;
           const {
             language,
             hearing_impaired,
@@ -153,7 +145,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
             provider,
             subtitle,
           } = result;
-          return ProvidersApi.downloadMovieSubtitle(id, {
+          return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
             language,
             hi: hearing_impaired,
             forced,
