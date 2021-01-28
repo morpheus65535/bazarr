@@ -102,6 +102,8 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
           </Form.Group>
           <Form.Group>
             <Form.Check
+              custom
+              id="forced-checkbox"
               defaultChecked={forced}
               onChange={(e) => setForced(e.target.checked)}
               label="Forced"

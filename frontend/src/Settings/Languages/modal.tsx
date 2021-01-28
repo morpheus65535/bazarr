@@ -175,6 +175,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
           const item = row.row.original;
           return (
             <Form.Check
+              custom
+              id={`${item.language}-forced`}
               defaultChecked={row.value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
@@ -191,6 +193,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
           const item = row.row.original;
           return (
             <Form.Check
+              custom
+              id={`${item.language}-hi`}
               defaultChecked={row.value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
@@ -207,6 +211,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
           const item = row.row.original;
           return (
             <Form.Check
+              custom
+              id={`${item.language}-audio`}
               defaultChecked={row.value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";
@@ -266,7 +272,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
             updateProfile("cutoff", num);
           }}
         ></Selector>
-        <Message type="info">Ignore others if existing</Message>
+        <Message>Ignore others if existing</Message>
       </Input>
     </BasicModal>
   );

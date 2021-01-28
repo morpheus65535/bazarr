@@ -32,7 +32,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 options={folderOptions}
                 settingKey="settings-general-subfolder"
               ></Selector>
-              <Message type="info">
+              <Message>
                 Choose the folder you wish to store/read the subtitles
               </Message>
             </Input>
@@ -50,7 +50,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Upgrade Previously Downloaded Subtitles"
                 settingKey="settings-general-upgrade_subs"
               ></Check>
-              <Message type="info">
+              <Message>
                 Schedule a task to upgrade subtitles previously downloaded by
                 Bazarr.
               </Message>
@@ -62,7 +62,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 settingKey="settings-general-days_to_upgrade_subs"
                 max={30}
               ></Slider>
-              <Message type="info">
+              <Message>
                 Number of days to go back in history to upgrade subtitles
               </Message>
             </Input>
@@ -71,7 +71,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Upgrade Manually Downloaded Subtitles"
                 settingKey="settings-general-upgrade_manual"
               ></Check>
-              <Message type="info">
+              <Message>
                 Enable or disable upgrade of manually searched and downloaded
                 subtitles.
               </Message>
@@ -84,14 +84,39 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input>
               <Selector
-                disabled
+                clearable
                 settingKey="settings-general-anti_captcha_provider"
+                beforeStaged={(v) => (v === undefined ? "None" : v)}
                 options={antiCaptchaOption}
               ></Selector>
+              <Message>
+                Choose the anti-captcha provider you want to use
+              </Message>
             </Input>
           </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k !== "" && k !== "none"}>
-            <Input name="Provider"></Input>
+          <CollapseBox.Content eventKey="anticaptcha">
+            <Input>
+              <a href="http://getcaptchasolution.com/eixxo1rsnw">
+                Anti-Captcha.com
+              </a>
+            </Input>
+            <Input name="Account Key">
+              <Text settingKey="settings-anticaptcha-anti_captcha_key"></Text>
+            </Input>
+          </CollapseBox.Content>
+          <CollapseBox.Content eventKey="deathbycaptcha">
+            <Input>
+              <a href="https://www.deathbycaptcha.com">DeathByCaptcha.com</a>
+            </Input>
+            <Input name="Username">
+              <Text settingKey="settings-deathbycaptcha-username"></Text>
+            </Input>
+            <Input name="Password">
+              <Text
+                password
+                settingKey="settings-deathbycaptcha-password"
+              ></Text>
+            </Input>
           </CollapseBox.Content>
         </CollapseBox>
       </Group>
@@ -101,7 +126,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Adaptive Searching"
             settingKey="settings-general-adaptive_searching"
           ></Check>
-          <Message type="info">
+          <Message>
             When searching for subtitles, Bazarr will search less frequently to
             limit call to providers.
           </Message>
@@ -111,7 +136,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Search Enabled Providers Simultaneously"
             settingKey="settings-general-multithreading"
           ></Check>
-          <Message type="info">
+          <Message>
             Search multiple providers at once (Don't choose this on low powered
             devices)
           </Message>
@@ -123,7 +148,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Use Embedded Subtitles"
                 settingKey="settings-general-use_embedded_subs"
               ></Check>
-              <Message type="info">
+              <Message>
                 Use embedded subtitles in media files when determining missing
                 ones.
               </Message>
@@ -135,7 +160,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Ignore Embedded PGS Subtitles"
                 settingKey="settings-general-ignore_pgs_subs"
               ></Check>
-              <Message type="info">
+              <Message>
                 Ignores PGS Subtitles in Embedded Subtitles detection.
               </Message>
             </Input>
@@ -144,7 +169,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Ignore Embedded VobSub Subtitles"
                 settingKey="settings-general-ignore_vobsub_subs"
               ></Check>
-              <Message type="info">
+              <Message>
                 Ignores VobSub Subtitles in Embedded Subtitles detection.
               </Message>
             </Input>
@@ -153,7 +178,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Show Only Desired Languages"
                 settingKey="settings-general-embeddeenabled_providersd_subs_show_desired"
               ></Check>
-              <Message type="info">
+              <Message>
                 Hide embedded subtitles for languages that are not currently
                 desired.
               </Message>
@@ -167,7 +192,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Encode Subtitles To UTF8"
             settingKey="settings-general-utf8_encode"
           ></Check>
-          <Message type="info">
+          <Message>
             Re-encode downloaded Subtitles to UTF8. Should be left enabled in
             most case.
           </Message>
@@ -178,7 +203,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("remove_HI")}
             settingKey="subzero-remove_HI"
           ></Check>
-          <Message type="info">
+          <Message>
             Removes tags, text and characters from subtitles that are meant for
             hearing impaired people.
           </Message>
@@ -189,7 +214,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("remove_tags")}
             settingKey="subzero-remove_tags"
           ></Check>
-          <Message type="info">
+          <Message>
             Removes all possible style tags from the subtitle, such as font,
             bold, color etc.
           </Message>
@@ -200,7 +225,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("OCR_fixed")}
             settingKey="subzero-OCR_fixed"
           ></Check>
-          <Message type="info">
+          <Message>
             Fix issues that happen when a subtitle gets converted from bitmap to
             text through OCR.
           </Message>
@@ -211,7 +236,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("common")}
             settingKey="subzero-common"
           ></Check>
-          <Message type="info">
+          <Message>
             Fix common and whitespace/punctuation issues in subtitles.
           </Message>
         </Input>
@@ -221,7 +246,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("fix_uppercase")}
             settingKey="subzero-fix_uppercase"
           ></Check>
-          <Message type="info">
+          <Message>
             Tries to make subtitles that are completely uppercase readable.
           </Message>
         </Input>
@@ -230,12 +255,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input>
               <Check
-                disabled
                 label="Color"
                 override={subzeroOverride("color")}
                 settingKey="subzero-color"
               ></Check>
-              <Message type="info">
+              <Message>
                 Adds color to your subtitles (for playback devices/software that
                 don't ship their own color modes; only works for players that
                 support color tags).
@@ -246,7 +270,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Input>
               <Selector
                 options={colorOptions}
-                settingKey="subzero_color"
+                override={(s) => s.general.subzero_color_selection}
+                settingKey="subzero-color-selection"
               ></Selector>
             </Input>
           </CollapseBox.Content>
@@ -257,7 +282,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             override={subzeroOverride("reverse_rtl")}
             settingKey="subzero-reverse_rtl"
           ></Check>
-          <Message type="info">
+          <Message>
             Reverses the punctuation in right-to-left subtitles for problematic
             playback devices.
           </Message>
@@ -277,7 +302,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 placeholder="0777"
                 settingKey="settings-general-chmod"
               ></Text>
-              <Message type="info">Must be 4 digit octal</Message>
+              <Message>Must be 4 digit octal</Message>
             </Input>
           </CollapseBox.Content>
         </CollapseBox>
@@ -288,7 +313,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 label="Automatic Subtitles Synchronization"
                 settingKey="settings-subsync-use_subsync"
               ></Check>
-              <Message type="info">
+              <Message>
                 Enable the automatic subtitles synchronization after downloading
                 a subtitles.
               </Message>
@@ -297,7 +322,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           <CollapseBox.Content>
             <Input>
               <Check label="Debug" settingKey="settings-subsync-debug"></Check>
-              <Message type="info">
+              <Message>
                 Do not actually sync the subtitles but generate a .tar.gz file
                 to be able to open an issue for ffsubsync. This file will reside
                 alongside the media file.
@@ -335,17 +360,104 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </CollapseBox>
           </CollapseBox.Content>
         </CollapseBox>
-        <Input>
-          {/* TODO: Implementation */}
-          <Check
-            disabled
-            settingKey="settings-general-postprocessing_cmd"
-            label="Use Custom Post-Processing"
-          ></Check>
-          <Message type="info">
-            Enable the post-processing execution after downloading a subtitles.
-          </Message>
-        </Input>
+        <CollapseBox>
+          <CollapseBox.Control>
+            <Input>
+              <Check
+                settingKey="settings-general-use_postprocessing"
+                label="Custom Post-Processing"
+              ></Check>
+              <Message>
+                Enable the post-processing execution after downloading a
+                subtitles.
+              </Message>
+            </Input>
+          </CollapseBox.Control>
+          <CollapseBox.Content>
+            <CollapseBox>
+              <CollapseBox.Control>
+                <Input>
+                  <Check
+                    settingKey="settings-general-use_postprocessing_threshold"
+                    label="Series Score Threshold"
+                  ></Check>
+                </Input>
+              </CollapseBox.Control>
+              <CollapseBox.Content indent={false}>
+                <Input>
+                  <Slider settingKey="settings-general-postprocessing_threshold"></Slider>
+                </Input>
+              </CollapseBox.Content>
+            </CollapseBox>
+            <CollapseBox>
+              <CollapseBox.Control>
+                <Input>
+                  <Check
+                    settingKey="settings-general-use_postprocessing_threshold_movie"
+                    label="Movies Score Threshold"
+                  ></Check>
+                </Input>
+              </CollapseBox.Control>
+              <CollapseBox.Content indent={false}>
+                <Input>
+                  <Slider settingKey="settings-general-postprocessing_threshold_movie"></Slider>
+                </Input>
+              </CollapseBox.Content>
+            </CollapseBox>
+            <Input name="Command">
+              <Text settingKey="settings-general-postprocessing_cmd"></Text>
+            </Input>
+            <Message>Variables you can use in your command</Message>
+            <Message>
+              <b>{"{{directory}}"}</b> Full path of the episode file parent
+              directory
+            </Message>
+            <Message>
+              <b>{"{{episode}}"}</b> Full path of the episode file
+            </Message>
+            <Message>
+              <b>{"{{episode_name}}"}</b> Filename of the episode without parent
+              directory or extension
+            </Message>
+            <Message>
+              <b>{"{{subtitles}}"}</b> Full path of the subtitles file
+            </Message>
+            <Message>
+              <b>{"{{subtitles_language}}"}</b> Language of the subtitles file
+            </Message>
+            <Message>
+              <b>{"{{subtitles_language_code2}}"}</b> 2-letter ISO-639 language
+              code of the subtitles language
+            </Message>
+            <Message>
+              <b>{"{{subtitles_language_code3}}"}</b> 3-letter ISO-639 language
+              code of the subtitles language
+            </Message>
+            <Message>
+              <b>{"{{episode_language}}"}</b> Audio language of the episode file
+            </Message>
+            <Message>
+              <b>{"{{episode_language_code2}}"}</b> 2-letter ISO-639 language
+              code of the episode audio language
+            </Message>
+            <Message>
+              <b>{"{{episode_language_code3}}"}</b> 3-letter ISO-639 language
+              code of the episode audio language
+            </Message>
+            <Message>
+              <b>{"{{score}}"}</b> Score of the subtitle file
+            </Message>
+            <Message>
+              <b>{"{{subtitle_id}}"}</b> Provider ID of the subtitle file
+            </Message>
+            <Message>
+              <b>{"{{series_id}}"}</b> Sonarr series ID (Empty if movie)
+            </Message>
+            <Message>
+              <b>{"{{episode_id}}"}</b> Sonarr episode ID or Radarr movie ID
+            </Message>
+          </CollapseBox.Content>
+        </CollapseBox>
       </Group>
     </SettingsProvider>
   );

@@ -27,9 +27,7 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Group header="Host">
         <Input name="Address">
           <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
-          <Message type="info">
-            Valid IPv4 address or '0.0.0.0' for all interfaces
-          </Message>
+          <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
         </Input>
         <Input name="Port">
           <Text placeholder={6767} settingKey="settings-general-port"></Text>
@@ -45,7 +43,7 @@ const SettingsGeneralView: FunctionComponent = () => {
               beforeStaged={(v) => "/" + v}
             ></Text>
           </InputGroup>
-          <Message type="info">Reverse proxy support</Message>
+          <Message>Reverse proxy support</Message>
         </Input>
       </Group>
       <Group header="Security">
@@ -53,6 +51,8 @@ const SettingsGeneralView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input name="Authentication">
               <Selector
+                // No Support yet
+                disabled
                 clearable
                 options={securityOptions}
                 settingKey="settings-auth-type"
@@ -107,7 +107,7 @@ const SettingsGeneralView: FunctionComponent = () => {
             </Input>
             <Input name="Password">
               <Text password settingKey="settings-proxy-password"></Text>
-              <Message type="info">
+              <Message>
                 You only need to enter a username and password if one is
                 required. Leave them blank otherwise
               </Message>
@@ -117,7 +117,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 settingKey="settings-proxy-exclude"
                 override={(settings) => settings.proxy.exclude.join(",")}
               ></Text>
-              <Message type="info">
+              <Message>
                 Use ',' as a separator, and '*.' as a wildcard for subdomains
               </Message>
             </Input>
@@ -127,15 +127,13 @@ const SettingsGeneralView: FunctionComponent = () => {
       <Group header="Logging">
         <Input>
           <Check label="Debug" settingKey="settings-general-debug"></Check>
-          <Message type="info">
-            Debug logging should only be enabled temporarily
-          </Message>
+          <Message>Debug logging should only be enabled temporarily</Message>
         </Input>
       </Group>
       <Group header="Analytics">
         <Input>
           <Check label="Enable" settingKey="settings-analytics-enabled"></Check>
-          <Message type="info">
+          <Message>
             Send anonymous usage information, nothing that can identify you.
             This includes information on which providers you use, what languages
             you search for, Bazarr, Python, Sonarr, Radarr and what OS version

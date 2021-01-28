@@ -37,7 +37,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
           <Group header="Host">
             <Input name="Address">
               <Text settingKey="settings-radarr-ip"></Text>
-              <Message type="info">Hostname or IPv4 Address</Message>
+              <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
               <Text settingKey="settings-radarr-port"></Text>
@@ -74,7 +74,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
                 disabled
                 settingKey="settings-radarr-excluded_tags"
               ></Text>
-              <Message type="info">
+              <Message>
                 Movies with those tags (case sensitive) in Radarr will be
                 excluded from automatic download of subtitles.
               </Message>
@@ -84,7 +84,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
                 label="Download Only Monitored"
                 settingKey="settings-radarr-only_monitored"
               ></Check>
-              <Message type="info">
+              <Message>
                 Automatic download of subtitles will only happen for monitored
                 movies in Radarr.
               </Message>

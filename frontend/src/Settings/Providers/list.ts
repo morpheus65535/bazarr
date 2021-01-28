@@ -64,6 +64,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      skip_wrong_fps: false,
+    },
+    keyNameOverride: {
+      skip_wrong_fps: "Skip Wrong FPS",
     },
   },
   {

@@ -3,7 +3,7 @@ import React, {
   FunctionComponent,
   useContext,
   useState,
-  useEffect,
+  useMemo,
 } from "react";
 import { Collapse } from "react-bootstrap";
 
@@ -25,12 +25,8 @@ interface CollapseBoxType {
   Content: typeof CollapseBoxContent;
 }
 
-interface Props {}
-
-const CollapseBox: CollapseBoxType & FunctionComponent<Props> = ({
-  children,
-}) => {
-  const state = useState<boolean | string>("");
+const CollapseBox: CollapseBoxType & FunctionComponent = ({ children }) => {
+  const state = useState<boolean | string>(false);
 
   return (
     <CollapseContext.Provider value={state}>
@@ -49,8 +45,8 @@ const CollapseBoxControl: FunctionComponent = ({ children }) => {
 };
 
 interface ContentProps {
-  eventKey?: string;
   on?: (k: string) => boolean;
+  eventKey?: string;
   indent?: boolean;
   children: JSX.Element | JSX.Element[];
 }
@@ -61,18 +57,17 @@ const CollapseBoxContent: FunctionComponent<ContentProps> = ({
   indent,
   children,
 }) => {
-  const [open, setOpen] = useState(false);
   const [value] = useContext(CollapseContext);
 
-  useEffect(() => {
+  const open = useMemo(() => {
     if (on && typeof value === "string") {
-      setOpen(on(value));
+      return on(value);
     } else if (eventKey) {
-      setOpen(value === eventKey);
+      return value === eventKey;
     } else {
-      setOpen(value === true);
+      return value === true;
     }
-  }, [eventKey, value, on]);
+  }, [on, value, eventKey]);
 
   return (
     <Collapse in={open} className={indent === false ? undefined : "pl-4"}>

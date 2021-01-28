@@ -68,7 +68,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
                 label="Single Language"
                 settingKey="settings-general-single_language"
               ></Check>
-              <Message type="info">
+              <Message>
                 Download a single Subtitles file without adding the language
                 code to the filename.
               </Message>
@@ -96,7 +96,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
                     label="Series"
                     settingKey="settings-general-serie_default_enabled"
                   ></Check>
-                  <Message type="info">
+                  <Message>
                     Apply only to Series added to Bazarr after enabling this
                     option.
                   </Message>
@@ -115,7 +115,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
                     label="Movies"
                     settingKey="settings-general-movie_default_enabled"
                   ></Check>
-                  <Message type="info">
+                  <Message>
                     Apply only to Movies added to Bazarr after enabling this
                     option.
                   </Message>

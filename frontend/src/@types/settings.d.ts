@@ -30,7 +30,7 @@ interface GeneralSettings {
   auto_update: boolean;
   base_url?: string;
   branch: string;
-  chmod: number;
+  chmod?: string;
   chmod_enabled: boolean;
   days_to_upgrade_subs: number;
   debug: boolean;
@@ -58,6 +58,7 @@ interface GeneralSettings {
   subfolder: string;
   subfolder_custom?: string;
   subzero_mods?: string[];
+  subzero_color_selection?: string;
   update_restart: boolean;
   upgrade_frequency: number;
   upgrade_manual: boolean;

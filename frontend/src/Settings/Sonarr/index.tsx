@@ -38,7 +38,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
           <Group header="Host">
             <Input name="Address">
               <Text settingKey="settings-sonarr-ip"></Text>
-              <Message type="info">Hostname or IPv4 Address</Message>
+              <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
               <Text settingKey="settings-sonarr-port"></Text>
@@ -75,7 +75,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 disabled
                 settingKey="settings-sonarr-excluded_tags"
               ></Text>
-              <Message type="info">
+              <Message>
                 Episodes from series with those tags (case sensitive) in Sonarr
                 will be excluded from automatic download of subtitles.
               </Message>
@@ -86,7 +86,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 multiple
                 options={seriesTypeOptions}
               ></Selector>
-              <Message type="info">
+              <Message>
                 Episodes from series with those types in Sonarr will be excluded
                 from automatic download of subtitles.
               </Message>
@@ -96,7 +96,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 label="Download Only Monitored"
                 settingKey="settings-sonarr-only_monitored"
               ></Check>
-              <Message type="info">
+              <Message>
                 Automatic download of subtitles will only happen for monitored
                 episodes in Sonarr.
               </Message>

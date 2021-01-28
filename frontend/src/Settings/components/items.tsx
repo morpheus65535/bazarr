@@ -11,7 +11,7 @@ import { isBoolean, isNumber, isString, isArray } from "lodash";
 import { isReactText } from "../../utilites";
 
 export const Message: FunctionComponent<{
-  type: "warning" | "info";
+  type?: "warning" | "info";
 }> = ({ type, children }) => {
   const cls = ["pr-4"];
   cls.push(type === "warning" ? "text-warning" : "text-muted");
@@ -22,7 +22,7 @@ export const Message: FunctionComponent<{
 export interface BasicInput<T> {
   disabled?: boolean;
   settingKey: string;
-  override?: (v: SystemSettings) => NonNullable<T>;
+  override?: (v: SystemSettings) => T;
   beforeStaged?: (v: T) => any;
 }
 
@@ -87,7 +87,9 @@ export const Check: FunctionComponent<CheckProps> = ({
 
   return (
     <Form.Check
+      custom
       type="checkbox"
+      id={settingKey}
       inline={inline}
       label={label}
       onChange={(e) => {

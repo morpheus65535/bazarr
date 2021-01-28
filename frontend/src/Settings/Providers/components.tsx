@@ -272,13 +272,13 @@ export const ProviderModal: FunctionComponent = () => {
           </Row>
           <Row>
             <Col className="mb-2">
-              <Message type="info">{info?.description}</Message>
+              <Message>{info?.description}</Message>
             </Col>
           </Row>
           {modification}
           <Row hidden={info?.message === undefined}>
             <Col>
-              <Message type="info">{info?.message}</Message>
+              <Message>{info?.message}</Message>
             </Col>
           </Row>
         </Container>
@@ -322,9 +322,7 @@ export const ProviderSection: FunctionComponent<ProviderEditProps> = ({
   return (
     <Group hidden={hide} header={header}>
       {children}
-      {info && info.description && (
-        <Message type="info">{info?.description}</Message>
-      )}
+      {info && info.description && <Message>{info?.description}</Message>}
     </Group>
   );
 };

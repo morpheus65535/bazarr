@@ -21,6 +21,17 @@
     border-color: var(--primary) !important;
   }
 
+  .custom-control-input {
+    &:checked {
+      & ~ .custom-control-label {
+        &::before {
+          background-color: var(--primary) !important;
+          border-color: var(--primary) !important;
+        }
+      }
+    }
+  }
+
   input {
     &[type="text"],
     &[type="password"] {
