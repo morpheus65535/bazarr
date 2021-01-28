@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
-
 import {
+  Chips,
   Check,
   Group,
   Input,
@@ -69,11 +69,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
               <Slider settingKey="settings-general-minimum_score_movie"></Slider>
             </Input>
             <Input name="Excluded Tags">
-              <Text
-                // TODO: Currently Unusable
-                disabled
-                settingKey="settings-radarr-excluded_tags"
-              ></Text>
+              <Chips settingKey="settings-radarr-excluded_tags"></Chips>
               <Message>
                 Movies with those tags (case sensitive) in Radarr will be
                 excluded from automatic download of subtitles.

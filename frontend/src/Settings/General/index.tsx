@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useCallback } from "react";
 import { Button, InputGroup } from "react-bootstrap";
-
 import {
   Check,
   Group,
@@ -10,11 +9,10 @@ import {
   Text,
   CollapseBox,
   SettingsProvider,
+  Chips,
 } from "../components";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faClipboard } from "@fortawesome/free-solid-svg-icons";
-
 import { proxyOptions, securityOptions } from "./options";
 
 const SettingsGeneralView: FunctionComponent = () => {
@@ -113,13 +111,8 @@ const SettingsGeneralView: FunctionComponent = () => {
               </Message>
             </Input>
             <Input name="Ignored Addresses">
-              <Text
-                settingKey="settings-proxy-exclude"
-                override={(settings) => settings.proxy.exclude.join(",")}
-              ></Text>
-              <Message>
-                Use ',' as a separator, and '*.' as a wildcard for subdomains
-              </Message>
+              <Chips settingKey="settings-proxy-exclude"></Chips>
+              <Message>'*.' as a wildcard for subdomains</Message>
             </Input>
           </CollapseBox.Content>
         </CollapseBox>

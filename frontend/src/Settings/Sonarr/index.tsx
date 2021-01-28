@@ -2,6 +2,7 @@ import React, { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import { seriesTypeOptions } from "./options";
 import {
+  Chips,
   Check,
   Group,
   Input,
@@ -70,11 +71,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
               <Slider settingKey="settings-general-minimum_score"></Slider>
             </Input>
             <Input name="Excluded Tags">
-              <Text
-                // TODO: Currently Unusable
-                disabled
-                settingKey="settings-sonarr-excluded_tags"
-              ></Text>
+              <Chips settingKey="settings-sonarr-excluded_tags"></Chips>
               <Message>
                 Episodes from series with those tags (case sensitive) in Sonarr
                 will be excluded from automatic download of subtitles.

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { isArray } from "lodash";
 import ReactSelect from "react-select";
+import "./selector.scss";
 
 export interface SelectorProps<T, M extends boolean> {
   className?: string;

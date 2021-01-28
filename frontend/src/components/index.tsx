@@ -256,7 +256,6 @@ export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
 export * from "./modals";
 export * from "./ContentHeader";
 export * from "./tables";
-export * from "./Selector";
-export * from "./Slider";
+export * from "./inputs";
 export * from "./SearchBar";
 export * from "./buttons";

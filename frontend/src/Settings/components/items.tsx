@@ -1,10 +1,12 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, FunctionComponentFactory } from "react";
 import { Form } from "react-bootstrap";
 import {
   Slider as CSlider,
   SliderProps as CSliderProps,
   Selector as CSelector,
   SelectorProps as CSelectorProps,
+  Chips as CChips,
+  ChipsProps as CChipsProps,
 } from "../../components";
 import { useUpdate, useLatest, useCollapse } from ".";
 import { isBoolean, isNumber, isString, isArray } from "lodash";
@@ -162,5 +164,26 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
       defaultValue={defaultValue}
       {...slider}
     ></CSlider>
+  );
+};
+
+type ChipsProp = {} & BasicInput<string[]> &
+  Omit<CChipsProps, "onChange" | "defaultValue">;
+
+export const Chips: FunctionComponent<ChipsProp> = (props) => {
+  const { settingKey, override, ...chips } = props;
+
+  const update = useUpdate();
+
+  const defaultValue = useLatest<string[]>(settingKey, isArray, override);
+
+  return (
+    <CChips
+      defaultValue={defaultValue}
+      onChange={(v) => {
+        update(v, settingKey);
+      }}
+      {...chips}
+    ></CChips>
   );
 };
