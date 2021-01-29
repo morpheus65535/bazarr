@@ -7,7 +7,6 @@ import React, {
 import { Button, ButtonProps, Badge } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-
 import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 
 export const ActionBadge: FunctionComponent<{
@@ -27,6 +26,8 @@ export const ActionBadge: FunctionComponent<{
 };
 
 interface ActionIconProps {
+  loading?: boolean;
+  disabled?: boolean;
   destructive?: boolean;
   icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
@@ -36,22 +37,33 @@ interface ActionIconProps {
 export const ActionIcon: FunctionComponent<ActionIconProps> = ({
   onClick,
   destructive,
+  disabled,
   ...other
 }) => {
   return (
-    <Button size="sm" variant="light" className="text-nowrap" onClick={onClick}>
+    <Button
+      disabled={other.loading || disabled}
+      size="sm"
+      variant="light"
+      className="text-nowrap"
+      onClick={onClick}
+    >
       <ActionIconItem {...other}></ActionIconItem>
     </Button>
   );
 };
 
 export const ActionIconItem: FunctionComponent<
-  Omit<ActionIconProps, "onClick" | "destructive">
-> = ({ icon, children }) => {
+  Omit<ActionIconProps, "onClick" | "destructive" | "disabled">
+> = ({ icon, children, loading }) => {
   return (
     <React.Fragment>
-      <FontAwesomeIcon style={{ width: "1rem" }} icon={icon}></FontAwesomeIcon>
-      {children ? (
+      <FontAwesomeIcon
+        style={{ width: "1rem" }}
+        icon={loading ? faCircleNotch : icon}
+        spin={loading}
+      ></FontAwesomeIcon>
+      {children && !loading ? (
         <span className="ml-2 font-weight-bold">{children}</span>
       ) : null}
     </React.Fragment>

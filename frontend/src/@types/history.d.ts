@@ -2,7 +2,7 @@ interface BasicHistory {
   action: number;
   blacklisted: boolean;
   exist: boolean;
-  language: Language;
+  language?: Language;
   mapped_path: string;
   mapped_subtitles_path: string;
   provider?: string;

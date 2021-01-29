@@ -73,7 +73,7 @@ interface Props<T extends object = {}> extends TableOptions<T> {
   emptyText?: string;
 }
 
-export default function BasicTable<T extends object = {}>(props: Props<T>) {
+export default function GroupTable<T extends object = {}>(props: Props<T>) {
   const { emptyText, ...options } = props;
   const instance = useTable(options, useGroupBy, useSortBy, useExpanded);
 

@@ -51,7 +51,7 @@ export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
       },
       {
         Header: "Language",
-        accessor: (d) => d.language.name,
+        accessor: (d) => d.language?.name ?? "",
       },
       {
         Header: "Provider",
@@ -132,7 +132,7 @@ export const EpisodeHistoryModal: FunctionComponent<
       },
       {
         Header: "Language",
-        accessor: (d) => d.language.name,
+        accessor: (d) => d.language?.name ?? "",
       },
       {
         Header: "Provider",

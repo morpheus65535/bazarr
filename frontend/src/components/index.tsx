@@ -170,7 +170,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
   seriesid: number;
   episodeid: number;
   subs_id?: string;
-  language: Language;
+  language?: Language;
   provider?: string;
   subtitles_path: string;
   path: string;
@@ -185,6 +185,9 @@ export const SeriesBlacklistButton: FunctionComponent<{
   path,
   update,
 }) => {
+  if (!language) {
+    return null;
+  }
   const { hi, forced, code2 } = language;
 
   if (subs_id && provider && hi !== undefined && forced !== undefined) {
@@ -216,7 +219,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
 export const MoviesBlacklistButton: FunctionComponent<{
   radarrId: number;
   subs_id?: string;
-  language: Language;
+  language?: Language;
   provider?: string;
   subtitles_path: string;
   video_path: string;
@@ -230,6 +233,10 @@ export const MoviesBlacklistButton: FunctionComponent<{
   video_path,
   update,
 }) => {
+  if (!language) {
+    return null;
+  }
+
   const { forced, code2 } = language;
 
   if (subs_id && provider && forced !== undefined) {

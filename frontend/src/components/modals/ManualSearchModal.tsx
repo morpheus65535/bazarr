@@ -32,10 +32,7 @@ import {
   Dropdown,
 } from "react-bootstrap";
 import { ProvidersApi } from "../../apis";
-
-function isMovie(v: any): v is Movie {
-  return "radarrId" in v;
-}
+import { isMovie } from "../../utilites";
 
 type SupportType = Movie | Episode;
 

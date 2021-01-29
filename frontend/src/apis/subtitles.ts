@@ -33,7 +33,7 @@ class SubtitlesApi extends BasicApi {
   async sync(
     language: string,
     path: string,
-    type: "series" | "movies",
+    type: "episode" | "movie",
     id: number
   ) {
     return new Promise<void>((resolve, reject) => {
