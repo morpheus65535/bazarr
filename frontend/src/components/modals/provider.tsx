@@ -59,7 +59,7 @@ export function usePayload<T>(key: string): T | undefined {
     const idx = keys.findIndex((v) => v === key);
     const show = idx !== -1 && idx === keys.length - 1;
     return show ? (payloads[idx] as T) : undefined;
-  }, [keys, payloads]);
+  }, [keys, payloads, key]);
 }
 
 export function useWhenModalShow(key: string, callback: React.EffectCallback) {

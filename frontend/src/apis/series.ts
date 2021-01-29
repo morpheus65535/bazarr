@@ -1,25 +1,8 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class SeriesApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/series${path}`, { params });
-  }
-
-  postForm<T>(
-    path: string,
-    formdata?: any,
-    params?: any
-  ): Promise<AxiosResponse<T>> {
-    return apis.post(`/series${path}`, formdata, params);
-  }
-
-  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.patch(`/series${path}`, form, params);
-  }
-
-  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.delete(`/series${path}`, form, params);
+class SeriesApi extends BasicApi {
+  constructor() {
+    super("/series");
   }
 
   async blacklist(): Promise<Array<SeriesBlacklist>> {
@@ -38,7 +21,7 @@ class SeriesApi {
     form: BlacklistAddForm
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.postForm<void>("/blacklist", form, { seriesid, episodeid })
+      this.post<void>("/blacklist", form, { seriesid, episodeid })
         .then(() => resolve())
         .catch(reject);
     });
@@ -69,7 +52,7 @@ class SeriesApi {
 
   async modify(id: number, form: ItemModifyForm) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("", { ...form }, { seriesid: id })
+      this.post<void>("", { ...form }, { seriesid: id })
         .then(() => resolve())
         .catch((err) => reject(err));
     });

@@ -1,25 +1,12 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class SystemApi {
-  private get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/system${path}`, { params });
-  }
-
-  private postForm<T>(
-    path: string,
-    formdata?: any,
-    params?: any
-  ): Promise<AxiosResponse<T>> {
-    return apis.post(`/system${path}`, formdata, params);
-  }
-
-  private delete<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.delete(`/system${path}`, { params });
+class SystemApi extends BasicApi {
+  constructor() {
+    super("/system");
   }
 
   async performAction(action: string) {
-    return this.postForm<void>("", undefined, { action });
+    return this.post<void>("", undefined, { action });
   }
 
   async shutdown() {
@@ -42,7 +29,7 @@ class SystemApi {
 
   async setSettings(data: object) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("/settings", data)
+      this.post<void>("/settings", data)
         .then((res) => {
           resolve();
         })
@@ -112,7 +99,7 @@ class SystemApi {
 
   async execTasks(id: string) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("/tasks", { taskid: id })
+      this.post<void>("/tasks", { taskid: id })
         .then(() => {
           resolve();
         })

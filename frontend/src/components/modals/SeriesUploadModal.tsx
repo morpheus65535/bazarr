@@ -27,7 +27,7 @@ import {
   usePayload,
   useWhenModalShow,
 } from "..";
-import { EpisodesApi, UtilsApi } from "../../apis";
+import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 enum SubtitleState {
@@ -380,7 +380,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
     });
 
     if (names.length !== 0) {
-      UtilsApi.subtitleInfo(names)
+      SubtitlesApi.info(names)
         .then((result) => {
           result.forEach((v) => {
             const idx = data.findIndex((d) => d.file.name === v.filename);

@@ -1,9 +1,8 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class HistoryApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/history${path}`, { params });
+class HistoryApi extends BasicApi {
+  constructor() {
+    super("/history");
   }
 
   async movies(): Promise<Array<MovieHistory>> {

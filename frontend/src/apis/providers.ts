@@ -1,17 +1,8 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class ProviderApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/providers${path}`, { params });
-  }
-
-  postForm<T>(
-    path: string,
-    formdata?: any,
-    params?: any
-  ): Promise<AxiosResponse<T>> {
-    return apis.post(`/providers${path}`, formdata, params);
+class ProviderApi extends BasicApi {
+  constructor() {
+    super("/providers");
   }
 
   async providers() {
@@ -26,7 +17,7 @@ class ProviderApi {
 
   async reset() {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("", { action: "reset" })
+      this.post<void>("", { action: "reset" })
         .then(() => resolve())
         .catch(reject);
     });
@@ -42,7 +33,7 @@ class ProviderApi {
 
   async downloadMovieSubtitle(radarrid: number, form: ManualDownloadForm) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("/movies", form, { radarrid })
+      this.post<void>("/movies", form, { radarrid })
         .then(() => resolve())
         .catch(reject);
     });
@@ -64,7 +55,7 @@ class ProviderApi {
     form: ManualDownloadForm
   ) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("/episodes", form, { seriesid, episodeid })
+      this.post<void>("/episodes", form, { seriesid, episodeid })
         .then(() => resolve())
         .catch(reject);
     });

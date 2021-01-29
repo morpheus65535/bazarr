@@ -44,19 +44,6 @@ class RequestUtils {
         .catch(reject);
     });
   }
-
-  subtitleInfo(names: string[]): Promise<SubtitleNameInfo[]> {
-    return new Promise<SubtitleNameInfo[]>((resolve, reject) => {
-      this.axios
-        .get<DataWrapper<SubtitleNameInfo[]>>(`api/subtitles/info`, {
-          params: {
-            filenames: names,
-          },
-        })
-        .then((result) => resolve(result.data.data))
-        .catch(reject);
-    });
-  }
 }
 
 export default new RequestUtils();

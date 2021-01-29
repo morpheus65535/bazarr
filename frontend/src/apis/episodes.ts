@@ -1,25 +1,8 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class EpisodeApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/episodes${path}`, { params });
-  }
-
-  postForm<T>(
-    path: string,
-    formdata?: any,
-    params?: any
-  ): Promise<AxiosResponse<T>> {
-    return apis.post(`/episodes${path}`, formdata, params);
-  }
-
-  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.patch(`/episodes${path}`, form, params);
-  }
-
-  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.delete(`/episodes${path}`, form, params);
+class EpisodeApi extends BasicApi {
+  constructor() {
+    super("/episodes");
   }
 
   async all(seriesid: number): Promise<Array<Episode>> {
@@ -64,7 +47,7 @@ class EpisodeApi {
     form: SubtitleUploadForm
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.postForm("/subtitles", form, { seriesid, episodeid })
+      this.post("/subtitles", form, { seriesid, episodeid })
         .then(() => resolve())
         .catch(reject);
     });

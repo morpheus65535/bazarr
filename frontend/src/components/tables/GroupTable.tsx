@@ -33,13 +33,13 @@ function renderRow<T extends object>(row: Row<T>) {
       return (
         <tr {...row.getRowProps()}>
           <td
-            className={cell.column.className}
+            className="p-0"
             {...cell.getCellProps()}
             colSpan={row.cells.length}
           >
             <span
               {...row.getToggleRowExpandedProps()}
-              className="d-flex align-items-center"
+              className="d-flex align-items-center p-2"
             >
               {cell.render("Cell")}
               <FontAwesomeIcon

@@ -73,6 +73,7 @@ class System(Resource):
             webserver.shutdown()
         elif action == "restart":
             webserver.restart()
+        return '', 204
 
 
 class BadgesSeries(Resource):
@@ -534,33 +535,6 @@ class Episodes(Resource):
             item.update({"monitored": item["monitored"] == "True"})
         return jsonify(data=result)
 
-class SubtitleNameInfo(Resource):
-    @authenticate
-    def get(self):
-        names = request.args.getlist('filenames[]')
-        results = []
-        for name in names:
-            opts = dict()
-            opts['type'] = 'episode'
-            result = guessit(name, options=opts)
-            result['filename'] = name
-            if 'subtitle_language' in result:
-                result['subtitle_language'] = str(result['subtitle_language'])
-
-            if 'episode' in result:
-                result['episode'] = result['episode']
-            else:
-                result['episode'] = 0
-
-            if 'season' in result:
-                result['season'] = result['season']
-            else:
-                result['season'] = 0
-            
-            results.append(result)
-
-        return jsonify(data=results)
-
 
 # PATCH: Download Subtitles
 # POST: Upload Subtitles
@@ -767,33 +741,6 @@ class EpisodesHistory(Resource):
 
         return jsonify(data=episode_history)
 
-
-class EpisodesTools(Resource):
-    @authenticate
-    def get(self):
-        episodeid = request.args.get('episodeid')
-
-        episode_ext_subs = database.execute("SELECT path, subtitles FROM table_episodes WHERE sonarrEpisodeId=?",
-                                            (episodeid,), only_one=True)
-        try:
-            all_subs = ast.literal_eval(episode_ext_subs['subtitles'])
-        except:
-            episode_external_subtitles = None
-        else:
-            episode_external_subtitles = []
-            for subs in all_subs:
-                if subs[1]:
-                    subtitle = subs[0].split(':')
-                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
-                               "code2": subtitle[0],
-                               "code3": alpha3_from_alpha2(subtitle[0]),
-                               "forced": True if len(subtitle) > 1 else False}
-                    episode_external_subtitles.append({'language': subs[0],
-                                                       'path': path_mappings.path_replace(subs[1]),
-                                                       'filename': os.path.basename(subs[1]),
-                                                       'videopath': path_mappings.path_replace(episode_ext_subs['path'])})
-
-        return jsonify(data=episode_external_subtitles)
 
 
 class Movies(Resource):
@@ -1337,34 +1284,6 @@ class MovieHistory(Resource):
         return jsonify(data=movie_history)
 
 
-class MovieTools(Resource):
-    @authenticate
-    def get(self):
-        radarrId = request.args.get('radarrid')
-
-        movie_ext_subs = database.execute("SELECT path, subtitles FROM table_movies WHERE radarrId=?",
-                                          (radarrId,), only_one=True)
-        try:
-            all_subs = ast.literal_eval(movie_ext_subs['subtitles'])
-        except:
-            movie_external_subtitles = None
-        else:
-            movie_external_subtitles = []
-            for subs in all_subs:
-                if subs[1]:
-                    subtitle = subs[0].split(':')
-                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
-                               "code2": subtitle[0],
-                               "code3": alpha3_from_alpha2(subtitle[0]),
-                               "forced": True if len(subtitle) > 1 else False}
-                    movie_external_subtitles.append({'language': subs[0],
-                                                     'path': path_mappings.path_replace_movie(subs[1]),
-                                                     'filename': os.path.basename(subs[1]),
-                                                     'videopath': path_mappings.path_replace_movie(movie_ext_subs['path'])})
-
-        return jsonify(data=movie_external_subtitles)
-
-
 class HistorySeries(Resource):
     @authenticate
     def get(self):
@@ -1864,40 +1783,63 @@ class BlacklistMovies(Resource):
         return '', 200
 
 
-class SyncSubtitles(Resource):
+class Subtitles(Resource):
     @authenticate
-    def post(self):
-        language = request.form.get('language')
-        subtitles_path = request.form.get('subtitlesPath')
-        video_path = request.form.get('videoPath')
-        media_type = request.form.get('mediaType')
+    def patch(self):
+        action = request.args.get('action')
 
-        if media_type == 'series':
-            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes"
-                                                " WHERE path = ?", (path_mappings.path_replace_reverse(video_path),),
-                                                only_one=True)
-            subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                         srt_lang=language, media_type=media_type, sonarr_series_id=episode_metadata['sonarrSeriesId'],
-                         sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+        language = request.form.get('language')
+        subtitles_path = request.form.get('path')
+
+        if action == 'sync':
+            media_type = request.form.get('type')
+            id = request.form.get('id')
+
+            if media_type == 'series':
+                metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
+                                    " WHERE sonarrEpisodeId = ?", (id,),
+                                    only_one=True)
+                video_path = path_mappings.path_replace_reverse(metadata['path'])
+                subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                            srt_lang=language, media_type=media_type, sonarr_series_id=metadata['sonarrSeriesId'],
+                            sonarr_episode_id=id)
+            else:
+                metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
+                                                (id,), only_one=True)
+                video_path = path_mappings.path_replace_reverse_movie(metadata['path'])
+                subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                            srt_lang=language, media_type=media_type, radarr_id=id)
         else:
-            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
-                                              (path_mappings.path_replace_reverse_movie(video_path),), only_one=True)
-            subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                         srt_lang=language, media_type=media_type, radarr_id=movie_metadata['radarrId'])
+            subtitles_apply_mods(language, subtitles_path, [action])
 
-        return '', 200
+        return '', 204
 
-
-class SubMods(Resource):
+class SubtitleNameInfo(Resource):
     @authenticate
-    def post(self):
-        language = request.form.get('language')
-        subtitles_path = request.form.get('subtitlesPath')
-        mod = request.form.get('mod')
+    def get(self):
+        names = request.args.getlist('filenames[]')
+        results = []
+        for name in names:
+            opts = dict()
+            opts['type'] = 'episode'
+            result = guessit(name, options=opts)
+            result['filename'] = name
+            if 'subtitle_language' in result:
+                result['subtitle_language'] = str(result['subtitle_language'])
 
-        subtitles_apply_mods(language, subtitles_path, [mod])
+            if 'episode' in result:
+                result['episode'] = result['episode']
+            else:
+                result['episode'] = 0
 
-        return '', 200
+            if 'season' in result:
+                result['season'] = result['season']
+            else:
+                result['season'] = 0
+            
+            results.append(result)
+
+        return jsonify(data=results)
 
 
 class BrowseBazarrFS(Resource):
@@ -1954,20 +1896,20 @@ api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')
 api.add_resource(LanguagesProfiles, '/system/languages/profiles')
 
+api.add_resource(Subtitles, '/subtitles')
 api.add_resource(SubtitleNameInfo, '/subtitles/info')
-# api.add_resource(SyncSubtitles, '/subtitles/sync')
-# api.add_resource(SubMods, '/subtitles/mods')
 
 api.add_resource(Series, '/series')
 api.add_resource(SeriesScanDisk, '/series/disk')
 api.add_resource(SeriesSearchMissing, '/series/missing')
+api.add_resource(WantedSeries, '/series/wanted')
+api.add_resource(BlacklistSeries, '/series/blacklist')
+
 # api.add_resource(SeriesEditor, '/series_editor')
 # api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
-
 api.add_resource(EpisodesHistory, '/episodes/history')
-# api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')
 api.add_resource(MovieScanDisk, '/movies/disk')
@@ -1976,17 +1918,12 @@ api.add_resource(MovieSubtitles, '/movies/subtitles')
 # api.add_resource(MoviesEditor, '/movies_editor')
 # api.add_resource(MoviesEditSave, '/movies_edit_save')
 api.add_resource(MovieHistory, '/movies/history')
-api.add_resource(MovieTools, '/movies/tools')
+api.add_resource(WantedMovies, '/movies/wanted')
+api.add_resource(BlacklistMovies, '/movies/blacklist')
 
 api.add_resource(HistorySeries, '/history/series')
 api.add_resource(HistoryMovies, '/history/movies')
 api.add_resource(HistoryStats, '/history/stats')
-
-api.add_resource(WantedSeries, '/series/wanted')
-api.add_resource(WantedMovies, '/movies/wanted')
-
-api.add_resource(BlacklistSeries, '/series/blacklist')
-api.add_resource(BlacklistMovies, '/movies/blacklist')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')

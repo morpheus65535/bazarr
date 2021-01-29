@@ -5,7 +5,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { Badge, Button } from "react-bootstrap";
+import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
 import { ActionIcon, BasicTable, useShowModal } from "../../components";
 import { useLanguagesProfile } from ".";
@@ -103,7 +103,7 @@ const Table: FunctionComponent = () => {
           const profile = row.row.original;
 
           return (
-            <div className="d-flex flex-nowrap">
+            <ButtonGroup>
               <ActionIcon
                 icon={faWrench}
                 onClick={() => {
@@ -114,7 +114,7 @@ const Table: FunctionComponent = () => {
                 icon={faTrash}
                 onClick={() => removeProfile(profile.profileId)}
               ></ActionIcon>
-            </div>
+            </ButtonGroup>
           );
         },
       },

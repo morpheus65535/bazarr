@@ -1,25 +1,8 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BasicApi from "./basic";
 
-class MovieApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/movies${path}`, { params });
-  }
-
-  postForm<T>(
-    path: string,
-    formdata?: any,
-    params?: any
-  ): Promise<AxiosResponse<T>> {
-    return apis.post(`/movies${path}`, formdata, params);
-  }
-
-  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.patch(`/movies${path}`, form, params);
-  }
-
-  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.delete(`/movies${path}`, form, params);
+class MovieApi extends BasicApi {
+  constructor() {
+    super("/movies");
   }
 
   async blacklist(): Promise<Array<MovieBlacklist>> {
@@ -34,7 +17,7 @@ class MovieApi {
 
   async addBlacklist(radarrid: number, form: BlacklistAddForm): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.postForm<void>("/blacklist", form, { radarrid })
+      this.post<void>("/blacklist", form, { radarrid })
         .then(() => resolve())
         .catch(reject);
     });
@@ -65,7 +48,7 @@ class MovieApi {
 
   async modify(id: number, form: ItemModifyForm) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("", { ...form }, { radarrid: id })
+      this.post<void>("", { ...form }, { radarrid: id })
         .then(() => resolve())
         .catch((err) => reject(err));
     });
@@ -131,7 +114,7 @@ class MovieApi {
 
   async uploadSubtitles(id: number, form: SubtitleUploadForm): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.postForm("/subtitles", form, { radarrid: id })
+      this.post("/subtitles", form, { radarrid: id })
         .then(() => resolve())
         .catch(reject);
     });

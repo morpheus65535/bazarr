@@ -26,55 +26,38 @@ const Action: FunctionComponent<Props> = ({
   subtitle,
   update,
 }) => {
-  // hi, forced
   const { hi, forced } = subtitle;
 
   const path = subtitle.path;
 
-  if (missing) {
+  if (missing || path) {
     return (
       <AsyncButton
-        promise={() =>
-          EpisodesApi.downloadSubtitles(seriesid, episodeid, {
-            hi,
-            forced,
-            language: subtitle.code2,
-          })
-        }
+        promise={() => {
+          if (missing) {
+            return EpisodesApi.downloadSubtitles(seriesid, episodeid, {
+              hi,
+              forced,
+              language: subtitle.code2,
+            });
+          } else if (path) {
+            return EpisodesApi.deleteSubtitles(seriesid, episodeid, {
+              hi,
+              forced,
+              path: path,
+              language: subtitle.code2,
+            });
+          }
+        }}
         onSuccess={() => update(seriesid)}
         as={Badge}
         className="mr-1"
-        variant="warning"
+        variant={missing ? "warning" : "secondary"}
       >
-        {subtitle.code2}
+        <span className="pr-1">{subtitle.code2}</span>
         <FontAwesomeIcon
-          className="ml-1"
           size="sm"
-          icon={faSearch}
-        ></FontAwesomeIcon>
-      </AsyncButton>
-    );
-  } else if (path) {
-    return (
-      <AsyncButton
-        promise={() =>
-          EpisodesApi.deleteSubtitles(seriesid, episodeid, {
-            hi,
-            forced,
-            path,
-            language: subtitle.code2,
-          })
-        }
-        onSuccess={() => update(seriesid)}
-        as={Badge}
-        className="mr-1"
-        variant="secondary"
-      >
-        {subtitle.code2}
-        <FontAwesomeIcon
-          className="ml-1"
-          size="sm"
-          icon={faTrash}
+          icon={missing ? faSearch : faTrash}
         ></FontAwesomeIcon>
       </AsyncButton>
     );

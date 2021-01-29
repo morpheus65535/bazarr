@@ -15,67 +15,42 @@ class Api {
     }
   }
 
-  post(path: string, formdata?: any, params?: any) {
-    let form = new FormData();
+  private createFormdata(object?: LooseObject) {
+    if (object) {
+      let form = new FormData();
 
-    for (const key in formdata) {
-      const data = formdata[key];
-      if (data instanceof Array) {
-        if (data.length > 0) {
-          data.forEach((val) => form.append(key, val));
+      for (const key in object) {
+        const data = object[key];
+        if (data instanceof Array) {
+          if (data.length > 0) {
+            data.forEach((val) => form.append(key, val));
+          } else {
+            form.append(key, "");
+          }
         } else {
-          form.append(key, "");
+          form.append(key, object[key]);
         }
-      } else {
-        form.append(key, formdata[key]);
       }
+      return form;
+    } else {
+      return undefined;
     }
+  }
+
+  post(path: string, formdata?: LooseObject, params?: LooseObject) {
+    let form = this.createFormdata(formdata);
 
     return this.axios.post(path, form, { params });
   }
 
-  patch(path: string, formdata?: any, params?: any) {
-    let form: FormData | undefined = undefined;
-
-    if (formdata) {
-      form = new FormData();
-
-      for (const key in formdata) {
-        const data = formdata[key];
-        if (data instanceof Array) {
-          if (data.length > 0) {
-            data.forEach((val) => form!.append(key, val));
-          } else {
-            form.append(key, "");
-          }
-        } else {
-          form.append(key, formdata[key]);
-        }
-      }
-    }
+  patch(path: string, formdata?: LooseObject, params?: LooseObject) {
+    let form = this.createFormdata(formdata);
 
     return this.axios.patch(path, form, { params });
   }
 
-  delete(path: string, formdata?: any, params?: any) {
-    let form: FormData | undefined = undefined;
-
-    if (formdata) {
-      form = new FormData();
-
-      for (const key in formdata) {
-        const data = formdata[key];
-        if (data instanceof Array) {
-          if (data.length > 0) {
-            data.forEach((val) => form!.append(key, val));
-          } else {
-            form.append(key, "");
-          }
-        } else {
-          form.append(key, formdata[key]);
-        }
-      }
-    }
+  delete(path: string, formdata?: LooseObject, params?: LooseObject) {
+    let form = this.createFormdata(formdata);
 
     return this.axios.delete(path, { params, data: form });
   }
@@ -111,4 +86,5 @@ export { default as MoviesApi } from "./movies";
 export { default as HistoryApi } from "./history";
 export { default as EpisodesApi } from "./episodes";
 export { default as ProvidersApi } from "./providers";
+export { default as SubtitlesApi } from "./subtitles";
 export { default as UtilsApi } from "./utils";

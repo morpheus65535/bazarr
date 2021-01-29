@@ -26,14 +26,35 @@ export const ActionBadge: FunctionComponent<{
   );
 };
 
-export const ActionIcon: FunctionComponent<{
+interface ActionIconProps {
+  destructive?: boolean;
   icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
-}> = ({ icon, onClick }) => {
+  children?: string;
+}
+
+export const ActionIcon: FunctionComponent<ActionIconProps> = ({
+  onClick,
+  destructive,
+  ...other
+}) => {
   return (
-    <Button size="sm" className="mx-1" variant="light" onClick={onClick}>
-      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+    <Button size="sm" variant="light" className="text-nowrap" onClick={onClick}>
+      <ActionIconItem {...other}></ActionIconItem>
     </Button>
+  );
+};
+
+export const ActionIconItem: FunctionComponent<
+  Omit<ActionIconProps, "onClick" | "destructive">
+> = ({ icon, children }) => {
+  return (
+    <React.Fragment>
+      <FontAwesomeIcon style={{ width: "1rem" }} icon={icon}></FontAwesomeIcon>
+      {children ? (
+        <span className="ml-2 font-weight-bold">{children}</span>
+      ) : null}
+    </React.Fragment>
   );
 };
 
@@ -46,7 +67,7 @@ interface AsyncButtonProps<T> {
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 
-  promise: () => Promise<T>;
+  promise: () => Promise<T> | undefined;
   onSuccess?: (result: T) => void;
   error?: () => void;
 }
@@ -73,15 +94,19 @@ export function AsyncButton<T>(
       disabled={loading || disabled}
       {...button}
       onClick={() => {
-        setLoading(true);
-        onChange && onChange(true);
-        promise()
-          .then(success)
-          .catch(error)
-          .finally(() => {
-            setLoading(false);
-            onChange && onChange(false);
-          });
+        const result = promise();
+
+        if (result) {
+          setLoading(true);
+          onChange && onChange(true);
+          result
+            .then(success)
+            .catch(error)
+            .finally(() => {
+              setLoading(false);
+              onChange && onChange(false);
+            });
+        }
       }}
     >
       {loading ? (

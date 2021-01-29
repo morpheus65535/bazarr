@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
+import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions } from "react-table";
 import { connect } from "react-redux";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +12,7 @@ import {
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
   GroupTable,
-  ActionBadge,
+  ActionIcon,
   AsyncStateOverlay,
   SubtitleToolModal,
   EpisodeHistoryModal,
@@ -130,24 +130,24 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         Cell: (row) => {
           const episode = row.row.original;
           return (
-            <React.Fragment>
-              <ActionBadge
+            <ButtonGroup>
+              <ActionIcon
                 icon={faUser}
                 onClick={() => showModal<Episode>("manual-search", episode)}
-              ></ActionBadge>
-              <ActionBadge
+              ></ActionIcon>
+              <ActionIcon
                 icon={faHistory}
                 onClick={() => {
                   showModal("history", episode);
                 }}
-              ></ActionBadge>
-              <ActionBadge
+              ></ActionIcon>
+              <ActionIcon
                 icon={faBriefcase}
                 onClick={() => {
                   showModal("tools", episode);
                 }}
-              ></ActionBadge>
-            </React.Fragment>
+              ></ActionIcon>
+            </ButtonGroup>
           );
         },
       },
