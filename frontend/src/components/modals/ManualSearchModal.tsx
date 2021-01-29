@@ -176,6 +176,7 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
     if (!start) {
       return (
         <div className="px-4 py-5">
+          <p className="mb-3 small">{item?.path ?? ""}</p>
           <Button variant="primary" block onClick={search}>
             Start Search
           </Button>
@@ -185,14 +186,17 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
-        <BasicTable
-          emptyText="No Result"
-          columns={columns}
-          data={result}
-        ></BasicTable>
+        <React.Fragment>
+          <p className="mb-3 small">{item?.path ?? ""}</p>
+          <BasicTable
+            emptyText="No Result"
+            columns={columns}
+            data={result}
+          ></BasicTable>
+        </React.Fragment>
       );
     }
-  }, [start, searching, columns, result, search]);
+  }, [start, searching, columns, result, search, item?.path]);
 
   const footer = useMemo(
     () => (

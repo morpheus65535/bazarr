@@ -35,7 +35,6 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
       {
         Header: "Name",
         accessor: "seriesTitle",
-        className: "text-nowrap",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
 
@@ -52,7 +51,6 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
       },
       {
         accessor: "episodeTitle",
-        className: "text-nowrap",
       },
       {
         Header: "Date",

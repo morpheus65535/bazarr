@@ -1,11 +1,11 @@
 export const securityOptions: SelectorOption<string>[] = [
   {
     label: "Basic",
-    value: "Basic",
+    value: "basic",
   },
   {
     label: "Form",
-    value: "Form",
+    value: "form",
   },
 ];
 
