@@ -1,55 +1,65 @@
 import React, {
-  Dispatch,
   FunctionComponent,
+  Dispatch,
   useEffect,
   useState,
-  useContext,
   useCallback,
+  useContext,
+  useMemo,
 } from "react";
 
-const ModalContext = React.createContext<[string, Dispatch<string>]>([
-  "",
+const ModalContext = React.createContext<[string[], Dispatch<string[]>]>([
+  [],
   (s) => {},
 ]);
 
-const PayloadContext = React.createContext<[any, Dispatch<any>]>([
-  undefined,
+const PayloadContext = React.createContext<[any[], Dispatch<any[]>]>([
+  [],
   (p) => {},
 ]);
 
 export function useShowModal() {
-  const modal = useContext(ModalContext)[1];
-  const update = useContext(PayloadContext)[1];
+  const [keys, setKeys] = useContext(ModalContext);
+  const [payloads, setPayloads] = useContext(PayloadContext);
   return useCallback(
     <T,>(key: string, payload?: T) => {
       if (process.env.NODE_ENV === "development") {
         console.log(`modal ${key} sending payload`, payload);
       }
-      update(payload);
-      modal(key);
+
+      setKeys([...keys, key]);
+      setPayloads([...payloads, payload]);
     },
-    [modal, update]
+    [keys, payloads, setKeys, setPayloads]
   );
 }
 
 export function useCloseModal() {
-  const modal = useContext(ModalContext)[1];
-  const payload = useContext(PayloadContext)[1];
+  const [keys, setKeys] = useContext(ModalContext);
+  const [payloads, setPayloads] = useContext(PayloadContext);
   return useCallback(() => {
-    modal("");
-    payload(undefined);
-  }, [modal, payload]);
+    const newKey = [...keys];
+    newKey.pop();
+    const newPayload = [...payloads];
+    newPayload.pop();
+    setKeys(newKey);
+    setPayloads(newPayload);
+  }, [keys, payloads, setKeys, setPayloads]);
 }
 
 export function useIsModalShow(key: string) {
-  const currentKey = useContext(ModalContext)[0];
-  return key === currentKey;
+  const keys = useContext(ModalContext)[0];
+  return key === keys[keys.length - 1];
 }
 
 export function usePayload<T>(key: string): T | undefined {
-  const payload = useContext(PayloadContext)[0];
-  const show = useIsModalShow(key);
-  return show ? (payload as T) : undefined;
+  const payloads = useContext(PayloadContext)[0];
+  const keys = useContext(ModalContext)[0];
+  return useMemo(() => {
+    const idx = keys.findIndex((v) => v === key);
+    const show = idx !== -1 && idx === keys.length - 1;
+    return show ? (payloads[idx] as T) : undefined;
+  }, [keys, payloads]);
 }
 
 export function useWhenModalShow(key: string, callback: React.EffectCallback) {
@@ -77,26 +87,9 @@ export function useWhenPayloadUpdate(
   });
 }
 
-interface Props {
-  value?: [string, any];
-}
-
-export const ModalProvider: FunctionComponent<Props> = ({
-  children,
-  value,
-}) => {
-  const [key, setKey] = useState("");
-  const [payload, setPayload] = useState<any>(undefined);
-
-  useEffect(() => {
-    if (value) {
-      setKey(value[0]);
-      setPayload(value[1]);
-    } else {
-      setKey("");
-      setPayload(undefined);
-    }
-  }, [value]);
+export const ModalProvider: FunctionComponent = ({ children }) => {
+  const [key, setKey] = useState<string[]>([]);
+  const [payload, setPayload] = useState<any[]>([]);
 
   return (
     <ModalContext.Provider value={[key, setKey]}>

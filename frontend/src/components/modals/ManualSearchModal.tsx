@@ -238,11 +238,21 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   }
 
   const matchElements = useMemo(
-    () => matches.map((v) => <p className="text-nowrap m-0">{v}</p>),
+    () =>
+      matches.map((v, idx) => (
+        <p key={`match-${idx}`} className="text-nowrap m-0">
+          {v}
+        </p>
+      )),
     [matches]
   );
   const dontElements = useMemo(
-    () => dont.map((v) => <p className="text-nowrap m-0">{v}</p>),
+    () =>
+      dont.map((v, idx) => (
+        <p key={`dont-${idx}`} className="text-nowrap m-0">
+          {v}
+        </p>
+      )),
     [dont]
   );
 
