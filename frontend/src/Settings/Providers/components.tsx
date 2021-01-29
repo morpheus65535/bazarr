@@ -28,6 +28,8 @@ import { isReactText } from "../../utilites";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import "./style.scss";
+
 const ModalKey = "provider-modal";
 const ProviderKey = "settings-general-enabled_providers";
 

@@ -8,20 +8,18 @@ import React, {
 import { connect } from "react-redux";
 import { ListGroup, Container, Image } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-
 import {
   BadgesContext,
   ActiveKeyContext,
   LinkItem,
   CollapseItem,
 } from "./items";
-
 import { SidebarList } from "./list";
+import { BadgeProvider } from "./types";
+import { SidebarToggleContext } from "../App";
 
 import logo from "../@static/logo128.png";
-import { BadgeProvider } from "./types";
-
-import { SidebarToggleContext } from "../App";
+import "./style.scss";
 
 interface Props {
   movies_badge: number;

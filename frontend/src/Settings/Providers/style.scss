@@ -1,0 +1,14 @@
+.provider-card {
+  cursor: pointer;
+
+  min-height: 85px;
+
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+
+  &:hover {
+    border-color: var(--primary);
+  }
+}
