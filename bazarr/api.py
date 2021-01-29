@@ -1792,23 +1792,23 @@ class Subtitles(Resource):
         subtitles_path = request.form.get('path')
 
         if action == 'sync':
-            media_type = request.form.get('type')
+            action_type = request.form.get('type')
             id = request.form.get('id')
 
-            if media_type == 'series':
+            if action_type == 'episode':
                 metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
                                     " WHERE sonarrEpisodeId = ?", (id,),
                                     only_one=True)
                 video_path = path_mappings.path_replace_reverse(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                            srt_lang=language, media_type=media_type, sonarr_series_id=metadata['sonarrSeriesId'],
-                            sonarr_episode_id=id)
+                            srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
+                            sonarr_episode_id=int(id))
             else:
                 metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
                                                 (id,), only_one=True)
                 video_path = path_mappings.path_replace_reverse_movie(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                            srt_lang=language, media_type=media_type, radarr_id=id)
+                            srt_lang=language, media_type='movies', radarr_id=id)
         else:
             subtitles_apply_mods(language, subtitles_path, [action])
 

@@ -262,7 +262,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
 
 
 def subtitles_apply_mods(language, subtitle_path, mods):
-
+    language = alpha3_from_alpha2(language)
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     else:
