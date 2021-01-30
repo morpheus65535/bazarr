@@ -40,6 +40,6 @@ jobs:
         name: Bazarr
         path: |
         /home/runner/work/bazarr
-        !/home/runner/work/bazarr/.git/*
-        !/home/runner/work/bazarr/bazarr/frontend/node_modules/*
+        !**/.git/*
+        !**/node_modules/*
     
