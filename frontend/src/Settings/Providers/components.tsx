@@ -59,10 +59,10 @@ export const ProviderCard: FunctionComponent<{ providerKey?: string }> = ({
     <Card className="provider-card" onClick={() => showModal(ModalKey, info)}>
       {info ? (
         <Card.Body>
-          <Card.Title>{info.name ?? capitalize(info.key)}</Card.Title>
-          <Card.Subtitle className="text-nowrap small">
-            {info.description}
-          </Card.Subtitle>
+          <Card.Title className="text-nowrap text-overflow-ellipsis">
+            {info.name ?? capitalize(info.key)}
+          </Card.Title>
+          <Card.Subtitle className="small">{info.description}</Card.Subtitle>
         </Card.Body>
       ) : (
         <Card.Body className="d-flex justify-content-center align-items-center">

@@ -33,8 +33,7 @@
   }
 
   input {
-    &[type="text"],
-    &[type="password"] {
+    &.form-control {
       &:active,
       &:focus {
         border-color: $theme-color;

@@ -26,6 +26,10 @@ export function updateAsyncState<T>(
     });
 }
 
+export function submodProcessColor(s: string) {
+  return `color(name=${s})`;
+}
+
 export function isReactText(v: any): v is ReactText {
   return isString(v) || isNumber(v);
 }

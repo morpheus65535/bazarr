@@ -5,11 +5,24 @@ import React, {
   useState,
 } from "react";
 import BasicModal, { BasicModalProps } from "./BasicModal";
-import { Badge, ButtonGroup, Dropdown } from "react-bootstrap";
+import {
+  Badge,
+  ButtonGroup,
+  Dropdown,
+  InputGroup,
+  Form,
+  Button,
+} from "react-bootstrap";
 import { Column } from "react-table";
-import { BasicTable, ActionIcon, ActionIconItem } from "..";
+import {
+  BasicTable,
+  ActionIcon,
+  ActionIconItem,
+  usePayload,
+  useShowModal,
+  Selector,
+} from "..";
 import { SubtitlesApi } from "../../apis";
-import { usePayload } from "./provider";
 import {
   faClock,
   faCode,
@@ -18,13 +31,259 @@ import {
   faFilm,
   faImage,
   faMagic,
+  faMinus,
   faPaintBrush,
   faPlay,
+  faPlus,
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
-import { isMovie } from "../../utilites";
+import { isMovie, submodProcessColor } from "../../utilites";
+import { colorOptions } from "../../Settings/Subtitles/options";
+import { AsyncButton } from "../buttons";
+import { useCloseModal } from "./provider";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 type SupportType = Episode | Movie;
+
+function submodProcessFrameRate(from: number, to: number) {
+  return `change_FPS(from=${from},to=${to})`;
+}
+
+function submodProcessOffset(h: number, m: number, s: number, ms: number) {
+  return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
+}
+
+const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
+  const { ...modal } = props;
+  const [updating, setUpdate] = useState(false);
+  const [selection, setSelection] = useState<string | undefined>(undefined);
+
+  const subtitle = usePayload<Subtitle>(modal.modalKey);
+  const closeModal = useCloseModal();
+
+  const submit = useCallback(() => {
+    if (subtitle && subtitle.path && selection) {
+      return SubtitlesApi.modify(selection, subtitle.code2, subtitle.path);
+    } else {
+      return undefined;
+    }
+  }, [selection, subtitle]);
+
+  const footer = useMemo(
+    () => (
+      <AsyncButton
+        disabled={selection === undefined}
+        promise={submit}
+        onSuccess={closeModal}
+        onChange={setUpdate}
+      >
+        Save
+      </AsyncButton>
+    ),
+    [selection, submit, closeModal]
+  );
+  return (
+    <BasicModal
+      title="Choose Color"
+      footer={footer}
+      closeable={!updating}
+      {...modal}
+    >
+      <Selector
+        disabled={updating}
+        options={colorOptions}
+        onChange={(s) => {
+          if (s) {
+            s = submodProcessColor(s);
+          }
+          setSelection(s);
+        }}
+      ></Selector>
+    </BasicModal>
+  );
+};
+
+const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
+  const { ...modal } = props;
+
+  const [updating, setUpdate] = useState(false);
+
+  const [from, setFrom] = useState<number | undefined>();
+  const [to, setTo] = useState<number | undefined>();
+
+  const subtitle = usePayload<Subtitle>(modal.modalKey);
+  const closeModal = useCloseModal();
+
+  const canSave = from !== undefined && to !== undefined && from !== to;
+
+  const submit = useCallback(() => {
+    if (canSave && subtitle && subtitle.path) {
+      const action = submodProcessFrameRate(from!, to!);
+      return SubtitlesApi.modify(action, subtitle.code2, subtitle.path);
+    } else {
+      return undefined;
+    }
+  }, [subtitle, canSave, from, to]);
+
+  const footer = useMemo(
+    () => (
+      <AsyncButton
+        disabled={!canSave}
+        promise={submit}
+        onSuccess={closeModal}
+        onChange={setUpdate}
+      >
+        Save
+      </AsyncButton>
+    ),
+    [submit, closeModal, canSave]
+  );
+
+  return (
+    <BasicModal
+      title="Change Frame Rate"
+      footer={footer}
+      closeable={!updating}
+      {...modal}
+    >
+      <InputGroup className="px-2">
+        <Form.Control
+          disabled={updating}
+          placeholder="From"
+          type="number"
+          onChange={(e) => {
+            const value = parseFloat(e.currentTarget.value);
+            if (isNaN(value)) {
+              setFrom(undefined);
+            } else {
+              setFrom(value);
+            }
+          }}
+        ></Form.Control>
+        <Form.Control
+          disabled={updating}
+          placeholder="To"
+          type="number"
+          onChange={(e) => {
+            const value = parseFloat(e.currentTarget.value);
+            if (isNaN(value)) {
+              setTo(undefined);
+            } else {
+              setTo(value);
+            }
+          }}
+        ></Form.Control>
+      </InputGroup>
+    </BasicModal>
+  );
+};
+const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
+  const { ...modal } = props;
+
+  const [updating, setUpdate] = useState(false);
+  const [isPlus, setPlus] = useState(true);
+  const [offset, setOffset] = useState<[number, number, number, number]>([
+    0,
+    0,
+    0,
+    0,
+  ]);
+
+  const updateOffset = useCallback(
+    (idx: number) => {
+      return (e: any) => {
+        let value = parseFloat(e.currentTarget.value);
+        if (isNaN(value)) {
+          value = 0;
+        }
+        const newOffset = [...offset] as [number, number, number, number];
+        newOffset[idx] = value;
+        setOffset(newOffset);
+      };
+    },
+    [offset]
+  );
+
+  const subtitle = usePayload<Subtitle>(modal.modalKey);
+  const closeModal = useCloseModal();
+
+  const canSave = offset.some((v) => v !== 0);
+
+  const submit = useCallback(() => {
+    if (canSave && subtitle && subtitle.path) {
+      const newOffset = offset.map((v) => (isPlus ? v : -v));
+      const action = submodProcessOffset(
+        newOffset[0],
+        newOffset[1],
+        newOffset[2],
+        newOffset[3]
+      );
+      return SubtitlesApi.modify(action, subtitle.code2, subtitle.path);
+    } else {
+      return undefined;
+    }
+  }, [subtitle, canSave, offset, isPlus]);
+
+  const footer = useMemo(
+    () => (
+      <AsyncButton
+        disabled={!canSave}
+        promise={submit}
+        onSuccess={closeModal}
+        onChange={setUpdate}
+      >
+        Save
+      </AsyncButton>
+    ),
+    [submit, closeModal, canSave]
+  );
+
+  return (
+    <BasicModal
+      title="Adjust Times"
+      footer={footer}
+      closeable={!updating}
+      {...modal}
+    >
+      <InputGroup>
+        <InputGroup.Prepend>
+          <Button
+            disabled={updating}
+            variant="secondary"
+            title={isPlus ? "Later" : "Earlier"}
+            onClick={() => setPlus(!isPlus)}
+          >
+            <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
+          </Button>
+        </InputGroup.Prepend>
+        <Form.Control
+          disabled={updating}
+          type="number"
+          placeholder="hour"
+          onChange={updateOffset(0)}
+        ></Form.Control>
+        <Form.Control
+          disabled={updating}
+          type="number"
+          placeholder="min"
+          onChange={updateOffset(1)}
+        ></Form.Control>
+        <Form.Control
+          disabled={updating}
+          type="number"
+          placeholder="sec"
+          onChange={updateOffset(2)}
+        ></Form.Control>
+        <Form.Control
+          disabled={updating}
+          type="number"
+          placeholder="ms"
+          onChange={updateOffset(3)}
+        ></Form.Control>
+      </InputGroup>
+    </BasicModal>
+  );
+};
 
 interface Props {
   item?: SupportType;
@@ -62,6 +321,8 @@ const Table: FunctionComponent<Props> = ({ item }) => {
     },
     [item]
   );
+
+  const showModal = useShowModal();
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
@@ -141,15 +402,17 @@ const Table: FunctionComponent<Props> = ({ item }) => {
                     Reverse RTL
                   </ActionIconItem>
                 </Dropdown.Item>
-                <Dropdown.Item>
+                <Dropdown.Item onSelect={() => showModal("add-color", sub)}>
                   <ActionIconItem icon={faPaintBrush}>Add Color</ActionIconItem>
                 </Dropdown.Item>
-                <Dropdown.Item>
+                <Dropdown.Item
+                  onSelect={() => showModal("change-frame-rate", sub)}
+                >
                   <ActionIconItem icon={faFilm}>
                     Change Frame Rate
                   </ActionIconItem>
                 </Dropdown.Item>
-                <Dropdown.Item>
+                <Dropdown.Item onSelect={() => showModal("adjust-times", sub)}>
                   <ActionIconItem icon={faClock}>Adjust Times</ActionIconItem>
                 </Dropdown.Item>
               </Dropdown.Menu>
@@ -158,7 +421,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
         },
       },
     ],
-    [submitAction, updating, syncSubtitle, active]
+    [submitAction, updating, syncSubtitle, active, showModal]
   );
 
   const data: Subtitle[] = useMemo<Subtitle[]>(
@@ -179,9 +442,14 @@ const Table: FunctionComponent<Props> = ({ item }) => {
 const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
   const item = usePayload<SupportType>(props.modalKey);
   return (
-    <BasicModal title={`Tools - ${item?.title ?? ""}`} {...props}>
-      <Table item={item} {...props}></Table>
-    </BasicModal>
+    <React.Fragment>
+      <BasicModal title={`Tools - ${item?.title ?? ""}`} {...props}>
+        <Table item={item} {...props}></Table>
+      </BasicModal>
+      <AddColorModal modalKey="add-color"></AddColorModal>
+      <ChangeFrameRateModal modalKey="change-frame-rate"></ChangeFrameRateModal>
+      <AdjustTimesModal modalKey="adjust-times"></AdjustTimesModal>
+    </React.Fragment>
   );
 };
 
