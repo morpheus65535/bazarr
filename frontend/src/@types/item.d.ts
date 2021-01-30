@@ -158,3 +158,11 @@ interface ManualSearchResult {
   uploader?: string;
   url?: string;
 }
+
+interface ReleaseInfo {
+  current: boolean;
+  date: string;
+  name: string;
+  prerelease: boolean;
+  body: string[];
+}

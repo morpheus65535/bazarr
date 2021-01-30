@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect, useMemo } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
-import { systemUpdateSystemStatus } from "../../@redux/actions";
+import { systemUpdateStatus } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -157,7 +157,7 @@ const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
   );
 
   return (
-    <Container fluid className="p-5">
+    <Container className="p-5">
       <Helmet>
         <title>Status - Bazarr (System)</title>
       </Helmet>
@@ -168,5 +168,5 @@ const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
 };
 
 export default connect(mapStateToProps, {
-  update: systemUpdateSystemStatus,
+  update: systemUpdateStatus,
 })(SystemStatusView);

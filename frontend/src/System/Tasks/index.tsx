@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
-import { systemUpdateSystemTasks } from "../../@redux/actions";
+import { systemUpdateTasks } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
 import { ContentHeader } from "../../components";
@@ -42,6 +42,6 @@ const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: systemUpdateSystemTasks })(
+export default connect(mapStateToProps, { update: systemUpdateTasks })(
   SystemTasksView
 );

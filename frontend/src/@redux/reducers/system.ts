@@ -2,11 +2,12 @@ import {
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
-  SYSTEM_UPDATE_SYSTEM_STATUS,
-  SYSTEM_UPDATE_SYSTEM_TASKS,
+  SYSTEM_UPDATE_STATUS,
+  SYSTEM_UPDATE_TASKS,
+  SYSTEM_UPDATE_RELEASES,
   PROVIDER_UPDATE_LIST,
-  SYSTEM_UPDATE_SYSTEM_LOGS,
-  SYSTEM_UPDATE_SYSTEM_SETTINGS,
+  SYSTEM_UPDATE_LOGS,
+  SYSTEM_UPDATE_SETTINGS,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
@@ -44,7 +45,7 @@ const reducer = handleActions<SystemState, any>(
         return newState;
       },
     },
-    [SYSTEM_UPDATE_SYSTEM_STATUS]: {
+    [SYSTEM_UPDATE_STATUS]: {
       next(state, action) {
         return {
           ...state,
@@ -55,7 +56,7 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
-    [SYSTEM_UPDATE_SYSTEM_TASKS]: {
+    [SYSTEM_UPDATE_TASKS]: {
       next(state, action) {
         return {
           ...state,
@@ -74,7 +75,7 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
-    [SYSTEM_UPDATE_SYSTEM_LOGS]: {
+    [SYSTEM_UPDATE_LOGS]: {
       next(state, action) {
         return {
           ...state,
@@ -82,7 +83,15 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
-    [SYSTEM_UPDATE_SYSTEM_SETTINGS]: {
+    [SYSTEM_UPDATE_RELEASES]: {
+      next(state, action) {
+        return {
+          ...state,
+          releases: mapToAsyncState(action, state.releases.items),
+        };
+      },
+    },
+    [SYSTEM_UPDATE_SETTINGS]: {
       next(state, action) {
         return {
           ...state,
@@ -108,6 +117,10 @@ const reducer = handleActions<SystemState, any>(
       items: [],
     },
     logs: {
+      updating: true,
+      items: [],
+    },
+    releases: {
       updating: true,
       items: [],
     },

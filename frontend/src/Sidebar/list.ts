@@ -116,6 +116,10 @@ export const SidebarList: SidebarDefinition[] = [
         name: "Status",
         link: "/system/status",
       },
+      {
+        name: "Releases",
+        link: "/system/releases",
+      },
     ],
   },
 ];

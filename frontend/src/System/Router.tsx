@@ -5,6 +5,7 @@ import Status from "./Status";
 import Tasks from "./Tasks";
 import Providers from "./Providers";
 import Logs from "./Logs";
+import Releases from "./Releases";
 
 const Router: FunctionComponent = () => {
   return (
@@ -20,6 +21,9 @@ const Router: FunctionComponent = () => {
       </Route>
       <Route exact path="/system/logs">
         <Logs></Logs>
+      </Route>
+      <Route exact path="/system/releases">
+        <Releases></Releases>
       </Route>
     </Switch>
   );

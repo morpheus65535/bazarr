@@ -2,7 +2,7 @@ import React, { FunctionComponent, useEffect } from "react";
 import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
-import { systemUpdateSystemSettings } from "../@redux/actions";
+import { systemUpdateSettings } from "../@redux/actions";
 
 import General from "./General";
 import Sonarr from "./Sonarr";
@@ -64,6 +64,6 @@ const Router: FunctionComponent<Props> = ({ update, settings }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: systemUpdateSystemSettings })(
+export default connect(mapStateToProps, { update: systemUpdateSettings })(
   Router
 );

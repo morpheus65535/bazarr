@@ -31,6 +31,7 @@ interface SystemState {
   tasks: AsyncState<Array<SystemTaskResult>>;
   providers: AsyncState<Array<SystemProvider>>;
   logs: AsyncState<Array<SystemLog>>;
+  releases: AsyncState<Array<ReleaseInfo>>;
   settings: AsyncState<SystemSettings | undefined>;
 }
 

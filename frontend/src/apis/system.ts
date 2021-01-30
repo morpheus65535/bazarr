@@ -97,6 +97,14 @@ class SystemApi extends BasicApi {
     });
   }
 
+  async releases() {
+    return new Promise<Array<ReleaseInfo>>((resolve, reject) => {
+      this.get<DataWrapper<Array<ReleaseInfo>>>("/releases")
+        .then((result) => resolve(result.data.data))
+        .catch(reject);
+    });
+  }
+
   async deleteLogs() {
     return new Promise<void>((resolve, reject) => {
       this.delete<void>("/logs")
