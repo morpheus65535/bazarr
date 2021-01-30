@@ -37,6 +37,9 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: react-github-actions-build
-        path: /home/runner/work/bazarr
+        name: Bazarr
+        path: |
+        /home/runner/work/bazarr
+        !/home/runner/work/bazarr/.git
+        !/home/runner/work/bazarr/bazarr/frontend/node_modules
     
