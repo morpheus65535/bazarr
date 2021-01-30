@@ -9,6 +9,8 @@ from operator import itemgetter
 import platform
 import re
 import json
+import hashlib
+import gc
 
 from get_args import args
 from config import settings, base_url, save_settings, get_settings
@@ -37,33 +39,70 @@ from filesystem import browse_bazarr_filesystem, browse_sonarr_filesystem, brows
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS, guessit
 
-from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response
+from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response, session
 
 from flask_restful import Resource, Api, abort
 from functools import wraps
 
+
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
 
+def check_credentials(user, pw):
+    username = settings.auth.username
+    password = settings.auth.password
+    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
+        return True
+    return False
 
 def authenticate(actual_method):
     @wraps(actual_method)
     def wrapper(*args, **kwargs):
+        if settings.auth.type == 'basic':
+            auth = request.authorization
+            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+                return ('Unauthorized', 401, {
+                    'WWW-Authenticate': 'Basic realm="Login Required"'
+                })
+        elif settings.auth.type == 'form':
+            if 'logged_in' not in session:
+                return abort(401, message="Unauthorized")
+
         apikey_settings = settings.auth.apikey
         apikey_get = request.args.get('apikey')
         apikey_post = request.form.get('apikey')
         apikey_header = None
-        if 'X-Api-Key' in request.headers:
-            apikey_header = request.headers['X-Api-Key']
+        if 'X-API-KEY' in request.headers:
+            apikey_header = request.headers['X-API-KEY']
 
         if apikey_settings in [apikey_get, apikey_post, apikey_header]:
             return actual_method(*args, **kwargs)
 
-        return abort(401, message="Unauthorized")
+        return abort(401)
 
     return wrapper
 
+class SystemAccount(Resource):
+    def post(self):
+        if settings.auth.type != 'form':
+            return '', 405
+            
+        action = request.args.get('action')
+        if action == 'login':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            if check_credentials(username, password):
+                session['logged_in'] = True
+                return '', 204
+        elif action == 'logout':
+            if settings.auth.type == 'basic':
+                return abort(401)
+            elif settings.auth.type == 'form':
+                session.clear()
+                gc.collect()
+                return '', 204
 
+        return '', 401,
 class System(Resource):
     @authenticate
     def post(self):
@@ -268,7 +307,6 @@ class SystemLogs(Resource):
 
 
 class SystemStatus(Resource):
-    @authenticate
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
@@ -1894,6 +1932,7 @@ api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
 api.add_resource(ProviderEpisodes, '/providers/episodes')
 
+api.add_resource(SystemAccount, '/system/account')
 api.add_resource(System, '/system')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')

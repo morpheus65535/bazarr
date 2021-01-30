@@ -52,37 +52,6 @@ login_auth = settings.auth.type
 update_notifier()
 
 
-def check_credentials(user, pw):
-    username = settings.auth.username
-    password = settings.auth.password
-    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
-        return True
-    return False
-
-
-def login_required(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        if settings.auth.type == 'basic':
-            auth = request.authorization
-            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
-                return ('Unauthorized', 401, {
-                    'WWW-Authenticate': 'Basic realm="Login Required"'
-                })
-
-            return f(*args, **kwargs)
-        elif settings.auth.type == 'form':
-            if 'logged_in' in session:
-                return f(*args, **kwargs)
-            else:
-                flash("You need to login first")
-                return redirect(url_for('login_page'))
-        else:
-            return f(*args, **kwargs)
-
-    return wrap
-
-
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
@@ -97,33 +66,6 @@ def catch_all(path):
 
     return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
-@app.route('/login/', methods=["GET", "POST"])
-def login_page():
-    error = ''
-    password_reset = False
-    if settings.auth.password == hashlib.md5(settings.auth.username.encode('utf-8')).hexdigest():
-        password_reset = True
-    try:
-        if request.method == "POST":
-            if check_credentials(request.form['username'], request.form['password']):
-                session['logged_in'] = True
-                session['username'] = request.form['username']
-
-                flash("You are now logged in")
-                return redirect(url_for("redirect_root"))
-            else:
-                error = "Invalid credentials, try again."
-        gc.collect()
-
-        # return render_template("login.html", error=error, password_reset=password_reset)
-        return ""
-
-    except Exception as e:
-        # flash(e)
-        error = "Invalid credentials, try again."
-        # return "render_template("login.html", error=error)"
-        return ""
-
 
 @app.context_processor
 def template_variable_processor():
@@ -133,34 +75,8 @@ def template_variable_processor():
                 settings=settings, args=args)
 
 
-def api_authorize():
-    if 'apikey' in request.GET.dict:
-        if request.GET.dict['apikey'][0] == settings.auth.apikey:
-            return
-        else:
-            abort(401, 'Unauthorized')
-    else:
-        abort(401, 'Unauthorized')
-
-
-def post_get(name, default=''):
-    return request.POST.get(name, default).strip()
-
-
-@app.route("/logout/")
-@login_required
-def logout():
-    if settings.auth.type == 'basic':
-        return abort(401)
-    elif settings.auth.type == 'form':
-        session.clear()
-        flash("You have been logged out!")
-        gc.collect()
-        return redirect(url_for('redirect_root'))
-
 
 @app.route('/bazarr.log')
-@login_required
 def download_log():
     r = Response()
     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -171,7 +87,6 @@ def download_log():
 
 
 @app.route('/images/series/<path:url>', methods=['GET'])
-@login_required
 def series_images(url):
     apikey = settings.sonarr.apikey
     url_image = (url_sonarr() + '/api/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
@@ -184,7 +99,6 @@ def series_images(url):
 
 
 @app.route('/images/movies/<path:url>', methods=['GET'])
-@login_required
 def movies_images(url):
     apikey = settings.radarr.apikey
     url_image = url_radarr() + '/api/' + url + '?apikey=' + apikey
@@ -196,13 +110,13 @@ def movies_images(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
-@app.route('/check_update')
-@login_required
-def check_update():
-    if not args.no_update:
-        check_and_apply_update()
+# @app.route('/check_update')
+# @authenticate
+# def check_update():
+#     if not args.no_update:
+#         check_and_apply_update()
 
-    return '', 200
+#     return '', 200
 
 
 def configured():
@@ -211,7 +125,6 @@ def configured():
 
 @app.route('/test', methods=['GET'])
 @app.route('/test/<protocol>/<path:url>', methods=['GET'])
-@login_required
 def proxy(protocol, url):
     url = protocol + '://' + unquote(url)
     params = request.args
@@ -236,7 +149,6 @@ def proxy(protocol, url):
 
 @app.route('/test_notification', methods=['GET'])
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
-@login_required
 def test_notification(protocol, provider):
     provider = unquote(provider)
 
