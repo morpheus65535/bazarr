@@ -72,7 +72,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         return video
 
     except Exception as e:
-        logging.exception("BAZARR Error trying to get video information for this file: " + path)
+        logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
