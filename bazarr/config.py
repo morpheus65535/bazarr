@@ -101,7 +101,7 @@ defaults = {
         'port': '',
         'username': '',
         'password': '',
-        'exclude': 'localhost,127.0.0.1'
+        'exclude': '["localhost","127.0.0.1"]'
     },
     'opensubtitles': {
         'username': '',
@@ -181,6 +181,7 @@ ignore_keys = ['flask_secret_key',
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
+                'exclude',
                 'subzero_mods',
                 'excluded_series_types',
                 'enabled_providers',
@@ -457,4 +458,5 @@ def configure_proxy_func():
             proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
-        os.environ['NO_PROXY'] = str(settings.proxy.exclude)
+        exclude = ','.join(get_array_from(settings.proxy.exclude))
+        os.environ['NO_PROXY'] = exclude
