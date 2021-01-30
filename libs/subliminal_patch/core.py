@@ -560,6 +560,9 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
             if "opensubtitles" in providers:
                 video.hashes['opensubtitles'] = osub_hash = osub_hash or hash_opensubtitles(hash_path)
 
+            if "opensubtitlescom" in providers:
+                video.hashes['opensubtitlescom'] = osub_hash = osub_hash or hash_opensubtitles(hash_path)
+
             if "shooter" in providers:
                 video.hashes['shooter'] = hash_shooter(hash_path)
 

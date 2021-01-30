@@ -31,13 +31,16 @@ from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from check_update import check_and_apply_update
+from check_update import check_and_apply_update, check_releases
 from server import app, webserver
 from functools import wraps
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
     check_and_apply_update()
+# If not, update releases cache instead.
+else:
+    check_releases()
 
 configure_proxy_func()
 
