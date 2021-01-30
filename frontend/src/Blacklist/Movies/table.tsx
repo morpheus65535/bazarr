@@ -6,7 +6,7 @@ import { Column } from "react-table";
 import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { MoviesApi } from "../../apis";
-import { updateMovieBlacklist } from "../../@redux/actions";
+import { movieUpdateBlacklist } from "../../@redux/actions";
 
 interface Props {
   blacklist: AsyncState<MovieBlacklist[]>;
@@ -85,6 +85,6 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateMovieBlacklist })(
+export default connect(mapStateToProps, { update: movieUpdateBlacklist })(
   Table
 );

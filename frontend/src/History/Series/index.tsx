@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { updateHistorySeriesList } from "../../@redux/actions";
+import { seriesUpdateHistoryList } from "../../@redux/actions";
 
 import Table from "./table";
 
@@ -26,6 +26,6 @@ const SeriesHistoryView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: updateHistorySeriesList })(
+export default connect(null, { update: seriesUpdateHistoryList })(
   SeriesHistoryView
 );

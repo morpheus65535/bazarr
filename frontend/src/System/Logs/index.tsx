@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { UpdateSystemLogs } from "../../@redux/actions";
+import { systemUpdateSystemLogs } from "../../@redux/actions";
 
 import { faTrash, faDownload, faSync } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader } from "../../components";
@@ -65,6 +65,6 @@ const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: UpdateSystemLogs })(
+export default connect(mapStateToProps, { update: systemUpdateSystemLogs })(
   SystemLogsView
 );

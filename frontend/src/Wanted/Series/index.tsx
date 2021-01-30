@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
-import { updateWantedSeries } from "../../@redux/actions";
+import { seriesUpdateWantedAll } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
@@ -41,5 +41,5 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update }) => {
 };
 
 export default connect(null, {
-  update: updateWantedSeries,
+  update: seriesUpdateWantedAll,
 })(WantedSeriesView);

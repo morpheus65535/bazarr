@@ -23,7 +23,7 @@ import {
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 import { MoviesApi } from "../apis";
-import { updateMovieInfo } from "../@redux/actions";
+import { movieUpdateInfoAll } from "../@redux/actions";
 
 interface Props {
   movies: AsyncState<Movie[]>;
@@ -160,4 +160,4 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateMovieInfo })(Table);
+export default connect(mapStateToProps, { update: movieUpdateInfoAll })(Table);

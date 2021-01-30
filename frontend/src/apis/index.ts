@@ -1,6 +1,6 @@
 import Axios, { AxiosInstance, CancelTokenSource } from "axios";
 import reduxStore from "../@redux/store";
-import { redirectToAuth } from "../@redux/actions";
+import { siteRedirectToAuth } from "../@redux/actions";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
@@ -55,7 +55,7 @@ class Api {
   handle5xxRequest() {}
 
   handle4xxRequest() {
-    reduxStore.dispatch(redirectToAuth());
+    reduxStore.dispatch(siteRedirectToAuth());
   }
 }
 

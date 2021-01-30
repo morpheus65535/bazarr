@@ -3,7 +3,7 @@ import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
-import { updateSeriesBlacklist } from "../../@redux/actions";
+import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { ContentHeader } from "../../components";
 import Table from "./table";
 import { SeriesApi } from "../../apis";
@@ -35,6 +35,6 @@ const BlacklistSeriesView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(undefined, { update: updateSeriesBlacklist })(
+export default connect(undefined, { update: seriesUpdateBlacklist })(
   BlacklistSeriesView
 );

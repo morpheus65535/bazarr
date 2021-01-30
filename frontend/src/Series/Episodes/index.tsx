@@ -14,7 +14,7 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { updateSeriesInfo } from "../../@redux/actions";
+import { seriesUpdateInfoAll } from "../../@redux/actions";
 
 import {
   ContentHeader,
@@ -140,5 +140,5 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 };
 
 export default withRouter(
-  connect(mapStateToProps, { update: updateSeriesInfo })(SeriesEpisodesView)
+  connect(mapStateToProps, { update: seriesUpdateInfoAll })(SeriesEpisodesView)
 );

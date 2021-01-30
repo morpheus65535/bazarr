@@ -5,11 +5,11 @@ import {
 } from "../constants";
 import { createFillfulAction } from "./utils";
 import { updateBadges } from "./badges";
-import { updateLanguagesList } from "./system";
+import { systemUpdateLanguagesAll } from "./system";
 import { createAction } from "redux-actions";
 
 export const bootstrap = createFillfulAction(
-  () => [updateBadges(), updateLanguagesList()],
+  () => [updateBadges(), systemUpdateLanguagesAll()],
   (state) => {
     const { system } = state;
     if (
@@ -24,6 +24,6 @@ export const bootstrap = createFillfulAction(
 
 const siteInitialized = createAction(SITE_INITIALIZED);
 
-export const redirectToAuth = createAction(SITE_NEED_AUTH);
+export const siteRedirectToAuth = createAction(SITE_NEED_AUTH);
 
-export const authSuccess = createAction(SITE_AUTH_SUCCESS);
+export const siteAuthSuccess = createAction(SITE_AUTH_SUCCESS);

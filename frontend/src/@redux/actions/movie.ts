@@ -1,42 +1,43 @@
 import { MoviesApi, HistoryApi } from "../../apis";
 import {
-  UPDATE_MOVIE_HISTORY_LIST,
-  UPDATE_MOVIE_LIST,
-  UPDATE_MOVIE_WANTED_LIST,
-  UPDATE_MOVIE_INFO,
-  UPDATE_MOVIES_BLACKLIST,
+  MOVIES_UPDATE_HISTORY_LIST,
+  MOVIES_UPDATE_LIST,
+  MOVIES_UPDATE_WANTED_LIST,
+  MOVIES_UPDATE_INFO,
+  MOVIES_UPDATE_BLACKLIST,
 } from "../constants";
-import { updateBadgeMovies, updateBadges } from "./badges";
+import { badgeUpdateMovies, updateBadges } from "./badges";
 import { createAsyncAction, createCombineAction } from "./utils";
 
-export const updateMovieList = createAsyncAction(UPDATE_MOVIE_LIST, () =>
+export const movieUpdateList = createAsyncAction(MOVIES_UPDATE_LIST, () =>
   MoviesApi.movies()
 );
 
-export const updateWantedMovieList = createAsyncAction(
-  UPDATE_MOVIE_WANTED_LIST,
+export const movieUpdateWantedList = createAsyncAction(
+  MOVIES_UPDATE_WANTED_LIST,
   () => MoviesApi.wanted()
 );
 
-export const updateWantedMovies = createCombineAction(() => [
-  updateWantedMovieList(),
-  updateBadgeMovies(),
+export const movieUpdateWantedAll = createCombineAction(() => [
+  movieUpdateWantedList(),
+  badgeUpdateMovies(),
 ]);
 
-export const updateHistoryMovieList = createAsyncAction(
-  UPDATE_MOVIE_HISTORY_LIST,
+export const movieUpdateHistoryList = createAsyncAction(
+  MOVIES_UPDATE_HISTORY_LIST,
   () => HistoryApi.movies()
 );
 
-export const updateMovie = createAsyncAction(UPDATE_MOVIE_INFO, (id: number) =>
-  MoviesApi.movies(id)
+export const movieUpdateInfo = createAsyncAction(
+  MOVIES_UPDATE_INFO,
+  (id: number) => MoviesApi.movies(id)
 );
 
-export const updateMovieInfo = createCombineAction((id: number) => {
-  return [updateMovie(id), updateBadges()];
+export const movieUpdateInfoAll = createCombineAction((id: number) => {
+  return [movieUpdateInfo(id), updateBadges()];
 });
 
-export const updateMovieBlacklist = createAsyncAction(
-  UPDATE_MOVIES_BLACKLIST,
+export const movieUpdateBlacklist = createAsyncAction(
+  MOVIES_UPDATE_BLACKLIST,
   () => MoviesApi.blacklist()
 );

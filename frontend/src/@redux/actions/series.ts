@@ -1,53 +1,53 @@
 import {
-  UPDATE_SERIES_LIST,
-  UPDATE_SERIES_WANTED_LIST,
-  UPDATE_SERIES_EPISODE_LIST,
-  UPDATE_SERIES_HISTORY_LIST,
-  UPDATE_SERIES_INFO,
-  UPDATE_SERIES_BLACKLIST,
+  SERIES_UPDATE_LIST,
+  SERIES_UPDATE_WANTED_LIST,
+  SERIES_UPDATE_EPISODE_LIST,
+  SERIES_UPDATE_HISTORY_LIST,
+  SERIES_UPDATE_INFO,
+  SERIES_UPDATE_BLACKLIST,
 } from "../constants";
 
 import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
 import { createAsyncAction, createCombineAction } from "./utils";
 
-import { updateBadges, updateBadgeSeries } from "./badges";
+import { updateBadges, badgeUpdateSeries } from "./badges";
 
-export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
+export const seriesUpdateList = createAsyncAction(SERIES_UPDATE_LIST, () =>
   SeriesApi.series()
 );
 
-export const updateWantedSeriesList = createAsyncAction(
-  UPDATE_SERIES_WANTED_LIST,
+export const seriesUpdateWantedList = createAsyncAction(
+  SERIES_UPDATE_WANTED_LIST,
   () => SeriesApi.wanted()
 );
 
-export const updateWantedSeries = createCombineAction(() => [
-  updateWantedSeriesList(),
-  updateBadgeSeries(),
+export const seriesUpdateWantedAll = createCombineAction(() => [
+  seriesUpdateWantedList(),
+  badgeUpdateSeries(),
 ]);
 
-export const updateEpisodeList = createAsyncAction(
-  UPDATE_SERIES_EPISODE_LIST,
+export const episodeUpdateInfo = createAsyncAction(
+  SERIES_UPDATE_EPISODE_LIST,
   (id: number) => EpisodesApi.all(id)
 );
 
-export const updateHistorySeriesList = createAsyncAction(
-  UPDATE_SERIES_HISTORY_LIST,
+export const seriesUpdateHistoryList = createAsyncAction(
+  SERIES_UPDATE_HISTORY_LIST,
   () => HistoryApi.series()
 );
 
-export const updateSeries = createAsyncAction(
-  UPDATE_SERIES_INFO,
+export const seriesUpdateInfo = createAsyncAction(
+  SERIES_UPDATE_INFO,
   (id: number) => SeriesApi.series(id)
 );
 
-export const updateSeriesInfo = createCombineAction((id: number) => [
-  updateSeries(id),
-  updateEpisodeList(id),
+export const seriesUpdateInfoAll = createCombineAction((id: number) => [
+  seriesUpdateInfo(id),
+  episodeUpdateInfo(id),
   updateBadges(),
 ]);
 
-export const updateSeriesBlacklist = createAsyncAction(
-  UPDATE_SERIES_BLACKLIST,
+export const seriesUpdateBlacklist = createAsyncAction(
+  SERIES_UPDATE_BLACKLIST,
   () => SeriesApi.blacklist()
 );

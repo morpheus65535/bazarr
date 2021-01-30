@@ -11,7 +11,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import { EpisodesApi } from "../../apis";
 
-import { updateWantedSeries } from "../../@redux/actions";
+import { seriesUpdateWantedAll } from "../../@redux/actions";
 
 interface Props {
   wanted: AsyncState<WantedEpisode[]>;
@@ -94,4 +94,6 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateWantedSeries })(Table);
+export default connect(mapStateToProps, { update: seriesUpdateWantedAll })(
+  Table
+);

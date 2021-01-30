@@ -9,7 +9,7 @@ import { faTrash, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import { EpisodesApi } from "../../apis";
 
-import { updateSeriesInfo } from "../../@redux/actions";
+import { seriesUpdateInfoAll } from "../../@redux/actions";
 
 interface Props {
   seriesid: number;
@@ -70,6 +70,6 @@ const Action: FunctionComponent<Props> = ({
   }
 };
 
-export const SubtitleAction = connect(undefined, { update: updateSeriesInfo })(
-  Action
-);
+export const SubtitleAction = connect(undefined, {
+  update: seriesUpdateInfoAll,
+})(Action);

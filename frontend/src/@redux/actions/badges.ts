@@ -1,7 +1,7 @@
 import {
-  UPDATE_BADGE_MOVIES,
-  UPDATE_BADGE_PROVIDERS,
-  UPDATE_BADGE_SERIES,
+  BADGE_UPDATE_MOVIES,
+  BADGE_UPDATE_PROVIDERS,
+  BADGE_UPDATE_SERIES,
 } from "../constants";
 
 import { createAction } from "redux-actions";
@@ -9,19 +9,19 @@ import { createCombineAction } from "./utils";
 import { BadgesApi } from "../../apis";
 
 export const updateBadges = createCombineAction(() => [
-  updateBadgeMovies(),
-  updateBadgeSeries(),
-  updateBadgeProviders(),
+  badgeUpdateMovies(),
+  badgeUpdateSeries(),
+  badgeUpdateProviders(),
 ]);
 
-export const updateBadgeMovies = createAction(UPDATE_BADGE_MOVIES, () =>
+export const badgeUpdateMovies = createAction(BADGE_UPDATE_MOVIES, () =>
   BadgesApi.movies()
 );
 
-export const updateBadgeSeries = createAction(UPDATE_BADGE_SERIES, () =>
+export const badgeUpdateSeries = createAction(BADGE_UPDATE_SERIES, () =>
   BadgesApi.series()
 );
 
-export const updateBadgeProviders = createAction(UPDATE_BADGE_PROVIDERS, () =>
+export const badgeUpdateProviders = createAction(BADGE_UPDATE_PROVIDERS, () =>
   BadgesApi.providers()
 );

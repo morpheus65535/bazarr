@@ -3,7 +3,7 @@ import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
-import { updateMovieBlacklist } from "../../@redux/actions";
+import { movieUpdateBlacklist } from "../../@redux/actions";
 import { ContentHeader } from "../../components";
 import Table from "./table";
 import { MoviesApi } from "../../apis";
@@ -35,6 +35,6 @@ const BlacklistMoviesView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(undefined, { update: updateMovieBlacklist })(
+export default connect(undefined, { update: movieUpdateBlacklist })(
   BlacklistMoviesView
 );

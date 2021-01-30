@@ -1,14 +1,14 @@
 import {
-  UPDATE_BADGE_MOVIES,
-  UPDATE_BADGE_PROVIDERS,
-  UPDATE_BADGE_SERIES,
+  BADGE_UPDATE_MOVIES,
+  BADGE_UPDATE_PROVIDERS,
+  BADGE_UPDATE_SERIES,
 } from "../constants";
 
 import { handleActions } from "redux-actions";
 
 const reducer = handleActions<BadgeState, number>(
   {
-    [UPDATE_BADGE_MOVIES]: {
+    [BADGE_UPDATE_MOVIES]: {
       next(state, action) {
         return {
           ...state,
@@ -16,7 +16,7 @@ const reducer = handleActions<BadgeState, number>(
         };
       },
     },
-    [UPDATE_BADGE_SERIES]: {
+    [BADGE_UPDATE_SERIES]: {
       next(state, action) {
         return {
           ...state,
@@ -24,7 +24,7 @@ const reducer = handleActions<BadgeState, number>(
         };
       },
     },
-    [UPDATE_BADGE_PROVIDERS]: {
+    [BADGE_UPDATE_PROVIDERS]: {
       next(state, action) {
         return {
           ...state,

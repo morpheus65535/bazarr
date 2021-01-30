@@ -10,7 +10,7 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 import { MoviesApi } from "../../apis";
 
-import { updateMovieInfo } from "../../@redux/actions";
+import { movieUpdateInfoAll } from "../../@redux/actions";
 
 const missingText = "Subtitle Missing";
 
@@ -104,4 +104,4 @@ const Table: FunctionComponent<Props> = (props) => {
   return <BasicTable columns={columns} data={data}></BasicTable>;
 };
 
-export default connect(undefined, { update: updateMovieInfo })(Table);
+export default connect(undefined, { update: movieUpdateInfoAll })(Table);

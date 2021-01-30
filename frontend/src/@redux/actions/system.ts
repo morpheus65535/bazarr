@@ -1,56 +1,59 @@
 import {
-  UPDATE_ALL_LANGUAGES_LIST,
-  UPDATE_ENABLED_LANGUAGES_LIST,
-  UPDATE_LANGUAGES_PROFILE_LIST,
-  UPDATE_SYSTEM_STATUS,
-  UPDATE_SYSTEM_TASKS,
-  UPDATE_SYSTEM_LOGS,
-  UPDATE_SYSTEM_SETTINGS,
+  SYSTEM_UPDATE_LANGUAGES_LIST,
+  SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
+  SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
+  SYSTEM_UPDATE_SYSTEM_STATUS,
+  SYSTEM_UPDATE_SYSTEM_TASKS,
+  SYSTEM_UPDATE_SYSTEM_LOGS,
+  SYSTEM_UPDATE_SYSTEM_SETTINGS,
 } from "../constants";
 
 import { SystemApi } from "../../apis";
 import { createAsyncAction, createCombineAction } from "./utils";
 
-export const updateLanguagesList = createCombineAction(() => [
-  updateAllLanguages(),
-  updateEnabledLanguages(),
-  updateLanguagesProfileList(),
+export const systemUpdateLanguagesAll = createCombineAction(() => [
+  systemUpdateLanguages(),
+  systemUpdateEnabledLanguages(),
+  systemUpdateLanguagesProfiles(),
 ]);
 
-export const updateAllLanguages = createAsyncAction(
-  UPDATE_ALL_LANGUAGES_LIST,
+export const systemUpdateLanguages = createAsyncAction(
+  SYSTEM_UPDATE_LANGUAGES_LIST,
   () => SystemApi.languages(false)
 );
 
-export const updateEnabledLanguages = createAsyncAction(
-  UPDATE_ENABLED_LANGUAGES_LIST,
+export const systemUpdateEnabledLanguages = createAsyncAction(
+  SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   () => SystemApi.languages(true)
 );
 
-export const updateLanguagesProfileList = createAsyncAction(
-  UPDATE_LANGUAGES_PROFILE_LIST,
+export const systemUpdateLanguagesProfiles = createAsyncAction(
+  SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   () => SystemApi.languagesProfileList()
 );
 
-export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>
-  SystemApi.status()
+export const systemUpdateSystemStatus = createAsyncAction(
+  SYSTEM_UPDATE_SYSTEM_STATUS,
+  () => SystemApi.status()
 );
 
-export const UpdateSystemTasks = createAsyncAction(UPDATE_SYSTEM_TASKS, () =>
-  SystemApi.getTasks()
+export const systemUpdateSystemTasks = createAsyncAction(
+  SYSTEM_UPDATE_SYSTEM_TASKS,
+  () => SystemApi.getTasks()
 );
 
-export const UpdateSystemLogs = createAsyncAction(UPDATE_SYSTEM_LOGS, () =>
-  SystemApi.logs()
+export const systemUpdateSystemLogs = createAsyncAction(
+  SYSTEM_UPDATE_SYSTEM_LOGS,
+  () => SystemApi.logs()
 );
 
-export const UpdateSystemSettings = createAsyncAction(
-  UPDATE_SYSTEM_SETTINGS,
+export const systemUpdateSystemSettings = createAsyncAction(
+  SYSTEM_UPDATE_SYSTEM_SETTINGS,
   () => SystemApi.settings()
 );
 
-export const UpdateSettingsRelative = createCombineAction(() => [
-  UpdateSystemSettings(),
-  updateLanguagesProfileList(),
-  updateEnabledLanguages(),
+export const systemUpdateSettingsAll = createCombineAction(() => [
+  systemUpdateSystemSettings(),
+  systemUpdateLanguagesProfiles(),
+  systemUpdateEnabledLanguages(),
 ]);

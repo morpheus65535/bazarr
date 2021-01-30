@@ -9,7 +9,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { connect } from "react-redux";
-import { authSuccess } from "../@redux/actions";
+import { siteAuthSuccess } from "../@redux/actions";
 import { useHistory } from "react-router-dom";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
@@ -105,4 +105,4 @@ const AuthPage: FunctionComponent<Props> = ({ login }) => {
   );
 };
 
-export default connect(undefined, { login: authSuccess })(AuthPage);
+export default connect(undefined, { login: siteAuthSuccess })(AuthPage);

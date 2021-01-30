@@ -20,7 +20,7 @@ import {
 
 import { ProgressBar, Badge } from "react-bootstrap";
 
-import { updateSeriesInfo } from "../@redux/actions";
+import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 
 interface Props {
@@ -172,4 +172,4 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateSeriesInfo })(Table);
+export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(Table);

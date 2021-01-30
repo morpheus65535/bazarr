@@ -1,15 +1,15 @@
 import { createAsyncAction, createCombineAction } from "./utils";
-import { UPDATE_PROVIDER_LIST } from "../constants";
+import { PROVIDER_UPDATE_LIST } from "../constants";
 
-import { updateBadgeProviders } from "./badges";
+import { badgeUpdateProviders } from "./badges";
 
 import { ProvidersApi } from "../../apis";
 
-export const UpdateProviderList = createAsyncAction(UPDATE_PROVIDER_LIST, () =>
+export const providerUpdateList = createAsyncAction(PROVIDER_UPDATE_LIST, () =>
   ProvidersApi.providers()
 );
 
-export const UpdateProvider = createCombineAction(() => [
-  UpdateProviderList(),
-  updateBadgeProviders(),
+export const providerUpdateAll = createCombineAction(() => [
+  providerUpdateList(),
+  badgeUpdateProviders(),
 ]);

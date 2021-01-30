@@ -21,7 +21,7 @@ import {
 import { SubtitleAction } from "./components";
 import { ProvidersApi } from "../../apis";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { updateSeriesInfo } from "../../@redux/actions";
+import { seriesUpdateInfoAll } from "../../@redux/actions";
 
 interface Props {
   series: Series;
@@ -219,4 +219,4 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateSeriesInfo })(Table);
+export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(Table);

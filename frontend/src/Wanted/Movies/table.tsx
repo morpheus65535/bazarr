@@ -9,7 +9,7 @@ import { BasicTable, AsyncStateOverlay, AsyncButton } from "../../components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
-import { updateWantedMovies } from "../../@redux/actions";
+import { movieUpdateWantedAll } from "../../@redux/actions";
 
 import { MoviesApi } from "../../apis";
 
@@ -86,4 +86,6 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateWantedMovies })(Table);
+export default connect(mapStateToProps, { update: movieUpdateWantedAll })(
+  Table
+);

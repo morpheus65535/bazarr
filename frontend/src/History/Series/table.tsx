@@ -10,7 +10,7 @@ import {
   HistoryIcon,
   SeriesBlacklistButton,
 } from "../../components";
-import { updateHistorySeriesList } from "../../@redux/actions";
+import { seriesUpdateHistoryList } from "../../@redux/actions";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;
@@ -93,6 +93,6 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateHistorySeriesList })(
+export default connect(mapStateToProps, { update: seriesUpdateHistoryList })(
   Table
 );

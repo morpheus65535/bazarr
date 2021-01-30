@@ -3,7 +3,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { updateSeriesBlacklist } from "../../@redux/actions";
+import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
@@ -91,6 +91,6 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateSeriesBlacklist })(
+export default connect(mapStateToProps, { update: seriesUpdateBlacklist })(
   Table
 );

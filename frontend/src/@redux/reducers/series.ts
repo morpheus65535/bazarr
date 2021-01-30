@@ -1,11 +1,11 @@
 import { AsyncAction } from "../types";
 import {
-  UPDATE_SERIES_EPISODE_LIST,
-  UPDATE_SERIES_LIST,
-  UPDATE_SERIES_WANTED_LIST,
-  UPDATE_SERIES_HISTORY_LIST,
-  UPDATE_SERIES_INFO,
-  UPDATE_SERIES_BLACKLIST,
+  SERIES_UPDATE_EPISODE_LIST,
+  SERIES_UPDATE_LIST,
+  SERIES_UPDATE_WANTED_LIST,
+  SERIES_UPDATE_HISTORY_LIST,
+  SERIES_UPDATE_INFO,
+  SERIES_UPDATE_BLACKLIST,
 } from "../constants";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
 
@@ -13,7 +13,7 @@ import { handleActions } from "redux-actions";
 
 const reducer = handleActions<SeriesState, any>(
   {
-    [UPDATE_SERIES_LIST]: {
+    [SERIES_UPDATE_LIST]: {
       next(state, action: AsyncAction<Series[]>) {
         return {
           ...state,
@@ -21,7 +21,7 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
-    [UPDATE_SERIES_WANTED_LIST]: {
+    [SERIES_UPDATE_WANTED_LIST]: {
       next(state, action: AsyncAction<WantedEpisode[]>) {
         return {
           ...state,
@@ -32,7 +32,7 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
-    [UPDATE_SERIES_EPISODE_LIST]: {
+    [SERIES_UPDATE_EPISODE_LIST]: {
       next(state, action: AsyncAction<Episode[]>) {
         const { updating, error, items } = mapToAsyncState(action, []);
 
@@ -60,7 +60,7 @@ const reducer = handleActions<SeriesState, any>(
         }
       },
     },
-    [UPDATE_SERIES_HISTORY_LIST]: {
+    [SERIES_UPDATE_HISTORY_LIST]: {
       next(state, action: AsyncAction<SeriesHistory[]>) {
         return {
           ...state,
@@ -68,7 +68,7 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
-    [UPDATE_SERIES_INFO]: {
+    [SERIES_UPDATE_INFO]: {
       next(state, action: AsyncAction<Series[]>) {
         return {
           ...state,
@@ -80,7 +80,7 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
-    [UPDATE_SERIES_BLACKLIST]: {
+    [SERIES_UPDATE_BLACKLIST]: {
       next(state, action: AsyncAction<SeriesBlacklist[]>) {
         return {
           ...state,

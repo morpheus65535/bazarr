@@ -1,10 +1,10 @@
 import { AsyncAction } from "../types";
 import {
-  UPDATE_MOVIE_HISTORY_LIST,
-  UPDATE_MOVIE_LIST,
-  UPDATE_MOVIE_WANTED_LIST,
-  UPDATE_MOVIE_INFO,
-  UPDATE_MOVIES_BLACKLIST as UPDATE_MOVIE_BLACKLIST,
+  MOVIES_UPDATE_HISTORY_LIST,
+  MOVIES_UPDATE_LIST,
+  MOVIES_UPDATE_WANTED_LIST,
+  MOVIES_UPDATE_INFO,
+  MOVIES_UPDATE_BLACKLIST,
 } from "../constants";
 
 import { mapToAsyncState, updateAsyncList } from "./mapper";
@@ -13,7 +13,7 @@ import { handleActions } from "redux-actions";
 
 const reducer = handleActions<MovieState, any>(
   {
-    [UPDATE_MOVIE_LIST]: {
+    [MOVIES_UPDATE_LIST]: {
       next(state, action: AsyncAction<Movie[]>) {
         return {
           ...state,
@@ -21,7 +21,7 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
-    [UPDATE_MOVIE_WANTED_LIST]: {
+    [MOVIES_UPDATE_WANTED_LIST]: {
       next(state, action: AsyncAction<WantedMovie[]>) {
         return {
           ...state,
@@ -29,7 +29,7 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
-    [UPDATE_MOVIE_HISTORY_LIST]: {
+    [MOVIES_UPDATE_HISTORY_LIST]: {
       next(state, action: AsyncAction<MovieHistory[]>) {
         return {
           ...state,
@@ -37,7 +37,7 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
-    [UPDATE_MOVIE_INFO]: {
+    [MOVIES_UPDATE_INFO]: {
       next(state, action: AsyncAction<Movie[]>) {
         return {
           ...state,
@@ -45,7 +45,7 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
-    [UPDATE_MOVIE_BLACKLIST]: {
+    [MOVIES_UPDATE_BLACKLIST]: {
       next(state, action: AsyncAction<MovieBlacklist[]>) {
         return {
           ...state,

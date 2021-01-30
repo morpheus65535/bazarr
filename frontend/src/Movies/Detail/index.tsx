@@ -24,7 +24,7 @@ import {
 } from "../../components";
 import Table from "./table";
 import { MoviesApi, ProvidersApi } from "../../apis";
-import { updateMovieInfo } from "../../@redux/actions";
+import { movieUpdateInfoAll } from "../../@redux/actions";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 
 interface Params {
@@ -162,5 +162,5 @@ const MovieDetailView: FunctionComponent<Props> = ({
 };
 
 export default withRouter(
-  connect(mapStateToProps, { update: updateMovieInfo })(MovieDetailView)
+  connect(mapStateToProps, { update: movieUpdateInfoAll })(MovieDetailView)
 );

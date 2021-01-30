@@ -28,7 +28,7 @@ import {
   useWhenModalShow,
 } from "..";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
-import { updateSeriesInfo } from "../../@redux/actions";
+import { seriesUpdateInfoAll } from "../../@redux/actions";
 
 enum SubtitleState {
   update,
@@ -516,6 +516,6 @@ const Table: FunctionComponent<TableProps> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateSeriesInfo })(
+export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(
   SeriesUploadModal
 );

@@ -8,7 +8,7 @@ import {
   HistoryIcon,
   MoviesBlacklistButton,
 } from "../../components";
-import { updateHistoryMovieList } from "../../@redux/actions";
+import { movieUpdateHistoryList } from "../../@redux/actions";
 
 interface Props {
   movieHistory: AsyncState<MovieHistory[]>;
@@ -82,6 +82,6 @@ const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: updateHistoryMovieList })(
+export default connect(mapStateToProps, { update: movieUpdateHistoryList })(
   Table
 );

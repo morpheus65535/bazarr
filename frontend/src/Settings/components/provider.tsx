@@ -11,7 +11,7 @@ import { Helmet } from "react-helmet";
 import { ContentHeader } from "../../components";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { SystemApi } from "../../apis";
-import { UpdateSettingsRelative } from "../../@redux/actions";
+import { systemUpdateSettingsAll } from "../../@redux/actions";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { SettingsContext } from "../Router";
 
@@ -123,6 +123,6 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(undefined, { update: UpdateSettingsRelative })(
+export default connect(undefined, { update: systemUpdateSettingsAll })(
   SettingsProvider
 );

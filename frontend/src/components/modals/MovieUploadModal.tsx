@@ -11,7 +11,7 @@ import {
 } from "..";
 import { Container, Form } from "react-bootstrap";
 import { MoviesApi } from "../../apis";
-import { updateMovieInfo } from "../../@redux/actions";
+import { movieUpdateInfoAll } from "../../@redux/actions";
 interface MovieProps {
   avaliableLanguages: Language[];
   update: (id: number) => void;
@@ -118,6 +118,6 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   );
 };
 
-export default connect(mapStateToProps, { update: updateMovieInfo })(
+export default connect(mapStateToProps, { update: movieUpdateInfoAll })(
   MovieUploadModal
 );
