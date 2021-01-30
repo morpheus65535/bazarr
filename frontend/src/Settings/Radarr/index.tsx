@@ -17,7 +17,7 @@ interface Props {}
 
 const SettingsRadarrView: FunctionComponent<Props> = () => {
   const baseUrlOverride = useCallback((settings: SystemSettings) => {
-    return settings.sonarr.base_url?.slice(1) ?? "";
+    return settings.radarr.base_url?.slice(1) ?? "";
   }, []);
 
   return (
