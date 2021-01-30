@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Group, Input, SettingsProvider } from "../components";
-import { ProviderView, ProviderModal } from "./components";
+import { ProviderModal, ProviderView } from "./components";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (

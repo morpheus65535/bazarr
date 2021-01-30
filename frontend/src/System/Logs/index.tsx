@@ -32,7 +32,7 @@ const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
   return (
     <Container fluid>
       <Helmet>
-        <title>Providers - Bazarr (System)</title>
+        <title>Logs - Bazarr (System)</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Button

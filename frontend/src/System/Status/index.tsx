@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo } from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { systemUpdateStatus } from "../../@redux/actions";
@@ -18,7 +18,7 @@ interface InfoProps {
   children: React.ReactNode;
 }
 
-function InfoRow(props: InfoProps): JSX.Element {
+function CRow(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
     <Row>
@@ -32,18 +32,19 @@ function InfoRow(props: InfoProps): JSX.Element {
 
 interface IconProps {
   icon: IconDefinition;
-  children: React.ReactNode;
+  link: string;
+  children: string;
 }
 
-function IconLabel(props: IconProps): JSX.Element {
-  const { icon, children } = props;
+function Label(props: IconProps): JSX.Element {
+  const { icon, link, children } = props;
   return (
-    <Row>
-      <Col sm={1}>
-        <FontAwesomeIcon icon={icon} className="mr-2"></FontAwesomeIcon>
-      </Col>
-      <Col>{children}</Col>
-    </Row>
+    <React.Fragment>
+      <FontAwesomeIcon icon={icon} style={{ width: "2rem" }}></FontAwesomeIcon>
+      <a href={link} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    </React.Fragment>
   );
 }
 
@@ -75,94 +76,66 @@ function mapStateToProps({ system }: StoreState) {
 const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
   useEffect(() => update(), [update]);
 
-  const about = useMemo(
-    () => (
-      <InfoContainer title="About">
-        <InfoRow title="Bazarr Version">
-          <span>{status?.bazarr_version}</span>
-        </InfoRow>
-        <InfoRow title="Sonarr Version">
-          <span>{status?.sonarr_version}</span>
-        </InfoRow>
-        <InfoRow title="Radarr Version">
-          <span>{status?.radarr_version}</span>
-        </InfoRow>
-        <InfoRow title="Operating System">
-          <span>{status?.operating_system}</span>
-        </InfoRow>
-        <InfoRow title="Python Version">
-          <span>{status?.python_version}</span>
-        </InfoRow>
-        <InfoRow title="Bazarr Directory">
-          <span>{status?.bazarr_directory}</span>
-        </InfoRow>
-        <InfoRow title="Bazarr Config Directory">
-          <span>{status?.bazarr_config_directory}</span>
-        </InfoRow>
-      </InfoContainer>
-    ),
-    [status]
-  );
-
-  const more = useMemo(
-    () => (
-      <InfoContainer title="More Info">
-        <InfoRow title="Home Page">
-          <IconLabel icon={faPaperPlane}>
-            <a
-              href="https://www.bazarr.media/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Bazarr Website
-            </a>
-          </IconLabel>
-        </InfoRow>
-        <InfoRow title="Source">
-          <IconLabel icon={faGithub}>
-            <a
-              href="https://github.com/morpheus65535/bazarr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Bazarr on Github
-            </a>
-          </IconLabel>
-        </InfoRow>
-        <InfoRow title="Wiki">
-          <IconLabel icon={faWikipediaW}>
-            <a
-              href="https://github.com/morpheus65535/bazarr/wiki"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Bazarr Wiki
-            </a>
-          </IconLabel>
-        </InfoRow>
-        <InfoRow title="Discord">
-          <IconLabel icon={faDiscord}>
-            <a
-              href="https://discord.gg/MH2e2eb"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Bazarr on Discord
-            </a>
-          </IconLabel>
-        </InfoRow>
-      </InfoContainer>
-    ),
-    []
-  );
-
   return (
     <Container className="p-5">
       <Helmet>
         <title>Status - Bazarr (System)</title>
       </Helmet>
-      <Row>{about}</Row>
-      <Row>{more}</Row>
+      <Row>
+        <InfoContainer title="About">
+          <CRow title="Bazarr Version">
+            <span>{status?.bazarr_version}</span>
+          </CRow>
+          <CRow title="Sonarr Version">
+            <span>{status?.sonarr_version}</span>
+          </CRow>
+          <CRow title="Radarr Version">
+            <span>{status?.radarr_version}</span>
+          </CRow>
+          <CRow title="Operating System">
+            <span>{status?.operating_system}</span>
+          </CRow>
+          <CRow title="Python Version">
+            <span>{status?.python_version}</span>
+          </CRow>
+          <CRow title="Bazarr Directory">
+            <span>{status?.bazarr_directory}</span>
+          </CRow>
+          <CRow title="Bazarr Config Directory">
+            <span>{status?.bazarr_config_directory}</span>
+          </CRow>
+        </InfoContainer>
+      </Row>
+      <Row>
+        <InfoContainer title="More Info">
+          <CRow title="Home Page">
+            <Label icon={faPaperPlane} link="https://www.bazarr.media/">
+              Bazarr Website
+            </Label>
+          </CRow>
+          <CRow title="Source">
+            <Label
+              icon={faGithub}
+              link="https://github.com/morpheus65535/bazarr"
+            >
+              Bazarr on Github
+            </Label>
+          </CRow>
+          <CRow title="Wiki">
+            <Label
+              icon={faWikipediaW}
+              link="https://github.com/morpheus65535/bazarr/wiki"
+            >
+              Bazarr Wiki
+            </Label>
+          </CRow>
+          <CRow title="Discord">
+            <Label icon={faDiscord} link="https://discord.gg/MH2e2eb">
+              Bazarr on Discord
+            </Label>
+          </CRow>
+        </InfoContainer>
+      </Row>
     </Container>
   );
 };

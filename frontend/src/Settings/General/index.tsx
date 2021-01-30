@@ -1,23 +1,43 @@
-import React, { FunctionComponent, useCallback } from "react";
-import { Button, InputGroup } from "react-bootstrap";
 import {
+  faCheck,
+  faClipboard,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useCallback, useState } from "react";
+import { InputGroup } from "react-bootstrap";
+import { copyToClipboard, toggleState } from "../../utilites";
+import {
+  Button,
   Check,
+  Chips,
+  CollapseBox,
   Group,
   Input,
-  Selector,
   Message,
-  Text,
-  CollapseBox,
+  Selector,
   SettingsProvider,
-  Chips,
+  Text,
 } from "../components";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSync, faClipboard } from "@fortawesome/free-solid-svg-icons";
 import { proxyOptions, securityOptions } from "./options";
+
+const characters = "abcdef0123456789";
+const settingApiKey = "settings-auth-apikey";
 
 const SettingsGeneralView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: SystemSettings) => {
     return settings.general.base_url?.slice(1) ?? "";
+  }, []);
+
+  const [copied, setCopy] = useState(false);
+
+  const generateApiKey = useCallback(() => {
+    return Array(32)
+      .fill(null)
+      .map(() =>
+        characters.charAt(Math.floor(Math.random() * characters.length))
+      )
+      .join("");
   }, []);
 
   return (
@@ -67,12 +87,29 @@ const SettingsGeneralView: FunctionComponent = () => {
         </CollapseBox>
         <Input name="API Key">
           <InputGroup>
-            <Text disabled settingKey="settings-auth-apikey"></Text>
+            <Text disabled controlled settingKey={settingApiKey}></Text>
             <InputGroup.Append>
-              <Button disabled variant="light">
-                <FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>
+              <Button
+                variant={copied ? "success" : "light"}
+                settingKey={settingApiKey}
+                onClick={(update, key, value) => {
+                  if (value) {
+                    copyToClipboard(value);
+                    toggleState(setCopy, 1500);
+                  }
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={copied ? faCheck : faClipboard}
+                ></FontAwesomeIcon>
               </Button>
-              <Button disabled variant="danger">
+              <Button
+                variant="danger"
+                settingKey={settingApiKey}
+                onClick={(update, key) => {
+                  update(generateApiKey(), key);
+                }}
+              >
                 <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
               </Button>
             </InputGroup.Append>

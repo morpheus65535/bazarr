@@ -1,21 +1,21 @@
+import { faSave } from "@fortawesome/free-solid-svg-icons";
 import React, {
   FunctionComponent,
   useCallback,
   useContext,
   useState,
 } from "react";
-import { Prompt } from "react-router";
 import { Container, Row } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
-import { ContentHeader } from "../../components";
-import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { SystemApi } from "../../apis";
+import { connect } from "react-redux";
+import { Prompt } from "react-router";
 import { systemUpdateSettingsAll } from "../../@redux/actions";
+import { SystemApi } from "../../apis";
+import { ContentHeader } from "../../components";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { SettingsContext } from "../Router";
 
-type UpdateFunctionType = (v: any, k?: string) => void;
+export type UpdateFunctionType = (v: any, k?: string) => void;
 
 export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
   (v: any, k?: string) => {}

@@ -1,33 +1,32 @@
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { capitalize, isArray, isBoolean } from "lodash";
 import React, {
   FunctionComponent,
+  useCallback,
   useMemo,
   useState,
-  useCallback,
 } from "react";
-import { Card, Col, Row, Container, Button } from "react-bootstrap";
-import { ProviderList, ProviderInfo } from "./list";
+import { Button, Card, Col, Container, Row } from "react-bootstrap";
 import {
-  useShowModal,
-  usePayload,
   BasicModal,
   Selector,
   useCloseModal,
+  usePayload,
+  useShowModal,
   useWhenModalShow,
 } from "../../components";
+import { isReactText } from "../../utilites";
 import {
-  Group,
-  Text,
   Check,
+  Group,
   Message,
-  useLatest,
+  Text,
   UpdateChangeContext,
+  useLatest,
   useUpdate,
 } from "../components";
-import { isArray, capitalize, isBoolean } from "lodash";
-import { isReactText } from "../../utilites";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
+import { ProviderInfo, ProviderList } from "./list";
 import "./style.scss";
 
 const ModalKey = "provider-modal";
