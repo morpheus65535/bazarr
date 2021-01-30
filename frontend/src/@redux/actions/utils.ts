@@ -2,7 +2,9 @@ import {
   AsyncActionDispatcher,
   ActionDispatcher,
   AvaliableType,
+  FillfulActionDispatcher,
 } from "../types";
+import { addToChecklist } from "../store/subscriber";
 
 // Create a async action
 function asyncActionCreator<T extends (...args: any[]) => Promise<any>>(
@@ -64,4 +66,11 @@ export function createCombineAction<
   T extends (...args: any[]) => AvaliableType[]
 >(fn: T) {
   return (...args: Parameters<T>) => combineActionCreator(fn(...args));
+}
+
+export function createFillfulAction<
+  T extends (...args: any[]) => AvaliableType[]
+>(fn: T, checker: FillfulActionDispatcher) {
+  addToChecklist(checker);
+  return createCombineAction(fn);
 }

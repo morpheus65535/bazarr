@@ -19,7 +19,7 @@ import { SearchResult, SearchBar } from "../components";
 
 import { SidebarToggleContext } from ".";
 
-import logo from "../@static/logo128.png";
+import logo from "../@static/logo64.png";
 
 interface Props {
   movies: Movie[];

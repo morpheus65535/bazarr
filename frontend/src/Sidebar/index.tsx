@@ -18,7 +18,7 @@ import { SidebarList } from "./list";
 import { BadgeProvider } from "./types";
 import { SidebarToggleContext } from "../App";
 
-import logo from "../@static/logo128.png";
+import logo from "../@static/logo64.png";
 import "./style.scss";
 
 interface Props {

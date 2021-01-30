@@ -12,15 +12,6 @@ import { mapToAsyncState } from "./mapper";
 
 import { handleActions } from "redux-actions";
 
-const checkInitialize = (state: SystemState): boolean => {
-  return (
-    state.initialized ||
-    (!state.languages.updating &&
-      !state.enabledLanguage.updating &&
-      !state.languagesProfiles.updating)
-  );
-};
-
 const reducer = handleActions<SystemState, any>(
   {
     [UPDATE_ALL_LANGUAGES_LIST]: {
@@ -29,7 +20,6 @@ const reducer = handleActions<SystemState, any>(
           ...state,
           languages: mapToAsyncState<Array<Language>>(action, []),
         };
-        newState.initialized = checkInitialize(newState);
         return newState;
       },
     },
@@ -39,7 +29,6 @@ const reducer = handleActions<SystemState, any>(
           ...state,
           enabledLanguage: mapToAsyncState<Array<Language>>(action, []),
         };
-        newState.initialized = checkInitialize(newState);
         return newState;
       },
     },
@@ -52,7 +41,6 @@ const reducer = handleActions<SystemState, any>(
             []
           ),
         };
-        newState.initialized = checkInitialize(newState);
         return newState;
       },
     },
@@ -104,7 +92,6 @@ const reducer = handleActions<SystemState, any>(
     },
   },
   {
-    initialized: false,
     languages: { updating: true, items: [] },
     enabledLanguage: { updating: true, items: [] },
     languagesProfiles: { updating: true, items: [] },

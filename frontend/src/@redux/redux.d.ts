@@ -9,6 +9,12 @@ interface StoreState {
   system: SystemState;
   series: SeriesState;
   movie: MovieState;
+  site: SiteState;
+}
+
+interface SiteState {
+  initialized: boolean;
+  auth: boolean;
 }
 
 interface BadgeState {
@@ -18,7 +24,6 @@ interface BadgeState {
 }
 
 interface SystemState {
-  initialized: boolean;
   languages: AsyncState<Array<Language>>;
   enabledLanguage: AsyncState<Array<Language>>;
   languagesProfiles: AsyncState<Array<LanguagesProfile>>;

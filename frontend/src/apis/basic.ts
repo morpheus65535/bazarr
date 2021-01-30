@@ -8,32 +8,57 @@ class BasicApi {
     this.prefix = prefix;
   }
 
+  private createFormdata(object?: LooseObject) {
+    if (object) {
+      let form = new FormData();
+
+      for (const key in object) {
+        const data = object[key];
+        if (data instanceof Array) {
+          if (data.length > 0) {
+            data.forEach((val) => form.append(key, val));
+          } else {
+            form.append(key, "");
+          }
+        } else {
+          form.append(key, object[key]);
+        }
+      }
+      return form;
+    } else {
+      return undefined;
+    }
+  }
+
   protected get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(this.prefix + path, { params });
   }
 
   protected post<T>(
     path: string,
-    form?: any,
+    formdata?: LooseObject,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    return apis.post(this.prefix + path, form, params);
+    const form = this.createFormdata(formdata);
+    return apis.axios.post(this.prefix + path, form, { params });
   }
 
   protected patch<T>(
     path: string,
-    form?: any,
+    formdata?: LooseObject,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    return apis.patch(this.prefix + path, form, params);
+    const form = this.createFormdata(formdata);
+    return apis.axios.patch(this.prefix + path, form, { params });
   }
 
   protected delete<T>(
     path: string,
-    form?: any,
+    formdata?: any,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    return apis.delete(this.prefix + path, form, params);
+    const form = this.createFormdata(formdata);
+    return apis.axios.delete(this.prefix + path, { params, data: form });
   }
 }
 

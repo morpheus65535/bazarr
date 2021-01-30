@@ -1,4 +1,6 @@
 import Axios, { AxiosInstance, CancelTokenSource } from "axios";
+import reduxStore from "../@redux/store";
+import { redirectToAuth } from "../@redux/actions";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
@@ -15,53 +17,13 @@ class Api {
     }
   }
 
-  private createFormdata(object?: LooseObject) {
-    if (object) {
-      let form = new FormData();
-
-      for (const key in object) {
-        const data = object[key];
-        if (data instanceof Array) {
-          if (data.length > 0) {
-            data.forEach((val) => form.append(key, val));
-          } else {
-            form.append(key, "");
-          }
-        } else {
-          form.append(key, object[key]);
-        }
-      }
-      return form;
-    } else {
-      return undefined;
-    }
-  }
-
-  post(path: string, formdata?: LooseObject, params?: LooseObject) {
-    let form = this.createFormdata(formdata);
-
-    return this.axios.post(path, form, { params });
-  }
-
-  patch(path: string, formdata?: LooseObject, params?: LooseObject) {
-    let form = this.createFormdata(formdata);
-
-    return this.axios.patch(path, form, { params });
-  }
-
-  delete(path: string, formdata?: LooseObject, params?: LooseObject) {
-    let form = this.createFormdata(formdata);
-
-    return this.axios.delete(path, { params, data: form });
-  }
-
   recreateAxios(url: string, apikey: string) {
     this.axios = Axios.create({
       baseURL: url,
     });
 
     this.axios.defaults.headers.post["Content-Type"] = "application/json";
-    this.axios.defaults.headers.common["x-api-key"] = apikey;
+    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
 
     this.source = Axios.CancelToken.source();
 
@@ -69,13 +31,32 @@ class Api {
       config.cancelToken = this.source.token;
       return config;
     });
+
+    this.axios.interceptors.response.use(
+      (resp) => {
+        if (resp.status >= 200 && resp.status < 300) {
+          return Promise.resolve(resp);
+        } else if (resp.status >= 400 && resp.status < 500) {
+          this.handle4xxRequest();
+        } else if (resp.status >= 500) {
+          this.handle5xxRequest();
+        }
+        return Promise.reject(resp);
+      },
+      (error: Error) => {
+        if (error.message.includes("401")) {
+          this.handle4xxRequest();
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   handle5xxRequest() {}
 
-  handle4xxRequest() {}
-
-  cancelAllRequest() {}
+  handle4xxRequest() {
+    reduxStore.dispatch(redirectToAuth());
+  }
 }
 
 export default new Api();

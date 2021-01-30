@@ -5,8 +5,28 @@ class SystemApi extends BasicApi {
     super("/system");
   }
 
-  async performAction(action: string) {
-    return this.post<void>("", undefined, { action });
+  private async performAction(action: string) {
+    return new Promise((resolve, reject) => {
+      this.post<void>("", undefined, { action })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  async login(username: string, password: string) {
+    return new Promise((resolve, reject) => {
+      this.post<void>("/account", { username, password }, { action: "login" })
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  async logout() {
+    return new Promise((resolve, reject) => {
+      this.post<void>("/account", undefined, { action: "logout" })
+        .then(resolve)
+        .catch(reject);
+    });
   }
 
   async shutdown() {

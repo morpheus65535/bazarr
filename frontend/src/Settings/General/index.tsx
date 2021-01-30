@@ -49,8 +49,6 @@ const SettingsGeneralView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input name="Authentication">
               <Selector
-                // No Support yet
-                disabled
                 clearable
                 options={securityOptions}
                 settingKey="settings-auth-type"

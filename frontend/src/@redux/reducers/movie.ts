@@ -55,9 +55,9 @@ const reducer = handleActions<MovieState, any>(
     },
   },
   {
-    movieList: { updating: false, items: [] },
-    wantedMovieList: { updating: false, items: [] },
-    historyList: { updating: false, items: [] },
+    movieList: { updating: true, items: [] },
+    wantedMovieList: { updating: true, items: [] },
+    historyList: { updating: true, items: [] },
     blacklist: { updating: true, items: [] },
   }
 );

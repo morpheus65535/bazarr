@@ -90,10 +90,10 @@ const reducer = handleActions<SeriesState, any>(
     },
   },
   {
-    seriesList: { updating: false, items: [] },
-    wantedSeriesList: { updating: false, items: [] },
-    episodeList: { updating: false, items: new Map() },
-    historyList: { updating: false, items: [] },
+    seriesList: { updating: true, items: [] },
+    wantedSeriesList: { updating: true, items: [] },
+    episodeList: { updating: true, items: new Map() },
+    historyList: { updating: true, items: [] },
     blacklist: { updating: true, items: [] },
   }
 );
