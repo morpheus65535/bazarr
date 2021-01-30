@@ -127,7 +127,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>
-          SeriesApi.modify((item as Series).sonarrSeriesId, form)
+          SeriesApi.modify({
+            seriesid: [(item as Series).sonarrSeriesId],
+            profileid: [form.profileid],
+          })
         }
         onSuccess={(item) => update((item as Series).sonarrSeriesId)}
       ></ItemEditorModal>

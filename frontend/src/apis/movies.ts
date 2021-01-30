@@ -46,9 +46,9 @@ class MovieApi extends BasicApi {
     });
   }
 
-  async modify(id: number, form: ItemModifyForm) {
+  async modify(form: MoviesModifyForm) {
     return new Promise<void>((resolve, reject) => {
-      this.post<void>("", { ...form }, { radarrid: id })
+      this.post<void>("", { ...form })
         .then(() => resolve())
         .catch((err) => reject(err));
     });

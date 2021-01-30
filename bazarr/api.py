@@ -378,23 +378,26 @@ class Series(Resource):
 
     @authenticate
     def post(self):
-        seriesId = request.args.get('seriesid')
+        seriesIdList = request.form.getlist('seriesid')
+        profileIdList = request.form.getlist('profileid')
 
-        profileId = request.form.get('profileid')
+        for idx in range(len(seriesIdList)):
+            seriesId = seriesIdList[idx]
+            profileId = profileIdList[idx]
 
-        if profileId == 'undefined':
-            profileId = None
-        else:      
-            try:
-                profileId = int(profileId)
-            except Exception:
-                return '', 400
+            if profileId == 'undefined':
+                profileId = None
+            else:      
+                try:
+                    profileId = int(profileId)
+                except Exception:
+                    return '', 400
 
-        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
+            database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
 
-        list_missing_subtitles(no=seriesId)
+            list_missing_subtitles(no=seriesId)
 
-        event_stream(type='series', action='update', series=seriesId)
+        # event_stream(type='series', action='update', series=seriesId)
 
         return '', 204
 
@@ -849,22 +852,26 @@ class Movies(Resource):
 
     @authenticate
     def post(self):
-        radarrId = request.args.get('radarrid')
-        profileId = request.form.get('profileid')
+        radarrIdList = request.args.getlist('radarrid')
+        profileIdList = request.form.getlist('profileid')
 
-        if profileId == 'undefined':
-            profileId = None
-        else:
-            try:
-                profileId = int(profileId)
-            except Exception:
-                return '', 400
+        for idx in range(len(radarrIdList)):
+            radarrId = radarrIdList[idx]
+            profileId = profileIdList[idx]
 
-        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (profileId, radarrId))
+            if profileId == 'undefined':
+                profileId = None
+            else:
+                try:
+                    profileId = int(profileId)
+                except Exception:
+                    return '', 400
 
-        list_missing_subtitles_movies(no=radarrId)
+            database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (profileId, radarrId))
 
-        event_stream(type='movies', action='update', movie=radarrId)
+            list_missing_subtitles_movies(no=radarrId)
+
+        # event_stream(type='movies', action='update', movie=radarrId)
 
         return '', 204
 

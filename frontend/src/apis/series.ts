@@ -50,9 +50,9 @@ class SeriesApi extends BasicApi {
     });
   }
 
-  async modify(id: number, form: ItemModifyForm) {
+  async modify(form: SeriesModifyForm) {
     return new Promise<void>((resolve, reject) => {
-      this.post<void>("", { ...form }, { seriesid: id })
+      this.post<void>("", { ...form })
         .then(() => resolve())
         .catch((err) => reject(err));
     });

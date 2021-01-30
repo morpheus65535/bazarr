@@ -149,7 +149,10 @@ const Table: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>
-          MoviesApi.modify((item as Movie).radarrId, form)
+          MoviesApi.modify({
+            radarrid: [(item as Movie).radarrId],
+            profileid: [form.profileid],
+          })
         }
         onSuccess={(item) => update((item as Movie).radarrId)}
       ></ItemEditorModal>
