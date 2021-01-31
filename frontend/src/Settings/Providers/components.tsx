@@ -1,5 +1,3 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize, isArray, isBoolean } from "lodash";
 import React, {
   FunctionComponent,
@@ -7,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Button, Card, Col, Container, Row } from "react-bootstrap";
+import { Button, Col, Container, Row } from "react-bootstrap";
 import {
   BasicModal,
   Selector,
@@ -18,8 +16,8 @@ import {
 } from "../../components";
 import { isReactText } from "../../utilites";
 import {
+  ColCard,
   Check,
-  Group,
   Message,
   Text,
   UpdateChangeContext,
@@ -27,65 +25,58 @@ import {
   useUpdate,
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
-import "./style.scss";
 
 const ModalKey = "provider-modal";
 const ProviderKey = "settings-general-enabled_providers";
 
-export const ProviderCard: FunctionComponent<{ providerKey?: string }> = ({
-  providerKey,
-}) => {
-  const info = useMemo<ProviderInfo | undefined>(() => {
-    if (providerKey) {
-      const info = ProviderList.find((l) => l.key === providerKey);
-
-      if (info) {
-        return info;
-      } else {
-        return {
-          key: providerKey,
-          description: "Unknown Provider",
-        };
-      }
-    } else {
-      return undefined;
-    }
-  }, [providerKey]);
-
-  const showModal = useShowModal();
-
-  return (
-    <Card className="provider-card" onClick={() => showModal(ModalKey, info)}>
-      {info ? (
-        <Card.Body>
-          <Card.Title className="text-nowrap text-overflow-ellipsis">
-            {info.name ?? capitalize(info.key)}
-          </Card.Title>
-          <Card.Subtitle className="small">{info.description}</Card.Subtitle>
-        </Card.Body>
-      ) : (
-        <Card.Body className="d-flex justify-content-center align-items-center">
-          <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
-        </Card.Body>
-      )}
-    </Card>
-  );
-};
-
 export const ProviderView: FunctionComponent = () => {
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
-  const cards = useMemo(() => {
-    return [...(providers ?? []), undefined].map((v, idx) => (
-      <Col className="p-2" xs={6} lg={4} key={idx}>
-        <ProviderCard providerKey={v}></ProviderCard>
-      </Col>
-    ));
+  const showModal = useShowModal();
+
+  const infos = useMemo(() => {
+    if (providers) {
+      return providers.flatMap((v) => {
+        const item = ProviderList.find((inn) => inn.key === v);
+        if (item) {
+          return item;
+        } else {
+          return [];
+        }
+      });
+    } else {
+      return [];
+    }
   }, [providers]);
+
+  const select = useCallback(
+    (v: ProviderInfo | undefined) => {
+      showModal(ModalKey, v);
+    },
+    [showModal]
+  );
+
+  const cards = useMemo(() => {
+    return infos.map((v, idx) => (
+      <ColCard
+        key={idx}
+        header={v.name ?? capitalize(v.key)}
+        subheader={v.description}
+        onClick={() => select(v)}
+      ></ColCard>
+    ));
+  }, [infos, select]);
 
   return (
     <Container fluid>
-      <Row>{cards}</Row>
+      <Row>
+        {cards}
+        <ColCard
+          key="add-card"
+          plus
+          onClick={() => select(undefined)}
+        ></ColCard>
+      </Row>
     </Container>
   );
 };
@@ -280,45 +271,5 @@ export const ProviderModal: FunctionComponent = () => {
         </Container>
       </UpdateChangeContext.Provider>
     </BasicModal>
-  );
-};
-
-interface ProviderEditProps {
-  providerKey: string;
-}
-
-export const ProviderSection: FunctionComponent<ProviderEditProps> = ({
-  providerKey,
-  children,
-}) => {
-  const info = useMemo(() => ProviderList.find((v) => v.key === providerKey), [
-    providerKey,
-  ]);
-
-  const enabled = useLatest<string[]>(ProviderKey, isArray);
-
-  const hide = useMemo(() => {
-    if (enabled) {
-      return enabled.findIndex((v) => v === providerKey) === -1;
-    } else {
-      return true;
-    }
-  }, [enabled, providerKey]);
-
-  const header = useMemo(() => {
-    const name = info?.name;
-
-    if (name) {
-      return name;
-    } else {
-      return capitalize(providerKey);
-    }
-  }, [providerKey, info]);
-
-  return (
-    <Group hidden={hide} header={header}>
-      {children}
-      {info && info.description && <Message>{info?.description}</Message>}
-    </Group>
   );
 };

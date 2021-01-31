@@ -32,13 +32,11 @@
     }
   }
 
-  input {
-    &.form-control {
-      &:active,
-      &:focus {
-        border-color: $theme-color;
-        box-shadow: none;
-      }
+  .form-control {
+    &:active,
+    &:focus {
+      border-color: $theme-color;
+      box-shadow: none;
     }
   }
 }

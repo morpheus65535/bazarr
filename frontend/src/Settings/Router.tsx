@@ -1,9 +1,8 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Route, Switch } from "react-router-dom";
-
+import { LoadingIndicator } from "../components";
 import { connect } from "react-redux";
 import { systemUpdateSettings } from "../@redux/actions";
-
 import General from "./General";
 import Sonarr from "./Sonarr";
 import Radarr from "./Radarr";
@@ -11,7 +10,7 @@ import Languages from "./Languages";
 import Subtitles from "./Subtitles";
 import Schedular from "./Schedular";
 import Providers from "./Providers";
-import { LoadingIndicator } from "../components";
+import Notifications from "./Notifications";
 
 export const SettingsContext = React.createContext<SystemSettings | undefined>(
   undefined
@@ -58,6 +57,9 @@ const Router: FunctionComponent<Props> = ({ update, settings }) => {
         </Route>
         <Route exact path="/settings/providers">
           <Providers></Providers>
+        </Route>
+        <Route exact path="/settings/notifications">
+          <Notifications></Notifications>
         </Route>
       </Switch>
     </SettingsContext.Provider>
