@@ -20,6 +20,7 @@ interface SystemSettings {
   subscene: SubsceneSettings;
   betaseries: BetaseriesSettings;
   titlovi: titloviSettings;
+  notifications: NotificationsSettings;
 }
 
 // Basic
@@ -101,6 +102,16 @@ interface SubsyncSettings {
 
 interface AnalyticSettings {
   enabled: boolean;
+}
+
+interface NotificationsSettings {
+  providers: NotificationInfo[];
+}
+
+interface NotificationInfo {
+  enabled: boolean;
+  name: string;
+  url: string | null;
 }
 
 // Sonarr / Radarr

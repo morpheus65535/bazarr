@@ -10,7 +10,6 @@ import gc
 import libs
 
 import hashlib
-import apprise
 import calendar
 
 from get_args import args
@@ -148,25 +147,6 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
-
-
-@app.route('/test_notification', methods=['GET'])
-@app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
-def test_notification(protocol, provider):
-    provider = unquote(provider)
-
-    asset = apprise.AppriseAsset(async_mode=False)
-
-    apobj = apprise.Apprise(asset=asset)
-
-    apobj.add(protocol + "://" + provider)
-
-    apobj.notify(
-            title='Bazarr test notification',
-            body='Test notification'
-    )
-
-    return '', 200
 
 
 if __name__ == "__main__":

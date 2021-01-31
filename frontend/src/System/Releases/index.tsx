@@ -1,6 +1,7 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Card, Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 import { systemUpdateReleases } from "../../@redux/actions";
 import { AsyncStateOverlay } from "../../components";
 
@@ -24,6 +25,9 @@ const ReleasesView: FunctionComponent<Props> = ({ releases, update }) => {
     <AsyncStateOverlay state={releases}>
       {(item) => (
         <Container fluid className="px-5 py-4 bg-light">
+          <Helmet>
+            <title>Releases - Bazarr (System)</title>
+          </Helmet>
           <Row>
             {item.map((v, idx) => (
               <InfoElement key={idx} release={v}></InfoElement>

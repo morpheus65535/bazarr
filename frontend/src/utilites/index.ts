@@ -1,5 +1,5 @@
-import { ReactText } from "react";
-import { isString, isNumber } from "lodash";
+import { isNumber, isString } from "lodash";
+import { Dispatch, ReactText } from "react";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -24,6 +24,25 @@ export function updateAsyncState<T>(
         items: defaultVal,
       });
     });
+}
+
+export function copyToClipboard(s: string) {
+  let field = document.createElement("textarea");
+  field.innerText = s;
+  document.body.appendChild(field);
+  field.select();
+  field.setSelectionRange(0, 9999);
+  document.execCommand("copy");
+  field.remove();
+}
+
+export function toggleState(
+  dispatch: Dispatch<boolean>,
+  wait: number,
+  start: boolean = false
+) {
+  dispatch(!start);
+  setTimeout(() => dispatch(start), wait);
 }
 
 export function submodProcessColor(s: string) {

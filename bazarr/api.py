@@ -10,6 +10,7 @@ import platform
 import re
 import json
 import hashlib
+import apprise
 import gc
 
 from get_args import args
@@ -167,20 +168,25 @@ class LanguagesProfiles(Resource):
     @authenticate
     def get(self):
         return jsonify(get_profiles_list())
+
+
 class Notifications(Resource):
     @authenticate
-    def get(self):
-        result = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
-        return jsonify(data=result)
+    def patch(self):
+        protocol = request.form.get("protocol")
+        provider = request.form.get("path")
 
-    @authenticate
-    def post(self):
-        notification_providers = json.loads(request.form.get('notification_providers'))
-        for item in notification_providers:
-            database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
-                             (item['enabled'], item['url'], item['name']))
+        asset = apprise.AppriseAsset(async_mode=False)
 
-        save_settings(zip(request.form.keys(), request.form.listvalues()))
+        apobj = apprise.Apprise(asset=asset)
+
+        apobj.add(protocol + "://" + provider)
+
+        apobj.notify(
+                title='Bazarr test notification',
+                body='Test notification'
+        )
+
         return '', 204
 
 
@@ -211,7 +217,16 @@ class Providers(Resource):
 class SystemSettings(Resource):
     @authenticate
     def get(self):
-        data=get_settings()
+        data = get_settings()
+
+        notifications = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
+        for i, item in enumerate(notifications):
+            item["enabled"] = item["enabled"] == 1
+            notifications[i] = item
+
+        data['notifications'] = dict()
+        data['notifications']['providers'] = notifications
+        
         return jsonify(data)
 
     @authenticate
@@ -255,6 +270,13 @@ class SystemSettings(Resource):
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
             if settings.general.getboolean('use_radarr'):
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': False})
+
+        # Update Notification
+        notifications = request.form.getlist('notifications-providers')
+        for item in notifications:
+            item = json.loads(item)
+            database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
+                            (item['enabled'], item['url'], item['name']))
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
         return '', 204
@@ -1923,7 +1945,6 @@ class BrowseRadarrFS(Resource):
 api.add_resource(BadgesSeries, '/badges/series')
 api.add_resource(BadgesMovies, '/badges/movies')
 api.add_resource(BadgesProviders, '/badges/providers')
-api.add_resource(Notifications, '/notifications')
 
 # Search action happens in frontend
 # api.add_resource(Search, '/search')
@@ -1941,6 +1962,7 @@ api.add_resource(SystemReleases, '/system/releases')
 api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')
 api.add_resource(LanguagesProfiles, '/system/languages/profiles')
+api.add_resource(Notifications, '/system/notifications')
 
 api.add_resource(Subtitles, '/subtitles')
 api.add_resource(SubtitleNameInfo, '/subtitles/info')

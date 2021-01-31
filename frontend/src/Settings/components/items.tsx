@@ -1,15 +1,19 @@
+import { isArray, isBoolean, isNumber, isString } from "lodash";
 import React, { FunctionComponent } from "react";
-import { Form } from "react-bootstrap";
 import {
-  Slider as CSlider,
-  SliderProps as CSliderProps,
-  Selector as CSelector,
-  SelectorProps as CSelectorProps,
+  Button as BSButton,
+  ButtonProps as BSButtonProps,
+  Form,
+} from "react-bootstrap";
+import { UpdateFunctionType, useCollapse, useLatest, useUpdate } from ".";
+import {
   Chips as CChips,
   ChipsProps as CChipsProps,
+  Selector as CSelector,
+  SelectorProps as CSelectorProps,
+  Slider as CSlider,
+  SliderProps as CSliderProps,
 } from "../../components";
-import { useUpdate, useLatest, useCollapse } from ".";
-import { isBoolean, isNumber, isString, isArray } from "lodash";
 import { isReactText, useOnShow } from "../../utilites";
 
 export const Message: FunctionComponent<{
@@ -31,21 +35,19 @@ export interface BasicInput<T> {
 export interface TextProps extends BasicInput<React.ReactText> {
   placeholder?: React.ReactText;
   password?: boolean;
+  controlled?: boolean;
 }
 
 export const Text: FunctionComponent<TextProps> = ({
   placeholder,
   disabled,
   beforeStaged,
+  controlled,
   override,
   password,
   settingKey,
 }) => {
-  const defaultValue = useLatest<React.ReactText>(
-    settingKey,
-    isReactText,
-    override
-  );
+  const value = useLatest<React.ReactText>(settingKey, isReactText, override);
 
   const update = useUpdate();
   const collapse = useCollapse();
@@ -55,7 +57,8 @@ export const Text: FunctionComponent<TextProps> = ({
       type={password ? "password" : "text"}
       placeholder={placeholder?.toString()}
       disabled={disabled}
-      defaultValue={defaultValue}
+      defaultValue={controlled ? undefined : value}
+      value={controlled ? value : undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
         collapse(val.toString());
@@ -185,5 +188,27 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
       }}
       {...chips}
     ></CChips>
+  );
+};
+
+type ButtonProps = {
+  onClick?: (update: UpdateFunctionType, key: string, value?: string) => void;
+} & Omit<BasicInput<string>, "override" | "beforeStaged">;
+
+export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
+  props
+) => {
+  const { onClick, settingKey, ...button } = props;
+
+  const value = useLatest<string>(settingKey, isString);
+  const update = useUpdate();
+
+  return (
+    <BSButton
+      onClick={() => {
+        onClick && onClick(update, settingKey, value);
+      }}
+      {...button}
+    ></BSButton>
   );
 };
