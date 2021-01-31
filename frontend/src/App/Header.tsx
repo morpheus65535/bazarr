@@ -1,29 +1,26 @@
-import React, { FunctionComponent, useCallback, useContext } from "react";
+import { faBars, faHeart, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faHeart, faBars } from "@fortawesome/free-solid-svg-icons";
+import React, { FunctionComponent, useCallback, useContext } from "react";
 import {
-  Image,
-  Dropdown,
-  Navbar,
-  Container,
-  Row,
-  Col,
   Button,
+  Col,
+  Container,
+  Dropdown,
+  Image,
+  Navbar,
+  Row,
 } from "react-bootstrap";
-
-import { SystemApi } from "../apis";
-
 import { connect } from "react-redux";
-
-import { SearchResult, SearchBar } from "../components";
-
 import { SidebarToggleContext } from ".";
-
 import logo from "../@static/logo64.png";
+import { SystemApi } from "../apis";
+import { SearchBar, SearchResult } from "../components";
+import { siteRedirectToAuth } from "../@redux/actions";
 
 interface Props {
   movies: Movie[];
   series: Series[];
+  setNeedAuth: () => void;
 }
 
 function mapStateToProps({ series, movie }: StoreState) {
@@ -34,7 +31,7 @@ function mapStateToProps({ series, movie }: StoreState) {
 }
 
 const Header: FunctionComponent<Props> = (props) => {
-  const { series, movies } = props;
+  const { series, movies, setNeedAuth } = props;
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
@@ -124,6 +121,14 @@ const Header: FunctionComponent<Props> = (props) => {
                 >
                   Shutdown
                 </Dropdown.Item>
+                <Dropdown.Divider></Dropdown.Divider>
+                <Dropdown.Item
+                  onClick={() => {
+                    SystemApi.logout().then(() => setNeedAuth());
+                  }}
+                >
+                  Logout
+                </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </Col>
@@ -133,4 +138,6 @@ const Header: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(Header);
+export default connect(mapStateToProps, { setNeedAuth: siteRedirectToAuth })(
+  Header
+);
