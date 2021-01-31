@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import { connect } from "react-redux";
 import { siteAuthSuccess } from "../@redux/actions";
-import { useHistory, Redirect } from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
 
@@ -39,11 +39,9 @@ const AuthPage: FunctionComponent<Props> = ({ login, authState }) => {
     setTimeout(() => setError(""), 2000);
   }, []);
 
-  const history = useHistory();
-
   const onSuccess = useCallback(() => {
     login();
-  }, [history, login]);
+  }, [login]);
 
   const onError = useCallback(() => {
     setUpdate(false);

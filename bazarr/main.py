@@ -91,7 +91,8 @@ def download_log():
 @app.route('/images/series/<path:url>', methods=['GET'])
 def series_images(url):
     apikey = settings.sonarr.apikey
-    url_image = (url_sonarr() + '/api/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    baseUrl = settings.sonarr.base_url
+    url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
@@ -103,7 +104,8 @@ def series_images(url):
 @app.route('/images/movies/<path:url>', methods=['GET'])
 def movies_images(url):
     apikey = settings.radarr.apikey
-    url_image = url_radarr() + '/api/' + url + '?apikey=' + apikey
+    baseUrl = settings.radarr.base_url
+    url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
