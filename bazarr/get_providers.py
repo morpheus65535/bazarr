@@ -75,11 +75,6 @@ PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendasdivx", "legendastv",
 
 throttle_count = {}
 
-if not settings.general.throtteled_providers:
-    tp = {}
-else:
-    tp = eval(str(settings.general.throtteled_providers))
-
 
 def provider_pool():
     if settings.general.getboolean('multithreading'):
@@ -88,7 +83,6 @@ def provider_pool():
 
 
 def get_providers():
-    changed = False
     providers_list = []
     if settings.general.enabled_providers:
         for provider in settings.general.enabled_providers.lower().split(','):
@@ -104,12 +98,7 @@ def get_providers():
                 else:
                     logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                     del tp[provider]
-                    settings.general.throtteled_providers = str(tp)
-                    changed = True
-        
-        if changed:
-            with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-                settings.write(handle)
+                    set_throttled_providers(str(tp))
         
         # if forced only is enabled: # fixme: Prepared for forced only implementation to remove providers with don't support forced only subtitles
         #     for provider in providers_list:
@@ -203,9 +192,7 @@ def provider_throttle(name, exception):
                     logging.debug("Couldn't remove cache file: %s", os.path.basename(fn))
         else:
             tp[name] = (cls_name, throttle_until, throttle_description)
-            settings.general.throtteled_providers = str(tp)
-            with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-                settings.write(handle)
+            set_throttled_providers(str(tp))
 
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
@@ -249,8 +236,7 @@ def update_throttled_provider():
         for provider in list(tp):
             if provider not in settings.general.enabled_providers:
                 del tp[provider]
-                settings.general.throtteled_providers = str(tp)
-                changed = True
+                set_throttled_providers(str(tp))
 
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
 
@@ -261,12 +247,7 @@ def update_throttled_provider():
                 else:
                     logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                     del tp[provider]
-                    settings.general.throtteled_providers = str(tp)
-                    changed = True
-        
-        if changed:
-            with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-                settings.write(handle)
+                    set_throttled_providers(str(tp))
 
         event_stream(type='badges_providers')
 
@@ -284,8 +265,24 @@ def list_throttled_providers():
 def reset_throttled_providers():
     for provider in list(tp):
         del tp[provider]
-    settings.general.throtteled_providers = str(tp)
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+    set_throttled_providers(str(tp))
     update_throttled_provider()
     logging.info('BAZARR throttled providers have been reset.')
+
+
+def get_throttled_providers():
+    providers = {}
+    if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
+        with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as handle:
+            providers = handle.read()
+    if not providers:
+        providers = {}
+    return providers
+
+
+def set_throttled_providers(data):
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'w+') as handle:
+        handle.write(data)
+
+
+tp = eval(str(get_throttled_providers()))

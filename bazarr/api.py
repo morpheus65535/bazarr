@@ -28,7 +28,8 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
     delete_subtitles, subtitles_apply_mods
-from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
+from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
+    get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
 from subsyncer import subsync
@@ -109,7 +110,7 @@ class BadgesProviders(Resource):
     @authenticate
     def get(self):
         result = {
-            "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
+            "throttled_providers": len(eval(str(get_throttled_providers())))
         }
         return jsonify(result)
 

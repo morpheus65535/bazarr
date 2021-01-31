@@ -44,7 +44,6 @@ defaults = {
         'ignore_vobsub_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '',
-        'throtteled_providers': '{}',
         'multithreading': 'True',
         'chmod_enabled': 'False',
         'chmod': '0640',
