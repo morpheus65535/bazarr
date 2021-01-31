@@ -1,12 +1,5 @@
 @import "../@scss/variable.scss";
 
-@mixin sidebar-animation {
-  transition: {
-    duration: 0.2s;
-    timing-function: ease-in-out;
-  }
-}
-
 @mixin sidebar-border($side) {
   border: {
     #{$side}: {
@@ -14,49 +7,6 @@
       style: solid;
       width: 1px;
     }
-  }
-}
-
-@media (min-width: $sm) {
-  .sidebar-container {
-    position: sticky;
-  }
-
-  .main-router {
-    max-width: calc(100% - #{$sidebar-width});
-  }
-
-  .header-icon {
-    min-width: $sidebar-width;
-  }
-}
-
-@media (max-width: $md) {
-  .sidebar-container {
-    position: fixed !important;
-    transform: translateX(-100%);
-
-    @include sidebar-animation();
-
-    &.open {
-      transform: translateX(0) !important;
-    }
-  }
-
-  .main-router {
-    max-width: 100%;
-  }
-
-  .sidebar-overlay {
-    @include sidebar-animation();
-    &.open {
-      display: block !important;
-      opacity: 0.6;
-    }
-  }
-
-  .header-icon {
-    min-width: 0;
   }
 }
 
@@ -132,7 +82,7 @@ $sidebar-active-color: #252833;
     border: none;
     outline: none;
 
-    color: white;
+    color: white !important;
     background-color: $sidebar-bg-color;
 
     &:hover {

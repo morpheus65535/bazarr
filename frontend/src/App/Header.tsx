@@ -84,17 +84,13 @@ const Header: FunctionComponent<Props> = (props) => {
     process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
 
   return (
-    <Navbar bg="light" className="flex-grow-1 px-0">
+    <Navbar bg="primary" className="flex-grow-1 px-0">
       <div className="header-icon px-3 m-0 d-none d-md-block">
         <Navbar.Brand href={baseUrl} className="">
           <Image alt="brand" src={logo} width="32" height="32"></Image>
         </Navbar.Brand>
       </div>
-      <Button
-        variant="light"
-        className="mx-2 m-0 d-md-none"
-        onClick={toggleSidebar}
-      >
+      <Button className="mx-2 m-0 d-md-none" onClick={toggleSidebar}>
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
       </Button>
       <Container fluid>
@@ -104,18 +100,13 @@ const Header: FunctionComponent<Props> = (props) => {
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <Button
-              variant="light"
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
             </Button>
             <Dropdown alignRight>
-              <Dropdown.Toggle
-                className="dropdown-hidden"
-                as={Button}
-                variant="light"
-              >
+              <Dropdown.Toggle className="dropdown-hidden" as={Button}>
                 <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
               </Dropdown.Toggle>
               <Dropdown.Menu>

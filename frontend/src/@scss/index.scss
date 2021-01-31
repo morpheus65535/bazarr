@@ -2,29 +2,19 @@
 @import "./components.scss";
 @import "./variable.scss";
 
+// Override bootstrap primary color
+$theme-colors: (
+  "primary": #911f93,
+);
+
+@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+
 #root {
   height: 100vh;
 }
 
 .header-container {
   height: $header-height;
-
-  nav {
-    background-color: $theme-color !important;
-  }
-
-  .btn-light {
-    color: white !important;
-    background-color: transparent !important;
-    border-color: transparent !important;
-
-    &:hover,
-    &:active,
-    &:focus {
-      background-color: $theme-color-darked !important;
-      border-color: $theme-color-darked !important;
-    }
-  }
 
   input {
     &[type="text"] {
@@ -49,5 +39,55 @@
         box-shadow: none;
       }
     }
+  }
+}
+
+@mixin sidebar-animation {
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+}
+
+@include media-breakpoint-up(sm) {
+  .sidebar-container {
+    position: sticky;
+  }
+
+  .main-router {
+    max-width: calc(100% - #{$sidebar-width});
+  }
+
+  .header-icon {
+    min-width: $sidebar-width;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .sidebar-container {
+    position: fixed !important;
+    transform: translateX(-100%);
+
+    @include sidebar-animation();
+
+    &.open {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .main-router {
+    max-width: 100%;
+  }
+
+  .sidebar-overlay {
+    @include sidebar-animation();
+    &.open {
+      display: block !important;
+      opacity: 0.6;
+    }
+  }
+
+  .header-icon {
+    min-width: 0;
   }
 }

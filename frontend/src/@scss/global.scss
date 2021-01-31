@@ -1,42 +1,11 @@
 @import "./variable.scss";
 
-// Override bootstrap primary color
 :root {
-  --primary: #{$theme-color};
-
-  .btn-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-
-    &:hover,
-    &:active,
-    &:focus {
-      background-color: $theme-color-darked !important;
-      border-color: $theme-color-darked !important;
-    }
-  }
-
-  .badge-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-  }
-
-  .custom-control-input {
-    &:checked {
-      & ~ .custom-control-label {
-        &::before {
-          background-color: var(--primary) !important;
-          border-color: var(--primary) !important;
-        }
-      }
-    }
-  }
-
   .form-control {
-    &:active,
     &:focus {
-      border-color: $theme-color;
-      box-shadow: none;
+      outline-color: none !important;
+      box-shadow: none !important;
+      border-color: var(--primary) !important;
     }
   }
 }

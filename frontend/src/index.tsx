@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useMemo } from "react";
 import ReactDOM from "react-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
 import App from "./App";
 import Auth from "./Auth";
 import { Switch, Route, Redirect } from "react-router";
