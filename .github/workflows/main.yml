@@ -43,7 +43,7 @@ jobs:
             !/home/runner/work/bazarr/**/node_modules/*
             !/home/runner/work/bazarr/**/screenshot/*
             !/home/runner/work/bazarr/**/bin/*
-            !/home/runner/work/bazarr/**/frontend/*.map
+            !/home/runner/work/bazarr/**/frontend/**/*.map
 
       - name: FP Build
         uses: actions/upload-artifact@v2
@@ -51,4 +51,4 @@ jobs:
           name: Frontpage
           path: |
             /home/runner/work/bazarr/bazarr/frontend/build
-            !/home/runner/work/bazarr/**/frontend/*.map
+            !/home/runner/work/bazarr/**/frontend/**/*.map
