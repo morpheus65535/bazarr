@@ -119,7 +119,11 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "missing_subtitles",
         Cell: (row) => {
           const missing = row.value;
-          return missing.map((v) => <Badge variant="warning">{v.code2}</Badge>);
+          return missing.map((v) => (
+            <Badge className="mx-2" variant="warning">
+              {v.code2}
+            </Badge>
+          ));
         },
       },
       {

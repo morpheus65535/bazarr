@@ -1,15 +1,12 @@
 import React, { FunctionComponent, useMemo } from "react";
 import ReactDOM from "react-dom";
+import { Provider } from "react-redux";
+import { Route, Switch } from "react-router";
+import { BrowserRouter } from "react-router-dom";
+import store from "./@redux/store";
+import "./@scss/index.scss";
 import App from "./App";
 import Auth from "./Auth";
-import { Switch, Route, Redirect } from "react-router";
-import { BrowserRouter } from "react-router-dom";
-import { Provider, useSelector } from "react-redux";
-import store from "./@redux/store";
-
-import "./@scss/index.scss";
-
-const loginUrl = "/login";
 
 const Entrance: FunctionComponent = () => {
   const baseUrl = useMemo(
@@ -17,20 +14,15 @@ const Entrance: FunctionComponent = () => {
     []
   );
 
-  const auth = useSelector<StoreState, boolean>((s) => s.site.auth);
-
-  const app = useMemo(
-    () => (auth ? <App></App> : <Redirect to={loginUrl}></Redirect>),
-    [auth]
-  );
-
   return (
     <BrowserRouter basename={baseUrl}>
       <Switch>
-        <Route exact path={loginUrl}>
+        <Route exact path="/login">
           <Auth></Auth>
         </Route>
-        <Route path="/">{app}</Route>
+        <Route path="/">
+          <App></App>
+        </Route>
       </Switch>
     </BrowserRouter>
   );

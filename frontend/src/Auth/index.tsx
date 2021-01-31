@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import { connect } from "react-redux";
 import { siteAuthSuccess } from "../@redux/actions";
-import { useHistory } from "react-router-dom";
+import { useHistory, Redirect } from "react-router-dom";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
 
@@ -18,9 +18,16 @@ import "./style.scss";
 
 interface Props {
   login: () => void;
+  authState: boolean;
 }
 
-const AuthPage: FunctionComponent<Props> = ({ login }) => {
+function mapStateToProps({ site }: StoreState) {
+  return {
+    authState: site.auth,
+  };
+}
+
+const AuthPage: FunctionComponent<Props> = ({ login, authState }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,13 +43,16 @@ const AuthPage: FunctionComponent<Props> = ({ login }) => {
 
   const onSuccess = useCallback(() => {
     login();
-    setTimeout(() => history.replace("/"), 500);
   }, [history, login]);
 
   const onError = useCallback(() => {
     setUpdate(false);
     updateError("Login Failed");
   }, [updateError]);
+
+  if (authState) {
+    return <Redirect to="/"></Redirect>;
+  }
 
   return (
     <div className="d-flex bg-light h-100 justify-content-center align-items-center">
@@ -105,4 +115,4 @@ const AuthPage: FunctionComponent<Props> = ({ login }) => {
   );
 };
 
-export default connect(undefined, { login: siteAuthSuccess })(AuthPage);
+export default connect(mapStateToProps, { login: siteAuthSuccess })(AuthPage);

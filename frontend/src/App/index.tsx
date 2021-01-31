@@ -5,12 +5,13 @@ import React, {
   useState,
 } from "react";
 import { Container, Row } from "react-bootstrap";
-import Router from "./Router";
+import { connect } from "react-redux";
+import { Redirect } from "react-router-dom";
+import { bootstrap } from "../@redux/actions";
+import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import Header from "./Header";
-import { bootstrap } from "../@redux/actions";
-import { connect } from "react-redux";
-import { LoadingIndicator, ModalProvider } from "../components";
+import Router from "./Router";
 
 // Sidebar Toggle
 export const SidebarToggleContext = React.createContext<() => void>(() => {});
@@ -18,21 +19,31 @@ export const SidebarToggleContext = React.createContext<() => void>(() => {});
 interface Props {
   bootstrap: () => void;
   initialized: boolean;
+  authState: boolean;
 }
 
 function mapStateToProps({ site }: StoreState) {
   return {
     initialized: site.initialized,
+    authState: site.auth,
   };
 }
 
-const App: FunctionComponent<Props> = ({ bootstrap, initialized }) => {
+const App: FunctionComponent<Props> = ({
+  bootstrap,
+  initialized,
+  authState,
+}) => {
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
 
   const [sidebar, setSidebar] = useState(false);
   const toggleSidebar = useCallback(() => setSidebar(!sidebar), [sidebar]);
+
+  if (!authState) {
+    return <Redirect to="/login"></Redirect>;
+  }
 
   if (!initialized) {
     return (
