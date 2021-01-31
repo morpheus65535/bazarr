@@ -2,13 +2,12 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ frontend-upgrade ]
+    branches: [frontend-upgrade]
   pull_request:
-    branches: [ frontend-upgrade ]
+    branches: [frontend-upgrade]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     env:
       working-directory: ./frontend
@@ -18,29 +17,35 @@ jobs:
         node-version: [14.x]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Install dependencies
-      run: npm install
-      working-directory: ${{ env.working-directory }}
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{ env.working-directory }}
 
-    - name: Build
-      run: npm run build
-      working-directory: ${{ env.working-directory }}
-    
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: Bazarr
-        path: |
-          /home/runner/work/bazarr/bazarr
-          !/home/runner/work/bazarr/**/.git/*
-          !/home/runner/work/bazarr/**/node_modules/*
-          !/home/runner/work/bazarr/**/screenshot/*
-    
+      - name: Build
+        run: npm run build
+        working-directory: ${{ env.working-directory }}
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Bazarr_package
+          path: |
+            /home/runner/work/bazarr/bazarr
+            !/home/runner/work/bazarr/**/.git/*
+            !/home/runner/work/bazarr/**/node_modules/*
+            !/home/runner/work/bazarr/**/screenshot/*
+            !/home/runner/work/bazarr/**/bin/*
+
+      - name: FP Build
+        uses: actions/upload-artifact@v2
+        with:
+          name: Frontpage
+          path: /home/runner/work/bazarr/bazarr/frontend/build
