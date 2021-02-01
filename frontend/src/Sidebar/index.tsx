@@ -1,25 +1,24 @@
 import React, {
   FunctionComponent,
   useContext,
+  useEffect,
   useMemo,
   useState,
-  useEffect,
 } from "react";
+import { Container, Image, ListGroup } from "react-bootstrap";
 import { connect } from "react-redux";
-import { ListGroup, Container, Image } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
+import logo from "../@static/logo64.png";
+import { SidebarToggleContext } from "../App";
 import {
-  BadgesContext,
   ActiveKeyContext,
-  LinkItem,
+  BadgesContext,
   CollapseItem,
+  LinkItem,
 } from "./items";
 import { SidebarList } from "./list";
-import { BadgeProvider } from "./types";
-import { SidebarToggleContext } from "../App";
-
-import logo from "../@static/logo64.png";
 import "./style.scss";
+import { BadgeProvider } from "./types";
 
 interface Props {
   movies_badge: number;

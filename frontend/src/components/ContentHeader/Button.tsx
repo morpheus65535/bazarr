@@ -1,3 +1,6 @@
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   MouseEvent,
@@ -5,9 +8,6 @@ import React, {
   useState,
 } from "react";
 import { Button } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 interface CHButtonProps {
   disabled?: boolean;

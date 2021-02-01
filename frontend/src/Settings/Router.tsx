@@ -1,16 +1,16 @@
 import React, { FunctionComponent, useEffect } from "react";
-import { Route, Switch } from "react-router-dom";
-import { LoadingIndicator } from "../components";
 import { connect } from "react-redux";
+import { Route, Switch } from "react-router-dom";
 import { systemUpdateSettings } from "../@redux/actions";
+import { LoadingIndicator } from "../components";
 import General from "./General";
-import Sonarr from "./Sonarr";
-import Radarr from "./Radarr";
 import Languages from "./Languages";
-import Subtitles from "./Subtitles";
-import Schedular from "./Schedular";
-import Providers from "./Providers";
 import Notifications from "./Notifications";
+import Providers from "./Providers";
+import Radarr from "./Radarr";
+import Schedular from "./Schedular";
+import Sonarr from "./Sonarr";
+import Subtitles from "./Subtitles";
 
 export const SettingsContext = React.createContext<SystemSettings | undefined>(
   undefined

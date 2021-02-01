@@ -1,16 +1,12 @@
+import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Column } from "react-table";
-
-import { AsyncButton, BasicTable } from "../../components";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
-
-import { MoviesApi } from "../../apis";
-
 import { movieUpdateInfoAll } from "../../@redux/actions";
+import { MoviesApi } from "../../apis";
+import { AsyncButton, BasicTable } from "../../components";
 
 const missingText = "Subtitle Missing";
 

@@ -1,34 +1,34 @@
-import React, {
-  FunctionComponent,
-  useState,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
-import { connect } from "react-redux";
-import { Column } from "react-table";
-import { Container, Form, Button, InputGroup } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCircleNotch,
-  faInfoCircle,
   faCheck,
+  faCircleNotch,
   faExclamationTriangle,
+  faInfoCircle,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Button, Container, Form, InputGroup } from "react-bootstrap";
+import { connect } from "react-redux";
+import { Column } from "react-table";
 import {
   AsyncButton,
-  FileForm,
   BasicTable,
-  MessageIcon,
+  FileForm,
   LanguageSelector,
+  MessageIcon,
   useCloseModal,
   usePayload,
   useWhenModalShow,
 } from "..";
-import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { EpisodesApi, SubtitlesApi } from "../../apis";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 
 enum SubtitleState {
   update,

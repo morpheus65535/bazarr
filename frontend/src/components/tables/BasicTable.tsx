@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pagination, Row, Col, Container, Table } from "react-bootstrap";
+import { Col, Container, Pagination, Row, Table } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
 interface Props<T extends object = {}> extends TableOptions<T> {

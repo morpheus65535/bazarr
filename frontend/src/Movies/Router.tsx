@@ -1,10 +1,8 @@
 import React, { FunctionComponent, useEffect } from "react";
-import { Route, Switch } from "react-router-dom";
-
 import { connect } from "react-redux";
-import { movieUpdateList } from "../@redux/actions";
-
+import { Route, Switch } from "react-router-dom";
 import Movie from ".";
+import { movieUpdateList } from "../@redux/actions";
 import MovieDetail from "./Detail";
 
 interface Props {

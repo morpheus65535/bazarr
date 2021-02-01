@@ -1,6 +1,5 @@
 import React, { FunctionComponent } from "react";
 import { Row } from "react-bootstrap";
-
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
 

@@ -1,16 +1,11 @@
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-
 import { connect } from "react-redux";
 import { seriesUpdateWantedAll } from "../../@redux/actions";
-
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-
-import { ContentHeader } from "../../components";
-
 import { SeriesApi } from "../../apis";
-
+import { ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {

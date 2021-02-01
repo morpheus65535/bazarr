@@ -1,29 +1,25 @@
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBookmark,
+  faCheck,
+  faExclamationTriangle,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
+import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-import { Badge } from "react-bootstrap";
-
+import { Column } from "react-table";
+import { movieUpdateInfoAll } from "../@redux/actions";
+import { MoviesApi } from "../apis";
 import {
-  BasicTable,
   ActionBadge,
   AsyncStateOverlay,
+  BasicTable,
   ItemEditorModal,
   useShowModal,
 } from "../components";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faWrench,
-  faCheck,
-  faBookmark,
-  faExclamationTriangle,
-} from "@fortawesome/free-solid-svg-icons";
-
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-
-import { MoviesApi } from "../apis";
-import { movieUpdateInfoAll } from "../@redux/actions";
 
 interface Props {
   movies: AsyncState<Movie[]>;

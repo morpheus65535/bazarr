@@ -1,17 +1,16 @@
-import React, { FunctionComponent, useEffect } from "react";
-import { Container, Row, Col } from "react-bootstrap";
-import { connect } from "react-redux";
-import { systemUpdateStatus } from "../../@redux/actions";
-import { Helmet } from "react-helmet";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import {
+  faDiscord,
   faGithub,
   faWikipediaW,
-  faDiscord,
 } from "@fortawesome/free-brands-svg-icons";
+import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useEffect } from "react";
+import { Col, Container, Row } from "react-bootstrap";
+import { Helmet } from "react-helmet";
+import { connect } from "react-redux";
+import { systemUpdateStatus } from "../../@redux/actions";
 
 interface InfoProps {
   title: string;

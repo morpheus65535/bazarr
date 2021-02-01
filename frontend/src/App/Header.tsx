@@ -12,10 +12,10 @@ import {
 } from "react-bootstrap";
 import { connect } from "react-redux";
 import { SidebarToggleContext } from ".";
+import { siteRedirectToAuth } from "../@redux/actions";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { SearchBar, SearchResult } from "../components";
-import { siteRedirectToAuth } from "../@redux/actions";
 
 interface Props {
   movies: Movie[];

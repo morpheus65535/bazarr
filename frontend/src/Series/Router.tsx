@@ -1,10 +1,8 @@
 import React, { FunctionComponent, useEffect } from "react";
-import { Route, Switch } from "react-router-dom";
-
 import { connect } from "react-redux";
-import { seriesUpdateList } from "../@redux/actions";
-
+import { Route, Switch } from "react-router-dom";
 import Series from ".";
+import { seriesUpdateList } from "../@redux/actions";
 import Episodes from "./Episodes";
 
 interface Props {

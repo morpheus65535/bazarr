@@ -1,17 +1,16 @@
+import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useMemo } from "react";
 import { Table } from "react-bootstrap";
 import {
-  TableOptions,
-  useGroupBy,
-  useExpanded,
-  useSortBy,
-  useTable,
   Cell,
   Row,
+  TableOptions,
+  useExpanded,
+  useGroupBy,
+  useSortBy,
+  useTable,
 } from "react-table";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 
 function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
   if (cell.isGrouped) {

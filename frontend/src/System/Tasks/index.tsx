@@ -1,13 +1,10 @@
+import { faSync } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { systemUpdateTasks } from "../../@redux/actions";
-import { Helmet } from "react-helmet";
-
 import { ContentHeader } from "../../components";
-
-import { faSync } from "@fortawesome/free-solid-svg-icons";
-
 import Table from "./table";
 
 interface Props {

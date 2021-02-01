@@ -1,6 +1,6 @@
-import React, { FunctionComponent, useMemo } from "react";
 import RcSlider from "rc-slider";
 import "rc-slider/assets/index.css";
+import React, { FunctionComponent, useMemo } from "react";
 
 type TooltipsOptions = boolean | "Always";
 

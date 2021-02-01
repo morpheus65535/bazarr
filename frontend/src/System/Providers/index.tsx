@@ -1,15 +1,11 @@
+import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
-
+import { connect } from "react-redux";
 import { providerUpdateAll } from "../../@redux/actions";
-
-import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ContentHeader } from "../../components";
-
 import { ProvidersApi } from "../../apis";
-
+import { ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {

@@ -5,17 +5,17 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import BasicModal, { BasicModalProps } from "./BasicModal";
 import { Column } from "react-table";
 import {
+  AsyncStateOverlay,
   BasicTable,
   HistoryIcon,
-  AsyncStateOverlay,
-  SeriesBlacklistButton,
   MoviesBlacklistButton,
+  SeriesBlacklistButton,
 } from "..";
+import { EpisodesApi, MoviesApi } from "../../apis";
 import { updateAsyncState } from "../../utilites";
-import { MoviesApi, EpisodesApi } from "../../apis";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 import { usePayload } from "./provider";
 
 export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (

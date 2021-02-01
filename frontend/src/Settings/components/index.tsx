@@ -1,11 +1,8 @@
+import { isBoolean, isNumber, isString } from "lodash";
 import React, { FunctionComponent, useCallback, useState } from "react";
-import { isString, isBoolean, isNumber } from "lodash";
-
 import { Button } from "react-bootstrap";
-
-import { useLatest } from "./hooks";
-
 import { UtilsApi } from "../../apis";
+import { useLatest } from "./hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -59,10 +56,10 @@ export const URLTestButton: FunctionComponent<{
   );
 };
 
-export * from "./container";
-export * from "./items";
-export * from "./hooks";
-export * from "./provider";
 export * from "./collapse";
-export { default as SettingsProvider } from "./provider";
 export { default as CollapseBox } from "./collapse";
+export * from "./container";
+export * from "./hooks";
+export * from "./items";
+export * from "./provider";
+export { default as SettingsProvider } from "./provider";

@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Card, Container, Row } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
+import { connect } from "react-redux";
 import { systemUpdateReleases } from "../../@redux/actions";
 import { AsyncStateOverlay } from "../../components";
 

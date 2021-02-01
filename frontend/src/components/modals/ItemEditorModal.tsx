@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useMemo, useState } from "react";
-import { connect } from "react-redux";
 import { Container, Form } from "react-bootstrap";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import { connect } from "react-redux";
 import { AsyncButton, Selector } from "../";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {

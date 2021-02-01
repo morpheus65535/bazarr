@@ -1,8 +1,8 @@
-import { createStore, applyMiddleware } from "redux";
-import rootReducer from "../reducers";
-import trunk from "redux-thunk";
-import promise from "redux-promise";
+import { applyMiddleware, createStore } from "redux";
 import logger from "redux-logger";
+import promise from "redux-promise";
+import trunk from "redux-thunk";
+import rootReducer from "../reducers";
 
 const plugins = [promise, trunk];
 

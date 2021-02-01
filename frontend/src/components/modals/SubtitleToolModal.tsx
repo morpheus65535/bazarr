@@ -1,28 +1,3 @@
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
-import BasicModal, { BasicModalProps } from "./BasicModal";
-import {
-  Badge,
-  ButtonGroup,
-  Dropdown,
-  InputGroup,
-  Form,
-  Button,
-} from "react-bootstrap";
-import { Column } from "react-table";
-import {
-  BasicTable,
-  ActionIcon,
-  ActionIconItem,
-  usePayload,
-  useShowModal,
-  Selector,
-} from "..";
-import { SubtitlesApi } from "../../apis";
 import {
   faClock,
   faCode,
@@ -37,11 +12,36 @@ import {
   faPlus,
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
-import { isMovie, submodProcessColor } from "../../utilites";
-import { colorOptions } from "../../Settings/Subtitles/options";
-import { AsyncButton } from "../buttons";
-import { useCloseModal } from "./provider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import {
+  Badge,
+  Button,
+  ButtonGroup,
+  Dropdown,
+  Form,
+  InputGroup,
+} from "react-bootstrap";
+import { Column } from "react-table";
+import {
+  ActionIcon,
+  ActionIconItem,
+  BasicTable,
+  Selector,
+  usePayload,
+  useShowModal,
+} from "..";
+import { SubtitlesApi } from "../../apis";
+import { colorOptions } from "../../Settings/Subtitles/options";
+import { isMovie, submodProcessColor } from "../../utilites";
+import { AsyncButton } from "../buttons";
+import BasicModal, { BasicModalProps } from "./BasicModal";
+import { useCloseModal } from "./provider";
 
 type SupportType = Episode | Movie;
 

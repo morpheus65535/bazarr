@@ -1,11 +1,10 @@
 import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
-
+import Logs from "./Logs";
+import Providers from "./Providers";
+import Releases from "./Releases";
 import Status from "./Status";
 import Tasks from "./Tasks";
-import Providers from "./Providers";
-import Logs from "./Logs";
-import Releases from "./Releases";
 
 const Router: FunctionComponent = () => {
   return (

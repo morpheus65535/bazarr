@@ -1,7 +1,7 @@
 import React, {
+  FocusEvent,
   FunctionComponent,
   KeyboardEvent,
-  FocusEvent,
   useCallback,
   useMemo,
   useRef,

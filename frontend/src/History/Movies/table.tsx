@@ -1,14 +1,14 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
+import { Column } from "react-table";
+import { movieUpdateHistoryList } from "../../@redux/actions";
 import {
-  BasicTable,
   AsyncStateOverlay,
+  BasicTable,
   HistoryIcon,
   MoviesBlacklistButton,
 } from "../../components";
-import { movieUpdateHistoryList } from "../../@redux/actions";
 
 interface Props {
   movieHistory: AsyncState<MovieHistory[]>;

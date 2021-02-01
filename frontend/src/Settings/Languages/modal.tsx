@@ -1,25 +1,25 @@
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, {
   FunctionComponent,
-  useMemo,
-  useState,
   useCallback,
   useEffect,
+  useMemo,
+  useState,
 } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Column } from "react-table";
+import { useEnabledLanguages } from ".";
 import {
   ActionIcon,
-  BasicTable,
   BasicModal,
   BasicModalProps,
+  BasicTable,
   LanguageSelector,
+  Selector,
   useCloseModal,
   usePayload,
-  Selector,
 } from "../../components";
 import { Input, Message } from "../components";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useEnabledLanguages } from ".";
 import { cutoffOptions } from "./options";
 interface Props {
   update: (profile: LanguagesProfile) => void;

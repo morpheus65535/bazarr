@@ -1,16 +1,12 @@
-import React, { FunctionComponent, useState, useEffect } from "react";
+import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
+import React, { FunctionComponent, useEffect, useState } from "react";
 import { Container, Row } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
-
+import { connect } from "react-redux";
 import { systemUpdateLogs } from "../../@redux/actions";
-
-import { faTrash, faDownload, faSync } from "@fortawesome/free-solid-svg-icons";
-import { ContentHeader } from "../../components";
-
-import Table from "./table";
-
 import { SystemApi } from "../../apis";
+import { ContentHeader } from "../../components";
+import Table from "./table";
 
 interface Props {
   loading: boolean;

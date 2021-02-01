@@ -1,20 +1,18 @@
+import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
 import { connect } from "react-redux";
-import { isArray } from "lodash";
-import Table from "./table";
 import {
-  Group,
-  Message,
-  Input,
   Check,
   CollapseBox,
+  Group,
+  Input,
+  Message,
   SettingsProvider,
   useLatest,
 } from "../components";
-
-import { LanguageSelector, ProfileSelector } from "./components";
-
 import { enabledLanguageKey, languageProfileKey } from "../keys";
+import { LanguageSelector, ProfileSelector } from "./components";
+import Table from "./table";
 
 const EnabledLanguageContext = React.createContext<Language[]>([]);
 const LanguagesProfileContext = React.createContext<LanguagesProfile[]>([]);

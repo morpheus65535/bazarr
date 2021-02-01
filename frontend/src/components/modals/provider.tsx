@@ -1,11 +1,11 @@
 import React, {
-  FunctionComponent,
   Dispatch,
-  useEffect,
-  useState,
+  FunctionComponent,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useState,
 } from "react";
 
 const ModalContext = React.createContext<[string[], Dispatch<string[]>]>([

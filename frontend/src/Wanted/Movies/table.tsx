@@ -1,17 +1,13 @@
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-
-import { BasicTable, AsyncStateOverlay, AsyncButton } from "../../components";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-
+import { Column } from "react-table";
 import { movieUpdateWantedAll } from "../../@redux/actions";
-
 import { MoviesApi } from "../../apis";
+import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
 
 interface Props {
   wanted: AsyncState<WantedMovie[]>;

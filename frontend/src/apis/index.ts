@@ -1,6 +1,6 @@
 import Axios, { AxiosInstance, CancelTokenSource } from "axios";
-import reduxStore from "../@redux/store";
 import { siteRedirectToAuth } from "../@redux/actions";
+import reduxStore from "../@redux/store";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
@@ -61,11 +61,11 @@ class Api {
 
 export default new Api();
 export { default as BadgesApi } from "./badges";
-export { default as SystemApi } from "./system";
-export { default as SeriesApi } from "./series";
-export { default as MoviesApi } from "./movies";
-export { default as HistoryApi } from "./history";
 export { default as EpisodesApi } from "./episodes";
+export { default as HistoryApi } from "./history";
+export { default as MoviesApi } from "./movies";
 export { default as ProvidersApi } from "./providers";
+export { default as SeriesApi } from "./series";
 export { default as SubtitlesApi } from "./subtitles";
+export { default as SystemApi } from "./system";
 export { default as UtilsApi } from "./utils";

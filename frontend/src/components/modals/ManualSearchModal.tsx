@@ -1,3 +1,10 @@
+import {
+  faCheck,
+  faDownload,
+  faInfoCircle,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   useCallback,
@@ -5,32 +12,25 @@ import React, {
   useState,
 } from "react";
 import {
-  usePayload,
+  Badge,
+  Button,
+  Col,
+  Container,
+  Dropdown,
+  OverlayTrigger,
+  Popover,
+  Row,
+} from "react-bootstrap";
+import { Column } from "react-table";
+import {
+  AsyncButton,
   BasicModal,
   BasicModalProps,
   BasicTable,
-  AsyncButton,
   LoadingIndicator,
+  usePayload,
   useWhenPayloadUpdate,
 } from "..";
-import { Column } from "react-table";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faDownload,
-  faCheck,
-  faTimes,
-  faInfoCircle,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-  Badge,
-  Button,
-  Popover,
-  OverlayTrigger,
-  Container,
-  Row,
-  Col,
-  Dropdown,
-} from "react-bootstrap";
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
 

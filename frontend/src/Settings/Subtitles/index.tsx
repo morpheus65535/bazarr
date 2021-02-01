@@ -1,18 +1,16 @@
 import React, { FunctionComponent } from "react";
-
 import {
   Check,
   CollapseBox,
   Group,
   Input,
   Message,
-  Text,
   Selector,
-  Slider,
   SettingsProvider,
+  Slider,
+  Text,
 } from "../components";
-
-import { folderOptions, antiCaptchaOption, colorOptions } from "./options";
+import { antiCaptchaOption, colorOptions, folderOptions } from "./options";
 
 const SettingsSubtitlesView: FunctionComponent = () => {
   // TODO: Performance

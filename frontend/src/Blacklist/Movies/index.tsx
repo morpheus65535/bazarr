@@ -4,9 +4,9 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { movieUpdateBlacklist } from "../../@redux/actions";
+import { MoviesApi } from "../../apis";
 import { ContentHeader } from "../../components";
 import Table from "./table";
-import { MoviesApi } from "../../apis";
 
 interface Props {
   update: () => void;

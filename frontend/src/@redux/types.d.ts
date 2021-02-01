@@ -1,5 +1,5 @@
-import { Action } from "redux-actions";
 import { Dispatch } from "redux";
+import { Action } from "redux-actions";
 
 interface AsyncPayload<Payload> {
   loading: boolean;

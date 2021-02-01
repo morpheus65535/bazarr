@@ -1,12 +1,12 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { MoviesApi } from "../../apis";
 import { movieUpdateBlacklist } from "../../@redux/actions";
+import { MoviesApi } from "../../apis";
+import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
 
 interface Props {
   blacklist: AsyncState<MovieBlacklist[]>;

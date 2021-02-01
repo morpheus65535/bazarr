@@ -1,8 +1,7 @@
+import { faList } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
-import { faList } from "@fortawesome/free-solid-svg-icons";
 import { Helmet } from "react-helmet";
-
 import { ContentHeader } from "../components";
 import Table from "./table";
 

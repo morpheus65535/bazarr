@@ -1,9 +1,7 @@
-import React, { FunctionComponent, useState, useMemo } from "react";
-import { useHistory } from "react-router";
-
-import { Dropdown, Form } from "react-bootstrap";
-
 import { throttle } from "lodash";
+import React, { FunctionComponent, useMemo, useState } from "react";
+import { Dropdown, Form } from "react-bootstrap";
+import { useHistory } from "react-router";
 
 export interface SearchResult {
   name: string;

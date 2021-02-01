@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Alert } from "react-bootstrap";
-import { NotificationView } from "./components";
 import { Check, Group, Input, Message, SettingsProvider } from "../components";
+import { NotificationView } from "./components";
 
 const SettingsNotificationsView: FunctionComponent = () => {
   return (

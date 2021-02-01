@@ -1,32 +1,32 @@
-import React, {
-  FunctionComponent,
-  ChangeEvent,
-  useState,
-  useMemo,
-  useEffect,
-  useRef,
-} from "react";
+import {
+  faClock,
+  faCloudUploadAlt,
+  faDownload,
+  faRecycle,
+  faTrash,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
+import React, {
+  ChangeEvent,
+  FunctionComponent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-  Spinner,
   Form,
   OverlayTrigger,
   Popover,
+  Spinner,
   SpinnerProps,
 } from "react-bootstrap";
-import {
-  faTrash,
-  faDownload,
-  faUser,
-  faRecycle,
-  faCloudUploadAlt,
-  faClock,
-} from "@fortawesome/free-solid-svg-icons";
-import { AsyncButton } from "./buttons";
 import { MoviesApi, SeriesApi } from "../apis";
+import { AsyncButton } from "./buttons";
 
 enum HistoryAction {
   Delete = 0,
@@ -265,12 +265,12 @@ export const MoviesBlacklistButton: FunctionComponent<{
   }
 };
 
+export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
+export * from "./buttons";
+export * from "./ContentHeader";
+export * from "./inputs";
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
-export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
 export * from "./modals";
-export * from "./ContentHeader";
-export * from "./tables";
-export * from "./inputs";
 export * from "./SearchBar";
-export * from "./buttons";
+export * from "./tables";

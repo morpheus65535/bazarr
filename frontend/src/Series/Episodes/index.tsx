@@ -1,32 +1,26 @@
-import React, { FunctionComponent, useEffect, useMemo } from "react";
-import { RouteComponentProps, withRouter } from "react-router-dom";
-import { connect } from "react-redux";
-import { Helmet } from "react-helmet";
-
-import { Container, Row } from "react-bootstrap";
-
-import { faHdd, faAdjust } from "@fortawesome/free-solid-svg-icons";
-
 import {
-  faSync,
-  faSearch,
+  faAdjust,
   faCloudUploadAlt,
+  faHdd,
+  faSearch,
+  faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-
+import React, { FunctionComponent, useEffect, useMemo } from "react";
+import { Container, Row } from "react-bootstrap";
+import { Helmet } from "react-helmet";
+import { connect } from "react-redux";
+import { RouteComponentProps, withRouter } from "react-router-dom";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
-
+import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
-  ItemOverview,
   ItemEditorModal,
-  SeriesUploadModal,
+  ItemOverview,
   LoadingIndicator,
+  SeriesUploadModal,
   useShowModal,
 } from "../../components";
-
-import { SeriesApi } from "../../apis";
-
 import Table from "./table";
 
 interface Params {

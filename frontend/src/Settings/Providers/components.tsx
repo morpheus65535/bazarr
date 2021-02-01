@@ -16,8 +16,8 @@ import {
 } from "../../components";
 import { isReactText } from "../../utilites";
 import {
-  ColCard,
   Check,
+  ColCard,
   Message,
   Text,
   UpdateChangeContext,

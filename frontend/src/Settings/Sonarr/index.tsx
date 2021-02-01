@@ -1,19 +1,19 @@
 import React, { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
-import { seriesTypeOptions } from "./options";
 import {
-  Chips,
   Check,
+  Chips,
+  CollapseBox,
   Group,
   Input,
   Message,
   Selector,
+  SettingsProvider,
   Slider,
   Text,
-  CollapseBox,
   URLTestButton,
-  SettingsProvider,
 } from "../components";
+import { seriesTypeOptions } from "./options";
 
 interface Props {}
 

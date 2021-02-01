@@ -1,12 +1,12 @@
+import { createAction } from "redux-actions";
 import {
-  SITE_NEED_AUTH,
-  SITE_INITIALIZED,
   SITE_AUTH_SUCCESS,
+  SITE_INITIALIZED,
+  SITE_NEED_AUTH,
 } from "../constants";
-import { createFillfulAction } from "./utils";
 import { updateBadges } from "./badges";
 import { systemUpdateLanguagesAll } from "./system";
-import { createAction } from "redux-actions";
+import { createFillfulAction } from "./utils";
 
 export const bootstrap = createFillfulAction(
   () => [updateBadges(), systemUpdateLanguagesAll()],

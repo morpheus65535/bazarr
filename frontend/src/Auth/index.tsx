@@ -9,11 +9,10 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { connect } from "react-redux";
-import { siteAuthSuccess } from "../@redux/actions";
 import { Redirect } from "react-router-dom";
+import { siteAuthSuccess } from "../@redux/actions";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
-
 import "./style.scss";
 
 interface Props {

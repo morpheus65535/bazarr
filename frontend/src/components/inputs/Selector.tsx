@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from "react";
 import { isArray } from "lodash";
+import React, { useCallback, useMemo } from "react";
 import ReactSelect from "react-select";
 import "./selector.scss";
 

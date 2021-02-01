@@ -1,17 +1,17 @@
-import { faWrench, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, {
   FunctionComponent,
+  useCallback,
   useMemo,
   useState,
-  useCallback,
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
-import { ActionIcon, BasicTable, useShowModal } from "../../components";
 import { useLanguagesProfile } from ".";
-import Modal from "./modal";
+import { ActionIcon, BasicTable, useShowModal } from "../../components";
 import { useUpdate } from "../components";
 import { languageProfileKey } from "../keys";
+import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {

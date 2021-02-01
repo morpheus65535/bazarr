@@ -1,17 +1,12 @@
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-
 import { connect } from "react-redux";
 import { movieUpdateWantedAll } from "../../@redux/actions";
-
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-
-import Table from "./table";
-
-import { ContentHeader } from "../../components";
-
 import { MoviesApi } from "../../apis";
+import { ContentHeader } from "../../components";
+import Table from "./table";
 
 interface Props {
   update: () => void;

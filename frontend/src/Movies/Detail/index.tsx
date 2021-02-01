@@ -1,31 +1,31 @@
+import {
+  faCloudUploadAlt,
+  faHistory,
+  faSearch,
+  faSync,
+  faToolbox,
+  faUser,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
+import { Container, Row } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
-import {
-  faSync,
-  faHistory,
-  faToolbox,
-  faWrench,
-  faUser,
-  faSearch,
-  faCloudUploadAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "react-bootstrap";
+import { movieUpdateInfoAll } from "../../@redux/actions";
+import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
   ItemEditorModal,
   ItemOverview,
   LoadingIndicator,
-  SubtitleToolModal,
   MovieHistoryModal,
   MovieUploadModal,
+  SubtitleToolModal,
   useShowModal,
 } from "../../components";
-import Table from "./table";
-import { MoviesApi, ProvidersApi } from "../../apis";
-import { movieUpdateInfoAll } from "../../@redux/actions";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
+import Table from "./table";
 
 interface Params {
   id: string;

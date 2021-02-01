@@ -1,13 +1,11 @@
-import React, { useMemo } from "react";
-import { Column } from "react-table";
-import { BasicTable } from "../../components";
-import { SystemApi } from "../../apis";
-
-import { connect } from "react-redux";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { useMemo } from "react";
 import { Button } from "react-bootstrap";
+import { connect } from "react-redux";
+import { Column } from "react-table";
+import { SystemApi } from "../../apis";
+import { BasicTable } from "../../components";
 
 interface Props {
   tasks: Array<SystemTaskResult>;

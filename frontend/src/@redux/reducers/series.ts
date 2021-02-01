@@ -1,15 +1,14 @@
-import { AsyncAction } from "../types";
+import { handleActions } from "redux-actions";
 import {
+  SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
-  SERIES_UPDATE_LIST,
-  SERIES_UPDATE_WANTED_LIST,
   SERIES_UPDATE_HISTORY_LIST,
   SERIES_UPDATE_INFO,
-  SERIES_UPDATE_BLACKLIST,
+  SERIES_UPDATE_LIST,
+  SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
+import { AsyncAction } from "../types";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
-
-import { handleActions } from "redux-actions";
 
 const reducer = handleActions<SeriesState, any>(
   {

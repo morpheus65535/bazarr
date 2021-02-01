@@ -1,17 +1,15 @@
-import React, { FunctionComponent, useMemo } from "react";
-import { Image, Container, Row, Col, Badge } from "react-bootstrap";
-import { connect } from "react-redux";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-import {
-  faMusic,
-  faLanguage,
-  IconDefinition,
-  faTags,
-  faStream,
-} from "@fortawesome/free-solid-svg-icons";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
+import {
+  faLanguage,
+  faMusic,
+  faStream,
+  faTags,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useMemo } from "react";
+import { Badge, Col, Container, Image, Row } from "react-bootstrap";
+import { connect } from "react-redux";
 
 interface Props {
   item: ExtendItem;

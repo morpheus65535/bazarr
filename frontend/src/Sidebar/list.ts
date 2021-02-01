@@ -1,13 +1,13 @@
-import { SidebarDefinition } from "./types";
 import {
-  faPlay,
-  faFilm,
-  faExclamationTriangle,
-  faCogs,
-  faLaptop,
   faClock,
+  faCogs,
+  faExclamationTriangle,
   faFileExcel,
+  faFilm,
+  faLaptop,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
+import { SidebarDefinition } from "./types";
 
 export const SidebarList: SidebarDefinition[] = [
   {

@@ -1,17 +1,17 @@
-import React, { FunctionComponent, useState, useMemo } from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
+import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
-import BasicModal, { BasicModalProps } from "./BasicModal";
 import {
   AsyncButton,
   FileForm,
+  LanguageSelector,
   useCloseModal,
   usePayload,
   useWhenModalShow,
-  LanguageSelector,
 } from "..";
-import { Container, Form } from "react-bootstrap";
-import { MoviesApi } from "../../apis";
 import { movieUpdateInfoAll } from "../../@redux/actions";
+import { MoviesApi } from "../../apis";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 interface MovieProps {
   avaliableLanguages: Language[];
   update: (id: number) => void;

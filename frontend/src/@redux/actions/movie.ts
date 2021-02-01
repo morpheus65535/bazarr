@@ -1,10 +1,10 @@
-import { MoviesApi, HistoryApi } from "../../apis";
+import { HistoryApi, MoviesApi } from "../../apis";
 import {
+  MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
+  MOVIES_UPDATE_INFO,
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_INFO,
-  MOVIES_UPDATE_BLACKLIST,
 } from "../constants";
 import { badgeUpdateMovies, updateBadges } from "./badges";
 import { createAsyncAction, createCombineAction } from "./utils";

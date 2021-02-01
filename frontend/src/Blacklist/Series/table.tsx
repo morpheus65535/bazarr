@@ -1,11 +1,11 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
 
 interface Props {

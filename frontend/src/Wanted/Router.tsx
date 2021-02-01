@@ -1,8 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
-
-import Series from "./Series";
 import Movies from "./Movies";
+import Series from "./Series";
 
 const Router: FunctionComponent = () => {
   return (

@@ -1,19 +1,17 @@
 import React, { FunctionComponent, useMemo } from "react";
-
 import {
-  Group,
-  Selector,
-  Input,
   CollapseBox,
+  Group,
+  Input,
+  Selector,
   SettingsProvider,
 } from "../components";
-
 import {
-  seriesSyncOptions,
+  dayOptions,
+  diskUpdateOptions,
   episodesSyncOptions,
   moviesSyncOptions,
-  diskUpdateOptions,
-  dayOptions,
+  seriesSyncOptions,
   upgradeOptions,
 } from "./options";
 

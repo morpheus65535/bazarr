@@ -1,27 +1,27 @@
-import React, { FunctionComponent, useMemo } from "react";
-import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column, TableOptions } from "react-table";
-import { connect } from "react-redux";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBookmark,
-  faUser,
-  faBriefcase,
-  faHistory,
-} from "@fortawesome/free-solid-svg-icons";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
-  GroupTable,
+  faBookmark,
+  faBriefcase,
+  faHistory,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useMemo } from "react";
+import { Badge, ButtonGroup } from "react-bootstrap";
+import { connect } from "react-redux";
+import { Column, TableOptions } from "react-table";
+import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { ProvidersApi } from "../../apis";
+import {
   ActionIcon,
   AsyncStateOverlay,
-  SubtitleToolModal,
   EpisodeHistoryModal,
+  GroupTable,
+  SubtitleToolModal,
   useShowModal,
 } from "../../components";
-import { SubtitleAction } from "./components";
-import { ProvidersApi } from "../../apis";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { SubtitleAction } from "./components";
 
 interface Props {
   series: Series;

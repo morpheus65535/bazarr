@@ -1,27 +1,23 @@
-import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
-import {
-  BasicTable,
-  ActionBadge,
-  AsyncStateOverlay,
-  ItemEditorModal,
-  useShowModal,
-} from "../components";
-
-import { connect } from "react-redux";
-import { Link } from "react-router-dom";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
   faExclamationTriangle,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-
-import { ProgressBar, Badge } from "react-bootstrap";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { Badge, ProgressBar } from "react-bootstrap";
+import { connect } from "react-redux";
+import { Link } from "react-router-dom";
+import { Column } from "react-table";
 import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
+import {
+  ActionBadge,
+  AsyncStateOverlay,
+  BasicTable,
+  ItemEditorModal,
+  useShowModal,
+} from "../components";
 
 interface Props {
   series: AsyncState<Series[]>;

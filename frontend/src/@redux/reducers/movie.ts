@@ -1,15 +1,13 @@
-import { AsyncAction } from "../types";
+import { handleActions } from "redux-actions";
 import {
+  MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
+  MOVIES_UPDATE_INFO,
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_INFO,
-  MOVIES_UPDATE_BLACKLIST,
 } from "../constants";
-
+import { AsyncAction } from "../types";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
-
-import { handleActions } from "redux-actions";
 
 const reducer = handleActions<MovieState, any>(
   {

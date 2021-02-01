@@ -1,17 +1,16 @@
+import { handleActions } from "redux-actions";
 import {
-  SYSTEM_UPDATE_LANGUAGES_LIST,
+  PROVIDER_UPDATE_LIST,
   SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
+  SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
+  SYSTEM_UPDATE_LOGS,
+  SYSTEM_UPDATE_RELEASES,
+  SYSTEM_UPDATE_SETTINGS,
   SYSTEM_UPDATE_STATUS,
   SYSTEM_UPDATE_TASKS,
-  SYSTEM_UPDATE_RELEASES,
-  PROVIDER_UPDATE_LIST,
-  SYSTEM_UPDATE_LOGS,
-  SYSTEM_UPDATE_SETTINGS,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
-
-import { handleActions } from "redux-actions";
 
 const reducer = handleActions<SystemState, any>(
   {

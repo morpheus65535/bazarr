@@ -1,17 +1,15 @@
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faBug,
+  faCode,
+  faExclamationCircle,
+  faInfoCircle,
+  faQuestion,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Column } from "react-table";
-
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faInfoCircle,
-  faExclamationCircle,
-  faBug,
-  faCode,
-  faQuestion,
-} from "@fortawesome/free-solid-svg-icons";
-
 import { BasicTable } from "../../components";
 
 interface Props {

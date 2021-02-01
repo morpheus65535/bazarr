@@ -1,7 +1,6 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { useEnabledLanguages, useLanguagesProfile } from ".";
 import { LanguageSelector as CLanguageSelector } from "../../components";
-
 import { BasicInput, Selector, useUpdate } from "../components";
 
 interface LanguageSelectorProps {

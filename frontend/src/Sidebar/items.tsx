@@ -1,17 +1,15 @@
-import React, { FunctionComponent, useContext, useMemo } from "react";
-import { Collapse, Badge, ListGroupItem } from "react-bootstrap";
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useContext, useMemo } from "react";
+import { Badge, Collapse, ListGroupItem } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
-
+import { SidebarToggleContext } from "../App";
 import {
-  CollapseItemType,
-  LinkItemType,
   BadgeProvider,
   ChildBadgeProvider,
+  CollapseItemType,
+  LinkItemType,
 } from "./types";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-
-import { SidebarToggleContext } from "../App";
 
 export const BadgesContext = React.createContext<BadgeProvider>({});
 

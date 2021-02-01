@@ -1,12 +1,11 @@
+import { createAction } from "redux-actions";
+import { BadgesApi } from "../../apis";
 import {
   BADGE_UPDATE_MOVIES,
   BADGE_UPDATE_PROVIDERS,
   BADGE_UPDATE_SERIES,
 } from "../constants";
-
-import { createAction } from "redux-actions";
 import { createCombineAction } from "./utils";
-import { BadgesApi } from "../../apis";
 
 export const updateBadges = createCombineAction(() => [
   badgeUpdateMovies(),

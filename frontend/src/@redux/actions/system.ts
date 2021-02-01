@@ -1,15 +1,14 @@
+import { SystemApi } from "../../apis";
 import {
-  SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
+  SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
+  SYSTEM_UPDATE_LOGS,
+  SYSTEM_UPDATE_RELEASES,
+  SYSTEM_UPDATE_SETTINGS,
   SYSTEM_UPDATE_STATUS,
   SYSTEM_UPDATE_TASKS,
-  SYSTEM_UPDATE_LOGS,
-  SYSTEM_UPDATE_SETTINGS,
-  SYSTEM_UPDATE_RELEASES,
 } from "../constants";
-
-import { SystemApi } from "../../apis";
 import { createAsyncAction, createCombineAction } from "./utils";
 
 export const systemUpdateLanguagesAll = createCombineAction(() => [

@@ -1,10 +1,9 @@
+import { handleActions } from "redux-actions";
 import {
   BADGE_UPDATE_MOVIES,
   BADGE_UPDATE_PROVIDERS,
   BADGE_UPDATE_SERIES,
 } from "../constants";
-
-import { handleActions } from "redux-actions";
 
 const reducer = handleActions<BadgeState, number>(
   {

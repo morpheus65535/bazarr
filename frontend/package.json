@@ -38,7 +38,6 @@
     "bootstrap": "^4.0.0",
     "lodash": "^4.0.0",
     "node-sass": "^4.0.0",
-    "prettier": "^2.1.2",
     "rc-slider": "^9.7.1",
     "react": "^16.0.0",
     "react-bootstrap": "^1.0.0",
@@ -57,6 +56,8 @@
   },
   "devDependencies": {
     "husky": "^4.3.8",
+    "prettier": "^2.1.2",
+    "prettier-plugin-organize-imports": "^1.1.1",
     "pretty-quick": "^3.1.0"
   },
   "scripts": {

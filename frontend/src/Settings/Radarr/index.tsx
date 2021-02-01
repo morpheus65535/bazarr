@@ -1,16 +1,16 @@
 import React, { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
-  Chips,
   Check,
+  Chips,
+  CollapseBox,
   Group,
   Input,
   Message,
+  SettingsProvider,
   Slider,
   Text,
-  CollapseBox,
   URLTestButton,
-  SettingsProvider,
 } from "../components";
 
 interface Props {}

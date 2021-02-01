@@ -1,10 +1,9 @@
-import {
-  SITE_NEED_AUTH,
-  SITE_INITIALIZED,
-  SITE_AUTH_SUCCESS,
-} from "../constants";
-
 import { handleActions } from "redux-actions";
+import {
+  SITE_AUTH_SUCCESS,
+  SITE_INITIALIZED,
+  SITE_NEED_AUTH,
+} from "../constants";
 
 const reducer = handleActions<SiteState, number>(
   {

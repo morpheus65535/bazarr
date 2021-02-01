@@ -1,13 +1,13 @@
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   MouseEvent,
   PropsWithChildren,
   useState,
 } from "react";
-import { Button, ButtonProps, Badge } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
+import { Badge, Button, ButtonProps } from "react-bootstrap";
 
 export const ActionBadge: FunctionComponent<{
   icon: IconDefinition;

@@ -1,15 +1,11 @@
-import React, { FunctionComponent } from "react";
-import { connect } from "react-redux";
-
-import { Badge } from "react-bootstrap";
-import { AsyncButton } from "../../components";
-
+import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faSearch } from "@fortawesome/free-solid-svg-icons";
-
-import { EpisodesApi } from "../../apis";
-
+import React, { FunctionComponent } from "react";
+import { Badge } from "react-bootstrap";
+import { connect } from "react-redux";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { EpisodesApi } from "../../apis";
+import { AsyncButton } from "../../components";
 
 interface Props {
   seriesid: number;

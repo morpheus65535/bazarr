@@ -1,9 +1,9 @@
 import { combineReducers } from "redux";
 import badges from "./badges";
-import system from "./system";
-import series from "./series";
 import movie from "./movie";
+import series from "./series";
 import site from "./site";
+import system from "./system";
 
 export default combineReducers({
   badges,

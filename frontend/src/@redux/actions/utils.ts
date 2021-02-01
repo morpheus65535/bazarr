@@ -1,10 +1,10 @@
+import { addToChecklist } from "../store/subscriber";
 import {
-  AsyncActionDispatcher,
   ActionDispatcher,
+  AsyncActionDispatcher,
   AvaliableType,
   FillfulActionDispatcher,
 } from "../types";
-import { addToChecklist } from "../store/subscriber";
 
 // Create a async action
 function asyncActionCreator<T extends (...args: any[]) => Promise<any>>(

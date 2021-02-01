@@ -1,8 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
-
-import BlacklistSeries from "./Series";
 import BlacklistMovies from "./Movies";
+import BlacklistSeries from "./Series";
 
 const Router: FunctionComponent = () => {
   return (

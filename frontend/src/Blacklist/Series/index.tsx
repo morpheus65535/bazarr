@@ -4,9 +4,9 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
+import { SeriesApi } from "../../apis";
 import { ContentHeader } from "../../components";
 import Table from "./table";
-import { SeriesApi } from "../../apis";
 
 interface Props {
   update: () => void;

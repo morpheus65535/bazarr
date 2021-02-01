@@ -1,6 +1,5 @@
 import React, { FunctionComponent } from "react";
 import { Modal } from "react-bootstrap";
-
 import { useIsModalShow } from ".";
 import { useCloseModal } from "./provider";
 

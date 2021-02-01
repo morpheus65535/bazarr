@@ -1,16 +1,14 @@
+import { EpisodesApi, HistoryApi, SeriesApi } from "../../apis";
 import {
-  SERIES_UPDATE_LIST,
-  SERIES_UPDATE_WANTED_LIST,
+  SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
   SERIES_UPDATE_INFO,
-  SERIES_UPDATE_BLACKLIST,
+  SERIES_UPDATE_LIST,
+  SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
-
-import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
+import { badgeUpdateSeries, updateBadges } from "./badges";
 import { createAsyncAction, createCombineAction } from "./utils";
-
-import { updateBadges, badgeUpdateSeries } from "./badges";
 
 export const seriesUpdateList = createAsyncAction(SERIES_UPDATE_LIST, () =>
   SeriesApi.series()

@@ -1,16 +1,14 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
-
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-
+import { Column } from "react-table";
+import { seriesUpdateHistoryList } from "../../@redux/actions";
 import {
-  BasicTable,
   AsyncStateOverlay,
+  BasicTable,
   HistoryIcon,
   SeriesBlacklistButton,
 } from "../../components";
-import { seriesUpdateHistoryList } from "../../@redux/actions";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;
