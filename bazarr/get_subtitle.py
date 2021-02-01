@@ -1375,6 +1375,8 @@ def upgrade_subtitles():
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
 
+    logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
+
 
 def postprocessing(command, path):
     try:
