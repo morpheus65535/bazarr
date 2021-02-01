@@ -104,10 +104,14 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Episodes",
         accessor: "episodeFileCount",
         Cell: (row) => {
-          const { episodeFileCount, episodeMissingCount } = row.row.original;
+          const {
+            episodeFileCount,
+            episodeMissingCount,
+            profileId,
+          } = row.row.original;
           let progress = 0;
           let label = "";
-          if (episodeFileCount === 0) {
+          if (episodeFileCount === 0 || !profileId) {
             progress = 0.0;
           } else {
             progress = episodeFileCount - episodeMissingCount;
