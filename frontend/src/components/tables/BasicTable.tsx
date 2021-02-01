@@ -11,6 +11,9 @@ interface Props<T extends object = {}> extends TableOptions<T> {
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const { emptyText, showPageControl, responsive, ...options } = props;
 
+  // Default Settings
+  options.autoResetPage = options.autoResetPage ?? false;
+
   const instance = useTable(options, usePagination);
 
   const {

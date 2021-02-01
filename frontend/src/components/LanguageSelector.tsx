@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Selector, SelectorProps } from "../components";
 
 interface Props {
-  options: Language[];
+  options: readonly Language[];
 }
 
 type RemovedSelectorProps<M extends boolean> = Omit<

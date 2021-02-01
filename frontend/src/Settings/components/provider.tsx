@@ -82,7 +82,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
         stagedChange[k] = v;
 
         if (process.env.NODE_ENV === "development") {
-          console.log("stage settings", stagedChange);
+          console.log("staged settings", stagedChange);
         }
         setChange({ ...stagedChange });
       }

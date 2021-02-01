@@ -5,7 +5,7 @@ import "./selector.scss";
 
 export interface SelectorProps<T, M extends boolean> {
   className?: string;
-  options: SelectorOption<T>[];
+  options: readonly SelectorOption<T>[];
   disabled?: boolean;
   clearable?: boolean;
   multiple?: M;

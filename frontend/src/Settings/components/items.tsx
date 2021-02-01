@@ -108,6 +108,10 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
+function selectorValidator<T>(v: any): v is T {
+  return isString(v) || isNumber(v) || isArray(v);
+}
+
 type SelectorProps<T, M extends boolean> = BasicInput<SelectorValueType<T, M>> &
   CSelectorProps<T, M>;
 
@@ -120,10 +124,7 @@ export function Selector<
 
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const defaultValue = useLatest<T>(
-    settingKey,
-    (v): v is T => isString(v) || isNumber(v) || isArray(v)
-  );
+  const defaultValue = useLatest<T>(settingKey, selectorValidator);
 
   useOnShow(() => {
     if (typeof defaultValue === "string") {

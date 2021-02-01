@@ -507,13 +507,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
     [removeItem, maxSeason, maxEpisode, updateItem, uploading]
   );
 
-  return (
-    <BasicTable
-      columns={columns}
-      data={data}
-      autoResetPage={false}
-    ></BasicTable>
-  );
+  return <BasicTable columns={columns} data={data}></BasicTable>;
 };
 
 export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(

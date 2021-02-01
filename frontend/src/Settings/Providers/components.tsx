@@ -34,21 +34,6 @@ export const ProviderView: FunctionComponent = () => {
 
   const showModal = useShowModal();
 
-  const infos = useMemo(() => {
-    if (providers) {
-      return providers.flatMap((v) => {
-        const item = ProviderList.find((inn) => inn.key === v);
-        if (item) {
-          return item;
-        } else {
-          return [];
-        }
-      });
-    } else {
-      return [];
-    }
-  }, [providers]);
-
   const select = useCallback(
     (v: ProviderInfo | undefined) => {
       showModal(ModalKey, v);
@@ -57,15 +42,28 @@ export const ProviderView: FunctionComponent = () => {
   );
 
   const cards = useMemo(() => {
-    return infos.map((v, idx) => (
-      <ColCard
-        key={idx}
-        header={v.name ?? capitalize(v.key)}
-        subheader={v.description}
-        onClick={() => select(v)}
-      ></ColCard>
-    ));
-  }, [infos, select]);
+    if (providers) {
+      return providers
+        .flatMap((v) => {
+          const item = ProviderList.find((inn) => inn.key === v);
+          if (item) {
+            return item;
+          } else {
+            return [];
+          }
+        })
+        .map((v, idx) => (
+          <ColCard
+            key={idx}
+            header={v.name ?? capitalize(v.key)}
+            subheader={v.description}
+            onClick={() => select(v)}
+          ></ColCard>
+        ));
+    } else {
+      return [];
+    }
+  }, [providers, select]);
 
   return (
     <Container fluid>
@@ -113,8 +111,9 @@ export const ProviderModal: FunctionComponent = () => {
     if (payload && providers) {
       const idx = providers.findIndex((v) => v === payload.key);
       if (idx !== -1) {
-        providers.splice(idx, 1);
-        updateGlobal([...providers], ProviderKey);
+        const newProviders = [...providers];
+        newProviders.splice(idx, 1);
+        updateGlobal(newProviders, ProviderKey);
         closeModal();
       }
     }
@@ -123,8 +122,13 @@ export const ProviderModal: FunctionComponent = () => {
   const addProvider = useCallback(() => {
     if (info && providers) {
       const changes = staged;
-      providers.push(info.key);
-      changes[ProviderKey] = [...providers];
+
+      // Add this provider if not exist
+      if (providers.find((v) => v === info.key) === undefined) {
+        const newProviders = [...providers];
+        newProviders.push(info.key);
+        changes[ProviderKey] = newProviders;
+      }
 
       for (const key in changes) {
         const value = changes[key];

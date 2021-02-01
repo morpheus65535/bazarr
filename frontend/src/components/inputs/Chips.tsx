@@ -11,7 +11,7 @@ import "./chip.scss";
 
 export interface ChipsProps {
   disabled?: boolean;
-  defaultValue?: string[];
+  defaultValue?: readonly string[];
   onChange?: (v: string[]) => void;
 }
 
@@ -20,7 +20,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
   disabled,
   onChange,
 }) => {
-  const [chips, setChips] = useState<string[]>(defaultValue ?? []);
+  const [chips, setChips] = useState(defaultValue ?? []);
 
   const input = useRef<HTMLInputElement>(null);
 

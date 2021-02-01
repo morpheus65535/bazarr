@@ -1,4 +1,4 @@
-import { isArray } from "lodash";
+import { isArray, isEqual } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useSettings, useStaged, useUpdate } from "./provider";
 
@@ -9,15 +9,11 @@ export function useExtract<T>(
   key: string,
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
-) {
+): Readonly<T | undefined> {
   const settings = useSettings();
 
   const extractValue = useMemo(() => {
     let value: T | undefined = undefined;
-
-    if (override) {
-      return override(settings);
-    }
 
     const path = key.split("-");
 
@@ -37,18 +33,28 @@ export function useExtract<T>(
       }
     }
 
-    return value;
-  }, [key, settings]); // eslint-disable-line react-hooks/exhaustive-deps
+    console.log("update", key, value);
 
-  return extractValue;
+    return value;
+  }, [key, settings, validate]);
+
+  if (override) {
+    return override(settings);
+  } else {
+    return extractValue;
+  }
 }
 
-export function useUpdateArray<T extends object>(
+export function useUpdateArray<T>(
   key: string,
-  compare: keyof T
+  compare?: (one: T, another: T) => boolean
 ) {
   const update = useUpdate();
   const stagedValue = useStaged();
+
+  if (compare === undefined) {
+    compare = isEqual;
+  }
 
   const staged: T[] = useMemo(() => {
     if (key in stagedValue) {
@@ -61,7 +67,7 @@ export function useUpdateArray<T extends object>(
   return useCallback(
     (v: T) => {
       const newArray = [...staged];
-      const idx = newArray.findIndex((inn) => inn[compare] === v[compare]);
+      const idx = newArray.findIndex((inn) => compare!(inn, v));
       if (idx !== -1) {
         newArray[idx] = v;
       } else {
@@ -77,7 +83,7 @@ export function useLatest<T>(
   key: string,
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
-) {
+): Readonly<T | undefined> {
   const extractValue = useExtract<T>(key, validate, override);
   const stagedValue = useStaged();
   if (key in stagedValue) {
@@ -88,13 +94,17 @@ export function useLatest<T>(
 }
 
 // Merge Two Array
-export function useLatestArray<T extends object>(
+export function useLatestMergeArray<T>(
   key: string,
-  compare: keyof T,
+  compare?: (one: T, another: T) => boolean,
   override?: OverrideFuncType<T[]>
-) {
+): Readonly<T[] | undefined> {
   const extractValue = useExtract<T[]>(key, isArray, override);
   const stagedValue = useStaged();
+
+  if (compare === undefined) {
+    compare = isEqual;
+  }
 
   let staged: T[] | undefined = undefined;
   if (key in stagedValue) {
@@ -102,9 +112,10 @@ export function useLatestArray<T extends object>(
   }
 
   return useMemo(() => {
+    console.log("refresh", staged, extractValue);
     if (staged !== undefined && extractValue) {
       const newArray = extractValue.map((v) => {
-        const updated = staged!.find((inn) => v[compare] === inn[compare]);
+        const updated = staged!.find((inn) => compare!(v, inn));
         if (updated) {
           return updated;
         } else {

@@ -4,7 +4,7 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
 import { copyToClipboard, toggleState } from "../../utilites";
 import {
@@ -24,21 +24,18 @@ import { proxyOptions, securityOptions } from "./options";
 const characters = "abcdef0123456789";
 const settingApiKey = "settings-auth-apikey";
 
+const generateApiKey = () => {
+  return Array(32)
+    .fill(null)
+    .map(() => characters.charAt(Math.floor(Math.random() * characters.length)))
+    .join("");
+};
+
+const baseUrlOverride = (settings: SystemSettings) =>
+  settings.general.base_url?.slice(1) ?? "";
+
 const SettingsGeneralView: FunctionComponent = () => {
-  const baseUrlOverride = useCallback((settings: SystemSettings) => {
-    return settings.general.base_url?.slice(1) ?? "";
-  }, []);
-
   const [copied, setCopy] = useState(false);
-
-  const generateApiKey = useCallback(() => {
-    return Array(32)
-      .fill(null)
-      .map(() =>
-        characters.charAt(Math.floor(Math.random() * characters.length))
-      )
-      .join("");
-  }, []);
 
   return (
     <SettingsProvider title="General - Bazarr (Settings)">

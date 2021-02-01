@@ -17,7 +17,7 @@ import { anyCutoff } from "./options";
 const Table: FunctionComponent = () => {
   const originalProfiles = useLanguagesProfile();
 
-  const [profiles, setProfiles] = useState(originalProfiles);
+  const [profiles, setProfiles] = useState([...originalProfiles]);
 
   const nextProfileId = useMemo(
     () =>
