@@ -44,7 +44,6 @@ defaults = {
         'ignore_vobsub_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '',
-        'throtteled_providers': '{}',
         'multithreading': 'True',
         'chmod_enabled': 'False',
         'chmod': '0640',
@@ -110,6 +109,11 @@ defaults = {
         'ssl': 'False',
         'timeout': '15',
         'skip_wrong_fps': 'False'
+    },
+    'opensubtitlescom': {
+        'username': '',
+        'password': '',
+        'use_hash': 'True'
     },
     'addic7ed': {
         'username': '',
@@ -245,6 +249,10 @@ def save_settings(settings_items):
         if key == 'settings-opensubtitles-username':
             if key != settings.opensubtitles.username:
                 region.delete('os_token')
+
+        if key == 'settings-opensubtitlescom-username':
+            if key != settings.opensubtitlescom.username:
+                region.delete('oscom_token')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:

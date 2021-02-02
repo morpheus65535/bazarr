@@ -31,13 +31,16 @@ from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from check_update import check_and_apply_update
+from check_update import check_and_apply_update, check_releases
 from server import app, webserver
 from functools import wraps
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
     check_and_apply_update()
+# If not, update releases cache instead.
+else:
+    check_releases()
 
 configure_proxy_func()
 
@@ -123,10 +126,7 @@ def login_page():
 
 @app.context_processor
 def template_variable_processor():
-    restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
-
-    return dict(restart_required=restart_required['configured'], update_required=restart_required['updated'],
-                settings=settings, args=args)
+    return dict(settings=settings, args=args)
 
 
 def api_authorize():

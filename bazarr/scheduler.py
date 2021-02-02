@@ -215,12 +215,12 @@ class Scheduler:
                     check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name=task_name,
                     replace_existing=True)
                 self.aps_scheduler.add_job(
-                    check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+                    check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
                     id='update_release', name='Update Release Info', replace_existing=True)
 
         else:
             self.aps_scheduler.add_job(
-                check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+                check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
                 id='update_release', name='Update Release Info', replace_existing=True)
 
     def __search_wanted_subtitles_task(self):

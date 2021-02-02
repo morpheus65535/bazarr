@@ -54,24 +54,22 @@ def check_and_apply_update():
             logging.info('BAZARR Updated to latest version. Restart required. ' + result)
             updated()
     else:
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
-        releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
+        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases/latest'
+        release = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
         
-        if releases is None:
+        if release is None:
             logging.warning('BAZARR Could not get releases from GitHub.')
             return
         else:
-            release = releases[0]
-        latest_release = release['tag_name']
+            latest_release = release['tag_name']
         
         if ('v' + os.environ["BAZARR_VERSION"]) != latest_release:
-            update_from_source()
+            update_from_source(tar_download_url=release['tarball_url'])
         else:
             logging.info('BAZARR is up to date')
 
 
-def update_from_source():
-    tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
+def update_from_source(tar_download_url):
     update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
     
     logging.info('BAZARR Downloading update from: ' + tar_download_url)
@@ -135,7 +133,10 @@ def check_releases():
         logging.exception("Error trying to get releases from Github.")
     else:
         for release in r.json():
-            releases.append([release['name'], release['body']])
+            releases.append({'name': release['name'],
+                             'body': release['body'],
+                             'date': release['published_at'],
+                             'prerelease': release['prerelease']})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
 

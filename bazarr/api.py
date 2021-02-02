@@ -28,7 +28,8 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
     delete_subtitles, subtitles_apply_mods
-from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
+from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
+    get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
 from subsyncer import subsync
@@ -109,7 +110,7 @@ class BadgesProviders(Resource):
     @authenticate
     def get(self):
         result = {
-            "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
+            "throttled_providers": len(eval(str(get_throttled_providers())))
         }
         return jsonify(result)
 
@@ -295,12 +296,15 @@ class SystemReleases(Resource):
         releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
-                releases = ast.literal_eval(f.read())
-            for release in releases:
-                release[1] = release[1].replace('- ', '')
-                release[1] = release[1].split('\r\n')
-                release[1].pop(0)
-                release.append(True if release[0].lstrip('v') == os.environ["BAZARR_VERSION"] else False)
+                releases = json.loads(f.read())
+            releases = releases[:5]
+            for i, release in enumerate(releases):
+                body = release['body'].replace('- ', '').split('\r\n')[1:]
+                releases[i] = {"body": body,
+                               "name": release['name'],
+                               "date": release['date'][:10],
+                               "prerelease": release['prerelease'],
+                               "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"] else False}
 
         except Exception as e:
             logging.exception(
@@ -1633,7 +1637,7 @@ class WantedSeries(Resource):
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT " + length + " OFFSET " + start)
+                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Parse missing subtitles
@@ -1676,8 +1680,7 @@ class WantedMovies(Resource):
         row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
-                                start)
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Parse missing subtitles

@@ -17,8 +17,9 @@ from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
-server_url = "http://sapidb.caretas.club/"
-page_url = "https://sucha.caretas.club/"
+SERVER_URL = "http://sapidb.caretas.club/"
+PAGE_URL = "https://sucha.caretas.club/"
+UNDESIRED_FILES = ("[eng]", ".en.", ".eng.", ".fr.", ".pt.")
 
 
 class SuchaSubtitle(Subtitle):
@@ -35,7 +36,7 @@ class SuchaSubtitle(Subtitle):
         matches,
     ):
         super(SuchaSubtitle, self).__init__(
-            language, hearing_impaired=False, page_link=page_url
+            language, hearing_impaired=False, page_link=PAGE_URL
         )
         self.download_id = download_id
         self.download_type = download_type
@@ -71,7 +72,6 @@ class SuchaSubtitle(Subtitle):
 
 class SuchaProvider(Provider):
     """Sucha Provider"""
-
     languages = {Language.fromalpha2(l) for l in ["es"]}
     language_list = list(languages)
     video_types = (Episode, Movie)
@@ -89,22 +89,21 @@ class SuchaProvider(Provider):
         movie_year = video.year if video.year else "0"
         is_episode = isinstance(video, Episode)
         language = self.language_list[0]
+
         if is_episode:
-            q = {
-                "query": "{} S{:02}E{:02}".format(
-                    video.series, video.season, video.episode
-                )
-            }
+            q = {"query": f"{video.series} S{video.season:02}E{video.episode:02}"}
         else:
             q = {"query": video.title, "year": movie_year}
-        logger.debug("Searching subtitles: {}".format(q["query"]))
-        res = self.session.get(
-            server_url + ("episode" if is_episode else "movie"), params=q, timeout=10
+
+        logger.debug(f"Searching subtitles: {q}")
+        result = self.session.get(
+            SERVER_URL + ("episode" if is_episode else "movie"), params=q, timeout=10
         )
-        res.raise_for_status()
-        result = res.json()
+        result.raise_for_status()
+
+        result_ = result.json()
         subtitles = []
-        for i in result:
+        for i in result_:
             matches = set()
             try:
                 if (
@@ -115,18 +114,18 @@ class SuchaProvider(Provider):
             except TypeError:
                 logger.debug("No subtitles found")
                 return []
+
             if is_episode:
                 if (
                     q["query"].lower() in i["title"].lower()
                     or q["query"].lower() in i["alt_title"].lower()
                 ):
-                    matches.add("title")
-                    matches.add("series")
-                    matches.add("season")
-                    matches.add("episode")
-                    matches.add("year")
+                    matches_ = ("title", "series", "season", "episode", "year")
+                    [matches.add(match) for match in matches_]
+
             if str(i["year"]) == video.year:
                 matches.add("year")
+
             subtitles.append(
                 SuchaSubtitle(
                     language,
@@ -144,40 +143,41 @@ class SuchaProvider(Provider):
 
     def _check_response(self, response):
         if response.status_code != 200:
-            raise ServiceUnavailable("Bad status code: " + str(response.status_code))
+            raise ServiceUnavailable(f"Bad status code: {response.status_code}")
 
     def _get_archive(self, content):
         archive_stream = io.BytesIO(content)
+
         if rarfile.is_rarfile(archive_stream):
             logger.debug("Identified rar archive")
-            archive = rarfile.RarFile(archive_stream)
-        elif zipfile.is_zipfile(archive_stream):
+            return rarfile.RarFile(archive_stream)
+
+        if zipfile.is_zipfile(archive_stream):
             logger.debug("Identified zip archive")
-            archive = zipfile.ZipFile(archive_stream)
-        else:
-            raise APIThrottled("Unsupported compressed format")
-        return archive
+            return zipfile.ZipFile(archive_stream)
+
+        raise APIThrottled("Unsupported compressed format")
 
     def get_file(self, archive):
         for name in archive.namelist():
             if os.path.split(name)[-1].startswith("."):
                 continue
+
             if not name.lower().endswith(SUBTITLE_EXTENSIONS):
                 continue
-            if (
-                "[eng]" in name.lower()
-                or ".en." in name.lower()
-                or ".eng." in name.lower()
-            ):
+
+            if any(undesired in name.lower() for undesired in UNDESIRED_FILES):
                 continue
-            logger.debug("Returning from archive: {}".format(name))
+
+            logger.debug(f"Returning from archive: {name}")
             return archive.read(name)
+
         raise APIThrottled("Can not find the subtitle in the compressed file")
 
     def download_subtitle(self, subtitle):
         logger.info("Downloading subtitle %r", subtitle)
         response = self.session.get(
-            server_url + "download",
+            SERVER_URL + "download",
             params={"id": subtitle.download_id, "type": subtitle.download_type},
             timeout=10,
         )

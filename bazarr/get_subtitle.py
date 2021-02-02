@@ -72,7 +72,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         return video
 
     except Exception as e:
-        logging.exception("BAZARR Error trying to get video information for this file: " + path)
+        logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
@@ -1344,16 +1344,16 @@ def upgrade_subtitles():
             if not providers:
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode['language'].endswith('forced'):
-                language = episode['language'].split(':')[0]
+            if movie['language'].endswith('forced'):
+                language = movie['language'].split(':')[0]
                 is_forced = True
                 is_hi = False
-            elif episode['language'].endswith('hi'):
-                language = episode['language'].split(':')[0]
+            elif movie['language'].endswith('hi'):
+                language = movie['language'].split(':')[0]
                 is_forced = False
                 is_hi = True
             else:
-                language = episode['language'].split(':')[0]
+                language = movie['language'].split(':')[0]
                 is_forced = False
                 is_hi = False
 
@@ -1388,6 +1388,8 @@ def upgrade_subtitles():
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
+
+    logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
 
 def postprocessing(command, path):
