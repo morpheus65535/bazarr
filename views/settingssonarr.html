@@ -511,7 +511,6 @@
                     if (data.status) {
                         $('#test_sonarr_span').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
                     } else {
-                        console.log(data);
                         $('#test_sonarr_span').text('Test Failed: ' + data.error).css('color', 'red');
                     }
                 });

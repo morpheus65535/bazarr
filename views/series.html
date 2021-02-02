@@ -174,7 +174,6 @@
                             var completed = data.episodeFileCount - data.episodeMissingCount;
                             var completed_style = '';
                             var completed_text = '';
-                            console.log(data.profileId);
                             if (data.episodeFileCount && data.profileId.id !== null) {
                                 completed_style = ' style="width: ' + completed / total * 100 + '%;"';
                                 completed_text = completed + '/' + total;
