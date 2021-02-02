@@ -27,7 +27,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles, subtitles_apply_mods
+    delete_subtitles, subtitles_apply_mods, translate_subtitles_file
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
@@ -870,7 +870,8 @@ class EpisodesTools(Resource):
                     subs[0] = {"name": language_from_alpha2(subtitle[0]),
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
-                               "forced": True if len(subtitle) > 1 else False}
+                               "forced": True if subs[0].endswith(':forced') else False,
+                               "hi": True if subs[0].endswith(':hi') else False}
                     episode_external_subtitles.append({'language': subs[0],
                                                        'path': path_mappings.path_replace(subs[1]),
                                                        'filename': os.path.basename(subs[1]),
@@ -1932,6 +1933,29 @@ class SubMods(Resource):
         return '', 200
 
 
+class SubTranslate(Resource):
+    @authenticate
+    def post(self):
+        video_path = request.form.get('videoPath')
+        media_type = request.form.get('mediaType')
+        subtitles_path = request.form.get('subtitlesPath')
+        dest_language = request.form.get('language')
+        forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
+
+        result = translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path, to_lang=dest_language,
+                                          forced=forced, hi=hi)
+
+        if result:
+            if media_type == 'series':
+                store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
+            else:
+                store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
+            return '', 200
+        else:
+            return '', 500
+
+
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
@@ -2036,6 +2060,7 @@ api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_r
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
 api.add_resource(SubMods, '/sub_mods')
+api.add_resource(SubTranslate, '/sub_translate')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')

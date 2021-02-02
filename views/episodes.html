@@ -44,6 +44,10 @@
         .dtrg-start {
             cursor: pointer;
         }
+
+        .dropdown-menu li.disabled {
+            cursor: not-allowed;
+        }
     </style>
 {% endblock page_head %}
 
@@ -421,6 +425,42 @@
                     </div>
                     <div class="modal-footer">
                         <span id="subtitles_mod_color_save_button_span"><button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button></span>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="episodeSubtitleTranslateModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Translate Subtitles</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                 <form class="form" name="subtitles_translate_form" id="subtitles_translate_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col text-right">
+                                    <b>Language Name</b>
+                                </div>
+                                <div class="form-group col">
+                                    <select class="form-control selectpicker" id="translate_language_select">
+                                    </select>
+                                </div>
+                            </div>
+                            <input type="hidden" id="translate_data_path" value="" />
+                            <input type="hidden" id="translate_data_videopath" value="" />
+                            <input type="hidden" id="translate_data_forced" value="" />
+                            <input type="hidden" id="translate_data_hi" value="" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <span id="subtitles_translate_save_button_span"><button type="submit" id="subtitles_translate_save_button" class="btn btn-info">Translate</button></span>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     </div>
                  </form>
@@ -1571,6 +1611,7 @@
                                 tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_fps badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Change Frame Rate"><i class="fa fa-film"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_offset badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adjust all times (show earlier/later)"><i class="fa fa-clock"></i></a> ';
+                                tools += '<a href="" class="subtitles_translate badge badge-secondary" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title = "Translate your subtitles"><i class="fa fa-language"></i></a> ';
 
                                 return tools;
                             }
@@ -1689,6 +1730,30 @@
                     });
             });
 
+            $('#episode_tools_result').on('click', '.subtitles_translate', function (e) {
+                e.preventDefault();
+
+                $('#translate_data_language').val($(this).attr("data-language"))
+                $('#translate_data_path').val($(this).attr("data-path"))
+                $('#translate_data_videopath').val($(this).attr("data-videopath"))
+                $('#translate_data_forced').val($(this).attr("data-forced"))
+                $('#translate_data_hi').val($(this).attr("data-hi"))
+
+                $('#translate_language_select')
+                    .empty();
+                $.each(enabledLanguages, function (i, item) {
+                    $('#translate_language_select')
+                        .append('<option value="' + item.code3 + '"' + ((item.code2 in GOOGLE_CODES_TO_LANGUAGES) ? '' : ' data-subtext="Unsupported" disabled') + '>' + item.name + '</option>');
+                });
+                $("#translate_language_select").selectpicker("refresh");
+
+                $('#episodeToolsModal').modal('hide');
+                $('#episodeSubtitleTranslateModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
             $('#subtitles_mod_fps_form').on('submit', function (e) {
                 e.preventDefault();
 
@@ -1709,6 +1774,33 @@
                     },
                     complete: function () {
                         $('#episodeSubtitleModFpsModal').modal('hide');
+                    }
+                });
+            });
+
+            $('#subtitles_translate_form').on('submit', function (e) {
+                e.preventDefault();
+
+                const values = {
+                    language: $('#translate_language_select').val(),
+                    subtitlesPath: $('#translate_data_path').val(),
+                    videoPath: $('#translate_data_videopath').val(),
+                    forced: $('#translate_data_forced').val(),
+                    hi: $('#translate_data_hi').val(),
+                    mediaType: 'series',
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.subtranslate') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+
+                    beforeSend: function () {
+                        $('#subtitles_translate_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
+                        $('#episodeSubtitleTranslateModal').modal('hide');
                     }
                 });
             });
@@ -1764,6 +1856,10 @@
 
             $('#episodeSubtitleModOffsetModal').on('hidden.bs.modal', function (e) {
                 $('#subtitles_mod_offset_save_button_span').html('<button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button>');
+            });
+
+            $('#episodeSubtitleTranslateModal').on('hidden.bs.modal', function (e) {
+                $('#subtitles_translate_save_button_span').html('<button type="submit" id="subtitles_translate_save_button" class="btn btn-info">Translate</button>');
             });
 
         });
@@ -1854,5 +1950,114 @@
                 }
             });
         }
+
+        GOOGLE_CODES_TO_LANGUAGES = {
+            'af': 'afrikaans',
+            'sq': 'albanian',
+            'am': 'amharic',
+            'ar': 'arabic',
+            'hy': 'armenian',
+            'az': 'azerbaijani',
+            'eu': 'basque',
+            'be': 'belarusian',
+            'bn': 'bengali',
+            'bs': 'bosnian',
+            'bg': 'bulgarian',
+            'ca': 'catalan',
+            'ceb': 'cebuano',
+            'ny': 'chichewa',
+            'zh-cn': 'chinese (simplified)',
+            'zh-tw': 'chinese (traditional)',
+            'co': 'corsican',
+            'hr': 'croatian',
+            'cs': 'czech',
+            'da': 'danish',
+            'nl': 'dutch',
+            'en': 'english',
+            'eo': 'esperanto',
+            'et': 'estonian',
+            'tl': 'filipino',
+            'fi': 'finnish',
+            'fr': 'french',
+            'fy': 'frisian',
+            'gl': 'galician',
+            'ka': 'georgian',
+            'de': 'german',
+            'el': 'greek',
+            'gu': 'gujarati',
+            'ht': 'haitian creole',
+            'ha': 'hausa',
+            'haw': 'hawaiian',
+            'iw': 'hebrew',
+            'hi': 'hindi',
+            'hmn': 'hmong',
+            'hu': 'hungarian',
+            'is': 'icelandic',
+            'ig': 'igbo',
+            'id': 'indonesian',
+            'ga': 'irish',
+            'it': 'italian',
+            'ja': 'japanese',
+            'jw': 'javanese',
+            'kn': 'kannada',
+            'kk': 'kazakh',
+            'km': 'khmer',
+            'ko': 'korean',
+            'ku': 'kurdish (kurmanji)',
+            'ky': 'kyrgyz',
+            'lo': 'lao',
+            'la': 'latin',
+            'lv': 'latvian',
+            'lt': 'lithuanian',
+            'lb': 'luxembourgish',
+            'mk': 'macedonian',
+            'mg': 'malagasy',
+            'ms': 'malay',
+            'ml': 'malayalam',
+            'mt': 'maltese',
+            'mi': 'maori',
+            'mr': 'marathi',
+            'mn': 'mongolian',
+            'my': 'myanmar (burmese)',
+            'ne': 'nepali',
+            'no': 'norwegian',
+            'ps': 'pashto',
+            'fa': 'persian',
+            'pl': 'polish',
+            'pt': 'portuguese',
+            'pa': 'punjabi',
+            'ro': 'romanian',
+            'ru': 'russian',
+            'sm': 'samoan',
+            'gd': 'scots gaelic',
+            'sr': 'serbian',
+            'st': 'sesotho',
+            'sn': 'shona',
+            'sd': 'sindhi',
+            'si': 'sinhala',
+            'sk': 'slovak',
+            'sl': 'slovenian',
+            'so': 'somali',
+            'es': 'spanish',
+            'su': 'sundanese',
+            'sw': 'swahili',
+            'sv': 'swedish',
+            'tg': 'tajik',
+            'ta': 'tamil',
+            'te': 'telugu',
+            'th': 'thai',
+            'tr': 'turkish',
+            'uk': 'ukrainian',
+            'ur': 'urdu',
+            'uz': 'uzbek',
+            'vi': 'vietnamese',
+            'cy': 'welsh',
+            'xh': 'xhosa',
+            'yi': 'yiddish',
+            'yo': 'yoruba',
+            'zu': 'zulu',
+            'fil': 'Filipino',
+            'he': 'Hebrew'
+        };
     </script>
 {% endblock tail %}

@@ -5,6 +5,7 @@ import time
 import platform
 import logging
 import requests
+import pysubs2
 
 from whichcraft import which
 from get_args import args
@@ -15,8 +16,10 @@ from get_languages import alpha2_from_alpha3, language_from_alpha3, alpha3_from_
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
+from deep_translator import GoogleTranslator
 import datetime
 import glob
 
@@ -284,3 +287,51 @@ def subtitles_apply_mods(language, subtitle_path, mods):
             f.write(content)
 
 
+def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    lang_obj = Language(to_lang)
+    if forced:
+        lang_obj = Language.rebuild(lang_obj, forced=True)
+    if hi:
+        lang_obj = Language.rebuild(lang_obj, hi=True)
+
+    logging.debug('BAZARR is translating in {0} this subtitles {1}'.format(lang_obj, source_srt_file))
+
+    max_characters = 5000
+
+    dest_srt_file = get_subtitle_path(video_path, language=lang_obj, extension='.srt', forced_tag=forced, hi_tag=hi)
+
+    subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    lines_list = [x.plaintext for x in subs]
+    joined_lines_str = '\n\n\n'.join(lines_list)
+
+    logging.debug('BAZARR splitting subtitles into {} characters blocks'.format(max_characters))
+    lines_block_list = []
+    translated_lines_list = []
+    while len(joined_lines_str):
+        partial_lines_str = joined_lines_str[:max_characters]
+
+        if len(joined_lines_str) > max_characters:
+            new_partial_lines_str = partial_lines_str.rsplit('\n\n\n', 1)[0]
+        else:
+            new_partial_lines_str = partial_lines_str
+
+        lines_block_list.append(new_partial_lines_str)
+        joined_lines_str = joined_lines_str.replace(new_partial_lines_str, '')
+
+    logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
+    for block_str in lines_block_list:
+        try:
+            translated_partial_srt_text = GoogleTranslator(source='auto',
+                                                           target=lang_obj.basename).translate(text=block_str)
+        except:
+            return False
+        else:
+            translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
+            translated_lines_list += translated_partial_srt_list
+
+    logging.debug('BAZARR saving translated subtitles to {}'.format(dest_srt_file))
+    for i, line in enumerate(subs):
+        line.plaintext = translated_lines_list[i]
+    subs.save(dest_srt_file)
+
+    return True
