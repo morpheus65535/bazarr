@@ -71,10 +71,7 @@ def catch_all(path):
 
 @app.context_processor
 def template_variable_processor():
-    restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
-
-    return dict(restart_required=restart_required['configured'], update_required=restart_required['updated'],
-                settings=settings, args=args)
+    return dict(settings=settings, args=args)
 
 
 

@@ -15,7 +15,8 @@ import json
 
 import html
 
-from zipfile import ZipFile
+import zipfile
+import rarfile
 from babelfish import language_converters
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
@@ -243,7 +244,15 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     def download_subtitle(self, subtitle):
         if subtitle.pack_data:
             logger.info("Using previously downloaded pack data")
-            archive = ZipFile(io.BytesIO(subtitle.pack_data))
+            if rarfile.is_rarfile(io.BytesIO(subtitle.pack_data)):
+                logger.debug('Identified rar archive')
+                archive = rarfile.RarFile(io.BytesIO(subtitle.pack_data))
+            elif zipfile.is_zipfile(io.BytesIO(subtitle.pack_data)):
+                logger.debug('Identified zip archive')
+                archive = zipfile.ZipFile(io.BytesIO(subtitle.pack_data))
+            else:
+                logger.error('Unsupported compressed format')
+                return
             subtitle.pack_data = None
 
             try:
@@ -256,7 +265,16 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(subtitle.get_download_link(self.session), timeout=10)
         r.raise_for_status()
         archive_stream = io.BytesIO(r.content)
-        archive = ZipFile(archive_stream)
+
+        if rarfile.is_rarfile(archive_stream):
+            logger.debug('Identified rar archive')
+            archive = rarfile.RarFile(archive_stream)
+        elif zipfile.is_zipfile(archive_stream):
+            logger.debug('Identified zip archive')
+            archive = zipfile.ZipFile(archive_stream)
+        else:
+            logger.error('Unsupported compressed format')
+            return
 
         subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 

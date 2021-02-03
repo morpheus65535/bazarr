@@ -28,8 +28,10 @@ def track_event(category=None, action=None, label=None):
     tracker = Tracker('UA-138214134-3', 'none', conf=anonymousConfig)
 
     try:
-        if settings.analytics.visitor:
-            visitor = pickle.loads(codecs.decode(settings.analytics.visitor.encode(), "base64"))
+        if os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat'))):
+            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'r') as handle:
+                visitor_text = handle.read()
+            visitor = pickle.loads(codecs.decode(visitor_text.encode(), "base64"))
             if visitor.user_agent is None:
                 visitor.user_agent = os.environ.get("SZ_USER_AGENT")
             if visitor.unique_id > int(0x7fffffff):
@@ -62,6 +64,5 @@ def track_event(category=None, action=None, label=None):
         logging.debug("BAZARR unable to track event.")
         pass
     else:
-        settings.analytics.visitor = codecs.encode(pickle.dumps(visitor), "base64").decode()
-        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-            settings.write(handle)
+        with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
+            handle.write(codecs.encode(pickle.dumps(visitor), "base64").decode())

@@ -1336,16 +1336,16 @@ def upgrade_subtitles():
             if not providers:
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode['language'].endswith('forced'):
-                language = episode['language'].split(':')[0]
+            if movie['language'].endswith('forced'):
+                language = movie['language'].split(':')[0]
                 is_forced = True
                 is_hi = False
-            elif episode['language'].endswith('hi'):
-                language = episode['language'].split(':')[0]
+            elif movie['language'].endswith('hi'):
+                language = movie['language'].split(':')[0]
                 is_forced = False
                 is_hi = True
             else:
-                language = episode['language'].split(':')[0]
+                language = movie['language'].split(':')[0]
                 is_forced = False
                 is_hi = False
 
@@ -1380,6 +1380,8 @@ def upgrade_subtitles():
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
+
+    logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
 
 def postprocessing(command, path):
