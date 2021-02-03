@@ -334,4 +334,4 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
         line.plaintext = translated_lines_list[i]
     subs.save(dest_srt_file)
 
-    return True
+    return dest_srt_file

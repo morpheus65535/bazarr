@@ -1195,7 +1195,7 @@ def upgrade_subtitles():
                          datetime(1970, 1, 1)).total_seconds()
 
     if settings.general.getboolean('upgrade_manual'):
-        query_actions = [1, 2, 3]
+        query_actions = [1, 2, 3, 6]
     else:
         query_actions = [1, 3]
 

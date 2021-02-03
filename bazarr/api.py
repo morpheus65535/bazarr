@@ -18,7 +18,7 @@ import logging
 from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
     get_audio_profile_languages, update_profile_id_list
 from helper import path_mappings
-from get_languages import language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
     manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     episode_download_subtitles, movies_download_subtitles
@@ -1375,7 +1375,7 @@ class HistorySeries(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1481,7 +1481,7 @@ class HistoryMovies(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1947,10 +1947,37 @@ class SubTranslate(Resource):
                                           forced=forced, hi=hi)
 
         if result:
+            message = 'Subtitles translated to {}'.format(language_from_alpha3(dest_language))
+
             if media_type == 'series':
+                episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes"
+                                                    " WHERE path = ?",
+                                                    (path_mappings.path_replace_reverse(video_path),), only_one=True)
                 store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
+                history_log(action=6,
+                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'],
+                            description=message,
+                            video_path=path_mappings.path_replace_reverse(video_path),
+                            language=alpha2_from_alpha3(dest_language),
+                            provider=None,
+                            score=0,
+                            subs_id=None,
+                            subtitles_path=path_mappings.path_replace_reverse(result))
             else:
+                movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                                  (path_mappings.path_replace_reverse_movie(video_path),),
+                                                  only_one=True)
                 store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
+                history_log_movie(action=6,
+                                  radarr_id=movie_metadata['radarrId'],
+                                  description=message,
+                                  video_path=path_mappings.path_replace_reverse_movie(video_path),
+                                  language=alpha2_from_alpha3(dest_language),
+                                  provider=None,
+                                  score=0,
+                                  subs_id=None,
+                                  subtitles_path=path_mappings.path_replace_reverse_movie(result))
             return '', 200
         else:
             return '', 500
