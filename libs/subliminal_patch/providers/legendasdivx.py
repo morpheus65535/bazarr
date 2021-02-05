@@ -335,8 +335,8 @@ class LegendasdivxProvider(Provider):
                         res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
                         res.raise_for_status()
                         if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
-                            logger.warning('Legendasdivx.pt :: query %s return no results (for series and season only).', querytext)
-                            return []
+                            logger.warning('Legendasdivx.pt :: query {0} return no results for language {1}(for series and season only).'.format(querytext, language_id))
+                            continue
                 if res.status_code == 302: # got redirected to login page.
                     # seems that our session cookies are no longer valid... clean them from cache
                     region.delete("legendasdivx_cookies2")
