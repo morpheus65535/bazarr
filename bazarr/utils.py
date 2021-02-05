@@ -6,6 +6,9 @@ import platform
 import logging
 import requests
 import pysubs2
+import json
+import hashlib
+import stat
 
 from whichcraft import which
 from get_args import args
@@ -20,8 +23,11 @@ from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 from deep_translator import GoogleTranslator
+from dogpile.cache import make_region
 import datetime
 import glob
+
+region = make_region().configure('dogpile.cache.memory')
 
 
 class BinaryNotFound(Exception):
@@ -78,31 +84,84 @@ def blacklist_delete_all_movie():
     event_stream(type='movieBlacklist')
 
 
-def get_binary(name):
-    binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
+@region.cache_on_arguments()
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
-    exe = None
+
+@region.cache_on_arguments()
+def get_binaries_from_json():
+    try:
+        binaries_json_file = os.path.realpath(os.path.join(os.path.dirname(__file__), 'binaries.json'))
+        with open(binaries_json_file) as json_file:
+            binaries_json = json.load(json_file)
+    except OSError:
+        logging.exception('BAZARR cannot access binaries.json')
+        return []
+    else:
+        return binaries_json
+
+
+def get_binary(name):
     installed_exe = which(name)
 
     if installed_exe and os.path.isfile(installed_exe):
+        logging.debug('BAZARR returning this binary: {}'.format(installed_exe))
         return installed_exe
     else:
+        logging.debug('BAZARR binary not found in path, searching for it...')
+        binaries_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bin'))
+        system = platform.system()
+        machine = platform.machine()
+        dir_name = name
+
+        # deals with exceptions
+        if platform.system() == "Windows":  # Windows
+            machine = "i386"
+            name = "%s.exe" % name
+        elif platform.system() == "Darwin":  # MacOSX
+            system = 'MacOSX'
         if name == 'ffprobe':
             dir_name = 'ffmpeg'
+
+        exe_dir = os.path.abspath(os.path.join(binaries_dir, system, machine, dir_name))
+        exe = os.path.abspath(os.path.join(exe_dir, name))
+
+        binaries_json = get_binaries_from_json()
+        binary = next((item for item in binaries_json if item['system'] == system and item['machine'] == machine and
+                       item['directory'] == dir_name and item['name'] == name), None)
+        if not binary:
+            logging.debug('BAZARR binary not found in binaries.json')
+            raise BinaryNotFound
         else:
-            dir_name = name
+            logging.debug('BAZARR found this in binaries.json: {}'.format(binary))
 
-        if platform.system() == "Windows":  # Windows
-            exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", dir_name, "%s.exe" % name))
-        elif platform.system() == "Darwin":  # MacOSX
-            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", platform.machine(), dir_name, name))
-        elif platform.system() == "Linux":  # Linux
-            exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), dir_name, name))
-
-    if exe and os.path.isfile(exe):
-        return exe
-    else:
-        raise BinaryNotFound
+        if os.path.isfile(exe) and md5(exe) == binary['checksum']:
+            logging.debug('BAZARR returning this existing and up-to-date binary: {}'.format(exe))
+            return exe
+        else:
+            try:
+                logging.debug('BAZARR creating directory tree for {}'.format(exe_dir))
+                os.makedirs(exe_dir, exist_ok=True)
+                logging.debug('BAZARR downloading {0} from {1}'.format(name, binary['url']))
+                r = requests.get(binary['url'])
+                logging.debug('BAZARR saving {0} to {1}'.format(name, exe_dir))
+                with open(exe, 'wb') as f:
+                    f.write(r.content)
+                if system != 'Windows':
+                    logging.debug('BAZARR adding execute permission on {}'.format(exe))
+                    st = os.stat(exe)
+                    os.chmod(exe, st.st_mode | stat.S_IEXEC)
+            except Exception:
+                logging.exception('BAZARR unable to download {0} to {1}'.format(name, exe_dir))
+                raise BinaryNotFound
+            else:
+                logging.debug('BAZARR returning this new binary: {}'.format(exe))
+                return exe
 
 
 def get_blacklist(media_type):
