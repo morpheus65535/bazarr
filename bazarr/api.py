@@ -1414,10 +1414,10 @@ class HistorySeries(Resource):
 
         for item in data:
             # Mark episode as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored']), "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1437,12 +1437,8 @@ class HistorySeries(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace(item['path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
@@ -1515,10 +1511,10 @@ class HistoryMovies(Resource):
 
         for item in data:
             # Mark movies as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['video_path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1537,12 +1533,8 @@ class HistoryMovies(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace_movie(item['video_path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
