@@ -22,7 +22,7 @@ import logging
 from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
     get_audio_profile_languages, update_profile_id_list
 from helper import path_mappings
-from get_languages import language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
     manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     episode_download_subtitles, movies_download_subtitles
@@ -1365,7 +1365,7 @@ class HistorySeries(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1401,10 +1401,10 @@ class HistorySeries(Resource):
 
         for item in data:
             # Mark episode as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored']), "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1424,12 +1424,8 @@ class HistorySeries(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace(item['path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
@@ -1469,7 +1465,7 @@ class HistoryMovies(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1500,10 +1496,10 @@ class HistoryMovies(Resource):
 
         for item in data:
             # Mark movies as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['video_path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1522,12 +1518,8 @@ class HistoryMovies(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace_movie(item['video_path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path

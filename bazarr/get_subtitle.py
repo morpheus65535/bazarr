@@ -1201,7 +1201,7 @@ def upgrade_subtitles():
                          datetime(1970, 1, 1)).total_seconds()
 
     if settings.general.getboolean('upgrade_manual'):
-        query_actions = [1, 2, 3]
+        query_actions = [1, 2, 3, 6]
     else:
         query_actions = [1, 3]
 
@@ -1210,14 +1210,14 @@ def upgrade_subtitles():
                                                "table_history.score, table_shows.tags, table_shows.profileId, "
                                                "table_episodes.audio_language, table_episodes.scene_name, "
                                                "table_episodes.title, table_episodes.sonarrSeriesId, "
-                                               "table_episodes.sonarrEpisodeId, MAX(table_history.timestamp) "
-                                               "as timestamp, table_episodes.monitored, table_shows.seriesType FROM "
-                                               "table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                               "table_history.sonarrSeriesId INNER JOIN table_episodes on "
-                                               "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                               "action IN (" + ','.join(map(str, query_actions)) +
-                                               ") AND timestamp > ? AND score is not null" +
-                                               get_exclusion_clause('series') + " GROUP BY "
+                                               "table_history.subtitles_path, table_episodes.sonarrEpisodeId, "
+                                               "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
+                                               "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
+                                               "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
+                                               "table_episodes on table_episodes.sonarrEpisodeId = "
+                                               "table_history.sonarrEpisodeId WHERE action IN "
+                                               "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
+                                               "score is not null" + get_exclusion_clause('series') + " GROUP BY "
                                                "table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
         upgradable_episodes_not_perfect = []
@@ -1233,7 +1233,7 @@ def upgrade_subtitles():
 
         episodes_to_upgrade = []
         for episode in upgradable_episodes_not_perfect:
-            if os.path.exists(path_mappings.path_replace(episode['video_path'])) and int(episode['score']) < 357:
+            if os.path.exists(path_mappings.path_replace(episode['subtitles_path'])) and int(episode['score']) < 357:
                 episodes_to_upgrade.append(episode)
 
         count_episode_to_upgrade = len(episodes_to_upgrade)
@@ -1241,12 +1241,12 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
                                              "table_history_movie.score, table_movies.profileId, "
-                                             "table_movies.audio_language, table_movies.sceneName, table_movies.title, "
-                                             "table_movies.radarrId, MAX(table_history_movie.timestamp) as timestamp, "
-                                             "table_movies.tags, table_movies.monitored FROM table_history_movie INNER "
-                                             "JOIN table_movies on table_movies.radarrId = "
-                                             "table_history_movie.radarrId WHERE action  IN (" +
-                                             ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
+                                             "table_history_movie.subtitles_path, table_movies.audio_language, "
+                                             "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
+                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.tags, "
+                                             "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
+                                             "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
+                                             "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
                                              "is not null" + get_exclusion_clause('movie') + " GROUP BY "
                                              "table_history_movie.video_path, table_history_movie.language",
                                              (minimum_timestamp,))
@@ -1263,7 +1263,7 @@ def upgrade_subtitles():
 
         movies_to_upgrade = []
         for movie in upgradable_movies_not_perfect:
-            if os.path.exists(path_mappings.path_replace_movie(movie['video_path'])) and int(movie['score']) < 117:
+            if os.path.exists(path_mappings.path_replace_movie(movie['subtitles_path'])) and int(movie['score']) < 117:
                 movies_to_upgrade.append(movie)
 
         count_movie_to_upgrade = len(movies_to_upgrade)
