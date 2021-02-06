@@ -34,7 +34,7 @@ interface BasicItem {
   audio_language: Language[];
   exist: boolean;
   mapped_path: string;
-  path: string;
+  // path: string;
   title: string;
 }
 
@@ -96,7 +96,7 @@ interface WantedItem {
   mapped_path: string;
   missing_subtitles: Subtitle[];
   monitored: boolean;
-  path: string;
+  // path: string;
   tags: string[];
 }
 
