@@ -149,7 +149,7 @@ class BadgesProviders(Resource):
     @authenticate
     def get(self):
         result = {
-            "throttled_providers": len(eval(str(get_throttled_providers())))
+            "value": len(eval(str(get_throttled_providers())))
         }
         return jsonify(result)
 
