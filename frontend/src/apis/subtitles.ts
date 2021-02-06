@@ -51,6 +51,30 @@ class SubtitlesApi extends BasicApi {
         .catch(reject);
     });
   }
+
+  async translate(
+    type: "series" | "movie",
+    id: number,
+    path: string,
+    videoPath: string,
+    language: string
+  ) {
+    return new Promise<void>((resolve, reject) => {
+      this.patch<void>(
+        "",
+        {
+          type,
+          id,
+          language,
+          path,
+          videoPath,
+        },
+        { action: "translate" }
+      )
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
 }
 
 export default new SubtitlesApi();

@@ -5,6 +5,7 @@ import {
   faExchangeAlt,
   faFilm,
   faImage,
+  faLanguage,
   faMagic,
   faMinus,
   faPaintBrush,
@@ -27,11 +28,13 @@ import {
   Form,
   InputGroup,
 } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import { Column } from "react-table";
 import {
   ActionIcon,
   ActionIconItem,
   BasicTable,
+  LanguageSelector,
   Selector,
   usePayload,
   useShowModal,
@@ -42,6 +45,7 @@ import { isMovie, submodProcessColor } from "../../utilites";
 import { AsyncButton } from "../buttons";
 import BasicModal, { BasicModalProps } from "./BasicModal";
 import { useCloseModal } from "./provider";
+import { avaliableTranslation } from "./toolOptions";
 
 type SupportType = Episode | Movie;
 
@@ -177,6 +181,7 @@ const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
     </BasicModal>
   );
 };
+
 const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
   const { ...modal } = props;
 
@@ -281,6 +286,83 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
           onChange={updateOffset(3)}
         ></Form.Control>
       </InputGroup>
+    </BasicModal>
+  );
+};
+
+interface TranslateProps {
+  item?: SupportType;
+}
+
+const TranslateModal: FunctionComponent<BasicModalProps & TranslateProps> = ({
+  ...modal
+}) => {
+  const item = usePayload<SupportType>(modal.modalKey, 1);
+  const subtitle = usePayload<Subtitle>(modal.modalKey);
+
+  const languages = useSelector<StoreState, Language[]>(
+    (s) => s.system.enabledLanguage.items
+  );
+
+  const avaliable = useMemo(
+    () =>
+      languages.filter(
+        (v) => v.code2 !== subtitle?.code2 && v.code2 in avaliableTranslation
+      ),
+    [subtitle, languages]
+  );
+
+  const [selectedLanguage, setLanguage] = useState<Language | undefined>();
+
+  const submit = useCallback(() => {
+    if (item && item.mapped_path && subtitle && subtitle.path) {
+      let type: "movie" | "series";
+      let id: number;
+      if (isMovie(item)) {
+        type = "movie";
+        id = item.radarrId;
+      } else {
+        type = "series";
+        id = item.sonarrSeriesId;
+      }
+      return SubtitlesApi.translate(
+        type,
+        id,
+        subtitle.path,
+        item.mapped_path,
+        "en"
+      );
+    }
+    return undefined;
+  }, [item, subtitle]);
+
+  const closeModal = useCloseModal();
+
+  const footer = useMemo(
+    () => (
+      <AsyncButton
+        disabled={!selectedLanguage}
+        onSuccess={() => closeModal()}
+        promise={submit}
+      >
+        Translate
+      </AsyncButton>
+    ),
+    [submit, selectedLanguage, closeModal]
+  );
+
+  return (
+    <BasicModal title="Translate Subtitle" footer={footer} {...modal}>
+      <InputGroup className="mb-3">
+        <InputGroup.Prepend>
+          <InputGroup.Text>Original</InputGroup.Text>
+        </InputGroup.Prepend>
+        <Form.Control disabled value={subtitle?.name ?? ""}></Form.Control>
+      </InputGroup>
+      <LanguageSelector
+        options={avaliable}
+        onChange={setLanguage}
+      ></LanguageSelector>
     </BasicModal>
   );
 };
@@ -415,6 +497,9 @@ const Table: FunctionComponent<Props> = ({ item }) => {
                 <Dropdown.Item onSelect={() => showModal("adjust-times", sub)}>
                   <ActionIconItem icon={faClock}>Adjust Times</ActionIconItem>
                 </Dropdown.Item>
+                <Dropdown.Item onSelect={() => showModal("translate-sub", sub)}>
+                  <ActionIconItem icon={faLanguage}>Translate</ActionIconItem>
+                </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           );
@@ -439,7 +524,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
   );
 };
 
-const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
+const Tools: FunctionComponent<BasicModalProps> = (props) => {
   const item = usePayload<SupportType>(props.modalKey);
   return (
     <React.Fragment>
@@ -449,6 +534,7 @@ const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
       <AddColorModal modalKey="add-color"></AddColorModal>
       <ChangeFrameRateModal modalKey="change-frame-rate"></ChangeFrameRateModal>
       <AdjustTimesModal modalKey="adjust-times"></AdjustTimesModal>
+      <TranslateModal modalKey="translate-sub"></TranslateModal>
     </React.Fragment>
   );
 };

@@ -52,14 +52,14 @@ export function useIsModalShow(key: string) {
   return key === keys[keys.length - 1];
 }
 
-export function usePayload<T>(key: string): T | undefined {
+export function usePayload<T>(key: string, offset?: number): T | undefined {
   const payloads = useContext(PayloadContext)[0];
   const keys = useContext(ModalContext)[0];
   return useMemo(() => {
     const idx = keys.findIndex((v) => v === key);
     const show = idx !== -1 && idx === keys.length - 1;
-    return show ? (payloads[idx] as T) : undefined;
-  }, [keys, payloads, key]);
+    return show ? (payloads[idx - (offset ?? 0)] as T) : undefined;
+  }, [keys, payloads, key, offset]);
 }
 
 export function useWhenModalShow(key: string, callback: React.EffectCallback) {

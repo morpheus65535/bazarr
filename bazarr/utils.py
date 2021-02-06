@@ -289,6 +289,7 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    to_lang = alpha3_from_alpha2(to_lang)
     lang_obj = Language(to_lang)
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
