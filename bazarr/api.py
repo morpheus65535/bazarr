@@ -611,7 +611,7 @@ class EpisodesSubtitles(Resource):
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
-        episodePath = episodeInfo['path']
+        episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         audio_language = episodeInfo['audio_language']
         if sceneName is None: sceneName = "None"
@@ -664,7 +664,7 @@ class EpisodesSubtitles(Resource):
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
-        episodePath = episodeInfo['path']
+        episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         audio_language = episodeInfo['audio_language']
         if sceneName is None: sceneName = "None"
@@ -714,7 +714,7 @@ class EpisodesSubtitles(Resource):
         sonarrEpisodeId = request.args.get('episodeid')
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
-        episodePath = episodeInfo['path']
+        episodePath = path_mappings.path_replace(episodeInfo['path'])
         
         language = request.form.get('language')
         forced = request.form.get('forced')
@@ -1003,7 +1003,7 @@ class MovieSubtitles(Resource):
 
         movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
-        moviePath = movieInfo['path']
+        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         if sceneName is None: sceneName = 'None'
  
@@ -1057,7 +1057,7 @@ class MovieSubtitles(Resource):
         radarrId = request.args.get('radarrid')
         movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
-        moviePath = movieInfo['path']
+        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         if sceneName is None: sceneName = 'None'
 
@@ -1108,7 +1108,7 @@ class MovieSubtitles(Resource):
         radarrId = request.args.get('radarrid')
         movieInfo = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
-        moviePath = movieInfo['path']
+        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 
         language = request.form.get('language')
         forced = request.form.get('forced')
@@ -1136,7 +1136,7 @@ class ProviderMovies(Resource):
         movieInfo = database.execute("SELECT title, path, sceneName, profileId FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
         title = movieInfo['title']
-        moviePath = movieInfo['path']
+        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         profileId = movieInfo['profileId']
         if sceneName is None: sceneName = "None"
@@ -1158,7 +1158,7 @@ class ProviderMovies(Resource):
         movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
         title = movieInfo['title']
-        moviePath = movieInfo['path']
+        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         if sceneName is None: sceneName = "None"
         audio_language = movieInfo['audio_language']
@@ -1212,7 +1212,7 @@ class ProviderEpisodes(Resource):
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language, sonarrSeriesId FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
-        episodePath = episodeInfo['path']
+        episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         seriesId = episodeInfo['sonarrSeriesId']
 
@@ -1302,7 +1302,7 @@ class MovieHistory(Resource):
     def get(self):
         radarrid = request.args.get('radarrid')
 
-        movie_history = database.execute("SELECT action, timestamp, language, provider, score, radarrId, subs_id, "
+        movie_history = database.execute("SELECT action, timestamp, language, provider, score, subs_id, "
                                          "video_path, subtitles_path FROM table_history_movie WHERE radarrId=? ORDER "
                                          "BY timestamp DESC", (radarrid,))
         for item in movie_history:
@@ -1859,14 +1859,14 @@ class Subtitles(Resource):
                 metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
                                     " WHERE sonarrEpisodeId = ?", (id,),
                                     only_one=True)
-                video_path = path_mappings.path_replace_reverse(metadata['path'])
+                video_path = path_mappings.path_replace(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                             srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
                             sonarr_episode_id=int(id))
             else:
                 metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
                                                 (id,), only_one=True)
-                video_path = path_mappings.path_replace_reverse_movie(metadata['path'])
+                video_path = path_mappings.path_replace_movie(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                             srt_lang=language, media_type='movies', radarr_id=id)
         elif action == 'translate':
