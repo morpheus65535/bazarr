@@ -87,7 +87,7 @@ const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
     } else {
       return undefined;
     }
-  }, [selection, subtitle]);
+  }, [selection, subtitle, item]);
 
   const footer = useMemo(
     () => (
@@ -151,7 +151,7 @@ const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
     } else {
       return undefined;
     }
-  }, [subtitle, canSave, from, to]);
+  }, [subtitle, canSave, from, to, item]);
 
   const footer = useMemo(
     () => (
@@ -259,7 +259,7 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
     } else {
       return undefined;
     }
-  }, [subtitle, canSave, offset, isPlus]);
+  }, [subtitle, canSave, offset, isPlus, item]);
 
   const footer = useMemo(
     () => (
@@ -402,17 +402,22 @@ interface Props {
 }
 
 const Table: FunctionComponent<Props> = ({ item }) => {
-  const submitAction = useCallback((action: string, sub: Subtitle) => {
-    if (sub.path && item) {
-      const [id, type] = getIdAndType(item);
-      setUpdate(true);
-      setActive(sub.path);
-      SubtitlesApi.modify(action, id, type, sub.code2, sub.path).finally(() => {
-        setUpdate(false);
-        setActive(undefined);
-      });
-    }
-  }, []);
+  const submitAction = useCallback(
+    (action: string, sub: Subtitle) => {
+      if (sub.path && item) {
+        const [id, type] = getIdAndType(item);
+        setUpdate(true);
+        setActive(sub.path);
+        SubtitlesApi.modify(action, id, type, sub.code2, sub.path).finally(
+          () => {
+            setUpdate(false);
+            setActive(undefined);
+          }
+        );
+      }
+    },
+    [item]
+  );
 
   const [updating, setUpdate] = useState<boolean>(false);
   const [active, setActive] = useState<string | undefined>(undefined);
