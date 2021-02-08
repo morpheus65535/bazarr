@@ -1850,37 +1850,36 @@ class Subtitles(Resource):
 
         language = request.form.get('language')
         subtitles_path = request.form.get('path')
+        media_type = request.form.get('type')
+        id = request.form.get('id')
+
+        if media_type == 'episode':
+            subtitles_path = path_mappings.path_replace(subtitles_path)
+            metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
+                                        " WHERE sonarrEpisodeId = ?", (id,), only_one=True)
+            video_path = path_mappings.path_replace(metadata['path'])
+        else:
+            subtitles_path = path_mappings.path_replace_movie(subtitles_path)
+            metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
+                                        (id,), only_one=True)
+            video_path = path_mappings.path_replace_movie(metadata['path'])
 
         if action == 'sync':
-            media_type = request.form.get('type')
-            id = request.form.get('id')
-
             if media_type == 'episode':
-                metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
-                                    " WHERE sonarrEpisodeId = ?", (id,),
-                                    only_one=True)
-                video_path = path_mappings.path_replace(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
-                            srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
-                            sonarr_episode_id=int(id))
+                             srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
+                             sonarr_episode_id=int(id))
             else:
-                metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
-                                                (id,), only_one=True)
-                video_path = path_mappings.path_replace_movie(metadata['path'])
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                             srt_lang=language, media_type='movies', radarr_id=id)
         elif action == 'translate':
-            media_type = request.form.get('type')
-            id = request.form.get('id')
-            video_path = request.form.get('videoPath')
             dest_language = language
             forced = True if request.form.get('forced') == 'true' else False
             hi = True if request.form.get('hi') == 'true' else False
             result = translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path, to_lang=dest_language,
                                           forced=forced, hi=hi)
-
             if result:
-                if media_type == 'series':
+                if media_type == 'episode':
                     store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
                 else:
                     store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)

@@ -49,6 +49,14 @@ import { avaliableTranslation } from "./toolOptions";
 
 type SupportType = Episode | Movie;
 
+function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
+  if (isMovie(item)) {
+    return [item.radarrId, "movie"];
+  } else {
+    return [item.sonarrEpisodeId, "episode"];
+  }
+}
+
 function submodProcessFrameRate(from: number, to: number) {
   return `change_FPS(from=${from},to=${to})`;
 }
@@ -62,12 +70,20 @@ const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
   const [updating, setUpdate] = useState(false);
   const [selection, setSelection] = useState<string | undefined>(undefined);
 
+  const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
   const closeModal = useCloseModal();
 
   const submit = useCallback(() => {
-    if (subtitle && subtitle.path && selection) {
-      return SubtitlesApi.modify(selection, subtitle.code2, subtitle.path);
+    if (subtitle && subtitle.path && selection && item) {
+      const [id, type] = getIdAndType(item);
+      return SubtitlesApi.modify(
+        selection,
+        id,
+        type,
+        subtitle.code2,
+        subtitle.path
+      );
     } else {
       return undefined;
     }
@@ -115,15 +131,23 @@ const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
   const [from, setFrom] = useState<number | undefined>();
   const [to, setTo] = useState<number | undefined>();
 
+  const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
   const closeModal = useCloseModal();
 
   const canSave = from !== undefined && to !== undefined && from !== to;
 
   const submit = useCallback(() => {
-    if (canSave && subtitle && subtitle.path) {
+    if (canSave && subtitle && subtitle.path && item) {
       const action = submodProcessFrameRate(from!, to!);
-      return SubtitlesApi.modify(action, subtitle.code2, subtitle.path);
+      const [id, type] = getIdAndType(item);
+      return SubtitlesApi.modify(
+        action,
+        id,
+        type,
+        subtitle.code2,
+        subtitle.path
+      );
     } else {
       return undefined;
     }
@@ -209,13 +233,14 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
     [offset]
   );
 
+  const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
   const closeModal = useCloseModal();
 
   const canSave = offset.some((v) => v !== 0);
 
   const submit = useCallback(() => {
-    if (canSave && subtitle && subtitle.path) {
+    if (canSave && subtitle && subtitle.path && item) {
       const newOffset = offset.map((v) => (isPlus ? v : -v));
       const action = submodProcessOffset(
         newOffset[0],
@@ -223,7 +248,14 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
         newOffset[2],
         newOffset[3]
       );
-      return SubtitlesApi.modify(action, subtitle.code2, subtitle.path);
+      const [id, type] = getIdAndType(item);
+      return SubtitlesApi.modify(
+        action,
+        id,
+        type,
+        subtitle.code2,
+        subtitle.path
+      );
     } else {
       return undefined;
     }
@@ -315,26 +347,24 @@ const TranslateModal: FunctionComponent<BasicModalProps & TranslateProps> = ({
   const [selectedLanguage, setLanguage] = useState<Language | undefined>();
 
   const submit = useCallback(() => {
-    if (item && item.mapped_path && subtitle && subtitle.path) {
-      let type: "movie" | "series";
-      let id: number;
-      if (isMovie(item)) {
-        type = "movie";
-        id = item.radarrId;
-      } else {
-        type = "series";
-        id = item.sonarrSeriesId;
-      }
-      return SubtitlesApi.translate(
-        type,
+    if (
+      item &&
+      item.mapped_path &&
+      subtitle &&
+      subtitle.path &&
+      selectedLanguage
+    ) {
+      const [id, type] = getIdAndType(item);
+      return SubtitlesApi.modify(
+        "translate",
         id,
-        subtitle.path,
-        item.mapped_path,
-        "en"
+        type,
+        selectedLanguage.code2,
+        subtitle.path
       );
     }
     return undefined;
-  }, [item, subtitle]);
+  }, [item, subtitle, selectedLanguage]);
 
   const closeModal = useCloseModal();
 
@@ -373,10 +403,11 @@ interface Props {
 
 const Table: FunctionComponent<Props> = ({ item }) => {
   const submitAction = useCallback((action: string, sub: Subtitle) => {
-    if (sub.path) {
+    if (sub.path && item) {
+      const [id, type] = getIdAndType(item);
       setUpdate(true);
       setActive(sub.path);
-      SubtitlesApi.modify(action, sub.code2, sub.path).finally(() => {
+      SubtitlesApi.modify(action, id, type, sub.code2, sub.path).finally(() => {
         setUpdate(false);
         setActive(undefined);
       });
@@ -389,16 +420,16 @@ const Table: FunctionComponent<Props> = ({ item }) => {
   const syncSubtitle = useCallback(
     (sub: Subtitle) => {
       if (sub.path && item) {
-        const [type, id]: ["movie" | "episode", number] = isMovie(item)
-          ? ["movie", item.radarrId]
-          : ["episode", item.sonarrEpisodeId];
+        const [id, type] = getIdAndType(item);
 
         setUpdate(true);
         setActive(sub.path);
-        SubtitlesApi.sync(sub.code2, sub.path, type, id).finally(() => {
-          setUpdate(false);
-          setActive(undefined);
-        });
+        SubtitlesApi.modify("sync", id, type, sub.code2, sub.path).finally(
+          () => {
+            setUpdate(false);
+            setActive(undefined);
+          }
+        );
       }
     },
     [item]

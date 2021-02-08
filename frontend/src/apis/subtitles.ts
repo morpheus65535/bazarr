@@ -1,5 +1,7 @@
 import BasicApi from "./basic";
 
+type SubtitleType = "episode" | "movie";
+
 class SubtitlesApi extends BasicApi {
   constructor() {
     super("/subtitles");
@@ -15,61 +17,23 @@ class SubtitlesApi extends BasicApi {
     });
   }
 
-  async modify(action: string, language: string, path: string) {
+  async modify(
+    action: string,
+    id: number,
+    type: SubtitleType,
+    language: string,
+    path: string
+  ) {
     return new Promise<void>((resolve, reject) => {
       this.patch<void>(
         "",
         {
+          type,
+          id,
           language,
           path,
         },
         { action }
-      )
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
-  async sync(
-    language: string,
-    path: string,
-    type: "episode" | "movie",
-    id: number
-  ) {
-    return new Promise<void>((resolve, reject) => {
-      this.patch<void>(
-        "",
-        {
-          language,
-          path,
-          type,
-          id,
-        },
-        { action: "sync" }
-      )
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
-  async translate(
-    type: "series" | "movie",
-    id: number,
-    path: string,
-    videoPath: string,
-    language: string
-  ) {
-    return new Promise<void>((resolve, reject) => {
-      this.patch<void>(
-        "",
-        {
-          type,
-          id,
-          language,
-          path,
-          videoPath,
-        },
-        { action: "translate" }
       )
         .then(() => resolve())
         .catch(reject);
