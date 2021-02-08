@@ -33,8 +33,6 @@ export function useExtract<T>(
       }
     }
 
-    console.log("update", key, value);
-
     return value;
   }, [key, settings, validate]);
 
@@ -112,7 +110,6 @@ export function useLatestMergeArray<T>(
   }
 
   return useMemo(() => {
-    console.log("refresh", staged, extractValue);
     if (staged !== undefined && extractValue) {
       const newArray = extractValue.map((v) => {
         const updated = staged!.find((inn) => compare!(v, inn));

@@ -116,7 +116,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           const missing = row.value;
           return missing.map((v) => (
-            <Badge className="mx-2" variant="warning">
+            <Badge className="mx-2" variant="warning" key={v.code2}>
               {v.code2}
             </Badge>
           ));
@@ -127,7 +127,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => (
           <ActionBadge
             icon={faWrench}
-            onClick={(e) => showModal("edit", row.row.original)}
+            onClick={() => showModal("edit", row.row.original)}
           ></ActionBadge>
         ),
       },

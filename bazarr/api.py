@@ -84,6 +84,7 @@ def authenticate(actual_method):
 
     return wrapper
 
+
 class SystemAccount(Resource):
     def post(self):
         if settings.auth.type != 'form':
@@ -104,7 +105,9 @@ class SystemAccount(Resource):
                 gc.collect()
                 return '', 204
 
-        return '', 401,
+        return '', 401
+
+
 class System(Resource):
     @authenticate
     def post(self):
@@ -214,6 +217,7 @@ class Providers(Resource):
             return '', 204
 
         return '', 400
+
 
 class SystemSettings(Resource):
     @authenticate
@@ -459,63 +463,6 @@ class Series(Resource):
             list_missing_subtitles(no=seriesId)
 
         # event_stream(type='series', action='update', series=seriesId)
-
-        return '', 204
-
-
-class SeriesEditor(Resource):
-    @authenticate
-    def get(self, **kwargs):
-        result = database.execute("SELECT sonarrSeriesId, title, audio_language, profileId "
-                                  "FROM table_shows ORDER BY sortTitle")
-
-        for item in result:
-            # Parse audio language
-            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
-
-            # Parse desired languages
-            item['languages'] = str(get_desired_languages(item['profileId']))
-            if item['languages'] and item['languages'] != 'None':
-                item.update({"languages": ast.literal_eval(item['languages'])})
-                for i, subs in enumerate(item['languages']):
-                    item['languages'][i] = {"name": language_from_alpha2(subs),
-                                            "code2": subs,
-                                            "code3": alpha3_from_alpha2(subs)}
-            else:
-                item.update({"languages": []})
-
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
-
-        return jsonify(data=result)
-
-
-class SeriesEditSave(Resource):
-    @authenticate
-    def post(self):
-        lang = request.form.get('languages')
-
-        if lang == 'None':
-            lang = None
-
-        seriesIdList = []
-        seriesidLangList = []
-        for item in request.form.getlist('seriesid[]'):
-            seriesid = item.lstrip('row_')
-            seriesIdList.append(seriesid)
-            seriesidLangList.append([lang, seriesid])
-
-        try:
-            database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", seriesidLangList,
-                             execute_many=True)
-        except:
-            pass
-        else:
-            for seriesId in seriesIdList:
-                list_missing_subtitles(no=seriesId, send_event=False)
-
-        event_stream(type='series_editor', action='update')
-        event_stream(type='badges_series')
 
         return '', 204
 
@@ -933,61 +880,6 @@ class Movies(Resource):
             list_missing_subtitles_movies(no=radarrId)
 
         # event_stream(type='movies', action='update', movie=radarrId)
-
-        return '', 204
-
-class MoviesEditor(Resource):
-    @authenticate
-    def get(self):
-        result = database.execute("SELECT radarrId, title, audio_language, profileId "
-                                  "FROM table_movies ORDER BY sortTitle")
-
-        for item in result:
-            # Parse audio language
-            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
-
-            # Parse desired languages
-            item['languages'] = str(get_desired_languages(item['profileId']))
-            if item['languages'] and item['languages'] != 'None':
-                item.update({"languages": ast.literal_eval(item['languages'])})
-                for i, subs in enumerate(item['languages']):
-                    item['languages'][i] = {"name": language_from_alpha2(subs),
-                                            "code2": subs,
-                                            "code3": alpha3_from_alpha2(subs)}
-            else:
-                item.update({"languages": []})
-
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
-
-        return jsonify(data=result)
-
-
-class MoviesEditSave(Resource):
-    @authenticate
-    def post(self):
-        lang = request.form.get('languages')
-
-        if lang == 'None':
-            lang = None
-
-        radarrIdList = []
-        radarrIdLangList = []
-        for item in request.form.getlist('radarrid[]'):
-            radarrid = item.lstrip('row_')
-            radarrIdList.append(radarrid)
-            radarrIdLangList.append([lang, radarrid])
-        try:
-            database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", radarrIdLangList,
-                             execute_many=True)
-        except:
-            pass
-        else:
-            for radarrId in radarrIdList:
-                list_missing_subtitles_movies(no=radarrId, send_event=False)
-
-        event_stream(type='movies_editor', action='update')
-        event_stream(type='badges_movies')
 
         return '', 204
 
@@ -1885,7 +1777,7 @@ class Subtitles(Resource):
                     store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
                 return '', 200
             else:
-                return '', 500
+                return '', 404
         else:
             subtitles_apply_mods(language, subtitles_path, [action])
 
@@ -1956,9 +1848,6 @@ api.add_resource(BadgesSeries, '/badges/series')
 api.add_resource(BadgesMovies, '/badges/movies')
 api.add_resource(BadgesProviders, '/badges/providers')
 
-# Search action happens in frontend
-# api.add_resource(Search, '/search')
-
 api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
 api.add_resource(ProviderEpisodes, '/providers/episodes')
@@ -1983,8 +1872,6 @@ api.add_resource(SeriesSearchMissing, '/series/missing')
 api.add_resource(WantedSeries, '/series/wanted')
 api.add_resource(BlacklistSeries, '/series/blacklist')
 
-# api.add_resource(SeriesEditor, '/series_editor')
-# api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
 api.add_resource(EpisodesHistory, '/episodes/history')
@@ -1993,8 +1880,6 @@ api.add_resource(Movies, '/movies')
 api.add_resource(MovieScanDisk, '/movies/disk')
 api.add_resource(MovieSearchMissing, '/movies/missing')
 api.add_resource(MovieSubtitles, '/movies/subtitles')
-# api.add_resource(MoviesEditor, '/movies_editor')
-# api.add_resource(MoviesEditSave, '/movies_edit_save')
 api.add_resource(MovieHistory, '/movies/history')
 api.add_resource(WantedMovies, '/movies/wanted')
 api.add_resource(BlacklistMovies, '/movies/blacklist')
