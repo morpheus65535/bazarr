@@ -20,7 +20,12 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
-  useEffect(() => update(), [update]);
+  useEffect(() => {
+    // TODO: Use Websocket
+    update();
+    const handle = setInterval(() => update(), 10 * 1000);
+    return () => clearInterval(handle);
+  }, [update]);
 
   return (
     <Container fluid>

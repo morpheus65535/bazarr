@@ -1,6 +1,7 @@
-import { handleActions } from "redux-actions";
+import { Action, handleActions } from "redux-actions";
 import {
   PROVIDER_UPDATE_LIST,
+  SYSTEM_RUN_TASK,
   SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
@@ -63,6 +64,27 @@ const reducer = handleActions<SystemState, any>(
             action,
             state.tasks.items
           ),
+        };
+      },
+    },
+    [SYSTEM_RUN_TASK]: {
+      next(state, action: Action<string>) {
+        const id = action.payload;
+        const tasks = state.tasks;
+        const newItems = [...tasks.items];
+
+        const idx = newItems.findIndex((v) => v.job_id === id);
+
+        if (idx !== -1) {
+          newItems[idx].job_running = true;
+        }
+
+        return {
+          ...state,
+          tasks: {
+            ...tasks,
+            items: newItems,
+          },
         };
       },
     },

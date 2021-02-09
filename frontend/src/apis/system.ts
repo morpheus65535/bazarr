@@ -125,7 +125,7 @@ class SystemApi extends BasicApi {
     });
   }
 
-  async execTasks(id: string) {
+  async runTask(id: string) {
     return new Promise<void>((resolve, reject) => {
       this.post<void>("/tasks", { taskid: id })
         .then(() => {

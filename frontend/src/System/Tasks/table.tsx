@@ -1,14 +1,15 @@
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { useMemo } from "react";
-import { Button } from "react-bootstrap";
+import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Column } from "react-table";
+import { systemRunTasks } from "../../@redux/actions";
 import { SystemApi } from "../../apis";
-import { BasicTable } from "../../components";
+import { AsyncButton, BasicTable } from "../../components";
 
 interface Props {
   tasks: Array<SystemTaskResult>;
+  run: (id: string) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -18,7 +19,7 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-function Table(props: Props) {
+const Table: FunctionComponent<Props> = ({ tasks, run }) => {
   const columns: Column<SystemTaskResult>[] = useMemo<
     Column<SystemTaskResult>[]
   >(
@@ -43,13 +44,15 @@ function Table(props: Props) {
         Cell: (row) => {
           const { job_id } = row.row.original;
           return (
-            <Button variant="light" size="sm" disabled={row.value}>
-              <FontAwesomeIcon
-                icon={faSync}
-                spin={row.value}
-                onClick={() => SystemApi.execTasks(job_id)}
-              ></FontAwesomeIcon>
-            </Button>
+            <AsyncButton
+              promise={() => SystemApi.runTask(job_id)}
+              onSuccess={() => run(job_id)}
+              variant="light"
+              size="sm"
+              disabled={row.value}
+            >
+              <FontAwesomeIcon icon={faSync} spin={row.value}></FontAwesomeIcon>
+            </AsyncButton>
           );
         },
       },
@@ -57,7 +60,7 @@ function Table(props: Props) {
     []
   );
 
-  return <BasicTable columns={columns} data={props.tasks}></BasicTable>;
-}
+  return <BasicTable columns={columns} data={tasks}></BasicTable>;
+};
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, { run: systemRunTasks })(Table);

@@ -1,5 +1,7 @@
+import { Action } from "redux-actions";
 import { SystemApi } from "../../apis";
 import {
+  SYSTEM_RUN_TASK,
   SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
@@ -39,6 +41,13 @@ export const systemUpdateStatus = createAsyncAction(SYSTEM_UPDATE_STATUS, () =>
 export const systemUpdateTasks = createAsyncAction(SYSTEM_UPDATE_TASKS, () =>
   SystemApi.getTasks()
 );
+
+export function systemRunTasks(id: string): Action<string> {
+  return {
+    type: SYSTEM_RUN_TASK,
+    payload: id,
+  };
+}
 
 export const systemUpdateLogs = createAsyncAction(SYSTEM_UPDATE_LOGS, () =>
   SystemApi.logs()
