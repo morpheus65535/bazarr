@@ -17,10 +17,16 @@ export const URLTestButton: FunctionComponent<{
   const ssl = useLatest<boolean>(`settings-${category}-ssl`, isBoolean);
 
   const click = useCallback(() => {
-    if (address && port && apikey && ssl !== undefined) {
+    if (address && apikey && ssl !== undefined) {
+      let testUrl: string;
+      if (port) {
+        testUrl = `${address}:${port}${url ?? ""}`;
+      } else {
+        testUrl = `${address}${url ?? ""}`;
+      }
       const request = {
         protocol: ssl ? "https" : "http",
-        url: `${address}:${port}${url ?? ""}`,
+        url: testUrl,
         params: {
           apikey: apikey,
         },

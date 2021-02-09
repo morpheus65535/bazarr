@@ -860,7 +860,7 @@ class Movies(Resource):
 
     @authenticate
     def post(self):
-        radarrIdList = request.args.getlist('radarrid')
+        radarrIdList = request.form.getlist('radarrid')
         profileIdList = request.form.getlist('profileid')
 
         for idx in range(len(radarrIdList)):
