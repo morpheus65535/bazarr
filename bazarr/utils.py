@@ -125,7 +125,7 @@ def get_binary(name):
             name = "%s.exe" % name
         elif platform.system() == "Darwin":  # MacOSX
             system = 'MacOSX'
-        if name == 'ffprobe':
+        if name in ['ffprobe', 'ffprobe.exe']:
             dir_name = 'ffmpeg'
 
         exe_dir = os.path.abspath(os.path.join(binaries_dir, system, machine, dir_name))
