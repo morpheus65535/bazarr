@@ -194,7 +194,7 @@ array_keys = ['excluded_tags',
 
 str_keys = ['chmod']
 
-none_keys = ['', 'None', 'null', 'undefined']
+empty_values = ['', 'None', 'null', 'undefined', None, []]
 
 def get_settings():
     result = dict()
@@ -213,7 +213,7 @@ def get_settings():
 
             if key not in raw_keys:
                 # Do some postprocessings
-                if value in none_keys:
+                if value in empty_values:
                     if key in array_keys:
                         value = []
                     else:
@@ -264,11 +264,11 @@ def save_settings(settings_items):
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
-            if value in none_keys:
+            if value in empty_values:
                 value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in none_keys :
+        if settings_keys[-1] in array_keys and value[0] in empty_values :
             value = []
 
         if value == 'true':
@@ -385,8 +385,12 @@ def url_sonarr():
     if settings.sonarr.base_url.endswith("/"):
         settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 
-    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port + settings.sonarr.base_url
+    if settings.sonarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.sonarr.port}"
 
+    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
 
 def url_sonarr_short():
     if settings.sonarr.getboolean('ssl'):
@@ -394,14 +398,12 @@ def url_sonarr_short():
     else:
         protocol_sonarr = "http"
 
-    if settings.sonarr.base_url == '':
-        settings.sonarr.base_url = "/"
-    if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
-    if settings.sonarr.base_url.endswith("/"):
-        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
-    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port
+    if settings.sonarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.sonarr.port}"
 
+    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
 
 def url_radarr():
     if settings.radarr.getboolean('ssl'):
@@ -416,8 +418,12 @@ def url_radarr():
     if settings.radarr.base_url.endswith("/"):
         settings.radarr.base_url = settings.radarr.base_url[:-1]
 
-    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port + settings.radarr.base_url
+    if settings.radarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.radarr.port}"
 
+    return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
 
 def url_radarr_short():
     if settings.radarr.getboolean('ssl'):
@@ -425,14 +431,12 @@ def url_radarr_short():
     else:
         protocol_radarr = "http"
 
-    if settings.radarr.base_url == '':
-        settings.radarr.base_url = "/"
-    if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
-    if settings.radarr.base_url.endswith("/"):
-        settings.radarr.base_url = settings.radarr.base_url[:-1]
+    if settings.radarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.radarr.port}"
 
-    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
+    return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
 def get_array_from(property):
     if property:
