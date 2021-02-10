@@ -6,10 +6,25 @@ interface Props<T extends object = {}> extends TableOptions<T> {
   emptyText?: string;
   showPageControl?: boolean;
   responsive?: boolean;
+  hoverable?: boolean;
+  striped?: boolean;
+  borderless?: boolean;
+  small?: boolean;
+  hideHeader?: boolean;
 }
 
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
-  const { emptyText, showPageControl, responsive, ...options } = props;
+  const {
+    emptyText,
+    showPageControl,
+    responsive,
+    hoverable,
+    striped,
+    borderless,
+    small,
+    hideHeader,
+    ...options
+  } = props;
 
   // Default Settings
   options.autoResetPage = options.autoResetPage ?? false;
@@ -36,7 +51,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
 
   const header = useMemo(
     () => (
-      <thead>
+      <thead hidden={hideHeader}>
         {headerGroups.map((headerGroup) => (
           <tr {...headerGroup.getHeaderGroupProps()}>
             {headerGroup.headers.map((col) => (
@@ -46,7 +61,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         ))}
       </thead>
     ),
-    [headerGroups]
+    [headerGroups, hideHeader]
   );
 
   const colCount = useMemo(() => {
@@ -173,8 +188,10 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   return (
     <React.Fragment>
       <Table
-        striped
-        borderless
+        size={small ? "sm" : undefined}
+        striped={striped ?? true}
+        borderless={borderless ?? true}
+        hover={hoverable}
         responsive={responsive ?? true}
         {...getTableProps()}
       >

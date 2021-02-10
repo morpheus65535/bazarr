@@ -1,5 +1,10 @@
 import { throttle } from "lodash";
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Dropdown, Form } from "react-bootstrap";
 import { useHistory } from "react-router";
 
@@ -7,31 +12,6 @@ export interface SearchResult {
   name: string;
   link?: string;
 }
-
-interface ResultItemProps extends SearchResult {
-  clear?: () => void;
-}
-
-const ResultItem: FunctionComponent<ResultItemProps> = ({
-  name,
-  link,
-  clear,
-}) => {
-  const history = useHistory();
-
-  return (
-    <Dropdown.Item
-      disabled={link === undefined}
-      onClick={(e) => {
-        e.preventDefault();
-        clear && clear();
-        link && history.push(link);
-      }}
-    >
-      <span>{name}</span>
-    </Dropdown.Item>
-  );
-};
 
 interface Props {
   className?: string;
@@ -46,19 +26,38 @@ export const SearchBar: FunctionComponent<Props> = ({
 
   const [results, setResults] = useState<SearchResult[]>([]);
 
-  const search = throttle((text: string) => {
-    setText(text);
-    setResults(onSearch(text));
-  }, 500);
+  const history = useHistory();
 
-  const clear = () => {
+  const updateResult = useMemo(
+    () =>
+      throttle((text: string) => {
+        setResults(onSearch(text));
+      }, 500),
+    [onSearch]
+  );
+
+  const search = useCallback(
+    (text: string) => {
+      setText(text);
+      updateResult(text);
+    },
+    [updateResult]
+  );
+
+  const clear = useCallback(() => {
     setText("");
     setResults([]);
-  };
+  }, []);
 
   const items = useMemo(() => {
-    const its = results.map((val) => (
-      <ResultItem {...val} key={val.name} clear={clear}></ResultItem>
+    const its = results.map((v) => (
+      <Dropdown.Item
+        key={v.name}
+        eventKey={v.link}
+        disabled={v.link === undefined}
+      >
+        <span>{v.name}</span>
+      </Dropdown.Item>
     ));
 
     if (its.length === 0) {
@@ -69,12 +68,22 @@ export const SearchBar: FunctionComponent<Props> = ({
   }, [results]);
 
   return (
-    <Dropdown show={text.length !== 0} className={className}>
+    <Dropdown
+      show={text.length !== 0}
+      className={className}
+      onSelect={(link) => {
+        if (link) {
+          clear();
+          history.push(link);
+        }
+      }}
+    >
       <Form.Control
         type="text"
         size="sm"
         placeholder="Search..."
-        onChange={(e) => search(e.target.value)}
+        value={text}
+        onChange={(e) => search(e.currentTarget.value)}
       ></Form.Control>
       <Dropdown.Menu style={{ maxHeight: 256, overflowY: "auto" }}>
         {items}

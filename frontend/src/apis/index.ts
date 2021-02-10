@@ -44,6 +44,7 @@ class Api {
         return Promise.reject(resp);
       },
       (error: Error) => {
+        // TODO: Get Response from Error
         if (error.message.includes("401")) {
           this.handle4xxRequest();
         }
@@ -62,6 +63,7 @@ class Api {
 export default new Api();
 export { default as BadgesApi } from "./badges";
 export { default as EpisodesApi } from "./episodes";
+export { default as FilesApi } from "./files";
 export { default as HistoryApi } from "./history";
 export { default as MoviesApi } from "./movies";
 export { default as ProvidersApi } from "./providers";

@@ -1816,9 +1816,13 @@ class BrowseBazarrFS(Resource):
     def get(self):
         path = request.args.get('path') or ''
         data = []
-        result = browse_bazarr_filesystem(path)
+        try:
+            result = browse_bazarr_filesystem(path)
+        except Exception:
+            return '', 404
+
         for item in result['directories']:
-            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+            data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
 
 
@@ -1827,9 +1831,12 @@ class BrowseSonarrFS(Resource):
     def get(self):
         path = request.args.get('path') or ''
         data = []
-        result = browse_sonarr_filesystem(path)
+        try:
+            result = browse_sonarr_filesystem(path)
+        except Exception:
+            return '', 404
         for item in result['directories']:
-            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+            data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
 
 
@@ -1838,9 +1845,12 @@ class BrowseRadarrFS(Resource):
     def get(self):
         path = request.args.get('path') or ''
         data = []
-        result = browse_radarr_filesystem(path)
+        try:
+            result = browse_radarr_filesystem(path)
+        except Exception:
+            return '', 404
         for item in result['directories']:
-            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+            data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
 
 
@@ -1888,6 +1898,6 @@ api.add_resource(HistorySeries, '/history/series')
 api.add_resource(HistoryMovies, '/history/movies')
 api.add_resource(HistoryStats, '/history/stats')
 
-api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
-api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
-api.add_resource(BrowseRadarrFS, '/browse_radarr_filesystem')
+api.add_resource(BrowseBazarrFS, '/files')
+api.add_resource(BrowseSonarrFS, '/files/sonarr')
+api.add_resource(BrowseRadarrFS, '/files/radarr')

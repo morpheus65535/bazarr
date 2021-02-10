@@ -57,7 +57,7 @@ const Table: FunctionComponent<Props> = ({ tasks, run }) => {
         },
       },
     ],
-    []
+    [run]
   );
 
   return <BasicTable columns={columns} data={tasks}></BasicTable>;
