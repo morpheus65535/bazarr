@@ -94,7 +94,7 @@ def series_images(url):
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
-        return None
+        return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
@@ -107,7 +107,7 @@ def movies_images(url):
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
-        return None
+        return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 

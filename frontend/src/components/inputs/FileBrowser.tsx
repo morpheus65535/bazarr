@@ -8,8 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Dropdown, Form } from "react-bootstrap";
-import { LoadingIndicator } from "..";
+import { Dropdown, Form, Spinner } from "react-bootstrap";
 
 const backKey = "--back--";
 
@@ -21,18 +20,32 @@ function getLastSeparator(path: string): number {
   return idx;
 }
 
+function extractPath(raw: string) {
+  if (raw.endsWith("/") || raw.endsWith("\\")) {
+    return raw;
+  } else {
+    const idx = getLastSeparator(raw);
+    return raw.slice(0, idx + 1);
+  }
+}
+
 interface Props {
   defaultValue?: string;
   load: (path: string) => Promise<FileTree[]>;
+  onChange?: (path: string) => void;
+  onBlur?: (path: string) => void;
 }
 
 export const FileBrowser: FunctionComponent<Props> = ({
   defaultValue,
+  onChange,
+  onBlur,
   load,
 }) => {
   const [show, canShow] = useState(false);
   const [text, setText] = useState(defaultValue ?? "");
-  const [path, setPath] = useState("");
+  const [path, setPath] = useState(() => extractPath(text));
+  const [loading, setLoading] = useState(true);
 
   const filter = useMemo(() => {
     const idx = getLastSeparator(text);
@@ -46,17 +59,16 @@ export const FileBrowser: FunctionComponent<Props> = ({
 
   const [tree, setTree] = useState<FileTree[]>([]);
 
-  const items = useMemo(() => {
-    const elements = [];
-
-    if (previous.length !== 0) {
-      elements.push(
-        <Dropdown.Item eventKey={backKey} key="back">
-          <FontAwesomeIcon icon={faReply} className="mr-2"></FontAwesomeIcon>
-          <span>Go Back</span>
+  const requestItems = useMemo(() => {
+    if (loading) {
+      return (
+        <Dropdown.Item>
+          <Spinner size="sm" animation="border"></Spinner>
         </Dropdown.Item>
       );
     }
+
+    const elements = [];
 
     elements.push(
       ...tree
@@ -72,40 +84,48 @@ export const FileBrowser: FunctionComponent<Props> = ({
         ))
     );
 
-    return elements;
-  }, [tree, filter, previous]);
+    if (elements.length === 0) {
+      elements.push(<Dropdown.Header key="no-files">No Files</Dropdown.Header>);
+    }
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+    if (previous.length !== 0) {
+      return [
+        <Dropdown.Item eventKey={backKey} key="back">
+          <FontAwesomeIcon icon={faReply} className="mr-2"></FontAwesomeIcon>
+          <span>Back</span>
+        </Dropdown.Item>,
+        <Dropdown.Divider key="back-divider"></Dropdown.Divider>,
+        ...elements,
+      ];
+    } else {
+      return elements;
+    }
+  }, [tree, filter, previous, loading]);
 
   useEffect(() => {
     if (text === path) {
       return;
     }
 
-    if (text.endsWith("/") || text.endsWith("\\")) {
-      setPath(text);
-    } else {
-      const idx = getLastSeparator(text);
-      const value = text.slice(0, idx + 1);
-      if (value !== path) {
-        setPath(value);
-      }
+    const newPath = extractPath(text);
+    if (newPath !== path) {
+      setPath(newPath);
+      onChange && onChange(newPath);
     }
-  }, [path, text]);
+  }, [path, text, onChange]);
 
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setLoading(true);
-    load(path)
-      .then((res) => {
-        setTree(res);
-        setError(false);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [path, load]);
+    if (show) {
+      setLoading(true);
+      load(path)
+        .then((res) => {
+          setTree(res);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [path, load, show]);
 
   return (
     <Dropdown
@@ -125,6 +145,10 @@ export const FileBrowser: FunctionComponent<Props> = ({
       onToggle={(open, _, meta) => {
         if (!open && meta.source !== "select") {
           canShow(false);
+
+          // TODO: FIX ME
+          // Delay blur to fix some weird behavior in bootstrap dropdown
+          setTimeout(() => onBlur && onBlur(path), 100);
         } else if (open) {
           canShow(true);
         }
@@ -139,13 +163,12 @@ export const FileBrowser: FunctionComponent<Props> = ({
           setText(e.currentTarget.value);
         }}
         ref={input}
-        isInvalid={error}
       ></Dropdown.Toggle>
       <Dropdown.Menu
         className="w-100"
         style={{ maxHeight: 256, overflowY: "auto" }}
       >
-        {loading ? <LoadingIndicator></LoadingIndicator> : items}
+        {requestItems}
       </Dropdown.Menu>
     </Dropdown>
   );

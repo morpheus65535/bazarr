@@ -79,12 +79,14 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const updateChange = useCallback<UpdateFunctionType>(
     (v: any, k?: string) => {
       if (k) {
-        stagedChange[k] = v;
+        const newChanges = { ...stagedChange };
+        newChanges[k] = v;
 
         if (process.env.NODE_ENV === "development") {
-          console.log("staged settings", stagedChange);
+          console.log("staged settings", newChanges);
         }
-        setChange({ ...stagedChange });
+
+        setChange(newChanges);
       }
     },
     [stagedChange]

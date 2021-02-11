@@ -18,11 +18,11 @@ class FilesApi extends BasicApi {
   }
 
   async sonarr(path?: string): Promise<FileTree[]> {
-    return this.browse("sonarr", path);
+    return this.browse("/sonarr", path);
   }
 
   async radarr(path?: string): Promise<FileTree[]> {
-    return this.browse("radarr", path);
+    return this.browse("/radarr", path);
   }
 }
 

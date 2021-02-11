@@ -13,7 +13,8 @@ import {
   Text,
   URLTestButton,
 } from "../components";
-import { seriesTypeOptions } from "./options";
+import { PathMappingTable } from "../components/pathMapper";
+import { seriesTypeOptions } from "../options";
 
 interface Props {}
 
@@ -98,6 +99,9 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 episodes in Sonarr.
               </Message>
             </Input>
+          </Group>
+          <Group header="Path Mappings">
+            <PathMappingTable type="sonarr"></PathMappingTable>
           </Group>
         </CollapseBox.Content>
       </CollapseBox>

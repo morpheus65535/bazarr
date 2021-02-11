@@ -29,6 +29,7 @@ interface ActionIconProps {
   loading?: boolean;
   disabled?: boolean;
   destructive?: boolean;
+  variant?: string;
   icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
   children?: string;
@@ -38,13 +39,14 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = ({
   onClick,
   destructive,
   disabled,
+  variant,
   ...other
 }) => {
   return (
     <Button
       disabled={other.loading || disabled}
       size="sm"
-      variant="light"
+      variant={variant ?? "light"}
       className="text-nowrap"
       onClick={onClick}
     >

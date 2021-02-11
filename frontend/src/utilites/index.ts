@@ -1,5 +1,6 @@
 import { isNumber, isString } from "lodash";
 import { Dispatch, ReactText } from "react";
+import { Row } from "react-table";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -64,4 +65,11 @@ export function isEpisode(v: any): v is Episode {
 export function isSeries(v: any): v is Series {
   return "episodeFileCount" in v;
 }
+
+export function tableUseOriginals<T extends object>(
+  items: readonly Row<T>[]
+): T[] {
+  return items.map((v) => v.original);
+}
+
 export * from "./hooks";

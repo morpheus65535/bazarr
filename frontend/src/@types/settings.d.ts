@@ -48,8 +48,8 @@ interface GeneralSettings {
   movie_default_profile?: number;
   serie_default_enabled: boolean;
   serie_default_profile?: number;
-  path_mappings: string[];
-  path_mappings_movie: string[];
+  path_mappings: [string, string][];
+  path_mappings_movie: [string, string][];
   port: number;
   upgrade_subs: boolean;
   postprocessing_cmd?: string;

@@ -49,21 +49,6 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     state: { pageIndex, pageSize },
   } = instance;
 
-  const header = useMemo(
-    () => (
-      <thead hidden={hideHeader}>
-        {headerGroups.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map((col) => (
-              <th {...col.getHeaderProps()}>{col.render("Header")}</th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-    ),
-    [headerGroups, hideHeader]
-  );
-
   const colCount = useMemo(() => {
     return headerGroups.reduce(
       (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
@@ -73,40 +58,12 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
 
   const empty = rows.length === 0;
 
-  const body = useMemo(
-    () => (
-      <tbody {...getTableBodyProps()}>
-        {emptyText && empty ? (
-          <tr>
-            <td colSpan={colCount} className="text-center">
-              {emptyText}
-            </td>
-          </tr>
-        ) : (
-          page.map(
-            (row): JSX.Element => {
-              prepareRow(row);
-              return (
-                <tr {...row.getRowProps()}>
-                  {row.cells.map((cell) => (
-                    <td
-                      className={cell.column.className}
-                      {...cell.getCellProps()}
-                    >
-                      {cell.render("Cell")}
-                    </td>
-                  ))}
-                </tr>
-              );
-            }
-          )
-        )}
-      </tbody>
-    ),
-    [colCount, empty, getTableBodyProps, page, prepareRow, emptyText]
-  );
+  const pageControlEnabled = showPageControl ?? true;
 
   const pageButtons = useMemo(() => {
+    if (!pageControlEnabled) {
+      return [];
+    }
     return [...Array(pageCount).keys()]
       .map((idx) => {
         if (
@@ -140,15 +97,18 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           return [item];
         }
       });
-  }, [pageCount, pageIndex, gotoPage]);
+  }, [pageCount, pageIndex, gotoPage, pageControlEnabled]);
 
   const pageControl = useMemo(() => {
+    if (!pageControlEnabled) {
+      return null;
+    }
+
     const start = empty ? 0 : pageSize * pageIndex + 1;
     const end = Math.min(pageSize * (pageIndex + 1), rows.length);
-    const pageControlEnabled = showPageControl ?? true;
 
     return (
-      <Container fluid hidden={!pageControlEnabled}>
+      <Container fluid>
         <Row>
           <Col className="d-flex align-items-center justify-content-start">
             <span>
@@ -182,7 +142,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     pageButtons,
     pageCount,
     rows.length,
-    showPageControl,
+    pageControlEnabled,
   ]);
 
   return (
@@ -195,8 +155,42 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         responsive={responsive ?? true}
         {...getTableProps()}
       >
-        {header}
-        {body}
+        <thead hidden={hideHeader}>
+          {headerGroups.map((headerGroup) => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((col) => (
+                <th {...col.getHeaderProps()}>{col.render("Header")}</th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          {emptyText && empty ? (
+            <tr>
+              <td colSpan={colCount} className="text-center">
+                {emptyText}
+              </td>
+            </tr>
+          ) : (
+            page.map(
+              (row): JSX.Element => {
+                prepareRow(row);
+                return (
+                  <tr {...row.getRowProps()}>
+                    {row.cells.map((cell) => (
+                      <td
+                        className={cell.column.className}
+                        {...cell.getCellProps()}
+                      >
+                        {cell.render("Cell")}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              }
+            )
+          )}
+        </tbody>
       </Table>
       {pageControl}
     </React.Fragment>

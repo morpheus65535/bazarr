@@ -12,6 +12,7 @@ import {
   Text,
   URLTestButton,
 } from "../components";
+import { PathMappingTable } from "../components/pathMapper";
 
 interface Props {}
 
@@ -85,6 +86,9 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
                 movies in Radarr.
               </Message>
             </Input>
+          </Group>
+          <Group header="Path Mappings">
+            <PathMappingTable type="radarr"></PathMappingTable>
           </Group>
         </CollapseBox.Content>
       </CollapseBox>

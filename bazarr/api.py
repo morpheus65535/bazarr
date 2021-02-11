@@ -1818,9 +1818,10 @@ class BrowseBazarrFS(Resource):
         data = []
         try:
             result = browse_bazarr_filesystem(path)
+            if result is None:
+                raise ValueError
         except Exception:
-            return '', 404
-
+            return jsonify([])
         for item in result['directories']:
             data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
@@ -1833,8 +1834,10 @@ class BrowseSonarrFS(Resource):
         data = []
         try:
             result = browse_sonarr_filesystem(path)
+            if result is None:
+                raise ValueError
         except Exception:
-            return '', 404
+            return jsonify([])
         for item in result['directories']:
             data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
@@ -1847,8 +1850,10 @@ class BrowseRadarrFS(Resource):
         data = []
         try:
             result = browse_radarr_filesystem(path)
+            if result is None:
+                raise ValueError
         except Exception:
-            return '', 404
+            return jsonify([])
         for item in result['directories']:
             data.append({'name': item['name'], 'children': True, 'path': item['path']})
         return jsonify(data)
