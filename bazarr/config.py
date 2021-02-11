@@ -271,6 +271,10 @@ def save_settings(settings_items):
         if settings_keys[-1] in array_keys and value[0] in empty_values :
             value = []
 
+        # Handle path mappings settings since they are array in array
+        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
+            value = [v.split(',') for v in value]
+
         if value == 'true':
             value = 'True'
         elif value == 'false':

@@ -150,7 +150,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
     >
       <Dropdown.Toggle
         as={Form.Control}
-        placeholder="Start typing or select a path below"
+        placeholder="Click to start"
         type="text"
         value={text}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

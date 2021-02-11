@@ -6,6 +6,7 @@ import { Button } from "react-bootstrap";
 import { Column } from "react-table";
 import { FilesApi } from "../../apis";
 import { ActionIcon, BasicTable, FileBrowser } from "../../components";
+import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
 import { useLatest } from "./hooks";
 import { useUpdate } from "./provider";
 
@@ -13,9 +14,9 @@ type SupportType = "sonarr" | "radarr";
 
 function getSupportKey(type: SupportType) {
   if (type === "sonarr") {
-    return "settings-general-path_mappings";
+    return pathMappingsKey;
   } else {
-    return "settings-general-path_mappings_movie";
+    return pathMappingsMovieKey;
   }
 }
 
