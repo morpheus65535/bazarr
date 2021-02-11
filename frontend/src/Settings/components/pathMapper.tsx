@@ -6,7 +6,6 @@ import { Button } from "react-bootstrap";
 import { Column } from "react-table";
 import { FilesApi } from "../../apis";
 import { ActionIcon, BasicTable, FileBrowser } from "../../components";
-import { tableUseOriginals } from "../../utilites";
 import { useLatest } from "./hooks";
 import { useUpdate } from "./provider";
 
@@ -66,19 +65,32 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     }
   }, [type]);
 
+  const updateCell = useCallback(
+    (idx: number, item?: PathMappingItem) => {
+      const newItems = [...data];
+      if (item) {
+        newItems[idx] = item;
+      } else {
+        newItems.splice(idx, 1);
+      }
+      updateRow(newItems);
+    },
+    [data, updateRow]
+  );
+
   const columns = useMemo<Column<PathMappingItem>[]>(
     () => [
       {
         Header: capitalize(type),
         accessor: "from",
-        Cell: ({ value, row, rows }) => (
+        Cell: ({ value, row, update }) => (
           <FileBrowser
             defaultValue={value}
             load={request}
-            onBlur={(path) => {
-              const newItems = tableUseOriginals(rows);
-              newItems[row.index].from = path;
-              updateRow(newItems);
+            onChange={(path) => {
+              const newItem = { ...row.original };
+              newItem.from = path;
+              update && update(row.index, newItem);
             }}
           ></FileBrowser>
         ),
@@ -93,14 +105,14 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: "Bazarr",
         accessor: "to",
-        Cell: ({ value, row, rows }) => (
+        Cell: ({ value, row, update }) => (
           <FileBrowser
             defaultValue={value}
             load={(path) => FilesApi.bazarr(path)}
-            onBlur={(path) => {
-              const newItems = tableUseOriginals(rows);
-              newItems[row.index].to = path;
-              updateRow(newItems);
+            onChange={(path) => {
+              const newItem = { ...row.original };
+              newItem.to = path;
+              update && update(row.index, newItem);
             }}
           ></FileBrowser>
         ),
@@ -108,19 +120,17 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         id: "action",
         accessor: "to",
-        Cell: ({ row, rows }) => (
+        Cell: ({ row, update }) => (
           <ActionIcon
             icon={faTrash}
             onClick={() => {
-              const newItems = tableUseOriginals(rows);
-              newItems.splice(row.index, 1);
-              updateRow(newItems);
+              update && update(row.index);
             }}
           ></ActionIcon>
         ),
       },
     ],
-    [type, request, updateRow]
+    [type, request]
   );
   return (
     <React.Fragment>
@@ -130,6 +140,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         showPageControl={false}
         columns={columns}
         data={data}
+        update={updateCell}
       ></BasicTable>
       <Button block variant="light" onClick={addRow}>
         Add

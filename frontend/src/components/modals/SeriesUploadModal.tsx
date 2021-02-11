@@ -342,28 +342,14 @@ interface TableProps {
 const Table: FunctionComponent<TableProps> = (props) => {
   const { maxSeason, maxEpisode, data, update, uploading } = props;
 
-  const removeItem = useCallback(
-    (file: File) => {
-      const idx = data.findIndex((v) => v.file === file);
-
-      if (idx !== -1) {
-        data.splice(idx, 1);
-
-        update(data);
-      }
-    },
-    [data, update]
-  );
-
   const updateItem = useCallback(
-    (info: SubtitleInfo) => {
-      const idx = data.findIndex((v) => v.file === info.file);
-
-      if (idx !== -1) {
+    (idx: number, info?: SubtitleInfo) => {
+      if (info) {
         data[idx] = info;
-
-        update(data);
+      } else {
+        data.splice(idx, 1);
       }
+      update(data);
     },
     [data, update]
   );
@@ -443,8 +429,8 @@ const Table: FunctionComponent<TableProps> = (props) => {
       {
         Header: "Season / Episode",
         accessor: "season",
-        Cell: (row) => {
-          const info = row.row.original;
+        Cell: ({ row, update }) => {
+          const info = row.original;
           const season = info.season;
           const episode = info.episode;
           return (
@@ -461,7 +447,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== season) {
                     info.season = v;
-                    updateItem(info);
+                    update && update(row.index, info);
                   }
                 }}
               ></Form.Control>
@@ -477,7 +463,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== episode) {
                     info.episode = v;
-                    updateItem(info);
+                    update && update(row.index, info);
                   }
                 }}
               ></Form.Control>
@@ -487,15 +473,15 @@ const Table: FunctionComponent<TableProps> = (props) => {
       },
       {
         accessor: "file",
-        Cell: (row) => {
-          const info = row.row.original;
+        Cell: ({ row, update }) => {
+          const info = row.original;
           return (
             <Button
               size="sm"
               variant="light"
               disabled={info.state === SubtitleState.update || uploading}
               onClick={() => {
-                removeItem(row.value);
+                update && update(row.index);
               }}
             >
               <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
@@ -504,10 +490,12 @@ const Table: FunctionComponent<TableProps> = (props) => {
         },
       },
     ],
-    [removeItem, maxSeason, maxEpisode, updateItem, uploading]
+    [maxSeason, maxEpisode, uploading]
   );
 
-  return <BasicTable columns={columns} data={data}></BasicTable>;
+  return (
+    <BasicTable columns={columns} data={data} update={updateItem}></BasicTable>
+  );
 };
 
 export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(

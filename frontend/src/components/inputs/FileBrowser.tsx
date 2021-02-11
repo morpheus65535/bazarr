@@ -33,13 +33,11 @@ interface Props {
   defaultValue?: string;
   load: (path: string) => Promise<FileTree[]>;
   onChange?: (path: string) => void;
-  onBlur?: (path: string) => void;
 }
 
 export const FileBrowser: FunctionComponent<Props> = ({
   defaultValue,
   onChange,
-  onBlur,
   load,
 }) => {
   const [show, canShow] = useState(false);
@@ -145,10 +143,6 @@ export const FileBrowser: FunctionComponent<Props> = ({
       onToggle={(open, _, meta) => {
         if (!open && meta.source !== "select") {
           canShow(false);
-
-          // TODO: FIX ME
-          // Delay blur to fix some weird behavior in bootstrap dropdown
-          setTimeout(() => onBlur && onBlur(path), 100);
         } else if (open) {
           canShow(true);
         }
