@@ -18,7 +18,7 @@ import logging
 from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
     get_audio_profile_languages, update_profile_id_list
 from helper import path_mappings
-from get_languages import language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
     manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     episode_download_subtitles, movies_download_subtitles
@@ -27,7 +27,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles, subtitles_apply_mods
+    delete_subtitles, subtitles_apply_mods, translate_subtitles_file
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
@@ -870,7 +870,8 @@ class EpisodesTools(Resource):
                     subs[0] = {"name": language_from_alpha2(subtitle[0]),
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
-                               "forced": True if len(subtitle) > 1 else False}
+                               "forced": True if subs[0].endswith(':forced') else False,
+                               "hi": True if subs[0].endswith(':hi') else False}
                     episode_external_subtitles.append({'language': subs[0],
                                                        'path': path_mappings.path_replace(subs[1]),
                                                        'filename': os.path.basename(subs[1]),
@@ -1374,7 +1375,7 @@ class HistorySeries(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1413,10 +1414,10 @@ class HistorySeries(Resource):
 
         for item in data:
             # Mark episode as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored']), "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1436,12 +1437,8 @@ class HistorySeries(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace(item['path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
@@ -1480,7 +1477,7 @@ class HistoryMovies(Resource):
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
-                query_actions = [1, 2, 3]
+                query_actions = [1, 2, 3, 6]
             else:
                 query_actions = [1, 3]
 
@@ -1514,10 +1511,10 @@ class HistoryMovies(Resource):
 
         for item in data:
             # Mark movies as upgradable or not
+            item.update({"upgradable": False})
             if {"video_path": str(item['video_path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
-                item.update({"upgradable": True})
-            else:
-                item.update({"upgradable": False})
+                if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
+                    item.update({"upgradable": True})
 
             # Parse language
             if item['language'] and item['language'] != 'None':
@@ -1536,12 +1533,8 @@ class HistoryMovies(Resource):
                 # Provide mapped path
                 mapped_path = path_mappings.path_replace_movie(item['video_path'])
                 item.update({"mapped_path": mapped_path})
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
             else:
                 item.update({"mapped_path": None})
-                item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
@@ -1932,6 +1925,56 @@ class SubMods(Resource):
         return '', 200
 
 
+class SubTranslate(Resource):
+    @authenticate
+    def post(self):
+        video_path = request.form.get('videoPath')
+        media_type = request.form.get('mediaType')
+        subtitles_path = request.form.get('subtitlesPath')
+        dest_language = request.form.get('language')
+        forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
+
+        result = translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path, to_lang=dest_language,
+                                          forced=forced, hi=hi)
+
+        if result:
+            message = 'Subtitles translated to {}'.format(language_from_alpha3(dest_language))
+
+            if media_type == 'series':
+                episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes"
+                                                    " WHERE path = ?",
+                                                    (path_mappings.path_replace_reverse(video_path),), only_one=True)
+                store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
+                history_log(action=6,
+                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'],
+                            description=message,
+                            video_path=path_mappings.path_replace_reverse(video_path),
+                            language=alpha2_from_alpha3(dest_language),
+                            provider=None,
+                            score=0,
+                            subs_id=None,
+                            subtitles_path=path_mappings.path_replace_reverse(result))
+            else:
+                movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                                  (path_mappings.path_replace_reverse_movie(video_path),),
+                                                  only_one=True)
+                store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
+                history_log_movie(action=6,
+                                  radarr_id=movie_metadata['radarrId'],
+                                  description=message,
+                                  video_path=path_mappings.path_replace_reverse_movie(video_path),
+                                  language=alpha2_from_alpha3(dest_language),
+                                  provider=None,
+                                  score=0,
+                                  subs_id=None,
+                                  subtitles_path=path_mappings.path_replace_reverse_movie(result))
+            return '', 200
+        else:
+            return '', 500
+
+
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
@@ -2036,6 +2079,7 @@ api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_r
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
 api.add_resource(SubMods, '/sub_mods')
+api.add_resource(SubTranslate, '/sub_translate')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
