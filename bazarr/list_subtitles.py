@@ -88,19 +88,19 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in simplified_chinese):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese):
                     logging.debug("BAZARR external subtitles detected: " + "zh")
                     actual_subtitles.append(
                         [str("zh"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in simplified_chinese_forced):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese_forced):
                     logging.debug("BAZARR external subtitles detected: " + "zh:forced")
                     actual_subtitles.append(
                         [str("zh:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in traditional_chinese):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese):
                     logging.debug("BAZARR external subtitles detected: " + "zt")
                     actual_subtitles.append(
                         [str("zt"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in traditional_chinese_forced):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese_forced):
                     logging.debug("BAZARR external subtitles detected: " + "zt:forced")
                     actual_subtitles.append(
                         [str("zt:forced"), path_mappings.path_replace_reverse(subtitle_path)])
@@ -196,16 +196,16 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in simplified_chinese):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese):
                     logging.debug("BAZARR external subtitles detected: " + "zh")
                     actual_subtitles.append([str("zh"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in simplified_chinese_forced):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese_forced):
                     logging.debug("BAZARR external subtitles detected: " + "zh:forced")
                     actual_subtitles.append([str("zh:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in traditional_chinese):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese):
                     logging.debug("BAZARR external subtitles detected: " + "zt")
                     actual_subtitles.append([str("zt"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-5:] for ext in traditional_chinese_forced):
+                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese_forced):
                     logging.debug("BAZARR external subtitles detected: " + "zt:forced")
                     actual_subtitles.append([str("zt:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif not language:
