@@ -20,10 +20,15 @@ class EmbeddedSubsReader:
             api.initialize({'provider': 'ffmpeg', 'ffmpeg': self.ffprobe})
             data = api.know(file)
 
+            traditional_chinese = ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"]
+
             if 'subtitle' in data:
                 for detected_language in data['subtitle']:
                     if 'language' in detected_language:
                         language = detected_language['language'].alpha3
+                        if language == 'zho' and 'name' in detected_language:
+                            if any (ext in (detected_language['name'].lower()) for ext in traditional_chinese):
+                                language = 'zht'
                         forced = detected_language['forced'] if 'forced' in detected_language else False
                         hearing_impaired = detected_language['hearing_impaired'] if 'hearing_impaired' in \
                                                                                     detected_language else False
