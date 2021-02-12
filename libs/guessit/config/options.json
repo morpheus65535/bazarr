@@ -146,12 +146,6 @@
         "MX": [
           "Latinoamérica",
           "latin america"
-        ],
-        "CN": [
-           "国产",
-           "國産",
-           "大陆",
-           "大陸"
         ]
       }
     },
@@ -174,8 +168,7 @@
         "ex",
         "ep",
         "e",
-        "x",
-        "第"
+        "x"
       ],
       "range_separators": [
         "-",
@@ -199,8 +192,7 @@
         "temp",
         "temporada",
         "temporadas",
-        "stagione",
-        "季"
+        "stagione"
       ],
       "episode_words": [
         "episode",
@@ -210,21 +202,14 @@
         "episodio",
         "episodios",
         "capitulo",
-        "capitulos",
-        "集",
-        "话",
-        "話",
-        "完"
+        "capitulos"
       ],
       "of_words": [
         "of",
         "sur"
       ],
       "all_words": [
-        "All",
-        "合集",
-        "打包",
-        "全集"
+        "All"
       ]
     },
     "language": {
@@ -276,18 +261,7 @@
           "ua"
         ],
         "zho": [
-          "cn",
-          "中文"
-        ],
-        "zho_CN": [
-          "simplified chinese",
-          "简",
-          "字幕"
-        ],
-        "zho_HK": [
-          "traditional chinese",
-          "繁",
-          "國語"
+          "cn"
         ],
         "jpn": [
           "jp"
@@ -297,11 +271,7 @@
         ],
         "mul": [
           "multi",
-          "dl",
-          "双语",
-          "雙語",
-          "国语言",
-          "國語言"
+          "dl"
         ]
       },
       "subtitle_affixes": [
@@ -335,25 +305,18 @@
       "subtitle_suffixes": [
         "subforced",
         "fansub",
-        "hardsub",
-        "字幕"
+        "hardsub"
       ],
       "language_affixes": [
         "dublado",
         "dubbed",
-        "dub",
-        "双语",
-        "多国",
-        "雙語",
-        "多國"
+        "dub"
       ],
       "language_prefixes": [
         "true"
       ],
       "language_suffixes": [
-        "audio",
-        "音轨",
-        "音軌"
+        "audio"
       ],
       "weak_affixes": [
         "v",
