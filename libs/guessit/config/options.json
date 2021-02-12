@@ -338,7 +338,7 @@
         "pour",
         "rip"
       ],
-      "ignored_seps": "[]{}()【】"
+      "ignored_seps": "[]{}()"
     },
     "screen_size": {
       "frame_rates": [
