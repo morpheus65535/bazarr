@@ -322,8 +322,6 @@ class TestLanguage(TestCase, _Py26FixTestCase):
         self.assertEqual(hash(Language('fra')), hash('fr'))
         self.assertEqual(hash(Language('ace')), hash('ace'))
         self.assertEqual(hash(Language('por', 'BR')), hash('pt-BR'))
-        self.assertEqual(hash(Language('zho', 'CN')), hash('zh-CN'))
-        self.assertEqual(hash(Language('zho', 'TW')), hash('zh-TW'))
         self.assertEqual(hash(Language('srp', script='Cyrl')), hash('sr-Cyrl'))
         self.assertEqual(hash(Language('eng', 'US', 'Latn')), hash('en-US-Latn'))
 
