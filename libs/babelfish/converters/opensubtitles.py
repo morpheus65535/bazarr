@@ -14,8 +14,8 @@ class OpenSubtitlesConverter(LanguageReverseConverter):
     def __init__(self):
         self.alpha3b_converter = language_converters['alpha3b']
         self.alpha2_converter = language_converters['alpha2']
-        self.to_opensubtitles = {('por', 'BR'): 'pob',  ('chi', None, 'Hant'): 'zht', ('gre', None): 'ell', ('srp', None): 'scc', ('srp', 'ME'): 'mne'}
-        self.from_opensubtitles = CaseInsensitiveDict({'pob': ('por', 'BR'), 'zht': ('zho', None ,'Hant'), 'pb': ('por', 'BR'), 'ell': ('ell', None),
+        self.to_opensubtitles = {('por', 'BR'): 'pob', ('gre', None): 'ell', ('srp', None): 'scc', ('srp', 'ME'): 'mne'}
+        self.from_opensubtitles = CaseInsensitiveDict({'pob': ('por', 'BR'), 'pb': ('por', 'BR'), 'ell': ('ell', None),
                                                        'scc': ('srp', None), 'mne': ('srp', 'ME')})
         self.codes = (self.alpha2_converter.codes | self.alpha3b_converter.codes | set(self.from_opensubtitles.keys()))
 
