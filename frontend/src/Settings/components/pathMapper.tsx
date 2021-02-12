@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize, isArray } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import { FilesApi } from "../../apis";
 import { ActionIcon, BasicTable, FileBrowser } from "../../components";
 import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
@@ -66,13 +66,13 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     }
   }, [type]);
 
-  const updateCell = useCallback(
-    (idx: number, item?: PathMappingItem) => {
+  const updateCell = useCallback<TableUpdater<PathMappingItem>>(
+    (row, item?: PathMappingItem) => {
       const newItems = [...data];
       if (item) {
-        newItems[idx] = item;
+        newItems[row.index] = item;
       } else {
-        newItems.splice(idx, 1);
+        newItems.splice(row.index, 1);
       }
       updateRow(newItems);
     },
@@ -86,12 +86,13 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         accessor: "from",
         Cell: ({ value, row, update }) => (
           <FileBrowser
+            drop="up"
             defaultValue={value}
             load={request}
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.from = path;
-              update && update(row.index, newItem);
+              update && update(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -108,12 +109,13 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         accessor: "to",
         Cell: ({ value, row, update }) => (
           <FileBrowser
+            drop="up"
             defaultValue={value}
             load={(path) => FilesApi.bazarr(path)}
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.to = path;
-              update && update(row.index, newItem);
+              update && update(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -125,7 +127,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           <ActionIcon
             icon={faTrash}
             onClick={() => {
-              update && update(row.index);
+              update && update(row);
             }}
           ></ActionIcon>
         ),

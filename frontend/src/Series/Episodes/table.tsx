@@ -6,10 +6,10 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { connect } from "react-redux";
-import { Column, TableOptions } from "react-table";
+import { Column, TableOptions, TableUpdater } from "react-table";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
 import { ProvidersApi } from "../../apis";
 import {
@@ -127,24 +127,25 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         className: "d-flex flex-nowrap",
-        Cell: (row) => {
-          const episode = row.row.original;
+        Cell: ({ row, update }) => {
           return (
             <ButtonGroup>
               <ActionIcon
                 icon={faUser}
-                onClick={() => showModal<Episode>("manual-search", episode)}
+                onClick={() => {
+                  update && update(row, "manual-search");
+                }}
               ></ActionIcon>
               <ActionIcon
                 icon={faHistory}
                 onClick={() => {
-                  showModal("history", episode);
+                  update && update(row, "history");
                 }}
               ></ActionIcon>
               <ActionIcon
                 icon={faBriefcase}
                 onClick={() => {
-                  showModal("tools", episode);
+                  update && update(row, "tools");
                 }}
               ></ActionIcon>
             </ButtonGroup>
@@ -152,6 +153,13 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         },
       },
     ],
+    []
+  );
+
+  const updateRow = useCallback<TableUpdater<Episode>>(
+    (row, modalKey: string) => {
+      showModal(modalKey, row.original);
+    },
     [showModal]
   );
 
@@ -165,6 +173,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
     return {
       columns,
       data: episodes,
+      update: updateRow,
       initialState: {
         sortBy: [
           { id: "season", desc: true },
@@ -176,12 +185,12 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         },
       },
     };
-  }, [episodes, columns, maxSeason]);
+  }, [episodes, columns, maxSeason, updateRow]);
 
   return (
     <React.Fragment>
       <AsyncStateOverlay state={episodeList} exist={(item) => item.has(id)}>
-        {(data) => (
+        {() => (
           <GroupTable
             emptyText="No Episode Found For This Series"
             {...options}

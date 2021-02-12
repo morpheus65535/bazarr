@@ -8,7 +8,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 import {
@@ -46,6 +46,13 @@ const Table: FunctionComponent<Props> = (props) => {
       return null;
     },
     [profiles]
+  );
+
+  const updateRow = useCallback<TableUpdater<Series>>(
+    (row, modalKey: string) => {
+      showModal(modalKey, row.original);
+    },
+    [showModal]
   );
 
   const columns: Column<Series>[] = useMemo<Column<Series>[]>(
@@ -132,17 +139,17 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "sonarrSeriesId",
-        Cell: (row) => (
+        Cell: ({ row, update }) => (
           <ActionBadge
             icon={faWrench}
             onClick={(e) => {
-              showModal("edit", row.row.original);
+              update && update(row, "edit");
             }}
           ></ActionBadge>
         ),
       },
     ],
-    [getProfile, showModal]
+    [getProfile]
   );
 
   return (
@@ -153,6 +160,7 @@ const Table: FunctionComponent<Props> = (props) => {
             emptyText="No Series Found"
             columns={columns}
             data={data}
+            update={updateRow}
           ></BasicTable>
           <ItemEditorModal
             modalKey="edit"

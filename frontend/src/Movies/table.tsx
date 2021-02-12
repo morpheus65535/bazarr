@@ -10,7 +10,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import { movieUpdateInfoAll } from "../@redux/actions";
 import { MoviesApi } from "../apis";
 import {
@@ -48,6 +48,13 @@ const Table: FunctionComponent<Props> = (props) => {
       return undefined;
     },
     [profiles]
+  );
+
+  const updateRow = useCallback<TableUpdater<Movie>>(
+    (row, modalKey: string) => {
+      showModal(modalKey, row.original);
+    },
+    [showModal]
   );
 
   const columns: Column<Movie>[] = useMemo<Column<Movie>[]>(
@@ -124,15 +131,15 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "radarrId",
-        Cell: (row) => (
+        Cell: ({ row, update }) => (
           <ActionBadge
             icon={faWrench}
-            onClick={() => showModal("edit", row.row.original)}
+            onClick={() => update && update(row, "edit")}
           ></ActionBadge>
         ),
       },
     ],
-    [getProfile, showModal]
+    [getProfile]
   );
 
   return (
@@ -143,6 +150,7 @@ const Table: FunctionComponent<Props> = (props) => {
             emptyText="No Movies Found"
             columns={columns}
             data={data}
+            update={updateRow}
           ></BasicTable>
         )}
       </AsyncStateOverlay>

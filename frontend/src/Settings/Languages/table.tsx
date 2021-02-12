@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import { useLanguagesProfile } from ".";
 import { ActionIcon, BasicTable, useShowModal } from "../../components";
 import { useUpdate } from "../components";
@@ -53,17 +53,17 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const removeProfile = useCallback(
-    (id: number) => {
-      const list = [...profiles];
-      const idx = list.findIndex((v) => v.profileId === id);
-
-      if (idx !== -1) {
-        list.splice(idx, 1);
+  const updateRow = useCallback<TableUpdater<LanguagesProfile>>(
+    (row, item?: LanguagesProfile) => {
+      if (item) {
+        showModal("profile", item);
+      } else {
+        const list = [...profiles];
+        list.splice(row.index, 1);
         submitProfiles(list);
       }
     },
-    [profiles, submitProfiles]
+    [submitProfiles, showModal, profiles]
   );
 
   const columns = useMemo<Column<LanguagesProfile>[]>(
@@ -99,27 +99,27 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: (row) => {
-          const profile = row.row.original;
+        Cell: ({ row, update }) => {
+          const profile = row.original;
 
           return (
             <ButtonGroup>
               <ActionIcon
                 icon={faWrench}
                 onClick={() => {
-                  showModal("profile", profile);
+                  update && update(row, profile);
                 }}
               ></ActionIcon>
               <ActionIcon
                 icon={faTrash}
-                onClick={() => removeProfile(profile.profileId)}
+                onClick={() => update && update(row)}
               ></ActionIcon>
             </ButtonGroup>
           );
         },
       },
     ],
-    [showModal, removeProfile]
+    []
   );
 
   return (
@@ -128,6 +128,7 @@ const Table: FunctionComponent = () => {
         showPageControl={false}
         columns={columns}
         data={profiles}
+        update={updateRow}
       ></BasicTable>
       <Button
         block

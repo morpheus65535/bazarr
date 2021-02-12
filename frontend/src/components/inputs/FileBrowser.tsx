@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Dropdown, Form, Spinner } from "react-bootstrap";
+import { Dropdown, DropdownProps, Form, Spinner } from "react-bootstrap";
 
 const backKey = "--back--";
 
@@ -33,12 +33,14 @@ interface Props {
   defaultValue?: string;
   load: (path: string) => Promise<FileTree[]>;
   onChange?: (path: string) => void;
+  drop?: DropdownProps["drop"];
 }
 
 export const FileBrowser: FunctionComponent<Props> = ({
   defaultValue,
   onChange,
   load,
+  drop,
 }) => {
   const [show, canShow] = useState(false);
   const [text, setText] = useState(defaultValue ?? "");
@@ -128,6 +130,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
   return (
     <Dropdown
       show={show}
+      drop={drop}
       onSelect={(key) => {
         if (!key) {
           return;

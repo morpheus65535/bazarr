@@ -44,8 +44,11 @@ import {
 declare module "react-table" {
   // take this file as-is, or comment out the sections that don't apply to your plugin configuration
 
-  // undefined item means we want to remove from table
-  type TableUpdater<T extends object> = (idx: number, item?: T) => void;
+  type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
+
+  interface CustomTableProps<D extends Record<string, unknown>> {
+    update?: TableUpdater<D>;
+  }
 
   export interface TableOptions<
     D extends Record<string, unknown>
@@ -57,9 +60,8 @@ declare module "react-table" {
       UseResizeColumnsOptions<D>,
       UseRowSelectOptions<D>,
       UseRowStateOptions<D>,
-      UseSortByOptions<D> {
-    update?: TableUpdater<D>;
-  }
+      UseSortByOptions<D>,
+      CustomTableProps<D> {}
 
   export interface Hooks<
     D extends Record<string, unknown> = Record<string, unknown>
@@ -78,9 +80,8 @@ declare module "react-table" {
       UsePaginationInstanceProps<D>,
       UseRowSelectInstanceProps<D>,
       UseRowStateInstanceProps<D>,
-      UseSortByInstanceProps<D> {
-    update?: TableUpdater<D>;
-  }
+      UseSortByInstanceProps<D>,
+      CustomTableProps<D> {}
 
   export interface TableState<
     D extends Record<string, unknown> = Record<string, unknown>

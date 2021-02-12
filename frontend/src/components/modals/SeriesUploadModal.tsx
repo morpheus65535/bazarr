@@ -15,7 +15,7 @@ import React, {
 } from "react";
 import { Button, Container, Form, InputGroup } from "react-bootstrap";
 import { connect } from "react-redux";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import {
   AsyncButton,
   BasicTable,
@@ -342,12 +342,12 @@ interface TableProps {
 const Table: FunctionComponent<TableProps> = (props) => {
   const { maxSeason, maxEpisode, data, update, uploading } = props;
 
-  const updateItem = useCallback(
-    (idx: number, info?: SubtitleInfo) => {
+  const updateItem = useCallback<TableUpdater<SubtitleInfo>>(
+    (row, info?: SubtitleInfo) => {
       if (info) {
-        data[idx] = info;
+        data[row.index] = info;
       } else {
-        data.splice(idx, 1);
+        data.splice(row.index, 1);
       }
       update(data);
     },
@@ -447,7 +447,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== season) {
                     info.season = v;
-                    update && update(row.index, info);
+                    update && update(row, info);
                   }
                 }}
               ></Form.Control>
@@ -463,7 +463,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== episode) {
                     info.episode = v;
-                    update && update(row.index, info);
+                    update && update(row, info);
                   }
                 }}
               ></Form.Control>
@@ -481,7 +481,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
               variant="light"
               disabled={info.state === SubtitleState.update || uploading}
               onClick={() => {
-                update && update(row.index);
+                update && update(row);
               }}
             >
               <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
