@@ -171,8 +171,8 @@ def store_subtitles_movie(original_path, reversed_path):
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         simplified_chinese = [".chs", ".sc", ".zhs", ".hans", ".gb", u"简", u"双语"]
         simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", ".hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
-        traditional_chinese = [".cht", ".tc", ".zht", ".hant", ".big5", u"繁", u"雙語"]
-        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced",".hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced"]
+        traditional_chinese = [".cht", ".tc", ".zht", ".hant", ".big5", u"繁", u"雙語", "zh-tw"]
+        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced",".hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
         try:
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
