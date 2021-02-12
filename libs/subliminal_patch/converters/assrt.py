@@ -5,12 +5,12 @@ from subliminal.exceptions import ConfigurationError
 
 class AssrtConverter(LanguageReverseConverter):
     def __init__(self):
-        self.from_assrt = { u'简体': ('zho', None, 'Hans'), u'繁体': ('zho', None, 'Hant'),
-                            u'簡體': ('zho', None, 'Hans'), u'繁體': ('zho', None, 'Hant'),
+        self.from_assrt = { u'简体': ('zho', 'CN', None), u'繁体': ('zho', 'TW', None),
+                            u'簡體': ('zho', 'CN', None), u'繁體': ('zho', 'TW', None),
                             u'英文': ('eng',),
-                            u'chs': ('zho', None, 'Hans'), u'cht': ('zho', None, 'Hant'),
-                            u'chn': ('zho', None, 'Hans'), u'twn': ('zho', None, 'Hant')}
-        self.to_assrt = { ('zho', None, 'Hans'): u'chs', ('zho', None, 'Hant'): u'cht',
+                            u'chs': ('zho', 'CN', None), u'cht': ('zho', 'TW', None),
+                            u'chn': ('zho', 'CN', None), u'twn': ('zho', 'TW', None)}
+        self.to_assrt = { ('zho', 'CN', None): u'chs', ('zho', 'TW', None): u'cht',
                          ('eng', None, None) : u'eng', ('zho', None, None): u'chs'}
         self.codes = set(self.from_assrt.keys())
 

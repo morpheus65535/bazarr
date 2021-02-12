@@ -136,7 +136,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             if hi == "force HI":
                 lang_obj = Language.rebuild(lang_obj, hi=True)
         elif l == 'zht':
-            lang_obj = Language('zho', 'HK')
+            lang_obj = Language('zho', 'TW')
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
             if hi == "force HI":
@@ -332,7 +332,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
         elif lang == 'zht':
-            lang_obj = Language('zho', 'HK')
+            lang_obj = Language('zho', 'TW')
         else:
             lang_obj = Language(lang)
 
@@ -644,7 +644,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     elif language == 'zht':
-        lang_obj = Language('zho', 'HK')
+        lang_obj = Language('zho', 'TW')
     else:
         lang_obj = Language(language)
 

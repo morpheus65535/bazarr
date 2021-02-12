@@ -76,7 +76,7 @@ def get_language_set():
         if lang['code3'] == 'pob':
             language_set.add(Language('por', 'BR'))
         elif lang['code3'] == 'zht':
-            language_set.add(Language('zho', 'HK'))
+            language_set.add(Language('zho', 'TW'))
         else:
             language_set.add(Language(lang['code3']))
     
