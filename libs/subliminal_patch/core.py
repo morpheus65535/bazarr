@@ -636,6 +636,13 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             hi_tag = ["hi", "cc", "sdh"]
             hi = any(i for i in hi_tag if i in adv_tag)
 
+        #add simplified/traditional chinese detection
+        simplified_chinese = ["chs", "sc", "zhs", "hans", "gb", u"简", u"双语"]
+        traditional_chinese = ["cht", "tc", "zht", "hant", "big5", u"繁", u"雙語"]
+        FULL_LANGUAGE_LIST.extend(simplified_chinese)
+        FULL_LANGUAGE_LIST.extend(traditional_chinese)
+        p_root = p_root.replace('zh-TW', 'zht')
+
         # remove possible language code for matching
         p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub(
             lambda m: "" if str(m.group(1)).lower() in FULL_LANGUAGE_LIST else m.group(0), p_root)
@@ -655,14 +662,24 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         try:
             language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
             try:
-                language = Language.fromietf(language_code)
+                language = Language.fromietf(language_code)      
                 language.forced = forced
                 language.hi = hi
             except (ValueError, LanguageReverseError):
-                logger.error('Cannot parse language code %r', language_code)
-                language_code = None
+                #add simplified/traditional chinese detection
+                if any(ext in str(language_code) for ext in simplified_chinese):
+                    language = Language.fromietf('zh')
+                    language.forced = forced
+                    language.hi = hi
+                elif any(ext in str(language_code) for ext in traditional_chinese):
+                    language = Language.fromietf('zh') 
+                    language.forced = forced
+                    language.hi = hi
+                else:
+                    logger.error('Cannot parse language code %r', language_code)
+                    language_code = None
         except IndexError:
-            language_code = None
+                language_code = None
 
         if not language and not language_code and only_one:
             language = Language.rebuild(list(languages)[0], forced=forced, hi=hi)
