@@ -11,6 +11,7 @@ import Radarr from "./Radarr";
 import Schedular from "./Schedular";
 import Sonarr from "./Sonarr";
 import Subtitles from "./Subtitles";
+import UI from "./UI";
 
 export const SettingsContext = React.createContext<SystemSettings | undefined>(
   undefined
@@ -39,6 +40,9 @@ const Router: FunctionComponent<Props> = ({ update, settings }) => {
       <Switch>
         <Route exact path="/settings/general">
           <General></General>
+        </Route>
+        <Route exact path="/settings/ui">
+          <UI></UI>
         </Route>
         <Route exact path="/settings/sonarr">
           <Sonarr></Sonarr>

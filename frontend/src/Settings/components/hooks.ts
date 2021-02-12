@@ -1,9 +1,14 @@
 import { isArray, isEqual } from "lodash";
 import { useCallback, useMemo } from "react";
+import { useStore } from "react-redux";
 import { useSettings, useStaged, useUpdate } from "./provider";
 
 type ValidateFuncType<T> = (v: any) => v is T;
-type OverrideFuncType<T> = (settings: SystemSettings) => T;
+
+export type OverrideFuncType<T> = (
+  settings: SystemSettings,
+  store: StoreState
+) => T;
 
 export function useExtract<T>(
   key: string,
@@ -11,6 +16,8 @@ export function useExtract<T>(
   override?: OverrideFuncType<T>
 ): Readonly<T | undefined> {
   const settings = useSettings();
+
+  const store = useStore<StoreState>();
 
   const extractValue = useMemo(() => {
     let value: T | undefined = undefined;
@@ -37,7 +44,8 @@ export function useExtract<T>(
   }, [key, settings, validate]);
 
   if (override) {
-    return override(settings);
+    // TODO: Temporarily override
+    return override(settings, store.getState());
   } else {
     return extractValue;
   }

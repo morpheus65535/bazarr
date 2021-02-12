@@ -15,6 +15,7 @@ interface StoreState {
 interface SiteState {
   initialized: boolean;
   auth: boolean;
+  pageSize: number;
 }
 
 interface BadgeState {

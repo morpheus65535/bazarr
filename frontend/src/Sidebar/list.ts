@@ -98,6 +98,10 @@ export const SidebarList: SidebarDefinition[] = [
         name: "Schedular",
         link: "/settings/schedular",
       },
+      {
+        name: "UI",
+        link: "/settings/ui",
+      },
     ],
   },
   {

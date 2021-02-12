@@ -3,13 +3,17 @@ import React, {
   FunctionComponent,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { Prompt } from "react-router";
-import { systemUpdateSettingsAll } from "../../@redux/actions";
+import {
+  siteSaveLocalstorage,
+  systemUpdateSettingsAll,
+} from "../../@redux/actions";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
 import {
@@ -63,18 +67,21 @@ function beforeSubmit(settings: LooseObject) {
   }
 }
 
+type SettingDispatch = Record<string, (settings: LooseObject) => void>;
+
 interface Props {
   title: string;
   update: () => void;
+  updateLocal: (settings: LooseObject) => void;
   children: JSX.Element | JSX.Element[];
 }
 
 const SettingsProvider: FunctionComponent<Props> = (props) => {
-  const { children, title, update } = props;
+  const { children, title, update, updateLocal } = props;
 
   const [stagedChange, setChange] = useState<LooseObject>({});
-
   const [updating, setUpdating] = useState(false);
+  const [dispatch, setDispatch] = useState<SettingDispatch>({});
 
   const updateChange = useCallback<UpdateFunctionType>(
     (v: any, k?: string) => {
@@ -92,17 +99,56 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     [stagedChange]
   );
 
-  const submit = useCallback(() => {
-    const newSettings = { ...stagedChange };
-    beforeSubmit(newSettings);
-    setUpdating(true);
-    console.log("submitting settings", newSettings);
-    SystemApi.setSettings(newSettings).finally(() => {
-      update();
+  const saveSettings = useCallback(
+    (settings: LooseObject) => {
+      beforeSubmit(settings);
+      setUpdating(true);
+      console.log("submitting settings", settings);
+      SystemApi.setSettings(settings).finally(() => {
+        update();
+        setChange({});
+        setUpdating(false);
+      });
+    },
+    [update]
+  );
+
+  const saveLocalStorage = useCallback(
+    (settings: LooseObject) => {
+      updateLocal(settings);
       setChange({});
-      setUpdating(false);
+    },
+    [updateLocal]
+  );
+
+  useEffect(() => {
+    // Update dispatch
+    const newDispatch: SettingDispatch = {};
+    newDispatch["settings"] = saveSettings;
+    newDispatch["storage"] = saveLocalStorage;
+    setDispatch(newDispatch);
+  }, [saveSettings, saveLocalStorage]);
+
+  const submit = useCallback(() => {
+    const maps = new Map<string, LooseObject>();
+
+    // Separate settings by key
+    for (const key in stagedChange) {
+      const keys = key.split("-");
+      if (maps.has(keys[0])) {
+        const object = maps.get(keys[0])!;
+        object[key] = stagedChange[key];
+      } else {
+        maps.set(keys[0], { [key]: stagedChange[key] });
+      }
+    }
+
+    maps.forEach((v, k) => {
+      if (k in dispatch) {
+        dispatch[k](v);
+      }
     });
-  }, [stagedChange, update]);
+  }, [stagedChange, dispatch]);
 
   return (
     <Container fluid>
@@ -134,6 +180,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(undefined, { update: systemUpdateSettingsAll })(
-  SettingsProvider
-);
+export default connect(undefined, {
+  update: systemUpdateSettingsAll,
+  updateLocal: siteSaveLocalstorage,
+})(SettingsProvider);

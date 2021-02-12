@@ -15,6 +15,7 @@ import {
   SliderProps as CSliderProps,
 } from "../../components";
 import { isReactText, useOnShow } from "../../utilites";
+import { OverrideFuncType } from "./hooks";
 
 export const Message: FunctionComponent<{
   type?: "warning" | "info";
@@ -28,7 +29,7 @@ export const Message: FunctionComponent<{
 export interface BasicInput<T> {
   disabled?: boolean;
   settingKey: string;
-  override?: (v: SystemSettings) => T;
+  override?: OverrideFuncType<T>;
   beforeStaged?: (v: T) => any;
 }
 
@@ -124,7 +125,11 @@ export function Selector<
 
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const defaultValue = useLatest<T>(settingKey, selectorValidator);
+  const defaultValue = useLatest<SelectorValueType<T, M>>(
+    settingKey,
+    selectorValidator,
+    override
+  );
 
   useOnShow(() => {
     if (typeof defaultValue === "string") {

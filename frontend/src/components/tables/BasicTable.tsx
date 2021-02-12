@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Col, Container, Pagination, Row, Table } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import { TableOptions, usePagination, useTable } from "react-table";
 
 interface Props<T extends object = {}> extends TableOptions<T> {
@@ -27,7 +28,19 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   } = props;
 
   // Default Settings
-  options.autoResetPage = options.autoResetPage ?? false;
+  const site = useSelector<StoreState, SiteState>((s) => s.site);
+
+  if (options.initialState === undefined) {
+    options.initialState = {};
+  }
+
+  if (options.autoResetPage === undefined) {
+    options.autoResetPage = false;
+  }
+
+  if (options.initialState.pageSize === undefined) {
+    options.initialState.pageSize = site.pageSize;
+  }
 
   const instance = useTable(options, usePagination);
 
