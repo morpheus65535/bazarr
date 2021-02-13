@@ -647,7 +647,11 @@
 					},
 					{ data: null,
 						render: function ( data ) {
-							return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+							if (data.url) {
+                                return '<a href="' + data.url + '" target="_blank">' + data.provider + '</a>';
+                            } else {
+							    return data.provider;
+                            }
 						}
 					},
 					{ data: null,
