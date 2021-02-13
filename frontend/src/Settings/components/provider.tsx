@@ -124,6 +124,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   useEffect(() => {
     // Update dispatch
     const newDispatch: SettingDispatch = {};
+    newDispatch["languages"] = saveSettings;
     newDispatch["settings"] = saveSettings;
     newDispatch["storage"] = saveLocalStorage;
     setDispatch(newDispatch);
