@@ -169,22 +169,28 @@ def db_upgrade():
 
     if not lang_table_exist:
         series_default = []
-        for language in ast.literal_eval(settings.general.serie_default_language):
-            if settings.general.serie_default_forced == 'Both':
-                series_default.append([language, 'True', settings.general.serie_default_hi])
-                series_default.append([language, 'False', settings.general.serie_default_hi])
-            else:
-                series_default.append([language, settings.general.serie_default_forced,
-                                       settings.general.serie_default_hi])
+        try:
+            for language in ast.literal_eval(settings.general.serie_default_language):
+                if settings.general.serie_default_forced == 'Both':
+                    series_default.append([language, 'True', settings.general.serie_default_hi])
+                    series_default.append([language, 'False', settings.general.serie_default_hi])
+                else:
+                    series_default.append([language, settings.general.serie_default_forced,
+                                           settings.general.serie_default_hi])
+        except ValueError:
+            pass
 
         movies_default = []
-        for language in ast.literal_eval(settings.general.movie_default_language):
-            if settings.general.movie_default_forced == 'Both':
-                movies_default.append([language, 'True', settings.general.movie_default_hi])
-                movies_default.append([language, 'False', settings.general.movie_default_hi])
-            else:
-                movies_default.append([language, settings.general.movie_default_forced,
-                                       settings.general.movie_default_hi])
+        try:
+            for language in ast.literal_eval(settings.general.movie_default_language):
+                if settings.general.movie_default_forced == 'Both':
+                    movies_default.append([language, 'True', settings.general.movie_default_hi])
+                    movies_default.append([language, 'False', settings.general.movie_default_hi])
+                else:
+                    movies_default.append([language, settings.general.movie_default_forced,
+                                           settings.general.movie_default_hi])
+        except ValueError:
+            pass
 
         profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
                                               "FROM (SELECT languages, hearing_impaired, forced FROM table_shows "
