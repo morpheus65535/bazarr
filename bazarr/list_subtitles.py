@@ -545,10 +545,8 @@ def guess_external_subtitles(dest_folder, subtitles):
                     detected_language = guess_language(text)
                     #add simplified and traditional chinese detection
                     if detected_language == 'zh':
-                        simplified_chinese = [".chs", ".sc", ".zhs", ".hans", ".gb", u"简", u"双语"]
-                        if any(ext in str(subtitle_path).lower() for ext in simplified_chinese):
-                            detected_language == 'zh'
-                        else:
+                        traditional_chinese = [".cht", ".tc", ".traditional",".zh-tw", ".zht", "hant", "big5", u"繁", u"雙語"]
+                        if any(ext in (str(subtitle_path).lower())[:-16] for ext in traditional_chinese):
                             detected_language == 'zt'
                 except UnicodeDecodeError:
                     detector = Detector()

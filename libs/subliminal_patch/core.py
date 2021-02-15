@@ -637,8 +637,8 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             hi = any(i for i in hi_tag if i in adv_tag)
 
         #add simplified/traditional chinese detection
-        simplified_chinese = ["chs", "sc", "zhs", "hans", "gb", u"简", u"双语"]
-        traditional_chinese = ["cht", "tc", "zht", "hant", "big5", u"繁", u"雙語"]
+        simplified_chinese = ["chs", "sc", "zhs", "hans","zh-hans", "gb", "简", "简中", "简体", "简体中文", "中英双语", "中日双语","中法双语"]
+        traditional_chinese = ["cht", "tc", "zht", "hant","zh-hant", "big5", "繁", "繁中", "繁体", "繁體","繁体中文", "繁體中文", "正體中文", "中英雙語", "中日雙語","中法雙語"]
         FULL_LANGUAGE_LIST.extend(simplified_chinese)
         FULL_LANGUAGE_LIST.extend(traditional_chinese)
         p_root = p_root.replace('zh-TW', 'zht')
