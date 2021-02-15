@@ -376,9 +376,21 @@ a.link:hover, a.link:focus {
   padding-top: 0px; }
 
 .dt-buttons {
-  display: inline-block;
-  padding-top: 0;
-  margin-bottom: 0; }
+    display: inline-block;
+    padding-top: 0;
+    margin-bottom: 0;
+}
+
+.dt-buttons button:disabled {
+    cursor: default;
+    background: #ffffff;
+    border: 1px solid #727b84 !important;
+    color: #727b84 !important; }
+.dt-buttons button.disabled:hover {
+    background: #ffffff;
+    opacity: 0.7;
+    color: #727b84 !important;
+    border: 1px solid #727b84; }
 
 .tooltip {
   pointer-events: none; }
