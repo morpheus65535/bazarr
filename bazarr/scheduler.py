@@ -9,7 +9,7 @@ from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_m
 from utils import cache_maintenance
 from get_args import args
 if not args.no_update:
-    from check_update import check_and_apply_update, check_releases
+    from check_update import check_if_new_update, check_releases
 else:
     from check_update import check_releases
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -202,17 +202,15 @@ class Scheduler:
 
     def __update_bazarr_task(self):
         if not args.no_update:
-            task_name = 'Update Bazarr from source on Github'
-            if args.release_update:
-                task_name = 'Update Bazarr from release on Github'
+            task_name = 'Update Bazarr'
 
             if settings.general.getboolean('auto_update'):
                 self.aps_scheduler.add_job(
-                    check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                    check_if_new_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                     misfire_grace_time=15, id='update_bazarr', name=task_name, replace_existing=True)
             else:
                 self.aps_scheduler.add_job(
-                    check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name=task_name,
+                    check_if_new_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name=task_name,
                     replace_existing=True)
                 self.aps_scheduler.add_job(
                     check_releases, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15,
