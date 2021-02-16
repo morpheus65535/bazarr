@@ -17,7 +17,10 @@ def clean_libs():
 
 
 def set_libs():
+    # Bundled, unmodified dependencies. See libs/libs_requirements.txt
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
+    # Bundled, locally modified dependencies. See modified_libs/README.md
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../modified_libs/'))
 
 
 clean_libs()
