@@ -21,13 +21,36 @@ from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode, Movie
 from zipfile import ZipFile
 from rarfile import RarFile, is_rarfile
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from guessit import guessit
 
 
 logger = logging.getLogger(__name__)
 
 language_converters.register('supersubtitles = subliminal_patch.converters.supersubtitles:SuperSubtitlesConverter')
+
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Marvel's WandaVision": "WandaVision",
+                                           "Marvel's Daredevil": "Daredevil",
+                                           "Marvel's Luke Cage": "Luke Cage",
+                                           "Marvel's Iron Fist": "Iron Fist",
+                                           "Marvel's Jessica Jones": "Jessica Jones",
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow",
+                                           "Star Trek: The Next Generation": "Star Trek TNG",
+                                           }, True)
+
+
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {
+                                           }, True)
 
 
 class SuperSubtitlesSubtitle(Subtitle):
@@ -228,7 +251,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             except IndexError:
                 continue
 
-            result_title = result_title.strip().replace("�", "").replace(" ", ".")
+            result_title = fix_tv_naming(result_title).strip().replace("�", "").replace(" ", ".")
             if not result_title:
                 continue
 
@@ -398,7 +421,11 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             subs = self.query(title, languages, video=video)
             if subs:
                 for item in subs:
-                    if item.series in titles:
+                    if isinstance(video, Episode):
+                        fixed_title = fix_tv_naming(item.series)
+                    else:
+                        fixed_title = fix_movie_naming(item.series)
+                    if fixed_title in titles:
                         subtitles.append(item)
 
             time.sleep(self.multi_result_throttle)
