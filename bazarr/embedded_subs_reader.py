@@ -21,7 +21,7 @@ class EmbeddedSubsReader:
             data = api.know(file)
 
             traditional_chinese = ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"]
-            brazilian_portuguese = ["pt-br", "pob", "pb", "Brazilian", "Brasil"]
+            brazilian_portuguese = ["pt-br", "pob", "pb", "brazilian", "brasil"]
 
             if 'subtitle' in data:
                 for detected_language in data['subtitle']:
