@@ -14,6 +14,7 @@ complete or up-to-date.
 
 subliminal_patch
 subzero
+libfilebot
 
 ### subliminal_patch
 
@@ -23,6 +24,12 @@ Originally developed in the plex Subzero plugin
 (Add description of what it is etc)
 
 ### subzero
+
+(Add attribution here)
+
+(Add description here)
+
+### libfilebot
 
 (Add attribution here)
 
