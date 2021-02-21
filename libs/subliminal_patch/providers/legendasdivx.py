@@ -298,8 +298,8 @@ class LegendasdivxProvider(Provider):
             querytext = video.imdb_id if video.imdb_id else video.title
 
         if isinstance(video, Episode):
-            querytext = '"{} S{:02d}E{:02d}"'.format(video.series, video.season, video.episode)
-            querytext = quote(quote(querytext))
+            querytext = '{} S{:02d}E{:02d}'.format(video.series, video.season, video.episode)
+            querytext = quote(querytext.lower())
 
         # language query filter
         if not isinstance(languages, (tuple, list, set)):

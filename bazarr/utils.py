@@ -125,7 +125,7 @@ def get_binary(name):
             name = "%s.exe" % name
         elif platform.system() == "Darwin":  # MacOSX
             system = 'MacOSX'
-        if name == 'ffprobe':
+        if name in ['ffprobe', 'ffprobe.exe']:
             dir_name = 'ffmpeg'
 
         exe_dir = os.path.abspath(os.path.join(binaries_dir, system, machine, dir_name))
@@ -327,6 +327,8 @@ def subtitles_apply_mods(language, subtitle_path, mods):
     language = alpha3_from_alpha2(language)
     if language == 'pob':
         lang_obj = Language('por', 'BR')
+    elif language == 'zht':
+        lang_obj = Language('zho', 'TW')
     else:
         lang_obj = Language(language)
 

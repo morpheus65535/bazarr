@@ -75,15 +75,15 @@ def test_get_matches_movie_name(movies):
 
 @pytest.mark.converter
 def test_converter_convert_alpha3():
-    assert language_converters['assrt'].convert('zho', None, 'Hans') == 'chs'
-    assert language_converters['assrt'].convert('zho', None, 'Hant') == 'cht'
+    assert language_converters['assrt'].convert('zho', None, 'Hans') == 'chi'
+    assert language_converters['assrt'].convert('zho', None, 'Hant') == 'zht'
     assert language_converters['assrt'].convert('eng') == 'eng'
 
 
 @pytest.mark.converter
 def test_converter_reverse():
-    assert language_converters['assrt'].reverse('chs') == ('zho', None, 'Hans')
-    assert language_converters['assrt'].reverse('cht') == ('zho', None, 'Hant')
+    assert language_converters['assrt'].reverse('chi') == ('zho', None, 'Hans')
+    assert language_converters['assrt'].reverse('zht') == ('zho', None, 'Hant')
     assert language_converters['assrt'].reverse(u'簡體') == ('zho', None, 'Hans')
     assert language_converters['assrt'].reverse(u'繁體') == ('zho', None, 'Hant')
     assert language_converters['assrt'].reverse(u'简体') == ('zho', None, 'Hans')

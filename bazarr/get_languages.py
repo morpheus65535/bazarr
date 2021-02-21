@@ -19,6 +19,9 @@ def load_language_in_db():
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
                      "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
 
+    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
+                     "VALUES ('zht', 'zt', 'Chinese Traditional')")
+
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
@@ -32,6 +35,9 @@ def load_language_in_db():
 
 def create_languages_dict():
     global languages_dict
+    #replace chinese by chinese simplified
+    database.execute("UPDATE table_settings_languages SET name = 'Chinese Simplified' WHERE code3 = 'zho'")
+    
     languages_dict = database.execute("SELECT name, code2, code3, code3b FROM table_settings_languages")
 
 
@@ -69,6 +75,8 @@ def get_language_set():
     for lang in languages:
         if lang['code3'] == 'pob':
             language_set.add(Language('por', 'BR'))
+        elif lang['code3'] == 'zht':
+            language_set.add(Language('zho', 'TW'))
         else:
             language_set.add(Language(lang['code3']))
     
