@@ -9,14 +9,14 @@
 ## Branching ##
 ### Basic rules ###
 - `master` contains only stable releases (which have been merged to `master`) and is intended for end-users.
-- `develop` is the target for integration and is not intended for end-users.
-- `feature` is a temporary feature branch based on `develop`.
+- `development` is the target for integration and is not intended for end-users.
+- `feature` is a temporary feature branch based on `development`.
 
 ### Conditions ###
-- `master` is not merged back to `develop`.
-- `develop` is not re-based on `master`.
-- all `feature` branches branch from `develop` only.
-- Bugfixes created specifically for a feature branch are done there (because they are specific, they're not cherry-picked to develop).
+- `master` is not merged back to `development`.
+- `development` is not re-based on `master`.
+- all `feature` branches branch from `development` only.
+- Bugfixes created specifically for a feature branch are done there (because they are specific, they're not cherry-picked to `development`).
 - We will not release a patch (0.0.x) if a newer minor (0.x.0) has already been released.
 
 
