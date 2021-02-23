@@ -194,7 +194,10 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
             response = self.session.get(url, params={"id": aid}, timeout=10)
             response.raise_for_status()
             content = response.json()
-            if not content or not content.get("releases"):
+            if not content:
+                continue
+
+            if not content.get("releases"):
                 continue
 
             imdb_id = year = None
