@@ -68,8 +68,7 @@ def download_release(url):
     except Exception as e:
         logging.exception('BAZARR unable to download new release')
     else:
-        from server import webserver
-        webserver.restart()
+        apply_update()
 
 
 def apply_update():
