@@ -2,7 +2,7 @@
 
 import os
 
-bazarr_version = None
+bazarr_version = ''
 
 version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
 if os.path.isfile(version_file):
@@ -41,7 +41,7 @@ from server import app, webserver
 from functools import wraps
 
 # Install downloaded update
-if bazarr_version:
+if bazarr_version != '':
     apply_update()
 check_releases()
 
@@ -363,7 +363,7 @@ def settingsscheduler():
 @app.route('/check_update')
 @login_required
 def check_update():
-    if not args.no_update and bazarr_version:
+    if not args.no_update and bazarr_version != '':
         check_if_new_update()
 
     return '', 200
