@@ -1,7 +1,7 @@
 # How to Contribute #
 
 ## Tools required ##
-- Python 3.7.x or 3.8.x (3.8.x is highly recommanded and 3.9 is proscribed).
+- Python 3.7.x or 3.8.x (3.8.x is highly recommended and 3.9 is proscribed).
 - Pycharm or Visual Studio code IDE.
 - Git.
 - UI testing must be done using Chrome latest version.
