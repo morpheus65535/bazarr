@@ -62,8 +62,14 @@ def download_release(url):
     update_dir = os.path.join(args.config_dir, 'update')
     os.makedirs(update_dir, exist_ok=True)
     r = requests.get(url, allow_redirects=True)
-    with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
-        f.write(r.content)
+    try:
+        with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
+            f.write(r.content)
+    except Exception as e:
+        logging.exception('BAZARR unable to download new release')
+    else:
+        from server import webserver
+        webserver.restart()
 
 
 def apply_update():
