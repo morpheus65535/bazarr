@@ -324,7 +324,7 @@
             $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
 
             // Hide update_div if args.no-update
-            {% if args.no_update or args.release_update %}
+            {% if args.no_update %}
             $('#update_div').hide()
             {% endif %}
 

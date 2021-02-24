@@ -201,7 +201,7 @@ class Scheduler:
                     id='update_all_movies', name='Update all Movie Subtitles from disk', replace_existing=True)
 
     def __update_bazarr_task(self):
-        if not args.no_update:
+        if not args.no_update and os.environ["BAZARR_VERSION"] != '':
             task_name = 'Update Bazarr'
 
             if settings.general.getboolean('auto_update'):
