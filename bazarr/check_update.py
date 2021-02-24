@@ -16,7 +16,8 @@ def check_releases():
     releases = []
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases'
     try:
-        r = requests.get(url_releases, timeout=15)
+        logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
+        r = requests.get(url_releases, allow_redirects=True)
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
         logging.exception("Error trying to get releases from Github. Http error.")
@@ -35,6 +36,7 @@ def check_releases():
                              'download_link': release['zipball_url']})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
+        logging.debug('BAZARR saved {} releases to releases.txt'.format(len(r.json())))
 
 
 def check_if_new_update():
@@ -54,21 +56,36 @@ def check_if_new_update():
     if not args.no_update:
         release = next((item for item in data if item["prerelease"] == use_prerelease), None)
         if release:
+            logging.debug('BAZARR last release available is {}'.format(release['name']))
             if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0:
+                logging.debug('BAZARR newer release available and will be downloaded')
                 download_release(url=release['download_link'])
+            else:
+                logging.debug('BAZARR no newer release have been found')
+        else:
+            logging.debug('BAZARR no release found')
+    else:
+        logging.debug('BAZARR --no_update have been used as an argument')
 
 
 def download_release(url):
+    r = None
     update_dir = os.path.join(args.config_dir, 'update')
-    os.makedirs(update_dir, exist_ok=True)
-    r = requests.get(url, allow_redirects=True)
     try:
-        with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
-            f.write(r.content)
+        os.makedirs(update_dir, exist_ok=True)
     except Exception as e:
-        logging.exception('BAZARR unable to download new release')
+        logging.debug('BAZARR unable to create update directory {}'.format(update_dir))
     else:
-        apply_update()
+        logging.debug('BAZARR downloading release from Github: {}'.format(url))
+        r = requests.get(url, allow_redirects=True)
+    if r:
+        try:
+            with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
+                f.write(r.content)
+        except Exception as e:
+            logging.exception('BAZARR unable to download new release and save it to disk')
+        else:
+            apply_update()
 
 
 def apply_update():
@@ -78,6 +95,7 @@ def apply_update():
     bazarr_dir = os.path.dirname(os.path.dirname(__file__))
     if os.path.isdir(update_dir):
         if os.path.isfile(bazarr_zip):
+            logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
             try:
                 with ZipFile(bazarr_zip, 'r') as archive:
                     zip_root_directory = archive.namelist()[0]
@@ -94,6 +112,7 @@ def apply_update():
             else:
                 is_updated = True
             finally:
+                logging.debug('BAZARR now deleting release archive')
                 os.remove(bazarr_zip)
     else:
         return
@@ -104,7 +123,9 @@ def apply_update():
 
 def updated():
     if settings.general.getboolean('update_restart'):
+        logging.debug('BAZARR new release have been installed, now we restart')
         from server import webserver
         webserver.restart()
     else:
+        logging.debug('BAZARR new release have been installed but we\'ll wait to restart')
         database.execute("UPDATE system SET updated='1'")
