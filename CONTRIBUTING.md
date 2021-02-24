@@ -6,6 +6,9 @@
 - Git.
 - UI testing must be done using Chrome latest version.
 
+## Warning ##
+As we're using Git in the development process, you better disable automatic update of Bazarr in UI or you may get your changes overwritten. Alternatively, you can completely disable the update module by running Bazarr with `--no-update` command line argument.
+
 ## Branching ##
 ### Basic rules ###
 - `master` contains only stable releases (which have been merged to `master`) and is intended for end-users.
