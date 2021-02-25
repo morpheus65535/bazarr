@@ -47,8 +47,8 @@ check_releases()
 
 configure_proxy_func()
 
-# Reset restart required warning on start
-database.execute("UPDATE system SET configured='0', updated='0'")
+# Reset the updated once Bazarr have been restarted after an update
+database.execute("UPDATE system SET updated='0'")
 
 # Load languages in database
 load_language_in_db()
@@ -129,7 +129,13 @@ def login_page():
 
 @app.context_processor
 def template_variable_processor():
-    return dict(settings=settings, args=args)
+    updated = None
+    try:
+        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
+    except:
+        pass
+    finally:
+        return dict(settings=settings, args=args, updated=updated)
 
 
 def api_authorize():
