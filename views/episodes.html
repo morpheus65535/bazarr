@@ -61,6 +61,10 @@
             <div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
             <div class="align-bottom text-themecolor small text-center">Search</div>
         </button>
+        <button class="btn btn-outline" id="sync_button">
+                <div><i class="fa fa-play-circle align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+                <div class="align-bottom text-themecolor small text-center">Sync</div>
+        </button>
     </div>
 {% endblock bcleft %}
 
@@ -1057,6 +1061,30 @@
                 DONE: 3
             }
 
+            $('#sync_button').on('click', function (e) {
+                e.preventDefault();
+                const values = {
+                    language: 'eng',
+                    show: seriesDetails['sonarrSeriesId'],
+                    mediaType: 'series'
+                };
+                var cell = $(this).parent()
+                ;
+                $.ajax({
+                    url: "{{ url_for('api.syncallsubtitles') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        $('#sync_button').find("i").addClass('fa-spin');
+                    },
+                    complete: function () {
+                        $('#sync_button').find("i").removeClass('fa-spin');
+                    }
+                });
+
+            });
+
             $('#mass_upload_button').on('click', function (e) {
                 e.preventDefault();
 
@@ -1612,6 +1640,7 @@
                                 var tools = '';
 
                                 tools += '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title="Sync"><i class="far fa-play-circle"></i></a> ';
+                                tools += '<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + data.language.code3 + '" data-season="' + data.season + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season'  + '" title="Sync whole season"><i class="far fa-play-circle"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_HI" data-toggle="tooltip" data-placement="right" title="Remove HI-tags"><i class="fa fa-deaf"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_tags" data-toggle="tooltip" data-placement="right" title="Remove style tags"><i class="fa fa-code"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "OCR_fixes" data-toggle="tooltip" data-placement="right" title="OCR Fixes"><i class="fa fa-image"></i></a> ';
@@ -1659,6 +1688,31 @@
                         $('#episodeToolsModal').modal('hide');
                     }
                 });
+            });
+
+            $('#episode_tools_result').on('click', '.subtitles_sync_all', function (e) {
+               e.preventDefault();
+               var season =  $(this).attr("data-season");
+               const values = {
+                   language: $(this).attr("data-language"),
+                   show: seriesDetails['sonarrSeriesId'],
+                   season: season,
+                   mediaType: 'series'
+               };
+               var cell = $(this).parent();
+               $.ajax({
+                   url: "{{ url_for('api.syncallsubtitles') }}",
+                   type: "POST",
+                   dataType: "json",
+                   data: values,
+                   beforeSend: function () {
+                       $('#'+'sync_button_season').find("i").addClass('fa-spin');
+                   },
+                   complete: function () {
+                       $('#'+'sync_button_season').find("i").removeClass('fa-spin');
+                   }
+               });
+
             });
 
             $('#episode_tools_result').on('click', '.subtitles_mod', function (e) {
