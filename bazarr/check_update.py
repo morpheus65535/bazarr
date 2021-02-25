@@ -57,7 +57,15 @@ def check_if_new_update():
         release = next((item for item in data if item["prerelease"] == use_prerelease), None)
         if release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
-            if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0:
+
+            new_version = False
+            try:
+                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
+                    else False
+            except ValueError:
+                new_version = True
+
+            if new_version:
                 logging.debug('BAZARR newer release available and will be downloaded')
                 download_release(url=release['download_link'])
             else:
