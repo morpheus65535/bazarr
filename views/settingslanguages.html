@@ -326,7 +326,7 @@
                     }
                 ],
                 buttons: [{
-                    text: 'Add',
+                    text: 'Add',  className: 'btn btn-info text-white',
                     action: function () {
                         if ($('#add_languages_profiles').DataTable().rows().length) {
                             $('#add_languages_profiles').DataTable().clear();
@@ -386,7 +386,7 @@
                                 }
                             ],
                             buttons: [{
-                                text: 'Add',
+                                text: 'Add', className: 'btn btn-info text-white',
                                 action: function () {
                                     var language_id = 0;
                                     if (table_add.rows().data().toArray().length) {
@@ -411,7 +411,7 @@
                             },
                             {
                                 extend: 'selected',
-                                text: 'Delete',
+                                text: 'Delete', className: 'btn btn-info text-white',
                                 action: function () {
                                     table_add.row( { selected: true } ).remove().draw();
                                 }
@@ -422,7 +422,7 @@
                 },
                 {
                     extend: 'selected',
-                    text: 'Edit',
+                    text: 'Edit', className: 'btn btn-info text-white',
                     action: function () {
                         $('#edit_profile_name').val(table.row( { selected: true } ).data()['name']);
                         var items = $.parseJSON(table.row( { selected: true } ).data()['items']);
@@ -480,7 +480,7 @@
                                 }
                             ],
                             buttons: [{
-                                text: 'Add',
+                                text: 'Add', className: 'btn btn-info text-white',
                                 action: function () {
                                     var language_id = 0;
                                     if (table_edit.rows().data().toArray().length) {
@@ -505,7 +505,7 @@
                             },
                             {
                                 extend: 'selected',
-                                text: 'Delete',
+                                text: 'Delete', className: 'btn btn-info text-white',
                                 action: function () {
                                     table_edit.row( { selected: true } ).remove().draw();
                                 }
@@ -525,7 +525,7 @@
                 },
                 {
                     extend: 'selected',
-                    text: 'Delete',
+                    text: 'Delete', className: 'btn btn-info text-white',
                     action: function () {
                         table.row( { selected: true } ).remove().draw();
                         $('#settings_form').trigger('change');

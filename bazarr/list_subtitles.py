@@ -58,10 +58,12 @@ def store_subtitles(original_path, reversed_path):
 
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
-        simplified_chinese = [".chs", ".sc", ".zhs", ".hans", ".gb", u"简", u"双语"]
-        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", ".hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
-        traditional_chinese = [".cht", ".tc", ".zht", ".hant", ".big5", u"繁", u"雙語", "zh-tw"]
-        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced", ".hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
+        simplified_chinese_fuzzy = [u"简", u"双语"]
+        simplified_chinese = [".chs", ".sc", ".zhs",".zh-hans",".hans",".zh_hans",".zhhans",".gb",".simplified"]
+        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", "hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
+        traditional_chinese_fuzzy = [u"繁", u"雙語"]
+        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
+        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced", "hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
 
         try:
             dest_folder = get_subtitle_destination_folder()
@@ -89,7 +91,7 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese):
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(simplified_chinese)) or (str(subtitle_path).lower())[:-5] in simplified_chinese_fuzzy:
                     logging.debug("BAZARR external subtitles detected: " + "zh")
                     actual_subtitles.append(
                         [str("zh"), path_mappings.path_replace_reverse(subtitle_path)])
@@ -97,7 +99,7 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + "zh:forced")
                     actual_subtitles.append(
                         [str("zh:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese):
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
                     logging.debug("BAZARR external subtitles detected: " + "zt")
                     actual_subtitles.append(
                         [str("zt"), path_mappings.path_replace_reverse(subtitle_path)])
@@ -170,10 +172,12 @@ def store_subtitles_movie(original_path, reversed_path):
 
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
-        simplified_chinese = [".chs", ".sc", ".zhs", ".hans", ".gb", u"简", u"双语"]
-        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", ".hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
-        traditional_chinese = [".cht", ".tc", ".zht", ".hant", ".big5", u"繁", u"雙語", "zh-tw"]
-        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced",".hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
+        simplified_chinese_fuzzy = [u"简", u"双语"]
+        simplified_chinese = [".chs", ".sc", ".zhs",".zh-hans",".hans",".zh_hans",".zhhans",".gb",".simplified"]
+        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", "hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
+        traditional_chinese_fuzzy = [u"繁", u"雙語"]
+        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
+        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced", "hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
         try:
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -197,13 +201,13 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese):
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(simplified_chinese)) or (str(subtitle_path).lower())[:-5] in simplified_chinese_fuzzy:
                     logging.debug("BAZARR external subtitles detected: " + "zh")
                     actual_subtitles.append([str("zh"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese_forced):
                     logging.debug("BAZARR external subtitles detected: " + "zh:forced")
                     actual_subtitles.append([str("zh:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese):
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
                     logging.debug("BAZARR external subtitles detected: " + "zt")
                     actual_subtitles.append([str("zt"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese_forced):
@@ -545,10 +549,9 @@ def guess_external_subtitles(dest_folder, subtitles):
                     detected_language = guess_language(text)
                     #add simplified and traditional chinese detection
                     if detected_language == 'zh':
-                        simplified_chinese = [".chs", ".sc", ".zhs", ".hans", ".gb", u"简", u"双语"]
-                        if any(ext in str(subtitle_path).lower() for ext in simplified_chinese):
-                            detected_language == 'zh'
-                        else:
+                        traditional_chinese_fuzzy = [u"繁", u"雙語"]
+                        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
+                        if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
                             detected_language == 'zt'
                 except UnicodeDecodeError:
                     detector = Detector()

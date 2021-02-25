@@ -143,8 +143,8 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <h6>Episode path is: <span id="episode_path_span" class="badge badge-secondary"></span>
-                        <br>Scenename is: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
+                    <h6>Episode path: <span id="episode_path_span" class="badge badge-secondary"></span>
+                        <br>Scenename: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
                     <div class="container-fluid" style="padding:0px;">
                         <table id="search_result" class="table table-striped" style="width:100%">
                             <thead>
@@ -808,7 +808,11 @@
                 e.preventDefault();
                 $("#series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
                 $("#episode_path_span").html($(this).attr("data-episodePath"));
-                $("#episode_scenename_span").html($(this).attr("data-sceneName"));
+                if ($(this).attr("data-sceneName") === 'null') {
+                    $("#episode_scenename_span").html('Not provided by Sonarr');
+                } else {
+                    $("#episode_scenename_span").html($(this).attr("data-sceneName"));
+                }
 
                 episodePath = $(this).attr("data-episodePath");
                 sceneName = $(this).attr("data-sceneName");

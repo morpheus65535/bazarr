@@ -120,11 +120,11 @@ class RegieLiveProvider(Provider):
         payload['an'] = video.year
         response = self.session.post(self.url, data=payload, headers=self.headers)
         logger.info(response.json())
-        response_json = response.json()['rezultate']
         subtitles = []
-        if not 'eroare' in response_json:
-            for film in response_json:
-                for sub in response_json[film]['subtitrari']:
+        if response.json()['cod'] == '200':
+            results_subs = response.json()['rezultate']
+            for film in results_subs:
+                for sub in results_subs[film]['subtitrari']:
                     logger.debug(sub)
                     subtitles.append(
                             RegieLiveSubtitle(sub['titlu'], video, sub['url'], sub['rating'], language)
