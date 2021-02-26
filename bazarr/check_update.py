@@ -58,12 +58,14 @@ def check_if_new_update():
         if release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
 
-            new_version = False
             try:
-                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
-                    else False
+                semver.parse(os.environ["BAZARR_VERSION"])
+                semver.parse(release['name'].lstrip('v'))
             except ValueError:
                 new_version = True
+            else:
+                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
+                    else False
 
             if new_version:
                 logging.debug('BAZARR newer release available and will be downloaded')
