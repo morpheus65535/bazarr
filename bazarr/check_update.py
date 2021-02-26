@@ -57,6 +57,7 @@ def check_if_new_update():
             release = next((item for item in data), None)
         else:
             release = next((item for item in data if not item["prerelease"]), None)
+
         if release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
 
