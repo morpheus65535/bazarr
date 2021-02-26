@@ -4,124 +4,19 @@ import os
 import logging
 import json
 import requests
-import tarfile
+import semver
+from zipfile import ZipFile
 
 from get_args import args
 from config import settings
-from database import database
-
-if not args.no_update and not args.release_update:
-    import git
-
-current_working_directory = os.path.dirname(os.path.dirname(__file__))
-
-
-def gitconfig():
-    g = git.Repo.init(current_working_directory)
-    config_read = g.config_reader()
-    config_write = g.config_writer()
-    
-    try:
-        username = config_read.get_value("user", "name")
-    except:
-        logging.debug('BAZARR Settings git username')
-        config_write.set_value("user", "name", "Bazarr")
-    
-    try:
-        email = config_read.get_value("user", "email")
-    except:
-        logging.debug('BAZARR Settings git email')
-        config_write.set_value("user", "email", "bazarr@fake.email")
-
-    config_write.release()
-
-
-def check_and_apply_update():
-    check_releases()
-    if not args.release_update:
-        gitconfig()
-        branch = settings.general.branch
-        g = git.cmd.Git(current_working_directory)
-        g.fetch('origin')
-        result = g.diff('--shortstat', 'origin/' + branch)
-        if len(result) == 0:
-            logging.info('BAZARR No new version of Bazarr available.')
-        else:
-            g.reset('--hard', 'HEAD')
-            g.checkout(branch)
-            g.reset('--hard', 'origin/' + branch)
-            g.pull()
-            logging.info('BAZARR Updated to latest version. Restart required. ' + result)
-            updated()
-    else:
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases/latest'
-        release = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
-        
-        if release is None:
-            logging.warning('BAZARR Could not get releases from GitHub.')
-            return
-        else:
-            latest_release = release['tag_name']
-        
-        if ('v' + os.environ["BAZARR_VERSION"]) != latest_release:
-            update_from_source(tar_download_url=release['tarball_url'])
-        else:
-            logging.info('BAZARR is up to date')
-
-
-def update_from_source(tar_download_url):
-    update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
-    
-    logging.info('BAZARR Downloading update from: ' + tar_download_url)
-    data = request_content(tar_download_url)
-    
-    if not data:
-        logging.error("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url)
-        return
-    
-    download_name = settings.general.branch + '-github'
-    tar_download_path = os.path.join(os.path.dirname(__file__), '..', download_name)
-    
-    # Save tar to disk
-    with open(tar_download_path, 'wb') as f:
-        f.write(data)
-    
-    # Extract the tar to update folder
-    logging.info('BAZARR Extracting file: ' + tar_download_path)
-    tar = tarfile.open(tar_download_path)
-    tar.extractall(update_dir)
-    tar.close()
-    
-    # Delete the tar.gz
-    logging.info('BAZARR Deleting file: ' + tar_download_path)
-    os.remove(tar_download_path)
-    
-    # Find update dir name
-    update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
-    if len(update_dir_contents) != 1:
-        logging.error("BAZARR Invalid update data, update failed: " + str(update_dir_contents))
-        return
-    
-    content_dir = os.path.join(update_dir, update_dir_contents[0])
-    
-    # walk temp folder and move files to main folder
-    for dirname, dirnames, filenames in os.walk(content_dir):
-        dirname = dirname[len(content_dir) + 1:]
-        for curfile in filenames:
-            old_path = os.path.join(content_dir, dirname, curfile)
-            new_path = os.path.join(os.path.dirname(__file__), '..', dirname, curfile)
-            
-            if os.path.isfile(new_path):
-                os.remove(new_path)
-            os.renames(old_path, new_path)
-    updated()
 
 
 def check_releases():
     releases = []
     url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases'
     try:
-        r = requests.get(url_releases, timeout=15)
+        logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
+        r = requests.get(url_releases, allow_redirects=True)
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
         logging.exception("Error trying to get releases from Github. Http error.")
@@ -136,156 +31,108 @@ def check_releases():
             releases.append({'name': release['name'],
                              'body': release['body'],
                              'date': release['published_at'],
-                             'prerelease': release['prerelease']})
+                             'prerelease': release['prerelease'],
+                             'download_link': release['zipball_url']})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
+        logging.debug('BAZARR saved {} releases to releases.txt'.format(len(r.json())))
 
 
-class FakeLock(object):
-    """
-    If no locking or request throttling is needed, use this
-    """
-    
-    def __enter__(self):
-        """
-        Do nothing on enter
-        """
-        pass
-    
-    def __exit__(self, type, value, traceback):
-        """
-        Do nothing on exit
-        """
-        pass
+def check_if_new_update():
+    if settings.general.branch == 'master':
+        use_prerelease = False
+    elif settings.general.branch == 'development':
+        use_prerelease = True
+    else:
+        logging.error('BAZARR unknown branch provided to updater: {}'.format(settings.general.branch))
+        return
+    logging.debug('BAZARR updater is using {} branch'.format(settings.general.branch))
+
+    check_releases()
+
+    with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
+        data = json.load(f)
+    if not args.no_update:
+        if use_prerelease:
+            release = next((item for item in data), None)
+        else:
+            release = next((item for item in data if not item["prerelease"]), None)
+
+        if release:
+            logging.debug('BAZARR last release available is {}'.format(release['name']))
+
+            try:
+                semver.parse(os.environ["BAZARR_VERSION"])
+                semver.parse(release['name'].lstrip('v'))
+            except ValueError:
+                new_version = True
+            else:
+                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
+                    else False
+
+            # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release
+            if new_version and release['name'] != 'v0.9.1.1':
+                logging.debug('BAZARR newer release available and will be downloaded: {}'.format(release['name']))
+                download_release(url=release['download_link'])
+            else:
+                logging.debug('BAZARR no newer release have been found')
+        else:
+            logging.debug('BAZARR no release found')
+    else:
+        logging.debug('BAZARR --no_update have been used as an argument')
 
 
-fake_lock = FakeLock()
-
-
-def request_content(url, **kwargs):
-    """
-    Wrapper for `request_response', which will return the raw content.
-    """
-    
-    response = request_response(url, **kwargs)
-    
-    if response is not None:
-        return response.content
-
-
-def request_response(url, method="get", auto_raise=True,
-                     whitelist_status_code=None, lock=fake_lock, **kwargs):
-    """
-    Convenient wrapper for `requests.get', which will capture the exceptions
-    and log them. On success, the Response object is returned. In case of a
-    exception, None is returned.
-
-    Additionally, there is support for rate limiting. To use this feature,
-    supply a tuple of (lock, request_limit). The lock is used to make sure no
-    other request with the same lock is executed. The request limit is the
-    minimal time between two requests (and so 1/request_limit is the number of
-    requests per seconds).
-    """
-    
-    # Convert whitelist_status_code to a list if needed
-    if whitelist_status_code and type(whitelist_status_code) != list:
-        whitelist_status_code = [whitelist_status_code]
-    
-    # Disable verification of SSL certificates if requested. Note: this could
-    # pose a security issue!
-    kwargs["verify"] = True
-    
-    # Map method to the request.XXX method. This is a simple hack, but it
-    # allows requests to apply more magic per method. See lib/requests/api.py.
-    request_method = getattr(requests, method.lower())
-    
+def download_release(url):
+    r = None
+    update_dir = os.path.join(args.config_dir, 'update')
     try:
-        # Request URL and wait for response
-        with lock:
-            logging.debug(
-                "BAZARR Requesting URL via %s method: %s", method.upper(), url)
-            response = request_method(url, **kwargs)
-        
-        # If status code != OK, then raise exception, except if the status code
-        # is white listed.
-        if whitelist_status_code and auto_raise:
-            if response.status_code not in whitelist_status_code:
-                try:
-                    response.raise_for_status()
-                except:
-                    logging.debug(
-                        "BAZARR Response status code %d is not white "
-                        "listed, raised exception", response.status_code)
-                    raise
-        elif auto_raise:
-            response.raise_for_status()
-        
-        return response
-    except requests.exceptions.SSLError as e:
-        if kwargs["verify"]:
-            logging.error(
-                "BAZARR Unable to connect to remote host because of a SSL error. "
-                "It is likely that your system cannot verify the validity"
-                "of the certificate. The remote certificate is either "
-                "self-signed, or the remote server uses SNI. See the wiki for "
-                "more information on this topic.")
-        else:
-            logging.error(
-                "BAZARR SSL error raised during connection, with certificate "
-                "verification turned off: %s", e)
-    except requests.ConnectionError:
-        logging.error(
-            "BAZARR Unable to connect to remote host. Check if the remote "
-            "host is up and running.")
-    except requests.Timeout:
-        logging.error(
-            "BAZARR Request timed out. The remote host did not respond timely.")
-    except requests.HTTPError as e:
-        if e.response is not None:
-            if e.response.status_code >= 500:
-                cause = "remote server error"
-            elif e.response.status_code >= 400:
-                cause = "local client error"
-            else:
-                # I don't think we will end up here, but for completeness
-                cause = "unknown"
-            
-            logging.error(
-                "BAZARR Request raise HTTP error with status code %d (%s).",
-                e.response.status_code, cause)
-        else:
-            logging.error("BAZARR Request raised HTTP error.")
-    except requests.RequestException as e:
-        logging.error("BAZARR Request raised exception: %s", e)
-
-
-def request_json(url, **kwargs):
-    """
-    Wrapper for `request_response', which will decode the response as JSON
-    object and return the result, if no exceptions are raised.
-
-    As an option, a validator callback can be given, which should return True
-    if the result is valid.
-    """
-    
-    validator = kwargs.pop("validator", None)
-    response = request_response(url, **kwargs)
-    
-    if response is not None:
+        os.makedirs(update_dir, exist_ok=True)
+    except Exception as e:
+        logging.debug('BAZARR unable to create update directory {}'.format(update_dir))
+    else:
+        logging.debug('BAZARR downloading release from Github: {}'.format(url))
+        r = requests.get(url, allow_redirects=True)
+    if r:
         try:
-            result = response.json()
-            
-            if validator and not validator(result):
-                logging.error("BAZARR JSON validation result failed")
+            with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
+                f.write(r.content)
+        except Exception as e:
+            logging.exception('BAZARR unable to download new release and save it to disk')
+        else:
+            apply_update()
+
+
+def apply_update():
+    is_updated = False
+    update_dir = os.path.join(args.config_dir, 'update')
+    bazarr_zip = os.path.join(update_dir, 'bazarr.zip')
+    bazarr_dir = os.path.dirname(os.path.dirname(__file__))
+    if os.path.isdir(update_dir):
+        if os.path.isfile(bazarr_zip):
+            logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
+            try:
+                with ZipFile(bazarr_zip, 'r') as archive:
+                    zip_root_directory = archive.namelist()[0]
+                    for file in archive.namelist():
+                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
+                                file.endswith('bazarr.py'):
+                            file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
+                            parent_dir = os.path.dirname(file_path)
+                            os.makedirs(parent_dir, exist_ok=True)
+                            if not os.path.isdir(file_path):
+                                with open(file_path, 'wb+') as f:
+                                    f.write(archive.read(file))
+            except Exception as e:
+                logging.exception('BAZARR unable to unzip release')
             else:
-                return result
-        except ValueError:
-            logging.error("BAZARR Response returned invalid JSON data")
+                is_updated = True
+            finally:
+                logging.debug('BAZARR now deleting release archive')
+                os.remove(bazarr_zip)
+    else:
+        return
 
-
-def updated(restart=True):
-    if settings.general.getboolean('update_restart') and restart:
+    if is_updated:
+        logging.debug('BAZARR new release have been installed, now we restart')
         from server import webserver
         webserver.restart()
-    else:
-        database.execute("UPDATE system SET updated='1'")

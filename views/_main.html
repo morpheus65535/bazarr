@@ -84,6 +84,11 @@
                 margin-bottom: 0.5em;
             }
 
+            #sidebar-nav-notif {
+                position: absolute;
+                bottom: 0;
+            }
+
         </style>
     {% endblock head %}
 
@@ -174,7 +179,7 @@
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
                             <div class="dropdown-menu dropdown-menu-right scale-up">
                                 <ul class="dropdown-user">
-                                    <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
+                                    <li><a class="restart_action"><i class="fas fa-redo"></i> Restart</a></li>
                                     <li><a id="shutdown"><i class="fas fa-power-off"></i> Shutdown</a></li>
                                     {% if settings.auth.type != 'None' %}
                                         <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -282,6 +287,20 @@
                     </ul>
                 </nav>
                 <!-- End Sidebar navigation -->
+
+                <!-- Sidebar notification-->
+                <nav class="sidebar-nav" id="sidebar-nav-notif">
+                    <ul id="sidebarnotif">
+                        {% if (updated == '1') %}
+                        <li>
+                            <a href='' class="restart_action">
+                                <i class="fas fa-redo"></i><span class="hide-menu"> Restart required</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <!-- End Sidebar notification -->
             </div>
             <!-- End Sidebar scroll-->
         </aside>
@@ -487,7 +506,7 @@
             events.close();
         });
 
-        $('#restart').on('click', function () {
+        $('.restart_action').on('click', function () {
             $('#loader_button').prop("hidden", true);
             $('#loader_text').text("Bazarr is restarting, please wait...");
             $('#reconnect_overlay').show();
