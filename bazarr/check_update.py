@@ -67,6 +67,7 @@ def check_if_new_update():
                 new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
                     else False
 
+            # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release
             if new_version and release['name'] != 'v0.9.1.1':
                 logging.debug('BAZARR newer release available and will be downloaded')
                 download_release(url=release['download_link'])
