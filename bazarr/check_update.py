@@ -9,7 +9,6 @@ from zipfile import ZipFile
 
 from get_args import args
 from config import settings
-from database import database
 
 
 def check_releases():
@@ -54,7 +53,10 @@ def check_if_new_update():
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         data = json.load(f)
     if not args.no_update:
-        release = next((item for item in data if item["prerelease"] == use_prerelease), None)
+        if use_prerelease:
+            release = next((item for item in data), None)
+        else:
+            release = next((item for item in data if not item["prerelease"]), None)
         if release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
 
@@ -69,7 +71,7 @@ def check_if_new_update():
 
             # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release
             if new_version and release['name'] != 'v0.9.1.1':
-                logging.debug('BAZARR newer release available and will be downloaded')
+                logging.debug('BAZARR newer release available and will be downloaded: {}'.format(release['name']))
                 download_release(url=release['download_link'])
             else:
                 logging.debug('BAZARR no newer release have been found')

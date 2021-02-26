@@ -1,0 +1,21 @@
+{
+  "github": {
+  	"release": true,
+    "releaseName": "v${version}",
+    "releaseNotes": "echo \"From newest to oldest:\" && git log --pretty=format:\"- %s [%h](${repo.protocol}://${repo.host}/${repo.owner}/${repo.project}/commit/%H)\" --no-merges --grep \"^Release\" --invert-grep $LAST_VERSION..HEAD"
+  },
+  "npm": {
+    "publish": false,
+    "ignoreVersion": true
+  },
+  "plugins": {
+    "@release-it/bumper": {
+      "in": {
+        "file": "VERSION"
+      },
+      "out": {
+        "file": "VERSION"
+      }
+    }
+  }
+}
