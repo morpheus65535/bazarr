@@ -129,14 +129,6 @@ def apply_update():
         return
 
     if is_updated:
-        updated()
-
-
-def updated():
-    if settings.general.getboolean('update_restart'):
         logging.debug('BAZARR new release have been installed, now we restart')
         from server import webserver
         webserver.restart()
-    else:
-        logging.debug('BAZARR new release have been installed but we\'ll wait to restart')
-        database.execute("UPDATE system SET updated='1'")

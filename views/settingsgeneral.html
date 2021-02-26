@@ -269,18 +269,6 @@
                         <label>Automatically download and install updates. You will still be able to install from System: Tasks</label>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-sm-3 text-right">
-                        <b>Restart After Update</b>
-                    </div>
-                    <div class="form-group col-sm-8">
-                        <label class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="settings-general-update_restart" name="settings-general-update_restart">
-                            <span class="custom-control-label" for="settings-general-update_restart"></span>
-                        </label>
-                        <label>Automatically restart after downloading and installing updates. You will still be able to restart manually</label>
-                    </div>
-                </div>
             </div>
         </form>
     </div>
@@ -357,7 +345,6 @@
             $('#settings-general-debug').prop('checked', {{'true' if settings.general.getboolean('debug') else 'false'}});
             $('#settings-analytics-enabled').prop('checked', {{'true' if settings.analytics.getboolean('enabled') else 'false'}});
             $('#settings-general-auto_update').prop('checked', {{'true' if settings.general.getboolean('auto_update') else 'false'}});
-            $('#settings-general-update_restart').prop('checked', {{'true' if settings.general.getboolean('update_restart') else 'false'}});
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
