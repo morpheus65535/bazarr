@@ -110,7 +110,8 @@ def apply_update():
                 with ZipFile(bazarr_zip, 'r') as archive:
                     zip_root_directory = archive.namelist()[0]
                     for file in archive.namelist():
-                        if file.startswith(zip_root_directory) and file != zip_root_directory:
+                        if file.startswith(zip_root_directory) and file != zip_root_directory and not \
+                                file.endswith('bazarr.py'):
                             file_path = os.path.join(bazarr_dir, file[len(zip_root_directory):])
                             parent_dir = os.path.dirname(file_path)
                             os.makedirs(parent_dir, exist_ok=True)
