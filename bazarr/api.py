@@ -299,7 +299,7 @@ class SystemReleases(Resource):
                 releases = json.loads(f.read())
             releases = releases[:5]
             for i, release in enumerate(releases):
-                body = release['body'].replace('- ', '').split('\r\n')[1:]
+                body = release['body'].replace('- ', '').split('\n')[1:]
                 releases[i] = {"body": body,
                                "name": release['name'],
                                "date": release['date'][:10],
