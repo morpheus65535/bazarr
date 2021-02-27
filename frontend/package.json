@@ -65,8 +65,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "lint": "prettier --write --ignore-unknown .",
-    "postinstall": "husky install"
+    "lint": "prettier --write --ignore-unknown ."
   },
   "eslintConfig": {
     "extends": "react-app"
