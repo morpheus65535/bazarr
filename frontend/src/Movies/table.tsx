@@ -58,26 +58,22 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "monitored",
-        Cell: (row) => {
-          const monitored = row.value;
-
-          return (
-            <FontAwesomeIcon
-              title={monitored ? "monitored" : "unmonitored"}
-              icon={monitored ? faBookmark : farBookmark}
-            ></FontAwesomeIcon>
-          );
-        },
+        Cell: ({ value }) => (
+          <FontAwesomeIcon
+            title={value ? "monitored" : "unmonitored"}
+            icon={value ? faBookmark : farBookmark}
+          ></FontAwesomeIcon>
+        ),
       },
       {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
+        Cell: ({ row, value }) => {
+          const target = `/movies/${row.original.radarrId}`;
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
+            <Link to={target} title={row.original.sceneName ?? value}>
+              <span>{value}</span>
             </Link>
           );
         },
@@ -85,9 +81,9 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Exist",
         accessor: "exist",
-        Cell: (row) => {
-          const exist = row.value;
-          const { mapped_path } = row.row.original;
+        Cell: ({ row, value }) => {
+          const exist = value;
+          const { mapped_path } = row.original;
           return (
             <FontAwesomeIcon
               title={mapped_path}

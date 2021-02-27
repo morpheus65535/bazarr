@@ -396,8 +396,12 @@ class Series(Resource):
                 item.update({"languages": []})
 
             # Parse alternate titles
+            # Make property name same as Movie
             if item['alternateTitles']:
-                item.update({"alternateTitles": ast.literal_eval(item['alternateTitles'])})
+                item.update({"alternativeTitles": ast.literal_eval(item['alternateTitles'])})
+                del item["alternateTitles"]
+            else:
+                item["alternativeTitles"] = []
 
             # Parse tags
             item.update({"tags": ast.literal_eval(item['tags'])})

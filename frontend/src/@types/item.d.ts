@@ -45,7 +45,7 @@ interface ExtendItem extends BaseItem {
   overview: string;
   imdbId: string;
   languages: Language[];
-  alternateTitles: string[];
+  alternativeTitles: string[];
   poster: string;
   sortTitle: string;
   tags: string[];
@@ -69,6 +69,7 @@ interface Movie extends ExtendItem {
   movie_file_id: number;
   radarrId: number;
   tmdbId: number;
+  sceneName?: string;
 }
 
 interface Episode extends BaseItem {
@@ -87,6 +88,7 @@ interface Episode extends BaseItem {
   subtitles: Subtitle[]; // FIX: Backend format
   format: string;
   episode_file_id: number;
+  scene_name?: string;
 }
 
 interface WantedItem {

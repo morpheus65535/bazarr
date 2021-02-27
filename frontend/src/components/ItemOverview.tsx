@@ -1,4 +1,7 @@
-import { faFolder } from "@fortawesome/free-regular-svg-icons";
+import {
+  faClone as fasClone,
+  faFolder,
+} from "@fortawesome/free-regular-svg-icons";
 import {
   faLanguage,
   faMusic,
@@ -8,7 +11,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { Badge, Col, Container, Image, Row } from "react-bootstrap";
+import {
+  Badge,
+  Col,
+  Container,
+  Image,
+  OverlayTrigger,
+  Popover,
+  Row,
+} from "react-bootstrap";
 import { connect } from "react-redux";
 
 interface Props {
@@ -84,6 +95,20 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [item.languages, profiles, item.profileId]);
 
+  const alternativePopover = useMemo(
+    () => (
+      <Popover id="item-overview-alternative">
+        <Popover.Title>Alternate Titles</Popover.Title>
+        <Popover.Content>
+          {item.alternativeTitles.map((v) => (
+            <li>{v}</li>
+          ))}
+        </Popover.Content>
+      </Popover>
+    ),
+    [item.alternativeTitles]
+  );
+
   return (
     <Container
       fluid
@@ -113,6 +138,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           <Container fluid>
             <Row className="text-white">
               <h1>{item.title}</h1>
+              <span hidden={item.alternativeTitles.length === 0}>
+                <OverlayTrigger placement="left" overlay={alternativePopover}>
+                  <FontAwesomeIcon
+                    className="mx-2"
+                    icon={fasClone}
+                  ></FontAwesomeIcon>
+                </OverlayTrigger>
+              </span>
             </Row>
             <Row className="text-white">{detailBadges}</Row>
             <Row className="text-white">{audioBadges}</Row>
