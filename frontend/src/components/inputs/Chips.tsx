@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import "./chip.scss";
 
+const SplitKeys = ["Tab", "Enter", " ", ",", ";", "."];
+
 export interface ChipsProps {
   disabled?: boolean;
   defaultValue?: readonly string[];
@@ -57,7 +59,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
     (event: KeyboardEvent<HTMLInputElement>) => {
       const pressed = event.key;
       const value = event.currentTarget.value;
-      if ((pressed === "Tab" || pressed === "Enter") && value.length !== 0) {
+      if (SplitKeys.includes(pressed) && value.length !== 0) {
         event.preventDefault();
         addChip(value);
         clearInput();
@@ -72,7 +74,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
   const onKeyDown = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
     const pressed = event.key;
     const value = event.currentTarget.value;
-    if ((pressed === "Tab" || pressed === "Enter") && value.length !== 0) {
+    if (SplitKeys.includes(pressed) && value.length !== 0) {
       event.preventDefault();
     }
   }, []);
@@ -93,16 +95,19 @@ export const Chips: FunctionComponent<ChipsProps> = ({
     () =>
       chips.map((v, idx) => (
         <span
-          // TODO: Element Disabled
           key={idx}
           title={v}
-          className="custom-chip"
-          onClick={() => removeChip(idx)}
+          className={`custom-chip ${disabled ? "" : "active"}`}
+          onClick={() => {
+            if (!disabled) {
+              removeChip(idx);
+            }
+          }}
         >
           {v}
         </span>
       )),
-    [chips, removeChip]
+    [chips, removeChip, disabled]
   );
 
   return (

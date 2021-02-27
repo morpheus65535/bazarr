@@ -32,10 +32,12 @@
       timing-function: ease-in-out;
     }
 
-    &:hover {
-      cursor: pointer;
-      background-color: var(--danger);
-      color: white;
+    &.active {
+      &:hover {
+        cursor: pointer;
+        background-color: var(--danger);
+        color: white;
+      }
     }
   }
 }
