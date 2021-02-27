@@ -100,8 +100,8 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       <Popover id="item-overview-alternative">
         <Popover.Title>Alternate Titles</Popover.Title>
         <Popover.Content>
-          {item.alternativeTitles.map((v) => (
-            <li>{v}</li>
+          {item.alternativeTitles.map((v, idx) => (
+            <li key={idx}>{v}</li>
           ))}
         </Popover.Content>
       </Popover>
