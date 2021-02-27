@@ -6,17 +6,11 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateBlacklist } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
+import { AsyncButton, BasicTable } from "../../components";
 
 interface Props {
-  blacklist: AsyncState<MovieBlacklist[]>;
+  blacklist: MovieBlacklist[];
   update: () => void;
-}
-
-function mapStateToProps({ movie }: StoreState) {
-  return {
-    blacklist: movie.blacklist,
-  };
 }
 
 const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
@@ -73,18 +67,12 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
     [update]
   );
   return (
-    <AsyncStateOverlay state={blacklist}>
-      {(data) => (
-        <BasicTable
-          emptyText="No Blacklisted Movies Subtitles"
-          columns={columns}
-          data={data}
-        ></BasicTable>
-      )}
-    </AsyncStateOverlay>
+    <BasicTable
+      emptyText="No Blacklisted Movies Subtitles"
+      columns={columns}
+      data={blacklist}
+    ></BasicTable>
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateBlacklist })(
-  Table
-);
+export default connect(undefined, { update: movieUpdateBlacklist })(Table);

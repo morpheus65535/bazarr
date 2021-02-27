@@ -45,6 +45,7 @@ const App: FunctionComponent<Props> = ({
     return <Redirect to="/login"></Redirect>;
   }
 
+  // TODO: Error handling on initializing process
   if (!initialized) {
     return (
       <LoadingIndicator>

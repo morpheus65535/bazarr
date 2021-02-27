@@ -5,49 +5,58 @@ import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { providerUpdateAll } from "../../@redux/actions";
 import { ProvidersApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  loading: boolean;
+  providers: AsyncState<SystemProvider[]>;
   update: () => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
   const { providers } = system;
   return {
-    loading: providers.updating,
+    providers,
   };
 }
 
-const SystemProvidersView: FunctionComponent<Props> = (props) => {
-  const { loading, update } = props;
-
+const SystemProvidersView: FunctionComponent<Props> = ({
+  providers,
+  update,
+}) => {
   useEffect(() => {
     update();
   }, [update]);
 
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Providers - Bazarr (System)</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.Button updating={loading} icon={faSync} onClick={update}>
-          Refresh
-        </ContentHeader.Button>
-        <ContentHeader.AsyncButton
-          icon={faTrash}
-          promise={() => ProvidersApi.reset()}
-          onSuccess={update}
-        >
-          Reset
-        </ContentHeader.AsyncButton>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={providers}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Providers - Bazarr (System)</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.Button
+              updating={providers.updating}
+              icon={faSync}
+              onClick={update}
+            >
+              Refresh
+            </ContentHeader.Button>
+            <ContentHeader.AsyncButton
+              icon={faTrash}
+              promise={() => ProvidersApi.reset()}
+              onSuccess={update}
+            >
+              Reset
+            </ContentHeader.AsyncButton>
+          </ContentHeader>
+          <Row>
+            <Table providers={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 

@@ -15,22 +15,19 @@ import { movieUpdateInfoAll } from "../@redux/actions";
 import { MoviesApi } from "../apis";
 import {
   ActionBadge,
-  AsyncStateOverlay,
   BasicTable,
   ItemEditorModal,
   useShowModal,
 } from "../components";
 
 interface Props {
-  movies: AsyncState<Movie[]>;
+  movies: Movie[];
   update: (id: number) => void;
   profiles: LanguagesProfile[];
 }
 
-function mapStateToProps({ movie, system }: StoreState) {
-  const { movieList } = movie;
+function mapStateToProps({ system }: StoreState) {
   return {
-    movies: movieList,
     profiles: system.languagesProfiles.items,
   };
 }
@@ -144,16 +141,12 @@ const Table: FunctionComponent<Props> = (props) => {
 
   return (
     <React.Fragment>
-      <AsyncStateOverlay state={movies}>
-        {(data) => (
-          <BasicTable
-            emptyText="No Movies Found"
-            columns={columns}
-            data={data}
-            update={updateRow}
-          ></BasicTable>
-        )}
-      </AsyncStateOverlay>
+      <BasicTable
+        emptyText="No Movies Found"
+        columns={columns}
+        data={movies}
+        update={updateRow}
+      ></BasicTable>
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>

@@ -7,18 +7,11 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateWantedAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
+import { AsyncButton, BasicTable } from "../../components";
 
 interface Props {
-  wanted: AsyncState<WantedMovie[]>;
+  wanted: WantedMovie[];
   update: () => void;
-}
-
-function mapStateToProps({ movie }: StoreState) {
-  const { wantedMovieList } = movie;
-  return {
-    wanted: wantedMovieList,
-  };
 }
 
 const Table: FunctionComponent<Props> = ({ wanted, update }) => {
@@ -70,18 +63,12 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 
   return (
-    <AsyncStateOverlay state={wanted}>
-      {(data) => (
-        <BasicTable
-          emptyText="No Missing Movies Subtitles"
-          columns={columns}
-          data={data}
-        ></BasicTable>
-      )}
-    </AsyncStateOverlay>
+    <BasicTable
+      emptyText="No Missing Movies Subtitles"
+      columns={columns}
+      data={wanted}
+    ></BasicTable>
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateWantedAll })(
-  Table
-);
+export default connect(undefined, { update: movieUpdateWantedAll })(Table);

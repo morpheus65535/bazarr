@@ -68,7 +68,7 @@ export function createCombineAction<
   return (...args: Parameters<T>) => combineActionCreator(fn(...args));
 }
 
-export function createFillfulAction<
+export function createFulfilAction<
   T extends (...args: any[]) => AvaliableType[]
 >(fn: T, checker: FillfulActionDispatcher) {
   addToChecklist(checker);

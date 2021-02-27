@@ -7,9 +7,9 @@ import {
 } from "../constants";
 import { updateBadges } from "./badges";
 import { systemUpdateLanguagesAll } from "./system";
-import { createFillfulAction } from "./utils";
+import { createFulfilAction } from "./utils";
 
-export const bootstrap = createFillfulAction(
+export const bootstrap = createFulfilAction(
   () => [updateBadges(), systemUpdateLanguagesAll()],
   (state) => {
     const { system } = state;

@@ -8,15 +8,8 @@ import { SystemApi } from "../../apis";
 import { AsyncButton, BasicTable } from "../../components";
 
 interface Props {
-  tasks: Array<SystemTaskResult>;
+  tasks: SystemTaskResult[];
   run: (id: string) => void;
-}
-
-function mapStateToProps({ system }: StoreState) {
-  const { tasks } = system;
-  return {
-    tasks: tasks.items,
-  };
 }
 
 const Table: FunctionComponent<Props> = ({ tasks, run }) => {
@@ -63,4 +56,4 @@ const Table: FunctionComponent<Props> = ({ tasks, run }) => {
   return <BasicTable columns={columns} data={tasks}></BasicTable>;
 };
 
-export default connect(mapStateToProps, { run: systemRunTasks })(Table);
+export default connect(undefined, { run: systemRunTasks })(Table);

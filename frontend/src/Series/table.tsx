@@ -13,22 +13,19 @@ import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 import {
   ActionBadge,
-  AsyncStateOverlay,
   BasicTable,
   ItemEditorModal,
   useShowModal,
 } from "../components";
 
 interface Props {
-  series: AsyncState<Series[]>;
+  series: Series[];
   profiles: LanguagesProfile[];
   update: (id: number) => void;
 }
 
 function mapStateToProps({ series, system }: StoreState) {
-  const { seriesList } = series;
   return {
-    series: seriesList,
     profiles: system.languagesProfiles.items,
   };
 }
@@ -153,30 +150,26 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 
   return (
-    <AsyncStateOverlay state={series}>
-      {(data) => (
-        <React.Fragment>
-          <BasicTable
-            emptyText="No Series Found"
-            columns={columns}
-            data={data}
-            update={updateRow}
-          ></BasicTable>
-          <ItemEditorModal
-            modalKey="edit"
-            submit={(item, form) =>
-              SeriesApi.modify({
-                seriesid: [(item as Series).sonarrSeriesId],
-                profileid: [form.profileid],
-              })
-            }
-            onSuccess={(item) => {
-              update((item as Series).sonarrSeriesId);
-            }}
-          ></ItemEditorModal>
-        </React.Fragment>
-      )}
-    </AsyncStateOverlay>
+    <React.Fragment>
+      <BasicTable
+        emptyText="No Series Found"
+        columns={columns}
+        data={series}
+        update={updateRow}
+      ></BasicTable>
+      <ItemEditorModal
+        modalKey="edit"
+        submit={(item, form) =>
+          SeriesApi.modify({
+            seriesid: [(item as Series).sonarrSeriesId],
+            profileid: [form.profileid],
+          })
+        }
+        onSuccess={(item) => {
+          update((item as Series).sonarrSeriesId);
+        }}
+      ></ItemEditorModal>
+    </React.Fragment>
   );
 };
 

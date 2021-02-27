@@ -4,22 +4,22 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { systemUpdateTasks } from "../../@redux/actions";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
   update: () => void;
-  loading: boolean;
+  tasks: AsyncState<SystemTaskResult[]>;
 }
 
 function mapStateToProps({ system }: StoreState) {
   const { tasks } = system;
   return {
-    loading: tasks.updating,
+    tasks,
   };
 }
 
-const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
+const SystemTasksView: FunctionComponent<Props> = ({ update, tasks }) => {
   useEffect(() => {
     // TODO: Use Websocket
     update();
@@ -28,19 +28,27 @@ const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
   }, [update]);
 
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Tasks - Bazarr (System)</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.Button updating={loading} icon={faSync} onClick={update}>
-          Refresh
-        </ContentHeader.Button>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={tasks}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Tasks - Bazarr (System)</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.Button
+              updating={tasks.updating}
+              icon={faSync}
+              onClick={update}
+            >
+              Refresh
+            </ContentHeader.Button>
+          </ContentHeader>
+          <Row>
+            <Table tasks={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 

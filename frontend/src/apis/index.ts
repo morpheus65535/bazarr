@@ -1,4 +1,4 @@
-import Axios, { AxiosInstance, CancelTokenSource } from "axios";
+import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 class Api {
@@ -7,17 +7,17 @@ class Api {
 
   constructor() {
     if (process.env.NODE_ENV === "development") {
-      this.recreateAxios("/api/", process.env.REACT_APP_APIKEY!);
+      this.initialize("/api/", process.env.REACT_APP_APIKEY!);
     } else {
       const baseUrl =
         window.Bazarr.baseUrl === "/"
           ? "/api/"
           : `${window.Bazarr.baseUrl}/api/`;
-      this.recreateAxios(baseUrl, window.Bazarr.apiKey);
+      this.initialize(baseUrl, window.Bazarr.apiKey);
     }
   }
 
-  recreateAxios(url: string, apikey: string) {
+  initialize(url: string, apikey: string) {
     this.axios = Axios.create({
       baseURL: url,
     });
@@ -36,27 +36,31 @@ class Api {
       (resp) => {
         if (resp.status >= 200 && resp.status < 300) {
           return Promise.resolve(resp);
-        } else if (resp.status >= 400 && resp.status < 500) {
-          this.handle4xxRequest();
-        } else if (resp.status >= 500) {
-          this.handle5xxRequest();
+        } else {
+          this.handleError(resp.status);
+          return Promise.reject(resp);
         }
-        return Promise.reject(resp);
       },
-      (error: Error) => {
-        // TODO: Get Response from Error
-        if (error.message.includes("401")) {
-          this.handle4xxRequest();
+      (error: AxiosError) => {
+        if (error.response) {
+          const response = error.response;
+          this.handleError(response.status);
         }
         return Promise.reject(error);
       }
     );
   }
 
-  handle5xxRequest() {}
-
-  handle4xxRequest() {
-    reduxStore.dispatch(siteRedirectToAuth());
+  handleError(code: number) {
+    switch (code) {
+      case 401:
+        reduxStore.dispatch(siteRedirectToAuth());
+        break;
+      case 500:
+        break;
+      default:
+        break;
+    }
   }
 }
 

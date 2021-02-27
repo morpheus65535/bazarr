@@ -8,19 +8,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { connect } from "react-redux";
 import { Column } from "react-table";
 import { BasicTable } from "../../components";
 
 interface Props {
-  providers: SystemLog[];
-}
-
-function mapStateToProps({ system }: StoreState) {
-  const { logs } = system;
-  return {
-    providers: logs.items,
-  };
+  logs: SystemLog[];
 }
 
 function mapTypeToIcon(type: SystemLogType): IconDefinition {
@@ -43,7 +35,7 @@ function mapDateToString(ts: string): string {
   return ts;
 }
 
-const Table: FunctionComponent<Props> = (props) => {
+const Table: FunctionComponent<Props> = ({ logs }) => {
   const columns: Column<SystemLog>[] = useMemo<Column<SystemLog>[]>(
     () => [
       {
@@ -65,7 +57,7 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable columns={columns} data={props.providers}></BasicTable>;
+  return <BasicTable columns={columns} data={logs}></BasicTable>;
 };
 
-export default connect(mapStateToProps)(Table);
+export default Table;

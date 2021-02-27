@@ -1,6 +1,6 @@
 interface AsyncState<T> {
   updating: boolean;
-  error?: string;
+  error?: Error;
   items: T;
 }
 

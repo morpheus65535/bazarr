@@ -5,36 +5,50 @@ import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
+  blacklist: AsyncState<SeriesBlacklist[]>;
   update: () => void;
 }
 
-const BlacklistSeriesView: FunctionComponent<Props> = ({ update }) => {
+function mapStateToProps({ series }: StoreState) {
+  return {
+    blacklist: series.blacklist,
+  };
+}
+
+const BlacklistSeriesView: FunctionComponent<Props> = ({
+  update,
+  blacklist,
+}) => {
   useEffect(() => update(), [update]);
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Series Blacklist - Bazarr</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.AsyncButton
-          icon={faTrash}
-          promise={() => SeriesApi.deleteBlacklist(true)}
-          onSuccess={update}
-        >
-          Remove All
-        </ContentHeader.AsyncButton>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={blacklist}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Series Blacklist - Bazarr</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.AsyncButton
+              icon={faTrash}
+              promise={() => SeriesApi.deleteBlacklist(true)}
+              onSuccess={update}
+            >
+              Remove All
+            </ContentHeader.AsyncButton>
+          </ContentHeader>
+          <Row>
+            <Table blacklist={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 
-export default connect(undefined, { update: seriesUpdateBlacklist })(
+export default connect(mapStateToProps, { update: seriesUpdateBlacklist })(
   BlacklistSeriesView
 );

@@ -15,110 +15,87 @@ import { mapToAsyncState } from "./mapper";
 
 const reducer = handleActions<SystemState, any>(
   {
-    [SYSTEM_UPDATE_LANGUAGES_LIST]: {
-      next(state, action) {
-        const newState = {
-          ...state,
-          languages: mapToAsyncState<Array<Language>>(action, []),
-        };
-        return newState;
-      },
+    [SYSTEM_UPDATE_LANGUAGES_LIST]: (state, action) => {
+      const newState = {
+        ...state,
+        languages: mapToAsyncState<Array<Language>>(action, []),
+      };
+      return newState;
     },
-    [SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST]: {
-      next(state, action) {
-        const newState = {
-          ...state,
-          enabledLanguage: mapToAsyncState<Array<Language>>(action, []),
-        };
-        return newState;
-      },
+    [SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST]: (state, action) => {
+      const newState = {
+        ...state,
+        enabledLanguage: mapToAsyncState<Array<Language>>(action, []),
+      };
+      return newState;
     },
-    [SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST]: {
-      next(state, action) {
-        const newState = {
-          ...state,
-          languagesProfiles: mapToAsyncState<Array<LanguagesProfile>>(
-            action,
-            []
-          ),
-        };
-        return newState;
-      },
+    [SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST]: (state, action) => {
+      const newState = {
+        ...state,
+        languagesProfiles: mapToAsyncState<Array<LanguagesProfile>>(action, []),
+      };
+      return newState;
     },
-    [SYSTEM_UPDATE_STATUS]: {
-      next(state, action) {
-        return {
-          ...state,
-          status: mapToAsyncState<SystemStatusResult | undefined>(
-            action,
-            state.status.items
-          ),
-        };
-      },
+    [SYSTEM_UPDATE_STATUS]: (state, action) => {
+      return {
+        ...state,
+        status: mapToAsyncState<SystemStatusResult | undefined>(
+          action,
+          state.status.items
+        ),
+      };
     },
-    [SYSTEM_UPDATE_TASKS]: {
-      next(state, action) {
-        return {
-          ...state,
-          tasks: mapToAsyncState<Array<SystemTaskResult>>(
-            action,
-            state.tasks.items
-          ),
-        };
-      },
+    [SYSTEM_UPDATE_TASKS]: (state, action) => {
+      return {
+        ...state,
+        tasks: mapToAsyncState<Array<SystemTaskResult>>(
+          action,
+          state.tasks.items
+        ),
+      };
     },
-    [SYSTEM_RUN_TASK]: {
-      next(state, action: Action<string>) {
-        const id = action.payload;
-        const tasks = state.tasks;
-        const newItems = [...tasks.items];
+    [SYSTEM_RUN_TASK]: (state, action: Action<string>) => {
+      const id = action.payload;
+      const tasks = state.tasks;
+      const newItems = [...tasks.items];
 
-        const idx = newItems.findIndex((v) => v.job_id === id);
+      const idx = newItems.findIndex((v) => v.job_id === id);
 
-        if (idx !== -1) {
-          newItems[idx].job_running = true;
-        }
+      if (idx !== -1) {
+        newItems[idx].job_running = true;
+      }
 
-        return {
-          ...state,
-          tasks: {
-            ...tasks,
-            items: newItems,
-          },
-        };
-      },
+      return {
+        ...state,
+        tasks: {
+          ...tasks,
+          items: newItems,
+        },
+      };
     },
-    [PROVIDER_UPDATE_LIST]: {
-      next(state, action) {
-        return {
-          ...state,
-          providers: mapToAsyncState(action, state.providers.items),
-        };
-      },
+    [PROVIDER_UPDATE_LIST]: (state, action) => {
+      return {
+        ...state,
+        providers: mapToAsyncState(action, state.providers.items),
+      };
     },
-    [SYSTEM_UPDATE_LOGS]: {
-      next(state, action) {
-        return {
-          ...state,
-          logs: mapToAsyncState(action, state.logs.items),
-        };
-      },
+    [SYSTEM_UPDATE_LOGS]: (state, action) => {
+      return {
+        ...state,
+        logs: mapToAsyncState(action, state.logs.items),
+      };
     },
-    [SYSTEM_UPDATE_RELEASES]: {
-      next(state, action) {
-        return {
-          ...state,
-          releases: mapToAsyncState(action, state.releases.items),
-        };
-      },
+    [SYSTEM_UPDATE_RELEASES]: (state, action) => {
+      return {
+        ...state,
+        releases: mapToAsyncState(action, state.releases.items),
+      };
     },
-    [SYSTEM_UPDATE_SETTINGS]: {
-      next(state, action) {
-        return {
-          ...state,
-          settings: mapToAsyncState(action, state.settings.items),
-        };
-      },
+    [SYSTEM_UPDATE_SETTINGS]: (state, action) => {
+      return {
+        ...state,
+        settings: mapToAsyncState(action, state.settings.items),
+      };
     },
   },
   {

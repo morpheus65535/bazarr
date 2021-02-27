@@ -12,80 +12,70 @@ import { mapToAsyncState, updateAsyncList } from "./mapper";
 
 const reducer = handleActions<SeriesState, any>(
   {
-    [SERIES_UPDATE_LIST]: {
-      next(state, action: AsyncAction<Series[]>) {
-        return {
-          ...state,
-          seriesList: mapToAsyncState(action, state.seriesList.items),
-        };
-      },
+    [SERIES_UPDATE_LIST]: (state, action: AsyncAction<Series[]>) => {
+      return {
+        ...state,
+        seriesList: mapToAsyncState(action, state.seriesList.items),
+      };
     },
-    [SERIES_UPDATE_WANTED_LIST]: {
-      next(state, action: AsyncAction<WantedEpisode[]>) {
-        return {
-          ...state,
-          wantedSeriesList: mapToAsyncState(
-            action,
-            state.wantedSeriesList.items
-          ),
-        };
-      },
+    [SERIES_UPDATE_WANTED_LIST]: (
+      state,
+      action: AsyncAction<WantedEpisode[]>
+    ) => {
+      return {
+        ...state,
+        wantedSeriesList: mapToAsyncState(action, state.wantedSeriesList.items),
+      };
     },
-    [SERIES_UPDATE_EPISODE_LIST]: {
-      next(state, action: AsyncAction<Episode[]>) {
-        const { updating, error, items } = mapToAsyncState(action, []);
+    [SERIES_UPDATE_EPISODE_LIST]: (state, action: AsyncAction<Episode[]>) => {
+      const { updating, error, items } = mapToAsyncState(action, []);
 
-        if (items.length > 0) {
-          const id = items[0].sonarrSeriesId;
-          const list = state.episodeList.items;
-          list.set(id, items);
-          return {
-            ...state,
-            episodeList: {
-              updating,
-              error,
-              items: list,
-            },
-          };
-        } else {
-          return {
-            ...state,
-            episodeList: {
-              ...state.episodeList,
-              updating,
-              error,
-            },
-          };
-        }
-      },
-    },
-    [SERIES_UPDATE_HISTORY_LIST]: {
-      next(state, action: AsyncAction<SeriesHistory[]>) {
+      if (items.length > 0) {
+        const id = items[0].sonarrSeriesId;
+        const list = state.episodeList.items;
+        list.set(id, items);
         return {
           ...state,
-          historyList: mapToAsyncState(action, state.historyList.items),
+          episodeList: {
+            updating,
+            error,
+            items: list,
+          },
         };
-      },
-    },
-    [SERIES_UPDATE_INFO]: {
-      next(state, action: AsyncAction<Series[]>) {
+      } else {
         return {
           ...state,
-          seriesList: updateAsyncList(
-            action,
-            state.seriesList,
-            "sonarrSeriesId"
-          ),
+          episodeList: {
+            ...state.episodeList,
+            updating,
+            error,
+          },
         };
-      },
+      }
     },
-    [SERIES_UPDATE_BLACKLIST]: {
-      next(state, action: AsyncAction<SeriesBlacklist[]>) {
-        return {
-          ...state,
-          blacklist: mapToAsyncState(action, state.blacklist.items),
-        };
-      },
+    [SERIES_UPDATE_HISTORY_LIST]: (
+      state,
+      action: AsyncAction<SeriesHistory[]>
+    ) => {
+      return {
+        ...state,
+        historyList: mapToAsyncState(action, state.historyList.items),
+      };
+    },
+    [SERIES_UPDATE_INFO]: (state, action: AsyncAction<Series[]>) => {
+      return {
+        ...state,
+        seriesList: updateAsyncList(action, state.seriesList, "sonarrSeriesId"),
+      };
+    },
+    [SERIES_UPDATE_BLACKLIST]: (
+      state,
+      action: AsyncAction<SeriesBlacklist[]>
+    ) => {
+      return {
+        ...state,
+        blacklist: mapToAsyncState(action, state.blacklist.items),
+      };
     },
   },
   {

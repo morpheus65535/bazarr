@@ -5,37 +5,49 @@ import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { movieUpdateWantedAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
+  wanted: AsyncState<WantedMovie[]>;
   update: () => void;
 }
 
-const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
+function mapStateToProps({ movie }: StoreState) {
+  const { wantedMovieList } = movie;
+  return {
+    wanted: wantedMovieList,
+  };
+}
+
+const WantedMoviesView: FunctionComponent<Props> = ({ update, wanted }) => {
   useEffect(() => update(), [update]);
 
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Wanted Movies - Bazarr</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.AsyncButton
-          promise={() => MoviesApi.searchAllWanted()}
-          onSuccess={update}
-          icon={faSearch}
-        >
-          Search All
-        </ContentHeader.AsyncButton>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={wanted}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Wanted Movies - Bazarr</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.AsyncButton
+              promise={() => MoviesApi.searchAllWanted()}
+              onSuccess={update}
+              icon={faSearch}
+            >
+              Search All
+            </ContentHeader.AsyncButton>
+          </ContentHeader>
+          <Row>
+            <Table wanted={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 
-export default connect(null, { update: movieUpdateWantedAll })(
+export default connect(mapStateToProps, { update: movieUpdateWantedAll })(
   WantedMoviesView
 );

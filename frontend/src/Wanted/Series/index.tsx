@@ -5,36 +5,48 @@ import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { seriesUpdateWantedAll } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
+  wanted: AsyncState<WantedEpisode[]>;
   update: () => void;
 }
 
-const WantedSeriesView: FunctionComponent<Props> = ({ update }) => {
+function mapStateToProps({ series }: StoreState) {
+  const { wantedSeriesList } = series;
+  return {
+    wanted: wantedSeriesList,
+  };
+}
+
+const WantedSeriesView: FunctionComponent<Props> = ({ update, wanted }) => {
   useEffect(() => update(), [update]);
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Wanted Series - Bazarr</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.AsyncButton
-          promise={() => SeriesApi.searchAllWanted()}
-          onSuccess={update}
-          icon={faSearch}
-        >
-          Search All
-        </ContentHeader.AsyncButton>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={wanted}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Wanted Series - Bazarr</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.AsyncButton
+              promise={() => SeriesApi.searchAllWanted()}
+              onSuccess={update}
+              icon={faSearch}
+            >
+              Search All
+            </ContentHeader.AsyncButton>
+          </ContentHeader>
+          <Row>
+            <Table wanted={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 
-export default connect(null, {
+export default connect(mapStateToProps, {
   update: seriesUpdateWantedAll,
 })(WantedSeriesView);

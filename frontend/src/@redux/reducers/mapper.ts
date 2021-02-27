@@ -12,7 +12,7 @@ export function mapToAsyncState<Payload>(
   } else if (action.error !== undefined) {
     return {
       updating: false,
-      error: (action.payload.item as Error).message,
+      error: action.payload.item as Error,
       items: defVal,
     };
   } else {
@@ -38,7 +38,7 @@ export function updateAsyncList<T, ID extends keyof T>(
     return {
       ...state,
       updating: false,
-      error: (action.payload.item as Error).message,
+      error: action.payload.item as Error,
     };
   } else {
     const list = [...(state.items as T[])];

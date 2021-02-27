@@ -6,17 +6,11 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
-import { AsyncButton, AsyncStateOverlay, BasicTable } from "../../components";
+import { AsyncButton, BasicTable } from "../../components";
 
 interface Props {
-  blacklist: AsyncState<SeriesBlacklist[]>;
+  blacklist: SeriesBlacklist[];
   update: () => void;
-}
-
-function mapStateToProps({ series }: StoreState) {
-  return {
-    blacklist: series.blacklist,
-  };
 }
 
 const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
@@ -79,18 +73,12 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
     [update]
   );
   return (
-    <AsyncStateOverlay state={blacklist}>
-      {(data) => (
-        <BasicTable
-          emptyText="No Blacklisted Series Subtitles"
-          columns={columns}
-          data={data}
-        ></BasicTable>
-      )}
-    </AsyncStateOverlay>
+    <BasicTable
+      emptyText="No Blacklisted Series Subtitles"
+      columns={columns}
+      data={blacklist}
+    ></BasicTable>
   );
 };
 
-export default connect(mapStateToProps, { update: seriesUpdateBlacklist })(
-  Table
-);
+export default connect(undefined, { update: seriesUpdateBlacklist })(Table);

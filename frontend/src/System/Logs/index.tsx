@@ -5,59 +5,64 @@ import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { systemUpdateLogs } from "../../@redux/actions";
 import { SystemApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  loading: boolean;
+  logs: AsyncState<SystemLog[]>;
   update: () => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
   const { logs } = system;
   return {
-    loading: logs.updating,
+    logs,
   };
 }
 
-const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
+const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
   useEffect(() => update(), [update]);
 
   const [resetting, setReset] = useState(false);
 
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Logs - Bazarr (System)</title>
-      </Helmet>
-      <ContentHeader>
-        <ContentHeader.Button
-          updating={loading}
-          icon={faSync}
-          disabled={loading}
-          onClick={update}
-        >
-          Refresh
-        </ContentHeader.Button>
-        <ContentHeader.Button icon={faDownload}>Download</ContentHeader.Button>
-        <ContentHeader.Button
-          updating={resetting}
-          icon={faTrash}
-          onClick={() => {
-            setReset(true);
-            SystemApi.deleteLogs().finally(() => {
-              setReset(false);
-              update();
-            });
-          }}
-        >
-          Empty
-        </ContentHeader.Button>
-      </ContentHeader>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <AsyncStateOverlay state={logs}>
+      {(data) => (
+        <Container fluid>
+          <Helmet>
+            <title>Logs - Bazarr (System)</title>
+          </Helmet>
+          <ContentHeader>
+            <ContentHeader.Button
+              updating={logs.updating}
+              icon={faSync}
+              onClick={update}
+            >
+              Refresh
+            </ContentHeader.Button>
+            <ContentHeader.Button icon={faDownload}>
+              Download
+            </ContentHeader.Button>
+            <ContentHeader.Button
+              updating={resetting}
+              icon={faTrash}
+              onClick={() => {
+                setReset(true);
+                SystemApi.deleteLogs().finally(() => {
+                  setReset(false);
+                  update();
+                });
+              }}
+            >
+              Empty
+            </ContentHeader.Button>
+          </ContentHeader>
+          <Row>
+            <Table logs={data}></Table>
+          </Row>
+        </Container>
+      )}
+    </AsyncStateOverlay>
   );
 };
 
