@@ -1,5 +1,4 @@
 import { isNumber, isString } from "lodash";
-import moment from "moment";
 import { Dispatch, ReactText } from "react";
 
 export function updateAsyncState<T>(
@@ -64,10 +63,6 @@ export function isEpisode(v: any): v is Episode {
 
 export function isSeries(v: any): v is Series {
   return "episodeFileCount" in v;
-}
-
-export function formatDate(ts: string): string {
-  return moment(ts, "DD/MM/YYYY h:mm:ss").fromNow();
 }
 
 export * from "./hooks";

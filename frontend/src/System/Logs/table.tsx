@@ -9,8 +9,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { BasicTable } from "../../components";
-import { formatDate } from "../../utilites";
+import { BasicTable, DateFormatter } from "../../components";
 
 interface Props {
   logs: SystemLog[];
@@ -47,7 +46,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       {
         Header: "Time",
         accessor: "timestamp",
-        Cell: (row) => formatDate(row.value),
+        Cell: (row) => <DateFormatter>{row.value}</DateFormatter>,
       },
     ],
     []

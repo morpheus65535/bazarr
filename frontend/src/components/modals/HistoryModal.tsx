@@ -6,15 +6,10 @@ import React, {
   useState,
 } from "react";
 import { Column } from "react-table";
-import {
-  AsyncStateOverlay,
-  BasicTable,
-  HistoryIcon,
-  MoviesBlacklistButton,
-  SeriesBlacklistButton,
-} from "..";
+import { AsyncStateOverlay, BasicTable, HistoryIcon } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
 import { updateAsyncState } from "../../utilites";
+import { MoviesBlacklistButton, SeriesBlacklistButton } from "../speical";
 import BasicModal, { BasicModalProps } from "./BasicModal";
 import { usePayload } from "./provider";
 

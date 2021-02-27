@@ -10,6 +10,7 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
+import moment from "moment";
 import React, {
   ChangeEvent,
   FunctionComponent,
@@ -25,8 +26,6 @@ import {
   Spinner,
   SpinnerProps,
 } from "react-bootstrap";
-import { MoviesApi, SeriesApi } from "../apis";
-import { AsyncButton } from "./buttons";
 
 enum HistoryAction {
   Delete = 0,
@@ -166,103 +165,20 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
   );
 };
 
-export const SeriesBlacklistButton: FunctionComponent<{
-  seriesid: number;
-  episodeid: number;
-  subs_id?: string;
-  language?: Language;
-  provider?: string;
-  subtitles_path: string;
-  path: string;
-  update: () => void;
-}> = ({
-  seriesid,
-  episodeid,
-  subs_id,
-  language,
-  provider,
-  subtitles_path,
-  path,
-  update,
+interface FormatterProps {
+  format?: string;
+  children: string;
+}
+
+export const DateFormatter: FunctionComponent<FormatterProps> = ({
+  children,
+  format,
 }) => {
-  if (!language) {
-    return null;
-  }
-  const { hi, forced, code2 } = language;
-
-  if (subs_id && provider && hi !== undefined && forced !== undefined) {
-    return (
-      <AsyncButton
-        size="sm"
-        variant="light"
-        promise={() =>
-          SeriesApi.addBlacklist(seriesid, episodeid, {
-            provider,
-            subs_id,
-            subtitles_path,
-            video_path: path,
-            language: code2,
-            hi,
-            forced,
-          })
-        }
-        onSuccess={update}
-      >
-        <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-      </AsyncButton>
-    );
-  } else {
-    return null;
-  }
-};
-
-export const MoviesBlacklistButton: FunctionComponent<{
-  radarrId: number;
-  subs_id?: string;
-  language?: Language;
-  provider?: string;
-  subtitles_path: string;
-  video_path: string;
-  update: () => void;
-}> = ({
-  radarrId,
-  subs_id,
-  language,
-  provider,
-  subtitles_path,
-  video_path,
-  update,
-}) => {
-  if (!language) {
-    return null;
-  }
-
-  const { forced, code2 } = language;
-
-  if (subs_id && provider && forced !== undefined) {
-    return (
-      <AsyncButton
-        size="sm"
-        variant="light"
-        promise={() =>
-          MoviesApi.addBlacklist(radarrId, {
-            provider,
-            subs_id,
-            video_path,
-            subtitles_path,
-            language: code2,
-            hi: false,
-            forced,
-          })
-        }
-        onSuccess={update}
-      >
-        <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-      </AsyncButton>
-    );
-  } else {
-    return null;
-  }
+  const result = useMemo(
+    () => moment(children, format ?? "DD/MM/YYYY h:mm:ss").fromNow(),
+    [children, format]
+  );
+  return <span>{result}</span>;
 };
 
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";

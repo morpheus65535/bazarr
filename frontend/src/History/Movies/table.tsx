@@ -3,12 +3,8 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateHistoryList } from "../../@redux/actions";
-import {
-  AsyncStateOverlay,
-  BasicTable,
-  HistoryIcon,
-  MoviesBlacklistButton,
-} from "../../components";
+import { AsyncStateOverlay, BasicTable, HistoryIcon } from "../../components";
+import { MoviesBlacklistButton } from "../../components/speical";
 
 interface Props {
   movieHistory: AsyncState<MovieHistory[]>;

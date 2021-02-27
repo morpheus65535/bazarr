@@ -3,12 +3,8 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateHistoryList } from "../../@redux/actions";
-import {
-  AsyncStateOverlay,
-  BasicTable,
-  HistoryIcon,
-  SeriesBlacklistButton,
-} from "../../components";
+import { AsyncStateOverlay, BasicTable, HistoryIcon } from "../../components";
+import { SeriesBlacklistButton } from "../../components/speical";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;
