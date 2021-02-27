@@ -1,6 +1,6 @@
-import BasicApi from "./basic";
+import BaseApi from "./base";
 
-class ProviderApi extends BasicApi {
+class ProviderApi extends BaseApi {
   constructor() {
     super("/providers");
   }

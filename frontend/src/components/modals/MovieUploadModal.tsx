@@ -11,7 +11,7 @@ import {
 } from "..";
 import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import BaseModal, { BaseModalProps } from "./BaseModal";
 interface MovieProps {
   avaliableLanguages: Language[];
   update: (id: number) => void;
@@ -23,7 +23,7 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
+const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   props
 ) => {
   const { avaliableLanguages, update, ...modal } = props;
@@ -74,7 +74,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   );
 
   return (
-    <BasicModal
+    <BaseModal
       title={`Upload - ${movie?.title}`}
       closeable={!uploading}
       footer={footer}
@@ -114,7 +114,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
           </Form.Group>
         </Form>
       </Container>
-    </BasicModal>
+    </BaseModal>
   );
 };
 

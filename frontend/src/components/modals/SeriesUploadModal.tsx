@@ -18,7 +18,7 @@ import { connect } from "react-redux";
 import { Column, TableUpdater } from "react-table";
 import {
   AsyncButton,
-  BasicTable,
+  BaseTable,
   FileForm,
   LanguageSelector,
   MessageIcon,
@@ -28,7 +28,7 @@ import {
 } from "..";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import BaseModal, { BaseModalProps } from "./BaseModal";
 
 enum SubtitleState {
   update,
@@ -50,7 +50,7 @@ function mapStateToProps({ system, series }: StoreState) {
   };
 }
 
-const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
+const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   props
 ) => {
   const { episodesList, avaliableLanguages, update, ...modal } = props;
@@ -289,7 +289,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   );
 
   return (
-    <BasicModal
+    <BaseModal
       size="lg"
       title={`Upload - ${series?.title}`}
       closeable={!uploading}
@@ -318,7 +318,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
           ></Table>
         </div>
       </Container>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
@@ -494,7 +494,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
   );
 
   return (
-    <BasicTable columns={columns} data={data} update={updateItem}></BasicTable>
+    <BaseTable columns={columns} data={data} update={updateItem}></BaseTable>
   );
 };
 

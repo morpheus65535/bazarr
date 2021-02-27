@@ -3,7 +3,7 @@ import { Modal } from "react-bootstrap";
 import { useIsModalShow } from ".";
 import { useCloseModal } from "./provider";
 
-export interface BasicModalProps {
+export interface BaseModalProps {
   modalKey: string;
   size?: "sm" | "lg" | "xl";
   closeable?: boolean;
@@ -11,7 +11,7 @@ export interface BasicModalProps {
   footer?: JSX.Element;
 }
 
-export const BasicModal: FunctionComponent<BasicModalProps> = (props) => {
+export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
   const { size, closeable, modalKey, title, children, footer } = props;
 
   const show = useIsModalShow(modalKey);
@@ -34,4 +34,4 @@ export const BasicModal: FunctionComponent<BasicModalProps> = (props) => {
   );
 };
 
-export default BasicModal;
+export default BaseModal;

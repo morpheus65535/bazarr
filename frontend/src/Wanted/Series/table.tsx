@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateWantedAll } from "../../@redux/actions";
 import { EpisodesApi } from "../../apis";
-import { AsyncButton, BasicTable } from "../../components";
+import { AsyncButton, BaseTable } from "../../components";
 
 interface Props {
   wanted: WantedEpisode[];
@@ -71,11 +71,11 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 
   return (
-    <BasicTable
+    <BaseTable
       emptyText="No Missing Episodes Subtitles"
       columns={columns}
       data={wanted}
-    ></BasicTable>
+    ></BaseTable>
   );
 };
 

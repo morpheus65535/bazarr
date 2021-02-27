@@ -14,7 +14,7 @@ interface Props<T extends object = {}> extends TableOptions<T> {
   hideHeader?: boolean;
 }
 
-export default function BasicTable<T extends object = {}>(props: Props<T>) {
+export default function BaseTable<T extends object = {}>(props: Props<T>) {
   const {
     emptyText,
     showPageControl,

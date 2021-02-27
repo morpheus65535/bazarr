@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 import {
-  BasicModal,
+  BaseModal,
   Selector,
   useCloseModal,
   usePayload,
@@ -247,7 +247,7 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   return (
-    <BasicModal title="Provider" footer={footer} modalKey={ModalKey}>
+    <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
       <UpdateChangeContext.Provider value={updateLocal}>
         <Container>
           <Row>
@@ -274,6 +274,6 @@ export const ProviderModal: FunctionComponent = () => {
           </Row>
         </Container>
       </UpdateChangeContext.Provider>
-    </BasicModal>
+    </BaseModal>
   );
 };

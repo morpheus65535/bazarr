@@ -24,9 +24,9 @@ import {
 import { Column } from "react-table";
 import {
   AsyncButton,
-  BasicModal,
-  BasicModalProps,
-  BasicTable,
+  BaseModal,
+  BaseModalProps,
+  BaseTable,
   LoadingIndicator,
   usePayload,
   useWhenPayloadUpdate,
@@ -41,7 +41,7 @@ interface Props {
   onDownload?: () => void;
 }
 
-export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
+export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   props
 ) => {
   const { onSelect, onDownload, ...modal } = props;
@@ -185,11 +185,11 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
       return (
         <React.Fragment>
           <p className="mb-3 small">{item?.mapped_path ?? ""}</p>
-          <BasicTable
+          <BaseTable
             emptyText="No Result"
             columns={columns}
             data={result}
-          ></BasicTable>
+          ></BaseTable>
         </React.Fragment>
       );
     }
@@ -217,9 +217,9 @@ export const ManualSearchModal: FunctionComponent<Props & BasicModalProps> = (
   }, [item]);
 
   return (
-    <BasicModal size="xl" title={title} footer={footer} {...modal}>
+    <BaseModal size="xl" title={title} footer={footer} {...modal}>
       {content}
-    </BasicModal>
+    </BaseModal>
   );
 };
 

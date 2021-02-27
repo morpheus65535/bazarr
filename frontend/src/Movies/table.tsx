@@ -15,7 +15,7 @@ import { movieUpdateInfoAll } from "../@redux/actions";
 import { MoviesApi } from "../apis";
 import {
   ActionBadge,
-  BasicTable,
+  BaseTable,
   ItemEditorModal,
   useShowModal,
 } from "../components";
@@ -141,12 +141,12 @@ const Table: FunctionComponent<Props> = (props) => {
 
   return (
     <React.Fragment>
-      <BasicTable
+      <BaseTable
         emptyText="No Movies Found"
         columns={columns}
         data={movies}
         update={updateRow}
-      ></BasicTable>
+      ></BaseTable>
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>

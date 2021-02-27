@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import apis from ".";
 
-class BasicApi {
+class BaseApi {
   prefix: string;
 
   constructor(prefix: string) {
@@ -62,4 +62,4 @@ class BasicApi {
   }
 }
 
-export default BasicApi;
+export default BaseApi;

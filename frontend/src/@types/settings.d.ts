@@ -23,7 +23,7 @@ interface SystemSettings {
   notifications: NotificationsSettings;
 }
 
-// Basic
+// Base
 
 interface GeneralSettings {
   adaptive_searching: boolean;
@@ -158,12 +158,12 @@ interface DeathByCaptcheSettings {
 
 // Providers
 
-interface BasicProviderSettings {
+interface BaseProviderSettings {
   username?: string;
   password?: string;
 }
 
-interface OpenSubtitlesSettings extends BasicProviderSettings {
+interface OpenSubtitlesSettings extends BaseProviderSettings {
   use_tag_search: boolean;
   vip: boolean;
   ssl: boolean;
@@ -171,21 +171,21 @@ interface OpenSubtitlesSettings extends BasicProviderSettings {
   skip_wrong_fps: boolean;
 }
 
-interface Addic7edSettings extends BasicProviderSettings {}
+interface Addic7edSettings extends BaseProviderSettings {}
 
-interface LegandasdivxSettings extends BasicProviderSettings {
+interface LegandasdivxSettings extends BaseProviderSettings {
   skip_wrong_fps: boolean;
 }
 
-interface LegendastvSettings extends BasicProviderSettings {}
+interface LegendastvSettings extends BaseProviderSettings {}
 
-interface XSubsSettings extends BasicProviderSettings {}
+interface XSubsSettings extends BaseProviderSettings {}
 
-interface Napisy24Settings extends BasicProviderSettings {}
+interface Napisy24Settings extends BaseProviderSettings {}
 
-interface SubsceneSettings extends BasicProviderSettings {}
+interface SubsceneSettings extends BaseProviderSettings {}
 
-interface titloviSettings extends BasicProviderSettings {}
+interface titloviSettings extends BaseProviderSettings {}
 
 interface BetaseriesSettings {
   token?: string;

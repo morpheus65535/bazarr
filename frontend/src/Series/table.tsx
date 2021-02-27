@@ -13,7 +13,7 @@ import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 import {
   ActionBadge,
-  BasicTable,
+  BaseTable,
   ItemEditorModal,
   useShowModal,
 } from "../components";
@@ -151,12 +151,12 @@ const Table: FunctionComponent<Props> = (props) => {
 
   return (
     <React.Fragment>
-      <BasicTable
+      <BaseTable
         emptyText="No Series Found"
         columns={columns}
         data={series}
         update={updateRow}
-      ></BasicTable>
+      ></BaseTable>
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>

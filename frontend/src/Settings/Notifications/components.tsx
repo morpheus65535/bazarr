@@ -6,8 +6,8 @@ import React, {
 } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import {
-  BasicModal,
-  BasicModalProps,
+  BaseModal,
+  BaseModalProps,
   Selector,
   useCloseModal,
   usePayload,
@@ -26,7 +26,7 @@ const notificationComparer = (
   another: NotificationInfo
 ) => one.name === another.name;
 
-const NotificationModal: FunctionComponent<ModalProps & BasicModalProps> = ({
+const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   selections,
   ...modal
 }) => {
@@ -109,7 +109,7 @@ const NotificationModal: FunctionComponent<ModalProps & BasicModalProps> = ({
   );
 
   return (
-    <BasicModal title="Notification" footer={footer} {...modal}>
+    <BaseModal title="Notification" footer={footer} {...modal}>
       <Container fluid>
         <Row>
           <Col xs={12}>
@@ -137,7 +137,7 @@ const NotificationModal: FunctionComponent<ModalProps & BasicModalProps> = ({
           </Col>
         </Row>
       </Container>
-    </BasicModal>
+    </BaseModal>
   );
 };
 

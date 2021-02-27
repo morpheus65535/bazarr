@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { Column } from "react-table";
 import { systemRunTasks } from "../../@redux/actions";
 import { SystemApi } from "../../apis";
-import { AsyncButton, BasicTable } from "../../components";
+import { AsyncButton, BaseTable } from "../../components";
 
 interface Props {
   tasks: SystemTaskResult[];
@@ -53,7 +53,7 @@ const Table: FunctionComponent<Props> = ({ tasks, run }) => {
     [run]
   );
 
-  return <BasicTable columns={columns} data={tasks}></BasicTable>;
+  return <BaseTable columns={columns} data={tasks}></BaseTable>;
 };
 
 export default connect(undefined, { run: systemRunTasks })(Table);

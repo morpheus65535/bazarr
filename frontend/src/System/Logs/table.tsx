@@ -9,7 +9,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { BasicTable, DateFormatter } from "../../components";
+import { BaseTable, DateFormatter } from "../../components";
 
 interface Props {
   logs: SystemLog[];
@@ -52,7 +52,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
     []
   );
 
-  return <BasicTable columns={columns} data={logs}></BasicTable>;
+  return <BaseTable columns={columns} data={logs}></BaseTable>;
 };
 
 export default Table;

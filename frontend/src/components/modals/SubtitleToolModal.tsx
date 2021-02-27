@@ -33,7 +33,7 @@ import { Column } from "react-table";
 import {
   ActionIcon,
   ActionIconItem,
-  BasicTable,
+  BaseTable,
   LanguageSelector,
   Selector,
   usePayload,
@@ -43,7 +43,7 @@ import { SubtitlesApi } from "../../apis";
 import { colorOptions } from "../../Settings/Subtitles/options";
 import { isMovie, submodProcessColor } from "../../utilites";
 import { AsyncButton } from "../buttons";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./provider";
 import { avaliableTranslation } from "./toolOptions";
 
@@ -65,7 +65,7 @@ function submodProcessOffset(h: number, m: number, s: number, ms: number) {
   return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
 }
 
-const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
+const AddColorModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
   const [updating, setUpdate] = useState(false);
   const [selection, setSelection] = useState<string | undefined>(undefined);
@@ -103,7 +103,7 @@ const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
     [selection, submit, closeModal]
   );
   return (
-    <BasicModal
+    <BaseModal
       title="Choose Color"
       footer={footer}
       closeable={!updating}
@@ -119,11 +119,11 @@ const AddColorModal: FunctionComponent<BasicModalProps> = (props) => {
           setSelection(s);
         }}
       ></Selector>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
-const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
+const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
   const [updating, setUpdate] = useState(false);
@@ -168,7 +168,7 @@ const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
   );
 
   return (
-    <BasicModal
+    <BaseModal
       title="Change Frame Rate"
       footer={footer}
       closeable={!updating}
@@ -202,11 +202,11 @@ const ChangeFrameRateModal: FunctionComponent<BasicModalProps> = (props) => {
           }}
         ></Form.Control>
       </InputGroup>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
-const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
+const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
   const [updating, setUpdate] = useState(false);
@@ -276,7 +276,7 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
   );
 
   return (
-    <BasicModal
+    <BaseModal
       title="Adjust Times"
       footer={footer}
       closeable={!updating}
@@ -318,7 +318,7 @@ const AdjustTimesModal: FunctionComponent<BasicModalProps> = (props) => {
           onChange={updateOffset(3)}
         ></Form.Control>
       </InputGroup>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
@@ -326,7 +326,7 @@ interface TranslateProps {
   item?: SupportType;
 }
 
-const TranslateModal: FunctionComponent<BasicModalProps & TranslateProps> = ({
+const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   ...modal
 }) => {
   const item = usePayload<SupportType>(modal.modalKey, 1);
@@ -382,7 +382,7 @@ const TranslateModal: FunctionComponent<BasicModalProps & TranslateProps> = ({
   );
 
   return (
-    <BasicModal title="Translate Subtitle" footer={footer} {...modal}>
+    <BaseModal title="Translate Subtitle" footer={footer} {...modal}>
       <InputGroup className="mb-3">
         <InputGroup.Prepend>
           <InputGroup.Text>Original</InputGroup.Text>
@@ -393,7 +393,7 @@ const TranslateModal: FunctionComponent<BasicModalProps & TranslateProps> = ({
         options={avaliable}
         onChange={setLanguage}
       ></LanguageSelector>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
@@ -551,22 +551,22 @@ const Table: FunctionComponent<Props> = ({ item }) => {
   );
 
   return (
-    <BasicTable
+    <BaseTable
       emptyText="No External Subtitles Found"
       responsive={false}
       columns={columns}
       data={data}
-    ></BasicTable>
+    ></BaseTable>
   );
 };
 
-const Tools: FunctionComponent<BasicModalProps> = (props) => {
+const Tools: FunctionComponent<BaseModalProps> = (props) => {
   const item = usePayload<SupportType>(props.modalKey);
   return (
     <React.Fragment>
-      <BasicModal title={`Tools - ${item?.title ?? ""}`} {...props}>
+      <BaseModal title={`Tools - ${item?.title ?? ""}`} {...props}>
         <Table item={item} {...props}></Table>
-      </BasicModal>
+      </BaseModal>
       <AddColorModal modalKey="add-color"></AddColorModal>
       <ChangeFrameRateModal modalKey="change-frame-rate"></ChangeFrameRateModal>
       <AdjustTimesModal modalKey="adjust-times"></AdjustTimesModal>

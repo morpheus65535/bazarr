@@ -26,14 +26,14 @@ export const Message: FunctionComponent<{
   return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
 };
 
-export interface BasicInput<T> {
+export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
   override?: OverrideFuncType<T>;
   beforeStaged?: (v: T) => any;
 }
 
-export interface TextProps extends BasicInput<React.ReactText> {
+export interface TextProps extends BaseInput<React.ReactText> {
   placeholder?: React.ReactText;
   password?: boolean;
   controlled?: boolean;
@@ -70,7 +70,7 @@ export const Text: FunctionComponent<TextProps> = ({
   );
 };
 
-export interface CheckProps extends BasicInput<boolean> {
+export interface CheckProps extends BaseInput<boolean> {
   label?: string;
   inline?: boolean;
 }
@@ -113,7 +113,7 @@ function selectorValidator<T>(v: any): v is T {
   return isString(v) || isNumber(v) || isArray(v);
 }
 
-type SelectorProps<T, M extends boolean> = BasicInput<SelectorValueType<T, M>> &
+type SelectorProps<T, M extends boolean> = BaseInput<SelectorValueType<T, M>> &
   CSelectorProps<T, M>;
 
 export function Selector<
@@ -155,7 +155,7 @@ export function Selector<
   );
 }
 
-type SliderProps = {} & BasicInput<number> &
+type SliderProps = {} & BaseInput<number> &
   Omit<CSliderProps, "onChange" | "onAfterChange">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
@@ -176,7 +176,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
   );
 };
 
-type ChipsProp = {} & BasicInput<string[]> &
+type ChipsProp = {} & BaseInput<string[]> &
   Omit<CChipsProps, "onChange" | "defaultValue">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
@@ -199,7 +199,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
 
 type ButtonProps = {
   onClick?: (update: UpdateFunctionType, key: string, value?: string) => void;
-} & Omit<BasicInput<string>, "override" | "beforeStaged">;
+} & Omit<BaseInput<string>, "override" | "beforeStaged">;
 
 export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
   props

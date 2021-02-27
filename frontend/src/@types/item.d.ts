@@ -30,7 +30,7 @@ interface Subtitle extends Language {
   path: string | null;
 }
 
-interface BasicItem {
+interface BaseItem {
   audio_language: Language[];
   exist: boolean;
   mapped_path: string;
@@ -39,7 +39,7 @@ interface BasicItem {
 }
 
 // Temp Name
-interface ExtendItem extends BasicItem {
+interface ExtendItem extends BaseItem {
   profileId?: number;
   fanart: string;
   overview: string;
@@ -71,7 +71,7 @@ interface Movie extends ExtendItem {
   tmdbId: number;
 }
 
-interface Episode extends BasicItem {
+interface Episode extends BaseItem {
   audio_codec: string;
   video_codec: string;
   // desired_languages: string[];

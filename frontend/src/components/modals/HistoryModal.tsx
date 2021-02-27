@@ -6,16 +6,14 @@ import React, {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { AsyncStateOverlay, BasicTable, HistoryIcon } from "..";
+import { AsyncStateOverlay, BaseTable, HistoryIcon } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
 import { updateAsyncState } from "../../utilites";
 import { MoviesBlacklistButton, SeriesBlacklistButton } from "../speical";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import BaseModal, { BaseModalProps } from "./BaseModal";
 import { usePayload } from "./provider";
 
-export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
-  props
-) => {
+export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
   const movie = usePayload<Movie>(modal.modalKey);
@@ -78,24 +76,24 @@ export const MovieHistoryModal: FunctionComponent<BasicModalProps> = (
   );
 
   return (
-    <BasicModal title={`History - ${movie?.title ?? ""}`} {...modal}>
+    <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
       <AsyncStateOverlay state={history}>
         {(data) => (
-          <BasicTable
+          <BaseTable
             emptyText="No History Found"
             columns={columns}
             data={data}
-          ></BasicTable>
+          ></BaseTable>
         )}
       </AsyncStateOverlay>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
 interface EpisodeHistoryProps {}
 
 export const EpisodeHistoryModal: FunctionComponent<
-  BasicModalProps & EpisodeHistoryProps
+  BaseModalProps & EpisodeHistoryProps
 > = (props) => {
   const episode = usePayload<Episode>(props.modalKey);
 
@@ -162,16 +160,16 @@ export const EpisodeHistoryModal: FunctionComponent<
   );
 
   return (
-    <BasicModal title={`History - ${episode?.title ?? ""}`} {...props}>
+    <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
       <AsyncStateOverlay state={history}>
         {(data) => (
-          <BasicTable
+          <BaseTable
             emptyText="No History Found"
             columns={columns}
             data={data}
-          ></BasicTable>
+          ></BaseTable>
         )}
       </AsyncStateOverlay>
-    </BasicModal>
+    </BaseModal>
   );
 };

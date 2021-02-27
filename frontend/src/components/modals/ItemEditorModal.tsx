@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { AsyncButton, Selector } from "../";
-import BasicModal, { BasicModalProps } from "./BasicModal";
+import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
@@ -17,7 +17,7 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
+const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { profiles, onSuccess, submit, ...modal } = props;
 
   const item = usePayload<ExtendItem>(modal.modalKey);
@@ -56,7 +56,7 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
   );
 
   return (
-    <BasicModal
+    <BaseModal
       closeable={!updating}
       footer={footer}
       title={item?.title}
@@ -83,7 +83,7 @@ const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
           </Form.Group>
         </Form>
       </Container>
-    </BasicModal>
+    </BaseModal>
   );
 };
 

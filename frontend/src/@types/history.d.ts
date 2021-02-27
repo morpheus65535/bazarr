@@ -1,4 +1,4 @@
-interface BasicHistory {
+interface BaseHistory {
   action: number;
   blacklisted: boolean;
   exist: boolean;
@@ -14,13 +14,13 @@ interface BasicHistory {
   timestamp: string;
 }
 
-interface EpisodeHistory extends BasicHistory {
+interface EpisodeHistory extends BaseHistory {
   sonarrEpisodeId: number;
   sonarrSeriesId: number;
   video_path: string;
 }
 
-interface ExtendHistory extends BasicHistory {
+interface ExtendHistory extends BaseHistory {
   description: string;
   monitored: boolean;
   upgradable: boolean;

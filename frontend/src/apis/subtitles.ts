@@ -1,8 +1,8 @@
-import BasicApi from "./basic";
+import BaseApi from "./base";
 
 type SubtitleType = "episode" | "movie";
 
-class SubtitlesApi extends BasicApi {
+class SubtitlesApi extends BaseApi {
   constructor() {
     super("/subtitles");
   }

@@ -11,9 +11,9 @@ import { Column, TableUpdater } from "react-table";
 import { useEnabledLanguages } from ".";
 import {
   ActionIcon,
-  BasicModal,
-  BasicModalProps,
-  BasicTable,
+  BaseModal,
+  BaseModalProps,
+  BaseTable,
   LanguageSelector,
   Selector,
   useCloseModal,
@@ -25,7 +25,7 @@ interface Props {
   update: (profile: LanguagesProfile) => void;
 }
 
-const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
+const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   props
 ) => {
   const { update, ...modal } = props;
@@ -225,7 +225,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   );
 
   return (
-    <BasicModal size="lg" title="Languages Profile" footer={footer} {...modal}>
+    <BaseModal size="lg" title="Languages Profile" footer={footer} {...modal}>
       <Input>
         <Form.Control
           type="text"
@@ -237,13 +237,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         ></Form.Control>
       </Input>
       <Input>
-        <BasicTable
+        <BaseTable
           showPageControl={false}
           responsive={false}
           columns={columns}
           data={current?.items ?? []}
           update={updateRow}
-        ></BasicTable>
+        ></BaseTable>
         <Button block variant="light" onClick={addItem}>
           Add
         </Button>
@@ -261,7 +261,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         ></Selector>
         <Message>Ignore others if existing</Message>
       </Input>
-    </BasicModal>
+    </BaseModal>
   );
 };
 
