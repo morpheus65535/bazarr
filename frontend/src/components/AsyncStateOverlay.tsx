@@ -1,7 +1,7 @@
-import { faExclamation } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { PropsWithChildren, useCallback } from "react";
-import { Button } from "react-bootstrap";
+import { Alert, Button, Container } from "react-bootstrap";
 import { LoadingIndicator } from ".";
 
 interface Params<T> {
@@ -33,11 +33,24 @@ function AsyncStateOverlay<T>(props: PropsWithChildren<Params<T>>) {
   } else {
     if (state.error && missing) {
       return (
-        <div className="d-flex flex-column w-100 align-items-center my-4">
-          <FontAwesomeIcon size="lg" icon={faExclamation}></FontAwesomeIcon>
-          <span className="my-2">{state.error.message}</span>
-          <Button onClick={reload}>Reload</Button>
-        </div>
+        <Container>
+          <Alert variant="danger" className="my-4">
+            <Alert.Heading>
+              <FontAwesomeIcon
+                className="mr-2"
+                icon={faExclamationTriangle}
+              ></FontAwesomeIcon>
+              <span>Ouch! You got an error</span>
+            </Alert.Heading>
+            <p>{state.error.message}</p>
+            <hr></hr>
+            <div className="d-flex justify-content-end">
+              <Button variant="outline-danger" onClick={reload}>
+                Reload
+              </Button>
+            </div>
+          </Alert>
+        </Container>
       );
     }
   }

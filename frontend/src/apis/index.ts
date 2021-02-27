@@ -45,6 +45,8 @@ class Api {
         if (error.response) {
           const response = error.response;
           this.handleError(response.status);
+        } else {
+          error.message = "You have disconnected to Bazarr backend";
         }
         return Promise.reject(error);
       }
