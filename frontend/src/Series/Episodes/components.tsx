@@ -5,7 +5,7 @@ import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
 import { EpisodesApi } from "../../apis";
-import { AsyncButton } from "../../components";
+import { AsyncButton, SubtitleText } from "../../components";
 
 interface Props {
   seriesid: number;
@@ -50,7 +50,7 @@ const Action: FunctionComponent<Props> = ({
         className="mr-1"
         variant={missing ? "warning" : "secondary"}
       >
-        <span className="pr-1">{subtitle.code2}</span>
+        <SubtitleText className="pr-1" subtitle={subtitle}></SubtitleText>
         <FontAwesomeIcon
           size="sm"
           icon={missing ? faSearch : faTrash}
@@ -60,7 +60,7 @@ const Action: FunctionComponent<Props> = ({
   } else {
     return (
       <Badge className="mr-1" variant="secondary">
-        {subtitle.code2}
+        <SubtitleText subtitle={subtitle}></SubtitleText>
       </Badge>
     );
   }

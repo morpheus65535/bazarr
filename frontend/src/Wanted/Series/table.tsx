@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateWantedAll } from "../../@redux/actions";
 import { EpisodesApi } from "../../apis";
-import { AsyncButton, BaseTable } from "../../components";
+import { AsyncButton, BaseTable, SubtitleText } from "../../components";
 
 interface Props {
   wanted: WantedEpisode[];
@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
               }
               onSuccess={update}
             >
-              <span className="pr-1">{item.code2}</span>
+              <SubtitleText className="pr-1" subtitle={item}></SubtitleText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

@@ -6,7 +6,7 @@ import { connect } from "react-redux";
 import { Column } from "react-table";
 import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, BaseTable } from "../../components";
+import { AsyncButton, BaseTable, SubtitleText } from "../../components";
 
 const missingText = "Subtitle Missing";
 
@@ -36,8 +36,12 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Language",
         accessor: "name",
-        Cell: (row) => {
-          return <Badge variant="secondary">{row.value}</Badge>;
+        Cell: ({ row }) => {
+          return (
+            <Badge variant="secondary">
+              <SubtitleText name subtitle={row.original}></SubtitleText>
+            </Badge>
+          );
         },
       },
       {

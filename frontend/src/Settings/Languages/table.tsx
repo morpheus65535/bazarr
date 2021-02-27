@@ -81,18 +81,12 @@ const Table: FunctionComponent = () => {
           return items.map((v) => {
             const isCutoff = v.id === cutoff || cutoff === anyCutoff;
             return (
-              <Badge
+              <ItemBadge
                 key={v.id}
+                cutoff={isCutoff}
                 className="mx-1"
-                title={
-                  isCutoff
-                    ? "Ignore others if this one is avaliable"
-                    : undefined
-                }
-                variant={isCutoff ? "primary" : "secondary"}
-              >
-                {v.language}
-              </Badge>
+                item={v}
+              ></ItemBadge>
             );
           });
         },
@@ -147,6 +141,37 @@ const Table: FunctionComponent = () => {
       </Button>
       <Modal update={updateProfile} modalKey="profile"></Modal>
     </React.Fragment>
+  );
+};
+
+interface ItemProps {
+  className?: string;
+  item: LanguagesProfileItem;
+  cutoff: boolean;
+}
+
+const ItemBadge: FunctionComponent<ItemProps> = ({
+  cutoff,
+  item,
+  className,
+}) => {
+  const text = useMemo(() => {
+    let result = item.language;
+    if (item.hi === "True") {
+      result += ":HI";
+    } else if (item.forced === "True") {
+      result += ":Forced";
+    }
+    return result;
+  }, [item.hi, item.forced, item.language]);
+  return (
+    <Badge
+      className={className}
+      title={cutoff ? "Ignore others if this one is avaliable" : undefined}
+      variant={cutoff ? "primary" : "secondary"}
+    >
+      {text}
+    </Badge>
   );
 };
 

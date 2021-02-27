@@ -181,6 +181,30 @@ export const DateFormatter: FunctionComponent<FormatterProps> = ({
   return <span>{result}</span>;
 };
 
+interface SubtitleProps {
+  subtitle: Subtitle;
+  name?: boolean;
+  className?: string;
+}
+
+export const SubtitleText: FunctionComponent<SubtitleProps> = ({
+  subtitle,
+  className,
+  name,
+}) => {
+  const text = useMemo(() => {
+    const useName = name ?? false;
+    let result = useName ? subtitle.name : subtitle.code2;
+    if (subtitle.hi) {
+      result += ":HI";
+    } else if (subtitle.forced) {
+      result += ":Forced";
+    }
+    return result;
+  }, [subtitle, name]);
+  return <span className={className}>{text}</span>;
+};
+
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
 export * from "./buttons";
 export * from "./ContentHeader";
