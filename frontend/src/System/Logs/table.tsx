@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { BasicTable } from "../../components";
+import { formatDate } from "../../utilites";
 
 interface Props {
   logs: SystemLog[];
@@ -30,11 +31,6 @@ function mapTypeToIcon(type: SystemLogType): IconDefinition {
   }
 }
 
-function mapDateToString(ts: string): string {
-  // TODO: Format Date
-  return ts;
-}
-
 const Table: FunctionComponent<Props> = ({ logs }) => {
   const columns: Column<SystemLog>[] = useMemo<Column<SystemLog>[]>(
     () => [
@@ -51,7 +47,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       {
         Header: "Time",
         accessor: "timestamp",
-        Cell: (row) => mapDateToString(row.value),
+        Cell: (row) => formatDate(row.value),
       },
     ],
     []
