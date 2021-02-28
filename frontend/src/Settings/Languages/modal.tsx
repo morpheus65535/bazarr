@@ -13,9 +13,9 @@ import {
   ActionIcon,
   BaseModal,
   BaseModalProps,
-  BaseTable,
   LanguageSelector,
   Selector,
+  SimpleTable,
   useCloseModal,
   usePayload,
 } from "../../components";
@@ -237,13 +237,12 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         ></Form.Control>
       </Input>
       <Input>
-        <BaseTable
-          showPageControl={false}
+        <SimpleTable
           responsive={false}
           columns={columns}
           data={current?.items ?? []}
           update={updateRow}
-        ></BaseTable>
+        ></SimpleTable>
         <Button block variant="light" onClick={addItem}>
           Add
         </Button>

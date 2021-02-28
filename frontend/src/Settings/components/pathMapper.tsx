@@ -5,7 +5,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { FilesApi } from "../../apis";
-import { ActionIcon, BaseTable, FileBrowser } from "../../components";
+import { ActionIcon, FileBrowser, SimpleTable } from "../../components";
 import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
 import { useLatest } from "./hooks";
 import { useUpdate } from "./provider";
@@ -137,14 +137,13 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   );
   return (
     <React.Fragment>
-      <BaseTable
+      <SimpleTable
         emptyText="No Mapping"
         responsive={false}
-        showPageControl={false}
         columns={columns}
         data={data}
         update={updateCell}
-      ></BaseTable>
+      ></SimpleTable>
       <Button block variant="light" onClick={addRow}>
         Add
       </Button>

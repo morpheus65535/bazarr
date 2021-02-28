@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateHistoryList } from "../../@redux/actions";
-import { AsyncStateOverlay, BaseTable, HistoryIcon } from "../../components";
+import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { MoviesBlacklistButton } from "../../components/speical";
 
 interface Props {
@@ -68,11 +68,11 @@ const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   return (
     <AsyncStateOverlay state={movieHistory}>
       {(data) => (
-        <BaseTable
+        <PageTable
           emptyText="Nothing Found in Movies History"
           columns={columns}
           data={data}
-        ></BaseTable>
+        ></PageTable>
       )}
     </AsyncStateOverlay>
   );

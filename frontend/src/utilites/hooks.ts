@@ -22,3 +22,16 @@ export function useBaseUrl(slash: boolean = false) {
     return url;
   }
 }
+
+const characters = "abcdef0123456789";
+const randomGenerator = () => {
+  return Array(8)
+    .fill(null)
+    .map(() => characters.charAt(Math.floor(Math.random() * characters.length)))
+    .join("");
+};
+
+export function useRandom() {
+  const [random] = useState(randomGenerator);
+  return random;
+}

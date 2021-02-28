@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { AsyncStateOverlay, BaseTable, HistoryIcon } from "..";
+import { AsyncStateOverlay, HistoryIcon, PageTable } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
 import { updateAsyncState } from "../../utilites";
 import { MoviesBlacklistButton, SeriesBlacklistButton } from "../speical";
@@ -79,11 +79,11 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
       <AsyncStateOverlay state={history}>
         {(data) => (
-          <BaseTable
+          <PageTable
             emptyText="No History Found"
             columns={columns}
             data={data}
-          ></BaseTable>
+          ></PageTable>
         )}
       </AsyncStateOverlay>
     </BaseModal>
@@ -163,11 +163,11 @@ export const EpisodeHistoryModal: FunctionComponent<
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
       <AsyncStateOverlay state={history}>
         {(data) => (
-          <BaseTable
+          <PageTable
             emptyText="No History Found"
             columns={columns}
             data={data}
-          ></BaseTable>
+          ></PageTable>
         )}
       </AsyncStateOverlay>
     </BaseModal>

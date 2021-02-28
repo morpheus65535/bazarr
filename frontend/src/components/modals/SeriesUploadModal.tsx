@@ -18,10 +18,10 @@ import { connect } from "react-redux";
 import { Column, TableUpdater } from "react-table";
 import {
   AsyncButton,
-  BaseTable,
   FileForm,
   LanguageSelector,
   MessageIcon,
+  SimpleTable,
   useCloseModal,
   usePayload,
   useWhenModalShow,
@@ -494,7 +494,11 @@ const Table: FunctionComponent<TableProps> = (props) => {
   );
 
   return (
-    <BaseTable columns={columns} data={data} update={updateItem}></BaseTable>
+    <SimpleTable
+      columns={columns}
+      data={data}
+      update={updateItem}
+    ></SimpleTable>
   );
 };
 

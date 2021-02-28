@@ -6,7 +6,7 @@ import { connect } from "react-redux";
 import { Column } from "react-table";
 import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, BaseTable, SubtitleText } from "../../components";
+import { AsyncButton, SimpleTable, SubtitleText } from "../../components";
 
 const missingText = "Subtitle Missing";
 
@@ -101,7 +101,7 @@ const Table: FunctionComponent<Props> = (props) => {
     return movie.subtitles.concat(missing);
   }, [movie.missing_subtitles, movie.subtitles]);
 
-  return <BaseTable columns={columns} data={data}></BaseTable>;
+  return <SimpleTable columns={columns} data={data}></SimpleTable>;
 };
 
 export default connect(undefined, { update: movieUpdateInfoAll })(Table);

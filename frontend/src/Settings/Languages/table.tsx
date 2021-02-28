@@ -8,7 +8,7 @@ import React, {
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useLanguagesProfile } from ".";
-import { ActionIcon, BaseTable, useShowModal } from "../../components";
+import { ActionIcon, SimpleTable, useShowModal } from "../../components";
 import { useUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
@@ -118,12 +118,11 @@ const Table: FunctionComponent = () => {
 
   return (
     <React.Fragment>
-      <BaseTable
-        showPageControl={false}
+      <SimpleTable
         columns={columns}
         data={profiles}
         update={updateRow}
-      ></BaseTable>
+      ></SimpleTable>
       <Button
         block
         variant="light"

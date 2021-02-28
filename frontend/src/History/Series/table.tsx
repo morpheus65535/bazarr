@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateHistoryList } from "../../@redux/actions";
-import { AsyncStateOverlay, BaseTable, HistoryIcon } from "../../components";
+import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { SeriesBlacklistButton } from "../../components/speical";
 
 interface Props {
@@ -77,11 +77,11 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
   return (
     <AsyncStateOverlay state={seriesHistory}>
       {(data) => (
-        <BaseTable
+        <PageTable
           emptyText="Nothing Found in Series History"
           columns={columns}
           data={data}
-        ></BaseTable>
+        ></PageTable>
       )}
     </AsyncStateOverlay>
   );

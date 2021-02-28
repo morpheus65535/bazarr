@@ -1,9 +1,9 @@
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { useMemo } from "react";
-import { Table } from "react-bootstrap";
+import React from "react";
 import {
   Cell,
+  HeaderGroup,
   Row,
   TableOptions,
   useExpanded,
@@ -11,6 +11,10 @@ import {
   useSortBy,
   useTable,
 } from "react-table";
+import BaseTable, {
+  ExtractStyleAndOptions,
+  TableStyleProps,
+} from "./BaseTable";
 
 function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
   if (cell.isGrouped) {
@@ -68,12 +72,18 @@ function renderRow<T extends object>(row: Row<T>) {
   }
 }
 
-interface Props<T extends object = {}> extends TableOptions<T> {
-  emptyText?: string;
+function renderHeaders<T extends object>(
+  headers: HeaderGroup<T>[]
+): JSX.Element[] {
+  return headers
+    .filter((col) => !col.isGrouped)
+    .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
 }
 
+type Props<T extends object> = TableOptions<T> & TableStyleProps;
+
 export default function GroupTable<T extends object = {}>(props: Props<T>) {
-  const { emptyText, ...options } = props;
+  const { style, options } = ExtractStyleAndOptions(props);
   const instance = useTable(options, useGroupBy, useSortBy, useExpanded);
 
   const {
@@ -84,58 +94,16 @@ export default function GroupTable<T extends object = {}>(props: Props<T>) {
     prepareRow,
   } = instance;
 
-  const header = useMemo(
-    () => (
-      <thead>
-        {headerGroups.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers
-              .filter((col) => !col.isGrouped)
-              .map((col) => (
-                <th {...col.getHeaderProps()}>{col.render("Header")}</th>
-              ))}
-          </tr>
-        ))}
-      </thead>
-    ),
-    [headerGroups]
-  );
-
-  const colCount = useMemo(() => {
-    return headerGroups.reduce(
-      (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
-      0
-    );
-  }, [headerGroups]);
-
-  const empty = rows.length === 0;
-
-  const body = useMemo(
-    () => (
-      <tbody {...getTableBodyProps()}>
-        {emptyText && empty ? (
-          <tr>
-            <td colSpan={colCount} className="text-center">
-              {emptyText}
-            </td>
-          </tr>
-        ) : (
-          rows.map((row) => {
-            prepareRow(row);
-            return renderRow(row);
-          })
-        )}
-      </tbody>
-    ),
-    [getTableBodyProps, prepareRow, rows, colCount, empty, emptyText]
-  );
-
   return (
-    <React.Fragment>
-      <Table striped borderless responsive {...getTableProps()}>
-        {header}
-        {body}
-      </Table>
-    </React.Fragment>
+    <BaseTable
+      {...style}
+      headers={headerGroups}
+      rows={rows}
+      prepareRow={prepareRow}
+      tableProps={getTableProps()}
+      tableBodyProps={getTableBodyProps()}
+      headersRenderer={renderHeaders}
+      rowRenderer={renderRow}
+    ></BaseTable>
   );
 }

@@ -33,9 +33,9 @@ import { Column } from "react-table";
 import {
   ActionIcon,
   ActionIconItem,
-  BaseTable,
   LanguageSelector,
   Selector,
+  SimpleTable,
   usePayload,
   useShowModal,
 } from "..";
@@ -551,12 +551,12 @@ const Table: FunctionComponent<Props> = ({ item }) => {
   );
 
   return (
-    <BaseTable
+    <SimpleTable
       emptyText="No External Subtitles Found"
       responsive={false}
       columns={columns}
       data={data}
-    ></BaseTable>
+    ></SimpleTable>
   );
 };
 

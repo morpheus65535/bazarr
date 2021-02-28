@@ -6,9 +6,9 @@ interface GroupProps {
 }
 
 const ContentHeaderGroup: FunctionComponent<GroupProps> = (props) => {
-  const { children, pos: dir } = props;
+  const { children, pos } = props;
 
-  const className = `d-flex flex-grow-1 justify-content-${dir}`;
+  const className = `d-flex flex-grow-1 align-items-center justify-content-${pos}`;
   return <div className={className}>{children}</div>;
 };
 

@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { SeriesApi } from "../../apis";
-import { AsyncButton, BaseTable } from "../../components";
+import { AsyncButton, PageTable } from "../../components";
 
 interface Props {
   blacklist: SeriesBlacklist[];
@@ -73,11 +73,11 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
     [update]
   );
   return (
-    <BaseTable
+    <PageTable
       emptyText="No Blacklisted Series Subtitles"
       columns={columns}
       data={blacklist}
-    ></BaseTable>
+    ></PageTable>
   );
 };
 

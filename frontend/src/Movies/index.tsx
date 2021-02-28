@@ -1,9 +1,9 @@
-import { faList } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { AsyncStateOverlay, ContentHeader } from "../components";
+import EditModeHeader from "../components/EditModeHeader";
 import Table from "./table";
 
 interface Props {
@@ -18,6 +18,8 @@ function mapStateToProps({ movie }: StoreState) {
 }
 
 const MovieView: FunctionComponent<Props> = ({ movies }) => {
+  const editMode = useState(false);
+
   return (
     <AsyncStateOverlay state={movies}>
       {(data) => (
@@ -26,7 +28,7 @@ const MovieView: FunctionComponent<Props> = ({ movies }) => {
             <title>Movies - Bazarr</title>
           </Helmet>
           <ContentHeader>
-            <ContentHeader.Button icon={faList}>Mass Edit</ContentHeader.Button>
+            <EditModeHeader editState={editMode}></EditModeHeader>
           </ContentHeader>
           <Row>
             <Table movies={data}></Table>

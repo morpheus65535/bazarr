@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { BaseTable } from "../../components";
+import { SimpleTable } from "../../components";
 
 interface Props {
   providers: SystemProvider[];
@@ -25,7 +25,7 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BaseTable columns={columns} data={props.providers}></BaseTable>;
+  return <SimpleTable columns={columns} data={props.providers}></SimpleTable>;
 };
 
 export default Table;

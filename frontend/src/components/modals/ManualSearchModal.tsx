@@ -26,8 +26,8 @@ import {
   AsyncButton,
   BaseModal,
   BaseModalProps,
-  BaseTable,
   LoadingIndicator,
+  PageTable,
   usePayload,
   useWhenPayloadUpdate,
 } from "..";
@@ -185,11 +185,11 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       return (
         <React.Fragment>
           <p className="mb-3 small">{item?.mapped_path ?? ""}</p>
-          <BaseTable
+          <PageTable
             emptyText="No Result"
             columns={columns}
             data={result}
-          ></BaseTable>
+          ></PageTable>
         </React.Fragment>
       );
     }

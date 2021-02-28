@@ -13,14 +13,15 @@ import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 import {
   ActionBadge,
-  BaseTable,
   ItemEditorModal,
+  PageTable,
   useShowModal,
 } from "../components";
 
 interface Props {
   series: Series[];
   profiles: LanguagesProfile[];
+  editMode: boolean;
   update: (id: number) => void;
 }
 
@@ -31,7 +32,7 @@ function mapStateToProps({ series, system }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series, profiles, update } = props;
+  const { series, profiles, update, editMode } = props;
 
   const showModal = useShowModal();
 
@@ -58,18 +59,23 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
-          return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
-          );
+        Cell: ({ row, value }) => {
+          if (editMode) {
+            return value;
+          } else {
+            const target = `/series/${row.original.sonarrSeriesId}`;
+            return (
+              <Link to={target}>
+                <span>{value}</span>
+              </Link>
+            );
+          }
         },
       },
       {
         Header: "Exist",
         accessor: "exist",
+        editHidden: true,
         Cell: (row) => {
           const exist = row.value;
           const { mapped_path } = row.row.original;
@@ -103,6 +109,7 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Episodes",
         accessor: "episodeFileCount",
+        editHidden: true,
         Cell: (row) => {
           const {
             episodeFileCount,
@@ -136,27 +143,28 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "sonarrSeriesId",
+        editHidden: true,
         Cell: ({ row, update }) => (
           <ActionBadge
             icon={faWrench}
-            onClick={(e) => {
+            onClick={() => {
               update && update(row, "edit");
             }}
           ></ActionBadge>
         ),
       },
     ],
-    [getProfile]
+    [getProfile, editMode]
   );
 
   return (
     <React.Fragment>
-      <BaseTable
+      <PageTable
         emptyText="No Series Found"
         columns={columns}
         data={series}
         update={updateRow}
-      ></BaseTable>
+      ></PageTable>
       <ItemEditorModal
         modalKey="edit"
         submit={(item, form) =>
