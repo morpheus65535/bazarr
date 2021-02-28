@@ -1,5 +1,4 @@
-import { isNumber, isString } from "lodash";
-import { Dispatch, ReactText } from "react";
+import { Dispatch } from "react";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -49,20 +48,5 @@ export function submodProcessColor(s: string) {
   return `color(name=${s})`;
 }
 
-export function isReactText(v: any): v is ReactText {
-  return isString(v) || isNumber(v);
-}
-
-export function isMovie(v: any): v is Movie {
-  return "radarrId" in v;
-}
-
-export function isEpisode(v: any): v is Episode {
-  return "sonarrEpisodeId" in v;
-}
-
-export function isSeries(v: any): v is Series {
-  return "episodeFileCount" in v;
-}
-
 export * from "./hooks";
+export * from "./validate";

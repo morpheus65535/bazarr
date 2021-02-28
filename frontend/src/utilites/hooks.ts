@@ -10,3 +10,15 @@ export function useOnShow(callback: () => void) {
     }
   }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
 }
+
+export function useBaseUrl(slash: boolean = false) {
+  if (process.env.NODE_ENV === "development") {
+    return "/";
+  } else {
+    let url = window.Bazarr.baseUrl ?? "/";
+    if (slash && !url.endsWith("/")) {
+      url += "/";
+    }
+    return url;
+  }
+}

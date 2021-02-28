@@ -16,6 +16,7 @@ import { siteRedirectToAuth } from "../@redux/actions";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { SearchBar, SearchResult } from "../components";
+import { useBaseUrl } from "../utilites";
 
 interface Props {
   movies: Movie[];
@@ -77,8 +78,7 @@ const Header: FunctionComponent<Props> = (props) => {
     [searchMovies, searchSeries]
   );
 
-  const baseUrl =
-    process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
+  const baseUrl = useBaseUrl();
 
   return (
     <Navbar bg="primary" className="flex-grow-1 px-0">

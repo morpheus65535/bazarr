@@ -77,12 +77,7 @@ def template_variable_processor():
 
 @app.route('/bazarr.log')
 def download_log():
-    r = Response()
-    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    r.headers['Cache-Control'] = 'public, max-age=0'
-    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0)
+    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
 
 
 @app.route('/images/series/<path:url>', methods=['GET'])

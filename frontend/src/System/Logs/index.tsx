@@ -1,11 +1,17 @@
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { systemUpdateLogs } from "../../@redux/actions";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useBaseUrl } from "../../utilites";
 import Table from "./table";
 
 interface Props {
@@ -25,6 +31,12 @@ const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
 
   const [resetting, setReset] = useState(false);
 
+  const baseUrl = useBaseUrl(true);
+
+  const download = useCallback(() => {
+    window.open(`${baseUrl}bazarr.log`);
+  }, []);
+
   return (
     <AsyncStateOverlay state={logs}>
       {(data) => (
@@ -40,7 +52,7 @@ const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
             >
               Refresh
             </ContentHeader.Button>
-            <ContentHeader.Button icon={faDownload}>
+            <ContentHeader.Button icon={faDownload} onClick={download}>
               Download
             </ContentHeader.Button>
             <ContentHeader.Button

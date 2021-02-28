@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent } from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { Route, Switch } from "react-router";
@@ -7,12 +7,10 @@ import store from "./@redux/store";
 import "./@scss/index.scss";
 import App from "./App";
 import Auth from "./Auth";
+import { useBaseUrl } from "./utilites";
 
 const Entrance: FunctionComponent = () => {
-  const baseUrl = useMemo(
-    () => (process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/"),
-    []
-  );
+  const baseUrl = useBaseUrl();
 
   return (
     <BrowserRouter basename={baseUrl}>
