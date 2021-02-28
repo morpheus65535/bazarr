@@ -35,7 +35,7 @@ const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
 
   const download = useCallback(() => {
     window.open(`${baseUrl}bazarr.log`);
-  }, []);
+  }, [baseUrl]);
 
   return (
     <AsyncStateOverlay state={logs}>

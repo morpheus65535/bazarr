@@ -8,6 +8,7 @@ import SeriesRouter from "../Series/Router";
 import SettingRouter from "../Settings/Router";
 import SystemRouter from "../System/Router";
 import WantedRouter from "../Wanted/Router";
+import EmptyPage from "./404Page";
 
 const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
   return (
@@ -36,6 +37,9 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
         </Route>
         <Route path="/system">
           <SystemRouter></SystemRouter>
+        </Route>
+        <Route path="*">
+          <EmptyPage></EmptyPage>
         </Route>
       </Switch>
     </div>
