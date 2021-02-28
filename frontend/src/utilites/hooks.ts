@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { mergeArray } from ".";
 
 export function useOnShow(callback: () => void) {
   const [show, setShow] = useState(false);
@@ -34,4 +35,12 @@ const randomGenerator = () => {
 export function useRandom() {
   const [random] = useState(randomGenerator);
   return random;
+}
+
+export function useMergeArray<T extends object>(
+  olds: readonly T[],
+  news: readonly T[],
+  key: keyof T
+) {
+  return useMemo(() => mergeArray(olds, news, key), [olds, news, key]);
 }

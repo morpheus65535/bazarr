@@ -36,14 +36,16 @@ export const seriesUpdateHistoryList = createAsyncAction(
 
 export const seriesUpdateInfo = createAsyncAction(
   SERIES_UPDATE_INFO,
-  (id: number) => SeriesApi.series(id)
+  (id?: number) => SeriesApi.series(id)
 );
 
-export const seriesUpdateInfoAll = createCombineAction((id: number) => [
-  seriesUpdateInfo(id),
-  episodeUpdateInfo(id),
-  updateBadges(),
-]);
+export const seriesUpdateInfoAll = createCombineAction((id?: number) => {
+  const actions = [seriesUpdateInfo(id), updateBadges()];
+  if (id !== undefined) {
+    actions.push(episodeUpdateInfo(id));
+  }
+  return actions;
+});
 
 export const seriesUpdateBlacklist = createAsyncAction(
   SERIES_UPDATE_BLACKLIST,

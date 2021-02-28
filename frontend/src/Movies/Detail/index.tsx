@@ -125,12 +125,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
       </Row>
       <ItemEditorModal
         modalKey="edit"
-        submit={(item, form) =>
-          MoviesApi.modify({
-            radarrid: [(item as Movie).radarrId],
-            profileid: [form.profileid],
-          })
-        }
+        submit={(form) => MoviesApi.modify(form)}
         onSuccess={() => update(id)}
       ></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>

@@ -1,4 +1,6 @@
+import { unionBy } from "lodash";
 import { Dispatch } from "react";
+import { isMovie, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -46,6 +48,24 @@ export function toggleState(
 
 export function submodProcessColor(s: string) {
   return `color(name=${s})`;
+}
+
+export function getExtendItemId(item: ExtendItem): number {
+  if (isMovie(item)) {
+    return item.radarrId;
+  } else if (isSeries(item)) {
+    return item.sonarrSeriesId;
+  } else {
+    return -1;
+  }
+}
+
+export function mergeArray<T extends object>(
+  olds: readonly T[],
+  news: readonly T[],
+  key: keyof T
+) {
+  return unionBy(news, olds, key);
 }
 
 export * from "./hooks";

@@ -2,12 +2,13 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { AsyncButton, Selector } from "../";
+import { getExtendItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
   profiles: LanguagesProfile[];
-  submit: (item: ExtendItem, form: ItemModifyForm) => Promise<void>;
+  submit: (form: ItemModifyForm) => Promise<void>;
   onSuccess?: (item: ExtendItem) => void;
 }
 
@@ -39,11 +40,13 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     () => (
       <AsyncButton
         onChange={setUpdating}
-        promise={() =>
-          submit(item!, {
-            profileid: id,
-          })
-        }
+        promise={() => {
+          const itemId = getExtendItemId(item!);
+          return submit({
+            id: [itemId],
+            profileid: [id],
+          });
+        }}
         onSuccess={() => {
           closeModal();
           onSuccess && onSuccess(item!);

@@ -1,15 +1,6 @@
-interface SeriesModifyForm {
-  seriesid: number[];
-  profileid: (number | undefined)[];
-}
-
-interface MoviesModifyForm {
-  radarrid: number[];
-  profileid: (number | undefined)[];
-}
-
 interface ItemModifyForm {
-  profileid?: number;
+  id: number[];
+  profileid: (number | undefined)[];
 }
 
 interface SubtitleForm {

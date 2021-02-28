@@ -19,20 +19,11 @@ import {
   UsePaginationInstanceProps,
   UsePaginationOptions,
   UsePaginationState,
-  UseResizeColumnsColumnOptions,
-  UseResizeColumnsColumnProps,
-  UseResizeColumnsOptions,
-  UseResizeColumnsState,
   UseRowSelectHooks,
   UseRowSelectInstanceProps,
   UseRowSelectOptions,
   UseRowSelectRowProps,
   UseRowSelectState,
-  UseRowStateCellProps,
-  UseRowStateInstanceProps,
-  UseRowStateOptions,
-  UseRowStateRowProps,
-  UseRowStateState,
   UseSortByColumnOptions,
   UseSortByColumnProps,
   UseSortByHooks,
@@ -48,6 +39,8 @@ declare module "react-table" {
 
   interface CustomTableProps<D extends Record<string, unknown>> {
     update?: TableUpdater<D>;
+    loose?: any[];
+    isSelecting?: boolean;
   }
 
   export interface TableOptions<
@@ -57,9 +50,9 @@ declare module "react-table" {
       // UseGlobalFiltersOptions<D>,
       UseGroupByOptions<D>,
       UsePaginationOptions<D>,
-      UseResizeColumnsOptions<D>,
+      // UseResizeColumnsOptions<D>,
       UseRowSelectOptions<D>,
-      UseRowStateOptions<D>,
+      // UseRowStateOptions<D>,
       UseSortByOptions<D>,
       CustomTableProps<D> {}
 
@@ -79,7 +72,7 @@ declare module "react-table" {
       UseGroupByInstanceProps<D>,
       UsePaginationInstanceProps<D>,
       UseRowSelectInstanceProps<D>,
-      UseRowStateInstanceProps<D>,
+      // UseRowStateInstanceProps<D>,
       UseSortByInstanceProps<D>,
       CustomTableProps<D> {}
 
@@ -91,9 +84,9 @@ declare module "react-table" {
       // UseGlobalFiltersState<D>,
       UseGroupByState<D>,
       UsePaginationState<D>,
-      UseResizeColumnsState<D>,
+      // UseResizeColumnsState<D>,
       UseRowSelectState<D>,
-      UseRowStateState<D>,
+      // UseRowStateState<D>,
       UseSortByState<D> {}
 
   export interface ColumnInterface<
@@ -101,8 +94,9 @@ declare module "react-table" {
   > extends UseFiltersColumnOptions<D>,
       // UseGlobalFiltersColumnOptions<D>,
       UseGroupByColumnOptions<D>,
-      UseResizeColumnsColumnOptions<D>,
+      // UseResizeColumnsColumnOptions<D>,
       UseSortByColumnOptions<D> {
+    selectHide?: boolean;
     className?: string;
   }
 
@@ -110,19 +104,17 @@ declare module "react-table" {
     D extends Record<string, unknown> = Record<string, unknown>
   > extends UseFiltersColumnProps<D>,
       UseGroupByColumnProps<D>,
-      UseResizeColumnsColumnProps<D>,
+      // UseResizeColumnsColumnProps<D>,
       UseSortByColumnProps<D> {}
 
   export interface Cell<
     D extends Record<string, unknown> = Record<string, unknown>,
     V = any
-  > extends UseGroupByCellProps<D>,
-      UseRowStateCellProps<D> {}
+  > extends UseGroupByCellProps<D> {}
 
   export interface Row<
     D extends Record<string, unknown> = Record<string, unknown>
   > extends UseExpandedRowProps<D>,
       UseGroupByRowProps<D>,
-      UseRowSelectRowProps<D>,
-      UseRowStateRowProps<D> {}
+      UseRowSelectRowProps<D> {}
 }

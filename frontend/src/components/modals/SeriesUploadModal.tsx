@@ -241,7 +241,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   const footer = useMemo(
     () => (
       <div className="d-flex flex-row flex-grow-1 justify-content-between">
-        <div style={{ width: "10rem" }}>
+        <div className="w-25">
           <LanguageSelector
             disabled={uploading}
             options={avaliableLanguages}

@@ -33,10 +33,20 @@ const Checkbox = forwardRef<
   return <Form.Check custom id={idIn} ref={resolvedRef} {...rest}></Form.Check>;
 });
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps;
+type Props<T extends object> = TableOptions<T> &
+  TableStyleProps & {
+    onSelect?: (items: T[]) => void;
+  };
 
 export default function SelectTable<T extends object>(props: Props<T>) {
-  const { style, options } = ExtractStyleAndOptions(props);
+  const { onSelect, ...remain } = props;
+  const { style, options } = ExtractStyleAndOptions(remain);
+
+  if (options.autoResetSelectedRows === undefined) {
+    options.autoResetSelectedRows = false;
+  }
+
+  options.isSelecting = true;
 
   const instance = useTable(options, useRowSelect, (hooks) => {
     hooks.visibleColumns.push((columns) => [
@@ -55,7 +65,7 @@ export default function SelectTable<T extends object>(props: Props<T>) {
           ></Checkbox>
         ),
       },
-      ...columns,
+      ...columns.filter((v) => v.selectHide !== true),
     ]);
   });
 
@@ -65,7 +75,16 @@ export default function SelectTable<T extends object>(props: Props<T>) {
     headerGroups,
     rows,
     prepareRow,
+    state: { selectedRowIds },
   } = instance;
+
+  useEffect(() => {
+    // Performance
+    const items = Object.keys(selectedRowIds).flatMap(
+      (v) => rows.find((n) => n.id === v)?.original ?? []
+    );
+    onSelect && onSelect(items);
+  }, [selectedRowIds, onSelect, rows]);
 
   return (
     <BaseTable

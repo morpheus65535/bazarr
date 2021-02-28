@@ -30,10 +30,10 @@ export const movieUpdateHistoryList = createAsyncAction(
 
 export const movieUpdateInfo = createAsyncAction(
   MOVIES_UPDATE_INFO,
-  (id: number) => MoviesApi.movies(id)
+  (id?: number) => MoviesApi.movies(id)
 );
 
-export const movieUpdateInfoAll = createCombineAction((id: number) => {
+export const movieUpdateInfoAll = createCombineAction((id?: number) => {
   return [movieUpdateInfo(id), updateBadges()];
 });
 
