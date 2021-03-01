@@ -55,7 +55,7 @@ export const URLTestButton: FunctionComponent<{
       onClick={click}
       variant={variant}
       title={title}
-      className="text-overflow-ellipsis text-nowrap"
+      className="text-truncate text-nowrap"
     >
       {title}
     </Button>

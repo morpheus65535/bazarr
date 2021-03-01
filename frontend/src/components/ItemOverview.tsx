@@ -43,7 +43,7 @@ const createBadge = (icon: IconDefinition, text: string, desc?: string) => {
     <Badge
       title={`${desc ?? ""}${text}`}
       variant="secondary"
-      className="mr-2 my-1 text-overflow-ellipsis"
+      className="mr-2 my-1 text-truncate"
       key={text}
     >
       <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
@@ -127,7 +127,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       >
         <Col sm="auto">
           <Image
-            className="d-none d-sm-block"
+            className="d-none d-sm-block my-2"
             style={{
               maxHeight: 250,
             }}
@@ -135,11 +135,11 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           ></Image>
         </Col>
         <Col>
-          <Container fluid>
-            <Row className="text-white">
+          <Container fluid className="text-white">
+            <Row>
               <h1>{item.title}</h1>
               <span hidden={item.alternativeTitles.length === 0}>
-                <OverlayTrigger placement="left" overlay={alternativePopover}>
+                <OverlayTrigger overlay={alternativePopover}>
                   <FontAwesomeIcon
                     className="mx-2"
                     icon={fasClone}
@@ -147,11 +147,10 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                 </OverlayTrigger>
               </span>
             </Row>
-            <Row className="text-white">{detailBadges}</Row>
-            <Row className="text-white">{audioBadges}</Row>
-            <Row className="text-white">{languageBadges}</Row>
-            <Row className="text-white"></Row>
-            <Row className="text-white">
+            <Row>{detailBadges}</Row>
+            <Row>{audioBadges}</Row>
+            <Row>{languageBadges}</Row>
+            <Row>
               <span>{item.overview}</span>
             </Row>
           </Container>

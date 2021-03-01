@@ -72,12 +72,12 @@ export const Card: FunctionComponent<CardProps> = ({
         </BSCard.Body>
       ) : (
         <BSCard.Body>
-          <BSCard.Title className="text-nowrap text-overflow-ellipsis">
+          <BSCard.Title className="text-nowrap text-truncate">
             {header}
           </BSCard.Title>
           <BSCard.Subtitle
             hidden={subheader === undefined}
-            className="small text-nowrap text-overflow-ellipsis"
+            className="small text-nowrap text-truncate"
           >
             {subheader}
           </BSCard.Subtitle>
