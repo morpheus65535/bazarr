@@ -126,25 +126,35 @@ typing-extensions==3.7.4.3 # Required-by: yarl, rich, importlib-metadata -> ... 
 webencodings==0.5.1        # Required-by: html5lib -> BeautifulSoup4
 zipp==3.4.0                # Required-by: importlib-metadata -> knowit/apprise/ffsubsync
 
+### Dependencies for bundled libraries
+contextlib2==0.5.5 # Required-by: py7zr, subscene_api -> subliminal_patch
+dnspython==1.15.0  # Required-by: subliminal_patch
+pysrt==1.1.1       # Required-by: subliminal, subliminal_patch
 
-# in bazarr tree, MISSING in pip freeze
-# These are probably the subliminal_patch and subzero dependencies
-#cloudscraper
-#contextlib2
-#deathbycaptcha
-#dns
-#dumprar
-#fcache
-#ftfy
-#inflect
-#js2py
-#json_tricks
-#jstyleson.py
-#libfilebot
-#py7zipr
-#pyads
-#pyjsparser
-#pysrt
+# Js2Py=0.63 <-- modified: manually merged from upstream: https://github.com/PiotrDabkowski/Js2Py/pull/192/files
+# Our fix was released wyth Js2Py 0.68. Including 0.70 which is the latest at this moment and has some more fixes.
+# This is why there are some changes between now and the originally bundled version.
+Js2Py==0.70  # Required-by: cloudscraper -> subliminal_patch
+
+# fcache differences between 0.4.7 and bundled are of no impact to subliminal_patch.
+# It's basically only the addition of some retries in the posixemulation module, and
+# it changes an exception to a return None in the case of opening a file
+fcache==0.4.7 # Required-by: subzero
+
+# bundled version still used some python2 unicode u'' lines.
+# Only difference between bundled and 4.4.3 is this. Using 4.4.3 is the better way going forward
+ftfy==4.4.3 # Required-by: subliminal_patch
+
+inflect==2.1.0 # Required-by: subliminal_patch
+
+# Bundled version was older, but its only used in Js2Py so we trust the Js2Py dev here (should we?)
+pyjsparser==2.7.1 # Required-by: Js2Py
+
+
+#json_tricks # Required-by: subzero
+#py7zr # Required-by: subliminal_patch
+#pyads # Required-by: libfilebot
+
 #python_anticaptcha
 #requests_toolbelt
 #retry
