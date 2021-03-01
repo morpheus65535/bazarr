@@ -21,6 +21,7 @@ guessit==3.1.1
 guess_language-spirit==0.5.3
 py-pretty==1
 pycountry==18.2.23
+pyga==2.6.2
 python-dateutil==2.7.3
 rarfile==3.0
 requests==2.22.0
@@ -31,10 +32,6 @@ whichcraft==0.5.2
 # For some dependencies we use non released versions.
 # knowit==0.3.0-dev
 git+https://github.com/ratoaq2/knowit@eea9ac18e38c930230cf81b5dca4a9af9fb10d4e
-
-# For some dependencies we use a fix that is not available in the official packages yet
-# pyga==2.6.1 + fix for python3 that has no .itervalues
-git+https://github.com/mvanbaak/py-ga-mob@3c5fef82b6951f4bb15dc0ee0e71c773505e26c2
 
 # non releases
 #pysubs2==0.2.4 + patch for ASS.drawing, is available in 1.0.0
