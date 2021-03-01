@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { uiPageSizeKey } from "../../@types/localStorage";
+import { uiPageSizeKey } from "../../@storage/local";
 import { Group, Input, Selector, SettingsProvider } from "../components";
 import { pageSizeOptions } from "./options";
 

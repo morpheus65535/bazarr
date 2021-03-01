@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { useEnabledLanguages, useLanguagesProfile } from ".";
+import { useEnabledLanguages, useProfiles } from ".";
 import { LanguageSelector as CLanguageSelector } from "../../components";
 import { BaseInput, Selector, useUpdate } from "../components";
 
@@ -29,7 +29,7 @@ interface ProfileSelectorProps {}
 export const ProfileSelector: FunctionComponent<
   ProfileSelectorProps & BaseInput<LanguagesProfile>
 > = ({ settingKey }) => {
-  const profiles = useLanguagesProfile();
+  const profiles = useProfiles();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>

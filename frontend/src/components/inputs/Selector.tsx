@@ -56,7 +56,7 @@ export function Selector<T = string, M extends boolean = false>(
           }
         }
       } else {
-        return undefined;
+        return value;
       }
     },
     [label, multiple, nameFromItems]

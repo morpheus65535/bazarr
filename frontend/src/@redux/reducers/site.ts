@@ -1,5 +1,5 @@
 import { Action, handleActions } from "redux-actions";
-import { uiPageSizeKey } from "../../@types/localStorage";
+import { storage } from "../../@storage/local";
 import {
   SITE_AUTH_SUCCESS,
   SITE_INITIALIZED,
@@ -9,7 +9,7 @@ import {
 
 function updateLocalStorage(): Partial<SiteState> {
   return {
-    pageSize: Number.parseInt(localStorage.getItem(uiPageSizeKey) ?? "50"),
+    pageSize: storage.pageSize,
   };
 }
 

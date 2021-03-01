@@ -7,7 +7,11 @@ import {
   SelectTable,
   useShowModal,
 } from "../../components";
-import { getExtendItemId, useMergeArray } from "../../utilites";
+import {
+  getExtendItemId,
+  useLanguageProfiles,
+  useMergeArray,
+} from "../../utilites";
 
 interface Props extends SharedProps {
   items: readonly ExtendItem[];
@@ -25,7 +29,6 @@ const Table: FunctionComponent<Props> = ({
   select,
   columns,
   name,
-  profiles,
 }) => {
   const showModal = useShowModal();
 
@@ -38,8 +41,14 @@ const Table: FunctionComponent<Props> = ({
 
   const data = useMergeArray(items, dirtyItems, ExtendItemComparer);
 
+  const profiles = useLanguageProfiles();
+
   const sharedOptions: TableOptions<ExtendItem> = useMemo(
-    () => ({ columns, data, loose: [profiles] }),
+    () => ({
+      columns,
+      data,
+      loose: [profiles],
+    }),
     [columns, data, profiles]
   );
 

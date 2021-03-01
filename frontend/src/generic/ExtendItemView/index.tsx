@@ -7,10 +7,13 @@ import React, {
 } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { Column } from "react-table";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { getExtendItemId, mergeArray } from "../../utilites";
+import {
+  getExtendItemId,
+  mergeArray,
+  useLanguageProfiles,
+} from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
@@ -18,24 +21,14 @@ export interface SharedProps {
   update: (id?: number) => void;
   columns: Column<ExtendItem>[];
   modify: (form: ItemModifyForm) => Promise<void>;
-  profiles: LanguagesProfile[];
 }
 
-export function ExtendItemComparer<T extends ExtendItem>(
-  lhs: T,
-  rhs: T
-): boolean {
-  return lhs.title === rhs.title;
+export function ExtendItemComparer(lhs: ExtendItem, rhs: ExtendItem): boolean {
+  return getExtendItemId(lhs) === getExtendItemId(rhs);
 }
 
 interface Props extends SharedProps {
   items: AsyncState<ExtendItem[]>;
-}
-
-function mapStateToProps({ system }: StoreState) {
-  return {
-    profiles: system.languagesProfiles.items,
-  };
 }
 
 const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
@@ -44,6 +37,8 @@ const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   const [selections, setSelections] = useState<ExtendItem[]>([]);
   const [dirtyItems, setDirty] = useState<ExtendItem[]>([]);
 
+  const profiles = useLanguageProfiles();
+
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];
     items.push(
@@ -51,14 +46,14 @@ const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
     );
     items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
     items.push(
-      ...shared.profiles.map((v) => (
+      ...profiles.map((v) => (
         <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
           {v.name}
         </Dropdown.Item>
       ))
     );
     return items;
-  }, [shared.profiles]);
+  }, [profiles]);
 
   const changeProfiles = useCallback(
     (key: string | null) => {
@@ -152,4 +147,4 @@ const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   );
 };
 
-export default connect(mapStateToProps)(ExtendItemView);
+export default ExtendItemView;

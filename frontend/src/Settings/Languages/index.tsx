@@ -28,7 +28,7 @@ export function useEnabledLanguages() {
   }
 }
 
-export function useLanguagesProfile() {
+export function useProfiles() {
   const list = useContext(LanguagesProfileContext);
   const latest = useLatest<LanguagesProfile[]>(languageProfileKey, isArray);
 

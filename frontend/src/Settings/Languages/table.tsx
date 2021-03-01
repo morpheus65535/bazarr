@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useLanguagesProfile } from ".";
+import { useProfiles } from ".";
 import { ActionIcon, SimpleTable, useShowModal } from "../../components";
 import { useUpdate } from "../components";
 import { languageProfileKey } from "../keys";
@@ -15,7 +15,7 @@ import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
-  const originalProfiles = useLanguagesProfile();
+  const originalProfiles = useProfiles();
 
   const [profiles, setProfiles] = useState([...originalProfiles]);
 

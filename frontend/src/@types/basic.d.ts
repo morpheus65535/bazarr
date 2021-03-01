@@ -8,3 +8,5 @@ type FileTree = {
   path: string;
   name: string;
 };
+
+type StorageType = string | null;

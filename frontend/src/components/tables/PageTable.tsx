@@ -7,10 +7,11 @@ import BaseTable, {
   TableStyleProps,
 } from "./BaseTable";
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps;
+type Props<T extends object> = TableOptions<T> & TableStyleProps & {};
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { style, options } = ExtractStyleAndOptions(props);
+  const { ...remain } = props;
+  const { style, options } = ExtractStyleAndOptions(remain);
 
   // Default Settings
   const site = useSelector<StoreState, SiteState>((s) => s.site);
