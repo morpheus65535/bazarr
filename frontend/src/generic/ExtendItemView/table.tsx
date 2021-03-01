@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { TableOptions, TableUpdater } from "react-table";
-import { SharedProps } from ".";
+import { ExtendItemComparer, SharedProps } from ".";
 import {
   ItemEditorModal,
   PageTable,
@@ -36,7 +36,7 @@ const Table: FunctionComponent<Props> = ({
     [showModal]
   );
 
-  const data = useMergeArray(items, dirtyItems, "title");
+  const data = useMergeArray(items, dirtyItems, ExtendItemComparer);
 
   const sharedOptions: TableOptions<ExtendItem> = useMemo(
     () => ({ columns, data, loose: [profiles] }),

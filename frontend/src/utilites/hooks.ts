@@ -37,10 +37,14 @@ export function useRandom() {
   return random;
 }
 
-export function useMergeArray<T extends object>(
+export function useMergeArray<T>(
   olds: readonly T[],
   news: readonly T[],
-  key: keyof T
+  comparer: Comparer<T>
 ) {
-  return useMemo(() => mergeArray(olds, news, key), [olds, news, key]);
+  return useMemo(() => mergeArray(olds, news, comparer), [
+    olds,
+    news,
+    comparer,
+  ]);
 }

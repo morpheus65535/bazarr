@@ -1,6 +1,7 @@
 import { isArray, isEqual } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useStore } from "react-redux";
+import { mergeArray } from "../../utilites";
 import { useSettings, useStaged, useUpdate } from "./provider";
 
 type ValidateFuncType<T> = (v: any) => v is T;
@@ -102,7 +103,7 @@ export function useLatest<T>(
 // Merge Two Array
 export function useLatestMergeArray<T>(
   key: string,
-  compare?: (one: T, another: T) => boolean,
+  compare: Comparer<T>,
   override?: OverrideFuncType<T[]>
 ): Readonly<T[] | undefined> {
   const extractValue = useExtract<T[]>(key, isArray, override);
@@ -119,15 +120,7 @@ export function useLatestMergeArray<T>(
 
   return useMemo(() => {
     if (staged !== undefined && extractValue) {
-      const newArray = extractValue.map((v) => {
-        const updated = staged!.find((inn) => compare!(v, inn));
-        if (updated) {
-          return updated;
-        } else {
-          return v;
-        }
-      });
-      return newArray;
+      return mergeArray(extractValue, staged, compare);
     } else {
       return extractValue;
     }

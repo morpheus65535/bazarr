@@ -1,4 +1,3 @@
-import { unionBy } from "lodash";
 import { Dispatch } from "react";
 import { isMovie, isSeries } from "./validate";
 
@@ -60,12 +59,22 @@ export function getExtendItemId(item: ExtendItem): number {
   }
 }
 
-export function mergeArray<T extends object>(
+export function mergeArray<T>(
   olds: readonly T[],
   news: readonly T[],
-  key: keyof T
+  comparer: Comparer<T>
 ) {
-  return unionBy(news, olds, key);
+  const list = [...olds];
+  // Performance
+  news.forEach((v) => {
+    const idx = list.findIndex((n) => comparer(n, v));
+    if (idx !== -1) {
+      list[idx] = v;
+    } else {
+      list.push(v);
+    }
+  });
+  return list;
 }
 
 export * from "./hooks";

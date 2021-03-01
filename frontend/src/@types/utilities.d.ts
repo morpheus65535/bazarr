@@ -33,3 +33,5 @@ type SelectorOption<PAYLOAD> = {
 type SelectorValueType<T, M extends boolean> = M extends true
   ? ReadonlyArray<T>
   : T | undefined;
+
+type Comparer<T> = (lhs: T, rhs: T) => boolean;

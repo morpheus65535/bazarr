@@ -1,3 +1,4 @@
+import { mergeArray } from "../../utilites";
 import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
@@ -41,20 +42,13 @@ export function updateAsyncList<T, ID extends keyof T>(
       error: action.payload.item as Error,
     };
   } else {
-    const list = [...(state.items as T[])];
+    const list = state.items as T[];
     const payload = action.payload.item as T[];
-
-    payload.forEach((v) => {
-      const idx = list.findIndex((old) => old[match] === v[match]);
-
-      if (idx !== -1) {
-        list[idx] = v;
-      }
-    });
+    const result = mergeArray(list, payload, (l, r) => l[match] === r[match]);
 
     return {
       updating: false,
-      items: list,
+      items: result,
     };
   }
 }

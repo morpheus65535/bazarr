@@ -21,6 +21,13 @@ export interface SharedProps {
   profiles: LanguagesProfile[];
 }
 
+export function ExtendItemComparer<T extends ExtendItem>(
+  lhs: T,
+  rhs: T
+): boolean {
+  return lhs.title === rhs.title;
+}
+
 interface Props extends SharedProps {
   items: AsyncState<ExtendItem[]>;
 }
@@ -61,7 +68,7 @@ const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
         item.profileId = id;
         return item;
       });
-      const newDirty = mergeArray(dirtyItems, newItems, "title");
+      const newDirty = mergeArray(dirtyItems, newItems, ExtendItemComparer);
       setDirty(newDirty);
     },
     [selections, dirtyItems]
