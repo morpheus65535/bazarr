@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useEffect } from "react";
-import { Card, Container, Row } from "react-bootstrap";
+import { Badge, Card, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { systemUpdateReleases } from "../../@redux/actions";
@@ -30,7 +30,7 @@ const ReleasesView: FunctionComponent<Props> = ({ releases, update }) => {
           </Helmet>
           <Row>
             {item.map((v, idx) => (
-              <InfoElement key={idx} release={v}></InfoElement>
+              <InfoElement key={idx} {...v}></InfoElement>
             ))}
           </Row>
         </Container>
@@ -39,23 +39,42 @@ const ReleasesView: FunctionComponent<Props> = ({ releases, update }) => {
   );
 };
 
-const InfoElement: FunctionComponent<{ release: ReleaseInfo }> = ({
-  release,
+const footerBadgeCls = "mr-2";
+
+const InfoElement: FunctionComponent<ReleaseInfo> = ({
+  name,
+  body,
+  date,
+  prerelease,
+  current,
 }) => {
   return (
     <Card className="mb-4 mx-3 d-flex flex-grow-1">
       <Card.Body>
         <Card.Title>
-          <span>{release.name}</span>
+          <span>{name}</span>
         </Card.Title>
         <Card.Subtitle>From newest to oldest</Card.Subtitle>
         <Card.Text className="mt-3">
-          {release.body.map((v, idx) => (
+          {body.map((v, idx) => (
             <li key={idx}>{v}</li>
           ))}
         </Card.Text>
       </Card.Body>
-      <Card.Footer>{release.date}</Card.Footer>
+      <Card.Footer>
+        <Badge className={footerBadgeCls} variant="info">
+          {date}
+        </Badge>
+        <Badge
+          className={footerBadgeCls}
+          variant={prerelease ? "danger" : "success"}
+        >
+          {prerelease ? "Development" : "Master"}
+        </Badge>
+        <Badge className={footerBadgeCls} hidden={!current} variant="primary">
+          Installed
+        </Badge>
+      </Card.Footer>
     </Card>
   );
 };
