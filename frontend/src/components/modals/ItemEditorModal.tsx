@@ -9,7 +9,7 @@ import { useCloseModal, usePayload } from "./provider";
 interface Props {
   profiles: LanguagesProfile[];
   submit: (form: ItemModifyForm) => Promise<void>;
-  onSuccess?: (item: ExtendItem) => void;
+  onSuccess?: (item: BaseItem) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -21,7 +21,7 @@ function mapStateToProps({ system }: StoreState) {
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { profiles, onSuccess, submit, ...modal } = props;
 
-  const item = usePayload<ExtendItem>(modal.modalKey);
+  const item = usePayload<BaseItem>(modal.modalKey);
 
   const closeModal = useCloseModal();
 

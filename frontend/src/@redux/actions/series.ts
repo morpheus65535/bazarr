@@ -1,4 +1,4 @@
-import { EpisodesApi, HistoryApi, SeriesApi } from "../../apis";
+import { EpisodesApi, SeriesApi } from "../../apis";
 import {
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
@@ -16,7 +16,7 @@ export const seriesUpdateList = createAsyncAction(SERIES_UPDATE_LIST, () =>
 
 export const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,
-  () => SeriesApi.wanted()
+  () => EpisodesApi.wanted()
 );
 
 export const seriesUpdateWantedAll = createCombineAction(() => [
@@ -31,7 +31,7 @@ export const episodeUpdateInfo = createAsyncAction(
 
 export const seriesUpdateHistoryList = createAsyncAction(
   SERIES_UPDATE_HISTORY_LIST,
-  () => HistoryApi.series()
+  () => EpisodesApi.history()
 );
 
 export const seriesUpdateInfo = createAsyncAction(
@@ -49,5 +49,5 @@ export const seriesUpdateInfoAll = createCombineAction((id?: number) => {
 
 export const seriesUpdateBlacklist = createAsyncAction(
   SERIES_UPDATE_BLACKLIST,
-  () => SeriesApi.blacklist()
+  () => EpisodesApi.blacklist()
 );

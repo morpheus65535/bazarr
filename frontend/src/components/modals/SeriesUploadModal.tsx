@@ -28,6 +28,7 @@ import {
 } from "..";
 import { seriesUpdateInfoAll } from "../../@redux/actions";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
+import { useGetLanguage, useProfileBy } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 
 enum SubtitleState {
@@ -65,13 +66,15 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [language, setLanguage] = useState<Language | undefined>(undefined);
 
+  const profile = useProfileBy(series?.profileId);
+
+  const languageGetter = useGetLanguage(true);
+
   useWhenModalShow(modal.modalKey, () => {
-    if (series) {
-      const lang =
-        series.languages.length > 0 ? series.languages[0] : undefined;
-      if (lang) {
-        setLanguage(lang);
-      }
+    if (profile) {
+      const first = profile.items[0]?.language;
+      const lang = languageGetter(first);
+      setLanguage(lang);
     }
   });
 

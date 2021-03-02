@@ -40,8 +40,8 @@ interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
   wantedSeriesList: AsyncState<Array<WantedEpisode>>;
   episodeList: AsyncState<Map<number, Array<Episode>>>;
-  historyList: AsyncState<Array<SeriesHistory>>;
-  blacklist: AsyncState<Array<SeriesBlacklist>>;
+  historyList: AsyncState<Array<EpisodeHistory>>;
+  blacklist: AsyncState<Array<EpisodeBlacklist>>;
 }
 
 interface MovieState {

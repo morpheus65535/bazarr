@@ -7,7 +7,7 @@ import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { SeriesBlacklistButton } from "../../components/speical";
 
 interface Props {
-  seriesHistory: AsyncState<SeriesHistory[]>;
+  seriesHistory: AsyncState<EpisodeHistory[]>;
   update: () => void;
 }
 
@@ -19,7 +19,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
-  const columns: Column<SeriesHistory>[] = useMemo<Column<SeriesHistory>[]>(
+  const columns: Column<EpisodeHistory>[] = useMemo<Column<EpisodeHistory>[]>(
     () => [
       {
         accessor: "action",
@@ -56,9 +56,9 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
         accessor: "description",
       },
       {
-        accessor: "subs_id",
-        Cell: (row) => {
-          const original = row.row.original;
+        accessor: "exist",
+        Cell: ({ row }) => {
+          const original = row.original;
 
           return (
             <SeriesBlacklistButton

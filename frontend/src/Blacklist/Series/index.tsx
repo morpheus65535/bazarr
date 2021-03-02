@@ -4,12 +4,12 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
-import { SeriesApi } from "../../apis";
+import { EpisodesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  blacklist: AsyncState<SeriesBlacklist[]>;
+  blacklist: AsyncState<EpisodeBlacklist[]>;
   update: () => void;
 }
 
@@ -34,7 +34,7 @@ const BlacklistSeriesView: FunctionComponent<Props> = ({
           <ContentHeader>
             <ContentHeader.AsyncButton
               icon={faTrash}
-              promise={() => SeriesApi.deleteBlacklist(true)}
+              promise={() => EpisodesApi.deleteBlacklist(true)}
               onSuccess={update}
             >
               Remove All

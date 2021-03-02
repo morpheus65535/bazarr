@@ -55,7 +55,7 @@ const reducer = handleActions<SeriesState, any>(
     },
     [SERIES_UPDATE_HISTORY_LIST]: (
       state,
-      action: AsyncAction<SeriesHistory[]>
+      action: AsyncAction<EpisodeHistory[]>
     ) => {
       return {
         ...state,
@@ -70,7 +70,7 @@ const reducer = handleActions<SeriesState, any>(
     },
     [SERIES_UPDATE_BLACKLIST]: (
       state,
-      action: AsyncAction<SeriesBlacklist[]>
+      action: AsyncAction<EpisodeBlacklist[]>
     ) => {
       return {
         ...state,

@@ -60,9 +60,9 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
       },
       {
         // Actions
-        accessor: "subs_id",
-        Cell: (row) => {
-          const original = row.row.original;
+        accessor: "exist",
+        Cell: ({ row }) => {
+          const original = row.original;
           return (
             <MoviesBlacklistButton
               update={update}
@@ -141,14 +141,13 @@ export const EpisodeHistoryModal: FunctionComponent<
       },
       {
         // Actions
-        accessor: "subs_id",
-        Cell: (row) => {
-          const original = row.row.original;
+        accessor: "exist",
+        Cell: ({ row }) => {
+          const original = row.original;
           return (
             <SeriesBlacklistButton
               seriesid={original.sonarrSeriesId}
               episodeid={original.sonarrEpisodeId}
-              path={original.video_path}
               update={update}
               {...original}
             ></SeriesBlacklistButton>

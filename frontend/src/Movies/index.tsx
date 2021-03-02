@@ -14,7 +14,7 @@ import { Column } from "react-table";
 import { movieUpdateInfoAll } from "../@redux/actions";
 import { MoviesApi } from "../apis";
 import { ActionBadge } from "../components";
-import ExtendItemView from "../generic/ExtendItemView";
+import BaseItemView from "../generic/BaseItemView";
 
 interface Props {
   movies: AsyncState<Movie[]>;
@@ -89,7 +89,7 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
         accessor: "profileId",
         Cell: ({ value, loose }) => {
           if (loose) {
-            // Define in generic/ExtendItemView/table.tsx
+            // Define in generic/BaseItemView/table.tsx
             const profiles = loose[0] as LanguagesProfile[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
@@ -124,13 +124,13 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
   );
 
   return (
-    <ExtendItemView
+    <BaseItemView
       items={movies}
       name="Movies"
       update={update}
-      columns={columns as Column<ExtendItem>[]}
+      columns={columns as Column<BaseItem>[]}
       modify={(form) => MoviesApi.modify(form)}
-    ></ExtendItemView>
+    ></BaseItemView>
   );
 };
 

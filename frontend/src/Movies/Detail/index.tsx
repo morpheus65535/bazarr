@@ -58,7 +58,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
     return <LoadingIndicator></LoadingIndicator>;
   }
 
-  const allowEdit = item?.languages instanceof Array ?? false;
+  const allowEdit = item.profileId !== undefined;
 
   return (
     <Container fluid>

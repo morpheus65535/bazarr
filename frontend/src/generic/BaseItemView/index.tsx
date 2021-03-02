@@ -19,23 +19,23 @@ import Table from "./table";
 export interface SharedProps {
   name: string;
   update: (id?: number) => void;
-  columns: Column<ExtendItem>[];
+  columns: Column<BaseItem>[];
   modify: (form: ItemModifyForm) => Promise<void>;
 }
 
-export function ExtendItemComparer(lhs: ExtendItem, rhs: ExtendItem): boolean {
+export function ExtendItemComparer(lhs: BaseItem, rhs: BaseItem): boolean {
   return getExtendItemId(lhs) === getExtendItemId(rhs);
 }
 
 interface Props extends SharedProps {
-  items: AsyncState<ExtendItem[]>;
+  items: AsyncState<BaseItem[]>;
 }
 
-const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
+const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   const [editMode, setEdit] = useState(false);
 
-  const [selections, setSelections] = useState<ExtendItem[]>([]);
-  const [dirtyItems, setDirty] = useState<ExtendItem[]>([]);
+  const [selections, setSelections] = useState<BaseItem[]>([]);
+  const [dirtyItems, setDirty] = useState<BaseItem[]>([]);
 
   const profiles = useLanguageProfiles();
 
@@ -147,4 +147,4 @@ const ExtendItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   );
 };
 
-export default ExtendItemView;
+export default BaseItemView;

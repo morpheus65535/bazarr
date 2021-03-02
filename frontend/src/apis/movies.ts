@@ -74,7 +74,7 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async history(id: number): Promise<Array<MovieHistory>> {
+  async history(id?: number): Promise<Array<MovieHistory>> {
     return new Promise<Array<MovieHistory>>((resolve, reject) => {
       this.get<DataWrapper<Array<MovieHistory>>>("/history", {
         radarrid: id,

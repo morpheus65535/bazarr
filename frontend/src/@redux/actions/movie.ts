@@ -1,4 +1,4 @@
-import { HistoryApi, MoviesApi } from "../../apis";
+import { MoviesApi } from "../../apis";
 import {
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
@@ -25,7 +25,7 @@ export const movieUpdateWantedAll = createCombineAction(() => [
 
 export const movieUpdateHistoryList = createAsyncAction(
   MOVIES_UPDATE_HISTORY_LIST,
-  () => HistoryApi.movies()
+  () => MoviesApi.history()
 );
 
 export const movieUpdateInfo = createAsyncAction(

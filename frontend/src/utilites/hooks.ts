@@ -31,10 +31,37 @@ export function useLanguageProfiles() {
   );
 }
 
-export function useLanguages(enabled: boolean) {
+export function useProfileBy(id?: number) {
+  const profiles = useLanguageProfiles();
+  return useMemo(() => profiles.find((v) => v.profileId === id), [
+    id,
+    profiles,
+  ]);
+}
+
+export function useLanguages(enabled: boolean = false) {
   return useSelector<StoreState, Language[]>((s) =>
     enabled ? s.system.enabledLanguage.items : s.system.languages.items
   );
+}
+
+export function useGetLanguage(enabled: boolean = false) {
+  const languages = useLanguages(enabled);
+  return useCallback(
+    (code?: string) => {
+      if (code === undefined) {
+        return undefined;
+      } else {
+        return languages.find((v) => v.code2 === code);
+      }
+    },
+    [languages]
+  );
+}
+
+export function useLanguageBy(code: string) {
+  const getter = useGetLanguage();
+  return useMemo(() => getter(code), [code, getter]);
 }
 
 export function useSessionStorage(

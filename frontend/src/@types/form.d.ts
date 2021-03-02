@@ -35,7 +35,7 @@ interface BlacklistAddForm {
   language: string;
   forced: boolean;
   hi: boolean;
-  video_path: string;
+  path: string;
   subtitles_path: string;
 }
 

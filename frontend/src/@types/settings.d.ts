@@ -36,7 +36,7 @@ interface GeneralSettings {
   days_to_upgrade_subs: number;
   debug: boolean;
   dont_notify_manual_actions: boolean;
-  embeddeenabled_providersd_subs_show_desired: boolean;
+  embedded_subs_show_desired: boolean;
   enabled_providers: string[];
   ignore_pgs_subs: boolean;
   ignore_vobsub_subs: boolean;

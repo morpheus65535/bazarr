@@ -14,10 +14,10 @@ import {
 } from "../../utilites";
 
 interface Props extends SharedProps {
-  items: readonly ExtendItem[];
-  dirtyItems: readonly ExtendItem[];
+  items: readonly BaseItem[];
+  dirtyItems: readonly BaseItem[];
   editMode: boolean;
-  select: React.Dispatch<ExtendItem[]>;
+  select: React.Dispatch<BaseItem[]>;
 }
 
 const Table: FunctionComponent<Props> = ({
@@ -32,7 +32,7 @@ const Table: FunctionComponent<Props> = ({
 }) => {
   const showModal = useShowModal();
 
-  const updateRow = useCallback<TableUpdater<ExtendItem>>(
+  const updateRow = useCallback<TableUpdater<BaseItem>>(
     (row, modalKey: string) => {
       showModal(modalKey, row.original);
     },
@@ -43,7 +43,7 @@ const Table: FunctionComponent<Props> = ({
 
   const profiles = useLanguageProfiles();
 
-  const sharedOptions: TableOptions<ExtendItem> = useMemo(
+  const sharedOptions: TableOptions<BaseItem> = useMemo(
     () => ({
       columns,
       data,

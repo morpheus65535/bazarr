@@ -8,8 +8,8 @@ class SubtitlesApi extends BaseApi {
   }
 
   async info(names: string[]) {
-    return new Promise<SubtitleNameInfo[]>((resolve, reject) => {
-      this.get<DataWrapper<SubtitleNameInfo[]>>(`/info`, {
+    return new Promise<SubtitleInfo[]>((resolve, reject) => {
+      this.get<DataWrapper<SubtitleInfo[]>>(`/info`, {
         filenames: names,
       })
         .then((result) => resolve(result.data.data))

@@ -174,7 +174,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Input>
               <Check
                 label="Show Only Desired Languages"
-                settingKey="settings-general-embeddeenabled_providersd_subs_show_desired"
+                settingKey="settings-general-embedded_subs_show_desired"
               ></Check>
               <Message>
                 Hide embedded subtitles for languages that are not currently

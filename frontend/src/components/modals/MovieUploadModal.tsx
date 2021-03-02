@@ -11,22 +11,18 @@ import {
 } from "..";
 import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
+import { useGetLanguage, useLanguages, useProfileBy } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 interface MovieProps {
-  avaliableLanguages: Language[];
   update: (id: number) => void;
-}
-
-function mapStateToProps({ system }: StoreState) {
-  return {
-    avaliableLanguages: system.enabledLanguage.items,
-  };
 }
 
 const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   props
 ) => {
-  const { avaliableLanguages, update, ...modal } = props;
+  const { update, ...modal } = props;
+
+  const avaliableLanguages = useLanguages(true);
 
   const movie = usePayload<Movie>(modal.modalKey);
 
@@ -36,9 +32,14 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [language, setLanguage] = useState<Language | undefined>(undefined);
 
+  const profile = useProfileBy(movie?.profileId);
+
+  const languageGetter = useGetLanguage(true);
+
   useWhenModalShow(modal.modalKey, () => {
-    if (movie) {
-      const lang = movie.languages.length > 0 ? movie.languages[0] : undefined;
+    if (profile) {
+      const first = profile.items[0]?.language;
+      const lang = languageGetter(first);
       setLanguage(lang);
     }
   });
@@ -118,6 +119,6 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateInfoAll })(
+export default connect(undefined, { update: movieUpdateInfoAll })(
   MovieUploadModal
 );

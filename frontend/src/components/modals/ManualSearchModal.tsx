@@ -37,7 +37,7 @@ import { isMovie } from "../../utilites";
 type SupportType = Movie | Episode;
 
 interface Props {
-  onSelect: (item: SupportType, result: ManualSearchResult) => Promise<void>;
+  onSelect: (item: SupportType, result: SearchResultType) => Promise<void>;
   onDownload?: () => void;
 }
 
@@ -46,7 +46,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { onSelect, onDownload, ...modal } = props;
 
-  const [result, setResult] = useState<ManualSearchResult[]>([]);
+  const [result, setResult] = useState<SearchResultType[]>([]);
   const [searching, setSearch] = useState(false);
   const [start, setStart] = useState(false);
 
@@ -56,7 +56,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     if (item) {
       setStart(true);
       setSearch(true);
-      let promise: Promise<ManualSearchResult[]>;
+      let promise: Promise<SearchResultType[]>;
       if (isMovie(item)) {
         promise = ProvidersApi.movies(item.radarrId);
       } else {
@@ -75,7 +75,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     reset();
   });
 
-  const columns = useMemo<Column<ManualSearchResult>[]>(
+  const columns = useMemo<Column<SearchResultType>[]>(
     () => [
       {
         accessor: "subtitle",

@@ -20,18 +20,11 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { connect } from "react-redux";
+import { useGetLanguage, useProfileBy } from "../utilites";
 
 interface Props {
-  item: ExtendItem;
+  item: BaseItem;
   details?: { icon: IconDefinition; text: string }[];
-  profiles: LanguagesProfile[];
-}
-
-function mapStateToProps({ system }: StoreState) {
-  return {
-    profiles: system.languagesProfiles.items,
-  };
 }
 
 const createBadge = (icon: IconDefinition, text: string, desc?: string) => {
@@ -53,7 +46,7 @@ const createBadge = (icon: IconDefinition, text: string, desc?: string) => {
 };
 
 const ItemOverview: FunctionComponent<Props> = (props) => {
-  const { item, details, profiles } = props;
+  const { item, details } = props;
 
   const detailBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
@@ -77,23 +70,28 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     [item.audio_language]
   );
 
+  const profile = useProfileBy(item.profileId);
+
+  const languageGetter = useGetLanguage(true);
+
   const languageBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
 
-    if (item.profileId) {
-      const profile = profiles.find((v) => v.profileId === item.profileId);
-      if (profile) {
-        badges.push(createBadge(faStream, profile.name, "Languages Profile: "));
-      }
+    if (profile) {
+      badges.push(createBadge(faStream, profile.name, "Languages Profile: "));
+      badges.push(
+        ...profile.items.map((v) =>
+          createBadge(
+            faLanguage,
+            languageGetter(v.language)?.name ?? "",
+            "Language: "
+          )
+        )
+      );
     }
 
-    badges.push(
-      ...item.languages.map((val) => {
-        return createBadge(faLanguage, val.name, "Language: ");
-      })
-    );
     return badges;
-  }, [item.languages, profiles, item.profileId]);
+  }, [profile, languageGetter]);
 
   const alternativePopover = useMemo(
     () => (
@@ -160,4 +158,4 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(ItemOverview);
+export default ItemOverview;

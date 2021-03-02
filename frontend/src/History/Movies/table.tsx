@@ -50,9 +50,9 @@ const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
         accessor: "description",
       },
       {
-        accessor: "subs_id",
-        Cell: (row) => {
-          const original = row.row.original;
+        accessor: "exist",
+        Cell: ({ row }) => {
+          const original = row.original;
           return (
             <MoviesBlacklistButton
               update={update}

@@ -17,7 +17,7 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
   const columns = useMemo<Column<MovieBlacklist>[]>(
     () => [
       {
-        Header: "Series",
+        Header: "Name",
         accessor: "title",
         className: "text-nowrap",
         Cell: (row) => {

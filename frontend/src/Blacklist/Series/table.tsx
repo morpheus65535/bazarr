@@ -5,16 +5,16 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateBlacklist } from "../../@redux/actions";
-import { SeriesApi } from "../../apis";
+import { EpisodesApi } from "../../apis";
 import { AsyncButton, PageTable } from "../../components";
 
 interface Props {
-  blacklist: SeriesBlacklist[];
+  blacklist: EpisodeBlacklist[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
-  const columns = useMemo<Column<SeriesBlacklist>[]>(
+  const columns = useMemo<Column<EpisodeBlacklist>[]>(
     () => [
       {
         Header: "Series",
@@ -57,7 +57,7 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
               size="sm"
               variant="light"
               promise={() =>
-                SeriesApi.deleteBlacklist(false, {
+                EpisodesApi.deleteBlacklist(false, {
                   provider: row.row.original.provider,
                   subs_id,
                 })

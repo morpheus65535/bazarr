@@ -12,7 +12,7 @@ import { Column } from "react-table";
 import { seriesUpdateInfoAll } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 import { ActionBadge } from "../components";
-import ExtendItemView from "../generic/ExtendItemView";
+import BaseItemView from "../generic/BaseItemView";
 
 interface Props {
   series: AsyncState<Series[]>;
@@ -77,7 +77,7 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
         accessor: "profileId",
         Cell: ({ value, loose }) => {
           if (loose) {
-            // Define in generic/ExtendItemView/table.tsx
+            // Define in generic/BaseItemView/table.tsx
             const profiles = loose[0] as LanguagesProfile[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
@@ -137,13 +137,13 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
   );
 
   return (
-    <ExtendItemView
+    <BaseItemView
       items={series}
       name="Series"
       update={update}
-      columns={columns as Column<ExtendItem>[]}
+      columns={columns as Column<BaseItem>[]}
       modify={(form) => SeriesApi.modify(form)}
-    ></ExtendItemView>
+    ></BaseItemView>
   );
 };
 

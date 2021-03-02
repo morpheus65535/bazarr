@@ -1,7 +1,7 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
-import { MoviesApi, SeriesApi } from "../apis";
+import { EpisodesApi, MoviesApi } from "../apis";
 import { AsyncButton } from "./buttons";
 
 export const SeriesBlacklistButton: FunctionComponent<{
@@ -11,7 +11,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
   language?: Language;
   provider?: string;
   subtitles_path: string;
-  path: string;
+  mapped_path: string;
   update: () => void;
 }> = ({
   seriesid,
@@ -20,7 +20,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
   language,
   provider,
   subtitles_path,
-  path,
+  mapped_path,
   update,
 }) => {
   if (!language) {
@@ -34,11 +34,11 @@ export const SeriesBlacklistButton: FunctionComponent<{
         size="sm"
         variant="light"
         promise={() =>
-          SeriesApi.addBlacklist(seriesid, episodeid, {
+          EpisodesApi.addBlacklist(seriesid, episodeid, {
             provider,
             subs_id,
             subtitles_path,
-            video_path: path,
+            path: mapped_path,
             language: code2,
             hi,
             forced,
@@ -60,7 +60,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
   language?: Language;
   provider?: string;
   subtitles_path: string;
-  video_path: string;
+  mapped_path: string;
   update: () => void;
 }> = ({
   radarrId,
@@ -68,7 +68,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
   language,
   provider,
   subtitles_path,
-  video_path,
+  mapped_path,
   update,
 }) => {
   if (!language) {
@@ -86,7 +86,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
           MoviesApi.addBlacklist(radarrId, {
             provider,
             subs_id,
-            video_path,
+            path: mapped_path,
             subtitles_path,
             language: code2,
             hi: false,

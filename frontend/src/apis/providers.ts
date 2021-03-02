@@ -24,8 +24,8 @@ class ProviderApi extends BaseApi {
   }
 
   async movies(id: number) {
-    return new Promise<ManualSearchResult[]>((resolve, reject) => {
-      this.get<DataWrapper<ManualSearchResult[]>>("/movies", { radarrid: id })
+    return new Promise<SearchResultType[]>((resolve, reject) => {
+      this.get<DataWrapper<SearchResultType[]>>("/movies", { radarrid: id })
         .then((result) => resolve(result.data.data))
         .catch(reject);
     });
@@ -40,8 +40,8 @@ class ProviderApi extends BaseApi {
   }
 
   async episodes(id: number) {
-    return new Promise<ManualSearchResult[]>((resolve, reject) => {
-      this.get<DataWrapper<ManualSearchResult[]>>("/episodes", {
+    return new Promise<SearchResultType[]>((resolve, reject) => {
+      this.get<DataWrapper<SearchResultType[]>>("/episodes", {
         episodeid: id,
       })
         .then((result) => resolve(result.data.data))
