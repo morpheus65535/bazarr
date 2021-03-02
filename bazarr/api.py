@@ -1425,43 +1425,8 @@ class EpisodesWanted(Resource):
         wanted_search_missing_subtitles_series()
         return '', 204
 
-# GET: Get Wanted Movies
 # PATCH: Search All Wanted Movies
 class MoviesWanted(Resource):
-    @authenticate
-    def get(self):
-        data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
-                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
-
-        for item in data:
-            # Parse missing subtitles
-            if item['missing_subtitles']:
-                item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
-                for i, subs in enumerate(item['missing_subtitles']):
-                    splitted_subs = subs.split(':')
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(splitted_subs[0]),
-                                                    "code2": splitted_subs[0],
-                                                    "code3": alpha3_from_alpha2(splitted_subs[0]),
-                                                    "forced": False,
-                                                    "hi": False}
-                    if len(splitted_subs) > 1:
-                        item['missing_subtitles'][i].update({
-                            "forced": True if splitted_subs[1] == 'forced' else False,
-                            "hi": True if splitted_subs[1] == 'hi' else False
-                        })
-            else:
-                item.update({"missing_subtitles": []})
-
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace_movie(item['path'])
-
-            # Confirm if path exist
-            item.update({"exist": os.path.isfile(item['path'])})
-            item.update({"monitored": item["monitored"] == "True"})
-
-        return jsonify(data=data)
-
     @authenticate
     def patch(self):
         wanted_search_missing_subtitles_movies()

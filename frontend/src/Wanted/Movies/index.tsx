@@ -3,25 +3,20 @@ import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
-import { movieUpdateWantedAll } from "../../@redux/actions";
+import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useWantedMovies } from "../../utilites/items";
 import Table from "./table";
 
 interface Props {
-  wanted: AsyncState<Wanted.Movie[]>;
   update: () => void;
 }
 
-function mapStateToProps({ movie }: ReduxStore) {
-  const { wantedMovieList } = movie;
-  return {
-    wanted: wantedMovieList,
-  };
-}
-
-const WantedMoviesView: FunctionComponent<Props> = ({ update, wanted }) => {
+const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
   useEffect(() => update(), [update]);
+
+  const wanted = useWantedMovies();
 
   return (
     <AsyncStateOverlay state={wanted}>
@@ -40,7 +35,7 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update, wanted }) => {
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table wanted={data}></Table>
+            <Table wanted={data} update={update}></Table>
           </Row>
         </Container>
       )}
@@ -48,6 +43,6 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update, wanted }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateWantedAll })(
+export default connect(undefined, { update: movieUpdateInfoAll })(
   WantedMoviesView
 );

@@ -2,20 +2,18 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateWantedAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, PageTable, SubtitleText } from "../../components";
 
 interface Props {
-  wanted: Wanted.Movie[];
+  wanted: Item.Movie[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ wanted, update }) => {
-  const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
+  const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
         Header: "Name",
@@ -32,12 +30,12 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: (row) => {
-          const wanted = row.row.original;
+        Cell: ({ row, value }) => {
+          const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const movieid = wanted.radarrId;
 
-          return row.value.map((item, idx) => (
+          return value.map((item, idx) => (
             <AsyncButton
               as={Badge}
               key={idx}
@@ -71,4 +69,4 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 };
 
-export default connect(undefined, { update: movieUpdateWantedAll })(Table);
+export default Table;

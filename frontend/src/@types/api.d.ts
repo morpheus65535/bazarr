@@ -108,6 +108,7 @@ namespace Item {
 
   type Series = Base &
     SeriesIdType & {
+      hearing_impaired: boolean;
       episodeFileCount: number;
       episodeMissingCount: number;
       seriesType: SonarrSeriesType;
@@ -120,6 +121,7 @@ namespace Item {
     SubtitleType &
     MissingSubtitleType &
     SceneNameType & {
+      hearing_impaired: boolean;
       audio_codec: string;
       // movie_file_id: number;
       tmdbId: number;
@@ -159,8 +161,6 @@ namespace Wanted {
       episode_number: string;
       seriesType: SonarrSeriesType;
     };
-
-  type Movie = Wanted.Base & MovieIdType & TitleType;
 }
 
 namespace Blacklist {

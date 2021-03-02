@@ -2,7 +2,7 @@ import React, { FunctionComponent, useEffect } from "react";
 import { connect } from "react-redux";
 import { Route, Switch } from "react-router-dom";
 import Movie from ".";
-import { movieUpdateList } from "../@redux/actions";
+import { movieUpdateInfoAll } from "../@redux/actions";
 import MovieDetail from "./Detail";
 
 interface Props {
@@ -24,4 +24,4 @@ const Router: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: movieUpdateList })(Router);
+export default connect(null, { update: movieUpdateInfoAll })(Router);

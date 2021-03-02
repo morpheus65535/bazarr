@@ -37,8 +37,8 @@ export const SeriesBlacklistButton: FunctionComponent<{
           EpisodesApi.addBlacklist(seriesid, episodeid, {
             provider,
             subs_id,
+            path,
             subtitles_path,
-            path: path,
             language: code2,
             hi,
             forced,
@@ -86,7 +86,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
           MoviesApi.addBlacklist(radarrId, {
             provider,
             subs_id,
-            path: path,
+            path,
             subtitles_path,
             language: code2,
             hi: false,

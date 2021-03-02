@@ -57,18 +57,6 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async wanted(): Promise<Array<Wanted.Movie>> {
-    return new Promise<Array<Wanted.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Wanted.Movie>>>("/wanted")
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
   async searchAllWanted(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.patch("/wanted")
