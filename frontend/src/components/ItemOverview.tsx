@@ -51,7 +51,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const detailBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
 
-    badges.push(createBadge(faFolder, item.mapped_path, "File Path: "));
+    badges.push(createBadge(faFolder, item.path, "File Path: "));
 
     badges.push(
       ...(details?.map((val) => createBadge(val.icon, val.text)) ?? [])
@@ -60,7 +60,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     badges.push(createBadge(faTags, item.tags.join("|"), "Tags: "));
 
     return badges;
-  }, [details, item.mapped_path, item.tags]);
+  }, [details, item.path, item.tags]);
 
   const audioBadges = useMemo(
     () =>

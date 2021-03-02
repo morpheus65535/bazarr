@@ -401,11 +401,10 @@ class Series(Resource):
             item.update({"seriesType": item['seriesType'].capitalize()})
 
             # Provide mapped path
-            mapped_path = path_mappings.path_replace(item['path'])
-            item.update({"mapped_path": mapped_path})
+            item['path'] = path_mappings.path_replace(item['path'])
 
             # Confirm if path exist
-            item.update({"exist": os.path.isdir(mapped_path)})
+            item.update({"exist": os.path.isdir(item['path'])})
 
             # Add missing subtitles episode count
             episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
@@ -534,11 +533,10 @@ class Episodes(Resource):
                 del item["scene_name"]
 
             # Provide mapped path
-            mapped_path = path_mappings.path_replace(item['path'])
-            item.update({"mapped_path": mapped_path})
+            item['path'] = path_mappings.path_replace(item['path'])
 
             # Confirm if path exist
-            item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"exist": os.path.isfile(item['path'])})
             item.update({"monitored": item["monitored"] == "True"})
         return jsonify(data=result)
 
@@ -767,11 +765,10 @@ class Movies(Resource):
             item.update({"tags": ast.literal_eval(item['tags'])})
 
             # Provide mapped path
-            mapped_path = path_mappings.path_replace_movie(item['path'])
-            item.update({"mapped_path": mapped_path})
+            item['path'] = path_mappings.path_replace_movie(item['path'])
 
             # Confirm if path exist
-            item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"exist": os.path.isfile(item['path'])})
 
             # Add the movie desired subtitles language code2
             item.update({"desired_languages": get_desired_languages(item['profileId'])})
@@ -1197,21 +1194,15 @@ class EpisodesHistory(Resource):
 
             if item['path']:
                 # Provide mapped path
-                mapped_path = path_mappings.path_replace(item['path'])
-                item.update({"mapped_path": mapped_path})
-
+                item['path'] = path_mappings.path_replace(item['path'])
                 # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
+                item.update({"exist": os.path.isfile(item['path'])})
             else:
-                item.update({"mapped_path": None})
                 item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
-                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
-                item.update({"mapped_subtitles_path": mapped_subtitles_path})
-            else:
-                item.update({"mapped_subtitles_path": None})
+                item['subtitles_path'] = path_mappings.path_replace(item['subtitles_path'])
 
             # Check if subtitles is blacklisted
             # if item['action'] not in [0, 4, 5]:
@@ -1307,21 +1298,16 @@ class MoviesHistory(Resource):
 
             if item['path']:
                 # Provide mapped path
-                mapped_path = path_mappings.path_replace_movie(item['path'])
-                item.update({"mapped_path": mapped_path})
+                item['path'] = path_mappings.path_replace_movie(item['path'])
 
                 # Confirm if path exist
-                item.update({"exist": os.path.isfile(mapped_path)})
+                item.update({"exist": os.path.isfile(item['path'])})
             else:
-                item.update({"mapped_path": None})
                 item.update({"exist": False})
 
             if item['subtitles_path']:
                 # Provide mapped subtitles path
-                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
-                item.update({"mapped_subtitles_path": mapped_subtitles_path})
-            else:
-                item.update({"mapped_subtitles_path": None})
+                item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
 
             # Check if subtitles is blacklisted
             # if item['action'] not in [0, 4, 5]:
@@ -1426,11 +1412,10 @@ class EpisodesWanted(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_mappings.path_replace(item['path'])
-            item.update({"mapped_path": mapped_path})
+            item['path'] = path_mappings.path_replace(item['path'])
 
             # Confirm if path exist
-            item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"exist": os.path.isfile(item['path'])})
             item.update({"monitored": item["monitored"] == "True"})
 
         return jsonify(data=data)
@@ -1469,11 +1454,10 @@ class MoviesWanted(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_mappings.path_replace_movie(item['path'])
-            item.update({"mapped_path": mapped_path})
+            item['path'] = path_mappings.path_replace_movie(item['path'])
 
             # Confirm if path exist
-            item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"exist": os.path.isfile(item['path'])})
             item.update({"monitored": item["monitored"] == "True"})
 
         return jsonify(data=data)
@@ -1544,8 +1528,8 @@ class EpisodesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=forced,
                          hi=hi,
-                         media_path=path_mappings.path_replace(media_path),
-                         subtitles_path=path_mappings.path_replace(subtitles_path),
+                         media_path=media_path,
+                         subtitles_path=subtitles_path,
                          sonarr_series_id=sonarr_series_id,
                          sonarr_episode_id=sonarr_episode_id)
         episode_download_subtitles(sonarr_episode_id)
@@ -1618,8 +1602,8 @@ class MoviesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=forced,
                          hi=hi,
-                         media_path=path_mappings.path_replace_movie(media_path),
-                         subtitles_path=path_mappings.path_replace_movie(subtitles_path),
+                         media_path=media_path,
+                         subtitles_path=subtitles_path,
                          radarr_id=radarr_id)
         movies_download_subtitles(radarr_id)
         event_stream(type='movieHistory')

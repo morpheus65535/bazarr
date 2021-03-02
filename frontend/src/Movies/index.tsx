@@ -64,10 +64,10 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
         selectHide: true,
         Cell: ({ row, value }) => {
           const exist = value;
-          const { mapped_path } = row.original;
+          const { path } = row.original;
           return (
             <FontAwesomeIcon
-              title={mapped_path}
+              title={path}
               icon={exist ? faCheck : faExclamationTriangle}
             ></FontAwesomeIcon>
           );

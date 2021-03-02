@@ -347,13 +347,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   const [selectedLanguage, setLanguage] = useState<Language | undefined>();
 
   const submit = useCallback(() => {
-    if (
-      item &&
-      item.mapped_path &&
-      subtitle &&
-      subtitle.path &&
-      selectedLanguage
-    ) {
+    if (item && item.path && subtitle && subtitle.path && selectedLanguage) {
       const [id, type] = getIdAndType(item);
       return SubtitlesApi.modify(
         "translate",

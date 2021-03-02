@@ -52,10 +52,10 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
         selectHide: true,
         Cell: (row) => {
           const exist = row.value;
-          const { mapped_path } = row.row.original;
+          const { path } = row.row.original;
           return (
             <FontAwesomeIcon
-              title={mapped_path}
+              title={path}
               icon={exist ? faCheck : faExclamationTriangle}
             ></FontAwesomeIcon>
           );

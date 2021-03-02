@@ -34,13 +34,11 @@ interface Subtitle extends Language {
 
 interface PathType {
   path: string;
-  mapped_path: string;
   exist: boolean;
 }
 
 interface SubtitlePathType {
   subtitles_path: string;
-  mapped_subtitles_path: string;
 }
 
 interface MonitoredType {

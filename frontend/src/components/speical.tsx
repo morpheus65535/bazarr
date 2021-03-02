@@ -11,7 +11,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
   language?: Language;
   provider?: string;
   subtitles_path: string;
-  mapped_path: string;
+  path: string;
   update: () => void;
 }> = ({
   seriesid,
@@ -20,7 +20,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
   language,
   provider,
   subtitles_path,
-  mapped_path,
+  path,
   update,
 }) => {
   if (!language) {
@@ -38,7 +38,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
             provider,
             subs_id,
             subtitles_path,
-            path: mapped_path,
+            path: path,
             language: code2,
             hi,
             forced,
@@ -60,7 +60,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
   language?: Language;
   provider?: string;
   subtitles_path: string;
-  mapped_path: string;
+  path: string;
   update: () => void;
 }> = ({
   radarrId,
@@ -68,7 +68,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
   language,
   provider,
   subtitles_path,
-  mapped_path,
+  path,
   update,
 }) => {
   if (!language) {
@@ -86,7 +86,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
           MoviesApi.addBlacklist(radarrId, {
             provider,
             subs_id,
-            path: mapped_path,
+            path: path,
             subtitles_path,
             language: code2,
             hi: false,
