@@ -78,6 +78,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           </ContentHeader.AsyncButton>
           <ContentHeader.AsyncButton
             icon={faSearch}
+            disabled={item.profileId === null}
             promise={() =>
               MoviesApi.action({
                 action: "search-missing",
@@ -90,6 +91,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           </ContentHeader.AsyncButton>
           <ContentHeader.Button
             icon={faUser}
+            disabled={item.profileId === null}
             onClick={() => showModal<Item.Movie>("manual-search", item)}
           >
             Manual
@@ -110,7 +112,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
 
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={!allowEdit}
+            disabled={!allowEdit || item.profileId === null}
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", item)}
           >

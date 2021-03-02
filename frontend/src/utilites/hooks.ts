@@ -31,7 +31,7 @@ export function useLanguageProfiles() {
   );
 }
 
-export function useProfileBy(id?: number) {
+export function useProfileBy(id: number | null | undefined) {
   const profiles = useLanguageProfiles();
   return useMemo(() => profiles.find((v) => v.profileId === id), [
     id,

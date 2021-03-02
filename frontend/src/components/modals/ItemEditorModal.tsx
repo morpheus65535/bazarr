@@ -32,7 +32,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       }),
     [profiles]
   );
-  const [id, setId] = useState<number | undefined>(undefined);
+  const [id, setId] = useState<number | null>(null);
 
   const [updating, setUpdating] = useState(false);
 
@@ -81,7 +81,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
               clearable
               options={profileOptions}
               defaultValue={item?.profileId}
-              onChange={setId}
+              onChange={(v) => setId(v === undefined ? null : v)}
             ></Selector>
           </Form.Group>
         </Form>

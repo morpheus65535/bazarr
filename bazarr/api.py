@@ -50,6 +50,8 @@ from functools import wraps
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
 
+None_Keys = ['null', 'undefined', '']
+
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
@@ -571,7 +573,7 @@ class Series(Resource):
             seriesId = seriesIdList[idx]
             profileId = profileIdList[idx]
 
-            if profileId == 'undefined':
+            if profileId in None_Keys:
                 profileId = None
             else:
                 try:
@@ -788,7 +790,7 @@ class Movies(Resource):
             radarrId = radarrIdList[idx]
             profileId = profileIdList[idx]
 
-            if profileId == 'undefined':
+            if profileId in None_Keys:
                 profileId = None
             else:
                 try:

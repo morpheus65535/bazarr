@@ -95,14 +95,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
             onSuccess={() => update(id)}
-            disabled={item.episodeFileCount === 0 ?? false}
+            disabled={item.episodeFileCount === 0 || item.profileId === null}
           >
             Search
           </ContentHeader.AsyncButton>
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={item.episodeFileCount === 0 ?? false}
+            disabled={item.episodeFileCount === 0 || item.profileId === null}
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", item)}
           >

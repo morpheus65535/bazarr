@@ -1,7 +1,7 @@
 namespace FormType {
   interface ModifyItem {
     id: number[];
-    profileid: (number | undefined)[];
+    profileid: (number | null)[];
   }
 
   type SeriesAction = OneSerieAction | SearchWantedAction;

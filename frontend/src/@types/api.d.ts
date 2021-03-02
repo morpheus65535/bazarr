@@ -97,7 +97,7 @@ namespace Item {
     TitleType &
     TagType &
     AudioLanguageType & {
-      profileId?: number;
+      profileId: number | null;
       fanart: string;
       overview: string;
       imdbId: string;

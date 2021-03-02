@@ -11,6 +11,7 @@ import { Button } from "react-bootstrap";
 
 interface CHButtonProps {
   disabled?: boolean;
+  hidden?: boolean;
   icon: IconDefinition;
   updating?: boolean;
   updatingIcon?: IconDefinition;
