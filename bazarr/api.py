@@ -84,20 +84,117 @@ def authenticate(actual_method):
 
     return wrapper
 
+def postprocess(item):
+    # Parse tags
+    if "tags" in item:
+        item['tags'] = ast.literal_eval(item['tags'])
+
+    if 'monitored' in item:
+        item['monitored'] = item['monitored'] == 'True'
+        
+    if 'hearing_impaired' in item:
+        item['hearing_impaired'] = item['hearing_impaired'] == 'True'
+
+    if 'language' in item:
+        if item['language'] == 'None':
+            item['language'] = None
+        elif item['language'] is not None:
+            splitted_language = item['language'].split(':')
+            item['language'] = {"name": language_from_alpha2(splitted_language[0]),
+                                "code2": splitted_language[0],
+                                "code3": alpha3_from_alpha2(splitted_language[0]),
+                                "forced": True if item['language'].endswith(':forced') else False,
+                                "hi": True if item['language'].endswith(':hi') else False}
+
+def postprocessSeries(item):
+    postprocess(item)
+    # Parse audio language
+    if 'audio_language' in item:
+        item['audio_language'] = get_audio_profile_languages(series_id=item['sonarrSeriesId'])
+
+    if 'alternateTitles' in item:
+        item['alternativeTitles'] = ast.literal_eval(item['alternateTitles'])
+        del item["alternateTitles"]
+
+    # Parse seriesType
+    if 'seriesType' in item:
+        item['seriesType'] = item['seriesType'].capitalize()
+
+    if 'path' in item:
+        item['path'] = path_mappings.path_replace(item['path'])
+        # Confirm if path exist
+        item['exist'] = os.path.isdir(item['path'])
+
+    # map poster and fanart to server proxy
+    if 'poster' in item:
+        poster = item['poster']
+        item['poster'] = f"{base_url}images/series{poster}"
+
+    if 'fanart' in item:
+        fanart = item['fanart']
+        item['fanart'] = f"{base_url}images/series{fanart}"
+
+def postprocessEpisode(item, desired = []):
+    postprocess(item)
+    if 'audio_language' in item:
+        item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
+
+    if 'subtitles' in item:
+        raw_subtitles = ast.literal_eval(item['subtitles'])
+        subtitles = []
+
+        for subs in raw_subtitles:
+            subtitle = subs[0].split(':')
+            sub = {"name": language_from_alpha2(subtitle[0]),
+                   "code2": subtitle[0],
+                   "code3": alpha3_from_alpha2(subtitle[0]),
+                   "path": subs[1],
+                   "forced": False,
+                   "hi": False}
+            if len(subtitle) > 1:
+                sub["forced"] = True if subtitle[1] == 'forced' else False
+                sub["hi"] = True if subtitle[1] == 'hi' else False
+
+            subtitles.append(sub)
+
+        item.update({"subtitles": subtitles})
+
+        if settings.general.getboolean('embedded_subs_show_desired'):
+            item['subtitles'] = [x for x in item['subtitles'] if
+                                 x['code2'] in desired or x['path']]
+
+    # Parse missing subtitles
+    if 'missing_subtitles' in item:
+        item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
+        for i, subs in enumerate(item['missing_subtitles']):
+            subtitle = subs.split(':')
+            item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
+                                            "code2": subtitle[0],
+                                            "code3": alpha3_from_alpha2(subtitle[0]),
+                                            "forced": False,
+                                            "hi": False}
+            if len(subtitle) > 1:
+                item['missing_subtitles'][i].update({
+                    "forced": True if subtitle[1] == 'forced' else False,
+                    "hi": True if subtitle[1] == 'hi' else False
+                })
+
+    if "scene_name" in item:
+        item["sceneName"] = item["scene_name"]
+        del item["scene_name"]
+
+    if 'path' in item:
+        # Provide mapped path
+        item['path'] = path_mappings.path_replace(item['path'])
+        item['exist'] = os.path.isfile(item['path'])
+
 
 # TODO: Move
 def postprocessMovie(item):
+    postprocess(item)
     # Parse audio language
     if 'audio_language' in item:
         item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
-
-    if 'language' in item:
-        language = item['language'].split(':')
-        item['language'] = {"name": language_from_alpha2(language[0]),
-                            "code2": language[0],
-                            "code3": alpha3_from_alpha2(language[0]),
-                            "forced": True if item['language'].endswith(':forced') else False,
-                            "hi": True if item['language'].endswith(':hi') else False}
 
     # Parse alternate titles
     if 'alternativeTitles' in item:
@@ -148,10 +245,6 @@ def postprocessMovie(item):
                     "hi": True if language[1] == 'hi' else False
                 })
 
-    # Parse tags
-    if "tags" in item:
-        item['tags'] = ast.literal_eval(item['tags'])
-
     # Provide mapped path
     if 'path' in item:
         item['path'] = path_mappings.path_replace_movie(item['path'])
@@ -171,18 +264,12 @@ def postprocessMovie(item):
         fanart = item['fanart']
         item['fanart'] = f"{base_url}images/movies{fanart}"
 
-    if 'monitored' in item:
-        item['monitored'] = item['monitored'] == 'True'
-
-    if 'hearing_impaired' in item:
-        item['hearing_impaired'] = item['hearing_impaired'] == 'True'
-
 
 class SystemAccount(Resource):
     def post(self):
         if settings.auth.type != 'form':
             return '', 405
-            
+
         action = request.args.get('action')
         if action == 'login':
             username = request.form.get('username')
@@ -324,7 +411,7 @@ class SystemSettings(Resource):
 
         data['notifications'] = dict()
         data['notifications']['providers'] = notifications
-        
+
         return jsonify(data)
 
     @authenticate
@@ -412,7 +499,7 @@ class SystemLogs(Resource):
             for line in file.readlines():
                 lin = []
                 lin = line.split('|')
-                log = dict() 
+                log = dict()
                 log["timestamp"] = lin[0]
                 log["type"] = lin[1].rstrip()
                 log["message"] = lin[3]
@@ -423,7 +510,7 @@ class SystemLogs(Resource):
     @authenticate
     def delete(self):
         empty_log()
-        return '', 204 
+        return '', 204
 
 
 class SystemStatus(Resource):
@@ -476,35 +563,14 @@ class Series(Resource):
                                       , (length, start))
 
         for item in result:
-            # Parse audio language
-            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
-
-            # Parse alternate titles
-            # Make property name same as Movie
-            if item['alternateTitles']:
-                item.update({"alternativeTitles": ast.literal_eval(item['alternateTitles'])})
-                del item["alternateTitles"]
-            else:
-                item["alternativeTitles"] = []
-
-            # Parse tags
-            item.update({"tags": ast.literal_eval(item['tags'])})
-
-            # Parse seriesType
-            item.update({"seriesType": item['seriesType'].capitalize()})
-
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-
-            # Confirm if path exist
-            item.update({"exist": os.path.isdir(item['path'])})
+            postprocessSeries(item)
 
             # Add missing subtitles episode count
             episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
                                                    "table_shows.seriesType FROM table_episodes INNER JOIN table_shows "
                                                    "on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
                                                    "WHERE table_episodes.sonarrSeriesId=? AND missing_subtitles is not "
-                                                   "null AND missing_subtitles != '[]'" + 
+                                                   "null AND missing_subtitles != '[]'" +
                                                    get_exclusion_clause('series'), (item['sonarrSeriesId'],))
             episodeMissingCount = len(episodeMissingCount)
             item.update({"episodeMissingCount": episodeMissingCount})
@@ -513,18 +579,11 @@ class Series(Resource):
             episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
                                                 "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
                                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                                "table_episodes.sonarrSeriesId=?" + get_exclusion_clause('series'), 
+                                                "table_episodes.sonarrSeriesId=?" + get_exclusion_clause('series'),
                                                 (item['sonarrSeriesId'],))
             episodeFileCount = len(episodeFileCount)
             item.update({"episodeFileCount": episodeFileCount})
 
-            # map poster and fanart to server proxy
-            poster = item["poster"]
-            fanart = item["fanart"]
-            item.update({"poster": f"{base_url}images/series{poster}","fanart": f"{base_url}images/series{fanart}"})
-
-            # Add the series desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId'])})
 
         return jsonify(data=result)
 
@@ -539,7 +598,7 @@ class Series(Resource):
 
             if profileId == 'undefined':
                 profileId = None
-            else:      
+            else:
                 try:
                     profileId = int(profileId)
                 except Exception:
@@ -570,67 +629,11 @@ class Episodes(Resource):
         profileId = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId = ?", (seriesId,),
                                      only_one=True)['profileId']
         desired_languages = str(get_desired_languages(profileId))
+        desired = ast.literal_eval(desired_languages)
 
         for item in result:
-            # Parse audio language
-            item.update({"audio_language": get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])})
+            postprocessEpisode(item, desired)
 
-            # Parse subtitles
-            if item['subtitles']:
-                raw_subtitles = ast.literal_eval(item['subtitles'])
-                subtitles = []
-
-                for subs in raw_subtitles:
-                    subtitle = subs[0].split(':')
-                    sub = {"name": language_from_alpha2(subtitle[0]),
-                               "code2": subtitle[0],
-                               "code3": alpha3_from_alpha2(subtitle[0]),
-                               "path": subs[1],
-                               "forced": False,
-                               "hi": False}
-                    if len(subtitle) > 1:
-                        sub["forced"] = True if subtitle[1] == 'forced' else False
-                        sub["hi"] = True if subtitle[1] == 'hi' else False
-
-                    subtitles.append(sub)
-
-                item.update({"subtitles": subtitles})
-
-                if settings.general.getboolean('embedded_subs_show_desired'):
-                    desired = ast.literal_eval(desired_languages)
-                    item['subtitles'] = [x for x in item['subtitles'] if
-                                         x['code2'] in desired or x['path']]
-            else:
-                item.update({"subtitles": []})
-
-            # Parse missing subtitles
-            if item['missing_subtitles']:
-                item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
-                for i, subs in enumerate(item['missing_subtitles']):
-                    subtitle = subs.split(':')
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
-                                                    "code2": subtitle[0],
-                                                    "code3": alpha3_from_alpha2(subtitle[0]),
-                                                    "forced": False,
-                                                    "hi": False}
-                    if len(subtitle) > 1:
-                        item['missing_subtitles'][i].update({
-                            "forced": True if subtitle[1] == 'forced' else False,
-                            "hi": True if subtitle[1] == 'hi' else False
-                        })
-            else:
-                item.update({"missing_subtitles": []})
-
-            if "scene_name" in item:
-                item["sceneName"] = item["scene_name"]
-                del item["scene_name"]
-
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-
-            # Confirm if path exist
-            item.update({"exist": os.path.isfile(item['path'])})
-            item.update({"monitored": item["monitored"] == "True"})
         return jsonify(data=result)
 
 
@@ -749,7 +752,7 @@ class EpisodesSubtitles(Resource):
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        
+
         language = request.form.get('language')
         forced = request.form.get('forced')
         hi = request.form.get('hi')
@@ -842,7 +845,7 @@ class MoviesSubtitles(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         if sceneName is None: sceneName = 'None'
- 
+
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
 
@@ -961,7 +964,7 @@ class MoviesSubtitles(Resource):
         if result:
             return '', 202
         else:
-            return '', 204    
+            return '', 204
 
 
 class ProviderMovies(Resource):
@@ -977,7 +980,7 @@ class ProviderMovies(Resource):
         profileId = movieInfo['profileId']
         if sceneName is None: sceneName = "None"
 
-        
+
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
@@ -1156,7 +1159,7 @@ class EpisodesHistory(Resource):
                 "table_shows.seriesType FROM table_history INNER JOIN table_episodes on "
                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" + 
+                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" +
                 get_exclusion_clause('series') + " GROUP BY table_history.video_path", (minimum_timestamp,))
 
             for upgradable_episode in upgradable_episodes:
@@ -1193,16 +1196,7 @@ class EpisodesHistory(Resource):
                 if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
                     item.update({"upgradable": True})
 
-            item["tags"] = ast.literal_eval(item["tags"])
-
-            # Parse language
-            if item['language'] and item['language'] != 'None':
-                splitted_language = item['language'].split(':')
-                item['language'] = {"name": language_from_alpha2(splitted_language[0]),
-                                    "code2": splitted_language[0],
-                                    "code3": alpha3_from_alpha2(splitted_language[0]),
-                                    "forced": True if item['language'].endswith(':forced') else False,
-                                    "hi": True if item['language'].endswith(':hi') else False}
+            postprocessEpisode(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
@@ -1210,18 +1204,6 @@ class EpisodesHistory(Resource):
             # Make timestamp pretty
             if item['timestamp']:
                 item['timestamp'] = pretty.date(int(item['timestamp']))
-
-            if item['path']:
-                # Provide mapped path
-                item['path'] = path_mappings.path_replace(item['path'])
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(item['path'])})
-            else:
-                item.update({"exist": False})
-
-            if item['subtitles_path']:
-                # Provide mapped subtitles path
-                item['subtitles_path'] = path_mappings.path_replace(item['subtitles_path'])
 
             # Check if subtitles is blacklisted
             # if item['action'] not in [0, 4, 5]:
@@ -1234,8 +1216,6 @@ class EpisodesHistory(Resource):
             #     item.update({"blacklisted": True})
             # else:
             #     item.update({"blacklisted": False})
-
-            item.update({"monitored": item["monitored"] == "True"})
 
         return jsonify(data=episode_history)
 
@@ -1388,30 +1368,7 @@ class EpisodesWanted(Resource):
                                 " ORDER BY table_episodes._rowid_ ")
 
         for item in data:
-            # Parse missing subtitles
-            if item['missing_subtitles']:
-                item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
-                for i, subs in enumerate(item['missing_subtitles']):
-                    splitted_subs = subs.split(':')
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(splitted_subs[0]),
-                                                    "code2": splitted_subs[0],
-                                                    "code3": alpha3_from_alpha2(splitted_subs[0]),
-                                                    "forced": False,
-                                                    "hi": False}
-                    if len(splitted_subs) > 1:
-                        item['missing_subtitles'][i].update({
-                            "forced": True if splitted_subs[1] == 'forced' else False,
-                            "hi": True if splitted_subs[1] == 'hi' else False
-                        })
-            else:
-                item.update({"missing_subtitles": []})
-
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-
-            # Confirm if path exist
-            item.update({"exist": os.path.isfile(item['path'])})
-            item.update({"monitored": item["monitored"] == "True"})
+            postprocessEpisode(item)
 
         return jsonify(data=data)
 
@@ -1450,14 +1407,7 @@ class EpisodesBlacklist(Resource):
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
-            # Convert language code2 to name
-            if item['language']:
-                language = item['language'].split(':')
-                item['language'] = {"name": language_from_alpha2(language[0]),
-                                    "code2": language[0],
-                                    "code3": alpha3_from_alpha2(language[0]),
-                                    "forced": True if item['language'].endswith(':forced') else False,
-                                    "hi": True if item['language'].endswith(':hi') else False}
+            postprocessEpisode(item)
 
         return jsonify(data=data)
 
@@ -1644,7 +1594,7 @@ class SubtitleNameInfo(Resource):
                 result['season'] = result['season']
             else:
                 result['season'] = 0
-            
+
             results.append(result)
 
         return jsonify(data=results)
