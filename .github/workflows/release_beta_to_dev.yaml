@@ -2,8 +2,6 @@ name: release_beta_to_dev
 on:
   push:
     branches: [ development ]
-  pull_request:
-    branches: [ development ]
 
 jobs:
   Release:
