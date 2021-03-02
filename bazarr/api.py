@@ -374,31 +374,6 @@ class Notifications(Resource):
         return '', 204
 
 
-class Providers(Resource):
-    @authenticate
-    def get(self):
-        throttled_providers = list_throttled_providers()
-
-        providers = list()
-        for provider in throttled_providers:
-            providers.append({
-                "name": provider[0],
-                "status": provider[1] if provider[1] is not None else "Good",
-                "retry": provider[2] if provider[2] != "now" else "-"
-            })
-        return jsonify(data=providers)
-
-    @authenticate
-    def post(self):
-        action = request.form.get('action')
-
-        if action == 'reset':
-            reset_throttled_providers()
-            return '', 204
-
-        return '', 400
-
-
 class SystemSettings(Resource):
     @authenticate
     def get(self):
@@ -612,6 +587,22 @@ class Series(Resource):
 
         return '', 204
 
+    @authenticate
+    def patch(self):
+        seriesid = request.form.get('seriesid')
+        action = request.form.get('action')
+        if action == "scan-disk":
+            series_scan_subtitles(seriesid)
+            return '', 204
+        elif action == "search-missing":
+            series_download_subtitles(seriesid)
+            return '', 204
+        elif action == "search-wanted":
+            wanted_search_missing_subtitles_series()
+            return '', 204
+
+        return '', 400
+
 
 class Episodes(Resource):
     @authenticate
@@ -770,23 +761,6 @@ class EpisodesSubtitles(Resource):
         return '', 204
 
 
-
-class SeriesScanDisk(Resource):
-    @authenticate
-    def patch(self):
-        seriesid = request.args.get('seriesid')
-        series_scan_subtitles(seriesid)
-        return '', 204
-
-
-class SeriesSearchMissing(Resource):
-    @authenticate
-    def patch(self):
-        seriesid = request.args.get('seriesid')
-        series_download_subtitles(seriesid)
-        return '', 204
-
-
 class Movies(Resource):
     @authenticate
     def get(self):
@@ -830,6 +804,21 @@ class Movies(Resource):
 
         return '', 204
 
+    @authenticate
+    def patch(self):
+        radarrid = request.form.get('radarrid')
+        action = request.form.get('action')
+        if action == "scan-disk":
+            movies_scan_subtitles(radarrid)
+            return '', 204
+        elif action == "search-missing":
+            movies_download_subtitles(radarrid)
+            return '', 204
+        elif action == "search-wanted":
+            wanted_search_missing_subtitles_movies()
+            return '', 204
+
+        return '', 400
 
 """
 :param language: Alpha2 language code
@@ -966,6 +955,29 @@ class MoviesSubtitles(Resource):
         else:
             return '', 204
 
+class Providers(Resource):
+    @authenticate
+    def get(self):
+        throttled_providers = list_throttled_providers()
+
+        providers = list()
+        for provider in throttled_providers:
+            providers.append({
+                "name": provider[0],
+                "status": provider[1] if provider[1] is not None else "Good",
+                "retry": provider[2] if provider[2] != "now" else "-"
+            })
+        return jsonify(data=providers)
+
+    @authenticate
+    def post(self):
+        action = request.form.get('action')
+
+        if action == 'reset':
+            reset_throttled_providers()
+            return '', 204
+
+        return '', 400
 
 class ProviderMovies(Resource):
     @authenticate
@@ -1120,21 +1132,6 @@ class ProviderEpisodes(Resource):
 
         return '', 204
 
-class MoviesScanDisk(Resource):
-    @authenticate
-    def patch(self):
-        radarrid = request.args.get('radarrid')
-        movies_scan_subtitles(radarrid)
-        return '', 204
-
-
-class MoviesSearchMissing(Resource):
-    @authenticate
-    def patch(self):
-        radarrid = request.args.get('radarrid')
-        movies_download_subtitles(radarrid)
-        return '', 204
-
 
 class EpisodesHistory(Resource):
     @authenticate
@@ -1263,7 +1260,7 @@ class MoviesHistory(Resource):
         movie_history = database.execute(
             "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
             "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored,"
-            " table_history_movie.video_path as path, table_history_movie.language, table_movies.tags, "
+            "table_history_movie.video_path as path, table_history_movie.language, table_movies.tags, "
             "table_history_movie.score, table_history_movie.subs_id, table_history_movie.provider, "
             "table_history_movie.subtitles_path, table_history_movie.subtitles_path FROM "
             "table_history_movie LEFT JOIN table_movies on table_movies.radarrId = "
@@ -1353,7 +1350,6 @@ class HistoryStats(Resource):
         return jsonify(data_series=sorted_data_series, data_movies=sorted_data_movies)
 
 # GET: Get Wanted Episodes
-# PATCH: Search All Wanted Episodes
 class EpisodesWanted(Resource):
     @authenticate
     def get(self):
@@ -1371,18 +1367,6 @@ class EpisodesWanted(Resource):
             postprocessEpisode(item)
 
         return jsonify(data=data)
-
-    @authenticate
-    def patch(self):
-        wanted_search_missing_subtitles_series()
-        return '', 204
-
-# PATCH: Search All Wanted Movies
-class MoviesWanted(Resource):
-    @authenticate
-    def patch(self):
-        wanted_search_missing_subtitles_movies()
-        return '', 204
 
 
 # GET: get blacklist
@@ -1671,8 +1655,6 @@ api.add_resource(Subtitles, '/subtitles')
 api.add_resource(SubtitleNameInfo, '/subtitles/info')
 
 api.add_resource(Series, '/series')
-api.add_resource(SeriesScanDisk, '/series/disk')
-api.add_resource(SeriesSearchMissing, '/series/missing')
 
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesWanted, '/episodes/wanted')
@@ -1681,11 +1663,8 @@ api.add_resource(EpisodesHistory, '/episodes/history')
 api.add_resource(EpisodesBlacklist, '/episodes/blacklist')
 
 api.add_resource(Movies, '/movies')
-api.add_resource(MoviesScanDisk, '/movies/disk')
-api.add_resource(MoviesSearchMissing, '/movies/missing')
 api.add_resource(MoviesSubtitles, '/movies/subtitles')
 api.add_resource(MoviesHistory, '/movies/history')
-api.add_resource(MoviesWanted, '/movies/wanted')
 api.add_resource(MoviesBlacklist, '/movies/blacklist')
 
 api.add_resource(HistoryStats, '/history/stats')

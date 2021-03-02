@@ -27,7 +27,7 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.AsyncButton
-              promise={() => MoviesApi.searchAllWanted()}
+              promise={() => MoviesApi.action({ action: "search-wanted" })}
               onSuccess={update}
               icon={faSearch}
             >

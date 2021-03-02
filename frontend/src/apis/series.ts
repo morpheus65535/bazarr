@@ -25,17 +25,9 @@ class SeriesApi extends BaseApi {
     });
   }
 
-  async scanDisk(id: number): Promise<void> {
+  async action(form: FormType.SeriesAction) {
     return new Promise<void>((resolve, reject) => {
-      this.patch("/disk", undefined, { seriesid: id })
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
-  async searchMissing(id: number): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/missing", undefined, { seriesid: id })
+      this.patch("", form)
         .then(() => resolve())
         .catch(reject);
     });

@@ -4,6 +4,24 @@ namespace FormType {
     profileid: (number | undefined)[];
   }
 
+  type SeriesAction = OneSerieAction | SearchWantedAction;
+
+  type MoviesAction = OneMovieAction | SearchWantedAction;
+
+  interface OneMovieAction {
+    action: "search-missing" | "scan-disk";
+    radarrid: number;
+  }
+
+  interface OneSerieAction {
+    action: "search-missing" | "scan-disk";
+    seriesid: number;
+  }
+
+  interface SearchWantedAction {
+    action: "search-wanted";
+  }
+
   interface Subtitle {
     language: string;
     hi: boolean;

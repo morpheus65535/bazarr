@@ -82,14 +82,18 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ContentHeader.Group pos="start">
           <ContentHeader.AsyncButton
             icon={faSync}
-            promise={() => SeriesApi.scanDisk(id)}
+            promise={() =>
+              SeriesApi.action({ action: "scan-disk", seriesid: id })
+            }
             onSuccess={() => update(id)}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
           <ContentHeader.AsyncButton
             icon={faSearch}
-            promise={() => SeriesApi.searchMissing(id)}
+            promise={() =>
+              SeriesApi.action({ action: "search-missing", seriesid: id })
+            }
             onSuccess={() => update(id)}
             disabled={item.episodeFileCount === 0 ?? false}
           >

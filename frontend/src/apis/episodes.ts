@@ -29,14 +29,6 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async searchAllWanted(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/wanted")
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
   async episode(episodeid: number): Promise<Array<Item.Episode>> {
     return new Promise<Array<Item.Episode>>((resolve, reject) => {
       this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })

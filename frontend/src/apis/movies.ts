@@ -57,14 +57,6 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async searchAllWanted(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/wanted")
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
   async history(id?: number): Promise<Array<History.Movie>> {
     return new Promise<Array<History.Movie>>((resolve, reject) => {
       this.get<DataWrapper<Array<History.Movie>>>("/history", {
@@ -79,17 +71,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async scanDisk(id: number): Promise<void> {
+  async action(action: FormType.MoviesAction) {
     return new Promise<void>((resolve, reject) => {
-      this.patch("/disk", undefined, { radarrid: id })
-        .then(() => resolve())
-        .catch(reject);
-    });
-  }
-
-  async searchMissing(id: number): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/missing", undefined, { radarrid: id })
+      this.patch("", action)
         .then(() => resolve())
         .catch(reject);
     });

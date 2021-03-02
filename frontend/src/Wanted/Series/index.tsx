@@ -4,7 +4,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { seriesUpdateWantedAll } from "../../@redux/actions";
-import { EpisodesApi } from "../../apis";
+import { SeriesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
@@ -31,7 +31,7 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update, wanted }) => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.AsyncButton
-              promise={() => EpisodesApi.searchAllWanted()}
+              promise={() => SeriesApi.action({ action: "search-wanted" })}
               onSuccess={update}
               icon={faSearch}
             >

@@ -69,14 +69,21 @@ const MovieDetailView: FunctionComponent<Props> = ({
         <ContentHeader.Group pos="start">
           <ContentHeader.AsyncButton
             icon={faSync}
-            promise={() => MoviesApi.scanDisk(item.radarrId)}
+            promise={() =>
+              MoviesApi.action({ action: "scan-disk", radarrid: item.radarrId })
+            }
             onSuccess={() => update(item.radarrId)}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
           <ContentHeader.AsyncButton
             icon={faSearch}
-            promise={() => MoviesApi.searchMissing(item.radarrId)}
+            promise={() =>
+              MoviesApi.action({
+                action: "search-missing",
+                radarrid: item.radarrId,
+              })
+            }
             onSuccess={() => update(item.radarrId)}
           >
             Search
