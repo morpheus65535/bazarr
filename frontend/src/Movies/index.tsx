@@ -17,11 +17,11 @@ import { ActionBadge } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {
-  movies: AsyncState<Movie[]>;
+  movies: AsyncState<Item.Movie[]>;
   update: (id?: number) => void;
 }
 
-function mapStateToProps({ movie }: StoreState) {
+function mapStateToProps({ movie }: ReduxStore) {
   const { movieList } = movie;
   return {
     movies: movieList,
@@ -29,7 +29,7 @@ function mapStateToProps({ movie }: StoreState) {
 }
 
 const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
-  const columns: Column<Movie>[] = useMemo<Column<Movie>[]>(
+  const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
         accessor: "monitored",
@@ -90,7 +90,7 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
         Cell: ({ value, loose }) => {
           if (loose) {
             // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as LanguagesProfile[];
+            const profiles = loose[0] as Profile.Languages[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
             return null;
@@ -128,7 +128,7 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
       items={movies}
       name="Movies"
       update={update}
-      columns={columns as Column<BaseItem>[]}
+      columns={columns as Column<Item.Base>[]}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>
   );

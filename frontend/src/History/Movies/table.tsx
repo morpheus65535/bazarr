@@ -7,11 +7,11 @@ import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { MoviesBlacklistButton } from "../../components/speical";
 
 interface Props {
-  movieHistory: AsyncState<MovieHistory[]>;
+  movieHistory: AsyncState<History.Movie[]>;
   update: () => void;
 }
 
-function mapStateToProps({ movie }: StoreState) {
+function mapStateToProps({ movie }: ReduxStore) {
   const { historyList } = movie;
   return {
     movieHistory: historyList,
@@ -19,7 +19,7 @@ function mapStateToProps({ movie }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
-  const columns: Column<MovieHistory>[] = useMemo<Column<MovieHistory>[]>(
+  const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [
       {
         accessor: "action",

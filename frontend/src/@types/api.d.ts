@@ -11,19 +11,20 @@ interface Language {
   forced?: boolean;
 }
 
-interface LanguagesProfileItem {
-  id: number;
-  audio_exclude: PythonBoolean;
-  forced: PythonBoolean;
-  hi: PythonBoolean;
-  language: LanguageCodeType;
-}
-
-interface LanguagesProfile {
-  name: string;
-  profileId: number;
-  cutoff: number | null;
-  items: LanguagesProfileItem[];
+namespace Profile {
+  interface Item {
+    id: number;
+    audio_exclude: PythonBoolean;
+    forced: PythonBoolean;
+    hi: PythonBoolean;
+    language: LanguageCodeType;
+  }
+  interface Languages {
+    name: string;
+    profileId: number;
+    cutoff: number | null;
+    items: Item[];
+  }
 }
 
 interface Subtitle extends Language {
@@ -86,113 +87,121 @@ interface AudioLanguageType {
   audio_language: Language[];
 }
 
-type BaseItem = PathType &
-  TitleType &
-  TagType &
-  AudioLanguageType & {
-    profileId?: number;
-    fanart: string;
-    overview: string;
-    imdbId: string;
-    alternativeTitles: string[];
-    poster: string;
-    year: string;
-  };
-
-type Series = BaseItem &
-  SeriesIdType & {
-    episodeFileCount: number;
-    episodeMissingCount: number;
-    seriesType: SonarrSeriesType;
-    tvdbId: number;
-  };
-
-type Movie = BaseItem &
-  MovieIdType &
-  MonitoredType &
-  SubtitleType &
-  MissingSubtitleType &
-  SceneNameType & {
-    audio_codec: string;
-    // movie_file_id: number;
-    tmdbId: number;
-  };
-
-type Episode = PathType &
-  TitleType &
-  MonitoredType &
-  EpisodeIdType &
-  SubtitleType &
-  MissingSubtitleType &
-  SceneNameType &
-  AudioLanguageType & {
-    audio_codec: string;
-    video_codec: string;
-    season: number;
-    episode: number;
-    resolution: string;
-    format: string;
-    // episode_file_id: number;
-  };
-
-type WantedItem = MonitoredType &
-  PathType &
-  TagType &
-  SceneNameType & {
-    // failedAttempts?: any;
-    hearing_impaired: boolean;
-    missing_subtitles: Subtitle[];
-  };
-
-type WantedEpisode = WantedItem &
-  EpisodeIdType &
-  EpisodeTitleType & {
-    episode_number: string;
-    seriesType: SonarrSeriesType;
-  };
-
-type WantedMovie = WantedItem & MovieIdType & TitleType;
-
 interface ItemHistoryType {
   language: Language;
   provider: string;
 }
 
-type BaseBlacklist = ItemHistoryType & {
-  timestamp: string;
-  subs_id: string;
-};
+namespace Item {
+  type Base = PathType &
+    TitleType &
+    TagType &
+    AudioLanguageType & {
+      profileId?: number;
+      fanart: string;
+      overview: string;
+      imdbId: string;
+      alternativeTitles: string[];
+      poster: string;
+      year: string;
+    };
 
-type MovieBlacklist = BaseBlacklist & MovieIdType & TitleType;
+  type Series = Base &
+    SeriesIdType & {
+      episodeFileCount: number;
+      episodeMissingCount: number;
+      seriesType: SonarrSeriesType;
+      tvdbId: number;
+    };
 
-type EpisodeBlacklist = BaseBlacklist &
-  EpisodeTitleType &
-  SeriesIdType & {
-    episode_number: string;
-  };
+  type Movie = Base &
+    MovieIdType &
+    MonitoredType &
+    SubtitleType &
+    MissingSubtitleType &
+    SceneNameType & {
+      audio_codec: string;
+      // movie_file_id: number;
+      tmdbId: number;
+    };
 
-type BaseHistory = PathType &
-  SubtitlePathType &
-  TagType &
-  MonitoredType &
-  PathType &
-  Partial<ItemHistoryType> & {
-    action: number;
-    // blacklisted: boolean;
-    score?: string;
-    // subs_id?: string;
+  type Episode = PathType &
+    TitleType &
+    MonitoredType &
+    EpisodeIdType &
+    SubtitleType &
+    MissingSubtitleType &
+    SceneNameType &
+    AudioLanguageType & {
+      audio_codec: string;
+      video_codec: string;
+      season: number;
+      episode: number;
+      resolution: string;
+      format: string;
+      // episode_file_id: number;
+    };
+}
+
+namespace Wanted {
+  type Base = MonitoredType &
+    PathType &
+    TagType &
+    SceneNameType & {
+      // failedAttempts?: any;
+      hearing_impaired: boolean;
+      missing_subtitles: Subtitle[];
+    };
+
+  type Episode = Base &
+    EpisodeIdType &
+    EpisodeTitleType & {
+      episode_number: string;
+      seriesType: SonarrSeriesType;
+    };
+
+  type Movie = Wanted.Base & MovieIdType & TitleType;
+}
+
+namespace Blacklist {
+  type Base = ItemHistoryType & {
     timestamp: string;
-    description: string;
-    upgradable: boolean;
+    subs_id: string;
   };
 
-type EpisodeHistory = BaseHistory &
-  EpisodeIdType &
-  EpisodeTitleType & {
-    episode_number: string;
-  };
+  type Movie = Base & MovieIdType & TitleType;
 
-type MovieHistory = BaseHistory & MovieIdType & TitleType;
+  type Episode = Base &
+    EpisodeTitleType &
+    SeriesIdType & {
+      episode_number: string;
+    };
+}
+
+namespace History {
+  type Base = PathType &
+    SubtitlePathType &
+    TagType &
+    MonitoredType &
+    PathType &
+    Partial<ItemHistoryType> & {
+      action: number;
+      // blacklisted: boolean;
+      score?: string;
+      // subs_id?: string;
+      timestamp: string;
+      description: string;
+      upgradable: boolean;
+    };
+
+  type Movie = History.Base & MovieIdType & TitleType;
+
+  type Episode = History.Base &
+    EpisodeIdType &
+    EpisodeTitleType & {
+      episode_number: string;
+    };
+}
 
 interface SearchResultType {
   matches: string[];

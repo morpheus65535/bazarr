@@ -27,7 +27,7 @@ export const LanguageSelector: FunctionComponent<
 interface ProfileSelectorProps {}
 
 export const ProfileSelector: FunctionComponent<
-  ProfileSelectorProps & BaseInput<LanguagesProfile>
+  ProfileSelectorProps & BaseInput<Profile.Languages>
 > = ({ settingKey }) => {
   const profiles = useProfiles();
 

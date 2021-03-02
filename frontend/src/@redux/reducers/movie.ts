@@ -9,9 +9,9 @@ import {
 import { AsyncAction } from "../types";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
 
-const reducer = handleActions<MovieState, any>(
+const reducer = handleActions<ReduxStore.Movie, any>(
   {
-    [MOVIES_UPDATE_LIST]: (state, action: AsyncAction<Movie[]>) => {
+    [MOVIES_UPDATE_LIST]: (state, action: AsyncAction<Item.Movie[]>) => {
       return {
         ...state,
         movieList: mapToAsyncState(action, state.movieList.items),
@@ -19,7 +19,7 @@ const reducer = handleActions<MovieState, any>(
     },
     [MOVIES_UPDATE_WANTED_LIST]: (
       state,
-      action: AsyncAction<WantedMovie[]>
+      action: AsyncAction<Wanted.Movie[]>
     ) => {
       return {
         ...state,
@@ -28,14 +28,14 @@ const reducer = handleActions<MovieState, any>(
     },
     [MOVIES_UPDATE_HISTORY_LIST]: (
       state,
-      action: AsyncAction<MovieHistory[]>
+      action: AsyncAction<History.Movie[]>
     ) => {
       return {
         ...state,
         historyList: mapToAsyncState(action, state.historyList.items),
       };
     },
-    [MOVIES_UPDATE_INFO]: (state, action: AsyncAction<Movie[]>) => {
+    [MOVIES_UPDATE_INFO]: (state, action: AsyncAction<Item.Movie[]>) => {
       return {
         ...state,
         movieList: updateAsyncList(action, state.movieList, "radarrId"),
@@ -43,7 +43,7 @@ const reducer = handleActions<MovieState, any>(
     },
     [MOVIES_UPDATE_BLACKLIST]: (
       state,
-      action: AsyncAction<MovieBlacklist[]>
+      action: AsyncAction<Blacklist.Movie[]>
     ) => {
       return {
         ...state,

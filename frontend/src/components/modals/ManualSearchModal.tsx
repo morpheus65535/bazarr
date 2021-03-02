@@ -34,7 +34,7 @@ import {
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
 
-type SupportType = Movie | Episode;
+type SupportType = Item.Movie | Item.Episode;
 
 interface Props {
   onSelect: (item: SupportType, result: SearchResultType) => Promise<void>;

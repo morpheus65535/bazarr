@@ -17,7 +17,7 @@ import { PathMappingTable } from "../components/pathMapper";
 interface Props {}
 
 const SettingsRadarrView: FunctionComponent<Props> = () => {
-  const baseUrlOverride = useCallback((settings: SystemSettings) => {
+  const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.radarr.base_url?.slice(1) ?? "";
   }, []);
 

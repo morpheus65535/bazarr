@@ -15,11 +15,11 @@ import { ActionBadge } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {
-  series: AsyncState<Series[]>;
+  series: AsyncState<Item.Series[]>;
   update: (id?: number) => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   const { seriesList } = series;
   return {
     series: seriesList,
@@ -27,7 +27,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
-  const columns: Column<Series>[] = useMemo<Column<Series>[]>(
+  const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
         Header: "Name",
@@ -78,7 +78,7 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
         Cell: ({ value, loose }) => {
           if (loose) {
             // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as LanguagesProfile[];
+            const profiles = loose[0] as Profile.Languages[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
             return null;
@@ -141,7 +141,7 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
       items={series}
       name="Series"
       update={update}
-      columns={columns as Column<BaseItem>[]}
+      columns={columns as Column<Item.Base>[]}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>
   );

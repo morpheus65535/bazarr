@@ -7,12 +7,12 @@ import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
-  profiles: LanguagesProfile[];
-  submit: (form: ItemModifyForm) => Promise<void>;
-  onSuccess?: (item: BaseItem) => void;
+  profiles: Profile.Languages[];
+  submit: (form: FormType.ModifyItem) => Promise<void>;
+  onSuccess?: (item: Item.Base) => void;
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   return {
     profiles: system.languagesProfiles.items,
   };
@@ -21,7 +21,7 @@ function mapStateToProps({ system }: StoreState) {
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { profiles, onSuccess, submit, ...modal } = props;
 
-  const item = usePayload<BaseItem>(modal.modalKey);
+  const item = usePayload<Item.Base>(modal.modalKey);
 
   const closeModal = useCloseModal();
 

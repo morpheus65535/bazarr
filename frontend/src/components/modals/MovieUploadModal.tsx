@@ -24,7 +24,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const avaliableLanguages = useLanguages(true);
 
-  const movie = usePayload<Movie>(modal.modalKey);
+  const movie = usePayload<Item.Movie>(modal.modalKey);
 
   const closeModal = useCloseModal();
 

@@ -19,23 +19,23 @@ import Table from "./table";
 export interface SharedProps {
   name: string;
   update: (id?: number) => void;
-  columns: Column<BaseItem>[];
-  modify: (form: ItemModifyForm) => Promise<void>;
+  columns: Column<Item.Base>[];
+  modify: (form: FormType.ModifyItem) => Promise<void>;
 }
 
-export function ExtendItemComparer(lhs: BaseItem, rhs: BaseItem): boolean {
+export function ExtendItemComparer(lhs: Item.Base, rhs: Item.Base): boolean {
   return getExtendItemId(lhs) === getExtendItemId(rhs);
 }
 
 interface Props extends SharedProps {
-  items: AsyncState<BaseItem[]>;
+  items: AsyncState<Item.Base[]>;
 }
 
 const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   const [editMode, setEdit] = useState(false);
 
-  const [selections, setSelections] = useState<BaseItem[]>([]);
-  const [dirtyItems, setDirty] = useState<BaseItem[]>([]);
+  const [selections, setSelections] = useState<Item.Base[]>([]);
+  const [dirtyItems, setDirty] = useState<Item.Base[]>([]);
 
   const profiles = useLanguageProfiles();
 
@@ -79,7 +79,7 @@ const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   }, [editMode, setEdit, dirtyItems.length, shared]);
 
   const saveItems = useCallback(() => {
-    const form: ItemModifyForm = {
+    const form: FormType.ModifyItem = {
       id: [],
       profileid: [],
     };

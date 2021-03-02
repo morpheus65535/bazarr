@@ -38,8 +38,8 @@ class SystemApi extends BaseApi {
   }
 
   async settings() {
-    return new Promise<SystemSettings>((resolve, reject) => {
-      this.get<SystemSettings>("/settings")
+    return new Promise<Settings>((resolve, reject) => {
+      this.get<Settings>("/settings")
         .then((result) => {
           resolve(result.data);
         })
@@ -70,8 +70,8 @@ class SystemApi extends BaseApi {
   }
 
   async languagesProfileList() {
-    return new Promise<Array<LanguagesProfile>>((resolve, reject) => {
-      this.get<Array<LanguagesProfile>>("/languages/profiles")
+    return new Promise<Array<Profile.Languages>>((resolve, reject) => {
+      this.get<Array<Profile.Languages>>("/languages/profiles")
         .then((result) => resolve(result.data))
         .catch(reject);
     });

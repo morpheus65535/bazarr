@@ -9,11 +9,11 @@ import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  blacklist: AsyncState<EpisodeBlacklist[]>;
+  blacklist: AsyncState<Blacklist.Episode[]>;
   update: () => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   return {
     blacklist: series.blacklist,
   };

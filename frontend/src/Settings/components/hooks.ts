@@ -6,10 +6,7 @@ import { useSettings, useStaged, useUpdate } from "./provider";
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
-export type OverrideFuncType<T> = (
-  settings: SystemSettings,
-  store: StoreState
-) => T;
+export type OverrideFuncType<T> = (settings: Settings, store: ReduxStore) => T;
 
 export function useExtract<T>(
   key: string,
@@ -18,7 +15,7 @@ export function useExtract<T>(
 ): Readonly<T | undefined> {
   const settings = useSettings();
 
-  const store = useStore<StoreState>();
+  const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
     let value: T | undefined = undefined;

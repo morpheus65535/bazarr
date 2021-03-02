@@ -16,9 +16,9 @@ import { usePayload } from "./provider";
 export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
-  const movie = usePayload<Movie>(modal.modalKey);
+  const movie = usePayload<Item.Movie>(modal.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<MovieHistory[]>>({
+  const [history, setHistory] = useState<AsyncState<History.Movie[]>>({
     updating: false,
     items: [],
   });
@@ -33,7 +33,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
     update();
   }, [update]);
 
-  const columns = useMemo<Column<MovieHistory>[]>(
+  const columns = useMemo<Column<History.Movie>[]>(
     () => [
       {
         accessor: "action",
@@ -95,9 +95,9 @@ interface EpisodeHistoryProps {}
 export const EpisodeHistoryModal: FunctionComponent<
   BaseModalProps & EpisodeHistoryProps
 > = (props) => {
-  const episode = usePayload<Episode>(props.modalKey);
+  const episode = usePayload<Item.Episode>(props.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<EpisodeHistory[]>>({
+  const [history, setHistory] = useState<AsyncState<History.Episode[]>>({
     updating: false,
     items: [],
   });
@@ -114,7 +114,7 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   useEffect(() => update(), [update]);
 
-  const columns = useMemo<Column<EpisodeHistory>[]>(
+  const columns = useMemo<Column<History.Episode>[]>(
     () => [
       {
         accessor: "action",

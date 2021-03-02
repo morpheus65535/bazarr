@@ -31,7 +31,7 @@ const generateApiKey = () => {
     .join("");
 };
 
-const baseUrlOverride = (settings: SystemSettings) =>
+const baseUrlOverride = (settings: Settings) =>
   settings.general.base_url?.slice(1) ?? "";
 
 const SettingsGeneralView: FunctionComponent = () => {

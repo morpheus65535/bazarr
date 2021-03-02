@@ -21,6 +21,12 @@ interface DataWrapper<T> {
 
 type PromiseType<T> = T extends Promise<infer D> ? D : T;
 
+interface AsyncState<T> {
+  updating: boolean;
+  error?: Error;
+  items: T;
+}
+
 type AsyncPayload<T> = T extends AsyncState<infer D> ? D : T;
 
 type Override<T, U> = T & Omit<U, keyof T>;

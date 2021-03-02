@@ -26,7 +26,7 @@ export function useBaseUrl(slash: boolean = false) {
 }
 
 export function useLanguageProfiles() {
-  return useSelector<StoreState, LanguagesProfile[]>(
+  return useSelector<ReduxStore, Profile.Languages[]>(
     (s) => s.system.languagesProfiles.items
   );
 }
@@ -40,7 +40,7 @@ export function useProfileBy(id?: number) {
 }
 
 export function useLanguages(enabled: boolean = false) {
-  return useSelector<StoreState, Language[]>((s) =>
+  return useSelector<ReduxStore, Language[]>((s) =>
     enabled ? s.system.enabledLanguage.items : s.system.languages.items
   );
 }

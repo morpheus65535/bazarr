@@ -19,7 +19,7 @@ import { seriesTypeOptions } from "../options";
 interface Props {}
 
 const SettingsSonarrView: FunctionComponent<Props> = () => {
-  const baseUrlOverride = useCallback((settings: SystemSettings) => {
+  const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.sonarr.base_url?.slice(1) ?? "";
   }, []);
 

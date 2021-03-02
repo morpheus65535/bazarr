@@ -11,7 +11,7 @@ import { AsyncButton, SimpleTable, SubtitleText } from "../../components";
 const missingText = "Subtitle Missing";
 
 interface Props {
-  movie: Movie;
+  movie: Item.Movie;
   update: (id: number) => void;
 }
 

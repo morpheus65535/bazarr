@@ -32,11 +32,11 @@ interface Params {
 }
 
 interface Props extends RouteComponentProps<Params> {
-  movieList: AsyncState<Movie[]>;
+  movieList: AsyncState<Item.Movie[]>;
   update: (id: number) => void;
 }
 
-function mapStateToProps({ movie }: StoreState) {
+function mapStateToProps({ movie }: ReduxStore) {
   const { movieList } = movie;
   return {
     movieList,
@@ -83,7 +83,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           </ContentHeader.AsyncButton>
           <ContentHeader.Button
             icon={faUser}
-            onClick={() => showModal<Movie>("manual-search", item)}
+            onClick={() => showModal<Item.Movie>("manual-search", item)}
           >
             Manual
           </ContentHeader.Button>
@@ -135,7 +135,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
         modalKey="manual-search"
         onDownload={() => update(item.radarrId)}
         onSelect={(item, result) => {
-          item = item as Movie;
+          item = item as Item.Movie;
           const {
             language,
             hearing_impaired,

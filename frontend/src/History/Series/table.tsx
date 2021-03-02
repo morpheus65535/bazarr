@@ -7,11 +7,11 @@ import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { SeriesBlacklistButton } from "../../components/speical";
 
 interface Props {
-  seriesHistory: AsyncState<EpisodeHistory[]>;
+  seriesHistory: AsyncState<History.Episode[]>;
   update: () => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   const { historyList } = series;
   return {
     seriesHistory: historyList,
@@ -19,7 +19,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
-  const columns: Column<EpisodeHistory>[] = useMemo<Column<EpisodeHistory>[]>(
+  const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [
       {
         accessor: "action",

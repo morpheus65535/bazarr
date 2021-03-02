@@ -19,7 +19,7 @@ interface Props {
   update: () => void;
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   const { logs } = system;
   return {
     logs,

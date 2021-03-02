@@ -24,12 +24,12 @@ import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  series: Series;
-  episodeList: AsyncState<Map<number, Episode[]>>;
+  series: Item.Series;
+  episodeList: AsyncState<Map<number, Item.Episode[]>>;
   update: (id: number) => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   return {
     episodeList: series.episodeList,
   };
@@ -42,7 +42,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
 
   const showModal = useShowModal();
 
-  const columns: Column<Episode>[] = useMemo<Column<Episode>[]>(
+  const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
       {
         accessor: "monitored",
@@ -156,7 +156,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
     []
   );
 
-  const updateRow = useCallback<TableUpdater<Episode>>(
+  const updateRow = useCallback<TableUpdater<Item.Episode>>(
     (row, modalKey: string) => {
       showModal(modalKey, row.original);
     },
@@ -169,7 +169,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
     [episodes]
   );
 
-  const options: TableOptions<Episode> = useMemo(() => {
+  const options: TableOptions<Item.Episode> = useMemo(() => {
     return {
       columns,
       data: episodes,
@@ -203,7 +203,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
         modalKey="manual-search"
         onDownload={() => update(series.sonarrSeriesId)}
         onSelect={(item, result) => {
-          item = item as Episode;
+          item = item as Item.Episode;
           const {
             language,
             hearing_impaired,

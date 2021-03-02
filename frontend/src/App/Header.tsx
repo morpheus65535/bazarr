@@ -19,12 +19,12 @@ import { SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
 
 interface Props {
-  movies: Movie[];
-  series: Series[];
+  movies: Item.Movie[];
+  series: Item.Series[];
   setNeedAuth: () => void;
 }
 
-function mapStateToProps({ series, movie }: StoreState) {
+function mapStateToProps({ series, movie }: ReduxStore) {
   return {
     movies: movie.movieList.items,
     series: series.seriesList.items,

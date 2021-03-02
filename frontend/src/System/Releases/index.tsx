@@ -10,7 +10,7 @@ interface Props {
   update: () => void;
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   return {
     releases: system.releases,
   };

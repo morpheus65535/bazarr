@@ -5,9 +5,9 @@ class SeriesApi extends BaseApi {
     super("/series");
   }
 
-  async series(id?: number): Promise<Array<Series>> {
-    return new Promise<Array<Series>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Series>>>("", { seriesid: id })
+  async series(id?: number): Promise<Array<Item.Series>> {
+    return new Promise<Array<Item.Series>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Item.Series>>>("", { seriesid: id })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -17,7 +17,7 @@ class SeriesApi extends BaseApi {
     });
   }
 
-  async modify(form: ItemModifyForm) {
+  async modify(form: FormType.ModifyItem) {
     return new Promise<void>((resolve, reject) => {
       this.post<void>("", { seriesid: form.id, profileid: form.profileid })
         .then(() => resolve())

@@ -28,13 +28,11 @@ export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
   (v: any, k?: string) => {}
 );
 
-const SettingsContext = React.createContext<SystemSettings | undefined>(
-  undefined
-);
+const SettingsContext = React.createContext<Settings | undefined>(undefined);
 
 export const StagedChangesContext = React.createContext<LooseObject>({});
 
-export function useSettings(): SystemSettings {
+export function useSettings(): Settings {
   const settings = useContext(SettingsContext);
   if (process.env.NODE_ENV === "development") {
     console.assert(
@@ -65,7 +63,7 @@ function beforeSubmit(settings: LooseObject) {
   }
 
   if (notificationsKey in settings) {
-    const item = settings[notificationsKey] as NotificationInfo[];
+    const item = settings[notificationsKey] as Settings.NotificationInfo[];
     settings[notificationsKey] = item.map((v) => JSON.stringify(v));
   }
 }
@@ -77,10 +75,10 @@ interface Props {
   update: () => void;
   updateLocal: (settings: LooseObject) => void;
   children: JSX.Element | JSX.Element[];
-  settings: AsyncState<SystemSettings | undefined>;
+  settings: AsyncState<Settings | undefined>;
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   return {
     settings: system.settings,
   };

@@ -27,7 +27,7 @@ interface Props {
   open?: boolean;
 }
 
-function mapStateToProps({ badges }: StoreState) {
+function mapStateToProps({ badges }: ReduxStore) {
   return {
     movies_badge: badges.movies,
     episodes_badge: badges.episodes,

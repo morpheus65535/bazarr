@@ -15,7 +15,7 @@ import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 
 const EnabledLanguageContext = React.createContext<Language[]>([]);
-const LanguagesProfileContext = React.createContext<LanguagesProfile[]>([]);
+const LanguagesProfileContext = React.createContext<Profile.Languages[]>([]);
 
 export function useEnabledLanguages() {
   const list = useContext(EnabledLanguageContext);
@@ -30,7 +30,7 @@ export function useEnabledLanguages() {
 
 export function useProfiles() {
   const list = useContext(LanguagesProfileContext);
-  const latest = useLatest<LanguagesProfile[]>(languageProfileKey, isArray);
+  const latest = useLatest<Profile.Languages[]>(languageProfileKey, isArray);
 
   if (latest) {
     return latest;
@@ -42,10 +42,10 @@ export function useProfiles() {
 interface Props {
   languages: Language[];
   enabled: Language[];
-  profiles: LanguagesProfile[];
+  profiles: Profile.Languages[];
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   return {
     languages: system.languages.items,
     enabled: system.enabledLanguage.items,

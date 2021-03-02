@@ -7,13 +7,13 @@ import {
   SITE_SAVE_LOCALSTORAGE,
 } from "../constants";
 
-function updateLocalStorage(): Partial<SiteState> {
+function updateLocalStorage(): Partial<ReduxStore.Site> {
   return {
     pageSize: storage.pageSize,
   };
 }
 
-const reducer = handleActions<SiteState>(
+const reducer = handleActions<ReduxStore.Site>(
   {
     [SITE_NEED_AUTH]: (state) => ({
       ...state,

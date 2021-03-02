@@ -10,12 +10,12 @@ import { MoviesApi } from "../../apis";
 import { AsyncButton, PageTable, SubtitleText } from "../../components";
 
 interface Props {
-  wanted: WantedMovie[];
+  wanted: Wanted.Movie[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ wanted, update }) => {
-  const columns: Column<WantedMovie>[] = useMemo<Column<WantedMovie>[]>(
+  const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
     () => [
       {
         Header: "Name",

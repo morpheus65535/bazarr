@@ -13,7 +13,7 @@ import {
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
-const reducer = handleActions<SystemState, any>(
+const reducer = handleActions<ReduxStore.System, any>(
   {
     [SYSTEM_UPDATE_LANGUAGES_LIST]: (state, action) => {
       const newState = {
@@ -32,7 +32,10 @@ const reducer = handleActions<SystemState, any>(
     [SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST]: (state, action) => {
       const newState = {
         ...state,
-        languagesProfiles: mapToAsyncState<Array<LanguagesProfile>>(action, []),
+        languagesProfiles: mapToAsyncState<Array<Profile.Languages>>(
+          action,
+          []
+        ),
       };
       return newState;
     },

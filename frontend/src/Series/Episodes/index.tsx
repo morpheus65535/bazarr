@@ -28,11 +28,11 @@ interface Params {
 }
 
 interface Props extends RouteComponentProps<Params> {
-  seriesList: AsyncState<Series[]>;
+  seriesList: AsyncState<Item.Series[]>;
   update: (id: number) => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   const { seriesList } = series;
   return {
     seriesList,
@@ -121,7 +121,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
-        onSuccess={(item) => update((item as Series).sonarrSeriesId)}
+        onSuccess={(item) => update((item as Item.Series).sonarrSeriesId)}
       ></ItemEditorModal>
       <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
     </Container>

@@ -12,7 +12,7 @@ interface Props {
   tasks: AsyncState<SystemTaskResult[]>;
 }
 
-function mapStateToProps({ system }: StoreState) {
+function mapStateToProps({ system }: ReduxStore) {
   const { tasks } = system;
   return {
     tasks,

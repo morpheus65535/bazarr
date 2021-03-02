@@ -47,7 +47,7 @@ import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./provider";
 import { avaliableTranslation } from "./toolOptions";
 
-type SupportType = Episode | Movie;
+type SupportType = Item.Episode | Item.Movie;
 
 function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
   if (isMovie(item)) {
@@ -332,7 +332,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
 
-  const languages = useSelector<StoreState, Language[]>(
+  const languages = useSelector<ReduxStore, Language[]>(
     (s) => s.system.enabledLanguage.items
   );
 

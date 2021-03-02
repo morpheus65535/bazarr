@@ -23,7 +23,7 @@ import {
 import { useGetLanguage, useProfileBy } from "../utilites";
 
 interface Props {
-  item: BaseItem;
+  item: Item.Base;
   details?: { icon: IconDefinition; text: string }[];
 }
 

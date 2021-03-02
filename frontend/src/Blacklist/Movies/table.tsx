@@ -9,12 +9,12 @@ import { MoviesApi } from "../../apis";
 import { AsyncButton, PageTable } from "../../components";
 
 interface Props {
-  blacklist: MovieBlacklist[];
+  blacklist: Blacklist.Movie[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
-  const columns = useMemo<Column<MovieBlacklist>[]>(
+  const columns = useMemo<Column<Blacklist.Movie>[]>(
     () => [
       {
         Header: "Name",

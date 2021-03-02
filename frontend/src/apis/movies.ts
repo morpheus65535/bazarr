@@ -5,9 +5,9 @@ class MovieApi extends BaseApi {
     super("/movies");
   }
 
-  async blacklist(): Promise<Array<MovieBlacklist>> {
-    return new Promise<Array<MovieBlacklist>>((resolve, reject) => {
-      this.get<DataWrapper<Array<MovieBlacklist>>>("/blacklist")
+  async blacklist(): Promise<Array<Blacklist.Movie>> {
+    return new Promise<Array<Blacklist.Movie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Blacklist.Movie>>>("/blacklist")
         .then((res) => {
           resolve(res.data.data);
         })
@@ -15,7 +15,10 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async addBlacklist(radarrid: number, form: BlacklistAddForm): Promise<void> {
+  async addBlacklist(
+    radarrid: number,
+    form: FormType.AddBlacklist
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.post<void>("/blacklist", form, { radarrid })
         .then(() => resolve())
@@ -25,7 +28,7 @@ class MovieApi extends BaseApi {
 
   async deleteBlacklist(
     all?: boolean,
-    form?: BlacklistDeleteForm
+    form?: FormType.DeleteBlacklist
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.delete<void>("/blacklist", form, { all })
@@ -34,9 +37,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async movies(id?: number): Promise<Array<Movie>> {
-    return new Promise<Array<Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Movie>>>("", { radarrid: id })
+  async movies(id?: number): Promise<Array<Item.Movie>> {
+    return new Promise<Array<Item.Movie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Item.Movie>>>("", { radarrid: id })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -46,7 +49,7 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async modify(form: ItemModifyForm) {
+  async modify(form: FormType.ModifyItem) {
     return new Promise<void>((resolve, reject) => {
       this.post<void>("", { radarrid: form.id, profileid: form.profileid })
         .then(() => resolve())
@@ -54,9 +57,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async wanted(): Promise<Array<WantedMovie>> {
-    return new Promise<Array<WantedMovie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedMovie>>>("/wanted")
+  async wanted(): Promise<Array<Wanted.Movie>> {
+    return new Promise<Array<Wanted.Movie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Wanted.Movie>>>("/wanted")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -74,9 +77,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async history(id?: number): Promise<Array<MovieHistory>> {
-    return new Promise<Array<MovieHistory>>((resolve, reject) => {
-      this.get<DataWrapper<Array<MovieHistory>>>("/history", {
+  async history(id?: number): Promise<Array<History.Movie>> {
+    return new Promise<Array<History.Movie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<History.Movie>>>("/history", {
         radarrid: id,
       })
         .then((result) => {
@@ -104,7 +107,7 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async downloadSubtitles(id: number, form: SubtitleForm): Promise<void> {
+  async downloadSubtitles(id: number, form: FormType.Subtitle): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.patch("/subtitles", form, { radarrid: id })
         .then(() => resolve())
@@ -112,7 +115,10 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async uploadSubtitles(id: number, form: SubtitleUploadForm): Promise<void> {
+  async uploadSubtitles(
+    id: number,
+    form: FormType.UploadSubtitle
+  ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.post("/subtitles", form, { radarrid: id })
         .then(() => resolve())
@@ -120,7 +126,10 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async deleteSubtitles(id: number, form: SubtitleDeleteForm): Promise<void> {
+  async deleteSubtitles(
+    id: number,
+    form: FormType.DeleteSubtitle
+  ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.delete("/subtitles", form, { radarrid: id })
         .then(() => resolve())

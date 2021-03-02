@@ -10,9 +10,9 @@ import {
 import { AsyncAction } from "../types";
 import { mapToAsyncState, updateAsyncList } from "./mapper";
 
-const reducer = handleActions<SeriesState, any>(
+const reducer = handleActions<ReduxStore.Series, any>(
   {
-    [SERIES_UPDATE_LIST]: (state, action: AsyncAction<Series[]>) => {
+    [SERIES_UPDATE_LIST]: (state, action: AsyncAction<Item.Series[]>) => {
       return {
         ...state,
         seriesList: mapToAsyncState(action, state.seriesList.items),
@@ -20,14 +20,17 @@ const reducer = handleActions<SeriesState, any>(
     },
     [SERIES_UPDATE_WANTED_LIST]: (
       state,
-      action: AsyncAction<WantedEpisode[]>
+      action: AsyncAction<Wanted.Episode[]>
     ) => {
       return {
         ...state,
         wantedSeriesList: mapToAsyncState(action, state.wantedSeriesList.items),
       };
     },
-    [SERIES_UPDATE_EPISODE_LIST]: (state, action: AsyncAction<Episode[]>) => {
+    [SERIES_UPDATE_EPISODE_LIST]: (
+      state,
+      action: AsyncAction<Item.Episode[]>
+    ) => {
       const { updating, error, items } = mapToAsyncState(action, []);
 
       if (items.length > 0) {
@@ -55,14 +58,14 @@ const reducer = handleActions<SeriesState, any>(
     },
     [SERIES_UPDATE_HISTORY_LIST]: (
       state,
-      action: AsyncAction<EpisodeHistory[]>
+      action: AsyncAction<History.Episode[]>
     ) => {
       return {
         ...state,
         historyList: mapToAsyncState(action, state.historyList.items),
       };
     },
-    [SERIES_UPDATE_INFO]: (state, action: AsyncAction<Series[]>) => {
+    [SERIES_UPDATE_INFO]: (state, action: AsyncAction<Item.Series[]>) => {
       return {
         ...state,
         seriesList: updateAsyncList(action, state.seriesList, "sonarrSeriesId"),
@@ -70,7 +73,7 @@ const reducer = handleActions<SeriesState, any>(
     },
     [SERIES_UPDATE_BLACKLIST]: (
       state,
-      action: AsyncAction<EpisodeBlacklist[]>
+      action: AsyncAction<Blacklist.Episode[]>
     ) => {
       return {
         ...state,

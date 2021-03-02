@@ -9,11 +9,11 @@ import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  wanted: AsyncState<WantedEpisode[]>;
+  wanted: AsyncState<Wanted.Episode[]>;
   update: () => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series }: ReduxStore) {
   const { wantedSeriesList } = series;
   return {
     wanted: wantedSeriesList,

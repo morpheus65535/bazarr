@@ -5,9 +5,9 @@ class EpisodeApi extends BaseApi {
     super("/episodes");
   }
 
-  async all(seriesid: number): Promise<Array<Episode>> {
-    return new Promise<Array<Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Episode>>>("", { seriesid })
+  async all(seriesid: number): Promise<Array<Item.Episode>> {
+    return new Promise<Array<Item.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Item.Episode>>>("", { seriesid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -17,9 +17,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async wanted(): Promise<Array<WantedEpisode>> {
-    return new Promise<Array<WantedEpisode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedEpisode>>>("/wanted")
+  async wanted(): Promise<Array<Wanted.Episode>> {
+    return new Promise<Array<Wanted.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Wanted.Episode>>>("/wanted")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -37,9 +37,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async episode(episodeid: number): Promise<Array<Episode>> {
-    return new Promise<Array<Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Episode>>>("", { episodeid })
+  async episode(episodeid: number): Promise<Array<Item.Episode>> {
+    return new Promise<Array<Item.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -49,9 +49,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async history(episodeid?: number): Promise<Array<EpisodeHistory>> {
-    return new Promise<Array<EpisodeHistory>>((resolve, reject) => {
-      this.get<DataWrapper<Array<EpisodeHistory>>>("/history", { episodeid })
+  async history(episodeid?: number): Promise<Array<History.Episode>> {
+    return new Promise<Array<History.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<History.Episode>>>("/history", { episodeid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -64,7 +64,7 @@ class EpisodeApi extends BaseApi {
   async downloadSubtitles(
     seriesid: number,
     episodeid: number,
-    form: SubtitleForm
+    form: FormType.Subtitle
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.patch("/subtitles", form, { seriesid, episodeid })
@@ -76,7 +76,7 @@ class EpisodeApi extends BaseApi {
   async uploadSubtitles(
     seriesid: number,
     episodeid: number,
-    form: SubtitleUploadForm
+    form: FormType.UploadSubtitle
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.post("/subtitles", form, { seriesid, episodeid })
@@ -88,7 +88,7 @@ class EpisodeApi extends BaseApi {
   async deleteSubtitles(
     seriesid: number,
     episodeid: number,
-    form: SubtitleDeleteForm
+    form: FormType.DeleteSubtitle
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.delete("/subtitles", form, { seriesid, episodeid })
@@ -97,9 +97,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async blacklist(): Promise<Array<EpisodeBlacklist>> {
-    return new Promise<Array<EpisodeBlacklist>>((resolve, reject) => {
-      this.get<DataWrapper<Array<EpisodeBlacklist>>>("/blacklist")
+  async blacklist(): Promise<Array<Blacklist.Episode>> {
+    return new Promise<Array<Blacklist.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Blacklist.Episode>>>("/blacklist")
         .then((res) => {
           resolve(res.data.data);
         })
@@ -110,7 +110,7 @@ class EpisodeApi extends BaseApi {
   async addBlacklist(
     seriesid: number,
     episodeid: number,
-    form: BlacklistAddForm
+    form: FormType.AddBlacklist
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.post<void>("/blacklist", form, { seriesid, episodeid })
@@ -121,7 +121,7 @@ class EpisodeApi extends BaseApi {
 
   async deleteBlacklist(
     all?: boolean,
-    form?: BlacklistDeleteForm
+    form?: FormType.DeleteBlacklist
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.delete<void>("/blacklist", form, { all })

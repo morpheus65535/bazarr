@@ -39,12 +39,12 @@ enum SubtitleState {
 }
 
 interface MovieProps {
-  episodesList: AsyncState<Map<number, Episode[]>>;
+  episodesList: AsyncState<Map<number, Item.Episode[]>>;
   avaliableLanguages: Language[];
   update: (id: number) => void;
 }
 
-function mapStateToProps({ system, series }: StoreState) {
+function mapStateToProps({ system, series }: ReduxStore) {
   return {
     avaliableLanguages: system.enabledLanguage.items,
     episodesList: series.episodeList,
@@ -56,7 +56,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const { episodesList, avaliableLanguages, update, ...modal } = props;
 
-  const series = usePayload<Series>(modal.modalKey);
+  const series = usePayload<Item.Series>(modal.modalKey);
 
   const [uploading, setUpload] = useState(false);
 
@@ -331,7 +331,7 @@ interface SubtitleInfo {
   stateText: string[];
   season?: number;
   episode?: number;
-  instance?: Episode;
+  instance?: Item.Episode;
 }
 
 interface TableProps {

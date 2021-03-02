@@ -5,7 +5,7 @@ import {
   BADGE_UPDATE_SERIES,
 } from "../constants";
 
-const reducer = handleActions<BadgeState, number>(
+const reducer = handleActions<ReduxStore.Badge, number>(
   {
     [BADGE_UPDATE_MOVIES]: {
       next(state, action) {

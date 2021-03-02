@@ -9,11 +9,11 @@ import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {
-  wanted: AsyncState<WantedMovie[]>;
+  wanted: AsyncState<Wanted.Movie[]>;
   update: () => void;
 }
 
-function mapStateToProps({ movie }: StoreState) {
+function mapStateToProps({ movie }: ReduxStore) {
   const { wantedMovieList } = movie;
   return {
     wanted: wantedMovieList,

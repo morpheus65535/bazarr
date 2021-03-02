@@ -15,7 +15,7 @@ import { antiCaptchaOption, colorOptions, folderOptions } from "./options";
 const SettingsSubtitlesView: FunctionComponent = () => {
   // TODO: Performance
   const subzeroOverride = (key: string) => {
-    return (settings: SystemSettings) => {
+    return (settings: Settings) => {
       return settings.general.subzero_mods?.includes(key) ?? false;
     };
   };

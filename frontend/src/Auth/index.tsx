@@ -20,7 +20,7 @@ interface Props {
   authState: boolean;
 }
 
-function mapStateToProps({ site }: StoreState) {
+function mapStateToProps({ site }: ReduxStore) {
   return {
     authState: site.auth,
   };

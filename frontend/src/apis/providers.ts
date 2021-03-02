@@ -31,7 +31,7 @@ class ProviderApi extends BaseApi {
     });
   }
 
-  async downloadMovieSubtitle(radarrid: number, form: ManualDownloadForm) {
+  async downloadMovieSubtitle(radarrid: number, form: FormType.ManualDownload) {
     return new Promise<void>((resolve, reject) => {
       this.post<void>("/movies", form, { radarrid })
         .then(() => resolve())
@@ -52,7 +52,7 @@ class ProviderApi extends BaseApi {
   async downloadEpisodeSubtitle(
     seriesid: number,
     episodeid: number,
-    form: ManualDownloadForm
+    form: FormType.ManualDownload
   ) {
     return new Promise<void>((resolve, reject) => {
       this.post<void>("/episodes", form, { seriesid, episodeid })

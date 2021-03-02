@@ -10,12 +10,12 @@ import { EpisodesApi } from "../../apis";
 import { AsyncButton, PageTable, SubtitleText } from "../../components";
 
 interface Props {
-  wanted: WantedEpisode[];
+  wanted: Wanted.Episode[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ wanted, update }) => {
-  const columns: Column<WantedEpisode>[] = useMemo<Column<WantedEpisode>[]>(
+  const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(
     () => [
       {
         Header: "Name",

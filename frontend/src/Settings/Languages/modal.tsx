@@ -22,7 +22,7 @@ import {
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 interface Props {
-  update: (profile: LanguagesProfile) => void;
+  update: (profile: Profile.Languages) => void;
 }
 
 const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
@@ -30,7 +30,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const profile = usePayload<LanguagesProfile>(modal.modalKey);
+  const profile = usePayload<Profile.Languages>(modal.modalKey);
 
   const closeModal = useCloseModal();
 
@@ -65,7 +65,10 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   }, [current.items]);
 
   const updateProfile = useCallback(
-    <K extends keyof LanguagesProfile>(key: K, value: LanguagesProfile[K]) => {
+    <K extends keyof Profile.Languages>(
+      key: K,
+      value: Profile.Languages[K]
+    ) => {
       const object = { ...current };
       object[key] = value;
       setProfile(object);
@@ -73,8 +76,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     [current]
   );
 
-  const updateRow = useCallback<TableUpdater<LanguagesProfileItem>>(
-    (row, item: LanguagesProfileItem) => {
+  const updateRow = useCallback<TableUpdater<Profile.Item>>(
+    (row, item: Profile.Item) => {
       const list = [...current.items];
       if (item) {
         list[row.index] = item;
@@ -94,7 +97,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     if (languages.length > 0) {
       const language = languages[0].code2;
 
-      const item: LanguagesProfileItem = {
+      const item: Profile.Item = {
         id,
         language,
         audio_exclude: "False",
@@ -123,7 +126,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     [update, current, closeModal]
   );
 
-  const columns = useMemo<Column<LanguagesProfileItem>[]>(
+  const columns = useMemo<Column<Profile.Item>[]>(
     () => [
       {
         Header: "ID",
