@@ -88,8 +88,11 @@ def authenticate(actual_method):
 
 def postprocess(item: dict):
     # Parse tags
-    if 'tags' in item and item["tags"] is not None:
-        item['tags'] = ast.literal_eval(item['tags'])
+    if 'tags' in item:
+        if item['tags'] is None:
+            item['tags'] = []
+        else:
+            item['tags'] = ast.literal_eval(item['tags'])
 
     if 'monitored' in item and item['monitored'] is not None:
         item['monitored'] = item['monitored'] == 'True'
@@ -97,7 +100,7 @@ def postprocess(item: dict):
     if 'hearing_impaired' in item and item['hearing_impaired'] is not None:
         item['hearing_impaired'] = item['hearing_impaired'] == 'True'
 
-    if 'language' in item and item['language'] is not None:
+    if 'language' in item:
         if item['language'] == 'None':
             item['language'] = None
         elif item['language'] is not None:
@@ -114,8 +117,11 @@ def postprocessSeries(item):
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(series_id=item['sonarrSeriesId'])
 
-    if 'alternateTitles' in item and item['alternateTitles'] is not None:
-        item['alternativeTitles'] = ast.literal_eval(item['alternateTitles'])
+    if 'alternateTitles' in item:
+        if item['alternateTitles'] is None:
+            item['alternativeTitles'] = []
+        else:
+            item['alternativeTitles'] = ast.literal_eval(item['alternateTitles'])
         del item["alternateTitles"]
 
     # Parse seriesType
@@ -141,8 +147,11 @@ def postprocessEpisode(item, desired = []):
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
 
-    if 'subtitles' in item and item['subtitles'] is not None:
-        raw_subtitles = ast.literal_eval(item['subtitles'])
+    if 'subtitles' in item:
+        if item['subtitles'] is None:
+            raw_subtitles = []
+        else:
+            raw_subtitles = ast.literal_eval(item['subtitles'])
         subtitles = []
 
         for subs in raw_subtitles:
@@ -166,8 +175,11 @@ def postprocessEpisode(item, desired = []):
                                  x['code2'] in desired or x['path']]
 
     # Parse missing subtitles
-    if 'missing_subtitles' in item and item['missing_subtitles'] is not None:
-        item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
+    if 'missing_subtitles' in item:
+        if item['missing_subtitles'] is None:
+            item['missing_subtitles'] = []
+        else:
+            item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             subtitle = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
@@ -207,8 +219,11 @@ def postprocessMovie(item):
         item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
 
     # Parse subtitles
-    if 'subtitles' in item and item['subtitles'] is not None:
-        item['subtitles'] = ast.literal_eval(item['subtitles'])
+    if 'subtitles' in item:
+        if item['subtitles'] is None:
+            item['subtitles'] = []
+        else:
+            item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
             item['subtitles'][i] = {"path": subs[1],
@@ -232,8 +247,11 @@ def postprocessMovie(item):
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
 
     # Parse missing subtitles
-    if 'missing_subtitles' in item and item['missing_subtitles'] is not None:
-        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+    if 'missing_subtitles' in item:
+        if item['missing_subtitles'] is None:
+            item['missing_subtitles'] = []
+        else:
+            item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
