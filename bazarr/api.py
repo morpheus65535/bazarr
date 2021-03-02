@@ -85,6 +85,99 @@ def authenticate(actual_method):
     return wrapper
 
 
+# TODO: Move
+def postprocessMovie(item):
+    # Parse audio language
+    if 'audio_language' in item:
+        item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
+
+    if 'language' in item:
+        language = item['language'].split(':')
+        item['language'] = {"name": language_from_alpha2(language[0]),
+                            "code2": language[0],
+                            "code3": alpha3_from_alpha2(language[0]),
+                            "forced": True if item['language'].endswith(':forced') else False,
+                            "hi": True if item['language'].endswith(':hi') else False}
+
+    # Parse alternate titles
+    if 'alternativeTitles' in item:
+        item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
+
+    # Parse failed attempts
+    if 'failedAttempts' in item and item['failedAttempts'] is not None:
+        item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
+
+    # Parse subtitles
+    if 'subtitles' in item:
+        item['subtitles'] = ast.literal_eval(item['subtitles'])
+        for i, subs in enumerate(item['subtitles']):
+            language = subs[0].split(':')
+            item['subtitles'][i] = {"path": subs[1],
+                                    "name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": False,
+                                    "hi": False}
+            if len(language) > 1:
+                item['subtitles'][i].update({
+                    "forced": True if language[1] == 'forced' else False,
+                    "hi": True if language[1] == 'hi' else False
+                })
+
+        if settings.general.getboolean('embedded_subs_show_desired'):
+            desired_lang_list = []
+            if isinstance(item['languages'], list):
+                desired_lang_list = [x['code2'] for x in item['languages']]
+            item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
+
+        item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+
+    # Parse missing subtitles
+    if 'missing_subtitles' in item:
+        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+        for i, subs in enumerate(item['missing_subtitles']):
+            language = subs.split(':')
+            item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
+                                            "code2": language[0],
+                                            "code3": alpha3_from_alpha2(language[0]),
+                                            "forced": False,
+                                            "hi": False}
+            if len(language) > 1:
+                item['missing_subtitles'][i].update({
+                    "forced": True if language[1] == 'forced' else False,
+                    "hi": True if language[1] == 'hi' else False
+                })
+
+    # Parse tags
+    if "tags" in item:
+        item['tags'] = ast.literal_eval(item['tags'])
+
+    # Provide mapped path
+    if 'path' in item:
+        item['path'] = path_mappings.path_replace_movie(item['path'])
+        # Confirm if path exist
+        item['exist'] = os.path.isfile(item['path'])
+
+    if 'subtitles_path' in item:
+        # Provide mapped subtitles path
+        item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
+
+    # map poster and fanart to server proxy
+    if 'poster' in item:
+        poster = item['poster']
+        item['poster'] = f"{base_url}images/movies{poster}"
+
+    if 'fanart' in item:
+        fanart = item['fanart']
+        item['fanart'] = f"{base_url}images/movies{fanart}"
+
+    if 'monitored' in item:
+        item['monitored'] = item['monitored'] == 'True'
+
+    if 'hearing_impaired' in item:
+        item['hearing_impaired'] = item['hearing_impaired'] == 'True'
+
+
 class SystemAccount(Resource):
     def post(self):
         if settings.auth.type != 'form':
@@ -696,91 +789,17 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
+        id = request.args.get('radarrid')
 
-        moviesId = request.args.get('radarrid')
-        if moviesId:
+        if id:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
-                                      "OFFSET ?", (moviesId, length, start))
+                                      "OFFSET ?", (id, length, start))
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
         for item in result:
-            # Parse audio language
-            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
+            postprocessMovie(item)
 
-            # Parse alternate titles
-            if item['alternativeTitles']:
-                item.update({"alternativeTitles": ast.literal_eval(item['alternativeTitles'])})
-
-            # Parse failed attempts
-            if item['failedAttempts']:
-                item.update({"failedAttempts": ast.literal_eval(item['failedAttempts'])})
-
-            # Parse subtitles
-            if item['subtitles']:
-                item.update({"subtitles": ast.literal_eval(item['subtitles'])})
-                for i, subs in enumerate(item['subtitles']):
-                    language = subs[0].split(':')
-                    item['subtitles'][i] = {"path": subs[1],
-                                            "name": language_from_alpha2(language[0]),
-                                            "code2": language[0],
-                                            "code3": alpha3_from_alpha2(language[0]),
-                                            "forced": False,
-                                            "hi": False}
-                    if len(language) > 1:
-                        item['subtitles'][i].update({
-                            "forced": True if language[1] == 'forced' else False,
-                            "hi": True if language[1] == 'hi' else False
-                        })
-
-                if settings.general.getboolean('embedded_subs_show_desired'):
-                    desired_lang_list = []
-                    if isinstance(item['languages'], list):
-                        desired_lang_list = [x['code2'] for x in item['languages']]
-                    item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
-
-                item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
-            else:
-                item.update({"subtitles": []})
-
-            # Parse missing subtitles
-            if item['missing_subtitles']:
-                item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
-                for i, subs in enumerate(item['missing_subtitles']):
-                    language = subs.split(':')
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
-                                                    "code2": language[0],
-                                                    "code3": alpha3_from_alpha2(language[0]),
-                                                    "forced": False,
-                                                    "hi": False}
-                    if len(language) > 1:
-                        item['missing_subtitles'][i].update({
-                            "forced": True if language[1] == 'forced' else False,
-                            "hi": True if language[1] == 'hi' else False
-                        })
-            else:
-                item.update({"missing_subtitles": []})
-
-            # Parse tags
-            item.update({"tags": ast.literal_eval(item['tags'])})
-
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace_movie(item['path'])
-
-            # Confirm if path exist
-            item.update({"exist": os.path.isfile(item['path'])})
-
-            # Add the movie desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId'])})
-
-            # map poster and fanart to server proxy
-            poster = item["poster"]
-            fanart = item["fanart"]
-            item.update({"poster": f"{base_url}images/movies{poster}","fanart": f"{base_url}images/movies{fanart}"})
-
-            item.update({"monitored": item["monitored"] == "True"})
-            item.update({"forced": item["forced"]})
-            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
     @authenticate
@@ -1277,17 +1296,8 @@ class MoviesHistory(Resource):
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
                 if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
                     item.update({"upgradable": True})
-            
-            item["tags"] = ast.literal_eval(item["tags"])
 
-            # Parse language
-            if item['language']:
-                language = item['language'].split(':')
-                item['language'] = {"name": language_from_alpha2(language[0]),
-                                    "code2": language[0],
-                                    "code3": alpha3_from_alpha2(language[0]),
-                                    "forced": True if item['language'].endswith(':forced') else False,
-                                    "hi": True if item['language'].endswith(':hi') else False}
+            postprocessMovie(item)
 
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
@@ -1295,19 +1305,6 @@ class MoviesHistory(Resource):
             # Make timestamp pretty
             if item['timestamp']:
                 item['timestamp'] = pretty.date(int(item['timestamp']))
-
-            if item['path']:
-                # Provide mapped path
-                item['path'] = path_mappings.path_replace_movie(item['path'])
-
-                # Confirm if path exist
-                item.update({"exist": os.path.isfile(item['path'])})
-            else:
-                item.update({"exist": False})
-
-            if item['subtitles_path']:
-                # Provide mapped subtitles path
-                item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
 
             # Check if subtitles is blacklisted
             # if item['action'] not in [0, 4, 5]:
@@ -1320,8 +1317,6 @@ class MoviesHistory(Resource):
             #     item.update({"blacklisted": True})
             # else:
             #     item.update({"blacklisted": False})
-
-            item.update({"monitored": item["monitored"] == "True"})
 
         return jsonify(data=movie_history)
 
@@ -1528,17 +1523,11 @@ class MoviesBlacklist(Resource):
                                 "OFFSET ?", (length, start))
 
         for item in data:
+
+            postprocessMovie(item)
+
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
-
-            # Convert language code2 to name
-            if item['language']:
-                language = item['language'].split(':')
-                item['language'] = {"name": language_from_alpha2(language[0]),
-                                    "code2": language[0],
-                                    "code3": alpha3_from_alpha2(language[0]),
-                                    "forced": True if item['language'].endswith(':forced') else False,
-                                    "hi": True if item['language'].endswith(':hi') else False}
 
         return jsonify(data=data)
 
