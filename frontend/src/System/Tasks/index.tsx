@@ -9,7 +9,7 @@ import Table from "./table";
 
 interface Props {
   update: () => void;
-  tasks: AsyncState<SystemTaskResult[]>;
+  tasks: AsyncState<System.Task[]>;
 }
 
 function mapStateToProps({ system }: ReduxStore) {

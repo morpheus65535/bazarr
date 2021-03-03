@@ -23,10 +23,10 @@ namespace ReduxStore {
     languages: AsyncState<Array<Language>>;
     enabledLanguage: AsyncState<Array<Language>>;
     languagesProfiles: AsyncState<Array<LanguagesProfile>>;
-    status: AsyncState<SystemStatusResult | undefined>;
-    tasks: AsyncState<Array<SystemTaskResult>>;
-    providers: AsyncState<Array<SystemProvider>>;
-    logs: AsyncState<Array<SystemLog>>;
+    status: AsyncState<System.Status | undefined>;
+    tasks: AsyncState<Array<System.Task>>;
+    providers: AsyncState<Array<System.Provider>>;
+    logs: AsyncState<Array<System.Log>>;
     releases: AsyncState<Array<ReleaseInfo>>;
     settings: AsyncState<Settings | undefined>;
   }

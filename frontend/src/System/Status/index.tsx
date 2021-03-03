@@ -61,7 +61,7 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 };
 
 interface Props {
-  status?: SystemStatusResult;
+  status?: System.Status;
   update: () => void;
 }
 

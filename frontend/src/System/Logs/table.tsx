@@ -12,10 +12,10 @@ import { Column } from "react-table";
 import { DateFormatter, PageTable } from "../../components";
 
 interface Props {
-  logs: SystemLog[];
+  logs: System.Log[];
 }
 
-function mapTypeToIcon(type: SystemLogType): IconDefinition {
+function mapTypeToIcon(type: System.LogType): IconDefinition {
   switch (type) {
     case "DEBUG":
       return faCode;
@@ -31,7 +31,7 @@ function mapTypeToIcon(type: SystemLogType): IconDefinition {
 }
 
 const Table: FunctionComponent<Props> = ({ logs }) => {
-  const columns: Column<SystemLog>[] = useMemo<Column<SystemLog>[]>(
+  const columns: Column<System.Log>[] = useMemo<Column<System.Log>[]>(
     () => [
       {
         accessor: "type",

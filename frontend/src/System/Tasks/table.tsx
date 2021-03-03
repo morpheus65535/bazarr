@@ -8,14 +8,12 @@ import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
 interface Props {
-  tasks: SystemTaskResult[];
+  tasks: System.Task[];
   run: (id: string) => void;
 }
 
 const Table: FunctionComponent<Props> = ({ tasks, run }) => {
-  const columns: Column<SystemTaskResult>[] = useMemo<
-    Column<SystemTaskResult>[]
-  >(
+  const columns: Column<System.Task>[] = useMemo<Column<System.Task>[]>(
     () => [
       {
         Header: "Name",

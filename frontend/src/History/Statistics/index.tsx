@@ -37,7 +37,7 @@ function converter(item: History.Stat) {
   return result;
 }
 
-const providerLabel = (item: SystemProvider) => item.name;
+const providerLabel = (item: System.Provider) => item.name;
 
 const SelectorContainer: FunctionComponent = ({ children }) => (
   <Col xs={6} lg={3} className="p-1">
@@ -55,7 +55,7 @@ const HistoryStats: FunctionComponent = () => {
     undefined
   );
   const [lang, setLanguage] = useState<Language | undefined>(undefined);
-  const [provider, setProvider] = useState<SystemProvider | undefined>(
+  const [provider, setProvider] = useState<System.Provider | undefined>(
     undefined
   );
 

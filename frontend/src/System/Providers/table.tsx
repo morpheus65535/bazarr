@@ -3,11 +3,11 @@ import { Column } from "react-table";
 import { SimpleTable } from "../../components";
 
 interface Props {
-  providers: SystemProvider[];
+  providers: System.Provider[];
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const columns: Column<SystemProvider>[] = useMemo<Column<SystemProvider>[]>(
+  const columns: Column<System.Provider>[] = useMemo<Column<System.Provider>[]>(
     () => [
       {
         Header: "Name",

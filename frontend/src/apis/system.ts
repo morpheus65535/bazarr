@@ -78,8 +78,8 @@ class SystemApi extends BaseApi {
   }
 
   async status() {
-    return new Promise<SystemStatusResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemStatusResult>>("/status")
+    return new Promise<System.Status>((resolve, reject) => {
+      this.get<DataWrapper<System.Status>>("/status")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -90,8 +90,8 @@ class SystemApi extends BaseApi {
   }
 
   async logs() {
-    return new Promise<Array<SystemLog>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SystemLog>>>("/logs")
+    return new Promise<Array<System.Log>>((resolve, reject) => {
+      this.get<DataWrapper<Array<System.Log>>>("/logs")
         .then((result) => resolve(result.data.data))
         .catch((err) => reject(err));
     });
@@ -114,8 +114,8 @@ class SystemApi extends BaseApi {
   }
 
   async getTasks() {
-    return new Promise<SystemTaskResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemTaskResult>>("/tasks")
+    return new Promise<System.Task>((resolve, reject) => {
+      this.get<DataWrapper<System.Task>>("/tasks")
         .then((result) => {
           resolve(result.data.data);
         })

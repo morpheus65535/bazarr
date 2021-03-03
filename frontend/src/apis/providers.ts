@@ -6,8 +6,8 @@ class ProviderApi extends BaseApi {
   }
 
   async providers() {
-    return new Promise<Array<SystemProvider>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SystemProvider>>>("")
+    return new Promise<Array<System.Provider>>((resolve, reject) => {
+      this.get<DataWrapper<Array<System.Provider>>>("")
         .then((result) => {
           resolve(result.data.data);
         })

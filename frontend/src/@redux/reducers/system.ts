@@ -42,7 +42,7 @@ const reducer = handleActions<ReduxStore.System, any>(
     [SYSTEM_UPDATE_STATUS]: (state, action) => {
       return {
         ...state,
-        status: mapToAsyncState<SystemStatusResult | undefined>(
+        status: mapToAsyncState<System.Status | undefined>(
           action,
           state.status.items
         ),
@@ -51,10 +51,7 @@ const reducer = handleActions<ReduxStore.System, any>(
     [SYSTEM_UPDATE_TASKS]: (state, action) => {
       return {
         ...state,
-        tasks: mapToAsyncState<Array<SystemTaskResult>>(
-          action,
-          state.tasks.items
-        ),
+        tasks: mapToAsyncState<Array<System.Task>>(action, state.tasks.items),
       };
     },
     [SYSTEM_RUN_TASK]: (state, action: Action<string>) => {

@@ -15,7 +15,7 @@ import { useBaseUrl } from "../../utilites";
 import Table from "./table";
 
 interface Props {
-  logs: AsyncState<SystemLog[]>;
+  logs: AsyncState<System.Log[]>;
   update: () => void;
 }
 

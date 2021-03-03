@@ -12,13 +12,13 @@ export function useWantedMovies(): AsyncState<Item.Movie[]> {
   }, [movies]);
 }
 
-export function useProviders(): AsyncState<SystemProvider[]> {
+export function useProviders(): AsyncState<System.Provider[]> {
   const dispatch = useDispatch();
   useEffect(() => {
     // Trigger update when we use it
     dispatch(providerUpdateAll());
   }, [dispatch]);
-  return useSelector<ReduxStore, AsyncState<SystemProvider[]>>(
+  return useSelector<ReduxStore, AsyncState<System.Provider[]>>(
     (d) => d.system.providers
   );
 }
