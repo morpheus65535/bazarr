@@ -8,10 +8,6 @@ $theme-colors: (
 
 @import "../../node_modules/bootstrap/scss/bootstrap.scss";
 
-#root {
-  height: 100vh;
-}
-
 .header-container {
   height: $header-height;
 

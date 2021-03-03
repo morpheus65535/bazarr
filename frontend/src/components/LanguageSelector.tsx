@@ -7,7 +7,7 @@ interface Props {
 
 type RemovedSelectorProps<M extends boolean> = Omit<
   SelectorProps<Language, M>,
-  "label"
+  "label" | "placeholder"
 >;
 
 function LanguageSelector<M extends boolean = false>(
@@ -25,7 +25,12 @@ function LanguageSelector<M extends boolean = false>(
   );
 
   return (
-    <Selector options={items} label={(l) => l.name} {...selector}></Selector>
+    <Selector
+      placeholder="Language..."
+      options={items}
+      label={(l) => l.name}
+      {...selector}
+    ></Selector>
   );
 }
 

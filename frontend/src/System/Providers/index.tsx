@@ -1,32 +1,20 @@
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { connect } from "react-redux";
 import { providerUpdateAll } from "../../@redux/actions";
 import { ProvidersApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useProviders } from "../../utilites/items";
 import Table from "./table";
 
 interface Props {
-  providers: AsyncState<SystemProvider[]>;
   update: () => void;
 }
 
-function mapStateToProps({ system }: ReduxStore) {
-  const { providers } = system;
-  return {
-    providers,
-  };
-}
-
-const SystemProvidersView: FunctionComponent<Props> = ({
-  providers,
-  update,
-}) => {
-  useEffect(() => {
-    update();
-  }, [update]);
+const SystemProvidersView: FunctionComponent<Props> = ({ update }) => {
+  const providers = useProviders();
 
   return (
     <AsyncStateOverlay state={providers}>
@@ -60,6 +48,6 @@ const SystemProvidersView: FunctionComponent<Props> = ({
   );
 };
 
-export default connect(mapStateToProps, { update: providerUpdateAll })(
+export default connect(undefined, { update: providerUpdateAll })(
   SystemProvidersView
 );

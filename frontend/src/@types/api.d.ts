@@ -201,6 +201,19 @@ namespace History {
     EpisodeTitleType & {
       episode_number: string;
     };
+
+  type StatItem = {
+    count: number;
+    date: string;
+  };
+
+  type Stat = {
+    movies: StatItem[];
+    series: StatItem[];
+  };
+
+  type TimeframeOptions = "week" | "month" | "trimester" | "year";
+  type ActionOptions = 0 | 1 | 2;
 }
 
 interface SearchResultType {

@@ -1367,7 +1367,7 @@ class HistoryStats(Resource):
         sorted_data_series = sorted(data_series, key=lambda i: i['date'])
         sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
 
-        return jsonify(data_series=sorted_data_series, data_movies=sorted_data_movies)
+        return jsonify(series=sorted_data_series, movies=sorted_data_movies)
 
 # GET: Get Wanted Episodes
 class EpisodesWanted(Resource):

@@ -205,7 +205,7 @@ export const SubtitleText: FunctionComponent<SubtitleProps> = ({
   return <span className={className}>{text}</span>;
 };
 
-export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
+export * from "./async";
 export * from "./buttons";
 export * from "./ContentHeader";
 export * from "./inputs";

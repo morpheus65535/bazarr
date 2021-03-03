@@ -5,9 +5,11 @@ import "./selector.scss";
 
 export interface SelectorProps<T, M extends boolean> {
   className?: string;
+  placeholder?: string;
   options: readonly SelectorOption<T>[];
   disabled?: boolean;
   clearable?: boolean;
+  loading?: boolean;
   multiple?: M;
   onChange?: (k: SelectorValueType<T, M>) => void;
   label?: (item: T) => string;
@@ -20,9 +22,11 @@ export function Selector<T = string, M extends boolean = false>(
 ) {
   const {
     className,
+    placeholder,
     label,
     disabled,
     clearable,
+    loading,
     options,
     multiple,
     onChange,
@@ -39,8 +43,8 @@ export function Selector<T = string, M extends boolean = false>(
 
   // TODO: Force as any
   const wrapper = useCallback(
-    (value: SelectorValueType<T, M> | undefined): any => {
-      if (value) {
+    (value: SelectorValueType<T, M> | undefined | null): any => {
+      if (value !== null && value !== undefined) {
         if (multiple) {
           return (value as SelectorValueType<T, true>).map((v) => ({
             label: label ? label(v) : nameFromItems(v) ?? "Unknown",
@@ -48,16 +52,14 @@ export function Selector<T = string, M extends boolean = false>(
           }));
         } else {
           const v = value as SelectorValueType<T, false>;
-          if (v) {
-            return {
-              label: label ? label(v) : nameFromItems(v) ?? "Unknown",
-              value: v,
-            };
-          }
+          return {
+            label: label ? label(v!) : nameFromItems(v!) ?? "Unknown",
+            value: v,
+          };
         }
-      } else {
-        return value;
       }
+
+      return value;
     },
     [label, multiple, nameFromItems]
   );
@@ -71,6 +73,8 @@ export function Selector<T = string, M extends boolean = false>(
 
   return (
     <ReactSelect
+      isLoading={loading}
+      placeholder={placeholder}
       isSearchable={options.length >= 10}
       isMulti={multiple}
       closeMenuOnSelect={!multiple}
@@ -79,7 +83,7 @@ export function Selector<T = string, M extends boolean = false>(
       isClearable={clearable}
       isDisabled={disabled}
       options={options}
-      className={`custom-selector ${className ?? ""}`}
+      className={`custom-selector w-100 ${className ?? ""}`}
       classNamePrefix="selector"
       onChange={(v) => {
         if (onChange) {

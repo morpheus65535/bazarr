@@ -15,11 +15,13 @@ type Pair<T = string> = {
   value: T;
 };
 
+type ArrayElement<T extends unknown[]> = T extends (infer D)[] ? D : never;
+
 interface DataWrapper<T> {
   data: T;
 }
 
-type PromiseType<T> = T extends Promise<infer D> ? D : T;
+type PromiseType<T> = T extends Promise<infer D> ? D : never;
 
 interface AsyncState<T> {
   updating: boolean;
@@ -27,7 +29,7 @@ interface AsyncState<T> {
   items: T;
 }
 
-type AsyncPayload<T> = T extends AsyncState<infer D> ? D : T;
+type AsyncPayload<T> = T extends AsyncState<infer D> ? D : never;
 
 type Override<T, U> = T & Omit<U, keyof T>;
 

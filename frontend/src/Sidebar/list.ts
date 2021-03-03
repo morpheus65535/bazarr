@@ -32,6 +32,10 @@ export const SidebarList: SidebarDefinition[] = [
         name: "Movies",
         link: "/history/movies",
       },
+      {
+        name: "Statistics",
+        link: "/history/stats",
+      },
     ],
   },
   {

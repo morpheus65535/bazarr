@@ -49,6 +49,7 @@
     "react-scripts": "^4.0.0",
     "react-select": "^4.0.2",
     "react-table": "^7.0.0",
+    "recharts": "^2.0.8",
     "redux-actions": "^2.0.0",
     "redux-logger": "^3.0.6",
     "redux-promise": "^0.6.0",

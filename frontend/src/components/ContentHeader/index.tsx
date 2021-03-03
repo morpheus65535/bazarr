@@ -15,13 +15,19 @@ declare type Header = FunctionComponent<Props> & {
 };
 
 export const ContentHeader: Header = ({ children, scroll }) => {
-  return (
-    <Row className={`content-header ${scroll !== false ? "scroll" : ""}`}>
-      <div className="d-flex flex-nowrap flex-grow-1 bg-dark p-2">
-        {children}
-      </div>
-    </Row>
-  );
+  const rowCls = ["content-header", "bg-dark", "p-2"];
+
+  let childItem: React.ReactNode;
+
+  if (scroll !== false) {
+    rowCls.push("scroll");
+    childItem = (
+      <div className="d-flex flex-nowrap flex-grow-1">{children}</div>
+    );
+  } else {
+    childItem = children;
+  }
+  return <Row className={rowCls.join(" ")}>{childItem}</Row>;
 };
 
 ContentHeader.Button = ContentHeaderButton;
