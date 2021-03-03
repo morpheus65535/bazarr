@@ -11,6 +11,7 @@ interface Settings {
   deathbycaptcha: Settings.DeathByCaptche;
   // Providers
   opensubtitles: Settings.OpenSubtitles;
+  opensubtitlescom: Settings.OpenSubtitlesCom;
   addic7ed: Settings.Addic7ed;
   legendasdivx: Settings.Legandasdivx;
   legendastv: Settings.Legendastv;
@@ -168,6 +169,10 @@ namespace Settings {
     ssl: boolean;
     timeout: number;
     skip_wrong_fps: boolean;
+  }
+
+  interface OpenSubtitlesCom extends BaseProvider {
+    use_hash: boolean;
   }
 
   interface Addic7ed extends BaseProvider {}

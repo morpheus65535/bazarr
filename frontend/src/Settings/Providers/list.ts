@@ -107,6 +107,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       skip_wrong_fps: "Skip Wrong FPS",
     },
   },
+  {
+    key: "opensubtitlescom",
+    name: "OpenSubtitles.com",
+    defaultKey: {
+      username: "",
+      password: "",
+      use_hash: false,
+    },
+    keyNameOverride: {
+      use_hash: "Use Hash",
+    },
+  },
   { key: "podnapisi" },
   {
     key: "regielive",
