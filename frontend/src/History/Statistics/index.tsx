@@ -64,8 +64,8 @@ const HistoryStats: FunctionComponent = () => {
   }, [timeframe, lang?.code2, action, provider]);
 
   return (
-    // TODO: Responsive Height
-    <Container fluid style={{ maxHeight: "75vh" }}>
+    // TODO: Responsive
+    <Container fluid className="vh-75">
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
@@ -108,7 +108,7 @@ const HistoryStats: FunctionComponent = () => {
                 ></LanguageSelector>
               </SelectorContainer>
             </ContentHeader>
-            <ResponsiveContainer>
+            <ResponsiveContainer height="100%">
               <BarChart data={converter(data)}>
                 <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
                 <XAxis dataKey="date"></XAxis>

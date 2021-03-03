@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Container, Row } from "react-bootstrap";
+import { Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Redirect } from "react-router-dom";
 import { bootstrap } from "../@redux/actions";
@@ -55,19 +55,17 @@ const App: FunctionComponent<Props> = ({
   }
 
   return (
-    <Container fluid className="p-0">
-      <SidebarToggleContext.Provider value={toggleSidebar}>
-        <Row noGutters className="header-container">
-          <Header></Header>
-        </Row>
-        <Row noGutters className="flex-nowrap">
-          <Sidebar open={sidebar}></Sidebar>
-          <ModalProvider>
-            <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
-          </ModalProvider>
-        </Row>
-      </SidebarToggleContext.Provider>
-    </Container>
+    <SidebarToggleContext.Provider value={toggleSidebar}>
+      <Row noGutters className="header-container">
+        <Header></Header>
+      </Row>
+      <Row noGutters className="flex-nowrap">
+        <Sidebar open={sidebar}></Sidebar>
+        <ModalProvider>
+          <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+        </ModalProvider>
+      </Row>
+    </SidebarToggleContext.Provider>
   );
 };
 
