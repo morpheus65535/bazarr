@@ -1,25 +1,20 @@
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
-import { connect } from "react-redux";
 import { AsyncButton, Selector } from "../";
+import { useLanguageProfiles } from "../../@redux/hooks";
 import { getExtendItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal, usePayload } from "./provider";
 
 interface Props {
-  profiles: Profile.Languages[];
   submit: (form: FormType.ModifyItem) => Promise<void>;
   onSuccess?: (item: Item.Base) => void;
 }
 
-function mapStateToProps({ system }: ReduxStore) {
-  return {
-    profiles: system.languagesProfiles.items,
-  };
-}
-
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
-  const { profiles, onSuccess, submit, ...modal } = props;
+  const { onSuccess, submit, ...modal } = props;
+
+  const [profiles] = useLanguageProfiles();
 
   const item = usePayload<Item.Base>(modal.modalKey);
 
@@ -90,4 +85,4 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(Editor);
+export default Editor;

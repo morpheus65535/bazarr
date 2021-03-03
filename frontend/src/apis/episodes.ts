@@ -5,7 +5,7 @@ class EpisodeApi extends BaseApi {
     super("/episodes");
   }
 
-  async all(seriesid: number): Promise<Array<Item.Episode>> {
+  async bySeriesId(seriesid: number): Promise<Array<Item.Episode>> {
     return new Promise<Array<Item.Episode>>((resolve, reject) => {
       this.get<DataWrapper<Array<Item.Episode>>>("", { seriesid })
         .then((result) => {
@@ -29,7 +29,7 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async episode(episodeid: number): Promise<Array<Item.Episode>> {
+  async byEpisodeId(episodeid: number): Promise<Array<Item.Episode>> {
     return new Promise<Array<Item.Episode>>((resolve, reject) => {
       this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })
         .then((result) => {

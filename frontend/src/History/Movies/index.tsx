@@ -1,16 +1,14 @@
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { movieUpdateHistoryList } from "../../@redux/actions";
+import { useItemUpdater, useMoviesHistory } from "../../@redux/hooks";
 import Table from "./table";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const MoviesHistoryView: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
+const MoviesHistoryView: FunctionComponent<Props> = () => {
+  const [, update] = useMoviesHistory();
+  useItemUpdater(update);
 
   return (
     <Container fluid>
@@ -24,6 +22,4 @@ const MoviesHistoryView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: movieUpdateHistoryList })(
-  MoviesHistoryView
-);
+export default MoviesHistoryView;

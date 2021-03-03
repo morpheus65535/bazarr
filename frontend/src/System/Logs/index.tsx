@@ -1,33 +1,21 @@
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { systemUpdateLogs } from "../../@redux/actions";
+import { useItemUpdater } from "../../@redux/hooks";
+import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import { useBaseUrl } from "../../utilites";
 import Table from "./table";
 
-interface Props {
-  logs: AsyncState<System.Log[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ system }: ReduxStore) {
-  const { logs } = system;
-  return {
-    logs,
-  };
-}
-
-const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
-  useEffect(() => update(), [update]);
+const SystemLogsView: FunctionComponent<Props> = () => {
+  const logs = useReduxStore(({ system }) => system.logs);
+  const update = useReduxActionFunction(systemUpdateLogs);
+  useItemUpdater(update);
 
   const [resetting, setReset] = useState(false);
 
@@ -78,6 +66,4 @@ const SystemLogsView: FunctionComponent<Props> = ({ logs, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: systemUpdateLogs })(
-  SystemLogsView
-);
+export default SystemLogsView;

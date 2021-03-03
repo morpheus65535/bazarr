@@ -1,7 +1,8 @@
-import React, { FunctionComponent, useEffect } from "react";
-import { connect } from "react-redux";
+import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
 import { systemUpdateSettings } from "../@redux/actions";
+import { useItemUpdater } from "../@redux/hooks";
+import { useReduxActionFunction } from "../@redux/hooks/base";
 import General from "./General";
 import Languages from "./Languages";
 import Notifications from "./Notifications";
@@ -12,12 +13,11 @@ import Sonarr from "./Sonarr";
 import Subtitles from "./Subtitles";
 import UI from "./UI";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const Router: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
+const Router: FunctionComponent<Props> = () => {
+  const update = useReduxActionFunction(systemUpdateSettings);
+  useItemUpdater(update);
 
   return (
     <Switch>
@@ -52,4 +52,4 @@ const Router: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(undefined, { update: systemUpdateSettings })(Router);
+export default Router;

@@ -2,8 +2,7 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
-import { connect } from "react-redux";
-import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { useSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncButton, SubtitleText } from "../../components";
 
@@ -12,17 +11,17 @@ interface Props {
   episodeid: number;
   missing?: boolean;
   subtitle: Subtitle;
-  update: (id: number) => void;
 }
 
-const Action: FunctionComponent<Props> = ({
+export const SubtitleAction: FunctionComponent<Props> = ({
   seriesid,
   episodeid,
   missing,
   subtitle,
-  update,
 }) => {
   const { hi, forced } = subtitle;
+
+  const [, update] = useSeries();
 
   const path = subtitle.path;
 
@@ -65,7 +64,3 @@ const Action: FunctionComponent<Props> = ({
     );
   }
 };
-
-export const SubtitleAction = connect(undefined, {
-  update: seriesUpdateInfoAll,
-})(Action);

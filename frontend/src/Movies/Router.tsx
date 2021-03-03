@@ -1,16 +1,14 @@
-import React, { FunctionComponent, useEffect } from "react";
-import { connect } from "react-redux";
+import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
 import Movie from ".";
-import { movieUpdateInfoAll } from "../@redux/actions";
+import { useItemUpdater, useMovies } from "../@redux/hooks";
 import MovieDetail from "./Detail";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const Router: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
+const Router: FunctionComponent<Props> = () => {
+  const [, update] = useMovies();
+  useItemUpdater(update);
 
   return (
     <Switch>
@@ -24,4 +22,4 @@ const Router: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: movieUpdateInfoAll })(Router);
+export default Router;

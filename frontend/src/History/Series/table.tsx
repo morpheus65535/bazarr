@@ -1,24 +1,15 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateHistoryList } from "../../@redux/actions";
+import { useSeriesHistory } from "../../@redux/hooks";
 import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { SeriesBlacklistButton } from "../../components/speical";
 
-interface Props {
-  seriesHistory: AsyncState<History.Episode[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ series }: ReduxStore) {
-  const { historyList } = series;
-  return {
-    seriesHistory: historyList,
-  };
-}
+const Table: FunctionComponent<Props> = () => {
+  const [seriesHistory, update] = useSeriesHistory();
 
-const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [
       {
@@ -87,6 +78,4 @@ const Table: FunctionComponent<Props> = ({ seriesHistory, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: seriesUpdateHistoryList })(
-  Table
-);
+export default Table;

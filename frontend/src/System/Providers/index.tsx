@@ -2,19 +2,16 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { providerUpdateAll } from "../../@redux/actions";
+import { useItemUpdater, useProviders } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { useProviders } from "../../utilites/items";
 import Table from "./table";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const SystemProvidersView: FunctionComponent<Props> = ({ update }) => {
-  const providers = useProviders();
+const SystemProvidersView: FunctionComponent<Props> = () => {
+  const [providers, update] = useProviders();
+  useItemUpdater(update);
 
   return (
     <AsyncStateOverlay state={providers}>
@@ -48,6 +45,4 @@ const SystemProvidersView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(undefined, { update: providerUpdateAll })(
-  SystemProvidersView
-);
+export default SystemProvidersView;

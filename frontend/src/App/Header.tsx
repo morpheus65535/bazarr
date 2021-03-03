@@ -10,29 +10,22 @@ import {
   Navbar,
   Row,
 } from "react-bootstrap";
-import { connect } from "react-redux";
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
+import { useMovies, useSeries } from "../@redux/hooks";
+import { useReduxActionFunction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
 
-interface Props {
-  movies: Item.Movie[];
-  series: Item.Series[];
-  setNeedAuth: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ series, movie }: ReduxStore) {
-  return {
-    movies: movie.movieList.items,
-    series: series.seriesList.items,
-  };
-}
+const Header: FunctionComponent<Props> = () => {
+  const setNeedAuth = useReduxActionFunction(siteRedirectToAuth);
 
-const Header: FunctionComponent<Props> = (props) => {
-  const { series, movies, setNeedAuth } = props;
+  const [series] = useSeries();
+  const [movies] = useMovies();
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
@@ -40,7 +33,7 @@ const Header: FunctionComponent<Props> = (props) => {
     (text: string): SearchResult[] => {
       text = text.toLowerCase();
 
-      return series
+      return series.items
         .filter((val) => val.title.toLowerCase().includes(text))
         .map((val) => {
           return {
@@ -56,7 +49,7 @@ const Header: FunctionComponent<Props> = (props) => {
     (text: string): SearchResult[] => {
       text = text.toLowerCase();
 
-      return movies
+      return movies.items
         .filter((val) => val.title.toLowerCase().includes(text))
         .map((val) => {
           return {
@@ -138,6 +131,4 @@ const Header: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { setNeedAuth: siteRedirectToAuth })(
-  Header
-);
+export default Header;

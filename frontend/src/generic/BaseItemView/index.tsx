@@ -8,12 +8,9 @@ import React, {
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
+import { useLanguageProfiles } from "../../@redux/hooks";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import {
-  getExtendItemId,
-  mergeArray,
-  useLanguageProfiles,
-} from "../../utilites";
+import { getExtendItemId, mergeArray } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
@@ -37,7 +34,7 @@ const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   const [selections, setSelections] = useState<Item.Base[]>([]);
   const [dirtyItems, setDirty] = useState<Item.Base[]>([]);
 
-  const profiles = useLanguageProfiles();
+  const [profiles] = useLanguageProfiles();
 
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];

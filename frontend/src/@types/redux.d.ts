@@ -22,7 +22,7 @@ namespace ReduxStore {
   interface System {
     languages: AsyncState<Array<Language>>;
     enabledLanguage: AsyncState<Array<Language>>;
-    languagesProfiles: AsyncState<Array<LanguagesProfile>>;
+    languagesProfiles: AsyncState<Array<Profile.Languages>>;
     status: AsyncState<System.Status | undefined>;
     tasks: AsyncState<Array<System.Task>>;
     providers: AsyncState<Array<System.Provider>>;
@@ -31,10 +31,14 @@ namespace ReduxStore {
     settings: AsyncState<Settings | undefined>;
   }
 
+  interface EpisodeState {
+    [key: number]: Array<Item.Episode>;
+  }
+
   interface Series {
     seriesList: AsyncState<Array<Item.Series>>;
     wantedSeriesList: AsyncState<Array<Wanted.Episode>>;
-    episodeList: AsyncState<Map<number, Array<Item.Episode>>>;
+    episodeList: AsyncState<EpisodeState>;
     historyList: AsyncState<Array<History.Episode>>;
     blacklist: AsyncState<Array<Blacklist.Episode>>;
   }

@@ -1,10 +1,8 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateBlacklist } from "../../@redux/actions";
 import { EpisodesApi } from "../../apis";
 import { AsyncButton, PageTable } from "../../components";
 
@@ -81,4 +79,4 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
   );
 };
 
-export default connect(undefined, { update: seriesUpdateBlacklist })(Table);
+export default Table;

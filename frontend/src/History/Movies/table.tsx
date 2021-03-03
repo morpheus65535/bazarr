@@ -1,24 +1,16 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateHistoryList } from "../../@redux/actions";
+import { useItemUpdater, useMoviesHistory } from "../../@redux/hooks";
 import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
 import { MoviesBlacklistButton } from "../../components/speical";
 
-interface Props {
-  movieHistory: AsyncState<History.Movie[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ movie }: ReduxStore) {
-  const { historyList } = movie;
-  return {
-    movieHistory: historyList,
-  };
-}
+const Table: FunctionComponent<Props> = () => {
+  const [history, update] = useMoviesHistory();
+  useItemUpdater(update);
 
-const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [
       {
@@ -66,7 +58,7 @@ const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   );
 
   return (
-    <AsyncStateOverlay state={movieHistory}>
+    <AsyncStateOverlay state={history}>
       {(data) => (
         <PageTable
           emptyText="Nothing Found in Movies History"
@@ -78,6 +70,4 @@ const Table: FunctionComponent<Props> = ({ movieHistory, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateHistoryList })(
-  Table
-);
+export default Table;

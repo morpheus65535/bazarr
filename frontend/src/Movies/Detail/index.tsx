@@ -10,9 +10,8 @@ import {
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { movieUpdateInfoAll } from "../../@redux/actions";
+import { useMovies } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
@@ -31,23 +30,11 @@ interface Params {
   id: string;
 }
 
-interface Props extends RouteComponentProps<Params> {
-  movieList: AsyncState<Item.Movie[]>;
-  update: (id: number) => void;
-}
+interface Props extends RouteComponentProps<Params> {}
 
-function mapStateToProps({ movie }: ReduxStore) {
-  const { movieList } = movie;
-  return {
-    movieList,
-  };
-}
+const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
+  const [movieList, update] = useMovies();
 
-const MovieDetailView: FunctionComponent<Props> = ({
-  movieList,
-  match,
-  update,
-}) => {
   const list = movieList.items;
   const id = Number.parseInt(match.params.id);
   const item = list.find((val) => val.radarrId === id);
@@ -130,7 +117,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
         <ItemOverview item={item} details={[]}></ItemOverview>
       </Row>
       <Row>
-        <Table movie={item}></Table>
+        <Table movie={item} update={update}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
@@ -165,6 +152,4 @@ const MovieDetailView: FunctionComponent<Props> = ({
   );
 };
 
-export default withRouter(
-  connect(mapStateToProps, { update: movieUpdateInfoAll })(MovieDetailView)
-);
+export default withRouter(MovieDetailView);

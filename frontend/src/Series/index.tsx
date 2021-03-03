@@ -6,27 +6,17 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateInfoAll } from "../@redux/actions";
+import { useSeries } from "../@redux/hooks";
 import { SeriesApi } from "../apis";
 import { ActionBadge } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 
-interface Props {
-  series: AsyncState<Item.Series[]>;
-  update: (id?: number) => void;
-}
+interface Props {}
 
-function mapStateToProps({ series }: ReduxStore) {
-  const { seriesList } = series;
-  return {
-    series: seriesList,
-  };
-}
-
-const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
+const SeriesView: FunctionComponent<Props> = () => {
+  const [series, update] = useSeries();
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -147,6 +137,4 @@ const SeriesView: FunctionComponent<Props> = ({ series, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(
-  SeriesView
-);
+export default SeriesView;

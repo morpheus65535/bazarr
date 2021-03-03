@@ -20,7 +20,7 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { useGetLanguage, useProfileBy } from "../utilites";
+import { useProfileBy } from "../@redux/hooks";
 
 interface Props {
   item: Item.Base;
@@ -72,8 +72,6 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
   const profile = useProfileBy(item.profileId);
 
-  const languageGetter = useGetLanguage(true);
-
   const languageBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
 
@@ -83,7 +81,8 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         ...profile.items.map((v) =>
           createBadge(
             faLanguage,
-            languageGetter(v.language)?.name ?? "",
+            // TODO: Convert to Name
+            v.language,
             "Language: "
           )
         )
@@ -91,7 +90,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     }
 
     return badges;
-  }, [profile, languageGetter]);
+  }, [profile]);
 
   const alternativePopover = useMemo(
     () => (

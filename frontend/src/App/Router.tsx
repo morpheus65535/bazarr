@@ -1,5 +1,4 @@
 import React, { FunctionComponent } from "react";
-import { connect } from "react-redux";
 import { Redirect, Route, Switch } from "react-router-dom";
 import BlacklistRouter from "../Blacklist/Router";
 import HistoryRouter from "../History/Router";
@@ -46,4 +45,4 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
   );
 };
 
-export default connect()(Router);
+export default Router;

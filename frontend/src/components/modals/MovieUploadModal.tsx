@@ -1,28 +1,30 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
-import { connect } from "react-redux";
 import {
   AsyncButton,
   FileForm,
   LanguageSelector,
   useCloseModal,
   usePayload,
-  useWhenModalShow,
 } from "..";
-import { movieUpdateInfoAll } from "../../@redux/actions";
+import {
+  useLanguageBy,
+  useLanguages,
+  useMovies,
+  useProfileBy,
+} from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
-import { useGetLanguage, useLanguages, useProfileBy } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-interface MovieProps {
-  update: (id: number) => void;
-}
+interface MovieProps {}
 
 const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   props
 ) => {
-  const { update, ...modal } = props;
+  const modal = props;
 
-  const avaliableLanguages = useLanguages(true);
+  const [, update] = useMovies();
+
+  const [avaliableLanguages] = useLanguages(true);
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
 
@@ -34,15 +36,9 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const profile = useProfileBy(movie?.profileId);
 
-  const languageGetter = useGetLanguage(true);
+  const defaultLanguage = useLanguageBy(profile?.items[0]?.language);
 
-  useWhenModalShow(modal.modalKey, () => {
-    if (profile) {
-      const first = profile.items[0]?.language;
-      const lang = languageGetter(first);
-      setLanguage(lang);
-    }
-  });
+  useEffect(() => setLanguage(defaultLanguage), [defaultLanguage]);
 
   const [file, setFile] = useState<File | undefined>(undefined);
   const [forced, setForced] = useState(false);
@@ -119,6 +115,4 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   );
 };
 
-export default connect(undefined, { update: movieUpdateInfoAll })(
-  MovieUploadModal
-);
+export default MovieUploadModal;

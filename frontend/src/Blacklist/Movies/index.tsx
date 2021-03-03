@@ -1,29 +1,17 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { movieUpdateBlacklist } from "../../@redux/actions";
+import { useBlacklistMovies, useItemUpdater } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
-interface Props {
-  blacklist: AsyncState<Blacklist.Movie[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ movie }: ReduxStore) {
-  return {
-    blacklist: movie.blacklist,
-  };
-}
-
-const BlacklistMoviesView: FunctionComponent<Props> = ({
-  update,
-  blacklist,
-}) => {
-  useEffect(() => update(), [update]);
+const BlacklistMoviesView: FunctionComponent<Props> = () => {
+  const [blacklist, update] = useBlacklistMovies();
+  useItemUpdater(update);
   return (
     <AsyncStateOverlay state={blacklist}>
       {(data) => (
@@ -41,7 +29,7 @@ const BlacklistMoviesView: FunctionComponent<Props> = ({
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={data}></Table>
+            <Table blacklist={data} update={update}></Table>
           </Row>
         </Container>
       )}
@@ -49,6 +37,4 @@ const BlacklistMoviesView: FunctionComponent<Props> = ({
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateBlacklist })(
-  BlacklistMoviesView
-);
+export default BlacklistMoviesView;

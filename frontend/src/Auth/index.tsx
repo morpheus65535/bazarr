@@ -8,25 +8,16 @@ import {
   Image,
   Spinner,
 } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Redirect } from "react-router-dom";
 import { siteAuthSuccess } from "../@redux/actions";
+import { useReduxActionFunction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
 import "./style.scss";
 
-interface Props {
-  login: () => void;
-  authState: boolean;
-}
+interface Props {}
 
-function mapStateToProps({ site }: ReduxStore) {
-  return {
-    authState: site.auth,
-  };
-}
-
-const AuthPage: FunctionComponent<Props> = ({ login, authState }) => {
+const AuthPage: FunctionComponent<Props> = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,9 +29,9 @@ const AuthPage: FunctionComponent<Props> = ({ login, authState }) => {
     setTimeout(() => setError(""), 2000);
   }, []);
 
-  const onSuccess = useCallback(() => {
-    login();
-  }, [login]);
+  const onSuccess = useReduxActionFunction(siteAuthSuccess);
+
+  const authState = useReduxStore((s) => s.site.auth);
 
   const onError = useCallback(() => {
     setUpdate(false);
@@ -112,4 +103,4 @@ const AuthPage: FunctionComponent<Props> = ({ login, authState }) => {
   );
 };
 
-export default connect(mapStateToProps, { login: siteAuthSuccess })(AuthPage);
+export default AuthPage;

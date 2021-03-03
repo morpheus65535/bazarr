@@ -1,17 +1,14 @@
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { TableOptions, TableUpdater } from "react-table";
 import { ExtendItemComparer, SharedProps } from ".";
+import { useLanguageProfiles } from "../../@redux/hooks";
 import {
   ItemEditorModal,
   PageTable,
   SelectTable,
   useShowModal,
 } from "../../components";
-import {
-  getExtendItemId,
-  useLanguageProfiles,
-  useMergeArray,
-} from "../../utilites";
+import { getExtendItemId, useMergeArray } from "../../utilites";
 
 interface Props extends SharedProps {
   items: readonly Item.Base[];

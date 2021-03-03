@@ -2,9 +2,7 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Column } from "react-table";
-import { movieUpdateInfoAll } from "../../@redux/actions";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, SimpleTable, SubtitleText } from "../../components";
 
@@ -104,4 +102,4 @@ const Table: FunctionComponent<Props> = (props) => {
   return <SimpleTable columns={columns} data={data}></SimpleTable>;
 };
 
-export default connect(undefined, { update: movieUpdateInfoAll })(Table);
+export default Table;

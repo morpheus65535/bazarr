@@ -8,27 +8,17 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateInfoAll } from "../@redux/actions";
+import { useMovies } from "../@redux/hooks";
 import { MoviesApi } from "../apis";
 import { ActionBadge } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 
-interface Props {
-  movies: AsyncState<Item.Movie[]>;
-  update: (id?: number) => void;
-}
+interface Props {}
 
-function mapStateToProps({ movie }: ReduxStore) {
-  const { movieList } = movie;
-  return {
-    movies: movieList,
-  };
-}
-
-const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
+const MovieView: FunctionComponent<Props> = () => {
+  const [movies, update] = useMovies();
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
@@ -134,6 +124,4 @@ const MovieView: FunctionComponent<Props> = ({ movies, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: movieUpdateInfoAll })(
-  MovieView
-);
+export default MovieView;

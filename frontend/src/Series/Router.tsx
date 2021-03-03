@@ -1,16 +1,14 @@
-import React, { FunctionComponent, useEffect } from "react";
-import { connect } from "react-redux";
+import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
 import Series from ".";
-import { seriesUpdateList } from "../@redux/actions";
+import { useItemUpdater, useSeries } from "../@redux/hooks";
 import Episodes from "./Episodes";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const Router: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
+const Router: FunctionComponent<Props> = () => {
+  const [, update] = useSeries();
+  useItemUpdater(update);
   return (
     <Switch>
       <Route exact path="/series">
@@ -23,4 +21,4 @@ const Router: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: seriesUpdateList })(Router);
+export default Router;

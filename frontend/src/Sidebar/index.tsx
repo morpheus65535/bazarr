@@ -6,8 +6,8 @@ import React, {
   useState,
 } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
-import { connect } from "react-redux";
 import { useHistory } from "react-router-dom";
+import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
 import {
@@ -21,39 +21,29 @@ import "./style.scss";
 import { BadgeProvider } from "./types";
 
 interface Props {
-  movies_badge: number;
-  episodes_badge: number;
-  providers_badge: number;
   open?: boolean;
 }
 
-function mapStateToProps({ badges }: ReduxStore) {
-  return {
-    movies_badge: badges.movies,
-    episodes_badge: badges.episodes,
-    providers_badge: badges.providers,
-  };
-}
-
-const Sidebar: FunctionComponent<Props> = ({
-  movies_badge,
-  episodes_badge,
-  providers_badge,
-  open,
-}) => {
+const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const toggle = useContext(SidebarToggleContext);
+
+  const { movies, episodes, providers } = useReduxStore(({ badges }) => ({
+    movies: badges.movies,
+    episodes: badges.episodes,
+    providers: badges.providers,
+  }));
 
   const badges = useMemo<BadgeProvider>(
     () => ({
       Wanted: {
-        Series: episodes_badge,
-        Movies: movies_badge,
+        Series: episodes,
+        Movies: movies,
       },
       System: {
-        Providers: providers_badge,
+        Providers: providers,
       },
     }),
-    [episodes_badge, movies_badge, providers_badge]
+    [episodes, movies, providers]
   );
 
   const history = useHistory();
@@ -107,4 +97,4 @@ const Sidebar: FunctionComponent<Props> = ({
   );
 };
 
-export default connect(mapStateToProps)(Sidebar);
+export default Sidebar;

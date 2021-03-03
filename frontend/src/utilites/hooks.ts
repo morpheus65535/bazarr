@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
 import { mergeArray } from ".";
 
 export function useOnShow(callback: () => void) {
@@ -23,45 +22,6 @@ export function useBaseUrl(slash: boolean = false) {
     }
     return url;
   }
-}
-
-export function useLanguageProfiles() {
-  return useSelector<ReduxStore, Profile.Languages[]>(
-    (s) => s.system.languagesProfiles.items
-  );
-}
-
-export function useProfileBy(id: number | null | undefined) {
-  const profiles = useLanguageProfiles();
-  return useMemo(() => profiles.find((v) => v.profileId === id), [
-    id,
-    profiles,
-  ]);
-}
-
-export function useLanguages(enabled: boolean = false) {
-  return useSelector<ReduxStore, Language[]>((s) =>
-    enabled ? s.system.enabledLanguage.items : s.system.languages.items
-  );
-}
-
-export function useGetLanguage(enabled: boolean = false) {
-  const languages = useLanguages(enabled);
-  return useCallback(
-    (code?: string) => {
-      if (code === undefined) {
-        return undefined;
-      } else {
-        return languages.find((v) => v.code2 === code);
-      }
-    },
-    [languages]
-  );
-}
-
-export function useLanguageBy(code: string) {
-  const getter = useGetLanguage();
-  return useMemo(() => getter(code), [code, getter]);
 }
 
 export function useSessionStorage(

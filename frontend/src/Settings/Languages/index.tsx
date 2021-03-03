@@ -1,6 +1,6 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
-import { connect } from "react-redux";
+import { useLanguageProfiles, useLanguages } from "../../@redux/hooks";
 import {
   Check,
   CollapseBox,
@@ -39,22 +39,12 @@ export function useProfiles() {
   }
 }
 
-interface Props {
-  languages: Language[];
-  enabled: Language[];
-  profiles: Profile.Languages[];
-}
+interface Props {}
 
-function mapStateToProps({ system }: ReduxStore) {
-  return {
-    languages: system.languages.items,
-    enabled: system.enabledLanguage.items,
-    profiles: system.languagesProfiles.items,
-  };
-}
-
-const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
-  const { languages, enabled, profiles } = props;
+const SettingsLanguagesView: FunctionComponent<Props> = () => {
+  const [languages] = useLanguages(false);
+  const [enabled] = useLanguages(true);
+  const [profiles] = useLanguageProfiles();
 
   return (
     <SettingsProvider title="Languages - Bazarr (Settings)">
@@ -132,4 +122,4 @@ const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, {})(SettingsLanguagesView);
+export default SettingsLanguagesView;

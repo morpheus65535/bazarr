@@ -1,18 +1,18 @@
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { connect } from "react-redux";
 import { Column } from "react-table";
 import { systemRunTasks } from "../../@redux/actions";
+import { useReduxActionFunction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
 interface Props {
   tasks: System.Task[];
-  run: (id: string) => void;
 }
 
-const Table: FunctionComponent<Props> = ({ tasks, run }) => {
+const Table: FunctionComponent<Props> = ({ tasks }) => {
+  const run = useReduxActionFunction(systemRunTasks);
   const columns: Column<System.Task>[] = useMemo<Column<System.Task>[]>(
     () => [
       {
@@ -54,4 +54,4 @@ const Table: FunctionComponent<Props> = ({ tasks, run }) => {
   return <SimpleTable columns={columns} data={tasks}></SimpleTable>;
 };
 
-export default connect(undefined, { run: systemRunTasks })(Table);
+export default Table;

@@ -5,9 +5,9 @@ import React, {
   useState,
 } from "react";
 import { Row } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Redirect } from "react-router-dom";
-import { bootstrap } from "../@redux/actions";
+import { bootstrap as ReduxBootstrap } from "../@redux/actions";
+import { useReduxActionFunction, useReduxStore } from "../@redux/hooks/base";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import Header from "./Header";
@@ -16,24 +16,16 @@ import Router from "./Router";
 // Sidebar Toggle
 export const SidebarToggleContext = React.createContext<() => void>(() => {});
 
-interface Props {
-  bootstrap: () => void;
-  initialized: boolean;
-  authState: boolean;
-}
+interface Props {}
 
-function mapStateToProps({ site }: ReduxStore) {
-  return {
-    initialized: site.initialized,
-    authState: site.auth,
-  };
-}
+const App: FunctionComponent<Props> = () => {
+  const bootstrap = useReduxActionFunction(ReduxBootstrap);
 
-const App: FunctionComponent<Props> = ({
-  bootstrap,
-  initialized,
-  authState,
-}) => {
+  const { initialized, authState } = useReduxStore((s) => ({
+    initialized: s.site.initialized,
+    authState: s.site.auth,
+  }));
+
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
@@ -69,6 +61,4 @@ const App: FunctionComponent<Props> = ({
   );
 };
 
-export default connect(mapStateToProps, {
-  bootstrap,
-})(App);
+export default App;

@@ -2,10 +2,8 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateWantedAll } from "../../@redux/actions";
 import { EpisodesApi } from "../../apis";
 import { AsyncButton, PageTable, SubtitleText } from "../../components";
 
@@ -79,4 +77,4 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
   );
 };
 
-export default connect(undefined, { update: seriesUpdateWantedAll })(Table);
+export default Table;

@@ -6,12 +6,11 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { useSeries } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
@@ -27,22 +26,13 @@ interface Params {
   id: string;
 }
 
-interface Props extends RouteComponentProps<Params> {
-  seriesList: AsyncState<Item.Series[]>;
-  update: (id: number) => void;
-}
-
-function mapStateToProps({ series }: ReduxStore) {
-  const { seriesList } = series;
-  return {
-    seriesList,
-  };
-}
+interface Props extends RouteComponentProps<Params> {}
 
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
-  const { update, match, seriesList } = props;
+  const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const list = seriesList.items;
+  const [series, update] = useSeries();
+  const list = series.items;
 
   const item = useMemo(() => list.find((val) => val.sonarrSeriesId === id), [
     list,
@@ -64,10 +54,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   );
 
   const showModal = useShowModal();
-
-  useEffect(() => {
-    update(id);
-  }, [update, id]);
 
   if (!item) {
     return <LoadingIndicator></LoadingIndicator>;
@@ -132,6 +118,4 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default withRouter(
-  connect(mapStateToProps, { update: seriesUpdateInfoAll })(SeriesEpisodesView)
-);
+export default withRouter(SeriesEpisodesView);

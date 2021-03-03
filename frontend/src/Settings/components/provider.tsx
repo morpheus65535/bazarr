@@ -8,12 +8,10 @@ import React, {
 } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { Prompt } from "react-router";
-import {
-  siteSaveLocalstorage,
-  systemUpdateSettingsAll,
-} from "../../@redux/actions";
+import { siteSaveLocalstorage } from "../../@redux/actions";
+import { useSystemSettings } from "../../@redux/hooks";
+import { useReduxActionFunction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import {
@@ -72,20 +70,14 @@ type SettingDispatch = Record<string, (settings: LooseObject) => void>;
 
 interface Props {
   title: string;
-  update: () => void;
-  updateLocal: (settings: LooseObject) => void;
   children: JSX.Element | JSX.Element[];
-  settings: AsyncState<Settings | undefined>;
-}
-
-function mapStateToProps({ system }: ReduxStore) {
-  return {
-    settings: system.settings,
-  };
 }
 
 const SettingsProvider: FunctionComponent<Props> = (props) => {
-  const { children, title, update, updateLocal, settings } = props;
+  const { children, title } = props;
+
+  const [settings, update] = useSystemSettings();
+  const updateStorage = useReduxActionFunction(siteSaveLocalstorage);
 
   const [stagedChange, setChange] = useState<LooseObject>({});
   const [updating, setUpdating] = useState(false);
@@ -123,10 +115,10 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const saveLocalStorage = useCallback(
     (settings: LooseObject) => {
-      updateLocal(settings);
+      updateStorage(settings);
       setChange({});
     },
-    [updateLocal]
+    [updateStorage]
   );
 
   useEffect(() => {
@@ -195,7 +187,4 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, {
-  update: systemUpdateSettingsAll,
-  updateLocal: siteSaveLocalstorage,
-})(SettingsProvider);
+export default SettingsProvider;

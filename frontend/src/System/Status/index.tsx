@@ -6,11 +6,12 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { systemUpdateStatus } from "../../@redux/actions";
+import { useItemUpdater } from "../../@redux/hooks";
+import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
 
 interface InfoProps {
   title: string;
@@ -60,20 +61,12 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   );
 };
 
-interface Props {
-  status?: System.Status;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ system }: ReduxStore) {
-  const { status } = system;
-  return {
-    status: status.items,
-  };
-}
-
-const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
-  useEffect(() => update(), [update]);
+const SystemStatusView: FunctionComponent<Props> = () => {
+  const status = useReduxStore((s) => s.system.status.items);
+  const update = useReduxActionFunction(systemUpdateStatus);
+  useItemUpdater(update);
 
   return (
     <Container className="p-5">
@@ -139,6 +132,4 @@ const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
   );
 };
 
-export default connect(mapStateToProps, {
-  update: systemUpdateStatus,
-})(SystemStatusView);
+export default SystemStatusView;

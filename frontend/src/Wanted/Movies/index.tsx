@@ -1,22 +1,17 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { movieUpdateInfoAll } from "../../@redux/actions";
+import { useItemUpdater, useWantedMovies } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { useWantedMovies } from "../../utilites/items";
 import Table from "./table";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
-
-  const wanted = useWantedMovies();
+const WantedMoviesView: FunctionComponent<Props> = () => {
+  const [wanted, update] = useWantedMovies();
+  useItemUpdater(update);
 
   return (
     <AsyncStateOverlay state={wanted}>
@@ -28,7 +23,7 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
           <ContentHeader>
             <ContentHeader.AsyncButton
               promise={() => MoviesApi.action({ action: "search-wanted" })}
-              onSuccess={update}
+              onSuccess={update as () => void}
               icon={faSearch}
             >
               Search All
@@ -43,6 +38,4 @@ const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(undefined, { update: movieUpdateInfoAll })(
-  WantedMoviesView
-);
+export default WantedMoviesView;

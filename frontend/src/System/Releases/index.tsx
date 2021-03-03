@@ -1,25 +1,17 @@
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Badge, Card, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
 import { systemUpdateReleases } from "../../@redux/actions";
+import { useItemUpdater } from "../../@redux/hooks";
+import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
 import { AsyncStateOverlay } from "../../components";
 
-interface Props {
-  releases: AsyncState<ReleaseInfo[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ system }: ReduxStore) {
-  return {
-    releases: system.releases,
-  };
-}
-
-const ReleasesView: FunctionComponent<Props> = ({ releases, update }) => {
-  useEffect(() => {
-    update();
-  }, [update]);
+const ReleasesView: FunctionComponent<Props> = () => {
+  const releases = useReduxStore(({ system }) => system.releases);
+  const update = useReduxActionFunction(systemUpdateReleases);
+  useItemUpdater(update);
 
   return (
     <AsyncStateOverlay state={releases}>
@@ -79,6 +71,4 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
   );
 };
 
-export default connect(mapStateToProps, { update: systemUpdateReleases })(
-  ReleasesView
-);
+export default ReleasesView;

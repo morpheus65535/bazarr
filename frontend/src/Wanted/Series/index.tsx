@@ -1,27 +1,17 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { seriesUpdateWantedAll } from "../../@redux/actions";
+import { useItemUpdater, useWantedSeries } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
-interface Props {
-  wanted: AsyncState<Wanted.Episode[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ series }: ReduxStore) {
-  const { wantedSeriesList } = series;
-  return {
-    wanted: wantedSeriesList,
-  };
-}
-
-const WantedSeriesView: FunctionComponent<Props> = ({ update, wanted }) => {
-  useEffect(() => update(), [update]);
+const WantedSeriesView: FunctionComponent<Props> = () => {
+  const [wanted, update] = useWantedSeries();
+  useItemUpdater(update);
   return (
     <AsyncStateOverlay state={wanted}>
       {(data) => (
@@ -39,7 +29,7 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update, wanted }) => {
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table wanted={data}></Table>
+            <Table wanted={data} update={update}></Table>
           </Row>
         </Container>
       )}
@@ -47,6 +37,4 @@ const WantedSeriesView: FunctionComponent<Props> = ({ update, wanted }) => {
   );
 };
 
-export default connect(mapStateToProps, {
-  update: seriesUpdateWantedAll,
-})(WantedSeriesView);
+export default WantedSeriesView;

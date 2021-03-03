@@ -8,9 +8,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
-import { connect } from "react-redux";
 import { Column, TableOptions, TableUpdater } from "react-table";
-import { seriesUpdateInfoAll } from "../../@redux/actions";
+import { useEpisodes, useItemUpdater } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionIcon,
@@ -25,20 +24,12 @@ import { SubtitleAction } from "./components";
 
 interface Props {
   series: Item.Series;
-  episodeList: AsyncState<Map<number, Item.Episode[]>>;
-  update: (id: number) => void;
 }
 
-function mapStateToProps({ series }: ReduxStore) {
-  return {
-    episodeList: series.episodeList,
-  };
-}
-
-const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
+const Table: FunctionComponent<Props> = ({ series }) => {
   const id = series.sonarrSeriesId;
-  const list = episodeList;
-  const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
+  const [episodes, update] = useEpisodes(id);
+  useItemUpdater(update);
 
   const showModal = useShowModal();
 
@@ -165,14 +156,17 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
 
   const maxSeason = useMemo(
     () =>
-      episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
+      episodes.items.reduce<number>(
+        (prev, curr) => Math.max(prev, curr.season),
+        0
+      ),
     [episodes]
   );
 
   const options: TableOptions<Item.Episode> = useMemo(() => {
     return {
       columns,
-      data: episodes,
+      data: episodes.items,
       update: updateRow,
       initialState: {
         sortBy: [
@@ -189,7 +183,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
 
   return (
     <React.Fragment>
-      <AsyncStateOverlay state={episodeList} exist={(item) => item.has(id)}>
+      <AsyncStateOverlay state={episodes}>
         {() => (
           <GroupTable
             emptyText="No Episode Found For This Series"
@@ -201,7 +195,7 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onDownload={() => update(series.sonarrSeriesId)}
+        onDownload={update}
         onSelect={(item, result) => {
           item = item as Item.Episode;
           const {
@@ -228,4 +222,4 @@ const Table: FunctionComponent<Props> = ({ series, episodeList, update }) => {
   );
 };
 
-export default connect(mapStateToProps, { update: seriesUpdateInfoAll })(Table);
+export default Table;

@@ -2,27 +2,15 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { seriesUpdateBlacklist } from "../../@redux/actions";
+import { useBlacklistSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
-interface Props {
-  blacklist: AsyncState<Blacklist.Episode[]>;
-  update: () => void;
-}
+interface Props {}
 
-function mapStateToProps({ series }: ReduxStore) {
-  return {
-    blacklist: series.blacklist,
-  };
-}
-
-const BlacklistSeriesView: FunctionComponent<Props> = ({
-  update,
-  blacklist,
-}) => {
+const BlacklistSeriesView: FunctionComponent<Props> = () => {
+  const [blacklist, update] = useBlacklistSeries();
   useEffect(() => update(), [update]);
   return (
     <AsyncStateOverlay state={blacklist}>
@@ -41,7 +29,7 @@ const BlacklistSeriesView: FunctionComponent<Props> = ({
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={data}></Table>
+            <Table blacklist={data} update={update}></Table>
           </Row>
         </Container>
       )}
@@ -49,6 +37,4 @@ const BlacklistSeriesView: FunctionComponent<Props> = ({
   );
 };
 
-export default connect(mapStateToProps, { update: seriesUpdateBlacklist })(
-  BlacklistSeriesView
-);
+export default BlacklistSeriesView;

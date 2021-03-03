@@ -1,16 +1,14 @@
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { connect } from "react-redux";
-import { seriesUpdateHistoryList } from "../../@redux/actions";
+import { useItemUpdater, useSeriesHistory } from "../../@redux/hooks";
 import Table from "./table";
 
-interface Props {
-  update: () => void;
-}
+interface Props {}
 
-const SeriesHistoryView: FunctionComponent<Props> = ({ update }) => {
-  useEffect(() => update(), [update]);
+const SeriesHistoryView: FunctionComponent<Props> = () => {
+  const [, update] = useSeriesHistory();
+  useItemUpdater(update);
 
   return (
     <Container fluid>
@@ -24,6 +22,4 @@ const SeriesHistoryView: FunctionComponent<Props> = ({ update }) => {
   );
 };
 
-export default connect(null, { update: seriesUpdateHistoryList })(
-  SeriesHistoryView
-);
+export default SeriesHistoryView;
