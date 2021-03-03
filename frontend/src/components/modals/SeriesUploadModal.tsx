@@ -23,7 +23,6 @@ import {
   SimpleTable,
   useCloseModal,
   usePayload,
-  useWhenModalShow,
 } from "..";
 import {
   useEpisodes,
@@ -223,10 +222,6 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const canUpload = tableShow && isValid && language?.code2 !== undefined;
 
-  useWhenModalShow(modal.modalKey, () => {
-    setFiles([]);
-  });
-
   const footer = useMemo(
     () => (
       <div className="d-flex flex-row flex-grow-1 justify-content-between">
@@ -253,6 +248,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
             promise={() => uploadSubtitles(subtitleInfoList)}
             onSuccess={() => {
               closeModal();
+              setFiles([]);
               update();
             }}
           >

@@ -1,5 +1,5 @@
-import { isArray, isBoolean, isNumber, isString } from "lodash";
-import React, { FunctionComponent } from "react";
+import { isArray, isBoolean, isNumber, isString, isUndefined } from "lodash";
+import React, { FunctionComponent, useEffect } from "react";
 import {
   Button as BSButton,
   ButtonProps as BSButtonProps,
@@ -14,7 +14,7 @@ import {
   Slider as CSlider,
   SliderProps as CSliderProps,
 } from "../../components";
-import { isReactText, useOnShow } from "../../utilites";
+import { isReactText } from "../../utilites";
 import { OverrideFuncType } from "./hooks";
 
 export const Message: FunctionComponent<{
@@ -85,11 +85,9 @@ export const Check: FunctionComponent<CheckProps> = ({
   const update = useUpdate();
   const collapse = useCollapse();
 
-  const defaultValue = useLatest<boolean>(settingKey, isBoolean, override);
+  const value = useLatest<boolean>(settingKey, isBoolean, override);
 
-  useOnShow(() => {
-    collapse(defaultValue ?? false);
-  });
+  useEffect(() => collapse(value ?? false), [collapse, value]);
 
   return (
     <Form.Check
@@ -100,11 +98,10 @@ export const Check: FunctionComponent<CheckProps> = ({
       label={label}
       onChange={(e) => {
         const { checked } = e.currentTarget;
-        collapse(checked);
         update(checked, settingKey);
       }}
       disabled={disabled}
-      defaultChecked={defaultValue}
+      checked={value}
     ></Form.Check>
   );
 };
@@ -125,15 +122,15 @@ export function Selector<
 
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const defaultValue = useLatest<SelectorValueType<T, M>>(
+  const value = useLatest<SelectorValueType<T, M>>(
     settingKey,
     selectorValidator,
     override
   );
 
-  useOnShow(() => {
-    if (typeof defaultValue === "string") {
-      collapse(defaultValue);
+  useEffect(() => {
+    if (isString(value) || isUndefined(value)) {
+      collapse(value ?? "");
     }
   });
 
@@ -141,13 +138,8 @@ export function Selector<
     <CSelector
       {...selector}
       // TODO: Force as any
-      defaultValue={defaultValue as any}
+      value={value as any}
       onChange={(v) => {
-        if (v === undefined) {
-          collapse("");
-        } else if (typeof v === "string") {
-          collapse(v);
-        }
         v = beforeStaged ? beforeStaged(v) : v;
         update(v, settingKey);
       }}

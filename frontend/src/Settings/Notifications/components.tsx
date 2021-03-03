@@ -12,7 +12,6 @@ import {
   useCloseModal,
   usePayload,
   useShowModal,
-  useWhenModalShow,
 } from "../../components";
 import { ColCard, useLatestMergeArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
@@ -46,15 +45,11 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     notificationComparer
   );
 
-  const [current, setCurrent] = useState<
-    Settings.NotificationInfo | undefined
-  >();
-
   const item = usePayload<Settings.NotificationInfo>(modal.modalKey);
 
-  useWhenModalShow(modal.modalKey, () => {
-    setCurrent(item);
-  });
+  const [current, setCurrent] = useState<Settings.NotificationInfo | undefined>(
+    item
+  );
 
   const updateUrl = useCallback(
     (s: string) => {

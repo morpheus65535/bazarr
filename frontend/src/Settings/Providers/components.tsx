@@ -12,7 +12,6 @@ import {
   useCloseModal,
   usePayload,
   useShowModal,
-  useWhenModalShow,
 } from "../../components";
 import { isReactText } from "../../utilites";
 import {
@@ -138,11 +137,6 @@ export const ProviderModal: FunctionComponent = () => {
       closeModal();
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
-
-  useWhenModalShow(ModalKey, () => {
-    setInfo(payload);
-    setChange({});
-  });
 
   const canSave = useMemo(() => {
     if (payload === undefined) {

@@ -3,7 +3,6 @@ import React, {
   FunctionComponent,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -60,31 +59,6 @@ export function usePayload<T>(key: string, offset?: number): T | undefined {
     const show = idx !== -1 && idx === keys.length - 1;
     return show ? (payloads[idx - (offset ?? 0)] as T) : undefined;
   }, [keys, payloads, key, offset]);
-}
-
-export function useWhenModalShow(key: string, callback: React.EffectCallback) {
-  const show = useIsModalShow(key);
-
-  useEffect(() => {
-    if (show) {
-      return callback();
-    }
-  }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-export function useWhenPayloadUpdate(
-  key: string,
-  callback: React.EffectCallback
-) {
-  const [last, setLast] = useState<any>(undefined);
-  const payload = usePayload(key);
-
-  useWhenModalShow(key, () => {
-    if (payload !== last) {
-      setLast(payload);
-      callback();
-    }
-  });
 }
 
 export const ModalProvider: FunctionComponent = ({ children }) => {

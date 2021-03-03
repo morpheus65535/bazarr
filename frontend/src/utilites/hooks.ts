@@ -1,16 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { mergeArray } from ".";
-
-export function useOnShow(callback: () => void) {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (!show) {
-      setShow(true);
-      callback();
-    }
-  }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
-}
 
 export function useBaseUrl(slash: boolean = false) {
   if (process.env.NODE_ENV === "development") {

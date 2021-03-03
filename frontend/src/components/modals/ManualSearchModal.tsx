@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -29,7 +30,6 @@ import {
   LoadingIndicator,
   PageTable,
   usePayload,
-  useWhenPayloadUpdate,
 } from "..";
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
@@ -71,9 +71,11 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     setSearch(false);
   }, []);
 
-  useWhenPayloadUpdate(modal.modalKey, () => {
-    reset();
-  });
+  useEffect(() => {
+    if (item) {
+      reset();
+    }
+  }, [item, reset]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -217,7 +219,13 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   }, [item]);
 
   return (
-    <BaseModal size="xl" title={title} footer={footer} {...modal}>
+    <BaseModal
+      closeable={!searching}
+      size="xl"
+      title={title}
+      footer={footer}
+      {...modal}
+    >
       {content}
     </BaseModal>
   );

@@ -126,6 +126,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     const newDispatch: SettingDispatch = {};
     newDispatch["languages"] = saveSettings;
     newDispatch["settings"] = saveSettings;
+    newDispatch["notifications"] = saveSettings;
     newDispatch["storage"] = saveLocalStorage;
     setDispatch(newDispatch);
   }, [saveSettings, saveLocalStorage]);
