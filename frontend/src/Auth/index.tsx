@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import { siteAuthSuccess } from "../@redux/actions";
-import { useReduxActionFunction, useReduxStore } from "../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
 import "./style.scss";
@@ -29,7 +29,7 @@ const AuthPage: FunctionComponent<Props> = () => {
     setTimeout(() => setError(""), 2000);
   }, []);
 
-  const onSuccess = useReduxActionFunction(siteAuthSuccess);
+  const onSuccess = useReduxAction(siteAuthSuccess);
 
   const authState = useReduxStore((s) => s.site.auth);
 

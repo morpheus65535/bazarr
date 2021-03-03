@@ -7,7 +7,7 @@ import React, {
 import { Row } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import { bootstrap as ReduxBootstrap } from "../@redux/actions";
-import { useReduxActionFunction, useReduxStore } from "../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import Header from "./Header";
@@ -19,7 +19,7 @@ export const SidebarToggleContext = React.createContext<() => void>(() => {});
 interface Props {}
 
 const App: FunctionComponent<Props> = () => {
-  const bootstrap = useReduxActionFunction(ReduxBootstrap);
+  const bootstrap = useReduxAction(ReduxBootstrap);
 
   const { initialized, authState } = useReduxStore((s) => ({
     initialized: s.site.initialized,

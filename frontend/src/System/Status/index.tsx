@@ -11,7 +11,7 @@ import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateStatus } from "../../@redux/actions";
 import { useItemUpdater } from "../../@redux/hooks";
-import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 
 interface InfoProps {
   title: string;
@@ -65,7 +65,7 @@ interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
   const status = useReduxStore((s) => s.system.status.items);
-  const update = useReduxActionFunction(systemUpdateStatus);
+  const update = useReduxAction(systemUpdateStatus);
   useItemUpdater(update);
 
   return (

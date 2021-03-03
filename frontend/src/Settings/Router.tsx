@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useItemUpdater } from "../@redux/hooks";
-import { useReduxActionFunction } from "../@redux/hooks/base";
+import { useReduxAction } from "../@redux/hooks/base";
 import General from "./General";
 import Languages from "./Languages";
 import Notifications from "./Notifications";
@@ -16,7 +16,7 @@ import UI from "./UI";
 interface Props {}
 
 const Router: FunctionComponent<Props> = () => {
-  const update = useReduxActionFunction(systemUpdateSettings);
+  const update = useReduxAction(systemUpdateSettings);
   useItemUpdater(update);
 
   return (

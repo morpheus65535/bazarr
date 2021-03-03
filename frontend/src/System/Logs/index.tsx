@@ -4,7 +4,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateLogs } from "../../@redux/actions";
 import { useItemUpdater } from "../../@redux/hooks";
-import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import { useBaseUrl } from "../../utilites";
@@ -14,7 +14,7 @@ interface Props {}
 
 const SystemLogsView: FunctionComponent<Props> = () => {
   const logs = useReduxStore(({ system }) => system.logs);
-  const update = useReduxActionFunction(systemUpdateLogs);
+  const update = useReduxAction(systemUpdateLogs);
   useItemUpdater(update);
 
   const [resetting, setReset] = useState(false);

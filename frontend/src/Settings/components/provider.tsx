@@ -11,7 +11,7 @@ import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
 import { siteSaveLocalstorage } from "../../@redux/actions";
 import { useSystemSettings } from "../../@redux/hooks";
-import { useReduxActionFunction } from "../../@redux/hooks/base";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import {
@@ -77,7 +77,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const { children, title } = props;
 
   const [settings, update] = useSystemSettings();
-  const updateStorage = useReduxActionFunction(siteSaveLocalstorage);
+  const updateStorage = useReduxAction(siteSaveLocalstorage);
 
   const [stagedChange, setChange] = useState<LooseObject>({});
   const [updating, setUpdating] = useState(false);

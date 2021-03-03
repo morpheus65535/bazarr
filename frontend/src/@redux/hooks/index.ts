@@ -14,7 +14,7 @@ import {
   systemUpdateLanguagesProfiles,
   systemUpdateSettingsAll,
 } from "../actions";
-import { useReduxActionFunction, useReduxStore } from "./base";
+import { useReduxAction, useReduxStore } from "./base";
 
 export function useItemUpdater(action: () => void) {
   useEffect(() => action(), [action]);
@@ -28,13 +28,13 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
 }
 
 export function useSystemSettings() {
-  const action = useReduxActionFunction(systemUpdateSettingsAll);
+  const action = useReduxAction(systemUpdateSettingsAll);
   const items = useReduxStore((s) => s.system.settings);
   return stateBuilder(items, action);
 }
 
 export function useLanguageProfiles() {
-  const action = useReduxActionFunction(systemUpdateLanguagesProfiles);
+  const action = useReduxAction(systemUpdateLanguagesProfiles);
   const items = useReduxStore((s) => s.system.languagesProfiles.items);
 
   return stateBuilder(items, action);
@@ -49,7 +49,7 @@ export function useProfileBy(id: number | null | undefined) {
 }
 
 export function useLanguages(enabled: boolean = false) {
-  const action = useReduxActionFunction(
+  const action = useReduxAction(
     enabled ? systemUpdateEnabledLanguages : systemUpdateLanguages
   );
   const items = useReduxStore((s) =>
@@ -74,13 +74,13 @@ export function useLanguageBy(code?: string) {
 }
 
 export function useSeries() {
-  const action = useReduxActionFunction(seriesUpdateInfoAll);
+  const action = useReduxAction(seriesUpdateInfoAll);
   const items = useReduxStore((d) => d.series.seriesList);
   return stateBuilder(items, action);
 }
 
 export function useEpisodes(seriesId?: number) {
-  const action = useReduxActionFunction(episodeUpdateBySeriesId);
+  const action = useReduxAction(episodeUpdateBySeriesId);
   const callback = useCallback(() => {
     if (seriesId !== undefined) {
       action(seriesId);
@@ -106,7 +106,7 @@ export function useEpisodes(seriesId?: number) {
 }
 
 export function useMovies() {
-  const action = useReduxActionFunction(movieUpdateInfoAll);
+  const action = useReduxAction(movieUpdateInfoAll);
 
   const items = useReduxStore((d) => d.movie.movieList);
 
@@ -114,7 +114,7 @@ export function useMovies() {
 }
 
 export function useWantedSeries() {
-  const action = useReduxActionFunction(seriesUpdateWantedAll);
+  const action = useReduxAction(seriesUpdateWantedAll);
   const items = useReduxStore((d) => d.series.wantedSeriesList);
 
   return stateBuilder(items, action);
@@ -132,35 +132,35 @@ export function useWantedMovies() {
 }
 
 export function useProviders() {
-  const action = useReduxActionFunction(providerUpdateAll);
+  const action = useReduxAction(providerUpdateAll);
   const items = useReduxStore((d) => d.system.providers);
 
   return stateBuilder(items, action);
 }
 
 export function useBlacklistMovies() {
-  const action = useReduxActionFunction(movieUpdateBlacklist);
+  const action = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
 
   return stateBuilder(items, action);
 }
 
 export function useBlacklistSeries() {
-  const action = useReduxActionFunction(seriesUpdateBlacklist);
+  const action = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
 
   return stateBuilder(items, action);
 }
 
 export function useMoviesHistory() {
-  const action = useReduxActionFunction(movieUpdateHistoryList);
+  const action = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
 
   return stateBuilder(items, action);
 }
 
 export function useSeriesHistory() {
-  const action = useReduxActionFunction(seriesUpdateHistoryList);
+  const action = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
 
   return stateBuilder(items, action);

@@ -3,14 +3,14 @@ import { Badge, Card, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateReleases } from "../../@redux/actions";
 import { useItemUpdater } from "../../@redux/hooks";
-import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { AsyncStateOverlay } from "../../components";
 
 interface Props {}
 
 const ReleasesView: FunctionComponent<Props> = () => {
   const releases = useReduxStore(({ system }) => system.releases);
-  const update = useReduxActionFunction(systemUpdateReleases);
+  const update = useReduxAction(systemUpdateReleases);
   useItemUpdater(update);
 
   return (

@@ -13,7 +13,7 @@ import {
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { useMovies, useSeries } from "../@redux/hooks";
-import { useReduxActionFunction } from "../@redux/hooks/base";
+import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { SearchBar, SearchResult } from "../components";
@@ -22,7 +22,7 @@ import { useBaseUrl } from "../utilites";
 interface Props {}
 
 const Header: FunctionComponent<Props> = () => {
-  const setNeedAuth = useReduxActionFunction(siteRedirectToAuth);
+  const setNeedAuth = useReduxAction(siteRedirectToAuth);
 
   const [series] = useSeries();
   const [movies] = useMovies();

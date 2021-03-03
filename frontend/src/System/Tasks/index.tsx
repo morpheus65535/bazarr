@@ -3,7 +3,7 @@ import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateTasks } from "../../@redux/actions";
-import { useReduxActionFunction, useReduxStore } from "../../@redux/hooks/base";
+import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
@@ -11,7 +11,7 @@ interface Props {}
 
 const SystemTasksView: FunctionComponent<Props> = () => {
   const tasks = useReduxStore((s) => s.system.tasks);
-  const update = useReduxActionFunction(systemUpdateTasks);
+  const update = useReduxAction(systemUpdateTasks);
 
   useEffect(() => {
     // TODO: Use Websocket

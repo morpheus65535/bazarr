@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { systemRunTasks } from "../../@redux/actions";
-import { useReduxActionFunction } from "../../@redux/hooks/base";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const Table: FunctionComponent<Props> = ({ tasks }) => {
-  const run = useReduxActionFunction(systemRunTasks);
+  const run = useReduxAction(systemRunTasks);
   const columns: Column<System.Task>[] = useMemo<Column<System.Task>[]>(
     () => [
       {
