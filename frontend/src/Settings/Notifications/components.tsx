@@ -1,6 +1,7 @@
 import React, {
   FunctionComponent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -50,6 +51,8 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   const [current, setCurrent] = useState<Settings.NotificationInfo | undefined>(
     item
   );
+
+  useEffect(() => setCurrent(item), [item]);
 
   const updateUrl = useCallback(
     (s: string) => {

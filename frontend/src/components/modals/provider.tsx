@@ -17,6 +17,7 @@ const PayloadContext = React.createContext<[any[], Dispatch<any[]>]>([
   (p) => {},
 ]);
 
+// TODO: Performance
 export function useShowModal() {
   const [keys, setKeys] = useContext(ModalContext);
   const [payloads, setPayloads] = useContext(PayloadContext);

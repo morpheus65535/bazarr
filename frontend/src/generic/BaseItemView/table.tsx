@@ -38,7 +38,7 @@ const Table: FunctionComponent<Props> = ({
 
   const data = useMergeArray(items, dirtyItems, ExtendItemComparer);
 
-  const profiles = useLanguageProfiles();
+  const [profiles] = useLanguageProfiles();
 
   const sharedOptions: TableOptions<Item.Base> = useMemo(
     () => ({
