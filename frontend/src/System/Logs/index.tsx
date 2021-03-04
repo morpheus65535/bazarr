@@ -3,11 +3,11 @@ import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateLogs } from "../../@redux/actions";
-import { useItemUpdater } from "../../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import { useBaseUrl } from "../../utilites";
+import { useAutoUpdate } from "../../utilites/hooks";
 import Table from "./table";
 
 interface Props {}
@@ -15,7 +15,7 @@ interface Props {}
 const SystemLogsView: FunctionComponent<Props> = () => {
   const logs = useReduxStore(({ system }) => system.logs);
   const update = useReduxAction(systemUpdateLogs);
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   const [resetting, setReset] = useState(false);
 

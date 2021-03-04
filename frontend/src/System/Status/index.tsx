@@ -10,8 +10,8 @@ import React, { FunctionComponent } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateStatus } from "../../@redux/actions";
-import { useItemUpdater } from "../../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
+import { useAutoUpdate } from "../../utilites/hooks";
 
 interface InfoProps {
   title: string;
@@ -66,7 +66,7 @@ interface Props {}
 const SystemStatusView: FunctionComponent<Props> = () => {
   const status = useReduxStore((s) => s.system.status.items);
   const update = useReduxAction(systemUpdateStatus);
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   return (
     <Container className="p-5">

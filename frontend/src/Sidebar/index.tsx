@@ -8,10 +8,10 @@ import React, {
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import { updateBadges } from "../@redux/actions";
-import { useItemUpdater } from "../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
+import { useAutoUpdate } from "../utilites/hooks";
 import {
   ActiveKeyContext,
   BadgesContext,
@@ -28,7 +28,7 @@ interface Props {
 
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const update = useReduxAction(updateBadges);
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   const toggle = useContext(SidebarToggleContext);
 

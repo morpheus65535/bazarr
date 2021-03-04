@@ -2,16 +2,17 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useItemUpdater, useProviders } from "../../@redux/hooks";
+import { useProviders } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useAutoUpdate } from "../../utilites/hooks";
 import Table from "./table";
 
 interface Props {}
 
 const SystemProvidersView: FunctionComponent<Props> = () => {
   const [providers, update] = useProviders();
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   return (
     <AsyncStateOverlay state={providers}>

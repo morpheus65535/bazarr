@@ -2,16 +2,16 @@ import React, { FunctionComponent } from "react";
 import { Badge, Card, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateReleases } from "../../@redux/actions";
-import { useItemUpdater } from "../../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { AsyncStateOverlay } from "../../components";
+import { useAutoUpdate } from "../../utilites/hooks";
 
 interface Props {}
 
 const ReleasesView: FunctionComponent<Props> = () => {
   const releases = useReduxStore(({ system }) => system.releases);
   const update = useReduxAction(systemUpdateReleases);
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   return (
     <AsyncStateOverlay state={releases}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { mergeArray } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -39,4 +39,30 @@ export function useMergeArray<T>(
     news,
     comparer,
   ]);
+}
+
+export function useAutoUpdate(action: () => void, interval?: number) {
+  const update = useCallback(() => {
+    if (document.visibilityState === "visible") {
+      action();
+    }
+  }, [action]);
+
+  useEffect(() => {
+    document.addEventListener("visibilitychange", update);
+    update();
+
+    let handle: NodeJS.Timeout | undefined = undefined;
+
+    if (interval !== undefined) {
+      handle = setInterval(update, interval);
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", update);
+      if (handle !== undefined) {
+        clearInterval(handle);
+      }
+    };
+  }, [update, action, interval]);
 }

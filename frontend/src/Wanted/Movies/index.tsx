@@ -2,16 +2,17 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useItemUpdater, useWantedMovies } from "../../@redux/hooks";
+import { useWantedMovies } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useAutoUpdate } from "../../utilites/hooks";
 import Table from "./table";
 
 interface Props {}
 
 const WantedMoviesView: FunctionComponent<Props> = () => {
   const [wanted, update] = useWantedMovies();
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   return (
     <AsyncStateOverlay state={wanted}>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   episodeUpdateBySeriesId,
   movieUpdateBlacklist,
@@ -15,10 +15,6 @@ import {
   systemUpdateSettingsAll,
 } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
-
-export function useItemUpdater(action: () => void) {
-  useEffect(() => action(), [action]);
-}
 
 function stateBuilder<T, D extends (...args: any[]) => any>(
   t: T,

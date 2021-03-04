@@ -1,14 +1,15 @@
 import React, { FunctionComponent } from "react";
 import { Route, Switch } from "react-router-dom";
 import Series from ".";
-import { useItemUpdater, useSeries } from "../@redux/hooks";
+import { useSeries } from "../@redux/hooks";
+import { useAutoUpdate } from "../utilites/hooks";
 import Episodes from "./Episodes";
 
 interface Props {}
 
 const Router: FunctionComponent<Props> = () => {
   const [, update] = useSeries();
-  useItemUpdater(update);
+  useAutoUpdate(update);
   return (
     <Switch>
       <Route exact path="/series">

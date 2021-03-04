@@ -4,7 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useItemUpdater, useMoviesHistory } from "../../@redux/hooks";
+import { useMoviesHistory } from "../../@redux/hooks";
 import {
   AsyncStateOverlay,
   HistoryIcon,
@@ -12,12 +12,13 @@ import {
   PageTable,
 } from "../../components";
 import { MoviesBlacklistButton } from "../../components/speical";
+import { useAutoUpdate } from "../../utilites/hooks";
 
 interface Props {}
 
 const Table: FunctionComponent<Props> = () => {
   const [history, update] = useMoviesHistory();
-  useItemUpdater(update);
+  useAutoUpdate(update);
 
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [
