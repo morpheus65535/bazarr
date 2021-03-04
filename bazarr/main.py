@@ -64,6 +64,8 @@ def catch_all(path):
     inject = dict()
     inject["apiKey"] = apikey
     inject["baseUrl"] = base_url
+    inject["canUpdate"] = not args.no_update
+    inject["hasUpdate"] = False
 
     template_url = base_url
     if not template_url.endswith("/"):

@@ -13,6 +13,22 @@ export function useBaseUrl(slash: boolean = false) {
   }
 }
 
+export function useCanUpdateInject() {
+  if (process.env.NODE_ENV === "development") {
+    return process.env["REACT_APP_CAN_UPDATE"] === "true";
+  } else {
+    return window.Bazarr.canUpdate;
+  }
+}
+
+export function useHasUpdateInject() {
+  if (process.env.NODE_ENV === "development") {
+    return process.env["REACT_APP_HAS_UPDATE"] === "true";
+  } else {
+    return window.Bazarr.hasUpdate;
+  }
+}
+
 export function useSessionStorage(
   key: string
 ): [StorageType, React.Dispatch<StorageType>] {

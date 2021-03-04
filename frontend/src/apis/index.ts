@@ -7,7 +7,7 @@ class Api {
 
   constructor() {
     if (process.env.NODE_ENV === "development") {
-      this.initialize("/api/", process.env.REACT_APP_APIKEY!);
+      this.initialize("/api/", process.env["REACT_APP_APIKEY"]!);
     } else {
       const baseUrl =
         window.Bazarr.baseUrl === "/"

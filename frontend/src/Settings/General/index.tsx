@@ -6,7 +6,11 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
-import { copyToClipboard, toggleState } from "../../utilites";
+import {
+  copyToClipboard,
+  toggleState,
+  useCanUpdateInject,
+} from "../../utilites";
 import {
   Button,
   Check,
@@ -19,7 +23,7 @@ import {
   SettingsProvider,
   Text,
 } from "../components";
-import { proxyOptions, securityOptions } from "./options";
+import { branchOptions, proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
 const settingApiKey = "settings-auth-apikey";
@@ -36,6 +40,8 @@ const baseUrlOverride = (settings: Settings) =>
 
 const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
+
+  const canUpdate = useCanUpdateInject();
 
   return (
     <SettingsProvider title="General - Bazarr (Settings)">
@@ -148,6 +154,22 @@ const SettingsGeneralView: FunctionComponent = () => {
             </Input>
           </CollapseBox.Content>
         </CollapseBox>
+      </Group>
+      <Group header="Updates" hidden={!canUpdate}>
+        <Input>
+          <Check
+            label="Automatic"
+            settingKey="settings-general-auto_update"
+          ></Check>
+          <Message>Automatically download and install updates</Message>
+        </Input>
+        <Input>
+          <Selector
+            options={branchOptions}
+            settingKey="settings-general-branch"
+          ></Selector>
+          <Message>Branch used by external update mechanism</Message>
+        </Input>
       </Group>
       <Group header="Logging">
         <Input>
