@@ -37,7 +37,6 @@ def gitconfig():
 
 
 def check_and_apply_update():
-    return
     check_releases()
     if not args.release_update:
         gitconfig()
