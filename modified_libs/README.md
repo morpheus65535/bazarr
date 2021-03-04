@@ -15,6 +15,7 @@ complete or up-to-date.
 subliminal_patch
 subzero
 libfilebot
+pyads (required by libfilebot)
 
 ### subliminal_patch
 
@@ -78,3 +79,9 @@ Installing 1.1.9 from git does not pull in the browsers.json.
 Earliest packaged version is with 1.1.13, but this brings in a lot of
 changes around reCaptcha handling that breaks the way it is used
 by subliminal_patch now.
+
+
+### pyads.py
+
+https://github.com/RobinDavid/pyADS
+Copyright © 2015, Robin David - MIT-Licensed
