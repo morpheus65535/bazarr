@@ -16,6 +16,7 @@ subliminal_patch
 subzero
 libfilebot
 pyads (required by libfilebot)
+subscene_api
 
 ### subliminal_patch
 
@@ -80,8 +81,14 @@ Earliest packaged version is with 1.1.13, but this brings in a lot of
 changes around reCaptcha handling that breaks the way it is used
 by subliminal_patch now.
 
-
 ### pyads.py
 
 https://github.com/RobinDavid/pyADS
 Copyright © 2015, Robin David - MIT-Licensed
+
+### subscene_api
+
+https://github.com/mamins1376/Subscene-API
+
+Version bundled is not easy to get the correct version for.
+Also, original author moved their focus to their own subliminal fork.
