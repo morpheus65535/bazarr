@@ -297,7 +297,7 @@ class SystemReleases(Resource):
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
                 releases = json.loads(f.read())
-            releases = releases[:5]
+            releases = releases[:25]
             for i, release in enumerate(releases):
                 body = release['body'].replace('- ', '').split('\n')[1:]
                 releases[i] = {"body": body,
