@@ -16,10 +16,14 @@ export interface SearchResult {
 interface Props {
   className?: string;
   onSearch: (text: string) => SearchResult[];
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export const SearchBar: FunctionComponent<Props> = ({
   onSearch,
+  onFocus,
+  onBlur,
   className,
 }) => {
   const [text, setText] = useState("");
@@ -71,6 +75,8 @@ export const SearchBar: FunctionComponent<Props> = ({
     <Dropdown
       show={text.length !== 0}
       className={className}
+      onFocus={onFocus}
+      onBlur={onBlur}
       onSelect={(link) => {
         if (link) {
           clear();

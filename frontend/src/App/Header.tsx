@@ -24,14 +24,24 @@ interface Props {}
 const Header: FunctionComponent<Props> = () => {
   const setNeedAuth = useReduxAction(siteRedirectToAuth);
 
-  const [series] = useSeries();
-  const [movies] = useMovies();
+  const [series, updateSeries] = useSeries();
+  const [movies, updateMovies] = useMovies();
 
   const [settings] = useSystemSettings();
 
   const canLogout = (settings.items?.auth.type ?? "none") !== "none";
 
   const toggleSidebar = useContext(SidebarToggleContext);
+
+  const updateItems = useCallback(() => {
+    if (series.items.length === 0) {
+      updateSeries();
+    }
+
+    if (movies.items.length === 0) {
+      updateMovies();
+    }
+  }, [series.items.length, movies.items.length, updateSeries, updateMovies]);
 
   const searchSeries = useCallback(
     (text: string): SearchResult[] => {
@@ -90,7 +100,7 @@ const Header: FunctionComponent<Props> = () => {
       <Container fluid>
         <Row noGutters className="flex-grow-1">
           <Col xs={6} sm={4} className="d-flex align-items-center">
-            <SearchBar onSearch={search}></SearchBar>
+            <SearchBar onFocus={updateItems} onSearch={search}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <Button
