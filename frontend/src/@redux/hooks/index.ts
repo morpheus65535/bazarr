@@ -23,7 +23,7 @@ export function useItemUpdater(action: () => void) {
 function stateBuilder<T, D extends (...args: any[]) => any>(
   t: T,
   d: D
-): [T, D] {
+): [Readonly<T>, D] {
   return [t, d];
 }
 
@@ -123,9 +123,12 @@ export function useWantedSeries() {
 export function useWantedMovies() {
   const [movies, action] = useMovies();
 
-  const items = useMemo(() => {
-    movies.items = movies.items.filter((v) => v.missing_subtitles.length !== 0);
-    return movies;
+  const items = useMemo<AsyncState<Item.Movie[]>>(() => {
+    const items = movies.items.filter((v) => v.missing_subtitles.length !== 0);
+    return {
+      ...movies,
+      items,
+    };
   }, [movies]);
 
   return stateBuilder(items, action);

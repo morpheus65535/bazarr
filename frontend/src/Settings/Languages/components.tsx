@@ -4,7 +4,7 @@ import { LanguageSelector as CLanguageSelector } from "../../components";
 import { BaseInput, Selector, useUpdate } from "../components";
 
 interface LanguageSelectorProps {
-  options: Language[];
+  options: readonly Language[];
 }
 
 export const LanguageSelector: FunctionComponent<

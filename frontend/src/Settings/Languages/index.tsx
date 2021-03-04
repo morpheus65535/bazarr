@@ -14,8 +14,10 @@ import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 
-const EnabledLanguageContext = React.createContext<Language[]>([]);
-const LanguagesProfileContext = React.createContext<Profile.Languages[]>([]);
+const EnabledLanguageContext = React.createContext<readonly Language[]>([]);
+const LanguagesProfileContext = React.createContext<
+  readonly Profile.Languages[]
+>([]);
 
 export function useEnabledLanguages() {
   const list = useContext(EnabledLanguageContext);
