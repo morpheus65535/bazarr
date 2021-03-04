@@ -147,16 +147,27 @@ inflect==2.1.0 # Required-by: subliminal_patch
 # Bundled version was older, but its only used in Js2Py so we trust the Js2Py dev here (should we?)
 pyjsparser==2.7.1 # Required-by: Js2Py
 
+# Bundled version was some commits before 3.10.1. The json_tricks project released 3.8.0 and then 3.10.1
+# The diff between bundled and 3.10.1 shows only some internal bugfixes, so picked this one
+json_tricks==3.10.1 # Required-by: subzero
 
-#json_tricks # Required-by: subzero
-#py7zr # Required-by: subliminal_patch
-#pyads # Required-by: libfilebot
+# Bundled version is one of the 0.7.0 beta releases with the old cli module instead of the __main__.py
+# But the module itself is not changed. Picked this one
+py7zr==0.7.0 # Required-by: subliminal_patch
 
-#python_anticaptcha
-#requests_toolbelt
-#retry
-#socks.py
-#stevedore
-#subscene_api
-#tld
-#wcwidth
+# Bundled is 0.3.2 which was never uploaded to pypi, nor tagged in git.
+# It is however listed in the CHANGELOG. https://github.com/ad-m/python-anticaptcha/blob/master/CHANGELOG.rst#032---2018-10-17
+# Bumped to 0.4.0
+python-anticaptcha==0.4.0  # Required-by: subliminal_patch
+
+requests_toolbelt==0.9.1  # Required-by: cloudscraper
+retry==0.9.2  # Required-by: subliminal_patch
+
+# Bundled version missed last-minute codestyle updates
+# no code paths changed, only style. Using pypi released version
+pysocks==1.6.7  # Required-by: urllib3 to enable socks support
+
+stevedore==1.28.0  # Required-by: subliminal
+tld==0.12.2  # Required-by: subzero
+
+wcwidth==0.1.6  # Required-by: ftfy
