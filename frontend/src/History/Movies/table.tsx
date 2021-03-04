@@ -1,4 +1,7 @@
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
+import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { useItemUpdater, useMoviesHistory } from "../../@redux/hooks";
@@ -33,13 +36,39 @@ const Table: FunctionComponent<Props> = () => {
         },
       },
       {
+        Header: "Language",
+        accessor: "language",
+        Cell: ({ value }) => {
+          if (value) {
+            return <Badge variant="secondary">{value.code2}</Badge>;
+          } else {
+            return null;
+          }
+        },
+      },
+      {
+        Header: "Score",
+        accessor: "score",
+      },
+      {
         Header: "Date",
         accessor: "timestamp",
         className: "text-nowrap",
       },
       {
-        Header: "Description",
         accessor: "description",
+        Cell: ({ row, value }) => {
+          const overlay = (
+            <Popover id={`description-${row.id}`}>
+              <Popover.Content>{value}</Popover.Content>
+            </Popover>
+          );
+          return (
+            <OverlayTrigger overlay={overlay}>
+              <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
+            </OverlayTrigger>
+          );
+        },
       },
       {
         accessor: "exist",

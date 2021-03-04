@@ -36,8 +36,11 @@ enum HistoryAction {
   Sync,
 }
 
-export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
-  const { action } = props;
+export const HistoryIcon: FunctionComponent<{
+  action: number;
+  title?: string;
+}> = (props) => {
+  const { action, title } = props;
   let icon = null;
   switch (action) {
     case HistoryAction.Delete:
@@ -60,7 +63,7 @@ export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
       break;
   }
   if (icon) {
-    return <FontAwesomeIcon icon={icon}></FontAwesomeIcon>;
+    return <FontAwesomeIcon title={title} icon={icon}></FontAwesomeIcon>;
   } else {
     return null;
   }
