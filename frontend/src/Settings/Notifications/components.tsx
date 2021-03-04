@@ -48,13 +48,13 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     notificationComparer
   );
 
-  const item = usePayload<Settings.NotificationInfo>(modal.modalKey);
+  const payload = usePayload<Settings.NotificationInfo>(modal.modalKey);
 
   const [current, setCurrent] = useState<Settings.NotificationInfo | undefined>(
-    item
+    payload
   );
 
-  useEffect(() => setCurrent(item), [item]);
+  useEffect(() => setCurrent(payload), [payload]);
 
   const updateUrl = useCallback(
     (s: string) => {
@@ -88,7 +88,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           Test
         </AsyncButton>
         <Button
-          hidden={item === undefined}
+          hidden={payload === undefined}
           variant="danger"
           onClick={() => {
             if (current) {
@@ -115,7 +115,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
         </Button>
       </React.Fragment>
     ),
-    [canSave, closeModal, current, update, item]
+    [canSave, closeModal, current, update, payload]
   );
 
   return (
@@ -124,9 +124,9 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
         <Row>
           <Col xs={12}>
             <Selector
-              disabled={item !== undefined}
+              disabled={payload !== undefined}
               options={options}
-              value={item}
+              value={current}
               onChange={(k) => setCurrent(k)}
               label={(v) => v.name}
             ></Selector>
