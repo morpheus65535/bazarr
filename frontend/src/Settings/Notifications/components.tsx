@@ -6,7 +6,9 @@ import React, {
   useState,
 } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
+import { SystemApi } from "../../apis";
 import {
+  AsyncButton,
   BaseModal,
   BaseModalProps,
   Selector,
@@ -73,10 +75,18 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   const footer = useMemo(
     () => (
       <React.Fragment>
-        {/* TODO: Test Button */}
-        {/* <Button disabled={!canSave} variant="outline-secondary">
+        <AsyncButton
+          className="mr-auto"
+          disabled={!canSave}
+          variant="outline-secondary"
+          promise={() => {
+            if (current && current.url) {
+              return SystemApi.testNotification(current.name, current.url);
+            }
+          }}
+        >
           Test
-        </Button> */}
+        </AsyncButton>
         <Button
           hidden={item === undefined}
           variant="danger"

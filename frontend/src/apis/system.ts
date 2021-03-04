@@ -136,6 +136,14 @@ class SystemApi extends BaseApi {
         });
     });
   }
+
+  async testNotification(protocol: string, path: string) {
+    return new Promise<void>((resolve, reject) => {
+      this.patch<void>("/notifications", { protocol, path })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
 }
 
 export default new SystemApi();
