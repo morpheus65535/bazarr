@@ -11,16 +11,8 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import moment from "moment";
-import React, {
-  ChangeEvent,
-  FunctionComponent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import {
-  Form,
   OverlayTrigger,
   Popover,
   Spinner,
@@ -104,70 +96,6 @@ export const LoadingIndicator: FunctionComponent<{
   );
 };
 
-interface FileFormProps {
-  disabled?: boolean;
-  multiple?: boolean;
-  emptyText: string;
-  files?: File[];
-  onChange?: (files: File[]) => void;
-}
-
-export const FileForm: FunctionComponent<FileFormProps> = ({
-  files,
-  emptyText,
-  multiple,
-  disabled,
-  onChange,
-}) => {
-  const [fileList, setFileList] = useState<File[]>([]);
-
-  const input = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (files) {
-      setFileList(files);
-
-      if (files.length === 0 && input.current) {
-        // Manual reset file input
-        input.current.value = "";
-      }
-    }
-  }, [files]);
-
-  const label = useMemo(() => {
-    if (fileList.length === 0) {
-      return emptyText;
-    } else {
-      if (multiple) {
-        return `${fileList.length} Files`;
-      } else {
-        return fileList[0].name;
-      }
-    }
-  }, [fileList, emptyText, multiple]);
-
-  return (
-    <Form.File
-      disabled={disabled}
-      custom
-      label={label}
-      multiple={multiple}
-      ref={input}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-        const { files } = e.target;
-        if (files) {
-          const list: File[] = [];
-          for (const file of files) {
-            list.push(file);
-          }
-          setFileList(list);
-          onChange && onChange(list);
-        }
-      }}
-    ></Form.File>
-  );
-};
-
 interface FormatterProps {
   format?: string;
   children: string;
@@ -184,28 +112,29 @@ export const DateFormatter: FunctionComponent<FormatterProps> = ({
   return <span>{result}</span>;
 };
 
-interface SubtitleProps {
-  subtitle: Subtitle;
-  name?: boolean;
+interface LanguageTextProps {
+  text: Language;
   className?: string;
 }
 
-export const SubtitleText: FunctionComponent<SubtitleProps> = ({
-  subtitle,
+export const LanguageText: FunctionComponent<LanguageTextProps> = ({
+  text: subtitle,
   className,
-  name,
 }) => {
   const text = useMemo(() => {
-    const useName = name ?? false;
-    let result = useName ? subtitle.name : subtitle.code2;
+    let result = subtitle.code2;
     if (subtitle.hi) {
       result += ":HI";
     } else if (subtitle.forced) {
       result += ":Forced";
     }
     return result;
-  }, [subtitle, name]);
-  return <span className={className}>{text}</span>;
+  }, [subtitle]);
+  return (
+    <span title={subtitle.name} className={className}>
+      {text}
+    </span>
+  );
 };
 
 export * from "./async";

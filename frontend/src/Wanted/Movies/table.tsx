@@ -5,7 +5,7 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, PageTable, SubtitleText } from "../../components";
+import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
   wanted: Item.Movie[];
@@ -50,7 +50,7 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
               }
               onSuccess={update}
             >
-              <SubtitleText className="pr-1" subtitle={item}></SubtitleText>
+              <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

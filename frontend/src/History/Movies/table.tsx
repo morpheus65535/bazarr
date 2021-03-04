@@ -5,7 +5,12 @@ import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { useItemUpdater, useMoviesHistory } from "../../@redux/hooks";
-import { AsyncStateOverlay, HistoryIcon, PageTable } from "../../components";
+import {
+  AsyncStateOverlay,
+  HistoryIcon,
+  LanguageText,
+  PageTable,
+} from "../../components";
 import { MoviesBlacklistButton } from "../../components/speical";
 
 interface Props {}
@@ -40,7 +45,11 @@ const Table: FunctionComponent<Props> = () => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <Badge variant="secondary">{value.code2}</Badge>;
+            return (
+              <Badge variant="secondary">
+                <LanguageText text={value}></LanguageText>
+              </Badge>
+            );
           } else {
             return null;
           }
