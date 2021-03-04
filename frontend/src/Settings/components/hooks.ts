@@ -2,7 +2,7 @@ import { isArray, isEqual } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useStore } from "react-redux";
 import { mergeArray } from "../../utilites";
-import { useSettings, useStaged, useUpdate } from "./provider";
+import { useLocalSettings, useLocalUpdater, useStagedValues } from "./provider";
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
@@ -13,22 +13,24 @@ export function useExtract<T>(
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<T | undefined> {
-  const settings = useSettings();
+  const settings = useLocalSettings();
 
   const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
     let value: T | undefined = undefined;
 
-    const path = key.split("-");
+    let path = key.split("-");
 
     if (path[0] !== "settings") {
       return undefined;
+    } else {
+      path = path.slice(0);
     }
 
     let item: LooseObject = settings;
     for (const key of path) {
-      if (key !== "settings" && key in item) {
+      if (key in item) {
         item = item[key];
       }
 
@@ -53,8 +55,8 @@ export function useUpdateArray<T>(
   key: string,
   compare?: (one: T, another: T) => boolean
 ) {
-  const update = useUpdate();
-  const stagedValue = useStaged();
+  const update = useLocalUpdater();
+  const stagedValue = useStagedValues();
 
   if (compare === undefined) {
     compare = isEqual;
@@ -89,7 +91,7 @@ export function useLatest<T>(
   override?: OverrideFuncType<T>
 ): Readonly<T | undefined> {
   const extractValue = useExtract<T>(key, validate, override);
-  const stagedValue = useStaged();
+  const stagedValue = useStagedValues();
   if (key in stagedValue) {
     return stagedValue[key] as T;
   } else {
@@ -104,7 +106,7 @@ export function useLatestMergeArray<T>(
   override?: OverrideFuncType<T[]>
 ): Readonly<T[] | undefined> {
   const extractValue = useExtract<T[]>(key, isArray, override);
-  const stagedValue = useStaged();
+  const stagedValue = useStagedValues();
 
   if (compare === undefined) {
     compare = isEqual;

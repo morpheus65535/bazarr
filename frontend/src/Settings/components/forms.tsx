@@ -5,7 +5,7 @@ import {
   ButtonProps as BSButtonProps,
   Form,
 } from "react-bootstrap";
-import { UpdateFunctionType, useCollapse, useLatest, useUpdate } from ".";
+import { UpdateFunctionType, useCollapse, useLatest, useLocalUpdater } from ".";
 import {
   Chips as CChips,
   ChipsProps as CChipsProps,
@@ -50,7 +50,7 @@ export const Text: FunctionComponent<TextProps> = ({
 }) => {
   const value = useLatest<React.ReactText>(settingKey, isReactText, override);
 
-  const update = useUpdate();
+  const update = useLocalUpdater();
   const collapse = useCollapse();
 
   return (
@@ -82,7 +82,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   disabled,
   settingKey,
 }) => {
-  const update = useUpdate();
+  const update = useLocalUpdater();
   const collapse = useCollapse();
 
   const value = useLatest<boolean>(settingKey, isBoolean, override);
@@ -117,7 +117,7 @@ export function Selector<
   T extends string | string[] | number | number[],
   M extends boolean = false
 >(props: SelectorProps<T, M>) {
-  const update = useUpdate();
+  const update = useLocalUpdater();
   const collapse = useCollapse();
 
   const { settingKey, override, beforeStaged, ...selector } = props;
@@ -153,7 +153,7 @@ type SliderProps = {} & BaseInput<number> &
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { settingKey, override, ...slider } = props;
 
-  const update = useUpdate();
+  const update = useLocalUpdater();
 
   const defaultValue = useLatest<number>(settingKey, isNumber, override);
 
@@ -174,7 +174,7 @@ type ChipsProp = {} & BaseInput<string[]> &
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { settingKey, override, ...chips } = props;
 
-  const update = useUpdate();
+  const update = useLocalUpdater();
 
   const defaultValue = useLatest<string[]>(settingKey, isArray, override);
 
@@ -199,7 +199,7 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
   const { onClick, settingKey, ...button } = props;
 
   const value = useLatest<string>(settingKey, isString);
-  const update = useUpdate();
+  const update = useLocalUpdater();
 
   return (
     <BSButton

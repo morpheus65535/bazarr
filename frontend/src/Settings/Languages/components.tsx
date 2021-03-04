@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { useEnabledLanguages, useProfiles } from ".";
 import { LanguageSelector as CLanguageSelector } from "../../components";
-import { BaseInput, Selector, useUpdate } from "../components";
+import { BaseInput, Selector, useLocalUpdater } from "../components";
 
 interface LanguageSelectorProps {
   options: readonly Language[];
@@ -11,7 +11,7 @@ export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
 > = ({ settingKey, options }) => {
   const enabled = useEnabledLanguages();
-  const update = useUpdate();
+  const update = useLocalUpdater();
   return (
     <CLanguageSelector
       multiple

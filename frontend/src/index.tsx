@@ -9,7 +9,7 @@ import App from "./App";
 import Auth from "./Auth";
 import { useBaseUrl } from "./utilites";
 
-const Entrance: FunctionComponent = () => {
+const MainRouter: FunctionComponent = () => {
   const baseUrl = useBaseUrl();
 
   return (
@@ -30,7 +30,7 @@ ReactDOM.render(
   <Provider store={store}>
     {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
     {/* <React.StrictMode> */}
-    <Entrance></Entrance>
+    <MainRouter></MainRouter>
     {/* </React.StrictMode> */}
   </Provider>,
   document.getElementById("root")

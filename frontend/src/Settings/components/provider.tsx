@@ -1,9 +1,11 @@
 import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { merge } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { Container, Row } from "react-bootstrap";
@@ -20,6 +22,8 @@ import {
   notificationsKey,
 } from "../keys";
 
+type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
+
 export type UpdateFunctionType = (v: any, k?: string) => void;
 
 export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
@@ -30,7 +34,7 @@ const SettingsContext = React.createContext<Settings | undefined>(undefined);
 
 export const StagedChangesContext = React.createContext<LooseObject>({});
 
-export function useSettings(): Settings {
+export function useLocalSettings(): Settings {
   const settings = useContext(SettingsContext);
   if (process.env.NODE_ENV === "development") {
     console.assert(
@@ -41,15 +45,15 @@ export function useSettings(): Settings {
   return settings!;
 }
 
-export function useUpdate(): UpdateFunctionType {
+export function useLocalUpdater(): UpdateFunctionType {
   return useContext(UpdateChangeContext);
 }
 
-export function useStaged(): LooseObject {
+export function useStagedValues(): LooseObject {
   return useContext(StagedChangesContext);
 }
 
-function beforeSubmit(settings: LooseObject) {
+function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {
     const item = settings[languageProfileKey];
     settings[languageProfileKey] = JSON.stringify(item);
@@ -66,8 +70,6 @@ function beforeSubmit(settings: LooseObject) {
   }
 }
 
-type SettingDispatch = Record<string, (settings: LooseObject) => void>;
-
 interface Props {
   title: string;
   children: JSX.Element | JSX.Element[];
@@ -81,7 +83,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const [stagedChange, setChange] = useState<LooseObject>({});
   const [updating, setUpdating] = useState(false);
-  const [dispatch, setDispatch] = useState<SettingDispatch>({});
+  const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
   const updateChange = useCallback<UpdateFunctionType>(
     (v: any, k?: string) => {
@@ -101,7 +103,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const saveSettings = useCallback(
     (settings: LooseObject) => {
-      beforeSubmit(settings);
+      submitHooks(settings);
       setUpdating(true);
       console.log("submitting settings", settings);
       SystemApi.setSettings(settings).finally(() => {
@@ -123,34 +125,47 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   useEffect(() => {
     // Update dispatch
-    const newDispatch: SettingDispatch = {};
-    newDispatch["languages"] = saveSettings;
-    newDispatch["settings"] = saveSettings;
-    newDispatch["notifications"] = saveSettings;
+    const newDispatch: SettingDispatcher = {};
+    newDispatch["__default__"] = saveSettings;
     newDispatch["storage"] = saveLocalStorage;
-    setDispatch(newDispatch);
+    setDispatcher(newDispatch);
   }, [saveSettings, saveLocalStorage]);
 
+  const defaultDispatcher = useMemo(() => dispatcher["__default__"], [
+    dispatcher,
+  ]);
+
   const submit = useCallback(() => {
-    const maps = new Map<string, LooseObject>();
+    const dispatchMaps = new Map<string, LooseObject>();
 
     // Separate settings by key
     for (const key in stagedChange) {
       const keys = key.split("-");
-      if (maps.has(keys[0])) {
-        const object = maps.get(keys[0])!;
+      const firstKey = keys[0];
+      if (firstKey.length === 0) {
+        continue;
+      }
+
+      const object = dispatchMaps.get(firstKey);
+      if (object) {
         object[key] = stagedChange[key];
       } else {
-        maps.set(keys[0], { [key]: stagedChange[key] });
+        dispatchMaps.set(firstKey, { [key]: stagedChange[key] });
       }
     }
 
-    maps.forEach((v, k) => {
-      if (k in dispatch) {
-        dispatch[k](v);
+    let lostValues = {};
+
+    dispatchMaps.forEach((v, k) => {
+      if (k in dispatcher) {
+        dispatcher[k](v);
+      } else {
+        lostValues = merge(lostValues, v);
       }
     });
-  }, [stagedChange, dispatch]);
+    // send to default dispatcher
+    defaultDispatcher(lostValues);
+  }, [stagedChange, dispatcher, defaultDispatcher]);
 
   return (
     <AsyncStateOverlay state={settings}>

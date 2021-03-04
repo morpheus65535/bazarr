@@ -21,7 +21,7 @@ import {
   Text,
   UpdateChangeContext,
   useLatest,
-  useUpdate,
+  useLocalUpdater,
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
 
@@ -89,7 +89,7 @@ export const ProviderModal: FunctionComponent = () => {
 
   const closeModal = useCloseModal();
 
-  const updateGlobal = useUpdate();
+  const updateGlobal = useLocalUpdater();
 
   const updateLocal = useCallback(
     (v: any, key?: string) => {

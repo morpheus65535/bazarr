@@ -8,7 +8,7 @@ import { FilesApi } from "../../apis";
 import { ActionIcon, FileBrowser, SimpleTable } from "../../components";
 import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
 import { useLatest } from "./hooks";
-import { useUpdate } from "./provider";
+import { useLocalUpdater } from "./provider";
 
 type SupportType = "sonarr" | "radarr";
 
@@ -34,7 +34,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   const items = useLatest<[string, string][]>(key, isArray);
 
-  const update = useUpdate();
+  const update = useLocalUpdater();
 
   const updateRow = useCallback(
     (newItems: PathMappingItem[]) => {
