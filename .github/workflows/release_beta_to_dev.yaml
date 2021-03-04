@@ -1,0 +1,39 @@
+name: release_beta_to_dev
+on:
+  push:
+    branches: [development]
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "15.x"
+      - run: npm install -D release-it
+      - run: npm install -D @release-it/bumper
+
+      - id: latest_release
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          repository: ${{ github.repository }}
+          excludes: draft
+
+      - name: Define LAST_VERSION environment variable
+        run: |
+          echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
+
+      - name: Update version and create release
+        uses: TheRealWaldo/release-it@v0.2.1
+        with:
+          json-opts: '{"preRelease": true, "increment": "prepatch", "preReleaseId": "beta"}'

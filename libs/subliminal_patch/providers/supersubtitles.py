@@ -9,6 +9,7 @@ from babelfish import language_converters
 from subzero.language import Language
 from requests import Session
 import urllib.parse
+from random import randint
 
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
@@ -23,6 +24,7 @@ from zipfile import ZipFile
 from rarfile import RarFile, is_rarfile
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from guessit import guessit
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 
 logger = logging.getLogger(__name__)
@@ -175,7 +177,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        self.session.headers = {'User-Agent': AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]}
 
     def terminate(self):
         self.session.close()
@@ -251,18 +253,18 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             except IndexError:
                 continue
 
-            result_title = fix_tv_naming(result_title).strip().replace("�", "").replace(" ", ".")
+            result_title = fix_tv_naming(result_title).strip().replace("�", "").replace("& ", "").replace(" ", ".")
             if not result_title:
                 continue
 
             guessable = result_title.strip() + ".s01e01." + result_year
             guess = guessit(guessable, {'type': "episode"})
 
-            if sanitize(original_title) == sanitize(guess['title']) and year and guess['year'] and \
+            if sanitize(original_title.replace('& ', '')) == sanitize(guess['title']) and year and guess['year'] and \
                     year == guess['year']:
                 # Return the founded id
                 return result_id
-            elif sanitize(original_title) == sanitize(guess['title']) and not year:
+            elif sanitize(original_title.replace('& ', '')) == sanitize(guess['title']) and not year:
                 # Return the founded id
                 return result_id
 
@@ -364,6 +366,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     sub_english_name = sub_english_name.group() if sub_english_name else ''
                     sub_english_name = sub_english_name.split(' (')[0]
 
+                sub_english_name = sub_english_name.replace('&amp;', '&')
                 sub_version = 'n/a'
                 if len(str(sub_english).split('(')) > 1:
                     sub_version = (str(sub_english).split('(')[len(str(sub_english).split('(')) - 1]).split(')')[0]

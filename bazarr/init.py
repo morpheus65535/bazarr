@@ -135,6 +135,7 @@ if settings.analytics.visitor:
 # Clean unused settings from config.ini
 with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
     settings.remove_option('general', 'throtteled_providers')
+    settings.remove_option('general', 'update_restart')
     settings.write(handle)
 
 

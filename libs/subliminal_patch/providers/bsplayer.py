@@ -4,9 +4,13 @@ import logging
 import io
 
 from requests import Session
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subzero.language import Language
@@ -22,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class BSPlayerSubtitle(Subtitle):
     """BSPlayer Subtitle."""
-    provider_name = 'bsplayer'
+    provider_name = "bsplayer"
     hash_verifiable = True
 
     def __init__(self, language, filename, subtype, video, link, subid):
@@ -46,64 +50,32 @@ class BSPlayerSubtitle(Subtitle):
         matches = set()
         matches |= guess_matches(video, guessit(self.filename))
 
-        subtitle_filename = self.filename
-
         # episode
         if isinstance(video, Episode):
             # already matched in search query
-            matches.update(['title', 'series', 'season', 'episode', 'year'])
+            matches.update(["title", "series", "season", "episode", "year"])
 
         # movie
         elif isinstance(video, Movie):
             # already matched in search query
-            matches.update(['title', 'year'])
+            matches.update(["title", "year"])
 
-        # release_group
-        if video.release_group and video.release_group.lower() in subtitle_filename:
-            matches.add('release_group')
-
-        # resolution
-        if video.resolution and video.resolution.lower() in subtitle_filename:
-            matches.add('resolution')
-
-        # source
-        formats = []
-        if video.source:
-            formats = [video.source.lower()]
-            if formats[0] == "web":
-                formats.append("webdl")
-                formats.append("webrip")
-                formats.append("web ")
-            for frmt in formats:
-                if frmt.lower() in subtitle_filename:
-                    matches.add('source')
-                    break
-
-        # video_codec
-        if video.video_codec:
-            video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "H.264":
-                formats.append("x264")
-            elif video_codecs[0] == "H.265":
-                formats.append("x265")
-            for vc in formats:
-                if vc.lower() in subtitle_filename:
-                    matches.add('video_codec')
-                    break
-
-        matches.add('hash')
+        matches.add("hash")
 
         return matches
 
 
 class BSPlayerProvider(Provider):
     """BSPlayer Provider."""
+
+    # fmt: off
     languages = {Language('por', 'BR')} | {Language(l) for l in [
         'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
         'ron', 'rus', 'spa', 'swe', 'tur', 'ukr', 'zho'
     ]}
     SEARCH_THROTTLE = 8
     hash_verifiable = True
+    # fmt: on
 
     # batantly based on kodi's bsplayer plugin
     # also took from BSPlayer-Subtitles-Downloader
@@ -112,20 +84,26 @@ class BSPlayerProvider(Provider):
 
     def initialize(self):
         self.session = Session()
+        # Try to avoid bsplayer throttling increasing retries time (0, 4, 6, 8, 10)
+        retry = Retry(connect=5, backoff_factor=2)
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("http://", adapter)
+
         self.search_url = self.get_sub_domain()
-        self.token = None
         self.login()
 
     def terminate(self):
         self.session.close()
         self.logout()
 
-    def api_request(self, func_name='logIn', params='', tries=5):
+    def api_request(self, func_name="logIn", params="", tries=5):
         headers = {
-            'User-Agent': 'BSPlayer/2.x (1022.12360)',
-            'Content-Type': 'text/xml; charset=utf-8',
-            'Connection': 'close',
-            'SOAPAction': '"http://api.bsplayer-subtitles.com/v1.php#{func_name}"'.format(func_name=func_name)
+            "User-Agent": "BSPlayer/2.x (1022.12360)",
+            "Content-Type": "text/xml; charset=utf-8",
+            "Connection": "close",
+            "SOAPAction": '"http://api.bsplayer-subtitles.com/v1.php#{func_name}"'.format(
+                func_name=func_name
+            ),
         }
         data = (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -134,148 +112,194 @@ class BSPlayerProvider(Provider):
             'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
             'xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns1="{search_url}">'
             '<SOAP-ENV:Body SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
-            '<ns1:{func_name}>{params}</ns1:{func_name}></SOAP-ENV:Body></SOAP-ENV:Envelope>'
+            "<ns1:{func_name}>{params}</ns1:{func_name}></SOAP-ENV:Body></SOAP-ENV:Envelope>"
         ).format(search_url=self.search_url, func_name=func_name, params=params)
-        logger.info('Sending request: %s.' % func_name)
+        logger.debug("Sending request: %s." % func_name)
         for i in iter(range(tries)):
             try:
                 self.session.headers.update(headers.items())
                 res = self.session.post(self.search_url, data)
-                return ElementTree.fromstring(res.text)
+                return ElementTree.fromstring(res.text.strip())
 
             except Exception as ex:
-                logger.info("ERROR: %s." % ex)
-                if func_name == 'logIn':
+                logger.error(f"Exception parsing response: {ex}")
+                if func_name == "logIn":
                     self.search_url = self.get_sub_domain()
 
                 sleep(1)
-        logger.info('ERROR: Too many tries (%d)...' % tries)
-        raise Exception('Too many tries...')
+
+        raise TooManyRequests(f"Too many retries: {tries}")
 
     def login(self):
-        # If already logged in
-        if self.token:
+        # Setting attribute here as initialize() will reset it
+        if hasattr(self, "token"):
+            logger.debug("Token already met. Skipping logging")
             return True
 
         root = self.api_request(
-            func_name='logIn',
-            params=('<username></username>'
-                    '<password></password>'
-                    '<AppID>BSPlayer v2.67</AppID>')
+            func_name="logIn",
+            params=(
+                "<username></username>"
+                "<password></password>"
+                "<AppID>BSPlayer v2.67</AppID>"
+            ),
         )
-        res = root.find('.//return')
-        if res.find('status').text == 'OK':
-            self.token = res.find('data').text
-            logger.info("Logged In Successfully.")
+        res = root.find(".//return")
+        # avoid AttributeError
+        if not res:
+            return False
+
+        if res.find("status").text == "OK":
+            self.token = res.find("data").text
+            logger.debug("Logged In Successfully.")
             return True
         return False
 
     def logout(self):
         # If already logged out / not logged in
-        if not self.token:
+        # if not self.token:
+        #    return True
+        if not hasattr(self, "token"):
+            logger.debug("Already logged out")
             return True
 
         root = self.api_request(
-            func_name='logOut',
-            params='<handle>{token}</handle>'.format(token=self.token)
+            func_name="logOut",
+            params="<handle>{token}</handle>".format(token=self.token),
         )
-        res = root.find('.//return')
+        res = root.find(".//return")
         self.token = None
-        if res.find('status').text == 'OK':
-            logger.info("Logged Out Successfully.")
+
+        # avoid AttributeError
+        if not res:
+            logger.debug("Root logout returned None")
+            return False
+
+        if res.find("status").text == "OK":
+            logger.debug("Logged Out Successfully.")
             return True
+
         return False
 
     def query(self, video, video_hash, language):
         if not self.login():
+            logger.debug("Token not found. Can't perform query")
             return []
 
         if isinstance(language, (tuple, list, set)):
             # language_ids = ",".join(language)
             # language_ids = 'spa'
-            language_ids = ','.join(sorted(l.opensubtitles for l in language))
+            language_ids = ",".join(sorted(l.opensubtitles for l in language))
 
         if video.imdb_id is None:
-            imdbId = '*'
+            imdbId = "*"
         else:
             imdbId = video.imdb_id
         sleep(self.SEARCH_THROTTLE)
         root = self.api_request(
-            func_name='searchSubtitles',
+            func_name="searchSubtitles",
             params=(
-                '<handle>{token}</handle>'
-                '<movieHash>{movie_hash}</movieHash>'
-                '<movieSize>{movie_size}</movieSize>'
-                '<languageId>{language_ids}</languageId>'
-                '<imdbId>{imdbId}</imdbId>'
-            ).format(token=self.token, movie_hash=video_hash,
-                     movie_size=video.size, language_ids=language_ids, imdbId=imdbId)
+                "<handle>{token}</handle>"
+                "<movieHash>{movie_hash}</movieHash>"
+                "<movieSize>{movie_size}</movieSize>"
+                "<languageId>{language_ids}</languageId>"
+                "<imdbId>{imdbId}</imdbId>"
+            ).format(
+                token=self.token,
+                movie_hash=video_hash,
+                movie_size=video.size,
+                language_ids=language_ids,
+                imdbId=imdbId,
+            ),
         )
-        res = root.find('.//return/result')
-        if res.find('status').text != 'OK':
+        res = root.find(".//return/result")
+
+        if not res:
+            logger.debug("No subtitles found")
             return []
 
-        items = root.findall('.//return/data/item')
+        status = res.find("status").text
+        if status != "OK":
+            logger.debug(f"No subtitles found (bad status: {status})")
+            return []
+
+        items = root.findall(".//return/data/item")
         subtitles = []
         if items:
-            logger.info("Subtitles Found.")
+            logger.debug("Subtitles Found.")
             for item in items:
-                subID = item.find('subID').text
-                subDownloadLink = item.find('subDownloadLink').text
-                subLang = Language.fromopensubtitles(item.find('subLang').text)
-                subName = item.find('subName').text
-                subFormat = item.find('subFormat').text
+                subID = item.find("subID").text
+                subDownloadLink = item.find("subDownloadLink").text
+                subLang = Language.fromopensubtitles(item.find("subLang").text)
+                subName = item.find("subName").text
+                subFormat = item.find("subFormat").text
                 subtitles.append(
-                    BSPlayerSubtitle(subLang, subName, subFormat, video, subDownloadLink, subID)
+                    BSPlayerSubtitle(
+                        subLang, subName, subFormat, video, subDownloadLink, subID
+                    )
                 )
         return subtitles
 
     def list_subtitles(self, video, languages):
-        return self.query(video, video.hashes['bsplayer'], languages)
+        return self.query(video, video.hashes["bsplayer"], languages)
 
     def get_sub_domain(self):
-        API_URL_TEMPLATE = None
-        session = Session()
+        # API_URL_TEMPLATE = None
+        # session = Session()
         # s1-9, s101-109
+
+        # Don't test again
+        # fixme: Setting attribute here as initialize() may reset it (maybe
+        # there's a more elegant way?)
+        if hasattr(self, "API_URL_TEMPLATE"):
+            logger.debug(f"Working subdomain already met: {self.API_URL_TEMPLATE}")
+            return self.API_URL_TEMPLATE
+        else:
+            self.API_URL_TEMPLATE = None
+
+        # fmt: off
         SUB_DOMAINS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8',
                        's101', 's102', 's103', 's104', 's105', 's106', 's107', 's108', 's109']
+        # fmt: on
         random.shuffle(SUB_DOMAINS)
-        for domain in SUB_DOMAINS:
+        # Limit to 8 tests
+        for domain in SUB_DOMAINS[:8]:
             TEST_URL = "http://{}.api.bsplayer-subtitles.com".format(domain)
             try:
-                logging.debug('Testing BSplayer sub-domain {}'.format(TEST_URL))
-                res = session.get(TEST_URL, timeout=5)
+                logging.debug("Testing BSplayer sub-domain {}".format(TEST_URL))
+                res = self.session.get(TEST_URL, timeout=10)
             except:
                 continue
             else:
                 res.raise_for_status()
 
                 if res.status_code == 200:
-                    API_URL_TEMPLATE = "http://{}.api.bsplayer-subtitles.com/v1.php".format(domain)
+                    logger.debug(f"Found working subdomain: {domain}")
+                    self.API_URL_TEMPLATE = (
+                        "http://{}.api.bsplayer-subtitles.com/v1.php".format(domain)
+                    )
                     break
                 else:
                     sleep(5)
                     continue
 
-        if API_URL_TEMPLATE:
-            return API_URL_TEMPLATE
-        else:
-            raise ServiceUnavailable()
+        if self.API_URL_TEMPLATE:
+            return self.API_URL_TEMPLATE
+
+        raise ServiceUnavailable("No API URL template was found")
 
     def download_subtitle(self, subtitle):
-        session = Session()
-        _addheaders = {
-            'User-Agent': 'Mozilla/4.0 (compatible; Synapse)'
-        }
-        session.headers.update(_addheaders)
-        res = session.get(subtitle.page_link)
+        # session = Session()
+        _addheaders = {"User-Agent": "Mozilla/4.0 (compatible; Synapse)"}
+        self.session.headers.update(_addheaders)
+        res = self.session.get(subtitle.page_link)
         if res:
-            if res.text == '500':
-                raise ValueError('Error 500 on server')
+            if res.text == "500":
+                raise ServiceUnavailable("Error 500 on server")
 
             with gzip.GzipFile(fileobj=io.BytesIO(res.content)) as gf:
                 subtitle.content = gf.read()
                 subtitle.normalize()
 
             return subtitle
-        raise ValueError('Problems conecting to the server')
+        raise ServiceUnavailable("Problems conecting to the server")
