@@ -2,6 +2,7 @@ import { throttle } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -33,20 +34,11 @@ export const SearchBar: FunctionComponent<Props> = ({
   const history = useHistory();
 
   const updateResult = useMemo(
-    () =>
-      throttle((text: string) => {
-        setResults(onSearch(text));
-      }, 500),
+    () => throttle((value: string) => setResults(onSearch(value)), 500),
     [onSearch]
   );
 
-  const search = useCallback(
-    (text: string) => {
-      setText(text);
-      updateResult(text);
-    },
-    [updateResult]
-  );
+  useEffect(() => updateResult(text), [updateResult, text]);
 
   const clear = useCallback(() => {
     setText("");
@@ -89,7 +81,7 @@ export const SearchBar: FunctionComponent<Props> = ({
         size="sm"
         placeholder="Search..."
         value={text}
-        onChange={(e) => search(e.currentTarget.value)}
+        onChange={(e) => setText(e.currentTarget.value)}
       ></Form.Control>
       <Dropdown.Menu style={{ maxHeight: 256, overflowY: "auto" }}>
         {items}
