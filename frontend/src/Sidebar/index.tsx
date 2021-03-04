@@ -7,7 +7,9 @@ import React, {
 } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-import { useReduxStore } from "../@redux/hooks/base";
+import { updateBadges } from "../@redux/actions";
+import { useItemUpdater } from "../@redux/hooks";
+import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
 import {
@@ -25,6 +27,9 @@ interface Props {
 }
 
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
+  const update = useReduxAction(updateBadges);
+  useItemUpdater(update);
+
   const toggle = useContext(SidebarToggleContext);
 
   const { movies, episodes, providers } = useReduxStore(({ badges }) => ({

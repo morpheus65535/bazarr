@@ -43,7 +43,7 @@ const AuthPage: FunctionComponent<Props> = () => {
   }
 
   return (
-    <div className="d-flex bg-light h-100 justify-content-center align-items-center">
+    <div className="d-flex bg-light vh-100 justify-content-center align-items-center">
       <Card className="auth-card shadow">
         <Form
           onSubmit={(e) => {

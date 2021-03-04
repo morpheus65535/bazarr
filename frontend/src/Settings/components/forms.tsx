@@ -138,7 +138,7 @@ export function Selector<
     <CSelector
       {...selector}
       // TODO: Force as any
-      value={value as any}
+      defaultValue={value as any}
       onChange={(v) => {
         v = beforeStaged ? beforeStaged(v) : v;
         update(v, settingKey);

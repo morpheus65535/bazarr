@@ -12,7 +12,7 @@ import {
 } from "react-bootstrap";
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
-import { useMovies, useSeries } from "../@redux/hooks";
+import { useMovies, useSeries, useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
@@ -26,6 +26,10 @@ const Header: FunctionComponent<Props> = () => {
 
   const [series] = useSeries();
   const [movies] = useMovies();
+
+  const [settings] = useSystemSettings();
+
+  const canLogout = (settings.items?.auth.type ?? "none") !== "none";
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
@@ -114,8 +118,9 @@ const Header: FunctionComponent<Props> = () => {
                 >
                   Shutdown
                 </Dropdown.Item>
-                <Dropdown.Divider></Dropdown.Divider>
+                <Dropdown.Divider hidden={!canLogout}></Dropdown.Divider>
                 <Dropdown.Item
+                  hidden={!canLogout}
                   onClick={() => {
                     SystemApi.logout().then(() => setNeedAuth());
                   }}

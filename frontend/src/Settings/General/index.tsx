@@ -125,7 +125,7 @@ const SettingsGeneralView: FunctionComponent = () => {
               ></Selector>
             </Input>
           </CollapseBox.Control>
-          <CollapseBox.Content on={(k) => k !== "" && k !== "none"}>
+          <CollapseBox.Content on={(k) => k !== "" && k !== "None"}>
             <Input name="Host">
               <Text settingKey="settings-proxy-url"></Text>
             </Input>

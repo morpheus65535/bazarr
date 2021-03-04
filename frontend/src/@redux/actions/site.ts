@@ -5,12 +5,11 @@ import {
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
 } from "../constants";
-import { updateBadges } from "./badges";
-import { systemUpdateLanguagesAll } from "./system";
+import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 import { createFulfilAction } from "./utils";
 
 export const bootstrap = createFulfilAction(
-  () => [updateBadges(), systemUpdateLanguagesAll()],
+  () => [systemUpdateLanguagesAll(), systemUpdateSettings()],
   (state) => {
     const { system } = state;
     if (
