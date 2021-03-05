@@ -10,6 +10,7 @@ import pickle
 import codecs
 import re
 import subliminal
+import copy
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -68,7 +69,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         refine_from_db(original_path, video)
         refine_from_ffprobe(original_path, video)
 
-        logging.debug('BAZARR is using these video object properties: %s', vars(video))
+        logging.debug('BAZARR is using these video object properties: %s', vars(copy.deepcopy(video)))
         return video
 
     except Exception as e:
