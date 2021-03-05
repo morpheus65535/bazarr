@@ -60,22 +60,27 @@ export function useMergeArray<T>(
 export function useAutoUpdate(action: () => void, interval?: number) {
   const [, setHandle] = useState<NodeJS.Timeout | undefined>(undefined);
 
-  const updateHandle = useCallback(
-    (enable: boolean, action?: () => void) => {
-      if (interval === undefined) {
-        return;
+  const removeTimer = useCallback(() => {
+    setHandle((hd) => {
+      if (hd !== undefined) {
+        clearInterval(hd);
       }
+      return undefined;
+    });
+  }, [setHandle]);
 
-      if (enable && action) {
-        setHandle(setInterval(action, interval));
-      } else if (!enable) {
-        setHandle((hd) => {
-          if (hd !== undefined) {
-            clearInterval(hd);
-          }
+  const createTimer = useCallback(
+    (action?: () => void) => {
+      setHandle((hd) => {
+        if (hd !== undefined) {
+          clearInterval(hd);
+        }
+        if (action && interval !== undefined) {
+          return setInterval(action, interval);
+        } else {
           return undefined;
-        });
-      }
+        }
+      });
     },
     [interval]
   );
@@ -83,11 +88,11 @@ export function useAutoUpdate(action: () => void, interval?: number) {
   const update = useCallback(() => {
     if (document.visibilityState === "visible") {
       action();
-      updateHandle(true, action);
+      createTimer(action);
     } else if (document.visibilityState === "hidden") {
-      updateHandle(false);
+      removeTimer();
     }
-  }, [action, updateHandle]);
+  }, [action, createTimer, removeTimer]);
 
   useEffect(() => {
     document.addEventListener("visibilitychange", update);
@@ -95,7 +100,7 @@ export function useAutoUpdate(action: () => void, interval?: number) {
 
     return () => {
       document.removeEventListener("visibilitychange", update);
-      updateHandle(false);
+      removeTimer();
     };
-  }, [update, updateHandle]);
+  }, [update, removeTimer]);
 }

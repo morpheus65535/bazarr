@@ -1,17 +1,18 @@
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useBlacklistSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 interface Props {}
 
 const BlacklistSeriesView: FunctionComponent<Props> = () => {
   const [blacklist, update] = useBlacklistSeries();
-  useEffect(() => update(), [update]);
+  useAutoUpdate(update);
   return (
     <AsyncStateOverlay state={blacklist}>
       {(data) => (
