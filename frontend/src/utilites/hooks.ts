@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { mergeArray } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -58,27 +58,44 @@ export function useMergeArray<T>(
 }
 
 export function useAutoUpdate(action: () => void, interval?: number) {
+  const [, setHandle] = useState<NodeJS.Timeout | undefined>(undefined);
+
+  const updateHandle = useCallback(
+    (enable: boolean, action?: () => void) => {
+      if (interval === undefined) {
+        return;
+      }
+
+      if (enable && action) {
+        setHandle(setInterval(action, interval));
+      } else if (!enable) {
+        setHandle((hd) => {
+          if (hd !== undefined) {
+            clearInterval(hd);
+          }
+          return undefined;
+        });
+      }
+    },
+    [interval]
+  );
+
   const update = useCallback(() => {
     if (document.visibilityState === "visible") {
       action();
+      updateHandle(true, action);
+    } else if (document.visibilityState === "hidden") {
+      updateHandle(false);
     }
-  }, [action]);
+  }, [action, updateHandle]);
 
   useEffect(() => {
     document.addEventListener("visibilitychange", update);
     update();
 
-    let handle: NodeJS.Timeout | undefined = undefined;
-
-    if (interval !== undefined) {
-      handle = setInterval(update, interval);
-    }
-
     return () => {
       document.removeEventListener("visibilitychange", update);
-      if (handle !== undefined) {
-        clearInterval(handle);
-      }
+      updateHandle(false);
     };
-  }, [update, action, interval]);
+  }, [update, updateHandle]);
 }

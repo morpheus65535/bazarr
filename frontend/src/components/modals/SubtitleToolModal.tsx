@@ -34,6 +34,7 @@ import {
   ActionIcon,
   ActionIconItem,
   LanguageSelector,
+  LanguageText,
   Selector,
   SimpleTable,
   usePayload,
@@ -440,7 +441,11 @@ const Table: FunctionComponent<Props> = ({ item }) => {
     () => [
       {
         accessor: "name",
-        Cell: (row) => <Badge variant="secondary">{row.value}</Badge>,
+        Cell: ({ row }) => (
+          <Badge variant="secondary">
+            <LanguageText text={row.original}></LanguageText>
+          </Badge>
+        ),
       },
       {
         Header: "File Name",
