@@ -140,8 +140,8 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<h6>Movie path is: <span id="movie_path_span" class="badge badge-secondary"></span>
-					<br>Scenename is: <span id="movie_scenename_span" class="badge badge-secondary"></span></h6>
+				<h6>Movie path: <span id="movie_path_span" class="badge badge-secondary"></span>
+					<br>Scenename: <span id="movie_scenename_span" class="badge badge-secondary"></span></h6>
 				<div class="container-fluid" style="padding:0px;">
 					<table id="search_result" class="table table-striped" style="width:100%">
 						<thead>
@@ -581,8 +581,11 @@
 			e.preventDefault();
 			$("#movie_title_span").html(movieDetails['title']);
 			$("#movie_path_span").html(movieDetails['mapped_path']);
-			$("#movie_scenename_span").html(movieDetails['sceneName']);
-
+			if (movieDetails['sceneName'] === null) {
+                $("#movie_scenename_span").html('Not provided by Radarr');
+            } else {
+                $("#movie_scenename_span").html(movieDetails['sceneName']);
+            }
 			moviePath = movieDetails['mapped_path'];
 			sceneName = movieDetails['sceneName'];
 			profileId = movieDetails['profileId'].id;

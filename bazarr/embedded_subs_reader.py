@@ -21,6 +21,7 @@ class EmbeddedSubsReader:
             data = api.know(file)
 
             traditional_chinese = ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"]
+            brazilian_portuguese = ["pt-br", "pob", "pb", "brazilian", "brasil", "brazil"]
 
             if 'subtitle' in data:
                 for detected_language in data['subtitle']:
@@ -29,6 +30,9 @@ class EmbeddedSubsReader:
                         if language == 'zho' and 'name' in detected_language:
                             if any (ext in (detected_language['name'].lower()) for ext in traditional_chinese):
                                 language = 'zht'
+                        if language == 'por' and 'name' in detected_language:
+                            if any (ext in (detected_language['name'].lower()) for ext in brazilian_portuguese):
+                                language = 'pob'
                         forced = detected_language['forced'] if 'forced' in detected_language else False
                         hearing_impaired = detected_language['hearing_impaired'] if 'hearing_impaired' in \
                                                                                     detected_language else False

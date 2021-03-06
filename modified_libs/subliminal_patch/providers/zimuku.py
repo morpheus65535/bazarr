@@ -13,23 +13,30 @@ except ImportError:
     from urllib.parse import urljoin
 
 import rarfile
+from babelfish import language_converters
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
 from six import text_type
 
 from subliminal import __short_version__
-from subliminal.providers import ParserBeautifulSoup, Provider
+from subliminal.providers import ParserBeautifulSoup
+from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
     SUBTITLE_EXTENSIONS,
+    fix_line_ending
+    )
+from subliminal_patch.subtitle import (
     Subtitle,
-    fix_line_ending,
-    guess_matches,
+    guess_matches
 )
 from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
 
+language_converters.register('zimuku = subliminal_patch.converters.zimuku:zimukuConverter')
+
+supported_languages = list(language_converters['zimuku'].to_zimuku.keys())
 
 class ZimukuSubtitle(Subtitle):
     """Zimuku Subtitle."""
@@ -77,7 +84,8 @@ class ZimukuSubtitle(Subtitle):
 class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
-    languages = {Language(l) for l in ["zho", "eng"]}
+    languages = {Language(*l) for l in supported_languages}
+    logger.info(str(supported_languages))
 
     server_url = "http://www.zimuku.la"
     search_url = "/search?q={}"
@@ -114,11 +122,18 @@ class ZimukuProvider(Provider):
             language = Language("eng")
             for img in sub.find("td", class_="tac lang").find_all("img"):
                 if (
-                    "hongkong" in img.attrs["src"]
-                    or "china" in img.attrs["src"]
+                    "china" in img.attrs["src"]
+                    and "hongkong" in img.attrs["src"]
+                    ):
+                    language = Language("zho").add(Language('zho', 'TW', None))
+                    logger.debug("language:"+str(language))
+                elif (                    
+                    "china" in img.attrs["src"]
                     or "jollyroger" in img.attrs["src"]
                 ):
                     language = Language("zho")
+                elif "hongkong" in img.attrs["src"]:
+                    language =  Language('zho', 'TW', None)
                     break
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             backup_session = copy.deepcopy(self.session)
@@ -189,7 +204,7 @@ class ZimukuProvider(Provider):
                 new_subs = self._parse_episode_page(episode_link, subs_year)
                 subtitles += new_subs
 
-        # NOTE: shooter result pages are ignored due to the existence of assrt provider
+        # NOTE: shooter result pages are ignored due to the existence of zimuku provider
 
         return subtitles
 
@@ -305,15 +320,15 @@ def _get_subtitle_from_archive(archive):
         if not subname.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
-        # prefer ass/ssa subtitles with double languages or simplified chinese
-        score = ("ass" in subname or "ssa" in subname) * 1
+        # prefer ass/ssa/srt subtitles with double languages or simplified/traditional chinese
+        score = ("ass" in subname or "ssa" in subname or "srt" in subname) * 1
         if "简体" in subname or "chs" in subname or ".gb." in subname:
             score += 2
         if "繁体" in subname or "cht" in subname or ".big5." in subname:
-            pass
-        if "chs.eng" in subname or "chs&eng" in subname:
             score += 2
-        if "中英" in subname or "简英" in subname or "双语" in subname or "简体&英文" in subname:
+        if "chs.eng" in subname or "chs&eng" in subname or "cht.eng" in subname or "cht&eng" in subname:
+            score += 2
+        if "中英" in subname or "简英" in subname or "繁英" in subname or "双语" in subname or "简体&英文" in subname or "繁体&英文" in subname:
             score += 4
         logger.debug("subtitle {}, score: {}".format(subname, score))
         if score > max_score:
