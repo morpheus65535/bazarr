@@ -129,9 +129,14 @@ webencodings==0.5.1        # Required-by: html5lib -> BeautifulSoup4
 zipp==3.4.0                # Required-by: importlib-metadata -> knowit/apprise/ffsubsync
 
 ### Dependencies for bundled libraries
-contextlib2==0.5.5 # Required-by: py7zr, subscene_api -> subliminal_patch
-dnspython==1.15.0  # Required-by: subliminal_patch
-pysrt==1.1.1       # Required-by: subliminal, subliminal_patch
+appdirs==1.4.4       # Required-by: fcache -> subzero
+contextlib2==0.5.5   # Required-by: py7zr, subscene_api -> subliminal_patch
+dnspython==1.15.0    # Required-by: subliminal_patch
+pbr==5.5.1           # Required-by: stevedore
+py==1.10.0           # Required-by: retry -> subliminal_patch
+pycryptodome==3.10.1 # Required-by: py7zr -> subliminal_patch
+pysrt==1.1.1         # Required-by: subliminal, subliminal_patch
+texttable==1.6.3     # Required-by: py7zr -> subliminal_patch
 
 # Js2Py=0.63 <-- modified: manually merged from upstream: https://github.com/PiotrDabkowski/Js2Py/pull/192/files
 # Our fix was released wyth Js2Py 0.68. Including 0.70 which is the latest at this moment and has some more fixes.
