@@ -1,6 +1,11 @@
 # To bundle the dependencies one can use
 # this file with pip (from within project root):
-# PIP_TARGET=./libs/ pip install -r libs/libs_requirements.txt --upgrade && rm -rf ./libs/*.dist-info
+# $ PIP_TARGET=./libs/ pip install -r libs_requirements.txt --upgrade
+# Remove pip/installer info files, not needed to run the application
+# $ rm -rf ./libs/*.dist-info
+# Remove indirect dependencies that have platform specific versions.
+# These are listed in requirements.txt and are installed during bazarr install
+# $ rm -rf ./libs/*webrtcvad* ./libs/numpy/
 
 ## Direct dependencies
 
