@@ -25,6 +25,7 @@ pyga==2.6.2
 python-dateutil==2.7.3
 rarfile==3.0
 requests==2.22.0
+semver==2.13.0
 SimpleConfigParser==0.1.0
 Waitress==1.4.3
 whichcraft==0.5.2
