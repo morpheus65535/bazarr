@@ -10,8 +10,8 @@
 ## Direct dependencies
 
 apprise==0.8.8
-apscheduler==3.5.3
-BeautifulSoup4==4.8.0
+APScheduler==3.5.3
+beautifulsoup4==4.8.0
 charamel==1.0.0
 deep-translator==1.3.4
 dogpile.cache==0.7.1
@@ -22,8 +22,8 @@ Flask-RESTful==0.3.7
 Flask-SocketIO==4.2.1
 Flask==1.1.1
 GitPython==2.1.11
+guess-language-spirit==0.5.3
 guessit==3.1.1
-guess_language-spirit==0.5.3
 py-pretty==1
 pycountry==18.2.23
 pyga==2.6.2
@@ -32,7 +32,7 @@ rarfile==3.0
 requests==2.22.0
 semver==2.13.0
 SimpleConfigParser==0.1.0
-Waitress==1.4.3
+waitress==1.4.3
 whichcraft==0.5.2
 
 # For some dependencies we use non released versions.
@@ -55,9 +55,9 @@ git+https://github.com/Diaoul/babelfish@f1d5309934d3cc27e788c1646f469d3dcdef2a2a
 
 ### vendored but were newer when we let pip find a good version
 # pip found certifi==2020.12.5
-certifi==2019.09.11  # Required-by: requests
+certifi==2019.9.11  # Required-by: requests
 # pip found click==7.1.2
-click==7.0       # Required-by: Flask, apprise
+Click==7.0       # Required-by: Flask, apprise
 # pip found decorator==4.4.2
 decorator==4.4.0 # Required-by: dogpile.cache
 # pip found python-engineio==4.0.0
@@ -154,7 +154,7 @@ pyjsparser==2.7.1 # Required-by: Js2Py
 
 # Bundled version was some commits before 3.10.1. The json_tricks project released 3.8.0 and then 3.10.1
 # The diff between bundled and 3.10.1 shows only some internal bugfixes, so picked this one
-json_tricks==3.10.1 # Required-by: subzero
+json-tricks==3.10.1 # Required-by: subzero
 
 # Bundled version is one of the 0.7.0 beta releases with the old cli module instead of the __main__.py
 # But the module itself is not changed. Picked this one
