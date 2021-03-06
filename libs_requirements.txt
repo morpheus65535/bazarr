@@ -97,7 +97,6 @@ urllib3==1.25.3 # Required-by: requests
 Werkzeug==0.16.0 # Required-by: Flask, Flask-DebugToolbar
 
 ### pip freeze frozen libs that match the vendored versions
-argparse==1.4.0           # Not in pip freeze, but on filesystem. Required-by: ffsubsync
 auditok==0.1.8            # Required-by: ffsubsync
 chardet==3.0.4            # Required-by: requests
 html5lib==1.0.1           # Required-by: BeautifulSoup4 vendored had tests included, removed
