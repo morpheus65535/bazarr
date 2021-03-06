@@ -4,7 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, SimpleTable } from "../../components";
+import { AsyncButton, LanguageText, SimpleTable } from "../../components";
 
 const missingText = "Subtitle Missing";
 
@@ -35,7 +35,11 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Language",
         accessor: "name",
         Cell: ({ row }) => {
-          return <Badge variant="secondary">{row.original.name}</Badge>;
+          return (
+            <Badge variant="secondary">
+              <LanguageText text={row.original}></LanguageText>
+            </Badge>
+          );
         },
       },
       {

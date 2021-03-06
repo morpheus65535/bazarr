@@ -239,9 +239,7 @@ def postprocessMovie(item):
                 })
 
         if settings.general.getboolean('embedded_subs_show_desired'):
-            desired_lang_list = []
-            if isinstance(item['languages'], list):
-                desired_lang_list = [x['code2'] for x in item['languages']]
+            desired_lang_list = get_desired_languages(item['profileId'])
             item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
 
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
