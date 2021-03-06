@@ -1,6 +1,6 @@
 # To bundle the dependencies one can use
 # this file with pip (from within project root):
-# PIP_TARGET=./libs/ pip install -r libs/libs_requirements.txt --upgrade
+# PIP_TARGET=./libs/ pip install -r libs/libs_requirements.txt --upgrade && rm -rf ./libs/*.dist-info
 
 ## Direct dependencies
 
