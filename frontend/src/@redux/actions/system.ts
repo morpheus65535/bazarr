@@ -11,9 +11,9 @@ import {
   SYSTEM_UPDATE_STATUS,
   SYSTEM_UPDATE_TASKS,
 } from "../constants";
-import { createAsyncAction, createCombineAction } from "./utils";
+import { createAsyncAction, createAsyncCombineAction } from "./factory";
 
-export const systemUpdateLanguagesAll = createCombineAction(() => [
+export const systemUpdateLanguagesAll = createAsyncCombineAction(() => [
   systemUpdateLanguages(),
   systemUpdateEnabledLanguages(),
   systemUpdateLanguagesProfiles(),
@@ -63,7 +63,7 @@ export const systemUpdateSettings = createAsyncAction(
   () => SystemApi.settings()
 );
 
-export const systemUpdateSettingsAll = createCombineAction(() => [
+export const systemUpdateSettingsAll = createAsyncCombineAction(() => [
   systemUpdateSettings(),
   systemUpdateLanguagesProfiles(),
   systemUpdateEnabledLanguages(),

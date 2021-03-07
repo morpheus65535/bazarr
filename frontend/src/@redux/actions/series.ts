@@ -7,7 +7,7 @@ import {
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { badgeUpdateSeries } from "./badges";
-import { createAsyncAction, createCombineAction } from "./utils";
+import { createAsyncAction, createCombineAction } from "./factory";
 
 const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,

@@ -5,7 +5,7 @@ import {
   MOVIES_UPDATE_INFO,
 } from "../constants";
 import { badgeUpdateMovies } from "./badges";
-import { createAsyncAction, createCombineAction } from "./utils";
+import { createAsyncAction, createCombineAction } from "./factory";
 
 export const movieUpdateHistoryList = createAsyncAction(
   MOVIES_UPDATE_HISTORY_LIST,

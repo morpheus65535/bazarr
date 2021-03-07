@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-import { updateBadges } from "../@redux/actions";
+import { badgeUpdateAll } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
@@ -27,7 +27,7 @@ interface Props {
 }
 
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
-  const update = useReduxAction(updateBadges);
+  const update = useReduxAction(badgeUpdateAll);
   useAutoUpdate(update);
 
   const toggle = useContext(SidebarToggleContext);
