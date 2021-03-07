@@ -6,10 +6,16 @@ interface AsyncPayload<Payload> {
   item?: Payload | Error;
 }
 
-type AvaliableType = Action | ActionDispatcher;
+type AvaliableType<T> = Action<T> | ActionDispatcher<T>;
 
 type AsyncAction<Payload> = Action<AsyncPayload<Payload>>;
 type ActionDispatcher<T = any> = (dispatch: Dispatch<Action<T>>) => void;
-type AsyncActionDispatcher<T> = (dispatch: Dispatch<AsyncAction<T>>) => void;
+type AsyncActionDispatcher<T> = (
+  dispatch: Dispatch<AsyncAction<T>>
+) => Promise<void>;
 
-type FillfulActionDispatcher = (state: ReduxStore) => Action<any> | undefined;
+type PromiseCreator = (...args: any[]) => Promise<any>;
+type AvaliableCreator = (...args: any[]) => AvaliableType<any>[];
+type AsyncActionCreator = (...args: any[]) => AsyncActionDispatcher<any>[];
+
+type ActionSuccessCallback = () => Action<any> | void;

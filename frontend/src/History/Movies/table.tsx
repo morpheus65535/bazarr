@@ -11,7 +11,7 @@ import {
   LanguageText,
   PageTable,
 } from "../../components";
-import { MoviesBlacklistButton } from "../../components/speical";
+import { MoviesBlacklistButton } from "../../generic/blacklist";
 import { useAutoUpdate } from "../../utilites/hooks";
 
 interface Props {}

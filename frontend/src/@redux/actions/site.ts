@@ -5,21 +5,12 @@ import {
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
 } from "../constants";
+import { createCallbackAction } from "./factory";
 import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
-import { createFulfilAction } from "./utils";
 
-export const bootstrap = createFulfilAction(
+export const bootstrap = createCallbackAction(
   () => [systemUpdateLanguagesAll(), systemUpdateSettings()],
-  (state) => {
-    const { system } = state;
-    if (
-      !system.languages.updating &&
-      !system.enabledLanguage.updating &&
-      !system.languagesProfiles.updating
-    ) {
-      return siteInitialized();
-    }
-  }
+  () => siteInitialized()
 );
 
 const siteInitialized = createAction(SITE_INITIALIZED);

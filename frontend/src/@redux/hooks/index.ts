@@ -75,7 +75,25 @@ export function useSeries() {
   return stateBuilder(items, action);
 }
 
-export function useEpisodes(seriesId?: number) {
+export function useSerieBy(id?: number) {
+  const [series, updateSeries] = useSeries();
+  const item = useMemo<AsyncState<Item.Series | undefined>>(
+    () => ({
+      ...series,
+      items: series.items.find((v) => v.sonarrSeriesId === id),
+    }),
+    [id, series]
+  );
+  const update = useCallback(() => {
+    if (id) {
+      updateSeries(id);
+    }
+  }, [id, updateSeries]);
+
+  return stateBuilder(item, update);
+}
+
+export function useEpisodesBy(seriesId?: number) {
   const action = useReduxAction(episodeUpdateBySeriesId);
   const callback = useCallback(() => {
     if (seriesId !== undefined) {
@@ -107,6 +125,24 @@ export function useMovies() {
   const items = useReduxStore((d) => d.movie.movieList);
 
   return stateBuilder(items, action);
+}
+
+export function useMovieBy(id?: number) {
+  const [movies, updateMovies] = useMovies();
+  const item = useMemo<AsyncState<Item.Movie | undefined>>(
+    () => ({
+      ...movies,
+      items: movies.items.find((v) => v.radarrId === id),
+    }),
+    [id, movies]
+  );
+  const update = useCallback(() => {
+    if (id) {
+      updateMovies(id);
+    }
+  }, [id, updateMovies]);
+
+  return stateBuilder(item, update);
 }
 
 export function useWantedSeries() {

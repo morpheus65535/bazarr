@@ -69,7 +69,7 @@ function submodProcessOffset(h: number, m: number, s: number, ms: number) {
 const AddColorModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
   const [updating, setUpdate] = useState(false);
-  const [selection, setSelection] = useState<string | undefined>(undefined);
+  const [selection, setSelection] = useState<Nullable<string>>(null);
 
   const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
@@ -86,14 +86,14 @@ const AddColorModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [selection, subtitle, item]);
 
   const footer = useMemo(
     () => (
       <AsyncButton
-        disabled={selection === undefined}
+        disabled={selection === null}
         promise={submit}
         onSuccess={closeModal}
         onChange={setUpdate}
@@ -129,14 +129,14 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const [updating, setUpdate] = useState(false);
 
-  const [from, setFrom] = useState<number | undefined>();
-  const [to, setTo] = useState<number | undefined>();
+  const [from, setFrom] = useState<Nullable<number>>(null);
+  const [to, setTo] = useState<Nullable<number>>(null);
 
   const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
   const closeModal = useCloseModal();
 
-  const canSave = from !== undefined && to !== undefined && from !== to;
+  const canSave = from !== null && to !== null && from !== to;
 
   const submit = useCallback(() => {
     if (canSave && subtitle && subtitle.path && item) {
@@ -150,7 +150,7 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [subtitle, canSave, from, to, item]);
 
@@ -183,7 +183,7 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
           onChange={(e) => {
             const value = parseFloat(e.currentTarget.value);
             if (isNaN(value)) {
-              setFrom(undefined);
+              setFrom(null);
             } else {
               setFrom(value);
             }
@@ -196,7 +196,7 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
           onChange={(e) => {
             const value = parseFloat(e.currentTarget.value);
             if (isNaN(value)) {
-              setTo(undefined);
+              setTo(null);
             } else {
               setTo(value);
             }
@@ -258,7 +258,7 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [subtitle, canSave, offset, isPlus, item]);
 
@@ -345,7 +345,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
     [subtitle, languages]
   );
 
-  const [selectedLanguage, setLanguage] = useState<Language | undefined>();
+  const [selectedLanguage, setLanguage] = useState<Nullable<Language>>(null);
 
   const submit = useCallback(() => {
     if (item && item.path && subtitle && subtitle.path && selectedLanguage) {
@@ -358,7 +358,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
         subtitle.path
       );
     }
-    return undefined;
+    return null;
   }, [item, subtitle, selectedLanguage]);
 
   const closeModal = useCloseModal();
@@ -406,7 +406,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
         SubtitlesApi.modify(action, id, type, sub.code2, sub.path).finally(
           () => {
             setUpdate(false);
-            setActive(undefined);
+            setActive(null);
           }
         );
       }
@@ -415,7 +415,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
   );
 
   const [updating, setUpdate] = useState<boolean>(false);
-  const [active, setActive] = useState<string | undefined>(undefined);
+  const [active, setActive] = useState<Nullable<string>>(null);
 
   const syncSubtitle = useCallback(
     (sub: Subtitle) => {
@@ -427,7 +427,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
         SubtitlesApi.modify("sync", id, type, sub.code2, sub.path).finally(
           () => {
             setUpdate(false);
-            setActive(undefined);
+            setActive(null);
           }
         );
       }
@@ -564,7 +564,7 @@ const Tools: FunctionComponent<BaseModalProps> = (props) => {
   return (
     <React.Fragment>
       <BaseModal title={`Tools - ${item?.title ?? ""}`} {...props}>
-        <Table item={item} {...props}></Table>
+        <Table item={item ?? undefined} {...props}></Table>
       </BaseModal>
       <AddColorModal modalKey="add-color"></AddColorModal>
       <ChangeFrameRateModal modalKey="change-frame-rate"></ChangeFrameRateModal>

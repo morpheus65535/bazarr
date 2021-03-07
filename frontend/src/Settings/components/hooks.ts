@@ -12,18 +12,18 @@ export function useExtract<T>(
   key: string,
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
-): Readonly<T | undefined> {
+): Readonly<Nullable<T>> {
   const settings = useLocalSettings();
 
   const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
-    let value: T | undefined = undefined;
+    let value: Nullable<T> = null;
 
     let path = key.split("-");
 
     if (path[0] !== "settings") {
-      return undefined;
+      return null;
     } else {
       path = path.slice(0);
     }
@@ -89,7 +89,7 @@ export function useLatest<T>(
   key: string,
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
-): Readonly<T | undefined> {
+): Readonly<Nullable<T>> {
   const extractValue = useExtract<T>(key, validate, override);
   const stagedValue = useStagedValues();
   if (key in stagedValue) {
@@ -104,7 +104,7 @@ export function useLatestMergeArray<T>(
   key: string,
   compare: Comparer<T>,
   override?: OverrideFuncType<T[]>
-): Readonly<T[] | undefined> {
+): Readonly<Nullable<T[]>> {
   const extractValue = useExtract<T[]>(key, isArray, override);
   const stagedValue = useStagedValues();
 

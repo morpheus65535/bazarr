@@ -44,7 +44,7 @@ export const ProfileSelector: FunctionComponent<
       clearable
       options={profileOptions}
       settingKey={settingKey}
-      beforeStaged={(v) => (v === undefined ? "" : v)}
+      beforeStaged={(v) => (v === null ? "" : v)}
     ></Selector>
   );
 };

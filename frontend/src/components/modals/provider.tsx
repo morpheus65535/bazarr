@@ -3,6 +3,7 @@ import React, {
   FunctionComponent,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -28,7 +29,7 @@ export function useShowModal() {
       }
 
       setKeys([...keys, key]);
-      setPayloads([...payloads, payload]);
+      setPayloads([...payloads, payload ?? null]);
     },
     [keys, payloads, setKeys, setPayloads]
   );
@@ -52,13 +53,22 @@ export function useIsModalShow(key: string) {
   return key === keys[keys.length - 1];
 }
 
-export function usePayload<T>(key: string, offset?: number): T | undefined {
+export function useOnModalShow(key: string, show: () => void) {
+  const isShow = useIsModalShow(key);
+  useEffect(() => {
+    if (isShow) {
+      show();
+    }
+  }, [isShow, show]);
+}
+
+export function usePayload<T>(key: string, offset?: number): T | null {
   const payloads = useContext(PayloadContext)[0];
   const keys = useContext(ModalContext)[0];
   return useMemo(() => {
     const idx = keys.findIndex((v) => v === key);
     const show = idx !== -1 && idx === keys.length - 1;
-    return show ? (payloads[idx - (offset ?? 0)] as T) : undefined;
+    return show ? (payloads[idx - (offset ?? 0)] as T) : null;
   }, [keys, payloads, key, offset]);
 }
 

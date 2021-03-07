@@ -5,9 +5,9 @@ import {
   BADGE_UPDATE_PROVIDERS,
   BADGE_UPDATE_SERIES,
 } from "../constants";
-import { createCombineAction } from "./utils";
+import { createCombineAction } from "./factory";
 
-export const updateBadges = createCombineAction(() => [
+export const badgeUpdateAll = createCombineAction(() => [
   badgeUpdateMovies(),
   badgeUpdateSeries(),
   badgeUpdateProviders(),

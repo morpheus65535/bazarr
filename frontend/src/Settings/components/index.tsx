@@ -17,7 +17,7 @@ export const URLTestButton: FunctionComponent<{
   const ssl = useLatest<boolean>(`settings-${category}-ssl`, isBoolean);
 
   const click = useCallback(() => {
-    if (address && apikey && ssl !== undefined) {
+    if (address && apikey && ssl !== null) {
       let testUrl: string;
       if (port) {
         testUrl = `${address}:${port}${url ?? ""}`;

@@ -27,7 +27,12 @@ interface Props {
   details?: { icon: IconDefinition; text: string }[];
 }
 
-const createBadge = (icon: IconDefinition, text: string, desc?: string) => {
+const createBadge = (
+  icon: IconDefinition,
+  text: string,
+  desc?: string,
+  key?: string
+) => {
   if (text.length === 0) {
     return null;
   }
@@ -37,7 +42,7 @@ const createBadge = (icon: IconDefinition, text: string, desc?: string) => {
       title={`${desc ?? ""}${text}`}
       variant="secondary"
       className="mr-2 my-1 text-truncate"
-      key={text}
+      key={key ? key : text}
     >
       <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
       <span className="ml-1">{text}</span>
@@ -79,11 +84,12 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     if (profile) {
       badges.push(createBadge(faStream, profile.name, "Languages Profile: "));
       badges.push(
-        ...profile.items.map((v) =>
+        ...profile.items.map((v, idx) =>
           createBadge(
             faLanguage,
             languages.find((lang) => lang.code2 === v.language)?.name ?? "",
-            "Language: "
+            "Language: ",
+            `lang-${idx}`
           )
         )
       );

@@ -11,7 +11,7 @@ import {
   LanguageText,
   PageTable,
 } from "../../components";
-import { SeriesBlacklistButton } from "../../components/speical";
+import { SeriesBlacklistButton } from "../../generic/blacklist";
 
 interface Props {}
 

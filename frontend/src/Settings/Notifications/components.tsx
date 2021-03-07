@@ -1,7 +1,6 @@
 import React, {
   FunctionComponent,
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -13,6 +12,7 @@ import {
   BaseModalProps,
   Selector,
   useCloseModal,
+  useOnModalShow,
   usePayload,
   useShowModal,
 } from "../../components";
@@ -50,11 +50,13 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 
   const payload = usePayload<Settings.NotificationInfo>(modal.modalKey);
 
-  const [current, setCurrent] = useState<Settings.NotificationInfo | undefined>(
-    payload
+  const [current, setCurrent] = useState<Nullable<Settings.NotificationInfo>>(
+    payload ?? null
   );
 
-  useEffect(() => setCurrent(payload), [payload]);
+  const onShow = useCallback(() => setCurrent(payload ?? null), [payload]);
+
+  useOnModalShow(modal.modalKey, onShow);
 
   const updateUrl = useCallback(
     (s: string) => {
@@ -70,7 +72,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   const closeModal = useCloseModal();
 
   const canSave =
-    current !== undefined && current.url !== null && current.url.length !== 0;
+    current !== null && current?.url !== null && current?.url.length !== 0;
 
   const footer = useMemo(
     () => (
@@ -82,13 +84,15 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           promise={() => {
             if (current && current.url) {
               return SystemApi.testNotification(current.name, current.url);
+            } else {
+              return null;
             }
           }}
         >
           Test
         </AsyncButton>
         <Button
-          hidden={payload === undefined}
+          hidden={payload === null}
           variant="danger"
           onClick={() => {
             if (current) {
@@ -124,14 +128,14 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
         <Row>
           <Col xs={12}>
             <Selector
-              disabled={payload !== undefined}
+              disabled={payload !== null}
               options={options}
               value={current}
-              onChange={(k) => setCurrent(k)}
+              onChange={setCurrent}
               label={(v) => v.name}
             ></Selector>
           </Col>
-          <Col hidden={current === undefined}>
+          <Col hidden={current === null}>
             <Form.Group className="mt-4">
               <Form.Control
                 as="textarea"

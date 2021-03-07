@@ -13,7 +13,7 @@ export interface BaseTableProps<T extends object> extends TableStyleProps {
   headers: HeaderGroup<T>[];
   rows: Row<T>[];
   headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
-  rowRenderer?: (row: Row<T>) => JSX.Element | null;
+  rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
   prepareRow: (row: Row<T>) => void;
   tableProps: TableProps;
   tableBodyProps: TableBodyProps;

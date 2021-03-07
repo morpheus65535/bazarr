@@ -11,9 +11,12 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { siteSaveLocalstorage } from "../../@redux/actions";
+import {
+  siteSaveLocalstorage,
+  systemUpdateSettingsAll,
+} from "../../@redux/actions";
 import { useSystemSettings } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
+import { useReduxAction, useReduxActionWith } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import {
@@ -30,7 +33,7 @@ export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
   (v: any, k?: string) => {}
 );
 
-const SettingsContext = React.createContext<Settings | undefined>(undefined);
+const SettingsContext = React.createContext<Nullable<Settings>>(null);
 
 export const StagedChangesContext = React.createContext<LooseObject>({});
 
@@ -38,7 +41,7 @@ export function useLocalSettings(): Settings {
   const settings = useContext(SettingsContext);
   if (process.env.NODE_ENV === "development") {
     console.assert(
-      settings !== undefined,
+      settings !== null,
       "useSettings hook was invoked outside of SettingsProvider!"
     );
   }
@@ -78,12 +81,19 @@ interface Props {
 const SettingsProvider: FunctionComponent<Props> = (props) => {
   const { children, title } = props;
 
-  const [settings, update] = useSystemSettings();
+  const [settings] = useSystemSettings();
   const updateStorage = useReduxAction(siteSaveLocalstorage);
 
   const [stagedChange, setChange] = useState<LooseObject>({});
   const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
+
+  const cleanup = useCallback(() => {
+    setChange({});
+    setUpdating(false);
+  }, []);
+
+  const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
 
   const updateChange = useCallback<UpdateFunctionType>(
     (v: any, k?: string) => {
@@ -106,11 +116,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
       submitHooks(settings);
       setUpdating(true);
       console.log("submitting settings", settings);
-      SystemApi.setSettings(settings).finally(() => {
-        update();
-        setChange({});
-        setUpdating(false);
-      });
+      SystemApi.setSettings(settings).finally(update);
     },
     [update]
   );

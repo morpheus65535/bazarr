@@ -81,7 +81,7 @@ interface AsyncButtonProps<T> {
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 
-  promise: () => Promise<T> | undefined;
+  promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
   error?: () => void;
 }

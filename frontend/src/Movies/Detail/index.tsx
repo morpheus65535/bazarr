@@ -11,12 +11,11 @@ import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { useMovies } from "../../@redux/hooks";
+import { useMovieBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
   ItemEditorModal,
-  ItemOverview,
   LoadingIndicator,
   MovieHistoryModal,
   MovieUploadModal,
@@ -24,6 +23,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
+import ItemOverview from "../../generic/ItemOverview";
 import Table from "./table";
 
 interface Params {
@@ -33,11 +33,9 @@ interface Params {
 interface Props extends RouteComponentProps<Params> {}
 
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
-  const [movieList, update] = useMovies();
-
-  const list = movieList.items;
   const id = Number.parseInt(match.params.id);
-  const item = list.find((val) => val.radarrId === id);
+  const [movie, update] = useMovieBy(id);
+  const item = movie.items;
 
   const showModal = useShowModal();
 
@@ -59,7 +57,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             promise={() =>
               MoviesApi.action({ action: "scan-disk", radarrid: item.radarrId })
             }
-            onSuccess={() => update(item.radarrId)}
+            onSuccess={update}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
@@ -72,7 +70,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 radarrid: item.radarrId,
               })
             }
-            onSuccess={() => update(item.radarrId)}
+            onSuccess={update}
           >
             Search
           </ContentHeader.AsyncButton>
@@ -122,14 +120,14 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => MoviesApi.modify(form)}
-        onSuccess={() => update(id)}
+        onSuccess={update}
       ></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onDownload={() => update(item.radarrId)}
+        onDownload={update}
         onSelect={(item, result) => {
           item = item as Item.Movie;
           const {

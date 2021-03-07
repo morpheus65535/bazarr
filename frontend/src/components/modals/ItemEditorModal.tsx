@@ -27,7 +27,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       }),
     [profiles]
   );
-  const [id, setId] = useState<number | null>(null);
+  const [id, setId] = useState<Nullable<number>>(null);
 
   const [updating, setUpdating] = useState(false);
 

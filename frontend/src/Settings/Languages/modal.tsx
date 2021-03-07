@@ -233,7 +233,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Form.Control
           type="text"
           placeholder="Name"
-          defaultValue={profile?.name}
+          defaultValue={current?.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}
@@ -254,12 +254,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Selector
           options={cutoff}
           value={current?.cutoff}
-          onChange={(num) => {
-            if (num === undefined) {
-              num = null;
-            }
-            updateProfile("cutoff", num);
-          }}
+          onChange={(num) => updateProfile("cutoff", num)}
         ></Selector>
         <Message>Ignore others if existing</Message>
       </Input>
