@@ -25,7 +25,7 @@ import {
   usePayload,
 } from "..";
 import {
-  useEpisodes,
+  useEpisodesBy,
   useLanguageBy,
   useLanguages,
   useProfileBy,
@@ -51,7 +51,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const series = usePayload<Item.Series>(modal.modalKey);
 
-  const [episodes, update] = useEpisodes(series?.sonarrSeriesId);
+  const [episodes, update] = useEpisodesBy(series?.sonarrSeriesId);
 
   const [uploading, setUpload] = useState(false);
 

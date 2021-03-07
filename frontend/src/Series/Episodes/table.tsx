@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions, TableUpdater } from "react-table";
-import { useEpisodes } from "../../@redux/hooks";
+import { useEpisodesBy } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionIcon,
@@ -29,7 +29,7 @@ interface Props {
 
 const Table: FunctionComponent<Props> = ({ series }) => {
   const id = series.sonarrSeriesId;
-  const [episodes, update] = useEpisodes(id);
+  const [episodes, update] = useEpisodesBy(id);
   useAutoUpdate(update);
 
   const showModal = useShowModal();

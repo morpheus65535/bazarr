@@ -10,7 +10,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { useSeries } from "../../@redux/hooks";
+import { useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
@@ -31,13 +31,8 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [series, update] = useSeries();
-  const list = series.items;
-
-  const item = useMemo(() => list.find((val) => val.sonarrSeriesId === id), [
-    list,
-    id,
-  ]);
+  const [serie, update] = useSerieBy(id);
+  const item = serie.items;
 
   const details = useMemo(
     () => [
@@ -71,7 +66,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "scan-disk", seriesid: id })
             }
-            onSuccess={() => update(id)}
+            onSuccess={update}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
@@ -80,7 +75,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
-            onSuccess={() => update(id)}
+            onSuccess={update}
             disabled={item.episodeFileCount === 0 || item.profileId === null}
           >
             Search
@@ -111,7 +106,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
-        onSuccess={(item) => update((item as Item.Series).sonarrSeriesId)}
+        onSuccess={update}
       ></ItemEditorModal>
       <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
     </Container>

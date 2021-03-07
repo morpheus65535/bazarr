@@ -10,7 +10,7 @@ import {
 import {
   useLanguageBy,
   useLanguages,
-  useMovies,
+  useMovieBy,
   useProfileBy,
 } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
@@ -22,11 +22,10 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const modal = props;
 
-  const [, update] = useMovies();
-
   const [avaliableLanguages] = useLanguages(true);
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
+  const [, update] = useMovieBy(movie?.radarrId);
 
   const closeModal = useCloseModal();
 
@@ -61,9 +60,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
       }
       onSuccess={() => {
         closeModal();
-        if (movie) {
-          update(movie.radarrId);
-        }
+        update();
       }}
     >
       Upload
