@@ -18,6 +18,7 @@ import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
+import "./header.scss";
 
 interface Props {}
 
