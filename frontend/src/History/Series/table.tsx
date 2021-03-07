@@ -53,7 +53,7 @@ const Table: FunctionComponent<Props> = () => {
           if (value) {
             return (
               <Badge variant="secondary">
-                <LanguageText text={value}></LanguageText>
+                <LanguageText text={value} long={true}></LanguageText>
               </Badge>
             );
           } else {

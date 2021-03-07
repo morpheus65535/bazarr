@@ -115,18 +115,30 @@ export const DateFormatter: FunctionComponent<FormatterProps> = ({
 interface LanguageTextProps {
   text: Language;
   className?: string;
+  long?: boolean;
 }
 
 export const LanguageText: FunctionComponent<LanguageTextProps> = ({
   text: subtitle,
   className,
+  long,
 }) => {
+  var lang = subtitle.code2;
+  var hi = ":HI";
+  var forced = ":Forced";
+
+  if (long) {
+    lang = subtitle.name;
+    hi = " HI";
+    forced = " Forced";
+  }
+
   const text = useMemo(() => {
-    let result = subtitle.code2;
+    let result = lang;
     if (subtitle.hi) {
-      result += ":HI";
+      result += hi;
     } else if (subtitle.forced) {
-      result += ":Forced";
+      result += forced;
     }
     return result;
   }, [subtitle]);

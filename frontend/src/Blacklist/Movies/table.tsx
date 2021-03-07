@@ -4,7 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { MoviesApi } from "../../apis";
-import { AsyncButton, PageTable } from "../../components";
+import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
   blacklist: Blacklist.Movie[];
@@ -29,7 +29,15 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
       },
       {
         Header: "Language",
-        accessor: (d) => d.language.name,
+        accessor: "language",
+        Cell: ({ row }) => {
+          return (
+            <LanguageText
+              text={row.original.language!}
+              long={true}
+            ></LanguageText>
+          );
+        },
       },
       {
         Header: "Provider",

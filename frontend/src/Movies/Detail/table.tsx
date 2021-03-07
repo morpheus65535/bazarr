@@ -37,7 +37,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: ({ row }) => {
           return (
             <Badge variant="secondary">
-              <LanguageText text={row.original}></LanguageText>
+              <LanguageText text={row.original} long={true}></LanguageText>
             </Badge>
           );
         },

@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { AsyncStateOverlay, HistoryIcon, PageTable } from "..";
+import { AsyncStateOverlay, HistoryIcon, LanguageText, PageTable } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
 import {
   MoviesBlacklistButton,
@@ -47,7 +47,15 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
       },
       {
         Header: "Language",
-        accessor: (d) => d.language?.name ?? "",
+        accessor: "language",
+        Cell: ({ row }) => {
+          return (
+            <LanguageText
+              text={row.original.language!}
+              long={true}
+            ></LanguageText>
+          );
+        },
       },
       {
         Header: "Provider",
@@ -128,7 +136,15 @@ export const EpisodeHistoryModal: FunctionComponent<
       },
       {
         Header: "Language",
-        accessor: (d) => d.language?.name ?? "",
+        accessor: "language",
+        Cell: ({ row }) => {
+          return (
+            <LanguageText
+              text={row.original.language!}
+              long={true}
+            ></LanguageText>
+          );
+        },
       },
       {
         Header: "Provider",

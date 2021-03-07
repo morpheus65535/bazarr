@@ -443,7 +443,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
         accessor: "name",
         Cell: ({ row }) => (
           <Badge variant="secondary">
-            <LanguageText text={row.original}></LanguageText>
+            <LanguageText text={row.original} long={true}></LanguageText>
           </Badge>
         ),
       },

@@ -61,7 +61,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
   } else {
     return (
       <Badge className="mr-1" variant="secondary">
-        <LanguageText text={subtitle}></LanguageText>
+        <LanguageText text={subtitle} long={false}></LanguageText>
       </Badge>
     );
   }
