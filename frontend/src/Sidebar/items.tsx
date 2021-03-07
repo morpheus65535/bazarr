@@ -94,7 +94,11 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
         action
         className="sidebar-button"
         onClick={() => {
-          setActiveKey(itemKey);
+          if (active) {
+            setActiveKey("");
+          } else {
+            setActiveKey(itemKey);
+          }
         }}
       >
         <DisplayItem
