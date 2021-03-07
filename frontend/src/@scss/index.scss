@@ -1,10 +1,6 @@
 @import "./global.scss";
 @import "./variable.scss";
-
-// Override bootstrap primary color
-$theme-colors: (
-  "primary": #911f93,
-);
+@import "./bazarr.scss";
 
 @import "../../node_modules/bootstrap/scss/bootstrap.scss";
 

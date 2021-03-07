@@ -1,0 +1,14 @@
+// Override bootstrap primary color
+$theme-colors: (
+  "primary": #911f93,
+);
+
+// Reduce padding of cells in datatables
+.table td,
+.table th {
+  padding: 0.4rem !important;
+}
+
+.progress-bar {
+  cursor: default;
+}

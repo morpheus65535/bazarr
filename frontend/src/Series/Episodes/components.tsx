@@ -47,7 +47,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
         onSuccess={() => update(seriesid)}
         as={Badge}
         className="mr-1"
-        variant={missing ? "warning" : "secondary"}
+        variant={missing ? "primary" : "secondary"}
       >
         <LanguageText className="pr-1" text={subtitle}></LanguageText>
         <FontAwesomeIcon

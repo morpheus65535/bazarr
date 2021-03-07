@@ -96,7 +96,7 @@ const SeriesView: FunctionComponent<Props> = () => {
             }/${episodeFileCount}`;
           }
 
-          const color = episodeMissingCount === 0 ? "success" : "warning";
+          const color = episodeMissingCount === 0 ? "primary" : "warning";
 
           return (
             <ProgressBar
