@@ -26,7 +26,7 @@ export const LinkItem: FunctionComponent<LinkItemType> = ({
   const toggle = useContext(SidebarToggleContext);
 
   const badgeValue = useMemo(() => {
-    let badge: number | undefined = undefined;
+    let badge: Nullable<number> = null;
     if (name in badges) {
       let item = badges[name];
       if (typeof item === "number") {
@@ -43,7 +43,11 @@ export const LinkItem: FunctionComponent<LinkItemType> = ({
       to={link}
       onClick={toggle}
     >
-      <DisplayItem badge={badgeValue} name={name} icon={icon}></DisplayItem>
+      <DisplayItem
+        badge={badgeValue ?? undefined}
+        name={name}
+        icon={icon}
+      ></DisplayItem>
     </NavLink>
   );
 };
@@ -61,10 +65,10 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
   const [activeKey, setActiveKey] = useContext(ActiveKeyContext);
 
   const [badgeValue, childValue] = useMemo<
-    [number | undefined, ChildBadgeProvider | undefined]
+    [Nullable<number>, Nullable<ChildBadgeProvider>]
   >(() => {
-    let badge: number | undefined = undefined;
-    let child: ChildBadgeProvider | undefined = undefined;
+    let badge: Nullable<number> = null;
+    let child: Nullable<ChildBadgeProvider> = null;
 
     if (name in badges) {
       const item = badges[name];
@@ -102,7 +106,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
         }}
       >
         <DisplayItem
-          badge={badgeValue === 0 ? undefined : badgeValue}
+          badge={badgeValue === 0 ? undefined : badgeValue ?? undefined}
           icon={icon}
           name={name}
         ></DisplayItem>
@@ -110,7 +114,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
       <Collapse in={active}>
         <div className="sidebar-collapse">
           {children.map((ch) => {
-            let badge: number | undefined = undefined;
+            let badge: Nullable<number> = null;
             if (childValue && ch.name in childValue) {
               badge = childValue[ch.name];
             }
@@ -123,7 +127,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
                 onClick={toggleSidebar}
               >
                 <DisplayItem
-                  badge={badge === 0 ? undefined : badge}
+                  badge={badge === 0 ? undefined : badge ?? undefined}
                   name={ch.name}
                 ></DisplayItem>
               </NavLink>

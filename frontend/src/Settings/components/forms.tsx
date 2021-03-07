@@ -1,4 +1,4 @@
-import { isArray, isBoolean, isNumber, isString, isUndefined } from "lodash";
+import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import React, { FunctionComponent, useEffect } from "react";
 import {
   Button as BSButton,
@@ -58,8 +58,8 @@ export const Text: FunctionComponent<TextProps> = ({
       type={password ? "password" : "text"}
       placeholder={placeholder?.toString()}
       disabled={disabled}
-      defaultValue={controlled ? undefined : value}
-      value={controlled ? value : undefined}
+      defaultValue={controlled ? undefined : value ?? undefined}
+      value={controlled ? value ?? undefined : undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
         collapse(val.toString());
@@ -101,7 +101,7 @@ export const Check: FunctionComponent<CheckProps> = ({
         update(checked, settingKey);
       }}
       disabled={disabled}
-      checked={value}
+      checked={value ?? undefined}
     ></Form.Check>
   );
 };
@@ -129,7 +129,7 @@ export function Selector<
   );
 
   useEffect(() => {
-    if (isString(value) || isUndefined(value)) {
+    if (isString(value) || isNull(value)) {
       collapse(value ?? "");
     }
   });
@@ -162,7 +162,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
       onAfterChange={(v) => {
         update(v, settingKey);
       }}
-      defaultValue={defaultValue}
+      defaultValue={defaultValue ?? undefined}
       {...slider}
     ></CSlider>
   );
@@ -180,7 +180,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
 
   return (
     <CChips
-      defaultValue={defaultValue}
+      defaultValue={defaultValue ?? undefined}
       onChange={(v) => {
         update(v, settingKey);
       }}
@@ -204,7 +204,7 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
   return (
     <BSButton
       onClick={() => {
-        onClick && onClick(update, settingKey, value);
+        onClick && onClick(update, settingKey, value ?? undefined);
       }}
       {...button}
     ></BSButton>

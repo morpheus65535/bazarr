@@ -220,7 +220,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
     [subtitleInfoList]
   );
 
-  const canUpload = tableShow && isValid && language?.code2 !== undefined;
+  const canUpload = tableShow && isValid && language?.code2;
 
   const footer = useMemo(
     () => (

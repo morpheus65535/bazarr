@@ -87,7 +87,7 @@ export function Selector<T = string, M extends boolean = false>(
       classNamePrefix="selector"
       onChange={(v) => {
         if (onChange) {
-          let res: T | T[] | undefined = undefined;
+          let res: T | T[] | null = null;
           if (isArray(v)) {
             res = (v as ReadonlyArray<SelectorOption<T>>).map(
               (val) => val.value

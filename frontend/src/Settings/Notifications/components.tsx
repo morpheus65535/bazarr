@@ -72,7 +72,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   const closeModal = useCloseModal();
 
   const canSave =
-    current !== undefined && current?.url !== null && current?.url.length !== 0;
+    current !== null && current?.url !== null && current?.url.length !== 0;
 
   const footer = useMemo(
     () => (

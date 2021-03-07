@@ -75,7 +75,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 clearable
                 options={securityOptions}
                 settingKey="settings-auth-type"
-                beforeStaged={(v) => (v === undefined ? "None" : v)}
+                beforeStaged={(v) => (v === null ? "None" : v)}
               ></Selector>
             </Input>
           </CollapseBox.Control>
@@ -127,7 +127,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 clearable
                 settingKey="settings-proxy-type"
                 options={proxyOptions}
-                beforeStaged={(v) => (v === undefined ? "None" : v)}
+                beforeStaged={(v) => (v === null ? "None" : v)}
               ></Selector>
             </Input>
           </CollapseBox.Control>

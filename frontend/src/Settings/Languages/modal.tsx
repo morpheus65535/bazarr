@@ -254,12 +254,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Selector
           options={cutoff}
           value={current?.cutoff}
-          onChange={(num) => {
-            if (num === undefined) {
-              num = null;
-            }
-            updateProfile("cutoff", num);
-          }}
+          onChange={(num) => updateProfile("cutoff", num)}
         ></Selector>
         <Message>Ignore others if existing</Message>
       </Input>

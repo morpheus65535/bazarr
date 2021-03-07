@@ -35,8 +35,8 @@ export const ProviderView: FunctionComponent = () => {
   const showModal = useShowModal();
 
   const select = useCallback(
-    (v: ProviderInfo | undefined) => {
-      showModal(ModalKey, v);
+    (v?: ProviderInfo) => {
+      showModal(ModalKey, v ?? null);
     },
     [showModal]
   );
@@ -57,7 +57,7 @@ export const ProviderView: FunctionComponent = () => {
             key={idx}
             header={v.name ?? capitalize(v.key)}
             subheader={v.description}
-            onClick={() => select(v)}
+            onClick={select}
           ></ColCard>
         ));
     } else {
@@ -69,11 +69,7 @@ export const ProviderView: FunctionComponent = () => {
     <Container fluid>
       <Row>
         {cards}
-        <ColCard
-          key="add-card"
-          plus
-          onClick={() => select(undefined)}
-        ></ColCard>
+        <ColCard key="add-card" plus onClick={() => select()}></ColCard>
       </Row>
     </Container>
   );
@@ -143,7 +139,7 @@ export const ProviderModal: FunctionComponent = () => {
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
 
-  const canSave = info !== undefined;
+  const canSave = info !== null;
 
   const footer = useMemo(
     () => (

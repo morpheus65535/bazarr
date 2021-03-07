@@ -33,7 +33,7 @@ export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
   (v: any, k?: string) => {}
 );
 
-const SettingsContext = React.createContext<Settings | undefined>(undefined);
+const SettingsContext = React.createContext<Nullable<Settings>>(null);
 
 export const StagedChangesContext = React.createContext<LooseObject>({});
 
@@ -41,7 +41,7 @@ export function useLocalSettings(): Settings {
   const settings = useContext(SettingsContext);
   if (process.env.NODE_ENV === "development") {
     console.assert(
-      settings !== undefined,
+      settings !== null,
       "useSettings hook was invoked outside of SettingsProvider!"
     );
   }
