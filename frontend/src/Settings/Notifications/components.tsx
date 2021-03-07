@@ -84,6 +84,8 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           promise={() => {
             if (current && current.url) {
               return SystemApi.testNotification(current.name, current.url);
+            } else {
+              return null;
             }
           }}
         >

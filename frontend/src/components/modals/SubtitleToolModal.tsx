@@ -86,7 +86,7 @@ const AddColorModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [selection, subtitle, item]);
 
@@ -150,7 +150,7 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [subtitle, canSave, from, to, item]);
 
@@ -258,7 +258,7 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
         subtitle.path
       );
     } else {
-      return undefined;
+      return null;
     }
   }, [subtitle, canSave, offset, isPlus, item]);
 
@@ -358,7 +358,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
         subtitle.path
       );
     }
-    return undefined;
+    return null;
   }, [item, subtitle, selectedLanguage]);
 
   const closeModal = useCloseModal();

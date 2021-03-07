@@ -42,6 +42,8 @@ export const SubtitleAction: FunctionComponent<Props> = ({
               path: path,
               language: subtitle.code2,
             });
+          } else {
+            return null;
           }
         }}
         onSuccess={update}
