@@ -94,11 +94,17 @@ def postprocess(item: dict):
         else:
             item['tags'] = ast.literal_eval(item['tags'])
 
-    if 'monitored' in item and item['monitored'] is not None:
-        item['monitored'] = item['monitored'] == 'True'
+    if 'monitored' in item:
+        if item['monitored'] is None:
+            item['monitored'] = False
+        else:
+            item['monitored'] = item['monitored'] == 'True'
         
     if 'hearing_impaired' in item and item['hearing_impaired'] is not None:
-        item['hearing_impaired'] = item['hearing_impaired'] == 'True'
+        if item['hearing_impaired'] is None:
+            item['hearing_impaired'] = False
+        else:
+            item['hearing_impaired'] = item['hearing_impaired'] == 'True'
 
     if 'language' in item:
         if item['language'] == 'None':
@@ -211,8 +217,11 @@ def postprocessMovie(item):
         item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
 
     # Parse alternate titles
-    if 'alternativeTitles' in item and item['alternativeTitles'] is not None:
-        item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
+    if 'alternativeTitles' in item:
+        if item['alternativeTitles'] is None:
+            item['alternativeTitles'] = []
+        else:
+            item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
 
     # Parse failed attempts
     if 'failedAttempts' in item and item['failedAttempts'] is not None:
