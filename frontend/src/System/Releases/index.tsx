@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { systemUpdateReleases } from "../../@redux/actions";
@@ -40,6 +40,10 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
   prerelease,
   current,
 }) => {
+  const infos = useMemo(
+    () => body.map((v) => v.replace(/(\s\[.*?\])\(.*?\)/, "")),
+    [body]
+  );
   return (
     <Card className="mb-4 mx-3 d-flex flex-grow-1">
       <Card.Body>
@@ -48,7 +52,7 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
         </Card.Title>
         <Card.Subtitle>From newest to oldest</Card.Subtitle>
         <Card.Text className="mt-3">
-          {body.map((v, idx) => (
+          {infos.map((v, idx) => (
             <li key={idx}>{v}</li>
           ))}
         </Card.Text>
