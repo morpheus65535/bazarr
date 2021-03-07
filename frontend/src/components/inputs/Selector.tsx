@@ -93,7 +93,7 @@ export function Selector<T = string, M extends boolean = false>(
               (val) => val.value
             );
           } else {
-            res = (v as SelectorOption<T>)?.value;
+            res = (v as SelectorOption<T>)?.value ?? null;
           }
           // TODO: Force as any
           onChange(res as any);

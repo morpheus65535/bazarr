@@ -252,6 +252,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       </Input>
       <Input name="Cutoff">
         <Selector
+          clearable
           options={cutoff}
           value={current?.cutoff}
           onChange={(num) => updateProfile("cutoff", num)}
