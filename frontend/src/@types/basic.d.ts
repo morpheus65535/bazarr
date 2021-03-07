@@ -10,3 +10,20 @@ type FileTree = {
 };
 
 type StorageType = string | null;
+
+interface AsyncState<T> {
+  updating: boolean;
+  error?: Error;
+  items: T;
+}
+
+type AsyncPayload<T> = T extends AsyncState<infer D> ? D : never;
+
+type SelectorOption<PAYLOAD> = {
+  label: string;
+  value: PAYLOAD;
+};
+
+type SelectorValueType<T, M extends boolean> = M extends true
+  ? ReadonlyArray<T>
+  : T | undefined;

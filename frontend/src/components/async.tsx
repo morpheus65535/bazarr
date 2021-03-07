@@ -89,7 +89,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   }
 }
 
-type ExtractAS<T extends AsyncState<any[]>> = ArrayElement<AsyncPayload<T>>;
+type ExtractAS<T extends AsyncState<any[]>> = Unpacked<AsyncPayload<T>>;
 
 type AsyncSelectorProps<T extends AsyncState<any[]>> = {
   state: T;
