@@ -10,7 +10,7 @@ export function useReduxStore<T extends (store: ReduxStore) => any>(
   return useSelector<ReduxStore, ReturnType<T>>(selector);
 }
 
-export function useReduxAction<T extends (...args: any[]) => any>(action: T) {
+export function useReduxAction<T extends (...args: any[]) => void>(action: T) {
   const dispatch = useDispatch();
   return useCallback((...args: Parameters<T>) => dispatch(action(...args)), [
     action,

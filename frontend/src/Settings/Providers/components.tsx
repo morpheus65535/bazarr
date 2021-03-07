@@ -57,7 +57,7 @@ export const ProviderView: FunctionComponent = () => {
             key={idx}
             header={v.name ?? capitalize(v.key)}
             subheader={v.description}
-            onClick={select}
+            onClick={() => select(v)}
           ></ColCard>
         ));
     } else {
@@ -69,7 +69,7 @@ export const ProviderView: FunctionComponent = () => {
     <Container fluid>
       <Row>
         {cards}
-        <ColCard key="add-card" plus onClick={() => select()}></ColCard>
+        <ColCard key="add-card" plus onClick={select}></ColCard>
       </Row>
     </Container>
   );
