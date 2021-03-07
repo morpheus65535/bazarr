@@ -17,7 +17,7 @@ export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
   const show = useIsModalShow(modalKey);
   const closeModal = useCloseModal();
 
-  const canClose = closeable === true;
+  const canClose = closeable !== false;
 
   return (
     <Modal
