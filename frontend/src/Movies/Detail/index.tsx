@@ -16,7 +16,6 @@ import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
   ItemEditorModal,
-  ItemOverview,
   LoadingIndicator,
   MovieHistoryModal,
   MovieUploadModal,
@@ -24,6 +23,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
+import ItemOverview from "../../generic/ItemOverview";
 import Table from "./table";
 
 interface Params {

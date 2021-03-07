@@ -10,8 +10,13 @@ type RemovedSelectorProps<M extends boolean> = Omit<
   "label" | "placeholder"
 >;
 
-function LanguageSelector<M extends boolean = false>(
-  props: Override<Props, RemovedSelectorProps<M>>
+export type LanguageSelectorProps<M extends boolean> = Override<
+  Props,
+  RemovedSelectorProps<M>
+>;
+
+export function LanguageSelector<M extends boolean = false>(
+  props: LanguageSelectorProps<M>
 ) {
   const { options, ...selector } = props;
 
@@ -33,5 +38,3 @@ function LanguageSelector<M extends boolean = false>(
     ></Selector>
   );
 }
-
-export default LanguageSelector;

@@ -2,8 +2,9 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { EpisodesApi, MoviesApi } from "../apis";
-import { AsyncButton } from "./buttons";
+import { AsyncButton } from "../components";
 
+// TODO: Group those button to a single one
 export const SeriesBlacklistButton: FunctionComponent<{
   seriesid: number;
   episodeid: number;

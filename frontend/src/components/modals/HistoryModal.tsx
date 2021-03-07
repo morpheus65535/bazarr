@@ -8,8 +8,11 @@ import React, {
 import { Column } from "react-table";
 import { AsyncStateOverlay, HistoryIcon, PageTable } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
+import {
+  MoviesBlacklistButton,
+  SeriesBlacklistButton,
+} from "../../generic/blacklist";
 import { updateAsyncState } from "../../utilites";
-import { MoviesBlacklistButton, SeriesBlacklistButton } from "../speical";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { usePayload } from "./provider";
 

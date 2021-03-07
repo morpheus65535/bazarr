@@ -15,11 +15,11 @@ import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
   ItemEditorModal,
-  ItemOverview,
   LoadingIndicator,
   SeriesUploadModal,
   useShowModal,
 } from "../../components";
+import ItemOverview from "../../generic/ItemOverview";
 import Table from "./table";
 
 interface Params {
