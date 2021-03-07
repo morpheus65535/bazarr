@@ -53,7 +53,7 @@ const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
   }, [profiles]);
 
   const changeProfiles = useCallback(
-    (key: string | null) => {
+    (key: Nullable<string>) => {
       const id = key ? parseInt(key) : null;
       const newItems = selections.map((v) => {
         const item = { ...v };

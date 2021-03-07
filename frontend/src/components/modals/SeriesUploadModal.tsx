@@ -59,13 +59,13 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [subtitleInfoList, setSubtitleInfo] = useState<SubtitleInfo[]>([]);
 
-  const [language, setLanguage] = useState<Language | undefined>(undefined);
+  const [language, setLanguage] = useState<Nullable<Language>>(null);
 
   const profile = useProfileBy(series?.profileId);
 
   const defaultLanguage = useLanguageBy(profile?.items[0]?.language);
 
-  useEffect(() => setLanguage(defaultLanguage), [defaultLanguage]);
+  useEffect(() => setLanguage(defaultLanguage ?? null), [defaultLanguage]);
 
   const filelist = useMemo(() => subtitleInfoList.map((v) => v.file), [
     subtitleInfoList,
@@ -84,7 +84,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   }, [episodes]);
 
   const validItem = useCallback(
-    (info: SubtitleInfo, lang?: Language) => {
+    (info: SubtitleInfo, lang: Nullable<Language>) => {
       info.stateText = [];
       if (info.state === SubtitleState.update) {
         return;
@@ -141,7 +141,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   );
 
   const updateLanguage = useCallback(
-    (lang?: Language) => {
+    (lang: Nullable<Language>) => {
       setLanguage(lang);
 
       subtitleInfoList.forEach((v) => validItem(v, lang));
@@ -175,7 +175,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const uploadSubtitles = useCallback(
     async (list: SubtitleInfo[]) => {
-      if (series === undefined) {
+      if (series === null) {
         return;
       }
 

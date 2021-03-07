@@ -268,7 +268,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             <Input>
               <Selector
                 options={colorOptions}
-                override={(s) => s.general.subzero_color_selection}
+                override={(s) => s.general.subzero_color_selection ?? null}
                 settingKey="subzero-color-selection"
               ></Selector>
             </Input>

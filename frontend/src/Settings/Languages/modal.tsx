@@ -233,7 +233,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Form.Control
           type="text"
           placeholder="Name"
-          defaultValue={profile?.name}
+          defaultValue={current?.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}

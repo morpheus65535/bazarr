@@ -10,6 +10,7 @@ import {
   BaseModal,
   Selector,
   useCloseModal,
+  useOnModalShow,
   usePayload,
   useShowModal,
 } from "../../components";
@@ -79,11 +80,15 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 export const ProviderModal: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo | undefined>(ModalKey);
+  const payload = usePayload<ProviderInfo>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
 
-  const [info, setInfo] = useState(payload);
+  const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload ?? null);
+
+  const onShow = useCallback(() => setInfo(payload ?? null), [payload]);
+
+  useOnModalShow(ModalKey, onShow);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
@@ -138,13 +143,7 @@ export const ProviderModal: FunctionComponent = () => {
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
 
-  const canSave = useMemo(() => {
-    if (payload === undefined) {
-      return info !== undefined;
-    } else {
-      return Object.keys(staged).length !== 0;
-    }
-  }, [payload, info, staged]);
+  const canSave = info !== undefined;
 
   const footer = useMemo(
     () => (
@@ -160,7 +159,7 @@ export const ProviderModal: FunctionComponent = () => {
     [canSave, payload, deletePayload, addProvider]
   );
 
-  const onSelect = useCallback((item: ProviderInfo | undefined) => {
+  const onSelect = useCallback((item: Nullable<ProviderInfo>) => {
     if (item) {
       setInfo(item);
     } else {
@@ -183,7 +182,7 @@ export const ProviderModal: FunctionComponent = () => {
   );
 
   const modification = useMemo(() => {
-    if (info === undefined) {
+    if (info === null) {
       return null;
     }
 
@@ -247,10 +246,10 @@ export const ProviderModal: FunctionComponent = () => {
           <Row>
             <Col>
               <Selector
-                disabled={payload !== undefined}
+                disabled={payload !== null}
                 options={options}
-                value={payload}
-                label={(v) => v.name ?? capitalize(v.key)}
+                value={info}
+                label={(v) => v?.name ?? capitalize(v?.key ?? "")}
                 onChange={onSelect}
               ></Selector>
             </Col>

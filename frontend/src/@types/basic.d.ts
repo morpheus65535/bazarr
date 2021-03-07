@@ -26,4 +26,4 @@ type SelectorOption<PAYLOAD> = {
 
 type SelectorValueType<T, M extends boolean> = M extends true
   ? ReadonlyArray<T>
-  : T | undefined;
+  : Nullable<T>;

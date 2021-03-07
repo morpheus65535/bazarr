@@ -52,16 +52,17 @@ const HistoryStats: FunctionComponent = () => {
   useAutoUpdate(update);
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
-  const [action, setAction] = useState<History.ActionOptions | undefined>(
-    undefined
-  );
-  const [lang, setLanguage] = useState<Language | undefined>(undefined);
-  const [provider, setProvider] = useState<System.Provider | undefined>(
-    undefined
-  );
+  const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
+  const [lang, setLanguage] = useState<Nullable<Language>>(null);
+  const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
   const promise = useCallback(() => {
-    return HistoryApi.stats(timeframe, action, provider?.name, lang?.code2);
+    return HistoryApi.stats(
+      timeframe,
+      action ?? undefined,
+      provider?.name,
+      lang?.code2
+    );
   }, [timeframe, lang?.code2, action, provider]);
 
   return (
