@@ -20,83 +20,80 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { useLanguages, useProfileBy } from "../@redux/hooks";
+import { useProfileBy, useProfileItems } from "../@redux/hooks";
+import { LanguageText } from "../components";
 
 interface Props {
   item: Item.Base;
   details?: { icon: IconDefinition; text: string }[];
 }
 
-const createBadge = (
-  icon: IconDefinition,
-  text: string,
-  desc?: string,
-  key?: string
-) => {
-  if (text.length === 0) {
-    return null;
-  }
-
-  return (
-    <Badge
-      title={`${desc ?? ""}${text}`}
-      variant="secondary"
-      className="mr-2 my-1 text-truncate"
-      key={key ? key : text}
-    >
-      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-      <span className="ml-1">{text}</span>
-    </Badge>
-  );
-};
-
 const ItemOverview: FunctionComponent<Props> = (props) => {
   const { item, details } = props;
 
   const detailBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
-
-    badges.push(createBadge(faFolder, item.path, "File Path: "));
-
     badges.push(
-      ...(details?.map((val) => createBadge(val.icon, val.text)) ?? [])
+      <DetailBadge key="file-path" icon={faFolder} desc="File Path">
+        {item.path}
+      </DetailBadge>
     );
 
-    badges.push(createBadge(faTags, item.tags.join("|"), "Tags: "));
+    badges.push(
+      ...(details?.map((val, idx) => (
+        <DetailBadge key={`detail-${idx}`} icon={val.icon}>
+          {val.text}
+        </DetailBadge>
+      )) ?? [])
+    );
+
+    badges.push(
+      <DetailBadge key="tags" icon={faTags} desc="Tags">
+        {item.tags.join("|")}
+      </DetailBadge>
+    );
 
     return badges;
   }, [details, item.path, item.tags]);
 
   const audioBadges = useMemo(
     () =>
-      item.audio_language.map((v) =>
-        createBadge(faMusic, v.name, "Audio Language: ")
-      ),
+      item.audio_language.map((v, idx) => (
+        <DetailBadge key={`audio-${idx}`} icon={faMusic} desc="Audio Language">
+          {v.name}
+        </DetailBadge>
+      )),
     [item.audio_language]
   );
 
   const profile = useProfileBy(item.profileId);
-  const [languages] = useLanguages(true);
+  const profileItems = useProfileItems(profile);
 
   const languageBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
 
     if (profile) {
-      badges.push(createBadge(faStream, profile.name, "Languages Profile: "));
       badges.push(
-        ...profile.items.map((v, idx) =>
-          createBadge(
-            faLanguage,
-            languages.find((lang) => lang.code2 === v.language)?.name ?? "",
-            "Language: ",
-            `lang-${idx}`
-          )
-        )
+        <DetailBadge
+          key="language-profile"
+          icon={faStream}
+          desc="Languages Profile"
+        >
+          {profile.name}
+        </DetailBadge>
+      );
+
+      badges.push(
+        ...profileItems.map((v, idx) => (
+          <DetailBadge key={`lang-${idx}`} icon={faLanguage} desc="Language">
+            <LanguageText long text={v}></LanguageText>
+          </DetailBadge>
+        ))
       );
     }
 
     return badges;
-  }, [profile, languages]);
+  }, [profile, profileItems]);
 
   const alternativePopover = useMemo(
     () => (
@@ -162,5 +159,22 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     </Container>
   );
 };
+
+interface ItemBadgeProps {
+  icon: IconDefinition;
+  children: string | JSX.Element;
+  desc?: string;
+}
+
+const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
+  icon,
+  desc,
+  children,
+}) => (
+  <Badge title={desc} variant="secondary" className="mr-2 my-1 text-truncate">
+    <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+    <span className="ml-1">{children}</span>
+  </Badge>
+);
 
 export default ItemOverview;

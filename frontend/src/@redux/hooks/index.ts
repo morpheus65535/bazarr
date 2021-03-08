@@ -54,9 +54,9 @@ export function useLanguages(enabled: boolean = false) {
   return stateBuilder(items, action);
 }
 
-export function useLanguageBy(code?: string) {
-  const [languages] = useLanguages();
-  const getter = useCallback(
+function useLanguageGetter(enabled: boolean = false) {
+  const [languages] = useLanguages(enabled);
+  return useCallback(
     (code?: string) => {
       if (code === undefined) {
         return undefined;
@@ -66,7 +66,30 @@ export function useLanguageBy(code?: string) {
     },
     [languages]
   );
+}
+
+export function useLanguageBy(code?: string) {
+  const getter = useLanguageGetter();
   return useMemo(() => getter(code), [code, getter]);
+}
+
+// Convert languageprofile items to language
+export function useProfileItems(profile?: Profile.Languages) {
+  const getter = useLanguageGetter(true);
+
+  return useMemo(
+    () =>
+      profile?.items.map<Language>(({ language, hi, forced }) => {
+        const name = getter(language)?.name ?? "";
+        return {
+          hi: hi === "True",
+          forced: forced === "True",
+          code2: language,
+          name,
+        };
+      }) ?? [],
+    [getter, profile?.items]
+  );
 }
 
 export function useSeries() {
