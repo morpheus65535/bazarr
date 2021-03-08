@@ -21,7 +21,7 @@ function asyncActionFactory<T extends PromiseCreator>(
       },
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       promise(...args)
         .then((val) => {
           dispatch({
@@ -42,7 +42,8 @@ function asyncActionFactory<T extends PromiseCreator>(
               item: err,
             },
           });
-          reject(err);
+          // Temporaily disabled
+          // reject(err);
         });
     });
   };
@@ -93,12 +94,16 @@ export function callbackActionFactory(
 ): ActionDispatcher<any> {
   return (dispatch) => {
     const promises = dispatchers.map((v) => v(dispatch));
-    Promise.all(promises).then(() => {
-      const action = success();
-      if (action !== undefined) {
-        dispatch(action);
-      }
-    });
+    Promise.all(promises)
+      .then(() => {
+        const action = success();
+        if (action !== undefined) {
+          dispatch(action);
+        }
+      })
+      .catch(() => {
+        //TODO: Handle this later
+      });
   };
 }
 
