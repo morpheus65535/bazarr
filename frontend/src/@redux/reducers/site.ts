@@ -2,6 +2,9 @@ import { Action, handleActions } from "redux-actions";
 import { storage } from "../../@storage/local";
 import {
   SITE_AUTH_SUCCESS,
+  SITE_ERROR_ADD,
+  SITE_ERROR_REMOVE,
+  SITE_ERROR_REMOVE_WITH_TIMESTAMP,
   SITE_INITIALIZED,
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
@@ -13,7 +16,7 @@ function updateLocalStorage(): Partial<ReduxStore.Site> {
   };
 }
 
-const reducer = handleActions<ReduxStore.Site>(
+const reducer = handleActions<ReduxStore.Site, any>(
   {
     [SITE_NEED_AUTH]: (state) => ({
       ...state,
@@ -38,11 +41,27 @@ const reducer = handleActions<ReduxStore.Site>(
         ...updateLocalStorage(),
       };
     },
+    [SITE_ERROR_ADD]: (state, action: Action<ReduxStore.Error>) => {
+      const alerts = [
+        ...state.alerts.filter((v) => v.id !== action.payload.id),
+        action.payload,
+      ];
+      return { ...state, alerts };
+    },
+    [SITE_ERROR_REMOVE]: (state, action: Action<string>) => {
+      const alerts = state.alerts.filter((v) => v.id !== action.payload);
+      return { ...state, alerts };
+    },
+    [SITE_ERROR_REMOVE_WITH_TIMESTAMP]: (state, action: Action<Date>) => {
+      const alerts = state.alerts.filter((v) => v.timestamp !== action.payload);
+      return { ...state, alerts };
+    },
   },
   {
     initialized: false,
     auth: true,
     pageSize: 50,
+    alerts: [],
     ...updateLocalStorage(),
   }
 );

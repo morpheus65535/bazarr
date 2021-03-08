@@ -10,6 +10,7 @@ import { bootstrap as ReduxBootstrap } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
+import AlertContainer from "./Alerts";
 import Header from "./Header";
 import Router from "./Router";
 
@@ -57,6 +58,7 @@ const App: FunctionComponent<Props> = () => {
           <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
         </ModalProvider>
       </Row>
+      <AlertContainer></AlertContainer>
     </SidebarToggleContext.Provider>
   );
 };

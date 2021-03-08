@@ -98,7 +98,7 @@ export const LoadingIndicator: FunctionComponent<{
 
 interface FormatterProps {
   format?: string;
-  children: string;
+  children: string | Date;
 }
 
 export const DateFormatter: FunctionComponent<FormatterProps> = ({

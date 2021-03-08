@@ -2,7 +2,6 @@ import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
-  PropsWithChildren,
   useCallback,
   useEffect,
   useMemo,
@@ -10,6 +9,7 @@ import React, {
 } from "react";
 import { Alert, Button, Container } from "react-bootstrap";
 import { LoadingIndicator } from ".";
+import { useDispatchError } from "../@redux/hooks/site";
 import { Selector, SelectorProps } from "./inputs";
 
 interface AsyncStateOverlayProps<T> {
@@ -26,15 +26,24 @@ function defaultExist(item: any) {
   }
 }
 
-export function AsyncStateOverlay<T>(
-  props: PropsWithChildren<AsyncStateOverlayProps<T>>
-) {
+export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const { exist, state, children } = props;
   const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
   const reload = useCallback(() => {
     window.location.reload();
   }, []);
+
+  const onError = useDispatchError("async-overlay");
+
+  useEffect(() => {
+    if (!state.updating && state.error !== undefined && !missing) {
+      onError({
+        type: "error",
+        message: state.error.message,
+      });
+    }
+  }, [state, onError, missing]);
 
   if (state.updating) {
     if (missing) {

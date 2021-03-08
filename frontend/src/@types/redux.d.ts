@@ -7,10 +7,17 @@ interface ReduxStore {
 }
 
 namespace ReduxStore {
+  interface Error {
+    type: "error" | "warning";
+    message: string;
+    timestamp: Date;
+    id: string;
+  }
   interface Site {
     initialized: boolean;
     auth: boolean;
     pageSize: number;
+    alerts: Error[];
   }
 
   interface Badge {
