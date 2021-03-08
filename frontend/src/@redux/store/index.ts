@@ -6,7 +6,10 @@ import rootReducer from "../reducers";
 
 const plugins = [promise, trunk];
 
-if (process.env.NODE_ENV === "development") {
+if (
+  process.env.NODE_ENV === "development" &&
+  process.env["REACT_APP_LOG_REDUX_EVENT"] !== "false"
+) {
   plugins.push(logger);
 }
 
