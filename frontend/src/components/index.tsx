@@ -119,32 +119,31 @@ interface LanguageTextProps {
 }
 
 export const LanguageText: FunctionComponent<LanguageTextProps> = ({
-  text: subtitle,
+  text,
   className,
   long,
 }) => {
-  var lang = subtitle.code2;
-  var hi = ":HI";
-  var forced = ":Forced";
-
-  if (long) {
-    lang = subtitle.name;
-    hi = " HI";
-    forced = " Forced";
-  }
-
-  const text = useMemo(() => {
-    let result = lang;
-    if (subtitle.hi) {
-      result += hi;
-    } else if (subtitle.forced) {
-      result += forced;
+  const result = useMemo(() => {
+    let lang = text.code2;
+    let hi = ":HI";
+    let forced = ":Forced";
+    if (long) {
+      lang = text.name;
+      hi = " HI";
+      forced = " Forced";
     }
-    return result;
-  }, [subtitle]);
+
+    let res = lang;
+    if (text.hi) {
+      res += hi;
+    } else if (text.forced) {
+      res += forced;
+    }
+    return res;
+  }, [text, long]);
   return (
-    <span title={subtitle.name} className={className}>
-      {text}
+    <span title={text.name} className={className}>
+      {result}
     </span>
   );
 };
