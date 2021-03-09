@@ -336,30 +336,16 @@ class BadgesSeries(Resource):
                                             "missing_subtitles != '[]'" + get_exclusion_clause('series'))
         missing_episodes = len(missing_episodes)
 
-        result = {
-            "value": missing_episodes
-        }
-        return jsonify(result)
-
-
-class BadgesMovies(Resource):
-    @authenticate
-    def get(self):
         missing_movies = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles is not "
                                           "null AND missing_subtitles != '[]'" + get_exclusion_clause('movie'))
         missing_movies = len(missing_movies)
 
-        result = {
-            "value": missing_movies
-        }
-        return jsonify(result)
+        throttled_providers = len(eval(str(get_throttled_providers())))
 
-
-class BadgesProviders(Resource):
-    @authenticate
-    def get(self):
         result = {
-            "value": len(eval(str(get_throttled_providers())))
+            "episodes": missing_episodes,
+            "movies": missing_movies,
+            "providers": throttled_providers
         }
         return jsonify(result)
 
@@ -1659,9 +1645,7 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
-api.add_resource(BadgesSeries, '/badges/series')
-api.add_resource(BadgesMovies, '/badges/movies')
-api.add_resource(BadgesProviders, '/badges/providers')
+api.add_resource(BadgesSeries, '/badges')
 
 api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
