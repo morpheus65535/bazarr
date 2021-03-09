@@ -64,6 +64,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Subscene
 * Subscenter
 * Subsunacs.net
+* SubSynchro
 * subtitri.id.lv
 * Subtitulamos.tv
 * Sucha
