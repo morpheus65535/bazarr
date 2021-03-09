@@ -27,10 +27,10 @@ import {
 
 type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
 
-export type UpdateFunctionType = (v: any, k?: string) => void;
+export type UpdateFunctionType = (v: any, k: string) => void;
 
 export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
-  (v: any, k?: string) => {}
+  (v, k) => {}
 );
 
 const SettingsContext = React.createContext<Nullable<Settings>>(null);
@@ -95,21 +95,17 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
 
-  const updateChange = useCallback<UpdateFunctionType>(
-    (v: any, k?: string) => {
-      if (k) {
-        const newChanges = { ...stagedChange };
-        newChanges[k] = v;
+  const updateChange = useCallback<UpdateFunctionType>((v: any, k: string) => {
+    setChange((staged) => {
+      const changes = { ...staged };
+      changes[k] = v;
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("staged settings", newChanges);
-        }
-
-        setChange(newChanges);
+      if (process.env.NODE_ENV === "development") {
+        console.log("staged settings", changes);
       }
-    },
-    [stagedChange]
-  );
+      return changes;
+    });
+  }, []);
 
   const saveSettings = useCallback(
     (settings: LooseObject) => {

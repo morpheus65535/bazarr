@@ -19,6 +19,7 @@ import {
   Check,
   ColCard,
   Message,
+  StagedChangesContext,
   Text,
   UpdateChangeContext,
   useLatest,
@@ -92,20 +93,17 @@ export const ProviderModal: FunctionComponent = () => {
 
   const updateGlobal = useLocalUpdater();
 
-  const updateLocal = useCallback(
-    (v: any, key?: string) => {
-      if (key) {
-        staged[key] = v;
+  const update = useCallback((v: any, key: string) => {
+    setChange((staged) => {
+      const changes = { ...staged };
+      changes[key] = v;
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("modal stage settings", staged);
-        }
-
-        setChange({ ...staged });
+      if (process.env.NODE_ENV === "development") {
+        console.log("modal stage settings", changes);
       }
-    },
-    [staged]
-  );
+      return changes;
+    });
+  }, []);
 
   const deletePayload = useCallback(() => {
     if (payload && providers) {
@@ -237,32 +235,34 @@ export const ProviderModal: FunctionComponent = () => {
 
   return (
     <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
-      <UpdateChangeContext.Provider value={updateLocal}>
-        <Container>
-          <Row>
-            <Col>
-              <Selector
-                disabled={payload !== null}
-                options={options}
-                value={info}
-                label={(v) => v?.name ?? capitalize(v?.key ?? "")}
-                onChange={onSelect}
-              ></Selector>
-            </Col>
-          </Row>
-          <Row>
-            <Col className="mb-2">
-              <Message>{info?.description}</Message>
-            </Col>
-          </Row>
-          {modification}
-          <Row hidden={info?.message === undefined}>
-            <Col>
-              <Message>{info?.message}</Message>
-            </Col>
-          </Row>
-        </Container>
-      </UpdateChangeContext.Provider>
+      <StagedChangesContext.Provider value={staged}>
+        <UpdateChangeContext.Provider value={update}>
+          <Container>
+            <Row>
+              <Col>
+                <Selector
+                  disabled={payload !== null}
+                  options={options}
+                  value={info}
+                  label={(v) => v?.name ?? capitalize(v?.key ?? "")}
+                  onChange={onSelect}
+                ></Selector>
+              </Col>
+            </Row>
+            <Row>
+              <Col className="mb-2">
+                <Message>{info?.description}</Message>
+              </Col>
+            </Row>
+            {modification}
+            <Row hidden={info?.message === undefined}>
+              <Col>
+                <Message>{info?.message}</Message>
+              </Col>
+            </Row>
+          </Container>
+        </UpdateChangeContext.Provider>
+      </StagedChangesContext.Provider>
     </BaseModal>
   );
 };
