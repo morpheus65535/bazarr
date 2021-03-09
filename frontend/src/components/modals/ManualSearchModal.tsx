@@ -81,14 +81,14 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     () => [
       {
         accessor: "subtitle",
-        Cell: (row) => {
-          const result = row.row.original;
+        Cell: ({ row, update }) => {
+          const result = row.original;
           return (
             <AsyncButton
               size="sm"
               variant="light"
               promise={() => onSelect(item!, result)}
-              onSuccess={onDownload}
+              onSuccess={() => update && update(row)}
             >
               <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
             </AsyncButton>
@@ -176,7 +176,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         },
       },
     ],
-    [onSelect, item, onDownload]
+    [onSelect, item]
   );
 
   const content = useMemo<JSX.Element>(() => {
@@ -199,11 +199,12 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             emptyText="No Result"
             columns={columns}
             data={result}
+            update={onDownload}
           ></PageTable>
         </React.Fragment>
       );
     }
-  }, [start, searching, columns, result, search, item?.path]);
+  }, [start, searching, columns, result, search, item?.path, onDownload]);
 
   const footer = useMemo(
     () => (

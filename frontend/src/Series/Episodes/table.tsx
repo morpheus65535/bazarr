@@ -27,6 +27,22 @@ interface Props {
   series: Item.Series;
 }
 
+const download = (item: any, result: SearchResultType) => {
+  item = item as Item.Episode;
+  const { language, hearing_impaired, forced, provider, subtitle } = result;
+  return ProvidersApi.downloadEpisodeSubtitle(
+    item.sonarrSeriesId,
+    item.sonarrEpisodeId,
+    {
+      language,
+      hi: hearing_impaired,
+      forced,
+      provider,
+      subtitle,
+    }
+  );
+};
+
 const Table: FunctionComponent<Props> = ({ series }) => {
   const id = series.sonarrSeriesId;
   const [episodes, update] = useEpisodesBy(id);
@@ -197,27 +213,7 @@ const Table: FunctionComponent<Props> = ({ series }) => {
       <ManualSearchModal
         modalKey="manual-search"
         onDownload={update}
-        onSelect={(item, result) => {
-          item = item as Item.Episode;
-          const {
-            language,
-            hearing_impaired,
-            forced,
-            provider,
-            subtitle,
-          } = result;
-          return ProvidersApi.downloadEpisodeSubtitle(
-            item.sonarrSeriesId,
-            item.sonarrEpisodeId,
-            {
-              language,
-              hi: hearing_impaired,
-              forced,
-              provider,
-              subtitle,
-            }
-          );
-        }}
+        onSelect={download}
       ></ManualSearchModal>
     </React.Fragment>
   );
