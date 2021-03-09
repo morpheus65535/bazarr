@@ -101,7 +101,15 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       },
       {
         accessor: "language",
-        Cell: (row) => <Badge variant="secondary">{row.value}</Badge>,
+        Cell: (row) => {
+          let text = row.row.original.language;
+          if (row.row.original.hearing_impaired === "True") {
+            text += ":HI";
+          } else if (row.row.original.forced === "True") {
+            text += ":Forced";
+          }
+          return <Badge variant="secondary">{text}</Badge>;
+        },
       },
       {
         Header: "Provider",
