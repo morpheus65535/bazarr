@@ -4,8 +4,8 @@ import {
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_INFO,
 } from "../constants";
-import { badgeUpdateMovies } from "./badges";
 import { createAsyncAction, createCombineAction } from "./factory";
+import { badgeUpdateAll } from "./site";
 
 export const movieUpdateHistoryList = createAsyncAction(
   MOVIES_UPDATE_HISTORY_LIST,
@@ -17,7 +17,7 @@ const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number) =>
 );
 
 export const movieUpdateInfoAll = createCombineAction((id?: number) => {
-  return [movieUpdateInfo(id), badgeUpdateMovies()];
+  return [movieUpdateInfo(id), badgeUpdateAll()];
 });
 
 export const movieUpdateBlacklist = createAsyncAction(

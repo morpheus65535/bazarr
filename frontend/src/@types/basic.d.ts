@@ -27,3 +27,8 @@ type SelectorOption<PAYLOAD> = {
 type SelectorValueType<T, M extends boolean> = M extends true
   ? ReadonlyArray<T>
   : Nullable<T>;
+
+type SimpleStateType<T> = [
+  T,
+  ((item: T) => void) | ((fn: (item: T) => T) => void)
+];

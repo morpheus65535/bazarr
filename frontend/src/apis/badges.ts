@@ -3,42 +3,16 @@ import apis from ".";
 
 class BadgesApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/badges/${path}`, { params });
+    return apis.axios.get(`/badges${path}`, { params });
   }
 
-  async series(): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
-      this.get<Badge>("series")
+  async all(): Promise<Badge> {
+    return new Promise<Badge>((resolve, reject) => {
+      this.get<Badge>("")
         .then((result) => {
-          resolve(result.data.value);
+          resolve(result.data);
         })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
-  async movies(): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
-      this.get<Badge>("movies")
-        .then((result) => {
-          resolve(result.data.value);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
-  async providers(): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
-      this.get<Badge>("providers")
-        .then((result) => {
-          resolve(result.data.value);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
+        .catch(reject);
     });
   }
 }

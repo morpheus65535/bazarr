@@ -1,5 +1,4 @@
 interface ReduxStore {
-  badges: ReduxStore.Badge;
   system: ReduxStore.System;
   series: ReduxStore.Series;
   movie: ReduxStore.Movie;
@@ -18,12 +17,8 @@ namespace ReduxStore {
     auth: boolean;
     pageSize: number;
     alerts: Error[];
-  }
-
-  interface Badge {
-    movies: number;
-    episodes: number;
-    providers: number;
+    sidebar: string;
+    badges: Badge;
   }
 
   interface System {

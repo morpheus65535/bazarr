@@ -1,4 +1,3 @@
-export * from "./badges";
 export * from "./movie";
 export * from "./providers";
 export * from "./series";

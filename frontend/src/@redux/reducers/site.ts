@@ -2,12 +2,14 @@ import { Action, handleActions } from "redux-actions";
 import { storage } from "../../@storage/local";
 import {
   SITE_AUTH_SUCCESS,
+  SITE_BADGE_UPDATE,
   SITE_ERROR_ADD,
   SITE_ERROR_REMOVE,
   SITE_ERROR_REMOVE_WITH_TIMESTAMP,
   SITE_INITIALIZED,
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
+  SITE_SIDEBAR_UPDATE,
 } from "../constants";
 
 function updateLocalStorage(): Partial<ReduxStore.Site> {
@@ -56,12 +58,30 @@ const reducer = handleActions<ReduxStore.Site, any>(
       const alerts = state.alerts.filter((v) => v.timestamp !== action.payload);
       return { ...state, alerts };
     },
+    [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
+      return {
+        ...state,
+        sidebar: action.payload,
+      };
+    },
+    [SITE_BADGE_UPDATE]: {
+      next: (state, action: Action<Badge>) => {
+        return { ...state, badges: action.payload };
+      },
+      throw: (state) => state,
+    },
   },
   {
     initialized: false,
     auth: true,
     pageSize: 50,
     alerts: [],
+    sidebar: "",
+    badges: {
+      movies: 0,
+      episodes: 0,
+      providers: 0,
+    },
     ...updateLocalStorage(),
   }
 );

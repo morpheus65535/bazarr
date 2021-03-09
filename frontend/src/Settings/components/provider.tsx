@@ -3,7 +3,6 @@ import { merge } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -15,10 +14,9 @@ import {
   siteSaveLocalstorage,
   systemUpdateSettingsAll,
 } from "../../@redux/actions";
-import { useSystemSettings } from "../../@redux/hooks";
 import { useReduxAction, useReduxActionWith } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { ContentHeader } from "../../components";
 import {
   enabledLanguageKey,
   languageProfileKey,
@@ -27,34 +25,9 @@ import {
 
 type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
 
-export type UpdateFunctionType = (v: any, k?: string) => void;
-
-export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
-  (v: any, k?: string) => {}
-);
-
-const SettingsContext = React.createContext<Nullable<Settings>>(null);
-
-export const StagedChangesContext = React.createContext<LooseObject>({});
-
-export function useLocalSettings(): Settings {
-  const settings = useContext(SettingsContext);
-  if (process.env.NODE_ENV === "development") {
-    console.assert(
-      settings !== null,
-      "useSettings hook was invoked outside of SettingsProvider!"
-    );
-  }
-  return settings!;
-}
-
-export function useLocalUpdater(): UpdateFunctionType {
-  return useContext(UpdateChangeContext);
-}
-
-export function useStagedValues(): LooseObject {
-  return useContext(StagedChangesContext);
-}
+export const StagedChangesContext = React.createContext<
+  SimpleStateType<LooseObject>
+>([{}, () => {}]);
 
 function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {
@@ -81,7 +54,6 @@ interface Props {
 const SettingsProvider: FunctionComponent<Props> = (props) => {
   const { children, title } = props;
 
-  const [settings] = useSystemSettings();
   const updateStorage = useReduxAction(siteSaveLocalstorage);
 
   const [stagedChange, setChange] = useState<LooseObject>({});
@@ -94,22 +66,6 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   }, []);
 
   const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
-
-  const updateChange = useCallback<UpdateFunctionType>(
-    (v: any, k?: string) => {
-      if (k) {
-        const newChanges = { ...stagedChange };
-        newChanges[k] = v;
-
-        if (process.env.NODE_ENV === "development") {
-          console.log("staged settings", newChanges);
-        }
-
-        setChange(newChanges);
-      }
-    },
-    [stagedChange]
-  );
 
   const saveSettings = useCallback(
     (settings: LooseObject) => {
@@ -174,38 +130,30 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   }, [stagedChange, dispatcher, defaultDispatcher]);
 
   return (
-    <AsyncStateOverlay state={settings}>
-      {(data) => (
-        <Container fluid>
-          <Helmet>
-            <title>{title}</title>
-          </Helmet>
-          <Prompt
-            when={Object.keys(stagedChange).length > 0}
-            message="You have unsaved changes, are you sure you want to leave?"
-          ></Prompt>
-          <ContentHeader>
-            <ContentHeader.Button
-              icon={faSave}
-              updating={updating}
-              disabled={Object.keys(stagedChange).length === 0}
-              onClick={submit}
-            >
-              Save
-            </ContentHeader.Button>
-          </ContentHeader>
-          <SettingsContext.Provider value={data}>
-            <UpdateChangeContext.Provider value={updateChange}>
-              <StagedChangesContext.Provider value={stagedChange}>
-                <Row className="p-4">
-                  <Container>{children}</Container>
-                </Row>
-              </StagedChangesContext.Provider>
-            </UpdateChangeContext.Provider>
-          </SettingsContext.Provider>
-        </Container>
-      )}
-    </AsyncStateOverlay>
+    <Container fluid>
+      <Helmet>
+        <title>{title}</title>
+      </Helmet>
+      <Prompt
+        when={Object.keys(stagedChange).length > 0}
+        message="You have unsaved changes, are you sure you want to leave?"
+      ></Prompt>
+      <ContentHeader>
+        <ContentHeader.Button
+          icon={faSave}
+          updating={updating}
+          disabled={Object.keys(stagedChange).length === 0}
+          onClick={submit}
+        >
+          Save
+        </ContentHeader.Button>
+      </ContentHeader>
+      <StagedChangesContext.Provider value={[stagedChange, setChange]}>
+        <Row className="p-4">
+          <Container>{children}</Container>
+        </Row>
+      </StagedChangesContext.Provider>
+    </Container>
   );
 };
 

@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { log } from "../../utilites/logger";
 
 const ModalContext = React.createContext<[string[], Dispatch<string[]>]>([
   [],
@@ -24,9 +25,7 @@ export function useShowModal() {
   const [payloads, setPayloads] = useContext(PayloadContext);
   return useCallback(
     <T,>(key: string, payload?: T) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`modal ${key} sending payload`, payload);
-      }
+      log("info", `modal ${key} sending payload`, payload);
 
       setKeys([...keys, key]);
       setPayloads([...payloads, payload ?? null]);

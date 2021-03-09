@@ -19,10 +19,10 @@ import {
   Check,
   ColCard,
   Message,
+  StagedChangesContext,
   Text,
-  UpdateChangeContext,
   useLatest,
-  useLocalUpdater,
+  useMultiUpdate,
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
 
@@ -90,22 +90,7 @@ export const ProviderModal: FunctionComponent = () => {
 
   const closeModal = useCloseModal();
 
-  const updateGlobal = useLocalUpdater();
-
-  const updateLocal = useCallback(
-    (v: any, key?: string) => {
-      if (key) {
-        staged[key] = v;
-
-        if (process.env.NODE_ENV === "development") {
-          console.log("modal stage settings", staged);
-        }
-
-        setChange({ ...staged });
-      }
-    },
-    [staged]
-  );
+  const updateGlobal = useMultiUpdate();
 
   const deletePayload = useCallback(() => {
     if (payload && providers) {
@@ -113,7 +98,7 @@ export const ProviderModal: FunctionComponent = () => {
       if (idx !== -1) {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
-        updateGlobal(newProviders, ProviderKey);
+        updateGlobal({ [ProviderKey]: newProviders });
         closeModal();
       }
     }
@@ -121,20 +106,15 @@ export const ProviderModal: FunctionComponent = () => {
 
   const addProvider = useCallback(() => {
     if (info && providers) {
-      const changes = staged;
+      const changes = { ...staged };
 
       // Add this provider if not exist
       if (providers.find((v) => v === info.key) === undefined) {
-        const newProviders = [...providers];
-        newProviders.push(info.key);
+        const newProviders = [...providers, info.key];
         changes[ProviderKey] = newProviders;
       }
 
-      for (const key in changes) {
-        const value = changes[key];
-        updateGlobal(value, key);
-      }
-
+      updateGlobal(changes);
       closeModal();
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
@@ -237,7 +217,7 @@ export const ProviderModal: FunctionComponent = () => {
 
   return (
     <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
-      <UpdateChangeContext.Provider value={updateLocal}>
+      <StagedChangesContext.Provider value={[staged, setChange]}>
         <Container>
           <Row>
             <Col>
@@ -262,7 +242,7 @@ export const ProviderModal: FunctionComponent = () => {
             </Col>
           </Row>
         </Container>
-      </UpdateChangeContext.Provider>
+      </StagedChangesContext.Provider>
     </BaseModal>
   );
 };

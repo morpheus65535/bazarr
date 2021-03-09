@@ -3,40 +3,38 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useState,
 } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-import { badgeUpdateAll } from "../@redux/actions";
+import { badgeUpdateAll, siteChangeSidebar } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
 import { useAutoUpdate } from "../utilites/hooks";
-import {
-  ActiveKeyContext,
-  BadgesContext,
-  CollapseItem,
-  LinkItem,
-} from "./items";
+import { BadgesContext, CollapseItem, LinkItem } from "./items";
 import { SidebarList } from "./list";
 import "./style.scss";
 import { BadgeProvider } from "./types";
+
+export function useSidebarKey() {
+  return useReduxStore((s) => s.site.sidebar);
+}
+
+export function useUpdateSidebar() {
+  return useReduxAction(siteChangeSidebar);
+}
 
 interface Props {
   open?: boolean;
 }
 
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
-  const update = useReduxAction(badgeUpdateAll);
-  useAutoUpdate(update);
+  const updateBadges = useReduxAction(badgeUpdateAll);
+  useAutoUpdate(updateBadges);
 
   const toggle = useContext(SidebarToggleContext);
 
-  const { movies, episodes, providers } = useReduxStore(({ badges }) => ({
-    movies: badges.movies,
-    episodes: badges.episodes,
-    providers: badges.providers,
-  }));
+  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
 
   const badges = useMemo<BadgeProvider>(
     () => ({
@@ -48,27 +46,27 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
         Providers: providers,
       },
     }),
-    [episodes, movies, providers]
+    [movies, episodes, providers]
   );
 
   const history = useHistory();
 
-  const [activeKey, setActiveKey] = useState("");
+  const updateSidebar = useUpdateSidebar();
 
   useEffect(() => {
     const path = history.location.pathname.split("/");
     const len = path.length;
     if (len >= 3) {
-      setActiveKey(path[len - 2]);
+      updateSidebar(path[len - 2]);
     } else {
-      setActiveKey(path[len - 1]);
+      updateSidebar(path[len - 1]);
     }
-  }, [history.location.pathname]);
+  }, [history.location.pathname, updateSidebar]);
 
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];
 
-  if (open && open === true) {
+  if (open === true) {
     cls.push("open");
     overlay.push("open");
   }
@@ -91,11 +89,9 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image alt="brand" src={logo} width="32" height="32"></Image>
         </Container>
-        <ActiveKeyContext.Provider value={[activeKey, setActiveKey]}>
-          <BadgesContext.Provider value={badges}>
-            <ListGroup variant="flush">{sidebarItems}</ListGroup>
-          </BadgesContext.Provider>
-        </ActiveKeyContext.Provider>
+        <BadgesContext.Provider value={badges}>
+          <ListGroup variant="flush">{sidebarItems}</ListGroup>
+        </BadgesContext.Provider>
       </aside>
       <div className={overlay.join(" ")} onClick={toggle}></div>
     </React.Fragment>

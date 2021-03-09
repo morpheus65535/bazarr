@@ -26,6 +26,18 @@ import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
 import Table from "./table";
 
+const download = (item: any, result: SearchResultType) => {
+  item = item as Item.Movie;
+  const { language, hearing_impaired, forced, provider, subtitle } = result;
+  return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
+    language,
+    hi: hearing_impaired,
+    forced,
+    provider,
+    subtitle,
+  });
+};
+
 interface Params {
   id: string;
 }
@@ -128,23 +140,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <ManualSearchModal
         modalKey="manual-search"
         onDownload={update}
-        onSelect={(item, result) => {
-          item = item as Item.Movie;
-          const {
-            language,
-            hearing_impaired,
-            forced,
-            provider,
-            subtitle,
-          } = result;
-          return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
-            language,
-            hi: hearing_impaired,
-            forced,
-            provider,
-            subtitle,
-          });
-        }}
+        onSelect={download}
       ></ManualSearchModal>
     </Container>
   );
