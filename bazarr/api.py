@@ -1116,7 +1116,7 @@ class ProviderEpisodes(Resource):
         episodeInfo = database.execute("SELECT title, path, scene_name FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
-        episodePath = episodeInfo['path']
+        episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         if sceneName is None: sceneName = "None"
 
