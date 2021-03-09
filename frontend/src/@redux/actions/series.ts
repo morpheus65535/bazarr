@@ -14,14 +14,22 @@ const seriesUpdateWantedList = createAsyncAction(
   () => EpisodesApi.wanted()
 );
 
+const seriesUpdateBy = createAsyncAction(SERIES_UPDATE_INFO, (id?: number) =>
+  SeriesApi.series(id)
+);
+
+const episodeUpdateBy = createAsyncAction(
+  SERIES_UPDATE_EPISODE_LIST,
+  (seriesid: number) => EpisodesApi.bySeriesId(seriesid)
+);
+
 export const seriesUpdateWantedAll = createCombineAction(() => [
   seriesUpdateWantedList(),
   badgeUpdateSeries(),
 ]);
 
-export const episodeUpdateBySeriesId = createAsyncAction(
-  SERIES_UPDATE_EPISODE_LIST,
-  (seriesid: number) => EpisodesApi.bySeriesId(seriesid)
+export const episodeUpdateBySeriesId = createCombineAction(
+  (seriesid: number) => [episodeUpdateBy(seriesid), badgeUpdateSeries()]
 );
 
 export const seriesUpdateHistoryList = createAsyncAction(
@@ -29,14 +37,10 @@ export const seriesUpdateHistoryList = createAsyncAction(
   () => EpisodesApi.history()
 );
 
-const seriesUpdateInfo = createAsyncAction(SERIES_UPDATE_INFO, (id?: number) =>
-  SeriesApi.series(id)
-);
-
-export const seriesUpdateInfoAll = createCombineAction((id?: number) => {
-  const actions: any[] = [seriesUpdateInfo(id), badgeUpdateSeries()];
-  if (id !== undefined) {
-    actions.push(episodeUpdateBySeriesId(id));
+export const seriesUpdateInfoAll = createCombineAction((seriesid?: number) => {
+  const actions: any[] = [seriesUpdateBy(seriesid), badgeUpdateSeries()];
+  if (seriesid !== undefined) {
+    actions.push(episodeUpdateBySeriesId(seriesid));
   }
   return actions;
 });
