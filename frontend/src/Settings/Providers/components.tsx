@@ -21,9 +21,8 @@ import {
   Message,
   StagedChangesContext,
   Text,
-  UpdateChangeContext,
   useLatest,
-  useLocalUpdater,
+  useMultiUpdate,
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
 
@@ -91,19 +90,7 @@ export const ProviderModal: FunctionComponent = () => {
 
   const closeModal = useCloseModal();
 
-  const updateGlobal = useLocalUpdater();
-
-  const update = useCallback((v: any, key: string) => {
-    setChange((staged) => {
-      const changes = { ...staged };
-      changes[key] = v;
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("modal stage settings", changes);
-      }
-      return changes;
-    });
-  }, []);
+  const updateGlobal = useMultiUpdate();
 
   const deletePayload = useCallback(() => {
     if (payload && providers) {
@@ -111,7 +98,7 @@ export const ProviderModal: FunctionComponent = () => {
       if (idx !== -1) {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
-        updateGlobal(newProviders, ProviderKey);
+        updateGlobal({ [ProviderKey]: newProviders });
         closeModal();
       }
     }
@@ -119,20 +106,15 @@ export const ProviderModal: FunctionComponent = () => {
 
   const addProvider = useCallback(() => {
     if (info && providers) {
-      const changes = staged;
+      const changes = { ...staged };
 
       // Add this provider if not exist
       if (providers.find((v) => v === info.key) === undefined) {
-        const newProviders = [...providers];
-        newProviders.push(info.key);
+        const newProviders = [...providers, info.key];
         changes[ProviderKey] = newProviders;
       }
 
-      for (const key in changes) {
-        const value = changes[key];
-        updateGlobal(value, key);
-      }
-
+      updateGlobal(changes);
       closeModal();
     }
   }, [info, providers, staged, closeModal, updateGlobal]);
@@ -235,33 +217,31 @@ export const ProviderModal: FunctionComponent = () => {
 
   return (
     <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
-      <StagedChangesContext.Provider value={staged}>
-        <UpdateChangeContext.Provider value={update}>
-          <Container>
-            <Row>
-              <Col>
-                <Selector
-                  disabled={payload !== null}
-                  options={options}
-                  value={info}
-                  label={(v) => v?.name ?? capitalize(v?.key ?? "")}
-                  onChange={onSelect}
-                ></Selector>
-              </Col>
-            </Row>
-            <Row>
-              <Col className="mb-2">
-                <Message>{info?.description}</Message>
-              </Col>
-            </Row>
-            {modification}
-            <Row hidden={info?.message === undefined}>
-              <Col>
-                <Message>{info?.message}</Message>
-              </Col>
-            </Row>
-          </Container>
-        </UpdateChangeContext.Provider>
+      <StagedChangesContext.Provider value={[staged, setChange]}>
+        <Container>
+          <Row>
+            <Col>
+              <Selector
+                disabled={payload !== null}
+                options={options}
+                value={info}
+                label={(v) => v?.name ?? capitalize(v?.key ?? "")}
+                onChange={onSelect}
+              ></Selector>
+            </Col>
+          </Row>
+          <Row>
+            <Col className="mb-2">
+              <Message>{info?.description}</Message>
+            </Col>
+          </Row>
+          {modification}
+          <Row hidden={info?.message === undefined}>
+            <Col>
+              <Message>{info?.message}</Message>
+            </Col>
+          </Row>
+        </Container>
       </StagedChangesContext.Provider>
     </BaseModal>
   );

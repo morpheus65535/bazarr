@@ -1,9 +1,51 @@
 import { isArray, isEqual } from "lodash";
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { useStore } from "react-redux";
 import { useSystemSettings } from "../../@redux/hooks";
 import { mergeArray } from "../../utilites";
-import { useLocalUpdater, useStagedValues } from "./provider";
+import { StagedChangesContext } from "./provider";
+
+export function useStagedValues(): LooseObject {
+  const [values] = useContext(StagedChangesContext);
+  return values;
+}
+
+export function useSingleUpdate() {
+  const [, update] = useContext(StagedChangesContext);
+  return useCallback(
+    (v: any, key: string) => {
+      update((staged) => {
+        const changes = { ...staged };
+        changes[key] = v;
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("stage settings", changes);
+        }
+
+        return changes;
+      });
+    },
+    [update]
+  );
+}
+
+export function useMultiUpdate() {
+  const [, update] = useContext(StagedChangesContext);
+  return useCallback(
+    (obj: LooseObject) => {
+      update((staged) => {
+        const changes = { ...staged, ...obj };
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("stage settings", changes);
+        }
+
+        return changes;
+      });
+    },
+    [update]
+  );
+}
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
@@ -61,7 +103,7 @@ export function useUpdateArray<T>(
   key: string,
   compare?: (one: T, another: T) => boolean
 ) {
-  const update = useLocalUpdater();
+  const update = useSingleUpdate();
   const stagedValue = useStagedValues();
 
   if (compare === undefined) {

@@ -9,7 +9,7 @@ import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useProfiles } from ".";
 import { ActionIcon, SimpleTable, useShowModal } from "../../components";
-import { useLocalUpdater } from "../components";
+import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
 import { anyCutoff } from "./options";
@@ -26,7 +26,7 @@ const Table: FunctionComponent = () => {
     [profiles]
   );
 
-  const update = useLocalUpdater();
+  const update = useSingleUpdate();
 
   const showModal = useShowModal();
 

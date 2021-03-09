@@ -3,7 +3,6 @@ import { merge } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -26,21 +25,9 @@ import {
 
 type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
 
-export type UpdateFunctionType = (v: any, k: string) => void;
-
-export const UpdateChangeContext = React.createContext<UpdateFunctionType>(
-  (v, k) => {}
-);
-
-export const StagedChangesContext = React.createContext<LooseObject>({});
-
-export function useLocalUpdater(): UpdateFunctionType {
-  return useContext(UpdateChangeContext);
-}
-
-export function useStagedValues(): LooseObject {
-  return useContext(StagedChangesContext);
-}
+export const StagedChangesContext = React.createContext<
+  SimpleStateType<LooseObject>
+>([{}, () => {}]);
 
 function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {
@@ -80,17 +67,17 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
 
-  const updateChange = useCallback<UpdateFunctionType>((v: any, k: string) => {
-    setChange((staged) => {
-      const changes = { ...staged };
-      changes[k] = v;
+  // const updateChange = useCallback<UpdateFunctionType>((v: any, k: string) => {
+  //   setChange((staged) => {
+  //     const changes = { ...staged };
+  //     changes[k] = v;
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("staged settings", changes);
-      }
-      return changes;
-    });
-  }, []);
+  //     if (process.env.NODE_ENV === "development") {
+  //       console.log("staged settings", changes);
+  //     }
+  //     return changes;
+  //   });
+  // }, []);
 
   const saveSettings = useCallback(
     (settings: LooseObject) => {
@@ -173,13 +160,11 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
           Save
         </ContentHeader.Button>
       </ContentHeader>
-      <UpdateChangeContext.Provider value={updateChange}>
-        <StagedChangesContext.Provider value={stagedChange}>
-          <Row className="p-4">
-            <Container>{children}</Container>
-          </Row>
-        </StagedChangesContext.Provider>
-      </UpdateChangeContext.Provider>
+      <StagedChangesContext.Provider value={[stagedChange, setChange]}>
+        <Row className="p-4">
+          <Container>{children}</Container>
+        </Row>
+      </StagedChangesContext.Provider>
     </Container>
   );
 };

@@ -7,8 +7,7 @@ import { Column, TableUpdater } from "react-table";
 import { FilesApi } from "../../apis";
 import { ActionIcon, FileBrowser, SimpleTable } from "../../components";
 import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
-import { useLatest } from "./hooks";
-import { useLocalUpdater } from "./provider";
+import { useLatest, useSingleUpdate } from "./hooks";
 
 type SupportType = "sonarr" | "radarr";
 
@@ -34,7 +33,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   const items = useLatest<[string, string][]>(key, isArray);
 
-  const update = useLocalUpdater();
+  const update = useSingleUpdate();
 
   const updateRow = useCallback(
     (newItems: PathMappingItem[]) => {
