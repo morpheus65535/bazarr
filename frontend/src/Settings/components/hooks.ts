@@ -1,8 +1,9 @@
 import { isArray, isEqual } from "lodash";
 import { useCallback, useMemo } from "react";
 import { useStore } from "react-redux";
+import { useSystemSettings } from "../../@redux/hooks";
 import { mergeArray } from "../../utilites";
-import { useLocalSettings, useLocalUpdater, useStagedValues } from "./provider";
+import { useLocalUpdater, useStagedValues } from "./provider";
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
@@ -13,12 +14,17 @@ export function useExtract<T>(
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
-  const settings = useLocalSettings();
+  const [systemSettings] = useSystemSettings();
+  const settings = systemSettings.items;
 
   const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;
+
+    if (settings === undefined) {
+      return value;
+    }
 
     let path = key.split("-");
 
@@ -43,7 +49,7 @@ export function useExtract<T>(
     return value;
   }, [key, settings, validate]);
 
-  if (override) {
+  if (override && settings !== undefined) {
     // TODO: Temporarily override
     return override(settings, store.getState());
   } else {
