@@ -1761,7 +1761,7 @@
                 $("#season_tools_title_span").html(seriesDetails['title'] + ' - Season ' + $(this).data("season"));
 
                 $("#season_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
-                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i>');
+                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i class="far fa-play-circle"></i></a>');
 
                 $('#seasonToolsModal')
                     .modal({
