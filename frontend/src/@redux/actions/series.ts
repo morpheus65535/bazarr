@@ -6,8 +6,8 @@ import {
   SERIES_UPDATE_INFO,
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
-import { badgeUpdateSeries } from "./badges";
 import { createAsyncAction, createCombineAction } from "./factory";
+import { badgeUpdateAll } from "./site";
 
 const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,
@@ -25,11 +25,11 @@ const episodeUpdateBy = createAsyncAction(
 
 export const seriesUpdateWantedAll = createCombineAction(() => [
   seriesUpdateWantedList(),
-  badgeUpdateSeries(),
+  badgeUpdateAll(),
 ]);
 
 export const episodeUpdateBySeriesId = createCombineAction(
-  (seriesid: number) => [episodeUpdateBy(seriesid), badgeUpdateSeries()]
+  (seriesid: number) => [episodeUpdateBy(seriesid), badgeUpdateAll()]
 );
 
 export const seriesUpdateHistoryList = createAsyncAction(
@@ -38,7 +38,7 @@ export const seriesUpdateHistoryList = createAsyncAction(
 );
 
 export const seriesUpdateInfoAll = createCombineAction((seriesid?: number) => {
-  const actions: any[] = [seriesUpdateBy(seriesid), badgeUpdateSeries()];
+  const actions: any[] = [seriesUpdateBy(seriesid), badgeUpdateAll()];
   if (seriesid !== undefined) {
     actions.push(episodeUpdateBySeriesId(seriesid));
   }

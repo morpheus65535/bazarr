@@ -2,6 +2,7 @@ import { Action, handleActions } from "redux-actions";
 import { storage } from "../../@storage/local";
 import {
   SITE_AUTH_SUCCESS,
+  SITE_BADGE_UPDATE,
   SITE_ERROR_ADD,
   SITE_ERROR_REMOVE,
   SITE_ERROR_REMOVE_WITH_TIMESTAMP,
@@ -63,6 +64,12 @@ const reducer = handleActions<ReduxStore.Site, any>(
         sidebar: action.payload,
       };
     },
+    [SITE_BADGE_UPDATE]: {
+      next: (state, action: Action<Badge>) => {
+        return { ...state, badges: action.payload };
+      },
+      throw: (state) => state,
+    },
   },
   {
     initialized: false,
@@ -70,6 +77,11 @@ const reducer = handleActions<ReduxStore.Site, any>(
     pageSize: 50,
     alerts: [],
     sidebar: "",
+    badges: {
+      movies: 0,
+      episodes: 0,
+      providers: 0,
+    },
     ...updateLocalStorage(),
   }
 );

@@ -1,7 +1,9 @@
 type LanguageCodeType = string;
 
 interface Badge {
-  value: number;
+  episodes: number;
+  movies: number;
+  providers: number;
 }
 
 interface Language {

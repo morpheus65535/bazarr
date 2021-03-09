@@ -34,11 +34,7 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
 
   const toggle = useContext(SidebarToggleContext);
 
-  const { movies, episodes, providers } = useReduxStore(({ badges }) => ({
-    movies: badges.movies,
-    episodes: badges.episodes,
-    providers: badges.providers,
-  }));
+  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
 
   const badges = useMemo<BadgeProvider>(
     () => ({
@@ -50,7 +46,7 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
         Providers: providers,
       },
     }),
-    [episodes, movies, providers]
+    [movies, episodes, providers]
   );
 
   const history = useHistory();
@@ -70,7 +66,7 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];
 
-  if (open && open === true) {
+  if (open === true) {
     cls.push("open");
     overlay.push("open");
   }
