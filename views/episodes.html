@@ -698,14 +698,14 @@
                         });
 
                         if (collapsed) {
-                            var chevron_icon = '<i class="fas fa-chevron-circle-right"></i>';
+                            var chevron_icon = '<i style="cursor: pointer;" class="chevron fas fa-chevron-circle-up"></i>';
                         } else {
-                            var chevron_icon = '<i class="fas fa-chevron-circle-down"></i>';
+                            var chevron_icon = '<i style="cursor: pointer;" class="chevron fas fa-chevron-circle-down"></i>';
                         }
 
 
                         return $('<tr/>')
-                            .append('<td colspan=' + ( rows.columns()[0].length - 1 ) + '>Season ' + group + ' ' + chevron_icon + '<td><a href="" class="season_tools badge badge-secondary"  data-season="' + group + '"><i class="fa fa-briefcase"></i></a></td>')
+                            .append('<td colspan=' + ( rows.columns()[0].length - 1 ) + '>Season ' + group + ' ' + chevron_icon + '</td><td><a href="" class="season_tools badge badge-secondary"  data-season="' + group + '"><i class="fa fa-briefcase"></i></a></td>')
                             .attr('data-name', group)
                             .toggleClass('collapsed', collapsed);
                     }
@@ -826,8 +826,8 @@
                 ]
             });
 
-            $('#episodes').on('click', 'tr.dtrg-start', function () {
-                var name = $(this).data('name');
+            $('#episodes').on('click', '.chevron', function () {
+                var name = $(this).closest('tr').data('name');
                 collapsedGroups[name] = !collapsedGroups[name];
                 table.draw(false);
             });
@@ -1761,7 +1761,7 @@
                 $("#season_tools_title_span").html(seriesDetails['title'] + ' - Season ' + $(this).data("season"));
 
                 $("#season_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
-                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i >
+                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i>');
 
                 $('#seasonToolsModal')
                     .modal({
