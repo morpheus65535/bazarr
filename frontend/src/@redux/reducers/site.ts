@@ -8,6 +8,7 @@ import {
   SITE_INITIALIZED,
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
+  SITE_SIDEBAR_UPDATE,
 } from "../constants";
 
 function updateLocalStorage(): Partial<ReduxStore.Site> {
@@ -56,12 +57,19 @@ const reducer = handleActions<ReduxStore.Site, any>(
       const alerts = state.alerts.filter((v) => v.timestamp !== action.payload);
       return { ...state, alerts };
     },
+    [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
+      return {
+        ...state,
+        sidebar: action.payload,
+      };
+    },
   },
   {
     initialized: false,
     auth: true,
     pageSize: 50,
     alerts: [],
+    sidebar: "",
     ...updateLocalStorage(),
   }
 );

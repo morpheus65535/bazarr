@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useContext, useMemo } from "react";
 import { Badge, Collapse, ListGroupItem } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
+import { useSidebarKey, useUpdateSidebar } from ".";
 import { SidebarToggleContext } from "../App";
 import {
   BadgeProvider,
@@ -12,10 +13,6 @@ import {
 } from "./types";
 
 export const BadgesContext = React.createContext<BadgeProvider>({});
-
-export const ActiveKeyContext = React.createContext<
-  [string, React.Dispatch<string>]
->(["", (s: string) => {}]);
 
 export const LinkItem: FunctionComponent<LinkItemType> = ({
   link,
@@ -62,7 +59,8 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
 
   const itemKey = name.toLowerCase();
 
-  const [activeKey, setActiveKey] = useContext(ActiveKeyContext);
+  const sidebarKey = useSidebarKey();
+  const updateSidebar = useUpdateSidebar();
 
   const [badgeValue, childValue] = useMemo<
     [Nullable<number>, Nullable<ChildBadgeProvider>]
@@ -85,7 +83,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
     return [badge, child];
   }, [badges, name]);
 
-  const active = useMemo(() => activeKey === itemKey, [activeKey, itemKey]);
+  const active = useMemo(() => sidebarKey === itemKey, [sidebarKey, itemKey]);
 
   const collapseBoxClass = useMemo(
     () => `sidebar-collapse-box ${active ? "active" : ""}`,
@@ -99,9 +97,9 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
         className="sidebar-button"
         onClick={() => {
           if (active) {
-            setActiveKey("");
+            updateSidebar("");
           } else {
-            setActiveKey(itemKey);
+            updateSidebar(itemKey);
           }
         }}
       >

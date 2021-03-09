@@ -7,6 +7,7 @@ import {
   SITE_INITIALIZED,
   SITE_NEED_AUTH,
   SITE_SAVE_LOCALSTORAGE,
+  SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { createCallbackAction } from "./factory";
 import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
@@ -40,4 +41,9 @@ export const siteRemoveError = createAction(
 export const siteRemoveErrorWithTimestamp = createAction(
   SITE_ERROR_REMOVE_WITH_TIMESTAMP,
   (date: Date) => date
+);
+
+export const siteChangeSidebar = createAction(
+  SITE_SIDEBAR_UPDATE,
+  (id: string) => id
 );

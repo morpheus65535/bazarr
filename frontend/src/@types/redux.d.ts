@@ -18,6 +18,7 @@ namespace ReduxStore {
     auth: boolean;
     pageSize: number;
     alerts: Error[];
+    sidebar: string;
   }
 
   interface Badge {
