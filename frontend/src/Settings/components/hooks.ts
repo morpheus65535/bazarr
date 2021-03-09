@@ -3,6 +3,7 @@ import { useCallback, useContext, useMemo } from "react";
 import { useStore } from "react-redux";
 import { useSystemSettings } from "../../@redux/hooks";
 import { mergeArray } from "../../utilites";
+import { log } from "../../utilites/logger";
 import { StagedChangesContext } from "./provider";
 
 export function useStagedValues(): LooseObject {
@@ -18,9 +19,7 @@ export function useSingleUpdate() {
         const changes = { ...staged };
         changes[key] = v;
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("stage settings", changes);
-        }
+        log("info", "stage settings", changes);
 
         return changes;
       });
@@ -36,9 +35,7 @@ export function useMultiUpdate() {
       update((staged) => {
         const changes = { ...staged, ...obj };
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("stage settings", changes);
-        }
+        log("info", "stage settings", changes);
 
         return changes;
       });

@@ -67,18 +67,6 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
 
   const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
 
-  // const updateChange = useCallback<UpdateFunctionType>((v: any, k: string) => {
-  //   setChange((staged) => {
-  //     const changes = { ...staged };
-  //     changes[k] = v;
-
-  //     if (process.env.NODE_ENV === "development") {
-  //       console.log("staged settings", changes);
-  //     }
-  //     return changes;
-  //   });
-  // }, []);
-
   const saveSettings = useCallback(
     (settings: LooseObject) => {
       submitHooks(settings);
