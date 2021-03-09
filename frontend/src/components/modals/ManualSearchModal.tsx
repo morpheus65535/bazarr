@@ -27,6 +27,7 @@ import {
   AsyncButton,
   BaseModal,
   BaseModalProps,
+  LanguageText,
   LoadingIndicator,
   PageTable,
   usePayload,
@@ -102,13 +103,17 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       {
         accessor: "language",
         Cell: (row) => {
-          let text = row.row.original.language;
-          if (row.row.original.hearing_impaired === "True") {
-            text += ":HI";
-          } else if (row.row.original.forced === "True") {
-            text += ":Forced";
-          }
-          return <Badge variant="secondary">{text}</Badge>;
+          const lang: Language = {
+            code2: row.value,
+            hi: row.row.original.hearing_impaired === "True" ? true : false,
+            forced: row.row.original.forced === "True" ? true : false,
+            name: "",
+          };
+          return (
+            <Badge variant="secondary">
+              <LanguageText text={lang}></LanguageText>
+            </Badge>
+          );
         },
       },
       {
