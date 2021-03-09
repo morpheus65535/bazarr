@@ -61,10 +61,10 @@
             <div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
             <div class="align-bottom text-themecolor small text-center">Search</div>
         </button>
-        <button class="btn btn-outline" id="sync_button">
-                <div><i class="fa fa-play-circle align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
-                <div class="align-bottom text-themecolor small text-center">Sync</div>
-        </button>
+        <button class="btn btn-outline" id="tools_button">
+                <div><i class="fa fa-briefcase align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+                <div class="align-bottom text-themecolor small text-center">Tools</div>
+         </button>
     </div>
 {% endblock bcleft %}
 
@@ -386,6 +386,80 @@
         </div>
     </div>
 
+    <div id="seasonToolsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="season_tools_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="season_tools_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Tools
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="season_tools_span"></span>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="showToolsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="show_tools_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="show_tools_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Tools
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="show_tools_span"></span>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="episodeSubtitleModColorModal" class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -631,7 +705,7 @@
 
 
                         return $('<tr/>')
-                            .append('<td colspan=' + rows.columns()[0].length + '>Season ' + group + ' ' + chevron_icon + '</td>')
+                            .append('<td colspan=' + ( rows.columns()[0].length - 1 ) + '>Season ' + group + ' ' + chevron_icon + '<td><a href="" class="season_tools badge badge-secondary"  data-season="' + group + '"><i class="fa fa-briefcase"></i></a></td>')
                             .attr('data-name', group)
                             .toggleClass('collapsed', collapsed);
                     }
@@ -1061,28 +1135,45 @@
                 DONE: 3
             }
 
-            $('#sync_button').on('click', function (e) {
+            $('#tools_button').on('click', function (e) {
+                $(this).tooltip('dispose');
                 e.preventDefault();
-                const values = {
-                    language: 'eng',
-                    show: seriesDetails['sonarrSeriesId'],
-                    mediaType: 'series'
-                };
-                var cell = $(this).parent()
-                ;
-                $.ajax({
-                    url: "{{ url_for('api.syncallsubtitles') }}",
-                    type: "POST",
-                    dataType: "json",
-                    data: values,
-                    beforeSend: function () {
-                        $('#sync_button').find("i").addClass('fa-spin');
-                    },
-                    complete: function () {
-                        $('#sync_button').find("i").removeClass('fa-spin');
-                    }
-                });
 
+                $("#show_tools_title_span").html(seriesDetails['title']);
+
+                $("#show_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
+                $("#show_tools_span").html('<a href="" class="subtitles_sync_all_show badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-placement="right"  data-toggle="tooltip" id="sync_button_show" title="Sync whole show"><i class="far fa-play-circle"></i></a>');
+
+                $('#showToolsModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+
+
+
+            $('#show_tools_span').on('click', '.subtitles_sync_all_show', function (e) {
+                    e.preventDefault();
+                    const values = {
+                            language: $(this).attr("data-language"),
+                            show: seriesDetails['sonarrSeriesId'],
+                            mediaType: 'series'
+                    };
+                    var cell = $(this).parent()
+                    ;
+                    $.ajax({
+                            url: "{{ url_for('api.syncallsubtitles') }}",
+                            type: "POST",
+                            dataType: "json",
+                            data: values,
+                            beforeSend: function () {
+                                    $('#sync_button_show').find("i").addClass('fa-spin');
+                            },
+                            complete: function () {
+                                    $('#sync_button_show').find("i").removeClass('fa-spin');
+                            }
+                     });
             });
 
             $('#mass_upload_button').on('click', function (e) {
@@ -1640,7 +1731,6 @@
                                 var tools = '';
 
                                 tools += '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title="Sync"><i class="far fa-play-circle"></i></a> ';
-                                tools += '<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + data.language.code3 + '" data-season="' + data.season + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season'  + '" title="Sync whole season"><i class="far fa-play-circle"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_HI" data-toggle="tooltip" data-placement="right" title="Remove HI-tags"><i class="fa fa-deaf"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_tags" data-toggle="tooltip" data-placement="right" title="Remove style tags"><i class="fa fa-code"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "OCR_fixes" data-toggle="tooltip" data-placement="right" title="OCR Fixes"><i class="fa fa-image"></i></a> ';
@@ -1662,6 +1752,45 @@
                     .modal({
                         focus: false
                     });
+            });
+
+            $('#episodes').on('click', '.season_tools', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+
+                $("#season_tools_title_span").html(seriesDetails['title'] + ' - Season ' + $(this).data("season"));
+
+                $("#season_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
+                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i >
+
+                $('#seasonToolsModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+            $('#season_tools_span').on('click', '.subtitles_sync_all', function (e) {
+                    e.preventDefault();
+                    var season =  $(this).attr("data-season");
+                    const values = {
+                            language: $(this).attr("data-language"),
+                            show: seriesDetails['sonarrSeriesId'],
+                            season: season,
+                            mediaType: 'series'
+                    };
+                    var cell = $(this).parent();
+                    $.ajax({
+                            url: "{{ url_for('api.syncallsubtitles') }}",
+                            type: "POST",
+                            dataType: "json",
+                            data: values,
+                            beforeSend: function () {
+                                    $('#'+'sync_button_season').find("i").addClass('fa-spin');
+                            },
+                            complete: function () {
+                                    $('#'+'sync_button_season').find("i").removeClass('fa-spin');
+                            }
+                     });
             });
 
             $('#episode_tools_result').on('click', '.subtitles_sync', function (e) {
@@ -1688,31 +1817,6 @@
                         $('#episodeToolsModal').modal('hide');
                     }
                 });
-            });
-
-            $('#episode_tools_result').on('click', '.subtitles_sync_all', function (e) {
-               e.preventDefault();
-               var season =  $(this).attr("data-season");
-               const values = {
-                   language: $(this).attr("data-language"),
-                   show: seriesDetails['sonarrSeriesId'],
-                   season: season,
-                   mediaType: 'series'
-               };
-               var cell = $(this).parent();
-               $.ajax({
-                   url: "{{ url_for('api.syncallsubtitles') }}",
-                   type: "POST",
-                   dataType: "json",
-                   data: values,
-                   beforeSend: function () {
-                       $('#'+'sync_button_season').find("i").addClass('fa-spin');
-                   },
-                   complete: function () {
-                       $('#'+'sync_button_season').find("i").removeClass('fa-spin');
-                   }
-               });
-
             });
 
             $('#episode_tools_result').on('click', '.subtitles_mod', function (e) {
