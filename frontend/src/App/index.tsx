@@ -1,17 +1,20 @@
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   useCallback,
   useEffect,
   useState,
 } from "react";
-import { Row } from "react-bootstrap";
+import { Alert, Button, Container, Row } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import { bootstrap as ReduxBootstrap } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
-import AlertContainer from "./Alerts";
+import { Reload } from "../utilites";
 import Header from "./Header";
+import NotificationContainer from "./notifications";
 import Router from "./Router";
 
 // Sidebar Toggle
@@ -22,10 +25,7 @@ interface Props {}
 const App: FunctionComponent<Props> = () => {
   const bootstrap = useReduxAction(ReduxBootstrap);
 
-  const { initialized, authState } = useReduxStore((s) => ({
-    initialized: s.site.initialized,
-    authState: s.site.auth,
-  }));
+  const { initialized, auth } = useReduxStore((s) => s.site);
 
   useEffect(() => {
     bootstrap();
@@ -34,17 +34,18 @@ const App: FunctionComponent<Props> = () => {
   const [sidebar, setSidebar] = useState(false);
   const toggleSidebar = useCallback(() => setSidebar(!sidebar), [sidebar]);
 
-  if (!authState) {
+  if (!auth) {
     return <Redirect to="/login"></Redirect>;
   }
 
-  // TODO: Error handling on initializing process
-  if (!initialized) {
+  if (typeof initialized === "boolean" && initialized === false) {
     return (
       <LoadingIndicator>
         <span>Please wait</span>
       </LoadingIndicator>
     );
+  } else if (typeof initialized === "string") {
+    return <InitializationErrorView>{initialized}</InitializationErrorView>;
   }
 
   return (
@@ -58,8 +59,32 @@ const App: FunctionComponent<Props> = () => {
           <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
         </ModalProvider>
       </Row>
-      <AlertContainer></AlertContainer>
+      <NotificationContainer></NotificationContainer>
     </SidebarToggleContext.Provider>
+  );
+};
+
+const InitializationErrorView: FunctionComponent<{
+  children: string;
+}> = ({ children }) => {
+  return (
+    <Container className="my-3">
+      <Alert
+        className="d-flex flex-nowrap justify-content-between align-items-center"
+        variant="danger"
+      >
+        <div>
+          <FontAwesomeIcon
+            className="mr-2"
+            icon={faExclamationTriangle}
+          ></FontAwesomeIcon>
+          <span>{children}</span>
+        </div>
+        <Button variant="outline-danger" onClick={Reload}>
+          Reload
+        </Button>
+      </Alert>
+    </Container>
   );
 };
 

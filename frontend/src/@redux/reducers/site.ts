@@ -3,11 +3,12 @@ import { storage } from "../../@storage/local";
 import {
   SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
-  SITE_ERROR_ADD,
-  SITE_ERROR_REMOVE,
-  SITE_ERROR_REMOVE_WITH_TIMESTAMP,
   SITE_INITIALIZED,
+  SITE_INITIALIZE_FAILED,
   SITE_NEED_AUTH,
+  SITE_NOTIFICATIONS_ADD,
+  SITE_NOTIFICATIONS_REMOVE,
+  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -32,6 +33,10 @@ const reducer = handleActions<ReduxStore.Site, any>(
       ...state,
       initialized: true,
     }),
+    [SITE_INITIALIZE_FAILED]: (state) => ({
+      ...state,
+      initialized: "An Error Occurred When Initializing Bazarr UI",
+    }),
     [SITE_SAVE_LOCALSTORAGE]: (state, action: Action<LooseObject>) => {
       const settings = action.payload;
       for (const key in settings) {
@@ -43,20 +48,25 @@ const reducer = handleActions<ReduxStore.Site, any>(
         ...updateLocalStorage(),
       };
     },
-    [SITE_ERROR_ADD]: (state, action: Action<ReduxStore.Error>) => {
+    [SITE_NOTIFICATIONS_ADD]: (
+      state,
+      action: Action<ReduxStore.Notification>
+    ) => {
       const alerts = [
-        ...state.alerts.filter((v) => v.id !== action.payload.id),
+        ...state.notifications.filter((v) => v.id !== action.payload.id),
         action.payload,
       ];
-      return { ...state, alerts };
+      return { ...state, notifications: alerts };
     },
-    [SITE_ERROR_REMOVE]: (state, action: Action<string>) => {
-      const alerts = state.alerts.filter((v) => v.id !== action.payload);
-      return { ...state, alerts };
+    [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<string>) => {
+      const alerts = state.notifications.filter((v) => v.id !== action.payload);
+      return { ...state, notifications: alerts };
     },
-    [SITE_ERROR_REMOVE_WITH_TIMESTAMP]: (state, action: Action<Date>) => {
-      const alerts = state.alerts.filter((v) => v.timestamp !== action.payload);
-      return { ...state, alerts };
+    [SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP]: (state, action: Action<Date>) => {
+      const alerts = state.notifications.filter(
+        (v) => v.timestamp !== action.payload
+      );
+      return { ...state, notifications: alerts };
     },
     [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
       return {
@@ -75,7 +85,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
     initialized: false,
     auth: true,
     pageSize: 50,
-    alerts: [],
+    notifications: [],
     sidebar: "",
     badges: {
       movies: 0,

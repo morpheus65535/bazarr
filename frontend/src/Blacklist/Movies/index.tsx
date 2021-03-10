@@ -23,6 +23,7 @@ const BlacklistMoviesView: FunctionComponent<Props> = () => {
           <ContentHeader>
             <ContentHeader.AsyncButton
               icon={faTrash}
+              disabled={data.length === 0}
               promise={() => MoviesApi.deleteBlacklist(true)}
               onSuccess={update}
             >

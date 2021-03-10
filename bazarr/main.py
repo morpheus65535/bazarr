@@ -59,30 +59,29 @@ update_notifier()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def catch_all(path):
-    apikey = settings.auth.apikey
+def catch_all():
+    return render_template("index.html")
+
+
+@app.context_processor
+def template_variable_processor():
+    updated = False
+    try:
+        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
+    except:
+        pass
+
     inject = dict()
-    inject["apiKey"] = apikey
+    inject["apiKey"] = settings.auth.apikey
     inject["baseUrl"] = base_url
     inject["canUpdate"] = not args.no_update
-    inject["hasUpdate"] = False
+    inject["hasUpdate"] = updated != '0'
 
     template_url = base_url
     if not template_url.endswith("/"):
         template_url += "/"
 
-    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
-
-
-@app.context_processor
-def template_variable_processor():
-    updated = None
-    try:
-        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
-    except:
-        pass
-    finally:
-        return dict(settings=settings, args=args, updated=updated)
+    return dict(BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
 
 

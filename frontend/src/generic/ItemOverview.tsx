@@ -47,11 +47,13 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       )) ?? [])
     );
 
-    badges.push(
-      <DetailBadge key="tags" icon={faTags} desc="Tags">
-        {item.tags.join("|")}
-      </DetailBadge>
-    );
+    if (item.tags.length > 0) {
+      badges.push(
+        <DetailBadge key="tags" icon={faTags} desc="Tags">
+          {item.tags.join("|")}
+        </DetailBadge>
+      );
+    }
 
     return badges;
   }, [details, item.path, item.tags]);

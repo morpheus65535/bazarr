@@ -18,4 +18,4 @@ type PromiseCreator = (...args: any[]) => Promise<any>;
 type AvaliableCreator = (...args: any[]) => AvaliableType<any>[];
 type AsyncActionCreator = (...args: any[]) => AsyncActionDispatcher<any>[];
 
-type ActionSuccessCallback = () => Action<any> | void;
+type ActionCallback = () => Action<any> | void;

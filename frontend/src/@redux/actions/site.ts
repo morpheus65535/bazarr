@@ -3,11 +3,12 @@ import { BadgesApi } from "../../apis";
 import {
   SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
-  SITE_ERROR_ADD,
-  SITE_ERROR_REMOVE,
-  SITE_ERROR_REMOVE_WITH_TIMESTAMP,
   SITE_INITIALIZED,
+  SITE_INITIALIZE_FAILED,
   SITE_NEED_AUTH,
+  SITE_NOTIFICATIONS_ADD,
+  SITE_NOTIFICATIONS_REMOVE,
+  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -16,8 +17,11 @@ import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 
 export const bootstrap = createCallbackAction(
   () => [systemUpdateLanguagesAll(), systemUpdateSettings()],
-  () => siteInitialized()
+  () => siteInitialized(),
+  () => siteInitializeFailed()
 );
+
+const siteInitializeFailed = createAction(SITE_INITIALIZE_FAILED);
 
 const siteInitialized = createAction(SITE_INITIALIZED);
 
@@ -35,17 +39,17 @@ export const siteSaveLocalstorage = createAction(
 );
 
 export const siteAddError = createAction(
-  SITE_ERROR_ADD,
-  (err: ReduxStore.Error) => err
+  SITE_NOTIFICATIONS_ADD,
+  (err: ReduxStore.Notification) => err
 );
 
 export const siteRemoveError = createAction(
-  SITE_ERROR_REMOVE,
+  SITE_NOTIFICATIONS_REMOVE,
   (id: string) => id
 );
 
-export const siteRemoveErrorWithTimestamp = createAction(
-  SITE_ERROR_REMOVE_WITH_TIMESTAMP,
+export const siteRemoveErrorByTimestamp = createAction(
+  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   (date: Date) => date
 );
 
