@@ -124,7 +124,11 @@ const BaseItemView: FunctionComponent<Props> = ({ items, ...shared }) => {
                 </ContentHeader.Group>
               </React.Fragment>
             ) : (
-              <ContentHeader.Button icon={faList} onClick={toggleMode}>
+              <ContentHeader.Button
+                disabled={data.length === 0}
+                icon={faList}
+                onClick={toggleMode}
+              >
                 Mass Edit
               </ContentHeader.Button>
             )}
