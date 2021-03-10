@@ -10,7 +10,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { useSerieBy } from "../../@redux/hooks";
+import { useEpisodesBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
@@ -20,6 +20,7 @@ import {
   useShowModal,
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
+import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -33,6 +34,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const id = Number.parseInt(match.params.id);
   const [serie, update] = useSerieBy(id);
   const item = serie.items;
+
+  const [episodes, updateEpisodes] = useEpisodesBy(serie.items?.sonarrSeriesId);
+  useAutoUpdate(updateEpisodes);
+
+  const avaliable = episodes.items.length !== 0;
 
   const details = useMemo(
     () => [
@@ -63,6 +69,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ContentHeader.Group pos="start">
           <ContentHeader.AsyncButton
             icon={faSync}
+            disabled={!avaliable}
             promise={() =>
               SeriesApi.action({ action: "scan-disk", seriesid: id })
             }
@@ -76,14 +83,22 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
             onSuccess={update}
-            disabled={item.episodeFileCount === 0 || item.profileId === null}
+            disabled={
+              item.episodeFileCount === 0 ||
+              item.profileId === null ||
+              !avaliable
+            }
           >
             Search
           </ContentHeader.AsyncButton>
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={item.episodeFileCount === 0 || item.profileId === null}
+            disabled={
+              item.episodeFileCount === 0 ||
+              item.profileId === null ||
+              !avaliable
+            }
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", item)}
           >
@@ -101,7 +116,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table series={item}></Table>
+        <Table episodes={episodes} update={updateEpisodes}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"

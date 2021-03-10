@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions, TableUpdater } from "react-table";
-import { useEpisodesBy } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionIcon,
@@ -20,11 +19,11 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { useAutoUpdate } from "../../utilites/hooks";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  series: Item.Series;
+  episodes: AsyncState<Item.Episode[]>;
+  update: () => void;
 }
 
 const download = (item: any, result: SearchResultType) => {
@@ -43,11 +42,7 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ series }) => {
-  const id = series.sonarrSeriesId;
-  const [episodes, update] = useEpisodesBy(id);
-  useAutoUpdate(update);
-
+const Table: FunctionComponent<Props> = ({ episodes, update }) => {
   const showModal = useShowModal();
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
