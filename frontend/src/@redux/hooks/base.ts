@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createCallbackAction } from "../actions/factory";
-import { ActionSuccessCallback, AsyncActionDispatcher } from "../types";
+import { ActionCallback, AsyncActionDispatcher } from "../types";
 
 // function use
 export function useReduxStore<T extends (store: ReduxStore) => any>(
@@ -20,7 +20,7 @@ export function useReduxAction<T extends (...args: any[]) => void>(action: T) {
 
 export function useReduxActionWith<
   T extends (...args: any[]) => AsyncActionDispatcher<any>
->(action: T, success: ActionSuccessCallback) {
+>(action: T, success: ActionCallback) {
   const dispatch = useDispatch();
   return useCallback(
     (...args: Parameters<T>) => {

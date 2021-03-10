@@ -1,6 +1,6 @@
 import {
+  ActionCallback,
   ActionDispatcher,
-  ActionSuccessCallback,
   AsyncActionCreator,
   AsyncActionDispatcher,
   AvaliableCreator,
@@ -21,7 +21,7 @@ function asyncActionFactory<T extends PromiseCreator>(
       },
     });
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       promise(...args)
         .then((val) => {
           dispatch({
@@ -42,8 +42,7 @@ function asyncActionFactory<T extends PromiseCreator>(
               item: err,
             },
           });
-          // Temporaily disabled
-          // reject(err);
+          reject(err);
         });
     });
   };
@@ -90,7 +89,8 @@ export function createAsyncCombineAction<T extends AsyncActionCreator>(fn: T) {
 
 export function callbackActionFactory(
   dispatchers: AsyncActionDispatcher<any>[],
-  success: ActionSuccessCallback
+  success: ActionCallback,
+  error?: ActionCallback
 ): ActionDispatcher<any> {
   return (dispatch) => {
     const promises = dispatchers.map((v) => v(dispatch));
@@ -102,14 +102,19 @@ export function callbackActionFactory(
         }
       })
       .catch(() => {
-        //TODO: Handle this later
+        const action = error && error();
+        if (action !== undefined) {
+          dispatch(action);
+        }
       });
   };
 }
 
 export function createCallbackAction<T extends AsyncActionCreator>(
   fn: T,
-  success: ActionSuccessCallback
+  success: ActionCallback,
+  error?: ActionCallback
 ) {
-  return (...args: Parameters<T>) => callbackActionFactory(fn(args), success);
+  return (...args: Parameters<T>) =>
+    callbackActionFactory(fn(args), success, error);
 }
