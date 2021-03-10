@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { Alert, Button, Container } from "react-bootstrap";
 import { LoadingIndicator } from ".";
-import { useDispatchError } from "../@redux/hooks/site";
+import { useNotification } from "../@redux/hooks/site";
 import { Selector, SelectorProps } from "./inputs";
 
 interface AsyncStateOverlayProps<T> {
@@ -34,7 +34,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     window.location.reload();
   }, []);
 
-  const onError = useDispatchError("async-overlay");
+  const onError = useNotification("async-overlay");
 
   useEffect(() => {
     if (!state.updating && state.error !== undefined && !missing) {

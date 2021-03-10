@@ -1,14 +1,14 @@
 import { useCallback } from "react";
-import { siteAddError, siteRemoveErrorWithTimestamp } from "../actions";
+import { siteAddError, siteRemoveErrorByTimestamp } from "../actions";
 import { useReduxAction } from "./base";
 
-export function useDispatchError(id: string, sec: number = 5) {
+export function useNotification(id: string, sec: number = 5) {
   const add = useReduxAction(siteAddError);
-  const remove = useReduxAction(siteRemoveErrorWithTimestamp);
+  const remove = useReduxAction(siteRemoveErrorByTimestamp);
 
   return useCallback(
-    (err: Omit<ReduxStore.Error, "id" | "timestamp">) => {
-      const error: ReduxStore.Error = {
+    (err: Omit<ReduxStore.Notification, "id" | "timestamp">) => {
+      const error: ReduxStore.Notification = {
         ...err,
         id,
         timestamp: new Date(),

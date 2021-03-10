@@ -6,7 +6,7 @@ interface ReduxStore {
 }
 
 namespace ReduxStore {
-  interface Error {
+  interface Notification {
     type: "error" | "warning";
     message: string;
     timestamp: Date;
@@ -16,7 +16,7 @@ namespace ReduxStore {
     initialized: boolean;
     auth: boolean;
     pageSize: number;
-    alerts: Error[];
+    notifications: Notification[];
     sidebar: string;
     badges: Badge;
   }

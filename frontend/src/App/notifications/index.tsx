@@ -7,38 +7,43 @@ import { siteRemoveError } from "../../@redux/actions";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import "./style.scss";
 
-function useAlertList() {
-  return useReduxStore((s) => s.site.alerts);
+function useNotificationList() {
+  return useReduxStore((s) => s.site.notifications);
 }
 
-function useRemoveAlert() {
+function useRemoveNotification() {
   return useReduxAction(siteRemoveError);
 }
 
-export interface AlertContainerProps {}
+export interface NotificationContainerProps {}
 
-const AlertContainer: FunctionComponent<AlertContainerProps> = () => {
-  const list = useAlertList();
+const NotificationContainer: FunctionComponent<NotificationContainerProps> = () => {
+  const list = useNotificationList();
 
-  const alerts = useMemo(
+  const items = useMemo(
     () =>
-      list.map((v, idx) => <MessageHolder key={idx} {...v}></MessageHolder>),
+      list.map((v, idx) => (
+        <NotificationToast key={idx} {...v}></NotificationToast>
+      )),
     [list]
   );
   return (
     <div className="alert-container">
-      <div className="toast-container">{alerts}</div>
+      <div className="toast-container">{items}</div>
     </div>
   );
 };
 
-type MessageHolderProps = ReduxStore.Error & {};
+type MessageHolderProps = ReduxStore.Notification & {};
 
-const MessageHolder: FunctionComponent<MessageHolderProps> = (props) => {
+const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   const { message, id, type } = props;
-  const removeAlert = useRemoveAlert();
+  const removeNotification = useRemoveNotification();
 
-  const remove = useCallback(() => removeAlert(id), [removeAlert, id]);
+  const remove = useCallback(() => removeNotification(id), [
+    removeNotification,
+    id,
+  ]);
 
   return (
     <Toast onClose={remove} animation={false}>
@@ -54,4 +59,4 @@ const MessageHolder: FunctionComponent<MessageHolderProps> = (props) => {
   );
 };
 
-export default AlertContainer;
+export default NotificationContainer;
