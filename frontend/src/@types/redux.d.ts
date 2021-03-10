@@ -13,7 +13,8 @@ namespace ReduxStore {
     id: string;
   }
   interface Site {
-    initialized: boolean;
+    // Initialization state or error message
+    initialized: boolean | string;
     auth: boolean;
     pageSize: number;
     notifications: Notification[];

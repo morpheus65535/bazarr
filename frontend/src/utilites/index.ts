@@ -77,5 +77,9 @@ export function mergeArray<T>(
   return list;
 }
 
+export function Reload() {
+  window.location.reload();
+}
+
 export * from "./hooks";
 export * from "./validate";

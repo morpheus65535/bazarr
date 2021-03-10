@@ -4,6 +4,7 @@ import {
   SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
   SITE_INITIALIZED,
+  SITE_INITIALIZE_FAILED,
   SITE_NEED_AUTH,
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
@@ -16,8 +17,11 @@ import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 
 export const bootstrap = createCallbackAction(
   () => [systemUpdateLanguagesAll(), systemUpdateSettings()],
-  () => siteInitialized()
+  () => siteInitialized(),
+  () => siteInitializeFailed()
 );
+
+const siteInitializeFailed = createAction(SITE_INITIALIZE_FAILED);
 
 const siteInitialized = createAction(SITE_INITIALIZED);
 

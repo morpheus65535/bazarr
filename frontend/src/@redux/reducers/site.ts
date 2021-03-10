@@ -4,6 +4,7 @@ import {
   SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
   SITE_INITIALIZED,
+  SITE_INITIALIZE_FAILED,
   SITE_NEED_AUTH,
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
@@ -31,6 +32,10 @@ const reducer = handleActions<ReduxStore.Site, any>(
     [SITE_INITIALIZED]: (state) => ({
       ...state,
       initialized: true,
+    }),
+    [SITE_INITIALIZE_FAILED]: (state) => ({
+      ...state,
+      initialized: "An Error Occurred When Initializing Bazarr UI",
     }),
     [SITE_SAVE_LOCALSTORAGE]: (state, action: Action<LooseObject>) => {
       const settings = action.payload;

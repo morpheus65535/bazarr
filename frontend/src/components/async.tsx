@@ -1,15 +1,10 @@
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Alert, Button, Container } from "react-bootstrap";
 import { LoadingIndicator } from ".";
 import { useNotification } from "../@redux/hooks/site";
+import { Reload } from "../utilites";
 import { Selector, SelectorProps } from "./inputs";
 
 interface AsyncStateOverlayProps<T> {
@@ -29,10 +24,6 @@ function defaultExist(item: any) {
 export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const { exist, state, children } = props;
   const missing = exist ? !exist(state.items) : !defaultExist(state.items);
-
-  const reload = useCallback(() => {
-    window.location.reload();
-  }, []);
 
   const onError = useNotification("async-overlay");
 
@@ -64,7 +55,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
             <p>{state.error.message}</p>
             <hr></hr>
             <div className="d-flex justify-content-end">
-              <Button variant="outline-danger" onClick={reload}>
+              <Button variant="outline-danger" onClick={Reload}>
                 Reload
               </Button>
             </div>
