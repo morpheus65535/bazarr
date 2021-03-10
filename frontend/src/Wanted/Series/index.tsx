@@ -22,6 +22,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.AsyncButton
+              disabled={data.length === 0}
               promise={() => SeriesApi.action({ action: "search-wanted" })}
               onSuccess={update}
               icon={faSearch}
