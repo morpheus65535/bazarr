@@ -18,7 +18,7 @@ from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSub
 from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.cache import region
 from subliminal_patch.score import framerate_equal
 from subzero.language import Language
@@ -26,6 +26,23 @@ from subzero.language import Language
 from ..exceptions import TooManyRequests, APIThrottled
 
 logger = logging.getLogger(__name__)
+
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Superman & Lois": "Superman and Lois",
+                                           }, True)
+
+
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {
+                                           }, True)
 
 
 class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
@@ -58,14 +75,14 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
         # episode
         if isinstance(video, Episode) and self.movie_kind == 'episode':
             # series
-            if video.series and (sanitize(self.series_name) in (
-                    sanitize(name) for name in [video.series] + video.alternative_series)):
+            if fix_tv_naming(video.series) and (sanitize(self.series_name) in (
+                    sanitize(name) for name in [fix_tv_naming(video.series)] + video.alternative_series)):
                 matches.add('series')
         # movie
         elif isinstance(video, Movie) and self.movie_kind == 'movie':
             # title
-            if video.title and (sanitize(self.movie_name) in (
-                    sanitize(name) for name in [video.title] + video.alternative_titles)):
+            if fix_movie_naming(video.title) and (sanitize(self.movie_name) in (
+                    sanitize(name) for name in [fix_movie_naming(video.title)] + video.alternative_titles)):
                 matches.add('title')
 
         sub_fps = None
