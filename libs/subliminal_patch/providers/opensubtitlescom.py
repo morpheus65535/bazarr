@@ -17,30 +17,12 @@ from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
-from subliminal_patch.utils import fix_inconsistent_naming
 from subliminal.cache import region
 from guessit import guessit
 
 logger = logging.getLogger(__name__)
 
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
-
-
-def fix_tv_naming(title):
-    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
-
-    :param str title: original title.
-    :return: new title.
-    :rtype: str
-
-    """
-    return fix_inconsistent_naming(title, {"Superman & Lois": "Superman and Lois",
-                                           }, True)
-
-
-def fix_movie_naming(title):
-    return fix_inconsistent_naming(title, {
-                                           }, True)
 
 
 class OpenSubtitlesComSubtitle(Subtitle):
@@ -221,7 +203,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         else:
             # loop over results
             for result in results_dict:
-                if fix_tv_naming(title).lower() == result['attributes']['title'].lower() and \
+                if title.lower() == result['attributes']['title'].lower() and \
                         (not self.video.year or self.video.year == int(result['attributes']['year'])):
                     title_id = result['id']
                     break
