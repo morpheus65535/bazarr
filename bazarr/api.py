@@ -353,11 +353,9 @@ class BadgesSeries(Resource):
 class Languages(Resource):
     @authenticate
     def get(self):
-        enabled = request.args.get('enabled')
-        if enabled.lower() in ['true', '1']:
-            result = database.execute("SELECT * FROM table_settings_languages WHERE enabled=1 ORDER BY name")
-        else:
-            result = database.execute("SELECT * FROM table_settings_languages ORDER BY name")
+        result = database.execute("SELECT name, code2, enabled FROM table_settings_languages ORDER BY name")
+        for item in result:
+            item['enabled'] = item['enabled'] == 1
         return jsonify(result)
 
 

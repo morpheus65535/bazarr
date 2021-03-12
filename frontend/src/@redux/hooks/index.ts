@@ -9,7 +9,6 @@ import {
   seriesUpdateHistoryList,
   seriesUpdateInfoAll,
   seriesUpdateWantedAll,
-  systemUpdateEnabledLanguages,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
   systemUpdateSettingsAll,
@@ -45,9 +44,7 @@ export function useProfileBy(id: number | null | undefined) {
 }
 
 export function useLanguages(enabled: boolean = false) {
-  const action = useReduxAction(
-    enabled ? systemUpdateEnabledLanguages : systemUpdateLanguages
-  );
+  const action = useReduxAction(systemUpdateLanguages);
   const items = useReduxStore((s) =>
     enabled ? s.system.enabledLanguage.items : s.system.languages.items
   );

@@ -2,7 +2,6 @@ import { Action } from "redux-actions";
 import { SystemApi } from "../../apis";
 import {
   SYSTEM_RUN_TASK,
-  SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
@@ -15,18 +14,12 @@ import { createAsyncAction, createAsyncCombineAction } from "./factory";
 
 export const systemUpdateLanguagesAll = createAsyncCombineAction(() => [
   systemUpdateLanguages(),
-  systemUpdateEnabledLanguages(),
   systemUpdateLanguagesProfiles(),
 ]);
 
 export const systemUpdateLanguages = createAsyncAction(
   SYSTEM_UPDATE_LANGUAGES_LIST,
-  () => SystemApi.languages(false)
-);
-
-export const systemUpdateEnabledLanguages = createAsyncAction(
-  SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
-  () => SystemApi.languages(true)
+  () => SystemApi.languages()
 );
 
 export const systemUpdateLanguagesProfiles = createAsyncAction(
@@ -65,6 +58,5 @@ export const systemUpdateSettings = createAsyncAction(
 
 export const systemUpdateSettingsAll = createAsyncCombineAction(() => [
   systemUpdateSettings(),
-  systemUpdateLanguagesProfiles(),
-  systemUpdateEnabledLanguages(),
+  systemUpdateLanguagesAll(),
 ]);
