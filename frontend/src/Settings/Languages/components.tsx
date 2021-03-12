@@ -13,23 +13,10 @@ export const LanguageSelector: FunctionComponent<
   const enabled = useEnabledLanguages();
   const update = useSingleUpdate();
 
-  // TODO: Performance
-  const enabledValue = useMemo(
-    () =>
-      enabled.flatMap((v) => {
-        const item = options.find((inn) => inn.name === v.name);
-        if (item) {
-          return [item];
-        } else {
-          return [];
-        }
-      }),
-    [enabled, options]
-  );
   return (
     <CLanguageSelector
       multiple
-      defaultValue={enabledValue}
+      defaultValue={enabled}
       options={options}
       onChange={(val) => {
         update(val, settingKey);
