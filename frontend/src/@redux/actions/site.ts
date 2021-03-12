@@ -9,6 +9,7 @@ import {
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
   SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
+  SITE_OFFLINE_UPDATE,
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -56,4 +57,9 @@ export const siteRemoveErrorByTimestamp = createAction(
 export const siteChangeSidebar = createAction(
   SITE_SIDEBAR_UPDATE,
   (id: string) => id
+);
+
+export const siteUpdateOffline = createAction(
+  SITE_OFFLINE_UPDATE,
+  (state: boolean) => state
 );
