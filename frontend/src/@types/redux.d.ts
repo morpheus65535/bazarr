@@ -20,6 +20,7 @@ namespace ReduxStore {
     notifications: Notification[];
     sidebar: string;
     badges: Badge;
+    offline: boolean;
   }
 
   interface System {

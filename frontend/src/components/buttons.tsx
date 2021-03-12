@@ -25,14 +25,13 @@ export const ActionBadge: FunctionComponent<{
   );
 };
 
-interface ActionIconProps {
-  loading?: boolean;
+interface ActionIconProps extends ActionIconItemProps {
   disabled?: boolean;
   destructive?: boolean;
   variant?: string;
-  icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
-  children?: string;
+  className?: string;
+  size?: ButtonProps["size"];
 }
 
 export const ActionIcon: FunctionComponent<ActionIconProps> = ({
@@ -40,14 +39,16 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = ({
   destructive,
   disabled,
   variant,
+  className,
+  size,
   ...other
 }) => {
   return (
     <Button
       disabled={other.loading || disabled}
-      size="sm"
+      size={size}
       variant={variant ?? "light"}
-      className="text-nowrap"
+      className={`text-nowrap ${className ?? ""}`}
       onClick={onClick}
     >
       <ActionIconItem {...other}></ActionIconItem>
@@ -55,9 +56,17 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = ({
   );
 };
 
-export const ActionIconItem: FunctionComponent<
-  Omit<ActionIconProps, "onClick" | "destructive" | "disabled">
-> = ({ icon, children, loading }) => {
+interface ActionIconItemProps {
+  loading?: boolean;
+  icon: IconDefinition;
+  children?: string;
+}
+
+export const ActionIconItem: FunctionComponent<ActionIconItemProps> = ({
+  icon,
+  children,
+  loading,
+}) => {
   return (
     <React.Fragment>
       <FontAwesomeIcon

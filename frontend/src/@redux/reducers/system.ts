@@ -2,7 +2,6 @@ import { Action, handleActions } from "redux-actions";
 import {
   PROVIDER_UPDATE_LIST,
   SYSTEM_RUN_TASK,
-  SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
@@ -16,16 +15,15 @@ import { mapToAsyncState } from "./mapper";
 const reducer = handleActions<ReduxStore.System, any>(
   {
     [SYSTEM_UPDATE_LANGUAGES_LIST]: (state, action) => {
-      const newState = {
-        ...state,
-        languages: mapToAsyncState<Array<Language>>(action, []),
+      const languages = mapToAsyncState<Array<ApiLanguage>>(action, []);
+      const enabledLanguage: AsyncState<ApiLanguage[]> = {
+        ...languages,
+        items: languages.items.filter((v) => v.enabled),
       };
-      return newState;
-    },
-    [SYSTEM_UPDATE_ENABLED_LANGUAGES_LIST]: (state, action) => {
       const newState = {
         ...state,
-        enabledLanguage: mapToAsyncState<Array<Language>>(action, []),
+        languages,
+        enabledLanguage,
       };
       return newState;
     },

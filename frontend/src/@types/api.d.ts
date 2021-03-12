@@ -6,12 +6,15 @@ interface Badge {
   providers: number;
 }
 
-interface Language {
+interface ApiLanguage {
   code2: LanguageCodeType;
   name: string;
   hi?: boolean;
   forced?: boolean;
+  enabled: boolean;
 }
+
+type Language = Omit<ApiLanguage, "enabled">;
 
 namespace Profile {
   interface Item {

@@ -1,6 +1,17 @@
-import { faBars, faHeart, faUser } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faHeart,
+  faNetworkWired,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useContext } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import {
   Button,
   Col,
@@ -14,9 +25,10 @@ import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { useMovies, useSeries, useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
+import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
-import { SearchBar, SearchResult } from "../components";
+import { ActionIcon, SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
 import "./header.scss";
 
@@ -86,6 +98,50 @@ const Header: FunctionComponent<Props> = () => {
     [searchMovies, searchSeries]
   );
 
+  const offline = useIsOffline();
+
+  const dropdown = useMemo(
+    () => (
+      <Dropdown alignRight>
+        <Dropdown.Toggle className="dropdown-hidden" as={Button}>
+          <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          <Dropdown.Item
+            onClick={() => {
+              SystemApi.restart();
+            }}
+          >
+            Restart
+          </Dropdown.Item>
+          <Dropdown.Item
+            onClick={() => {
+              SystemApi.shutdown();
+            }}
+          >
+            Shutdown
+          </Dropdown.Item>
+          <Dropdown.Divider hidden={!canLogout}></Dropdown.Divider>
+          <Dropdown.Item
+            hidden={!canLogout}
+            onClick={() => {
+              SystemApi.logout().then(() => setNeedAuth());
+            }}
+          >
+            Logout
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    ),
+    [canLogout, setNeedAuth]
+  );
+
+  const [reconnecting, setReconnect] = useState(false);
+  const reconnect = useCallback(() => {
+    setReconnect(true);
+    SystemApi.status().finally(() => setReconnect(false));
+  }, []);
+
   const baseUrl = useBaseUrl();
 
   return (
@@ -110,36 +166,19 @@ const Header: FunctionComponent<Props> = () => {
             >
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
             </Button>
-            <Dropdown alignRight>
-              <Dropdown.Toggle className="dropdown-hidden" as={Button}>
-                <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item
-                  onClick={() => {
-                    SystemApi.restart();
-                  }}
-                >
-                  Restart
-                </Dropdown.Item>
-                <Dropdown.Item
-                  onClick={() => {
-                    SystemApi.shutdown();
-                  }}
-                >
-                  Shutdown
-                </Dropdown.Item>
-                <Dropdown.Divider hidden={!canLogout}></Dropdown.Divider>
-                <Dropdown.Item
-                  hidden={!canLogout}
-                  onClick={() => {
-                    SystemApi.logout().then(() => setNeedAuth());
-                  }}
-                >
-                  Logout
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            {offline ? (
+              <ActionIcon
+                loading={reconnecting}
+                className="ml-2"
+                variant="warning"
+                icon={faNetworkWired}
+                onClick={reconnect}
+              >
+                Reconnect
+              </ActionIcon>
+            ) : (
+              dropdown
+            )}
           </Col>
         </Row>
       </Container>

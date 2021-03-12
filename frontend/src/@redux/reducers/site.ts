@@ -9,6 +9,7 @@ import {
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
   SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
+  SITE_OFFLINE_UPDATE,
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -80,6 +81,9 @@ const reducer = handleActions<ReduxStore.Site, any>(
       },
       throw: (state) => state,
     },
+    [SITE_OFFLINE_UPDATE]: (state, action: Action<boolean>) => {
+      return { ...state, offline: action.payload };
+    },
   },
   {
     initialized: false,
@@ -92,6 +96,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
       episodes: 0,
       providers: 0,
     },
+    offline: false,
     ...updateLocalStorage(),
   }
 );

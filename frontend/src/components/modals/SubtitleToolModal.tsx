@@ -480,6 +480,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
               onSelect={(k) => k && submitAction(k, sub)}
             >
               <ActionIcon
+                size="sm"
                 loading={isActive}
                 disabled={updating}
                 icon={faPlay}

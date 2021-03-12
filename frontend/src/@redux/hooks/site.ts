@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { siteAddError, siteRemoveErrorByTimestamp } from "../actions";
-import { useReduxAction } from "./base";
+import { useReduxAction, useReduxStore } from "./base";
 
 export function useNotification(id: string, sec: number = 5) {
   const add = useReduxAction(siteAddError);
@@ -18,4 +18,8 @@ export function useNotification(id: string, sec: number = 5) {
     },
     [add, remove, sec, id]
   );
+}
+
+export function useIsOffline() {
+  return useReduxStore((s) => s.site.offline);
 }

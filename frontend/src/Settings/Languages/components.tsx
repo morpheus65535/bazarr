@@ -12,6 +12,7 @@ export const LanguageSelector: FunctionComponent<
 > = ({ settingKey, options }) => {
   const enabled = useEnabledLanguages();
   const update = useSingleUpdate();
+
   return (
     <CLanguageSelector
       multiple
