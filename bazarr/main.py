@@ -59,7 +59,7 @@ update_notifier()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def catch_all():
+def catch_all(path):
     return render_template("index.html")
 
 
@@ -87,6 +87,7 @@ def template_variable_processor():
 
 @app.route('/bazarr.log')
 def download_log():
+
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
 
 
