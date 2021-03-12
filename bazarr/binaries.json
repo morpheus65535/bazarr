@@ -112,6 +112,30 @@
     "url": "https://github.com/morpheus65535/bazarr-binaries/raw/master/bin/MacOSX/x86_64/unrar/unrar"
   },
   {
+    "system": "MacOSX",
+    "machine": "arm64",
+    "directory": "ffmpeg",
+    "name": "ffmpeg",
+    "checksum": "af1723314ba5ca9c70ef35dc8b5c2260",
+    "url": "https://github.com/morpheus65535/bazarr-binaries/raw/master/bin/MacOSX/x86_64/ffmpeg/ffmpeg"
+  },
+  {
+    "system": "MacOSX",
+    "machine": "arm64",
+    "directory": "ffmpeg",
+    "name": "ffprobe",
+    "checksum": "d81468cebd6630450d2f5a17720b4504",
+    "url": "https://github.com/morpheus65535/bazarr-binaries/raw/master/bin/MacOSX/x86_64/ffmpeg/ffprobe"
+  },
+  {
+    "system": "MacOSX",
+    "machine": "arm64",
+    "directory": "unrar",
+    "name": "unrar",
+    "checksum": "8d5b3d5d6be2c14b74b02767430ade9c",
+    "url": "https://github.com/morpheus65535/bazarr-binaries/raw/master/bin/MacOSX/x86_64/unrar/unrar"
+  },
+  {
     "system": "Windows",
     "machine": "i386",
     "directory": "ffmpeg",
