@@ -18,6 +18,7 @@ function asyncActionFactory<T extends PromiseCreator>(
       type,
       payload: {
         loading: true,
+        parameters: args,
       },
     });
 
@@ -29,6 +30,7 @@ function asyncActionFactory<T extends PromiseCreator>(
             payload: {
               loading: false,
               item: val,
+              parameters: args,
             },
           });
           resolve();
@@ -40,6 +42,7 @@ function asyncActionFactory<T extends PromiseCreator>(
             payload: {
               loading: false,
               item: err,
+              parameters: args,
             },
           });
           reject(err);
