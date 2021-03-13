@@ -117,9 +117,12 @@ db_upgrade()
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
 
+# Overwrite the subliminal dogpile.cache region with a key mangler
 subliminal.region = make_region(
     key_mangler=sha1_mangle_key
-).configure(
+)
+# Now, configure it
+subliminal.region.configure(
     'subzero.cache.file',
     expiration_time=datetime.timedelta(days=30),
     arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir}
