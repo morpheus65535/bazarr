@@ -1,11 +1,14 @@
 import {
+  faCheck,
   faCircleNotch,
   faExclamationTriangle,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
   PropsWithChildren,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -15,6 +18,12 @@ import { LoadingIndicator } from ".";
 import { useNotification } from "../@redux/hooks/site";
 import { Reload } from "../utilites";
 import { Selector, SelectorProps } from "./inputs";
+
+enum RequestState {
+  Success,
+  Error,
+  Invalid,
+}
 
 interface AsyncStateOverlayProps<T> {
   state: AsyncState<T>;
@@ -155,7 +164,7 @@ export function AsyncButton<T>(
   props: PropsWithChildren<AsyncButtonProps<T>>
 ): JSX.Element {
   const {
-    children,
+    children: propChildren,
     className,
     promise,
     onSuccess: success,
@@ -167,32 +176,68 @@ export function AsyncButton<T>(
 
   const [loading, setLoading] = useState(false);
 
+  const [state, setState] = useState(RequestState.Invalid);
+
+  const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
+
+  useEffect(() => {
+    if (state !== RequestState.Invalid) {
+      const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
+      setHandle(handle);
+    }
+
+    // Clear timeout handle so we wont leak memory
+    return () => {
+      setHandle((handle) => {
+        if (handle) {
+          clearTimeout(handle);
+        }
+        return null;
+      });
+    };
+  }, [state]);
+
+  const click = useCallback(() => {
+    const result = promise();
+
+    if (result) {
+      setLoading(true);
+      onChange && onChange(true);
+      result
+        .then((res) => {
+          setState(RequestState.Success);
+          success && success(res);
+        })
+        .catch(() => {
+          setState(RequestState.Error);
+          error && error();
+        })
+        .finally(() => {
+          setLoading(false);
+          onChange && onChange(false);
+        });
+    }
+  }, [error, onChange, promise, success]);
+
+  let children = propChildren;
+  if (loading) {
+    children = <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>;
+  }
+
+  if (state === RequestState.Success) {
+    children = <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>;
+  } else if (state === RequestState.Error) {
+    children = <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>;
+  }
+
   return (
     <Button
       className={className}
-      disabled={loading || disabled}
+      disabled={loading || disabled || state !== RequestState.Invalid}
       {...button}
-      onClick={() => {
-        const result = promise();
-
-        if (result) {
-          setLoading(true);
-          onChange && onChange(true);
-          result
-            .then(success)
-            .catch(error)
-            .finally(() => {
-              setLoading(false);
-              onChange && onChange(false);
-            });
-        }
-      }}
+      onClick={click}
     >
-      {loading ? (
-        <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>
-      ) : (
-        children
-      )}
+      {children}
     </Button>
   );
 }
