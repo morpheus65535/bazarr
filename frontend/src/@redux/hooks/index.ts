@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { isNonNullable } from "../../utilites";
+import { isNullable } from "../../utilites";
 import {
   episodeUpdateBySeriesId,
   movieUpdateBlacklist,
@@ -96,7 +96,7 @@ export function useSeries() {
   const series = useMemo<AsyncState<Item.Series[]>>(
     () => ({
       ...items,
-      items: items.items.filter((v) => isNonNullable(v)) as Item.Series[],
+      items: items.items.filter((v) => !isNullable(v)) as Item.Series[],
     }),
     [items]
   );
@@ -154,7 +154,7 @@ export function useMovies() {
   const movies = useMemo<AsyncState<Item.Movie[]>>(
     () => ({
       ...items,
-      items: items.items.filter((v) => isNonNullable(v)) as Item.Movie[],
+      items: items.items.filter((v) => !isNullable(v)) as Item.Movie[],
     }),
     [items]
   );

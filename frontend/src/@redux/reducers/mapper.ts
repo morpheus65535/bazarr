@@ -1,4 +1,4 @@
-import { isNonNullable, mergeArray } from "../../utilites";
+import { isNullable, mergeArray } from "../../utilites";
 import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
@@ -55,7 +55,7 @@ export function updateAsyncDataList<T, ID extends keyof T>(
       // TODO: Performance
       // Remove duplicate item
       result.filter((v) => {
-        if (isNonNullable(v)) {
+        if (!isNullable(v)) {
           return data.find((inn) => inn[match] === v[match]) === undefined;
         } else {
           return true;

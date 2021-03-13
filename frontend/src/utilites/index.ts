@@ -1,5 +1,5 @@
 import { Dispatch } from "react";
-import { isMovie, isNonNullable, isSeries } from "./validate";
+import { isMovie, isNullable, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -65,11 +65,11 @@ export function mergeArray<T>(
   comparer: Comparer<NonNullable<T>>
 ) {
   const list = [...olds];
-  const newList = news.filter((v) => isNonNullable(v)) as NonNullable<T>[];
+  const newList = news.filter((v) => !isNullable(v)) as NonNullable<T>[];
   // Performance
   newList.forEach((v) => {
     const idx = list.findIndex((n) => {
-      if (isNonNullable(n)) {
+      if (!isNullable(n)) {
         return comparer(n, v);
       } else {
         return false;
