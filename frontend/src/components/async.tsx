@@ -181,7 +181,7 @@ export function AsyncButton<T>(
   const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
 
   useEffect(() => {
-    if (state !== RequestState.Invalid) {
+    if (state === RequestState.Error) {
       const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
       setHandle(handle);
     }
@@ -198,6 +198,10 @@ export function AsyncButton<T>(
   }, [state]);
 
   const click = useCallback(() => {
+    if (state !== RequestState.Invalid) {
+      return;
+    }
+
     const result = promise();
 
     if (result) {
@@ -217,7 +221,7 @@ export function AsyncButton<T>(
           onChange && onChange(false);
         });
     }
-  }, [error, onChange, promise, success]);
+  }, [error, onChange, promise, success, state]);
 
   let children = propChildren;
   if (loading) {
