@@ -90,9 +90,14 @@ export function useProfileItems(profile?: Profile.Languages) {
   );
 }
 
-export function useSeries() {
+export function useRawSeries() {
   const action = useReduxAction(seriesUpdateInfoAll);
   const items = useReduxStore((d) => d.series.seriesList);
+  return stateBuilder(items, action);
+}
+
+export function useSeries() {
+  const [items, action] = useRawSeries();
   const series = useMemo<AsyncState<Item.Series[]>>(
     () => ({
       ...items,
@@ -147,10 +152,14 @@ export function useEpisodesBy(seriesId?: number) {
   return stateBuilder(state, callback);
 }
 
-export function useMovies() {
+export function useRawMovies() {
   const action = useReduxAction(movieUpdateInfoAll);
-
   const items = useReduxStore((d) => d.movie.movieList);
+  return stateBuilder(items, action);
+}
+
+export function useMovies() {
+  const [items, action] = useRawMovies();
   const movies = useMemo<AsyncState<Item.Movie[]>>(
     () => ({
       ...items,
