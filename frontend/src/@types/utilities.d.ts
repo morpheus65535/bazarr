@@ -21,6 +21,11 @@ interface DataWrapper<T> {
   data: T;
 }
 
+interface AsyncDataWrapper<T> {
+  data: T[];
+  total: number;
+}
+
 type PromiseType<T> = T extends Promise<infer D> ? D : never;
 
 type Override<T, U> = T & Omit<U, keyof T>;

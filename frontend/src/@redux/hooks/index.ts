@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { isNonNullable } from "../../utilites";
 import {
   episodeUpdateBySeriesId,
   movieUpdateBlacklist,
@@ -92,15 +93,22 @@ export function useProfileItems(profile?: Profile.Languages) {
 export function useSeries() {
   const action = useReduxAction(seriesUpdateInfoAll);
   const items = useReduxStore((d) => d.series.seriesList);
-  return stateBuilder(items, action);
+  const series = useMemo<AsyncState<Item.Series[]>>(
+    () => ({
+      ...items,
+      items: items.items.filter((v) => isNonNullable(v)) as Item.Series[],
+    }),
+    [items]
+  );
+  return stateBuilder(series, action);
 }
 
 export function useSerieBy(id?: number) {
   const [series, updateSeries] = useSeries();
-  const item = useMemo<AsyncState<Item.Series | undefined>>(
+  const item = useMemo<AsyncState<Item.Series | null>>(
     () => ({
       ...series,
-      items: series.items.find((v) => v.sonarrSeriesId === id),
+      items: series.items.find((v) => v?.sonarrSeriesId === id) ?? null,
     }),
     [id, series]
   );
@@ -143,16 +151,23 @@ export function useMovies() {
   const action = useReduxAction(movieUpdateInfoAll);
 
   const items = useReduxStore((d) => d.movie.movieList);
+  const movies = useMemo<AsyncState<Item.Movie[]>>(
+    () => ({
+      ...items,
+      items: items.items.filter((v) => isNonNullable(v)) as Item.Movie[],
+    }),
+    [items]
+  );
 
-  return stateBuilder(items, action);
+  return stateBuilder(movies, action);
 }
 
 export function useMovieBy(id?: number) {
   const [movies, updateMovies] = useMovies();
-  const item = useMemo<AsyncState<Item.Movie | undefined>>(
+  const item = useMemo<AsyncState<Item.Movie | null>>(
     () => ({
       ...movies,
-      items: movies.items.find((v) => v.radarrId === id),
+      items: movies.items.find((v) => v?.radarrId === id) ?? null,
     }),
     [id, movies]
   );
@@ -176,7 +191,9 @@ export function useWantedMovies() {
   const [movies, action] = useMovies();
 
   const items = useMemo<AsyncState<Item.Movie[]>>(() => {
-    const items = movies.items.filter((v) => v.missing_subtitles.length !== 0);
+    const items = movies.items.filter(
+      (v) => v !== null && v.missing_subtitles.length !== 0
+    ) as Item.Movie[];
     return {
       ...movies,
       items,
