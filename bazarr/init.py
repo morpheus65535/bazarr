@@ -11,9 +11,7 @@ from get_args import args
 from logger import configure_logging
 from helper import path_mappings
 
-from dogpile.cache import make_region
 from dogpile.cache.region import register_backend as register_cache_backend
-from dogpile.cache.util import sha1_mangle_key
 import subliminal
 import datetime
 
@@ -116,10 +114,7 @@ db_upgrade()
 
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
-
-subliminal.region = make_region(
-    key_mangler=sha1_mangle_key
-).configure(
+subliminal.region.configure(
     'subzero.cache.file',
     expiration_time=datetime.timedelta(days=30),
     arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir}
