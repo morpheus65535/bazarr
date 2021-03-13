@@ -221,7 +221,7 @@ export function AsyncButton<T>(
           onChange && onChange(false);
         });
     }
-  }, [error, onChange, promise, success]);
+  }, [error, onChange, promise, success, state]);
 
   let children = propChildren;
   if (loading) {
