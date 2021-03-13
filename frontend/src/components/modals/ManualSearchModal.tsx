@@ -213,7 +213,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   const footer = useMemo(
     () => (
-      <Button variant="danger" disabled={!start} onClick={reset}>
+      <Button variant="light" disabled={!start} onClick={reset}>
         Reset
       </Button>
     ),
