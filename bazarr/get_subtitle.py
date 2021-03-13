@@ -502,6 +502,14 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    if hi == 'True':
+        subtitle.language.hi = True
+    else:
+        subtitle.language.hi = False
+    if forced == 'True':
+        subtitle.language.forced = True
+    else:
+        subtitle.language.forced = False
     subtitle.mods = get_array_from(settings.general.subzero_mods)
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
