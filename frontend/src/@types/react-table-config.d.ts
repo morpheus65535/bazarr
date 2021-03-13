@@ -54,7 +54,9 @@ declare module "react-table" {
       UseRowSelectOptions<D>,
       // UseRowStateOptions<D>,
       UseSortByOptions<D>,
-      CustomTableProps<D> {}
+      CustomTableProps<D> {
+    data: readonly D[];
+  }
 
   export interface Hooks<
     D extends Record<string, unknown> = Record<string, unknown>

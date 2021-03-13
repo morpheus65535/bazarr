@@ -36,7 +36,7 @@ namespace ReduxStore {
   }
 
   interface EpisodeState {
-    [key: number]: Array<Item.Episode>;
+    [key: number]: readonly Item.Episode[];
   }
 
   interface Series {

@@ -1,6 +1,6 @@
 type ValueOf<D> = D[keyof D];
 
-type Unpacked<D> = D extends any[] ? D[number] : D;
+type Unpacked<D> = D extends any[] | readonly any[] ? D[number] : D;
 
 type Nullable<D> = D | null;
 

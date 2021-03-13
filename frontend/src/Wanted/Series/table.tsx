@@ -8,7 +8,7 @@ import { EpisodesApi } from "../../apis";
 import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
-  wanted: Wanted.Episode[];
+  wanted: readonly Wanted.Episode[];
   update: () => void;
 }
 

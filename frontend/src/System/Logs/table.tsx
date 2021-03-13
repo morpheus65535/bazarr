@@ -12,7 +12,7 @@ import { Column } from "react-table";
 import { DateFormatter, PageTable } from "../../components";
 
 interface Props {
-  logs: System.Log[];
+  logs: readonly System.Log[];
 }
 
 function mapTypeToIcon(type: System.LogType): IconDefinition {

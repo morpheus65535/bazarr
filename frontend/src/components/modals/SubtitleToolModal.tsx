@@ -28,7 +28,6 @@ import {
   Form,
   InputGroup,
 } from "react-bootstrap";
-import { useSelector } from "react-redux";
 import { Column } from "react-table";
 import {
   ActionButton,
@@ -41,6 +40,7 @@ import {
   usePayload,
   useShowModal,
 } from "..";
+import { useReduxStore } from "../../@redux/hooks/base";
 import { SubtitlesApi } from "../../apis";
 import { colorOptions } from "../../Settings/Subtitles/options";
 import { isMovie, submodProcessColor } from "../../utilites";
@@ -333,9 +333,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
 
-  const languages = useSelector<ReduxStore, Language[]>(
-    (s) => s.system.enabledLanguage.items
-  );
+  const languages = useReduxStore((s) => s.system.enabledLanguage.items);
 
   const avaliable = useMemo(
     () =>

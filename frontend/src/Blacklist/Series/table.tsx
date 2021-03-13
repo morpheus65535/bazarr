@@ -7,7 +7,7 @@ import { EpisodesApi } from "../../apis";
 import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
-  blacklist: Blacklist.Episode[];
+  blacklist: readonly Blacklist.Episode[];
   update: () => void;
 }
 

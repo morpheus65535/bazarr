@@ -7,7 +7,7 @@ import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
-  blacklist: Blacklist.Movie[];
+  blacklist: readonly Blacklist.Movie[];
   update: () => void;
 }
 

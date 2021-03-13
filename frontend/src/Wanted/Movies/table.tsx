@@ -8,7 +8,7 @@ import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
-  wanted: Item.Movie[];
+  wanted: readonly Item.Movie[];
   update: () => void;
 }
 

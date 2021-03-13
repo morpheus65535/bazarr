@@ -3,7 +3,7 @@ import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
   action: AsyncAction<Payload>,
-  defVal: Payload
+  defVal: Readonly<Payload>
 ): AsyncState<Payload> {
   if (action.payload.loading) {
     return {
