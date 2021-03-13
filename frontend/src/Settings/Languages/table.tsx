@@ -8,7 +8,7 @@ import React, {
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useProfiles } from ".";
-import { ActionIcon, SimpleTable, useShowModal } from "../../components";
+import { ActionButton, SimpleTable, useShowModal } from "../../components";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
@@ -98,16 +98,16 @@ const Table: FunctionComponent = () => {
 
           return (
             <ButtonGroup>
-              <ActionIcon
+              <ActionButton
                 icon={faWrench}
                 onClick={() => {
                   update && update(row, profile);
                 }}
-              ></ActionIcon>
-              <ActionIcon
+              ></ActionButton>
+              <ActionButton
                 icon={faTrash}
                 onClick={() => update && update(row)}
-              ></ActionIcon>
+              ></ActionButton>
             </ButtonGroup>
           );
         },

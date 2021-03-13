@@ -31,8 +31,9 @@ import {
 import { useSelector } from "react-redux";
 import { Column } from "react-table";
 import {
-  ActionIcon,
-  ActionIconItem,
+  ActionButton,
+  ActionButtonItem,
+  AsyncButton,
   LanguageSelector,
   LanguageText,
   Selector,
@@ -43,7 +44,6 @@ import {
 import { SubtitlesApi } from "../../apis";
 import { colorOptions } from "../../Settings/Subtitles/options";
 import { isMovie, submodProcessColor } from "../../utilites";
-import { AsyncButton } from "../buttons";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./provider";
 import { avaliableTranslation } from "./toolOptions";
@@ -479,7 +479,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
               as={ButtonGroup}
               onSelect={(k) => k && submitAction(k, sub)}
             >
-              <ActionIcon
+              <ActionButton
                 size="sm"
                 loading={isActive}
                 disabled={updating}
@@ -487,7 +487,7 @@ const Table: FunctionComponent<Props> = ({ item }) => {
                 onClick={() => syncSubtitle(sub)}
               >
                 Sync
-              </ActionIcon>
+              </ActionButton>
               <Dropdown.Toggle
                 disabled={updating}
                 split
@@ -497,44 +497,54 @@ const Table: FunctionComponent<Props> = ({ item }) => {
               ></Dropdown.Toggle>
               <Dropdown.Menu>
                 <Dropdown.Item eventKey="remove_HI">
-                  <ActionIconItem icon={faDeaf}>Remove HI Tags</ActionIconItem>
+                  <ActionButtonItem icon={faDeaf}>
+                    Remove HI Tags
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item eventKey="remove_tags">
-                  <ActionIconItem icon={faCode}>
+                  <ActionButtonItem icon={faCode}>
                     Remove Style Tags
-                  </ActionIconItem>
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item eventKey="OCR_fixes">
-                  <ActionIconItem icon={faImage}>OCR Fixes</ActionIconItem>
+                  <ActionButtonItem icon={faImage}>OCR Fixes</ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item eventKey="common">
-                  <ActionIconItem icon={faMagic}>Common Fixes</ActionIconItem>
+                  <ActionButtonItem icon={faMagic}>
+                    Common Fixes
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item eventKey="fix_uppercase">
-                  <ActionIconItem icon={faTextHeight}>
+                  <ActionButtonItem icon={faTextHeight}>
                     Fix Uppercase
-                  </ActionIconItem>
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item eventKey="reverse_rtl">
-                  <ActionIconItem icon={faExchangeAlt}>
+                  <ActionButtonItem icon={faExchangeAlt}>
                     Reverse RTL
-                  </ActionIconItem>
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item onSelect={() => showModal("add-color", sub)}>
-                  <ActionIconItem icon={faPaintBrush}>Add Color</ActionIconItem>
+                  <ActionButtonItem icon={faPaintBrush}>
+                    Add Color
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item
                   onSelect={() => showModal("change-frame-rate", sub)}
                 >
-                  <ActionIconItem icon={faFilm}>
+                  <ActionButtonItem icon={faFilm}>
                     Change Frame Rate
-                  </ActionIconItem>
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item onSelect={() => showModal("adjust-times", sub)}>
-                  <ActionIconItem icon={faClock}>Adjust Times</ActionIconItem>
+                  <ActionButtonItem icon={faClock}>
+                    Adjust Times
+                  </ActionButtonItem>
                 </Dropdown.Item>
                 <Dropdown.Item onSelect={() => showModal("translate-sub", sub)}>
-                  <ActionIconItem icon={faLanguage}>Translate</ActionIconItem>
+                  <ActionButtonItem icon={faLanguage}>
+                    Translate
+                  </ActionButtonItem>
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>

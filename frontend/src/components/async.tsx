@@ -1,7 +1,16 @@
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCircleNotch,
+  faExclamationTriangle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Container } from "react-bootstrap";
+import React, {
+  FunctionComponent,
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Alert, Button, ButtonProps, Container } from "react-bootstrap";
 import { LoadingIndicator } from ".";
 import { useNotification } from "../@redux/hooks/site";
 import { Reload } from "../utilites";
@@ -125,5 +134,65 @@ export function AsyncSelector<
       label={label}
       {...selector}
     ></Selector>
+  );
+}
+
+interface AsyncButtonProps<T> {
+  as?: ButtonProps["as"];
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+
+  className?: string;
+  disabled?: boolean;
+  onChange?: (v: boolean) => void;
+
+  promise: () => Promise<T> | null;
+  onSuccess?: (result: T) => void;
+  error?: () => void;
+}
+
+export function AsyncButton<T>(
+  props: PropsWithChildren<AsyncButtonProps<T>>
+): JSX.Element {
+  const {
+    children,
+    className,
+    promise,
+    onSuccess: success,
+    error,
+    onChange,
+    disabled,
+    ...button
+  } = props;
+
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <Button
+      className={className}
+      disabled={loading || disabled}
+      {...button}
+      onClick={() => {
+        const result = promise();
+
+        if (result) {
+          setLoading(true);
+          onChange && onChange(true);
+          result
+            .then(success)
+            .catch(error)
+            .finally(() => {
+              setLoading(false);
+              onChange && onChange(false);
+            });
+        }
+      }}
+    >
+      {loading ? (
+        <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>
+      ) : (
+        children
+      )}
+    </Button>
   );
 }

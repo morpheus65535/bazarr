@@ -10,7 +10,7 @@ import { Button, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useEnabledLanguages } from ".";
 import {
-  ActionIcon,
+  ActionButton,
   BaseModal,
   BaseModalProps,
   LanguageSelector,
@@ -216,10 +216,10 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         accessor: "id",
         Cell: ({ row, update }) => {
           return (
-            <ActionIcon
+            <ActionButton
               icon={faTrash}
               onClick={() => update && update(row)}
-            ></ActionIcon>
+            ></ActionButton>
           );
         },
       },

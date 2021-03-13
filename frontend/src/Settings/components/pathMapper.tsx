@@ -5,7 +5,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { FilesApi } from "../../apis";
-import { ActionIcon, FileBrowser, SimpleTable } from "../../components";
+import { ActionButton, FileBrowser, SimpleTable } from "../../components";
 import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
 import { useLatest, useSingleUpdate } from "./hooks";
 
@@ -123,12 +123,12 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         id: "action",
         accessor: "to",
         Cell: ({ row, update }) => (
-          <ActionIcon
+          <ActionButton
             icon={faTrash}
             onClick={() => {
               update && update(row);
             }}
-          ></ActionIcon>
+          ></ActionButton>
         ),
       },
     ],
