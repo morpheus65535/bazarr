@@ -17,6 +17,7 @@ import {
 import { useReduxAction, useReduxActionWith } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
+import { log } from "../../utilites/logger";
 import {
   enabledLanguageKey,
   languageProfileKey,
@@ -71,7 +72,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     (settings: LooseObject) => {
       submitHooks(settings);
       setUpdating(true);
-      console.log("submitting settings", settings);
+      log("info", "submitting settings", settings);
       SystemApi.setSettings(settings).finally(update);
     },
     [update]
