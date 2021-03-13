@@ -28,7 +28,7 @@ import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
-import { ActionIcon, SearchBar, SearchResult } from "../components";
+import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
 import "./header.scss";
 
@@ -167,7 +167,7 @@ const Header: FunctionComponent<Props> = () => {
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
             </Button>
             {offline ? (
-              <ActionIcon
+              <ActionButton
                 loading={reconnecting}
                 className="ml-2"
                 variant="warning"
@@ -175,7 +175,7 @@ const Header: FunctionComponent<Props> = () => {
                 onClick={reconnect}
               >
                 Reconnect
-              </ActionIcon>
+              </ActionButton>
             ) : (
               dropdown
             )}

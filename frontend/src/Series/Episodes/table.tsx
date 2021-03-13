@@ -11,7 +11,7 @@ import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions, TableUpdater } from "react-table";
 import { ProvidersApi } from "../../apis";
 import {
-  ActionIcon,
+  ActionButton,
   AsyncStateOverlay,
   EpisodeHistoryModal,
   GroupTable,
@@ -133,24 +133,24 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
         Cell: ({ row, update }) => {
           return (
             <ButtonGroup>
-              <ActionIcon
+              <ActionButton
                 icon={faUser}
                 onClick={() => {
                   update && update(row, "manual-search");
                 }}
-              ></ActionIcon>
-              <ActionIcon
+              ></ActionButton>
+              <ActionButton
                 icon={faHistory}
                 onClick={() => {
                   update && update(row, "history");
                 }}
-              ></ActionIcon>
-              <ActionIcon
+              ></ActionButton>
+              <ActionButton
                 icon={faBriefcase}
                 onClick={() => {
                   update && update(row, "tools");
                 }}
-              ></ActionIcon>
+              ></ActionButton>
             </ButtonGroup>
           );
         },
