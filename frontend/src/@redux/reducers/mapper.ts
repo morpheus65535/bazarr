@@ -1,9 +1,9 @@
-import { mergeArray } from "../../utilites";
+import { isNullable, mergeArray } from "../../utilites";
 import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
   action: AsyncAction<Payload>,
-  defVal: Payload
+  defVal: Readonly<Payload>
 ): AsyncState<Payload> {
   if (action.payload.loading) {
     return {
@@ -21,6 +21,58 @@ export function mapToAsyncState<Payload>(
       updating: false,
       error: undefined,
       items: action.payload.item as Payload,
+    };
+  }
+}
+
+export function updateAsyncDataList<T, ID extends keyof T>(
+  action: AsyncAction<AsyncDataWrapper<T>>,
+  state: AsyncState<Nullable<T>[]>,
+  match: ID
+) {
+  if (action.payload.loading) {
+    return {
+      ...state,
+      updating: true,
+    };
+  } else if (action.error !== undefined) {
+    return {
+      ...state,
+      updating: false,
+      error: action.payload.item as Error,
+    };
+  } else {
+    const payload = action.payload.item as AsyncDataWrapper<T>;
+    const [start, length] = action.payload.parameters;
+    const { data, total } = payload;
+
+    let result: Nullable<T>[] = [];
+
+    const list = state.items;
+
+    if (typeof start === "number" && typeof length === "number") {
+      result = [...list];
+      // TODO: Performance
+      // Remove duplicate item
+      result.filter((v) => {
+        if (!isNullable(v)) {
+          return data.find((inn) => inn[match] === v[match]) === undefined;
+        } else {
+          return true;
+        }
+      });
+      const fillCount = total - result.length;
+      if (fillCount > 0) {
+        result.push(...Array(fillCount).fill(null));
+      }
+      result.splice(start, result.length, ...data);
+    } else {
+      result = mergeArray(list, data, (l, r) => l[match] === r[match]);
+    }
+
+    return {
+      updating: false,
+      items: result,
     };
   }
 }

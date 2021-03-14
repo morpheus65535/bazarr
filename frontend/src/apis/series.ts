@@ -5,11 +5,23 @@ class SeriesApi extends BaseApi {
     super("/series");
   }
 
-  async series(id?: number): Promise<Array<Item.Series>> {
-    return new Promise<Array<Item.Series>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Item.Series>>>("", { seriesid: id })
+  async series(id?: number) {
+    return new Promise<AsyncDataWrapper<Item.Series>>((resolve, reject) => {
+      this.get<AsyncDataWrapper<Item.Series>>("", { seriesid: id })
         .then((result) => {
-          resolve(result.data.data);
+          resolve(result.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async seriesBy(start: number, length: number) {
+    return new Promise<AsyncDataWrapper<Item.Series>>((resolve, reject) => {
+      this.get<AsyncDataWrapper<Item.Series>>("", { start, length })
+        .then((result) => {
+          resolve(result.data);
         })
         .catch((reason) => {
           reject(reason);

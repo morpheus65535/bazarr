@@ -1,13 +1,8 @@
-import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { TableOptions, TableUpdater } from "react-table";
+import React, { FunctionComponent, useCallback } from "react";
+import { TableUpdater } from "react-table";
 import { ExtendItemComparer, SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import {
-  ItemEditorModal,
-  PageTable,
-  SelectTable,
-  useShowModal,
-} from "../../components";
+import { ItemEditorModal, PageTable, useShowModal } from "../../components";
 import { getExtendItemId, useMergeArray } from "../../utilites";
 
 interface Props extends SharedProps {
@@ -40,26 +35,17 @@ const Table: FunctionComponent<Props> = ({
 
   const [profiles] = useLanguageProfiles();
 
-  const sharedOptions: TableOptions<Item.Base> = useMemo(
-    () => ({
-      columns,
-      data,
-      loose: [profiles],
-    }),
-    [columns, data, profiles]
-  );
-
   return (
     <React.Fragment>
-      {editMode ? (
-        <SelectTable {...sharedOptions} onSelect={select}></SelectTable>
-      ) : (
-        <PageTable
-          {...sharedOptions}
-          emptyText={`No ${name} Found`}
-          update={updateRow}
-        ></PageTable>
-      )}
+      <PageTable
+        columns={columns}
+        data={data}
+        loose={[profiles]}
+        select={editMode}
+        onSelect={select}
+        emptyText={`No ${name} Found`}
+        update={updateRow}
+      ></PageTable>
       <ItemEditorModal
         modalKey="edit"
         submit={modify}

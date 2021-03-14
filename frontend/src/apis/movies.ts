@@ -37,11 +37,23 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async movies(id?: number): Promise<Array<Item.Movie>> {
-    return new Promise<Array<Item.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Item.Movie>>>("", { radarrid: id })
+  async movies(id?: number) {
+    return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
+      this.get<AsyncDataWrapper<Item.Movie>>("", { radarrid: id })
         .then((result) => {
-          resolve(result.data.data);
+          resolve(result.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async moviesBy(start: number, length: number) {
+    return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
+      this.get<AsyncDataWrapper<Item.Movie>>("", { start, length })
+        .then((result) => {
+          resolve(result.data);
         })
         .catch((reason) => {
           reject(reason);

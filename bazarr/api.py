@@ -541,6 +541,8 @@ class Series(Resource):
         length = request.args.get('length') or -1
         seriesId = request.args.get('seriesid')
 
+        count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
+
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (seriesId, length, start))
@@ -571,7 +573,7 @@ class Series(Resource):
             item.update({"episodeFileCount": episodeFileCount})
 
 
-        return jsonify(data=result)
+        return jsonify(data=result, total=count)
 
     @authenticate
     def post(self):
@@ -779,6 +781,8 @@ class Movies(Resource):
         length = request.args.get('length') or -1
         id = request.args.get('radarrid')
 
+        count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
+
         if id:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (id, length, start))
@@ -788,7 +792,7 @@ class Movies(Resource):
         for item in result:
             postprocessMovie(item)
 
-        return jsonify(data=result)
+        return jsonify(data=result, total=count)
 
     @authenticate
     def post(self):

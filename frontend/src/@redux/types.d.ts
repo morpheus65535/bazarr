@@ -4,6 +4,7 @@ import { Action } from "redux-actions";
 interface AsyncPayload<Payload> {
   loading: boolean;
   item?: Payload | Error;
+  parameters: any[];
 }
 
 type AvaliableType<T> = Action<T> | ActionDispatcher<T>;

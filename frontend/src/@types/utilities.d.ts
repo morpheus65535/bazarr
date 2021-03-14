@@ -1,6 +1,6 @@
 type ValueOf<D> = D[keyof D];
 
-type Unpacked<D> = D extends any[] ? D[number] : D;
+type Unpacked<D> = D extends any[] | readonly any[] ? D[number] : D;
 
 type Nullable<D> = D | null;
 
@@ -19,6 +19,11 @@ type Pair<T = string> = {
 
 interface DataWrapper<T> {
   data: T;
+}
+
+interface AsyncDataWrapper<T> {
+  data: T[];
+  total: number;
 }
 
 type PromiseType<T> = T extends Promise<infer D> ? D : never;

@@ -8,7 +8,7 @@ import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
 interface Props {
-  tasks: System.Task[];
+  tasks: readonly System.Task[];
 }
 
 const Table: FunctionComponent<Props> = ({ tasks }) => {

@@ -1,5 +1,5 @@
 import { Dispatch } from "react";
-import { isMovie, isSeries } from "./validate";
+import { isMovie, isNullable, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -62,12 +62,19 @@ export function getExtendItemId(item: Item.Base): number {
 export function mergeArray<T>(
   olds: readonly T[],
   news: readonly T[],
-  comparer: Comparer<T>
+  comparer: Comparer<NonNullable<T>>
 ) {
   const list = [...olds];
+  const newList = news.filter((v) => !isNullable(v)) as NonNullable<T>[];
   // Performance
-  news.forEach((v) => {
-    const idx = list.findIndex((n) => comparer(n, v));
+  newList.forEach((v) => {
+    const idx = list.findIndex((n) => {
+      if (!isNullable(n)) {
+        return comparer(n, v);
+      } else {
+        return false;
+      }
+    });
     if (idx !== -1) {
       list[idx] = v;
     } else {

@@ -3,6 +3,7 @@ import {
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_INFO,
+  MOVIES_UPDATE_RANGE,
 } from "../constants";
 import { createAsyncAction, createCombineAction } from "./factory";
 import { badgeUpdateAll } from "./site";
@@ -14,6 +15,11 @@ export const movieUpdateHistoryList = createAsyncAction(
 
 const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number) =>
   MoviesApi.movies(id)
+);
+
+export const movieUpdateByRange = createAsyncAction(
+  MOVIES_UPDATE_RANGE,
+  (start: number, length: number) => MoviesApi.moviesBy(start, length)
 );
 
 export const movieUpdateInfoAll = createCombineAction((id?: number) => {

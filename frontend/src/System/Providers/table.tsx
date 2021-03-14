@@ -3,7 +3,7 @@ import { Column } from "react-table";
 import { SimpleTable } from "../../components";
 
 interface Props {
-  providers: System.Provider[];
+  providers: readonly System.Provider[];
 }
 
 const Table: FunctionComponent<Props> = (props) => {
