@@ -53,6 +53,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
     plugins,
     rows,
     onSelect,
+    select,
     state: { selectedRowIds },
   } = instance;
 
@@ -62,11 +63,13 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
 
   useEffect(() => {
     // Performance
-    const items = Object.keys(selectedRowIds).flatMap(
-      (v) => rows.find((n) => n.id === v)?.original ?? []
-    );
-    onSelect && onSelect(items);
-  }, [selectedRowIds, onSelect, rows]);
+    if (select) {
+      const items = Object.keys(selectedRowIds).flatMap(
+        (v) => rows.find((n) => n.id === v)?.original ?? []
+      );
+      onSelect && onSelect(items);
+    }
+  }, [selectedRowIds, onSelect, rows, select]);
 }
 
 function visibleColumns<T extends object>(
