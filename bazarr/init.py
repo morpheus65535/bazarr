@@ -11,9 +11,7 @@ from get_args import args
 from logger import configure_logging
 from helper import path_mappings
 
-from dogpile.cache import make_region
 from dogpile.cache.region import register_backend as register_cache_backend
-from dogpile.cache.util import sha1_mangle_key
 import subliminal
 import datetime
 
@@ -111,19 +109,12 @@ if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
 
 # upgrade database schema
 from database import db_upgrade
-
 db_upgrade()
 
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
-
-subliminal.region = make_region(
-    key_mangler=sha1_mangle_key
-).configure(
-    'subzero.cache.file',
-    expiration_time=datetime.timedelta(days=30),
-    arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir}
-)
+subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
+                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir})
 subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
@@ -186,20 +177,20 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
-
+    
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
     except:
         logging.debug("custom check failed for: %s", exe)
-
+    
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-
+    
     return unrar
 
 
