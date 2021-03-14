@@ -1,11 +1,17 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { TableOptions, usePagination, useTable } from "react-table";
+import {
+  TableOptions,
+  usePagination,
+  useRowSelect,
+  useTable,
+} from "react-table";
 import BaseTable, {
   ExtractStyleAndOptions,
   TableStyleProps,
 } from "./BaseTable";
 import PageControl from "./PageControl";
+import { useCustomSelection } from "./plugins";
 
 type Props<T extends object> = TableOptions<T> & TableStyleProps & {};
 
@@ -28,7 +34,12 @@ export default function PageTable<T extends object>(props: Props<T>) {
     options.initialState.pageSize = site.pageSize;
   }
 
-  const instance = useTable(options, usePagination);
+  const instance = useTable(
+    options,
+    usePagination,
+    useRowSelect,
+    useCustomSelection
+  );
 
   const {
     getTableProps,

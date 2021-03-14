@@ -35,8 +35,8 @@ const MovieView: FunctionComponent<Props> = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, isSelecting }) => {
-          if (isSelecting) {
+        Cell: ({ row, value, select }) => {
+          if (select) {
             return value;
           } else {
             const target = `/movies/${row.original.radarrId}`;

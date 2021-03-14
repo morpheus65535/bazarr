@@ -35,13 +35,25 @@ import {
 declare module "react-table" {
   // take this file as-is, or comment out the sections that don't apply to your plugin configuration
 
+  // Customize of React Table
   type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
 
-  interface CustomTableProps<D extends Record<string, unknown>> {
+  interface useSelectionProps<D extends Record<string, unknown>> {
+    select?: boolean;
+    onSelect?: (items: D[]) => void;
+  }
+
+  interface useSelectionState<D extends Record<string, unknown>> {}
+
+  interface CustomTableProps<D extends Record<string, unknown>>
+    extends useSelectionProps<D> {
     update?: TableUpdater<D>;
     loose?: any[];
-    isSelecting?: boolean;
   }
+
+  type CustomTableState<
+    D extends Record<string, unknown>
+  > = CustomTableState<D> & {};
 
   export interface TableOptions<
     D extends Record<string, unknown>
@@ -89,7 +101,8 @@ declare module "react-table" {
       // UseResizeColumnsState<D>,
       UseRowSelectState<D>,
       // UseRowStateState<D>,
-      UseSortByState<D> {}
+      UseSortByState<D>,
+      CustomTableState<D> {}
 
   export interface ColumnInterface<
     D extends Record<string, unknown> = Record<string, unknown>
