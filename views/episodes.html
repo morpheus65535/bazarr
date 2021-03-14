@@ -44,6 +44,10 @@
         .dtrg-start {
             cursor: pointer;
         }
+
+        .dropdown-menu li.disabled {
+            cursor: not-allowed;
+        }
     </style>
 {% endblock page_head %}
 
@@ -57,6 +61,10 @@
             <div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
             <div class="align-bottom text-themecolor small text-center">Search</div>
         </button>
+        <button class="btn btn-outline" id="tools_button">
+                <div><i class="fa fa-briefcase align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+                <div class="align-bottom text-themecolor small text-center">Tools</div>
+         </button>
     </div>
 {% endblock bcleft %}
 
@@ -139,8 +147,8 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <h6>Episode path is: <span id="episode_path_span" class="badge badge-secondary"></span>
-                        <br>Scenename is: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
+                    <h6>Episode path: <span id="episode_path_span" class="badge badge-secondary"></span>
+                        <br>Scenename: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
                     <div class="container-fluid" style="padding:0px;">
                         <table id="search_result" class="table table-striped" style="width:100%">
                             <thead>
@@ -202,7 +210,7 @@
                                 </div>
                                 <div class="form-group col-sm-7 pl-sm-0">
                                     <div class="custom-file">
-                                        <input type="file" class="custom-file-input" id="upload" name="upload">
+                                        <input type="file" accept=".srt" class="custom-file-input" id="upload" name="upload">
                                         <label class="custom-file-label" for="upload">Choose file</label>
                                     </div>
                                 </div>
@@ -239,7 +247,7 @@
                         <div class="container-fluid">
                             <div class="row form-group">
                                 <div class="custom-file">
-                                    <input type="file" multiple class="custom-file-input" id="mass_upload_file_list">
+                                    <input type="file" accept=".srt" multiple class="custom-file-input" id="mass_upload_file_list">
                                     <label id="mass-upload-file-label" class="custom-file-label" for="upload">Choose files</label>
                                 </div>
                             </div>
@@ -378,11 +386,85 @@
         </div>
     </div>
 
+    <div id="seasonToolsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="season_tools_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="season_tools_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Tools
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="season_tools_span"></span>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="showToolsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="show_tools_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="show_tools_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Tools
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="show_tools_span"></span>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="episodeSubtitleModColorModal" class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Chose Color</h5><br>
+                    <h5 class="modal-title">Choose Color</h5><br>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -421,6 +503,42 @@
                     </div>
                     <div class="modal-footer">
                         <span id="subtitles_mod_color_save_button_span"><button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button></span>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="episodeSubtitleTranslateModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Translate Subtitles</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                 <form class="form" name="subtitles_translate_form" id="subtitles_translate_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col text-right">
+                                    <b>Language Name</b>
+                                </div>
+                                <div class="form-group col">
+                                    <select class="form-control selectpicker" id="translate_language_select">
+                                    </select>
+                                </div>
+                            </div>
+                            <input type="hidden" id="translate_data_path" value="" />
+                            <input type="hidden" id="translate_data_videopath" value="" />
+                            <input type="hidden" id="translate_data_forced" value="" />
+                            <input type="hidden" id="translate_data_hi" value="" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <span id="subtitles_translate_save_button_span"><button type="submit" id="subtitles_translate_save_button" class="btn btn-info">Translate</button></span>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     </div>
                  </form>
@@ -580,14 +698,14 @@
                         });
 
                         if (collapsed) {
-                            var chevron_icon = '<i class="fas fa-chevron-circle-right"></i>';
+                            var chevron_icon = '<i style="cursor: pointer;" class="chevron fas fa-chevron-circle-up"></i>';
                         } else {
-                            var chevron_icon = '<i class="fas fa-chevron-circle-down"></i>';
+                            var chevron_icon = '<i style="cursor: pointer;" class="chevron fas fa-chevron-circle-down"></i>';
                         }
 
 
                         return $('<tr/>')
-                            .append('<td colspan=' + rows.columns()[0].length + '>Season ' + group + ' ' + chevron_icon + '</td>')
+                            .append('<td colspan=' + ( rows.columns()[0].length - 1 ) + '>Season ' + group + ' ' + chevron_icon + '</td><td><a href="" class="season_tools badge badge-secondary"  data-season="' + group + '"><i class="fa fa-briefcase"></i></a></td>')
                             .attr('data-name', group)
                             .toggleClass('collapsed', collapsed);
                     }
@@ -708,8 +826,8 @@
                 ]
             });
 
-            $('#episodes').on('click', 'tr.dtrg-start', function () {
-                var name = $(this).data('name');
+            $('#episodes').on('click', '.chevron', function () {
+                var name = $(this).closest('tr').data('name');
                 collapsedGroups[name] = !collapsedGroups[name];
                 table.draw(false);
             });
@@ -768,7 +886,11 @@
                 e.preventDefault();
                 $("#series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
                 $("#episode_path_span").html($(this).attr("data-episodePath"));
-                $("#episode_scenename_span").html($(this).attr("data-sceneName"));
+                if ($(this).attr("data-sceneName") === 'null') {
+                    $("#episode_scenename_span").html('Not provided by Sonarr');
+                } else {
+                    $("#episode_scenename_span").html($(this).attr("data-sceneName"));
+                }
 
                 episodePath = $(this).attr("data-episodePath");
                 sceneName = $(this).attr("data-sceneName");
@@ -839,7 +961,11 @@
                         {
                             data: null,
                             render: function (data) {
-                                return '<a href="' + data.url + '" target="_blank">' + data.provider + '</a>';
+                                if (data.url) {
+                                    return '<a href="' + data.url + '" target="_blank">' + data.provider + '</a>';
+                                } else {
+                                    return data.provider;
+                                }
                             }
                         },
                         {
@@ -1008,6 +1134,47 @@
                 UPLOAD: 2,
                 DONE: 3
             }
+
+            $('#tools_button').on('click', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+
+                $("#show_tools_title_span").html(seriesDetails['title']);
+
+                $("#show_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
+                $("#show_tools_span").html('<a href="" class="subtitles_sync_all_show badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-placement="right"  data-toggle="tooltip" id="sync_button_show" title="Sync whole show"><i class="far fa-play-circle"></i></a>');
+
+                $('#showToolsModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+
+
+
+            $('#show_tools_span').on('click', '.subtitles_sync_all_show', function (e) {
+                    e.preventDefault();
+                    const values = {
+                            language: $(this).attr("data-language"),
+                            show: seriesDetails['sonarrSeriesId'],
+                            mediaType: 'series'
+                    };
+                    var cell = $(this).parent()
+                    ;
+                    $.ajax({
+                            url: "{{ url_for('api.syncallsubtitles') }}",
+                            type: "POST",
+                            dataType: "json",
+                            data: values,
+                            beforeSend: function () {
+                                    $('#sync_button_show').find("i").addClass('fa-spin');
+                            },
+                            complete: function () {
+                                    $('#sync_button_show').find("i").removeClass('fa-spin');
+                            }
+                     });
+            });
 
             $('#mass_upload_button').on('click', function (e) {
                 e.preventDefault();
@@ -1462,6 +1629,8 @@
                                     return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";
                                 } else if (data === 5) {
                                     return "<i class='fas fa-clock' title='Subtitle file has been synced.' data-toggle='tooltip' data-placement='right'></i>";
+                                } else if (data === 6) {
+                                    return "<i class='fas fa-language' title='Subtitle file has been translated.' data-toggle='tooltip' data-placement='right'></i>";
                                 }
                             }
                         },
@@ -1571,6 +1740,7 @@
                                 tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_fps badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Change Frame Rate"><i class="fa fa-film"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_offset badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adjust all times (show earlier/later)"><i class="fa fa-clock"></i></a> ';
+                                tools += '<a href="" class="subtitles_translate badge badge-secondary" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title = "Translate your subtitles"><i class="fa fa-language"></i></a> ';
 
                                 return tools;
                             }
@@ -1582,6 +1752,45 @@
                     .modal({
                         focus: false
                     });
+            });
+
+            $('#episodes').on('click', '.season_tools', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+
+                $("#season_tools_title_span").html(seriesDetails['title'] + ' - Season ' + $(this).data("season"));
+
+                $("#season_tools_audio_language_span").html(seriesDetails['audio_language'][0].name);
+                $("#season_tools_span").html('<a href="" class="subtitles_sync_all badge badge-secondary" data-language="' + seriesDetails['audio_language'][0].code3 + '" data-season="' + $(this).data("season") + '"  data-placement="right"  data-toggle="tooltip" id="sync_button_season" title="Sync whole season"><i class="far fa-play-circle"></i></a>');
+
+                $('#seasonToolsModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+            $('#season_tools_span').on('click', '.subtitles_sync_all', function (e) {
+                    e.preventDefault();
+                    var season =  $(this).attr("data-season");
+                    const values = {
+                            language: $(this).attr("data-language"),
+                            show: seriesDetails['sonarrSeriesId'],
+                            season: season,
+                            mediaType: 'series'
+                    };
+                    var cell = $(this).parent();
+                    $.ajax({
+                            url: "{{ url_for('api.syncallsubtitles') }}",
+                            type: "POST",
+                            dataType: "json",
+                            data: values,
+                            beforeSend: function () {
+                                    $('#'+'sync_button_season').find("i").addClass('fa-spin');
+                            },
+                            complete: function () {
+                                    $('#'+'sync_button_season').find("i").removeClass('fa-spin');
+                            }
+                     });
             });
 
             $('#episode_tools_result').on('click', '.subtitles_sync', function (e) {
@@ -1689,6 +1898,30 @@
                     });
             });
 
+            $('#episode_tools_result').on('click', '.subtitles_translate', function (e) {
+                e.preventDefault();
+
+                $('#translate_data_language').val($(this).attr("data-language"))
+                $('#translate_data_path').val($(this).attr("data-path"))
+                $('#translate_data_videopath').val($(this).attr("data-videopath"))
+                $('#translate_data_forced').val($(this).attr("data-forced"))
+                $('#translate_data_hi').val($(this).attr("data-hi"))
+
+                $('#translate_language_select')
+                    .empty();
+                $.each(enabledLanguages, function (i, item) {
+                    $('#translate_language_select')
+                        .append('<option value="' + item.code3 + '"' + ((item.code2 in GOOGLE_CODES_TO_LANGUAGES) ? '' : ' data-subtext="Unsupported" disabled') + '>' + item.name + '</option>');
+                });
+                $("#translate_language_select").selectpicker("refresh");
+
+                $('#episodeToolsModal').modal('hide');
+                $('#episodeSubtitleTranslateModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
             $('#subtitles_mod_fps_form').on('submit', function (e) {
                 e.preventDefault();
 
@@ -1709,6 +1942,33 @@
                     },
                     complete: function () {
                         $('#episodeSubtitleModFpsModal').modal('hide');
+                    }
+                });
+            });
+
+            $('#subtitles_translate_form').on('submit', function (e) {
+                e.preventDefault();
+
+                const values = {
+                    language: $('#translate_language_select').val(),
+                    subtitlesPath: $('#translate_data_path').val(),
+                    videoPath: $('#translate_data_videopath').val(),
+                    forced: $('#translate_data_forced').val(),
+                    hi: $('#translate_data_hi').val(),
+                    mediaType: 'series',
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.subtranslate') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+
+                    beforeSend: function () {
+                        $('#subtitles_translate_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
+                        $('#episodeSubtitleTranslateModal').modal('hide');
                     }
                 });
             });
@@ -1764,6 +2024,10 @@
 
             $('#episodeSubtitleModOffsetModal').on('hidden.bs.modal', function (e) {
                 $('#subtitles_mod_offset_save_button_span').html('<button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button>');
+            });
+
+            $('#episodeSubtitleTranslateModal').on('hidden.bs.modal', function (e) {
+                $('#subtitles_translate_save_button_span').html('<button type="submit" id="subtitles_translate_save_button" class="btn btn-info">Translate</button>');
             });
 
         });
@@ -1854,5 +2118,114 @@
                 }
             });
         }
+
+        GOOGLE_CODES_TO_LANGUAGES = {
+            'af': 'afrikaans',
+            'sq': 'albanian',
+            'am': 'amharic',
+            'ar': 'arabic',
+            'hy': 'armenian',
+            'az': 'azerbaijani',
+            'eu': 'basque',
+            'be': 'belarusian',
+            'bn': 'bengali',
+            'bs': 'bosnian',
+            'bg': 'bulgarian',
+            'ca': 'catalan',
+            'ceb': 'cebuano',
+            'ny': 'chichewa',
+            'zh-cn': 'chinese (simplified)',
+            'zh-tw': 'chinese (traditional)',
+            'co': 'corsican',
+            'hr': 'croatian',
+            'cs': 'czech',
+            'da': 'danish',
+            'nl': 'dutch',
+            'en': 'english',
+            'eo': 'esperanto',
+            'et': 'estonian',
+            'tl': 'filipino',
+            'fi': 'finnish',
+            'fr': 'french',
+            'fy': 'frisian',
+            'gl': 'galician',
+            'ka': 'georgian',
+            'de': 'german',
+            'el': 'greek',
+            'gu': 'gujarati',
+            'ht': 'haitian creole',
+            'ha': 'hausa',
+            'haw': 'hawaiian',
+            'iw': 'hebrew',
+            'hi': 'hindi',
+            'hmn': 'hmong',
+            'hu': 'hungarian',
+            'is': 'icelandic',
+            'ig': 'igbo',
+            'id': 'indonesian',
+            'ga': 'irish',
+            'it': 'italian',
+            'ja': 'japanese',
+            'jw': 'javanese',
+            'kn': 'kannada',
+            'kk': 'kazakh',
+            'km': 'khmer',
+            'ko': 'korean',
+            'ku': 'kurdish (kurmanji)',
+            'ky': 'kyrgyz',
+            'lo': 'lao',
+            'la': 'latin',
+            'lv': 'latvian',
+            'lt': 'lithuanian',
+            'lb': 'luxembourgish',
+            'mk': 'macedonian',
+            'mg': 'malagasy',
+            'ms': 'malay',
+            'ml': 'malayalam',
+            'mt': 'maltese',
+            'mi': 'maori',
+            'mr': 'marathi',
+            'mn': 'mongolian',
+            'my': 'myanmar (burmese)',
+            'ne': 'nepali',
+            'no': 'norwegian',
+            'ps': 'pashto',
+            'fa': 'persian',
+            'pl': 'polish',
+            'pt': 'portuguese',
+            'pa': 'punjabi',
+            'ro': 'romanian',
+            'ru': 'russian',
+            'sm': 'samoan',
+            'gd': 'scots gaelic',
+            'sr': 'serbian',
+            'st': 'sesotho',
+            'sn': 'shona',
+            'sd': 'sindhi',
+            'si': 'sinhala',
+            'sk': 'slovak',
+            'sl': 'slovenian',
+            'so': 'somali',
+            'es': 'spanish',
+            'su': 'sundanese',
+            'sw': 'swahili',
+            'sv': 'swedish',
+            'tg': 'tajik',
+            'ta': 'tamil',
+            'te': 'telugu',
+            'th': 'thai',
+            'tr': 'turkish',
+            'uk': 'ukrainian',
+            'ur': 'urdu',
+            'uz': 'uzbek',
+            'vi': 'vietnamese',
+            'cy': 'welsh',
+            'xh': 'xhosa',
+            'yi': 'yiddish',
+            'yo': 'yoruba',
+            'zu': 'zulu',
+            'fil': 'Filipino',
+            'he': 'Hebrew'
+        };
     </script>
 {% endblock tail %}

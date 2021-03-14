@@ -197,6 +197,9 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
             if not content:
                 continue
 
+            if not content.get("releases"):
+                continue
+
             imdb_id = year = None
             returned_title = title
             if not is_episode and "info" in content:

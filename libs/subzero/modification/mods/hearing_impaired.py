@@ -93,7 +93,7 @@ class HearingImpaired(SubtitleTextModification):
                      "", name="HI_music_symbols_only"),
 
         # remove music entries
-        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)'),
+        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$|.+\s*[*#¶♫♪]+[)\]])'),
                      "", name="HI_music", entry=True),
     ]
 

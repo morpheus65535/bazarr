@@ -8,6 +8,7 @@ cachefile.dbm
 bazarr.pid
 /venv
 /data
+/bin
 static/scss/.sass-cache/*
 static/scss/.sass-cache
 *.scssc

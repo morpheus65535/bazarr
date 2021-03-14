@@ -168,10 +168,35 @@ def db_upgrade():
                          "cutoff INTEGER, items TEXT NOT NULL)")
 
     if not lang_table_exist:
+        series_default = []
+        try:
+            for language in ast.literal_eval(settings.general.serie_default_language):
+                if settings.general.serie_default_forced == 'Both':
+                    series_default.append([language, 'True', settings.general.serie_default_hi])
+                    series_default.append([language, 'False', settings.general.serie_default_hi])
+                else:
+                    series_default.append([language, settings.general.serie_default_forced,
+                                           settings.general.serie_default_hi])
+        except ValueError:
+            pass
+
+        movies_default = []
+        try:
+            for language in ast.literal_eval(settings.general.movie_default_language):
+                if settings.general.movie_default_forced == 'Both':
+                    movies_default.append([language, 'True', settings.general.movie_default_hi])
+                    movies_default.append([language, 'False', settings.general.movie_default_hi])
+                else:
+                    movies_default.append([language, settings.general.movie_default_forced,
+                                           settings.general.movie_default_hi])
+        except ValueError:
+            pass
+
         profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
                                               "FROM (SELECT languages, hearing_impaired, forced FROM table_shows "
                                               "UNION ALL SELECT languages, hearing_impaired, forced FROM table_movies) "
                                               "a WHERE languages NOT null and languages NOT IN ('None', '[]')")
+
         for profile in profiles_to_create:
             profile_items = []
             languages_list = ast.literal_eval(profile['languages'])
@@ -184,6 +209,7 @@ def db_upgrade():
                 else:
                     profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
                                           'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
+
             # Create profiles
             new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
@@ -197,6 +223,22 @@ def db_upgrade():
             database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ? AND hearing_impaired = ? AND "
                              "forced = ?", (created_profile_id, profile['languages'], profile['hearing_impaired'],
                                             profile['forced']))
+
+            # Save new defaults
+            profile_items_list = []
+            for item in profile_items:
+                profile_items_list.append([item['language'], item['forced'], item['hi']])
+            try:
+                if created_profile_id and profile_items_list == series_default:
+                    settings.general.serie_default_profile = str(created_profile_id)
+            except:
+                pass
+
+            try:
+                if created_profile_id and profile_items_list == movies_default:
+                    settings.general.movie_default_profile = str(created_profile_id)
+            except:
+                pass
 
         # null languages, forced and hearing_impaired for all series and movies
         database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
@@ -316,32 +358,44 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
     if series_id:
         audio_languages_list_str = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
                                                     (series_id,), only_one=True)['audio_language']
-        audio_languages_list = ast.literal_eval(audio_languages_list_str)
-        for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+        try:
+            audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        except ValueError:
+            pass
+        else:
+            for language in audio_languages_list:
+                audio_languages.append(
+                    {"name": language,
+                     "code2": alpha2_from_language(language) or None,
+                     "code3": alpha3_from_language(language) or None}
+                )
     elif episode_id:
         audio_languages_list_str = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
                                                     (episode_id,), only_one=True)['audio_language']
-        audio_languages_list = ast.literal_eval(audio_languages_list_str)
-        for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+        try:
+            audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        except ValueError:
+            pass
+        else:
+            for language in audio_languages_list:
+                audio_languages.append(
+                    {"name": language,
+                     "code2": alpha2_from_language(language) or None,
+                     "code3": alpha3_from_language(language) or None}
+                )
     elif movie_id:
         audio_languages_list_str = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?",
                                                     (movie_id,), only_one=True)['audio_language']
-        audio_languages_list = ast.literal_eval(audio_languages_list_str)
-        for language in audio_languages_list:
-            audio_languages.append(
-                {"name": language,
-                 "code2": alpha2_from_language(language) or None,
-                 "code3": alpha3_from_language(language) or None}
-            )
+        try:
+            audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        except ValueError:
+            pass
+        else:
+            for language in audio_languages_list:
+                audio_languages.append(
+                    {"name": language,
+                     "code2": alpha2_from_language(language) or None,
+                     "code3": alpha3_from_language(language) or None}
+                )
 
     return audio_languages

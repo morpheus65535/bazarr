@@ -5,6 +5,10 @@ import time
 import platform
 import logging
 import requests
+import pysubs2
+import json
+import hashlib
+import stat
 
 from whichcraft import which
 from get_args import args
@@ -15,10 +19,15 @@ from get_languages import alpha2_from_alpha3, language_from_alpha3, alpha3_from_
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
+from deep_translator import GoogleTranslator
+from dogpile.cache import make_region
 import datetime
 import glob
+
+region = make_region().configure('dogpile.cache.memory')
 
 
 class BinaryNotFound(Exception):
@@ -75,31 +84,84 @@ def blacklist_delete_all_movie():
     event_stream(type='movieBlacklist')
 
 
-def get_binary(name):
-    binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
+@region.cache_on_arguments()
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
-    exe = None
+
+@region.cache_on_arguments()
+def get_binaries_from_json():
+    try:
+        binaries_json_file = os.path.realpath(os.path.join(os.path.dirname(__file__), 'binaries.json'))
+        with open(binaries_json_file) as json_file:
+            binaries_json = json.load(json_file)
+    except OSError:
+        logging.exception('BAZARR cannot access binaries.json')
+        return []
+    else:
+        return binaries_json
+
+
+def get_binary(name):
     installed_exe = which(name)
 
     if installed_exe and os.path.isfile(installed_exe):
+        logging.debug('BAZARR returning this binary: {}'.format(installed_exe))
         return installed_exe
     else:
-        if name == 'ffprobe':
-            dir_name = 'ffmpeg'
-        else:
-            dir_name = name
+        logging.debug('BAZARR binary not found in path, searching for it...')
+        binaries_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bin'))
+        system = platform.system()
+        machine = platform.machine()
+        dir_name = name
 
+        # deals with exceptions
         if platform.system() == "Windows":  # Windows
-            exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", dir_name, "%s.exe" % name))
+            machine = "i386"
+            name = "%s.exe" % name
         elif platform.system() == "Darwin":  # MacOSX
-            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", platform.machine(), dir_name, name))
-        elif platform.system() == "Linux":  # Linux
-            exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), dir_name, name))
+            system = 'MacOSX'
+        if name in ['ffprobe', 'ffprobe.exe']:
+            dir_name = 'ffmpeg'
 
-    if exe and os.path.isfile(exe):
-        return exe
-    else:
-        raise BinaryNotFound
+        exe_dir = os.path.abspath(os.path.join(binaries_dir, system, machine, dir_name))
+        exe = os.path.abspath(os.path.join(exe_dir, name))
+
+        binaries_json = get_binaries_from_json()
+        binary = next((item for item in binaries_json if item['system'] == system and item['machine'] == machine and
+                       item['directory'] == dir_name and item['name'] == name), None)
+        if not binary:
+            logging.debug('BAZARR binary not found in binaries.json')
+            raise BinaryNotFound
+        else:
+            logging.debug('BAZARR found this in binaries.json: {}'.format(binary))
+
+        if os.path.isfile(exe) and md5(exe) == binary['checksum']:
+            logging.debug('BAZARR returning this existing and up-to-date binary: {}'.format(exe))
+            return exe
+        else:
+            try:
+                logging.debug('BAZARR creating directory tree for {}'.format(exe_dir))
+                os.makedirs(exe_dir, exist_ok=True)
+                logging.debug('BAZARR downloading {0} from {1}'.format(name, binary['url']))
+                r = requests.get(binary['url'])
+                logging.debug('BAZARR saving {0} to {1}'.format(name, exe_dir))
+                with open(exe, 'wb') as f:
+                    f.write(r.content)
+                if system != 'Windows':
+                    logging.debug('BAZARR adding execute permission on {}'.format(exe))
+                    st = os.stat(exe)
+                    os.chmod(exe, st.st_mode | stat.S_IEXEC)
+            except Exception:
+                logging.exception('BAZARR unable to download {0} to {1}'.format(name, exe_dir))
+                raise BinaryNotFound
+            else:
+                logging.debug('BAZARR returning this new binary: {}'.format(exe))
+                return exe
 
 
 def get_blacklist(media_type):
@@ -264,6 +326,8 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
     if language == 'pob':
         lang_obj = Language('por', 'BR')
+    elif language == 'zht':
+        lang_obj = Language('zho', 'TW')
     else:
         lang_obj = Language(language)
 
@@ -284,3 +348,51 @@ def subtitles_apply_mods(language, subtitle_path, mods):
             f.write(content)
 
 
+def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    lang_obj = Language(to_lang)
+    if forced:
+        lang_obj = Language.rebuild(lang_obj, forced=True)
+    if hi:
+        lang_obj = Language.rebuild(lang_obj, hi=True)
+
+    logging.debug('BAZARR is translating in {0} this subtitles {1}'.format(lang_obj, source_srt_file))
+
+    max_characters = 5000
+
+    dest_srt_file = get_subtitle_path(video_path, language=lang_obj, extension='.srt', forced_tag=forced, hi_tag=hi)
+
+    subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    lines_list = [x.plaintext for x in subs]
+    joined_lines_str = '\n\n\n'.join(lines_list)
+
+    logging.debug('BAZARR splitting subtitles into {} characters blocks'.format(max_characters))
+    lines_block_list = []
+    translated_lines_list = []
+    while len(joined_lines_str):
+        partial_lines_str = joined_lines_str[:max_characters]
+
+        if len(joined_lines_str) > max_characters:
+            new_partial_lines_str = partial_lines_str.rsplit('\n\n\n', 1)[0]
+        else:
+            new_partial_lines_str = partial_lines_str
+
+        lines_block_list.append(new_partial_lines_str)
+        joined_lines_str = joined_lines_str.replace(new_partial_lines_str, '')
+
+    logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
+    for block_str in lines_block_list:
+        try:
+            translated_partial_srt_text = GoogleTranslator(source='auto',
+                                                           target=lang_obj.basename).translate(text=block_str)
+        except:
+            return False
+        else:
+            translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
+            translated_lines_list += translated_partial_srt_list
+
+    logging.debug('BAZARR saving translated subtitles to {}'.format(dest_srt_file))
+    for i, line in enumerate(subs):
+        line.plaintext = translated_lines_list[i]
+    subs.save(dest_srt_file)
+
+    return dest_srt_file

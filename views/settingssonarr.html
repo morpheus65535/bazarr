@@ -392,7 +392,7 @@
                 paging: false,
                 info: false,
                 buttons: [{
-                    text: 'Add',
+                    text: 'Add', className: 'btn btn-info text-white',
                     action: function () {
                         if (form_changed) {
                             alert('You must save changes before adding a path mapping.')
@@ -403,7 +403,7 @@
                 },
                 {
                     extend: 'selected',
-                    text: 'Edit',
+                    text: 'Edit', className: 'btn btn-info text-white',
                     action: function () {
                         $('#edit_path_sonarr').val(table.row( { selected: true } ).data()[0]);
                         $('#edit_path_bazarr').val(table.row( { selected: true } ).data()[1]);
@@ -412,7 +412,7 @@
                 },
                 {
                     extend: 'selected',
-                    text: 'Delete',
+                    text: 'Delete', className: 'btn btn-info text-white',
                     action: function () {
                         $('#deleteModal').modal('show');
                     }
@@ -511,7 +511,6 @@
                     if (data.status) {
                         $('#test_sonarr_span').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
                     } else {
-                        console.log(data);
                         $('#test_sonarr_span').text('Test Failed: ' + data.error).css('color', 'red');
                     }
                 });

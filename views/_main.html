@@ -27,16 +27,6 @@
         <link href="{{ url_for('static',filename='css/bazarr.css') }}" id="theme" rel="stylesheet">
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='datatables/datatables.min.css') }}">
-        <link rel="stylesheet" type="text/css"
-              href="{{ url_for('static',filename='datatables/rowGroup.dataTables.min.css') }}">
-        <link rel="stylesheet" type="text/css"
-              href="{{ url_for('static',filename='datatables/responsive.dataTables.min.css') }}">
-        <link rel="stylesheet" type="text/css"
-              href="{{ url_for('static',filename='datatables/select.bootstrap4.min.css') }}">
-        <link rel="stylesheet" type="text/css"
-              href="{{ url_for('static',filename='datatables/buttons.dataTables.min.css') }}">
-        <link rel="stylesheet" type="text/css"
-              href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-slider.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
@@ -54,6 +44,10 @@
 
             .table td, .table th {
                 padding: .4rem !important;
+            }
+
+            .table tr {
+                cursor: auto !important;
             }
 
             .btn-light {
@@ -92,6 +86,11 @@
 
             #add_path_sonarr, #add_path_radarr, #add_path_bazarr {
                 margin-bottom: 0.5em;
+            }
+
+            #sidebar-nav-notif {
+                position: absolute;
+                bottom: 0;
             }
 
         </style>
@@ -184,7 +183,7 @@
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
                             <div class="dropdown-menu dropdown-menu-right scale-up">
                                 <ul class="dropdown-user">
-                                    <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
+                                    <li><a class="restart_action"><i class="fas fa-redo"></i> Restart</a></li>
                                     <li><a id="shutdown"><i class="fas fa-power-off"></i> Shutdown</a></li>
                                     {% if settings.auth.type != 'None' %}
                                         <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -292,6 +291,20 @@
                     </ul>
                 </nav>
                 <!-- End Sidebar navigation -->
+
+                <!-- Sidebar notification-->
+                <nav class="sidebar-nav" id="sidebar-nav-notif">
+                    <ul id="sidebarnotif">
+                        {% if (updated == '1') %}
+                        <li>
+                            <a href='' class="restart_action">
+                                <i class="fas fa-redo"></i><span class="hide-menu"> Restart required</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <!-- End Sidebar notification -->
             </div>
             <!-- End Sidebar scroll-->
         </aside>
@@ -354,12 +367,7 @@
     <!--stickey kit -->
     <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
     <!--Custom JavaScript -->
-    <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='datatables/dataTables.rowGroup.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='datatables/dataTables.select.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='datatables/dataTables.buttons.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/datatables.min.js') }}"></script>
     <script src="{{ url_for('static',filename='datatables-alteditor/dataTables.altEditor.free.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
@@ -502,7 +510,7 @@
             events.close();
         });
 
-        $('#restart').on('click', function () {
+        $('.restart_action').on('click', function () {
             $('#loader_button').prop("hidden", true);
             $('#loader_text').text("Bazarr is restarting, please wait...");
             $('#reconnect_overlay').show();

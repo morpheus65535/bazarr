@@ -124,6 +124,21 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
+# Move GA visitor from config.ini to dedicated file
+if settings.analytics.visitor:
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
+        handle.write(settings.analytics.visitor)
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
+        settings.remove_option('analytics', 'visitor')
+        settings.write(handle)
+
+# Clean unused settings from config.ini
+with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
+    settings.remove_option('general', 'throtteled_providers')
+    settings.remove_option('general', 'update_restart')
+    settings.write(handle)
+
+
 # Commenting out the password reset process as it could be having unwanted effects and most of the users have already
 # moved to new password hashing algorithm.
 

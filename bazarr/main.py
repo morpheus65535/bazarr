@@ -1,8 +1,13 @@
 # coding=utf-8
 
-bazarr_version = '0.9.1'
-
 import os
+
+bazarr_version = ''
+
+version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
+if os.path.isfile(version_file):
+    with open(version_file, 'r') as f:
+        bazarr_version = f.read()
 
 os.environ["BAZARR_VERSION"] = bazarr_version
 
@@ -31,21 +36,19 @@ from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from check_update import check_and_apply_update, check_releases
+from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
 
-# Check and install update on startup when running on Windows from installer
-if args.release_update:
-    check_and_apply_update()
-# If not, update releases cache instead.
-else:
-    check_releases()
+# Install downloaded update
+if bazarr_version != '':
+    apply_update()
+check_releases()
 
 configure_proxy_func()
 
-# Reset restart required warning on start
-database.execute("UPDATE system SET configured='0', updated='0'")
+# Reset the updated once Bazarr have been restarted after an update
+database.execute("UPDATE system SET updated='0'")
 
 # Load languages in database
 load_language_in_db()
@@ -126,10 +129,13 @@ def login_page():
 
 @app.context_processor
 def template_variable_processor():
-    restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
-
-    return dict(restart_required=restart_required['configured'], update_required=restart_required['updated'],
-                settings=settings, args=args)
+    updated = None
+    try:
+        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
+    except:
+        pass
+    finally:
+        return dict(settings=settings, args=args, updated=updated)
 
 
 def api_authorize():
@@ -363,8 +369,8 @@ def settingsscheduler():
 @app.route('/check_update')
 @login_required
 def check_update():
-    if not args.no_update:
-        check_and_apply_update()
+    if not args.no_update and bazarr_version != '':
+        check_if_new_update()
 
     return '', 200
 
