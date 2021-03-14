@@ -17,10 +17,6 @@ const pluginName = "useSelection";
 
 const checkboxId = "---selection---";
 
-// Actions
-const ActionStartSelect = "start-select";
-const ActionEndSelect = "end-select";
-
 interface CheckboxProps {
   idIn: string;
 }
