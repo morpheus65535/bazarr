@@ -174,7 +174,7 @@ settings = simpleconfigparser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
-base_url = settings.general.base_url
+base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
                 'page_size',

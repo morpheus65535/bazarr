@@ -142,11 +142,11 @@ def postprocessSeries(item):
     # map poster and fanart to server proxy
     if 'poster' in item:
         poster = item['poster']
-        item['poster'] = f"{base_url}images/series{poster}"
+        item['poster'] = f"{base_url}/images/series{poster}"
 
     if 'fanart' in item:
         fanart = item['fanart']
-        item['fanart'] = f"{base_url}images/series{fanart}"
+        item['fanart'] = f"{base_url}/images/series{fanart}"
 
 def postprocessEpisode(item, desired = []):
     postprocess(item)
@@ -288,11 +288,11 @@ def postprocessMovie(item):
     # map poster and fanart to server proxy
     if 'poster' in item:
         poster = item['poster']
-        item['poster'] = f"{base_url}images/movies{poster}"
+        item['poster'] = f"{base_url}/images/movies{poster}"
 
     if 'fanart' in item:
         fanart = item['fanart']
-        item['fanart'] = f"{base_url}images/movies{fanart}"
+        item['fanart'] = f"{base_url}/images/movies{fanart}"
 
 
 class SystemAccount(Resource):

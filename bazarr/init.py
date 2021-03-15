@@ -85,10 +85,9 @@ if not settings.general.flask_secret_key:
         settings.write(handle)
 
 # change default base_url to ''
-if settings.general.base_url == '/':
-    settings.general.base_url = ''
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+settings.general.base_url = settings.general.base_url.rstrip('/')
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+    settings.write(handle)
 
 # create database file
 if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
