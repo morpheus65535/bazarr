@@ -122,7 +122,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       }}
     >
       <Row
-        className="p-4 pb-5"
+        className="p-4 pb-4"
         style={{
           backgroundColor: "rgba(0,0,0,0.7)",
         }}
