@@ -1,4 +1,4 @@
-import { isNullable, mergeArray } from "../../utilites";
+import { mergeArray } from "../../utilites";
 import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
@@ -25,11 +25,11 @@ export function mapToAsyncState<Payload>(
   }
 }
 
-export function updateAsyncDataList<T, ID extends keyof T>(
+export function updateOrderIdState<T extends LooseObject>(
   action: AsyncAction<AsyncDataWrapper<T>>,
-  state: AsyncState<Nullable<T>[]>,
-  match: ID
-): AsyncState<Nullable<T>[]> {
+  state: AsyncState<OrderIdState<T>>,
+  id: ItemIdType<T>
+): AsyncState<OrderIdState<T>> {
   if (action.payload.loading) {
     return {
       ...state,
@@ -42,43 +42,39 @@ export function updateAsyncDataList<T, ID extends keyof T>(
       error: action.payload.item as Error,
     };
   } else {
-    const payload = action.payload.item as AsyncDataWrapper<T>;
+    const { data, total } = action.payload.item as AsyncDataWrapper<T>;
     const [start, length] = action.payload.parameters;
-    const { data, total } = payload;
 
-    let result: Nullable<T>[] = [];
+    // Convert item list to object
+    const idState: IdState<T> = data.reduce<IdState<T>>((prev, curr) => {
+      const tid = curr[id];
+      prev[tid] = curr;
+      return prev;
+    }, {});
 
-    const list = [...state.data];
+    const dataOrder: number[] = data.map((v) => v[id]);
 
-    // Fill empty list with null
-    const fillCount = total - list.length;
-    if (fillCount > 0) {
-      list.push(...Array(fillCount).fill(null));
-    } else if (fillCount < 0) {
-      throw new Error("array in redux storage is larger then API total");
+    const newItems = { ...state.data.items, ...idState };
+    let newOrder = state.data.order;
+
+    const countDist = total - newOrder.length;
+    if (countDist > 0) {
+      newOrder.push(...Array(countDist).fill(null));
     }
 
     if (typeof start === "number" && typeof length === "number") {
-      result = list;
-
-      // TODO: Performance
-      // Remove duplicate item
-      result.filter((v) => {
-        if (!isNullable(v)) {
-          return data.find((inn) => inn[match] === v[match]) === undefined;
-        } else {
-          return true;
-        }
-      });
-
-      result.splice(start, data.length, ...data);
-    } else {
-      result = mergeArray(list, data, (l, r) => l[match] === r[match]);
+      newOrder.splice(start, length, ...dataOrder);
+    } else if (start === undefined) {
+      // Full Update
+      newOrder = dataOrder;
     }
 
     return {
       updating: false,
-      data: result,
+      data: {
+        items: newItems,
+        order: newOrder,
+      },
     };
   }
 }

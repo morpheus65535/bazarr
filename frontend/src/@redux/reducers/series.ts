@@ -8,7 +8,7 @@ import {
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { mapToAsyncState, updateAsyncDataList } from "./mapper";
+import { mapToAsyncState, updateOrderIdState } from "./mapper";
 
 const reducer = handleActions<ReduxStore.Series, any>(
   {
@@ -58,7 +58,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        seriesList: updateAsyncDataList(
+        seriesList: updateOrderIdState(
           action,
           state.seriesList,
           "sonarrSeriesId"
@@ -71,7 +71,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        seriesList: updateAsyncDataList(
+        seriesList: updateOrderIdState(
           action,
           state.seriesList,
           "sonarrSeriesId"
@@ -89,7 +89,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     },
   },
   {
-    seriesList: { updating: true, data: [] },
+    seriesList: { updating: true, data: { items: {}, order: [] } },
     wantedSeriesList: { updating: true, data: [] },
     episodeList: { updating: true, data: {} },
     historyList: { updating: true, data: [] },

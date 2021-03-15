@@ -59,8 +59,19 @@ export function getExtendItemId(item: Item.Base): number {
   }
 }
 
+export function buildOrderList<T>(state: OrderIdState<T>): T[] {
+  const { items, order } = state;
+  return order.flatMap((v) => {
+    if (v !== null && v in items) {
+      const item = items[v];
+      return [item];
+    }
+
+    return [];
+  });
+}
+
 // Replace elements in old array with news
-// If not exist, the method will find the first null value and replace it
 export function mergeArray<T>(
   olds: readonly T[],
   news: readonly T[],
@@ -69,20 +80,16 @@ export function mergeArray<T>(
   const list = [...olds];
   const newList = news.filter((v) => !isNullable(v)) as NonNullable<T>[];
   // Performance
-  let firstNull = -1;
   newList.forEach((v) => {
     const idx = list.findIndex((n, idx) => {
       if (!isNullable(n)) {
         return comparer(n, v);
       } else {
-        firstNull = idx;
         return false;
       }
     });
     if (idx !== -1) {
       list[idx] = v;
-    } else if (firstNull !== -1) {
-      list[firstNull] = v;
     } else {
       list.push(v);
     }

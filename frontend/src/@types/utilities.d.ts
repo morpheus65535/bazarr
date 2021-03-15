@@ -31,3 +31,9 @@ type PromiseType<T> = T extends Promise<infer D> ? D : never;
 type Override<T, U> = T & Omit<U, keyof T>;
 
 type Comparer<T> = (lhs: T, rhs: T) => boolean;
+
+type KeysOfType<D, T> = NonNullable<
+  ValueOf<{ [P in keyof D]: D[P] extends T ? P : never }>
+>;
+
+type ItemIdType<T> = KeysOfType<T, number>;

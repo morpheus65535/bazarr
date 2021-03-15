@@ -1,3 +1,12 @@
+interface IdState<T> {
+  [key: number]: Readonly<T>;
+}
+
+interface OrderIdState<T> {
+  items: IdState<T>;
+  order: (number | null)[];
+}
+
 interface ReduxStore {
   system: ReduxStore.System;
   series: ReduxStore.Series;
@@ -12,6 +21,7 @@ namespace ReduxStore {
     timestamp: Date;
     id: string;
   }
+
   interface Site {
     // Initialization state or error message
     initialized: boolean | string;
@@ -35,20 +45,16 @@ namespace ReduxStore {
     settings: AsyncState<Settings | undefined>;
   }
 
-  interface EpisodeState {
-    [key: number]: readonly Item.Episode[];
-  }
-
   interface Series {
-    seriesList: AsyncState<Nullable<Item.Series>[]>;
+    seriesList: AsyncState<OrderIdState<Item.Series>>;
     wantedSeriesList: AsyncState<Array<Wanted.Episode>>;
-    episodeList: AsyncState<EpisodeState>;
+    episodeList: AsyncState<IdState<Item.Episode[]>>;
     historyList: AsyncState<Array<History.Episode>>;
     blacklist: AsyncState<Array<Blacklist.Episode>>;
   }
 
   interface Movie {
-    movieList: AsyncState<Nullable<Item.Movie>[]>;
+    movieList: AsyncState<OrderIdState<Item.Movie>>;
     historyList: AsyncState<Array<History.Movie>>;
     blacklist: AsyncState<Array<Blacklist.Movie>>;
   }

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { isNullable } from "../../utilites";
+import { buildOrderList } from "../../utilites";
 import {
   episodeUpdateBySeriesId,
   movieUpdateBlacklist,
@@ -96,15 +96,22 @@ export function useRawSeries() {
   return stateBuilder(items, action);
 }
 
-export function useSeries() {
-  const [items, action] = useRawSeries();
-  const series = useMemo<AsyncState<Item.Series[]>>(
-    () => ({
-      ...items,
-      data: items.data.filter((v) => !isNullable(v)) as Item.Series[],
-    }),
-    [items]
-  );
+export function useSeries(order = true) {
+  const [rawSeries, action] = useRawSeries();
+  const series = useMemo<AsyncState<Item.Series[]>>(() => {
+    const state = rawSeries.data;
+    if (order) {
+      return {
+        ...rawSeries,
+        data: buildOrderList(state),
+      };
+    } else {
+      return {
+        ...rawSeries,
+        data: Object.values(state.items),
+      };
+    }
+  }, [rawSeries, order]);
   return stateBuilder(series, action);
 }
 
@@ -158,16 +165,22 @@ export function useRawMovies() {
   return stateBuilder(items, action);
 }
 
-export function useMovies() {
-  const [items, action] = useRawMovies();
-  const movies = useMemo<AsyncState<Item.Movie[]>>(
-    () => ({
-      ...items,
-      data: items.data.filter((v) => !isNullable(v)) as Item.Movie[],
-    }),
-    [items]
-  );
-
+export function useMovies(order = true) {
+  const [rawMovies, action] = useRawMovies();
+  const movies = useMemo<AsyncState<Item.Movie[]>>(() => {
+    const state = rawMovies.data;
+    if (order) {
+      return {
+        ...rawMovies,
+        data: buildOrderList(state),
+      };
+    } else {
+      return {
+        ...rawMovies,
+        data: Object.values(state.items),
+      };
+    }
+  }, [rawMovies, order]);
   return stateBuilder(movies, action);
 }
 
