@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Col, Container, Pagination, Row } from "react-bootstrap";
-
 interface Props {
   count: number;
   index: number;
