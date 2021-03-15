@@ -116,21 +116,26 @@ export function useSeries(order = true) {
 }
 
 export function useSerieBy(id?: number) {
-  const [series, updateSeries] = useSeries();
-  const item = useMemo<AsyncState<Item.Series | null>>(
-    () => ({
+  const [series, updateSerie] = useRawSeries();
+  const serie = useMemo<AsyncState<Item.Series | null>>(() => {
+    const items = series.data.items;
+    let item: Item.Series | null = null;
+    if (id && id in items) {
+      item = items[id];
+    }
+    return {
       ...series,
-      data: series.data.find((v) => v?.sonarrSeriesId === id) ?? null,
-    }),
-    [id, series]
-  );
+      data: item,
+    };
+  }, [id, series]);
+
   const update = useCallback(() => {
     if (id) {
-      updateSeries(id);
+      updateSerie(id);
     }
-  }, [id, updateSeries]);
+  }, [id, updateSerie]);
 
-  return stateBuilder(item, update);
+  return stateBuilder(serie, update);
 }
 
 export function useEpisodesBy(seriesId?: number) {
@@ -185,21 +190,26 @@ export function useMovies(order = true) {
 }
 
 export function useMovieBy(id?: number) {
-  const [movies, updateMovies] = useMovies();
-  const item = useMemo<AsyncState<Item.Movie | null>>(
-    () => ({
+  const [movies, updateMovies] = useRawMovies();
+  const movie = useMemo<AsyncState<Item.Movie | null>>(() => {
+    const items = movies.data.items;
+    let item: Item.Movie | null = null;
+    if (id && id in items) {
+      item = items[id];
+    }
+    return {
       ...movies,
-      data: movies.data.find((v) => v?.radarrId === id) ?? null,
-    }),
-    [id, movies]
-  );
+      data: item,
+    };
+  }, [id, movies]);
+
   const update = useCallback(() => {
     if (id) {
       updateMovies(id);
     }
   }, [id, updateMovies]);
 
-  return stateBuilder(item, update);
+  return stateBuilder(movie, update);
 }
 
 export function useWantedSeries() {
