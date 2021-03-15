@@ -204,9 +204,10 @@ def postprocessEpisode(item, desired = []):
         del item["scene_name"]
 
     if 'path' in item:
-        # Provide mapped path
-        item['path'] = path_mappings.path_replace(item['path'])
-        item['exist'] = os.path.isfile(item['path'])
+        if item['path']:
+            # Provide mapped path
+            item['path'] = path_mappings.path_replace(item['path'])
+            item['exist'] = os.path.isfile(item['path'])
 
 
 # TODO: Move
@@ -224,8 +225,9 @@ def postprocessMovie(item):
             item['alternativeTitles'] = ast.literal_eval(item['alternativeTitles'])
 
     # Parse failed attempts
-    if 'failedAttempts' in item and item['failedAttempts'] is not None:
-        item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
+    if 'failedAttempts' in item:
+        if item['failedAttempts']:
+            item['failedAttempts'] = ast.literal_eval(item['failedAttempts'])
 
     # Parse subtitles
     if 'subtitles' in item:
@@ -274,9 +276,10 @@ def postprocessMovie(item):
 
     # Provide mapped path
     if 'path' in item:
-        item['path'] = path_mappings.path_replace_movie(item['path'])
-        # Confirm if path exist
-        item['exist'] = os.path.isfile(item['path'])
+        if item['path']:
+            item['path'] = path_mappings.path_replace_movie(item['path'])
+            # Confirm if path exist
+            item['exist'] = os.path.isfile(item['path'])
 
     if 'subtitles_path' in item:
         # Provide mapped subtitles path
