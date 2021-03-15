@@ -73,11 +73,8 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [maxSeason, maxEpisode] = useMemo(() => {
     if (episodes) {
-      const season = episodes.items.reduce((v, e) => Math.max(v, e.season), 0);
-      const episode = episodes.items.reduce(
-        (v, e) => Math.max(v, e.episode),
-        0
-      );
+      const season = episodes.data.reduce((v, e) => Math.max(v, e.season), 0);
+      const episode = episodes.data.reduce((v, e) => Math.max(v, e.episode), 0);
       return [season, episode];
     }
     return [0, 0];
@@ -102,7 +99,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           info.season !== info.instance.season ||
           info.episode !== info.instance.episode)
       ) {
-        info.instance = episodes.items.find(
+        info.instance = episodes.data.find(
           (e) => e.season === info.season && e.episode === info.episode
         );
       }

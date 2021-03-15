@@ -14,7 +14,7 @@ type StorageType = string | null;
 interface AsyncState<T> {
   updating: boolean;
   error?: Error;
-  items: Readonly<T>;
+  data: Readonly<T>;
 }
 
 type AsyncPayload<T> = T extends AsyncState<infer D> ? D : never;

@@ -31,7 +31,7 @@ export function useSystemSettings() {
 
 export function useLanguageProfiles() {
   const action = useReduxAction(systemUpdateLanguagesProfiles);
-  const items = useReduxStore((s) => s.system.languagesProfiles.items);
+  const items = useReduxStore((s) => s.system.languagesProfiles.data);
 
   return stateBuilder(items, action);
 }
@@ -47,7 +47,7 @@ export function useProfileBy(id: number | null | undefined) {
 export function useLanguages(enabled: boolean = false) {
   const action = useReduxAction(systemUpdateLanguages);
   const items = useReduxStore((s) =>
-    enabled ? s.system.enabledLanguage.items : s.system.languages.items
+    enabled ? s.system.enabledLanguage.data : s.system.languages.data
   );
   return stateBuilder(items, action);
 }
@@ -101,7 +101,7 @@ export function useSeries() {
   const series = useMemo<AsyncState<Item.Series[]>>(
     () => ({
       ...items,
-      items: items.items.filter((v) => !isNullable(v)) as Item.Series[],
+      data: items.data.filter((v) => !isNullable(v)) as Item.Series[],
     }),
     [items]
   );
@@ -113,7 +113,7 @@ export function useSerieBy(id?: number) {
   const item = useMemo<AsyncState<Item.Series | null>>(
     () => ({
       ...series,
-      items: series.items.find((v) => v?.sonarrSeriesId === id) ?? null,
+      data: series.data.find((v) => v?.sonarrSeriesId === id) ?? null,
     }),
     [id, series]
   );
@@ -138,15 +138,15 @@ export function useEpisodesBy(seriesId?: number) {
 
   const items = useMemo(() => {
     if (seriesId !== undefined) {
-      return list.items[seriesId] ?? [];
+      return list.data[seriesId] ?? [];
     } else {
       return [];
     }
-  }, [seriesId, list.items]);
+  }, [seriesId, list.data]);
 
   const state: AsyncState<Item.Episode[]> = {
     ...list,
-    items,
+    data: items,
   };
 
   return stateBuilder(state, callback);
@@ -163,7 +163,7 @@ export function useMovies() {
   const movies = useMemo<AsyncState<Item.Movie[]>>(
     () => ({
       ...items,
-      items: items.items.filter((v) => !isNullable(v)) as Item.Movie[],
+      data: items.data.filter((v) => !isNullable(v)) as Item.Movie[],
     }),
     [items]
   );
@@ -176,7 +176,7 @@ export function useMovieBy(id?: number) {
   const item = useMemo<AsyncState<Item.Movie | null>>(
     () => ({
       ...movies,
-      items: movies.items.find((v) => v?.radarrId === id) ?? null,
+      data: movies.data.find((v) => v?.radarrId === id) ?? null,
     }),
     [id, movies]
   );
@@ -200,12 +200,12 @@ export function useWantedMovies() {
   const [movies, action] = useMovies();
 
   const items = useMemo<AsyncState<Item.Movie[]>>(() => {
-    const items = movies.items.filter(
+    const items = movies.data.filter(
       (v) => v !== null && v.missing_subtitles.length !== 0
     ) as Item.Movie[];
     return {
       ...movies,
-      items,
+      data: items,
     };
   }, [movies]);
 

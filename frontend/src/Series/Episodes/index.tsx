@@ -33,12 +33,12 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
   const [serie, update] = useSerieBy(id);
-  const item = serie.items;
+  const item = serie.data;
 
-  const [episodes, updateEpisodes] = useEpisodesBy(serie.items?.sonarrSeriesId);
+  const [episodes, updateEpisodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
   useAutoUpdate(updateEpisodes);
 
-  const avaliable = episodes.items.length !== 0;
+  const avaliable = episodes.data.length !== 0;
 
   const details = useMemo(
     () => [

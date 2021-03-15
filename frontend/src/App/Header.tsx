@@ -42,25 +42,25 @@ const Header: FunctionComponent<Props> = () => {
 
   const [settings] = useSystemSettings();
 
-  const canLogout = (settings.items?.auth.type ?? "none") !== "none";
+  const canLogout = (settings.data?.auth.type ?? "none") !== "none";
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
   const updateItems = useCallback(() => {
-    if (series.items.length === 0) {
+    if (series.data.length === 0) {
       updateSeries();
     }
 
-    if (movies.items.length === 0) {
+    if (movies.data.length === 0) {
       updateMovies();
     }
-  }, [series.items.length, movies.items.length, updateSeries, updateMovies]);
+  }, [series.data.length, movies.data.length, updateSeries, updateMovies]);
 
   const searchSeries = useCallback(
     (text: string): SearchResult[] => {
       text = text.toLowerCase();
 
-      return series.items
+      return series.data
         .filter((val) => val.title.toLowerCase().includes(text))
         .map((val) => {
           return {
@@ -76,7 +76,7 @@ const Header: FunctionComponent<Props> = () => {
     (text: string): SearchResult[] => {
       text = text.toLowerCase();
 
-      return movies.items
+      return movies.data
         .filter((val) => val.title.toLowerCase().includes(text))
         .map((val) => {
           return {

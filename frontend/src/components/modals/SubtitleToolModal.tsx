@@ -333,7 +333,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   const item = usePayload<SupportType>(modal.modalKey, 1);
   const subtitle = usePayload<Subtitle>(modal.modalKey);
 
-  const languages = useReduxStore((s) => s.system.enabledLanguage.items);
+  const languages = useReduxStore((s) => s.system.enabledLanguage.data);
 
   const avaliable = useMemo(
     () =>

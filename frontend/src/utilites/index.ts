@@ -8,20 +8,20 @@ export function updateAsyncState<T>(
 ) {
   setter({
     updating: true,
-    items: defaultVal,
+    data: defaultVal,
   });
   promise
     .then((data) => {
       setter({
         updating: false,
-        items: data,
+        data: data,
       });
     })
     .catch((err) => {
       setter({
         updating: false,
         error: err,
-        items: defaultVal,
+        data: defaultVal,
       });
     });
 }

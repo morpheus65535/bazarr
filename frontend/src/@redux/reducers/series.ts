@@ -18,16 +18,16 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        wantedSeriesList: mapToAsyncState(action, state.wantedSeriesList.items),
+        wantedSeriesList: mapToAsyncState(action, state.wantedSeriesList.data),
       };
     },
     [SERIES_UPDATE_EPISODE_LIST]: (
       state,
       action: AsyncAction<Item.Episode[]>
     ) => {
-      const { updating, error, items } = mapToAsyncState(action, []);
+      const { updating, error, data: items } = mapToAsyncState(action, []);
 
-      const stateItems = { ...state.episodeList.items };
+      const stateItems = { ...state.episodeList.data };
 
       if (items.length > 0) {
         const id = items[0].sonarrSeriesId;
@@ -39,7 +39,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
         episodeList: {
           updating,
           error,
-          items: stateItems,
+          data: stateItems,
         },
       };
     },
@@ -49,7 +49,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        historyList: mapToAsyncState(action, state.historyList.items),
+        historyList: mapToAsyncState(action, state.historyList.data),
       };
     },
     [SERIES_UPDATE_INFO]: (
@@ -84,16 +84,16 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        blacklist: mapToAsyncState(action, state.blacklist.items),
+        blacklist: mapToAsyncState(action, state.blacklist.data),
       };
     },
   },
   {
-    seriesList: { updating: true, items: [] },
-    wantedSeriesList: { updating: true, items: [] },
-    episodeList: { updating: true, items: {} },
-    historyList: { updating: true, items: [] },
-    blacklist: { updating: true, items: [] },
+    seriesList: { updating: true, data: [] },
+    wantedSeriesList: { updating: true, data: [] },
+    episodeList: { updating: true, data: {} },
+    historyList: { updating: true, data: [] },
+    blacklist: { updating: true, data: [] },
   }
 );
 

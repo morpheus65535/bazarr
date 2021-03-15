@@ -47,7 +47,7 @@ interface Props extends RouteComponentProps<Params> {}
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
   const [movie, update] = useMovieBy(id);
-  const item = movie.items;
+  const item = movie.data;
 
   const showModal = useShowModal();
 

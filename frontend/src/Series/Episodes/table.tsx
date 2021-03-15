@@ -168,7 +168,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
 
   const maxSeason = useMemo(
     () =>
-      episodes.items.reduce<number>(
+      episodes.data.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
         0
       ),
@@ -178,7 +178,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
   const options: TableOptions<Item.Episode> = useMemo(() => {
     return {
       columns,
-      data: episodes.items,
+      data: episodes.data,
       update: updateRow,
       initialState: {
         sortBy: [

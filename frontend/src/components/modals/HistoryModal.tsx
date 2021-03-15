@@ -23,7 +23,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const [history, setHistory] = useState<AsyncState<History.Movie[]>>({
     updating: false,
-    items: [],
+    data: [],
   });
 
   const update = useCallback(() => {
@@ -110,7 +110,7 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   const [history, setHistory] = useState<AsyncState<History.Episode[]>>({
     updating: false,
-    items: [],
+    data: [],
   });
 
   const update = useCallback(() => {

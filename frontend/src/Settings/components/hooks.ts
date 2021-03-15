@@ -54,7 +54,7 @@ export function useExtract<T>(
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
   const [systemSettings] = useSystemSettings();
-  const settings = systemSettings.items;
+  const settings = systemSettings.data;
 
   const store = useStore<ReduxStore>();
 

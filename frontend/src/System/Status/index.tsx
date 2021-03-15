@@ -64,7 +64,7 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
-  const status = useReduxStore((s) => s.system.status.items);
+  const status = useReduxStore((s) => s.system.status.data);
   const update = useReduxAction(systemUpdateStatus);
   useAutoUpdate(update);
 

@@ -18,7 +18,7 @@ const reducer = handleActions<ReduxStore.System, any>(
       const languages = mapToAsyncState<Array<ApiLanguage>>(action, []);
       const enabledLanguage: AsyncState<ApiLanguage[]> = {
         ...languages,
-        items: languages.items.filter((v) => v.enabled),
+        data: languages.data.filter((v) => v.enabled),
       };
       const newState = {
         ...state,
@@ -42,20 +42,20 @@ const reducer = handleActions<ReduxStore.System, any>(
         ...state,
         status: mapToAsyncState<System.Status | undefined>(
           action,
-          state.status.items
+          state.status.data
         ),
       };
     },
     [SYSTEM_UPDATE_TASKS]: (state, action) => {
       return {
         ...state,
-        tasks: mapToAsyncState<Array<System.Task>>(action, state.tasks.items),
+        tasks: mapToAsyncState<Array<System.Task>>(action, state.tasks.data),
       };
     },
     [SYSTEM_RUN_TASK]: (state, action: Action<string>) => {
       const id = action.payload;
       const tasks = state.tasks;
-      const newItems = [...tasks.items];
+      const newItems = [...tasks.data];
 
       const idx = newItems.findIndex((v) => v.job_id === id);
 
@@ -67,62 +67,62 @@ const reducer = handleActions<ReduxStore.System, any>(
         ...state,
         tasks: {
           ...tasks,
-          items: newItems,
+          data: newItems,
         },
       };
     },
     [PROVIDER_UPDATE_LIST]: (state, action) => {
       return {
         ...state,
-        providers: mapToAsyncState(action, state.providers.items),
+        providers: mapToAsyncState(action, state.providers.data),
       };
     },
     [SYSTEM_UPDATE_LOGS]: (state, action) => {
       return {
         ...state,
-        logs: mapToAsyncState(action, state.logs.items),
+        logs: mapToAsyncState(action, state.logs.data),
       };
     },
     [SYSTEM_UPDATE_RELEASES]: (state, action) => {
       return {
         ...state,
-        releases: mapToAsyncState(action, state.releases.items),
+        releases: mapToAsyncState(action, state.releases.data),
       };
     },
     [SYSTEM_UPDATE_SETTINGS]: (state, action) => {
       return {
         ...state,
-        settings: mapToAsyncState(action, state.settings.items),
+        settings: mapToAsyncState(action, state.settings.data),
       };
     },
   },
   {
-    languages: { updating: true, items: [] },
-    enabledLanguage: { updating: true, items: [] },
-    languagesProfiles: { updating: true, items: [] },
+    languages: { updating: true, data: [] },
+    enabledLanguage: { updating: true, data: [] },
+    languagesProfiles: { updating: true, data: [] },
     status: {
       updating: true,
-      items: undefined,
+      data: undefined,
     },
     tasks: {
       updating: true,
-      items: [],
+      data: [],
     },
     providers: {
       updating: true,
-      items: [],
+      data: [],
     },
     logs: {
       updating: true,
-      items: [],
+      data: [],
     },
     releases: {
       updating: true,
-      items: [],
+      data: [],
     },
     settings: {
       updating: true,
-      items: undefined,
+      data: undefined,
     },
   }
 );

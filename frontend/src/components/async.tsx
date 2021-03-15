@@ -41,7 +41,7 @@ function defaultExist(item: any) {
 
 export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const { exist, state, children } = props;
-  const missing = exist ? !exist(state.items) : !defaultExist(state.items);
+  const missing = exist ? !exist(state.data) : !defaultExist(state.data);
 
   const onError = useNotification("async-overlay");
 
@@ -83,7 +83,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     }
   }
 
-  return children(state.items!, state.error);
+  return children(state.data!, state.error);
 }
 
 interface PromiseProps<T> {
@@ -129,7 +129,7 @@ export function AsyncSelector<
 
   const options = useMemo<SelectorOption<ExtractAS<T>>[]>(
     () =>
-      state.items.map((v) => ({
+      state.data.map((v) => ({
         label: label(v),
         value: v,
       })),

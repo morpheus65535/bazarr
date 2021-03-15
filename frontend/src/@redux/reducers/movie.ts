@@ -16,7 +16,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     ) => {
       return {
         ...state,
-        historyList: mapToAsyncState(action, state.historyList.items),
+        historyList: mapToAsyncState(action, state.historyList.data),
       };
     },
     [MOVIES_UPDATE_INFO]: (
@@ -43,14 +43,14 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     ) => {
       return {
         ...state,
-        blacklist: mapToAsyncState(action, state.blacklist.items),
+        blacklist: mapToAsyncState(action, state.blacklist.data),
       };
     },
   },
   {
-    movieList: { updating: true, items: [] },
-    historyList: { updating: true, items: [] },
-    blacklist: { updating: true, items: [] },
+    movieList: { updating: true, data: [] },
+    historyList: { updating: true, data: [] },
+    blacklist: { updating: true, data: [] },
   }
 );
 

@@ -8,19 +8,19 @@ export function mapToAsyncState<Payload>(
   if (action.payload.loading) {
     return {
       updating: true,
-      items: defVal,
+      data: defVal,
     };
   } else if (action.error !== undefined) {
     return {
       updating: false,
       error: action.payload.item as Error,
-      items: defVal,
+      data: defVal,
     };
   } else {
     return {
       updating: false,
       error: undefined,
-      items: action.payload.item as Payload,
+      data: action.payload.item as Payload,
     };
   }
 }
@@ -29,7 +29,7 @@ export function updateAsyncDataList<T, ID extends keyof T>(
   action: AsyncAction<AsyncDataWrapper<T>>,
   state: AsyncState<Nullable<T>[]>,
   match: ID
-) {
+): AsyncState<Nullable<T>[]> {
   if (action.payload.loading) {
     return {
       ...state,
@@ -48,7 +48,7 @@ export function updateAsyncDataList<T, ID extends keyof T>(
 
     let result: Nullable<T>[] = [];
 
-    const list = [...state.items];
+    const list = [...state.data];
 
     // Fill empty list with null
     const fillCount = total - list.length;
@@ -78,7 +78,7 @@ export function updateAsyncDataList<T, ID extends keyof T>(
 
     return {
       updating: false,
-      items: result,
+      data: result,
     };
   }
 }
@@ -100,13 +100,13 @@ export function updateAsyncList<T, ID extends keyof T>(
       error: action.payload.item as Error,
     };
   } else {
-    const list = state.items as T[];
+    const list = state.data as T[];
     const payload = action.payload.item as T[];
     const result = mergeArray(list, payload, (l, r) => l[match] === r[match]);
 
     return {
       updating: false,
-      items: result,
+      data: result,
     };
   }
 }
