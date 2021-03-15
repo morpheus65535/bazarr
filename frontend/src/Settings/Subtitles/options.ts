@@ -16,11 +16,11 @@ export const folderOptions: SelectorOption<string>[] = [
 export const antiCaptchaOption: SelectorOption<string>[] = [
   {
     label: "Anti-Captcha",
-    value: "anticaptcha",
+    value: "anti-captcha",
   },
   {
     label: "Death by Captcha",
-    value: "deathbycaptcha",
+    value: "death-by-captcha",
   },
 ];
 

@@ -92,7 +92,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
               </Message>
             </Input>
           </CollapseBox.Control>
-          <CollapseBox.Content eventKey="anticaptcha">
+          <CollapseBox.Content eventKey="anti-captcha">
             <Input>
               <a href="http://getcaptchasolution.com/eixxo1rsnw">
                 Anti-Captcha.com
@@ -102,7 +102,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
               <Text settingKey="settings-anticaptcha-anti_captcha_key"></Text>
             </Input>
           </CollapseBox.Content>
-          <CollapseBox.Content eventKey="deathbycaptcha">
+          <CollapseBox.Content eventKey="death-by-captcha">
             <Input>
               <a href="https://www.deathbycaptcha.com">DeathByCaptcha.com</a>
             </Input>

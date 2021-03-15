@@ -168,7 +168,7 @@ const SettingsGeneralView: FunctionComponent = () => {
             options={branchOptions}
             settingKey="settings-general-branch"
           ></Selector>
-          <Message>Branch used by external update mechanism</Message>
+          <Message>Branch used by update mechanism</Message>
         </Input>
       </Group>
       <Group header="Logging">
