@@ -1,13 +1,10 @@
 import { TableOptions, useTable } from "react-table";
-import BaseTable, {
-  ExtractStyleAndOptions,
-  TableStyleProps,
-} from "./BaseTable";
+import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 
 type Props<T extends object> = TableOptions<T> & TableStyleProps;
 
 export default function SimpleTable<T extends object>(props: Props<T>) {
-  const { style, options } = ExtractStyleAndOptions(props);
+  const { style, options } = useStyleAndOptions(props);
 
   const instance = useTable(options);
 

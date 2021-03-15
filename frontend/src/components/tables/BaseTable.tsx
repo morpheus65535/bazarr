@@ -34,7 +34,7 @@ interface ExtractResult<T extends object> {
   options: TableOptions<T>;
 }
 
-export function ExtractStyleAndOptions<T extends object>(
+export function useStyleAndOptions<T extends object>(
   props: TableStyleProps & TableOptions<T>
 ): ExtractResult<T> {
   const {

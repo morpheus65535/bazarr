@@ -1,23 +1,25 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import {
+  PluginHook,
   TableOptions,
   usePagination,
   useRowSelect,
   useTable,
 } from "react-table";
-import BaseTable, {
-  ExtractStyleAndOptions,
-  TableStyleProps,
-} from "./BaseTable";
+import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
-import { useCustomSelection } from "./plugins";
+import { useAsyncPagination, useCustomSelection } from "./plugins";
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps & {};
+type Props<T extends object> = TableOptions<T> &
+  TableStyleProps & {
+    async?: boolean;
+    canSelect?: boolean;
+  };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { ...remain } = props;
-  const { style, options } = ExtractStyleAndOptions(remain);
+  const { async, canSelect, ...remain } = props;
+  const { style, options } = useStyleAndOptions(remain);
 
   // Default Settings
   const site = useSelector<ReduxStore, ReduxStore.Site>((s) => s.site);
@@ -34,12 +36,17 @@ export default function PageTable<T extends object>(props: Props<T>) {
     options.initialState.pageSize = site.pageSize;
   }
 
-  const instance = useTable(
-    options,
-    usePagination,
-    useRowSelect,
-    useCustomSelection
-  );
+  const plugins: PluginHook<T>[] = [usePagination];
+
+  if (async) {
+    plugins.push(useAsyncPagination);
+  }
+
+  if (canSelect) {
+    plugins.push(useRowSelect, useCustomSelection);
+  }
+
+  const instance = useTable(options, ...plugins);
 
   const {
     getTableProps,
@@ -59,6 +66,10 @@ export default function PageTable<T extends object>(props: Props<T>) {
     state: { pageIndex, pageSize },
   } = instance;
 
+  const total = options.idState
+    ? options.idState.data.order.length
+    : rows.length;
+
   return (
     <React.Fragment>
       <BaseTable
@@ -73,7 +84,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
         count={pageCount}
         index={pageIndex}
         size={pageSize}
-        total={rows.length}
+        total={total}
         canPrevious={canPreviousPage}
         canNext={canNextPage}
         previous={previousPage}

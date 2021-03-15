@@ -6,7 +6,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { RouteComponentProps, withRouter } from "react-router-dom";
@@ -36,7 +36,13 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const item = serie.data;
 
   const [episodes, updateEpisodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
-  useAutoUpdate(updateEpisodes);
+
+  const combineUpdate = useCallback(() => {
+    update();
+    updateEpisodes();
+  }, [update, updateEpisodes]);
+
+  useAutoUpdate(combineUpdate);
 
   const avaliable = episodes.data.length !== 0;
 

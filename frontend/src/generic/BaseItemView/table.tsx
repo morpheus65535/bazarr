@@ -1,25 +1,25 @@
-import React, { FunctionComponent, useCallback } from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { TableUpdater } from "react-table";
 import { ExtendItemComparer, SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { ItemEditorModal, PageTable, useShowModal } from "../../components";
-import { getExtendItemId, useMergeArray } from "../../utilites";
+import { buildOrderList, getExtendItemId, useMergeArray } from "../../utilites";
 
 interface Props extends SharedProps {
-  items: readonly Item.Base[];
   dirtyItems: readonly Item.Base[];
   editMode: boolean;
   select: React.Dispatch<Item.Base[]>;
 }
 
 const Table: FunctionComponent<Props> = ({
-  items,
+  state,
   dirtyItems,
   update,
   modify,
   editMode,
   select,
   columns,
+  loader,
   name,
 }) => {
   const showModal = useShowModal();
@@ -31,15 +31,24 @@ const Table: FunctionComponent<Props> = ({
     [showModal]
   );
 
-  const data = useMergeArray(items, dirtyItems, ExtendItemComparer);
+  const idState = state.data;
+
+  const orderList = useMemo(() => buildOrderList(idState), [idState]);
+
+  const data = useMergeArray(orderList, dirtyItems, ExtendItemComparer);
 
   const [profiles] = useLanguageProfiles();
 
   return (
     <React.Fragment>
       <PageTable
+        async
+        canSelect
         columns={columns}
         data={data}
+        idState={state}
+        idGetter={getExtendItemId}
+        loader={loader}
         loose={[profiles]}
         select={editMode}
         onSelect={select}

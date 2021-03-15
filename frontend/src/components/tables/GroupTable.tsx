@@ -11,10 +11,7 @@ import {
   useSortBy,
   useTable,
 } from "react-table";
-import BaseTable, {
-  ExtractStyleAndOptions,
-  TableStyleProps,
-} from "./BaseTable";
+import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 
 function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
   if (cell.isGrouped) {
@@ -83,7 +80,7 @@ function renderHeaders<T extends object>(
 type Props<T extends object> = TableOptions<T> & TableStyleProps;
 
 export default function GroupTable<T extends object = {}>(props: Props<T>) {
-  const { style, options } = ExtractStyleAndOptions(props);
+  const { style, options } = useStyleAndOptions(props);
   const instance = useTable(options, useGroupBy, useSortBy, useExpanded);
 
   const {

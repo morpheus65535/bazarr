@@ -24,6 +24,7 @@ import {
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
+import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 const download = (item: any, result: SearchResultType) => {
@@ -47,6 +48,7 @@ interface Props extends RouteComponentProps<Params> {}
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
   const [movie, update] = useMovieBy(id);
+  useAutoUpdate(update);
   const item = movie.data;
 
   const showModal = useShowModal();
