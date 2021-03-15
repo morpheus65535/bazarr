@@ -48,7 +48,7 @@ export function useSessionStorage(
 export function useMergeArray<T>(
   olds: readonly T[],
   news: readonly T[],
-  comparer: Comparer<T>
+  comparer: Comparer<NonNullable<T>>
 ) {
   return useMemo(() => mergeArray(olds, news, comparer), [
     olds,

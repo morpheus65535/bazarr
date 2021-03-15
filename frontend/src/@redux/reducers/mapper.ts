@@ -48,10 +48,19 @@ export function updateAsyncDataList<T, ID extends keyof T>(
 
     let result: Nullable<T>[] = [];
 
-    const list = state.items;
+    const list = [...state.items];
+
+    // Fill empty list with null
+    const fillCount = total - list.length;
+    if (fillCount > 0) {
+      list.push(...Array(fillCount).fill(null));
+    } else if (fillCount < 0) {
+      throw new Error("array in redux storage is larger then API total");
+    }
 
     if (typeof start === "number" && typeof length === "number") {
-      result = [...list];
+      result = list;
+
       // TODO: Performance
       // Remove duplicate item
       result.filter((v) => {
@@ -61,11 +70,8 @@ export function updateAsyncDataList<T, ID extends keyof T>(
           return true;
         }
       });
-      const fillCount = total - result.length;
-      if (fillCount > 0) {
-        result.push(...Array(fillCount).fill(null));
-      }
-      result.splice(start, result.length, ...data);
+
+      result.splice(start, data.length, ...data);
     } else {
       result = mergeArray(list, data, (l, r) => l[match] === r[match]);
     }

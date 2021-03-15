@@ -22,12 +22,12 @@ export default function PageTable<T extends object>(props: Props<T>) {
   // Default Settings
   const site = useSelector<ReduxStore, ReduxStore.Site>((s) => s.site);
 
-  if (options.initialState === undefined) {
-    options.initialState = {};
-  }
-
   if (options.autoResetPage === undefined) {
     options.autoResetPage = false;
+  }
+
+  if (options.initialState === undefined) {
+    options.initialState = {};
   }
 
   if (options.initialState.pageSize === undefined) {

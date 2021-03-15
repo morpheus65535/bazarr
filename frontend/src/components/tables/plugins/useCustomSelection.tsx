@@ -10,7 +10,6 @@ import {
   MetaBase,
   TableInstance,
   TableToggleCommonProps,
-  useMountedLayoutEffect,
 } from "react-table";
 
 const pluginName = "useSelection";
@@ -58,8 +57,6 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
   } = instance;
 
   ensurePluginOrder(plugins, ["useRowSelect"], pluginName);
-
-  useMountedLayoutEffect(() => {}, []);
 
   useEffect(() => {
     // Performance
