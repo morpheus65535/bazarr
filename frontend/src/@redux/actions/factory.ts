@@ -14,7 +14,7 @@ import {
 const gLimiter: Map<PromiseCreator, Date> = new Map();
 const gArgs: Map<PromiseCreator, any[]> = new Map();
 
-const LIMIT_CALL_SECONDS = 5;
+const LIMIT_CALL_SECONDS = 1;
 
 function asyncActionFactory<T extends PromiseCreator>(
   type: string,
