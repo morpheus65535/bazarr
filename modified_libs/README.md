@@ -56,9 +56,13 @@ cloudscraper
 
 ### subliminal
 
-(Add attribution here)
+https://github.com/Diaoul/subliminal
+Copyright (c) 2016 Antoine Bertin
+subliminal is licensed under the MIT License
 
-(Add description here)
+Changes before this document was created are unknown.
+
+- Added cache key mangler function to prevent 'filename too long' errors
 
 ### cloudscraper
 
