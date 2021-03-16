@@ -89,6 +89,12 @@ settings.general.base_url = settings.general.base_url.rstrip('/')
 with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
     settings.write(handle)
 
+# migrate enabled_providers from comma separated string to list
+if isinstance(settings.general.enabled_providers, str) and not settings.general.enabled_providers.startswith('['):
+    settings.general.enabled_providers = str(settings.general.enabled_providers.split(","))
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+    settings.write(handle)
+
 # create database file
 if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
     import sqlite3
