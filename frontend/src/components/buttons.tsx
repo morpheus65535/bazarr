@@ -41,7 +41,7 @@ export const ActionButton: FunctionComponent<ActionButtonProps> = ({
   return (
     <Button
       disabled={other.loading || disabled}
-      size={size}
+      size={size ?? "sm"}
       variant={variant ?? "light"}
       className={`text-nowrap ${className ?? ""}`}
       onClick={onClick}
