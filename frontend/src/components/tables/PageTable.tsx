@@ -20,10 +20,11 @@ type Props<T extends object> = TableOptions<T> &
   TableStyleProps & {
     async?: boolean;
     canSelect?: boolean;
+    autoScroll?: boolean;
   };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { async, canSelect, ...remain } = props;
+  const { async, canSelect, autoScroll, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
   const plugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
@@ -57,7 +58,11 @@ export default function PageTable<T extends object>(props: Props<T>) {
   } = instance;
 
   // Scroll to top when page is changed
-  useEffect(ScrollToTop, [pageIndex]);
+  useEffect(() => {
+    if (autoScroll) {
+      ScrollToTop();
+    }
+  }, [pageIndex, autoScroll]);
 
   const total = options.idState
     ? options.idState.data.order.length

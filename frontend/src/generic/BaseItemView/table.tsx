@@ -44,6 +44,7 @@ const Table: FunctionComponent<Props> = ({
       <PageTable
         async
         canSelect
+        autoScroll
         columns={columns}
         data={data}
         idState={state}
