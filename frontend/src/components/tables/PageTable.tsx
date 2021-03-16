@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
   PluginHook,
@@ -7,6 +7,8 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
+import { LoadingIndicator } from "..";
+import { ScrollToTop } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useAsyncPagination, useCustomSelection } from "./plugins";
@@ -63,12 +65,19 @@ export default function PageTable<T extends object>(props: Props<T>) {
     gotoPage,
     nextPage,
     previousPage,
-    state: { pageIndex, pageSize },
+    state: { pageIndex, pageSize, pageToLoad, needLoadingScreen },
   } = instance;
+
+  // Scroll to top when page is changed
+  useEffect(ScrollToTop, [pageIndex]);
 
   const total = options.idState
     ? options.idState.data.order.length
     : rows.length;
+
+  if (needLoadingScreen) {
+    return <LoadingIndicator></LoadingIndicator>;
+  }
 
   return (
     <React.Fragment>
@@ -81,6 +90,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
         tableBodyProps={getTableBodyProps()}
       ></BaseTable>
       <PageControl
+        loadState={pageToLoad}
         count={pageCount}
         index={pageIndex}
         size={pageSize}

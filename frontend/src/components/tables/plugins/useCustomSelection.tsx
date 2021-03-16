@@ -12,7 +12,7 @@ import {
   TableToggleCommonProps,
 } from "react-table";
 
-const pluginName = "useSelection";
+const pluginName = "useCustomSelection";
 
 const checkboxId = "---selection---";
 
@@ -36,7 +36,7 @@ const Checkbox = forwardRef<
   return <Form.Check custom id={idIn} ref={resolvedRef} {...rest}></Form.Check>;
 });
 
-function useSelection<T extends object>(hooks: Hooks<T>) {
+function useCustomSelection<T extends object>(hooks: Hooks<T>) {
   hooks.visibleColumnsDeps.push((deps, { instance }) => [
     ...deps,
     instance.select,
@@ -45,7 +45,7 @@ function useSelection<T extends object>(hooks: Hooks<T>) {
   hooks.useInstance.push(useInstance);
 }
 
-useSelection.pluginName = pluginName;
+useCustomSelection.pluginName = pluginName;
 
 function useInstance<T extends object>(instance: TableInstance<T>) {
   const {
@@ -96,4 +96,4 @@ function visibleColumns<T extends object>(
   }
 }
 
-export default useSelection;
+export default useCustomSelection;

@@ -7,11 +7,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Badge } from "react-bootstrap";
+import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions, TableUpdater } from "react-table";
 import { ProvidersApi } from "../../apis";
 import {
-  ActionBadge,
+  ActionButton,
   AsyncStateOverlay,
   EpisodeHistoryModal,
   GroupTable,
@@ -129,29 +129,28 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        className: "d-flex flex-nowrap",
         Cell: ({ row, update }) => {
           return (
-            <span>
-              <ActionBadge
+            <ButtonGroup className="d-flex flex-nowrap">
+              <ActionButton
                 icon={faUser}
                 onClick={() => {
                   update && update(row, "manual-search");
                 }}
-              ></ActionBadge>
-              <ActionBadge
+              ></ActionButton>
+              <ActionButton
                 icon={faHistory}
                 onClick={() => {
                   update && update(row, "history");
                 }}
-              ></ActionBadge>
-              <ActionBadge
+              ></ActionButton>
+              <ActionButton
                 icon={faBriefcase}
                 onClick={() => {
                   update && update(row, "tools");
                 }}
-              ></ActionBadge>
-            </span>
+              ></ActionButton>
+            </ButtonGroup>
           );
         },
       },

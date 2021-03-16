@@ -47,7 +47,8 @@ declare module "react-table" {
   }
 
   interface useAsyncPaginationState<D extends Record<string, unknown>> {
-    loading?: PageControlAction;
+    pageToLoad?: PageControlAction;
+    needLoadingScreen?: boolean;
   }
 
   interface useSelectionProps<D extends Record<string, unknown>> {
