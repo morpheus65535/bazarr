@@ -1,7 +1,7 @@
 import { mergeArray } from "../../utilites";
 import { AsyncAction } from "../types";
 
-export function mapToAsyncState<Payload>(
+export function updateAsyncState<Payload>(
   action: AsyncAction<Payload>,
   defVal: Readonly<Payload>
 ): AsyncState<Payload> {
