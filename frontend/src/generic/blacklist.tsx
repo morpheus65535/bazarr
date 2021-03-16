@@ -1,4 +1,4 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { EpisodesApi, MoviesApi } from "../apis";
@@ -47,7 +47,7 @@ export const SeriesBlacklistButton: FunctionComponent<{
         }
         onSuccess={update}
       >
-        <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+        <FontAwesomeIcon icon={faFileExcel}></FontAwesomeIcon>
       </AsyncButton>
     );
   } else {
@@ -96,7 +96,7 @@ export const MoviesBlacklistButton: FunctionComponent<{
         }
         onSuccess={update}
       >
-        <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+        <FontAwesomeIcon icon={faFileExcel}></FontAwesomeIcon>
       </AsyncButton>
     );
   } else {
