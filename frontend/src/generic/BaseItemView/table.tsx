@@ -44,6 +44,7 @@ const Table: FunctionComponent<Props> = ({
       <PageTable
         async
         canSelect
+        autoScroll
         columns={columns}
         data={data}
         idState={state}
@@ -60,7 +61,7 @@ const Table: FunctionComponent<Props> = ({
         submit={modify}
         onSuccess={(item) => {
           const id = getExtendItemId(item);
-          update(id);
+          update([id]);
         }}
       ></ItemEditorModal>
     </React.Fragment>

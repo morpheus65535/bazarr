@@ -21,11 +21,11 @@ const ReleasesView: FunctionComponent<Props> = () => {
             <title>Releases - Bazarr (System)</title>
           </Helmet>
           <Row>
-            <Col xs={12}>
-              {item.map((v, idx) => (
+            {item.map((v, idx) => (
+              <Col xs={12}>
                 <InfoElement key={idx} {...v}></InfoElement>
-              ))}
-            </Col>
+              </Col>
+            ))}
           </Row>
         </Container>
       )}

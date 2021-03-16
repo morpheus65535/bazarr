@@ -15,7 +15,7 @@ import Table from "./table";
 
 export interface SharedProps {
   name: string;
-  update: (id?: number) => void;
+  update: (id?: number[]) => void;
   loader: (start: number, length: number) => void;
   columns: Column<Item.Base>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
@@ -69,12 +69,13 @@ const BaseItemView: FunctionComponent<Props> = (shared) => {
 
   const toggleMode = useCallback(() => {
     if (dirtyItems.length > 0) {
-      shared.update();
+      const ids = dirtyItems.map(getExtendItemId);
+      shared.update(ids);
     }
-    setEdit(!editMode);
+    setEdit((edit) => !edit);
     setDirty([]);
     setSelections([]);
-  }, [editMode, setEdit, dirtyItems.length, shared]);
+  }, [dirtyItems, shared]);
 
   const saveItems = useCallback(() => {
     const form: FormType.ModifyItem = {

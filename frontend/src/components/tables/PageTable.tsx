@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
 import {
   PluginHook,
   TableOptions,
@@ -11,34 +10,24 @@ import { LoadingIndicator } from "..";
 import { ScrollToTop } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
-import { useAsyncPagination, useCustomSelection } from "./plugins";
+import {
+  useAsyncPagination,
+  useCustomSelection,
+  useDefaultSettings,
+} from "./plugins";
 
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps & {
     async?: boolean;
     canSelect?: boolean;
+    autoScroll?: boolean;
   };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { async, canSelect, ...remain } = props;
+  const { async, canSelect, autoScroll, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  // Default Settings
-  const site = useSelector<ReduxStore, ReduxStore.Site>((s) => s.site);
-
-  if (options.autoResetPage === undefined) {
-    options.autoResetPage = false;
-  }
-
-  if (options.initialState === undefined) {
-    options.initialState = {};
-  }
-
-  if (options.initialState.pageSize === undefined) {
-    options.initialState.pageSize = site.pageSize;
-  }
-
-  const plugins: PluginHook<T>[] = [usePagination];
+  const plugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
 
   if (async) {
     plugins.push(useAsyncPagination);
@@ -69,7 +58,11 @@ export default function PageTable<T extends object>(props: Props<T>) {
   } = instance;
 
   // Scroll to top when page is changed
-  useEffect(ScrollToTop, [pageIndex]);
+  useEffect(() => {
+    if (autoScroll) {
+      ScrollToTop();
+    }
+  }, [pageIndex, autoScroll]);
 
   const total = options.idState
     ? options.idState.data.order.length

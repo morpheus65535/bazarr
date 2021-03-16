@@ -5,6 +5,7 @@ import React, {
   FunctionComponent,
   MouseEvent,
   PropsWithChildren,
+  useCallback,
   useState,
 } from "react";
 import { Button } from "react-bootstrap";
@@ -57,15 +58,18 @@ export function ContentHeaderAsyncButton<T extends () => Promise<any>>(
 
   const [updating, setUpdate] = useState(false);
 
+  const click = useCallback(() => {
+    setUpdate(true);
+    promise().then((val) => {
+      setUpdate(false);
+      onSuccess && onSuccess(val);
+    });
+  }, [onSuccess, promise]);
+
   return (
     <ContentHeaderButton
       updating={updating}
-      onClick={() => {
-        setUpdate(true);
-        promise()
-          .then(onSuccess)
-          .finally(() => setUpdate(false));
-      }}
+      onClick={click}
       {...button}
     ></ContentHeaderButton>
   );

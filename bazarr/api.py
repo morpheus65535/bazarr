@@ -542,13 +542,13 @@ class Series(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        seriesId = request.args.get('seriesid')
+        seriesId = request.args.getlist('seriesid[]')
 
         count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
 
-        if seriesId:
-            result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
-                                      "OFFSET ?", (seriesId, length, start))
+        if len(seriesId) != 0:
+            seriesIdList = ','.join(seriesId)
+            result = database.execute(f"SELECT * FROM table_shows WHERE sonarrSeriesId in ({seriesIdList}) ORDER BY sortTitle ASC")
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?"
                                       , (length, start))
@@ -782,13 +782,13 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        id = request.args.get('radarrid')
+        id = request.args.getlist('radarrid[]')
 
         count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
 
-        if id:
-            result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
-                                      "OFFSET ?", (id, length, start))
+        if len(id) != 0:
+            movieIdList = ','.join(id)
+            result = database.execute(f"SELECT * FROM table_movies WHERE radarrId in ({movieIdList}) ORDER BY sortTitle ASC")
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))

@@ -5,7 +5,7 @@ class SeriesApi extends BaseApi {
     super("/series");
   }
 
-  async series(id?: number) {
+  async series(id?: number[]) {
     return new Promise<AsyncDataWrapper<Item.Series>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Item.Series>>("", { seriesid: id })
         .then((result) => {

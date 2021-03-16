@@ -30,7 +30,9 @@ function reducer<T extends object>(
   instance: TableInstance<T> | undefined
 ): ReducerTableState<T> {
   if (action.type === ActionLoadingChange && instance) {
-    const pageToLoad = action.pageToLoad as PageControlAction;
+    let pageToLoad:
+      | PageControlAction
+      | undefined = action.pageToLoad as PageControlAction;
     let needLoadingScreen = false;
     const { idState } = instance;
     const { pageIndex, pageSize } = state;
@@ -48,6 +50,8 @@ function reducer<T extends object>(
       const order = idState.data.order.slice(pageStart, pageEnd);
       if (order.every(isNull)) {
         needLoadingScreen = true;
+      } else if (order.every(isNonNullable)) {
+        pageToLoad = undefined;
       }
     }
     return { ...state, pageToLoad, needLoadingScreen };

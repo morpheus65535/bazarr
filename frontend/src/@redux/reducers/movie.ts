@@ -6,7 +6,7 @@ import {
   MOVIES_UPDATE_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { mapToAsyncState, updateOrderIdState } from "./mapper";
+import { updateAsyncState, updateOrderIdState } from "./mapper";
 
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
@@ -16,7 +16,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     ) => {
       return {
         ...state,
-        historyList: mapToAsyncState(action, state.historyList.data),
+        historyList: updateAsyncState(action, state.historyList.data),
       };
     },
     [MOVIES_UPDATE_INFO]: (
@@ -43,7 +43,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     ) => {
       return {
         ...state,
-        blacklist: mapToAsyncState(action, state.blacklist.data),
+        blacklist: updateAsyncState(action, state.blacklist.data),
       };
     },
   },

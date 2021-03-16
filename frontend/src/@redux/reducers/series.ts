@@ -8,7 +8,7 @@ import {
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { mapToAsyncState, updateOrderIdState } from "./mapper";
+import { updateAsyncState, updateOrderIdState } from "./mapper";
 
 const reducer = handleActions<ReduxStore.Series, any>(
   {
@@ -18,14 +18,14 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        wantedSeriesList: mapToAsyncState(action, state.wantedSeriesList.data),
+        wantedSeriesList: updateAsyncState(action, state.wantedSeriesList.data),
       };
     },
     [SERIES_UPDATE_EPISODE_LIST]: (
       state,
       action: AsyncAction<Item.Episode[]>
     ) => {
-      const { updating, error, data: items } = mapToAsyncState(action, []);
+      const { updating, error, data: items } = updateAsyncState(action, []);
 
       const stateItems = { ...state.episodeList.data };
 
@@ -49,7 +49,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        historyList: mapToAsyncState(action, state.historyList.data),
+        historyList: updateAsyncState(action, state.historyList.data),
       };
     },
     [SERIES_UPDATE_INFO]: (
@@ -84,7 +84,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     ) => {
       return {
         ...state,
-        blacklist: mapToAsyncState(action, state.blacklist.data),
+        blacklist: updateAsyncState(action, state.blacklist.data),
       };
     },
   },
