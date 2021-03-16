@@ -15,7 +15,7 @@ const seriesUpdateWantedList = createAsyncAction(
   () => EpisodesApi.wanted()
 );
 
-const seriesUpdateBy = createAsyncAction(SERIES_UPDATE_INFO, (id?: number) =>
+const seriesUpdateBy = createAsyncAction(SERIES_UPDATE_INFO, (id?: number[]) =>
   SeriesApi.series(id)
 );
 
@@ -43,13 +43,9 @@ export const seriesUpdateHistoryList = createAsyncAction(
   () => EpisodesApi.history()
 );
 
-export const seriesUpdateInfoAll = createCombineAction((seriesid?: number) => {
-  const actions: any[] = [seriesUpdateBy(seriesid), badgeUpdateAll()];
-  if (seriesid !== undefined) {
-    actions.push(episodeUpdateBySeriesId(seriesid));
-  }
-  return actions;
-});
+export const seriesUpdateInfoAll = createCombineAction(
+  (seriesid?: number[]) => [seriesUpdateBy(seriesid), badgeUpdateAll()]
+);
 
 export const seriesUpdateBlacklist = createAsyncAction(
   SERIES_UPDATE_BLACKLIST,

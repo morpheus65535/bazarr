@@ -13,7 +13,7 @@ export const movieUpdateHistoryList = createAsyncAction(
   () => MoviesApi.history()
 );
 
-const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number) =>
+const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number[]) =>
   MoviesApi.movies(id)
 );
 
@@ -22,7 +22,7 @@ export const movieUpdateByRange = createAsyncAction(
   (start: number, length: number) => MoviesApi.moviesBy(start, length)
 );
 
-export const movieUpdateInfoAll = createCombineAction((id?: number) => {
+export const movieUpdateInfoAll = createCombineAction((id?: number[]) => {
   return [movieUpdateInfo(id), badgeUpdateAll()];
 });
 

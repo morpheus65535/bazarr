@@ -37,7 +37,7 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async movies(id?: number) {
+  async movies(id?: number[]) {
     return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Item.Movie>>("", { radarrid: id })
         .then((result) => {

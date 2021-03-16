@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = ({
         submit={modify}
         onSuccess={(item) => {
           const id = getExtendItemId(item);
-          update(id);
+          update([id]);
         }}
       ></ItemEditorModal>
     </React.Fragment>

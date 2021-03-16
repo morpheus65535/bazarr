@@ -131,7 +131,7 @@ export function useSerieBy(id?: number) {
 
   const update = useCallback(() => {
     if (id) {
-      updateSerie(id);
+      updateSerie([id]);
     }
   }, [id, updateSerie]);
 
@@ -205,7 +205,7 @@ export function useMovieBy(id?: number) {
 
   const update = useCallback(() => {
     if (id) {
-      updateMovies(id);
+      updateMovies([id]);
     }
   }, [id, updateMovies]);
 
