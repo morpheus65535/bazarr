@@ -102,11 +102,11 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       },
       {
         accessor: "language",
-        Cell: (row) => {
+        Cell: ({ row: { original }, value }) => {
           const lang: Language = {
-            code2: row.value,
-            hi: row.row.original.hearing_impaired === "True" ? true : false,
-            forced: row.row.original.forced === "True" ? true : false,
+            code2: value,
+            hi: original.hearing_impaired === "True",
+            forced: original.forced === "True",
             name: "",
           };
           return (
