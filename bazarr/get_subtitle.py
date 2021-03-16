@@ -440,9 +440,6 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 if not initial_hi_match:
                     initial_hi = None
 
-                if initial_hi_match:
-                    matches.add('hearing_impaired')
-
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
                     not_matched = scores - matches
