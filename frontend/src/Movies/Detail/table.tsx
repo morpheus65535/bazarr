@@ -99,7 +99,13 @@ const Table: FunctionComponent<Props> = (props) => {
     return movie.subtitles.concat(missing);
   }, [movie.missing_subtitles, movie.subtitles]);
 
-  return <SimpleTable columns={columns} data={data}></SimpleTable>;
+  return (
+    <SimpleTable
+      columns={columns}
+      data={data}
+      emptyText="No Subtitles Found For This Movie"
+    ></SimpleTable>
+  );
 };
 
 export default Table;
