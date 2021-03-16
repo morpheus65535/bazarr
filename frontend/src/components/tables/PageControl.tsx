@@ -1,5 +1,6 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Col, Container, Pagination, Row } from "react-bootstrap";
+import { PageControlAction } from "./types";
 interface Props {
   count: number;
   index: number;
@@ -10,6 +11,7 @@ interface Props {
   canNext: boolean;
   next: () => void;
   goto: (idx: number) => void;
+  loadState?: PageControlAction;
 }
 
 const PageControl: FunctionComponent<Props> = ({
@@ -22,10 +24,13 @@ const PageControl: FunctionComponent<Props> = ({
   canNext,
   next,
   goto,
+  loadState,
 }) => {
   const empty = total === 0;
   const start = empty ? 0 : size * index + 1;
   const end = Math.min(size * (index + 1), total);
+
+  const loading = loadState !== undefined;
 
   const pageButtons = useMemo(
     () =>
@@ -37,6 +42,7 @@ const PageControl: FunctionComponent<Props> = ({
             return (
               <Pagination.Item
                 key={idx}
+                disabled={loading}
                 active={index === idx}
                 onClick={() => goto(idx)}
               >
@@ -58,7 +64,7 @@ const PageControl: FunctionComponent<Props> = ({
             return [item];
           }
         }),
-    [count, index, goto]
+    [count, index, goto, loading]
   );
 
   return (
@@ -73,12 +79,12 @@ const PageControl: FunctionComponent<Props> = ({
           <Pagination className="m-0" hidden={count <= 1}>
             <Pagination.Prev
               onClick={previous}
-              disabled={!canPrevious}
+              disabled={!canPrevious && loading}
             ></Pagination.Prev>
             {pageButtons}
             <Pagination.Next
               onClick={next}
-              disabled={!canNext}
+              disabled={!canNext && loading}
             ></Pagination.Next>
           </Pagination>
         </Col>

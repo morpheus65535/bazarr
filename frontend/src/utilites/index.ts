@@ -101,5 +101,9 @@ export function Reload() {
   window.location.reload();
 }
 
+export function ScrollToTop() {
+  window.scrollTo(0, 0);
+}
+
 export * from "./hooks";
 export * from "./validate";

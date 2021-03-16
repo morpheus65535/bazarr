@@ -1,4 +1,4 @@
-import { isNumber } from "lodash";
+import { isNull } from "lodash";
 import { useCallback, useEffect, useMemo } from "react";
 import {
   ActionType,
@@ -9,7 +9,7 @@ import {
   TableOptions,
   TableState,
 } from "react-table";
-import { isNullable } from "../../../utilites";
+import { isNonNullable } from "../../../utilites";
 import { PageControlAction } from "../types";
 
 const pluginName = "useAsyncPagination";
@@ -29,15 +29,39 @@ function reducer<T extends object>(
   previous: TableState<T> | undefined,
   instance: TableInstance<T> | undefined
 ): ReducerTableState<T> {
-  if (action.type === ActionLoadingChange) {
-    const loading = action.loading;
-    return { ...state, loading };
+  if (action.type === ActionLoadingChange && instance) {
+    const pageToLoad = action.pageToLoad as PageControlAction;
+    let needLoadingScreen = false;
+    const { idState } = instance;
+    const { pageIndex, pageSize } = state;
+    let index = pageIndex;
+    if (pageToLoad === "prev") {
+      index -= 1;
+    } else if (pageToLoad === "next") {
+      index += 1;
+    } else if (typeof pageToLoad === "number") {
+      index = pageToLoad;
+    }
+    const pageStart = index * pageSize;
+    const pageEnd = pageStart + pageSize;
+    if (idState) {
+      const order = idState.data.order.slice(pageStart, pageEnd);
+      if (order.every(isNull)) {
+        needLoadingScreen = true;
+      }
+    }
+    return { ...state, pageToLoad, needLoadingScreen };
   }
   return state;
 }
 
 function useOptions<T extends object>(options: TableOptions<T>) {
   options.manualPagination = true;
+  if (options.initialState === undefined) {
+    options.initialState = {};
+  }
+  options.initialState.pageToLoad = 0;
+  options.initialState.needLoadingScreen = true;
   return options;
 }
 
@@ -52,43 +76,36 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
     nextPage,
     previousPage,
     gotoPage,
-    state: { pageIndex, pageSize, loading },
+    state: { pageIndex, pageSize, pageToLoad },
   } = instance;
 
   ensurePluginOrder(plugins, ["usePagination"], pluginName);
 
   const totalCount = idState?.data.order.length ?? 0;
-
-  const pageStart = pageSize * pageIndex;
-  const pageEnd = pageStart + pageSize;
   const pageCount = Math.ceil(totalCount / pageSize);
+  const pageStart = pageIndex * pageSize;
+  const pageEnd = pageStart + pageSize;
 
   useEffect(() => {
     // TODO Lazy Load
-    let start = pageStart;
-    let size = pageSize;
-    if (loading === "next") {
-      start += size;
-    } else if (loading === "prev") {
-      start = Math.max(0, start - size);
-    } else if (isNumber(loading)) {
-      start = loading * pageSize;
+    if (pageToLoad === undefined) {
+      return;
     }
-    loader && loader(start, pageSize);
-  }, [loader, pageStart, pageSize, loading]);
+    loader && loader(pageStart, pageSize);
+  }, [loader, pageStart, pageSize, pageToLoad]);
 
-  const updateLoading = useCallback(
-    (state?: PageControlAction) => {
-      dispatch({ type: ActionLoadingChange, loading: state });
+  const setPageToLoad = useCallback(
+    (pageToLoad?: PageControlAction) => {
+      dispatch({ type: ActionLoadingChange, pageToLoad });
     },
     [dispatch]
   );
 
   useEffect(() => {
     if (idState?.updating === false) {
-      updateLoading();
+      setPageToLoad();
     }
-  }, [idState?.updating, updateLoading]);
+  }, [idState?.updating, setPageToLoad]);
 
   const newGoto = useCallback(
     (updater: number | ((pageIndex: number) => number)) => {
@@ -98,27 +115,37 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
       } else {
         page = updater(pageIndex);
       }
-      updateLoading(page);
+      if (page === pageIndex) {
+        return;
+      }
+      setPageToLoad(page);
       gotoPage(page);
     },
-    [pageIndex, updateLoading, gotoPage]
+    [pageIndex, setPageToLoad, gotoPage]
   );
 
   const newPrevious = useCallback(() => {
-    updateLoading("prev");
+    if (pageIndex === 0) {
+      return;
+    }
+    setPageToLoad("prev");
     previousPage();
-  }, [updateLoading, previousPage]);
+  }, [setPageToLoad, previousPage, pageIndex]);
 
   const newNext = useCallback(() => {
-    updateLoading("next");
+    if (pageIndex === pageCount) {
+      return;
+    }
+    setPageToLoad("next");
     nextPage();
-  }, [updateLoading, nextPage]);
+  }, [setPageToLoad, nextPage, pageCount, pageIndex]);
 
   const newPages = useMemo(() => {
     // TODO: Performance
+
     const order = (idState?.data.order
       .slice(pageStart, pageEnd)
-      .filter((v) => !isNullable(v)) ?? []) as number[];
+      .filter(isNonNullable) ?? []) as number[];
 
     return order.flatMap((num) => {
       const row = rows.find((v) => idGetter && idGetter(v.original) === num);
