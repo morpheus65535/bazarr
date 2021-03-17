@@ -23,7 +23,7 @@ import {
 } from "react-bootstrap";
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
-import { useMovies, useSeries, useSystemSettings } from "../@redux/hooks";
+import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
@@ -32,71 +32,35 @@ import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useBaseUrl } from "../utilites";
 import "./header.scss";
 
+async function SearchItem(text: string) {
+  const results = await SystemApi.search(text);
+
+  return results.map<SearchResult>((v) => {
+    let link: string;
+    if (v.sonarrSeriesId) {
+      link = `series/${v.sonarrSeriesId}`;
+    } else if (v.radarrId) {
+      link = `movies/${v.radarrId}`;
+    } else {
+      link = "";
+    }
+    return {
+      name: `${v.title} (${v.year})`,
+      link,
+    };
+  });
+}
+
 interface Props {}
 
 const Header: FunctionComponent<Props> = () => {
   const setNeedAuth = useReduxAction(siteRedirectToAuth);
-
-  const [series, updateSeries] = useSeries();
-  const [movies, updateMovies] = useMovies();
 
   const [settings] = useSystemSettings();
 
   const canLogout = (settings.data?.auth.type ?? "none") !== "none";
 
   const toggleSidebar = useContext(SidebarToggleContext);
-
-  const updateItems = useCallback(() => {
-    if (series.data.length === 0) {
-      updateSeries();
-    }
-
-    if (movies.data.length === 0) {
-      updateMovies();
-    }
-  }, [series.data.length, movies.data.length, updateSeries, updateMovies]);
-
-  const searchSeries = useCallback(
-    (text: string): SearchResult[] => {
-      text = text.toLowerCase();
-
-      return series.data
-        .filter((val) => val.title.toLowerCase().includes(text))
-        .map((val) => {
-          return {
-            name: `${val.title} (${val.year})`,
-            link: `/series/${val.sonarrSeriesId}`,
-          };
-        });
-    },
-    [series]
-  );
-
-  const searchMovies = useCallback(
-    (text: string): SearchResult[] => {
-      text = text.toLowerCase();
-
-      return movies.data
-        .filter((val) => val.title.toLowerCase().includes(text))
-        .map((val) => {
-          return {
-            name: `${val.title} (${val.year})`,
-            link: `/movies/${val.radarrId}`,
-          };
-        });
-    },
-    [movies]
-  );
-
-  const search = useCallback(
-    (text: string): SearchResult[] => {
-      const movies = searchMovies(text);
-      const series = searchSeries(text);
-
-      return [...movies, ...series];
-    },
-    [searchMovies, searchSeries]
-  );
 
   const offline = useIsOffline();
 
@@ -157,7 +121,7 @@ const Header: FunctionComponent<Props> = () => {
       <Container fluid>
         <Row noGutters className="flex-grow-1">
           <Col xs={6} sm={4} className="d-flex align-items-center">
-            <SearchBar onFocus={updateItems} onSearch={search}></SearchBar>
+            <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <Button
