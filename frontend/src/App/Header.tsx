@@ -38,9 +38,9 @@ async function SearchItem(text: string) {
   return results.map<SearchResult>((v) => {
     let link: string;
     if (v.sonarrSeriesId) {
-      link = `series/${v.sonarrSeriesId}`;
+      link = `/series/${v.sonarrSeriesId}`;
     } else if (v.radarrId) {
-      link = `movies/${v.radarrId}`;
+      link = `/movies/${v.radarrId}`;
     } else {
       link = "";
     }
