@@ -250,3 +250,9 @@ interface SubtitleInfo {
   episode: number;
   season: number;
 }
+
+type ItemSearchResult = Partial<SeriesIdType> &
+  Partial<MovieIdType> & {
+    title: string;
+    year: string;
+  };

@@ -387,6 +387,28 @@ class Notifications(Resource):
 
         return '', 204
 
+class Searches(Resource):
+    @authenticate
+    def get(self):
+        query = request.args.get('query')
+        search_list = []
+
+        if query:
+            if settings.general.getboolean('use_sonarr'):
+                # Get matching series
+                series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? "
+                                          "ORDER BY title ASC", ("%" + query + "%",))
+
+                search_list += series
+
+            if settings.general.getboolean('use_radarr'):
+                # Get matching movies
+                movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
+                                          "title ASC", ("%" + query + "%",))
+
+                search_list += movies
+
+        return jsonify(search_list)
 
 class SystemSettings(Resource):
     @authenticate
@@ -1656,8 +1678,9 @@ api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
 api.add_resource(ProviderEpisodes, '/providers/episodes')
 
-api.add_resource(SystemAccount, '/system/account')
 api.add_resource(System, '/system')
+api.add_resource(Searches, "/system/searches")
+api.add_resource(SystemAccount, '/system/account')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
 api.add_resource(SystemStatus, '/system/status')

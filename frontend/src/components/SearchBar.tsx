@@ -16,7 +16,7 @@ export interface SearchResult {
 
 interface Props {
   className?: string;
-  onSearch: (text: string) => SearchResult[];
+  onSearch: (text: string) => Promise<SearchResult[]>;
   onFocus?: () => void;
   onBlur?: () => void;
 }
@@ -33,12 +33,22 @@ export const SearchBar: FunctionComponent<Props> = ({
 
   const history = useHistory();
 
-  const updateResult = useMemo(
-    () => throttle((value: string) => setResults(onSearch(value)), 500),
+  const search = useCallback(
+    (value: string) => {
+      if (value === "") {
+        setResults([]);
+      } else {
+        onSearch(value).then((res) => setResults(res));
+      }
+    },
     [onSearch]
   );
 
-  useEffect(() => updateResult(text), [updateResult, text]);
+  const debounceSearch = useMemo(() => throttle(search, 500), [search]);
+
+  useEffect(() => {
+    debounceSearch(text);
+  }, [text, debounceSearch]);
 
   const clear = useCallback(() => {
     setText("");

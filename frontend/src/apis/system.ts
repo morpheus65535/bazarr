@@ -144,6 +144,14 @@ class SystemApi extends BaseApi {
         .catch(reject);
     });
   }
+
+  async search(query: string) {
+    return new Promise<ItemSearchResult[]>((resolve, reject) => {
+      this.get<ItemSearchResult[]>("/searches", { query })
+        .then((res) => resolve(res.data))
+        .catch(reject);
+    });
+  }
 }
 
 export default new SystemApi();
