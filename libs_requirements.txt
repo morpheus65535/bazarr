@@ -36,8 +36,8 @@ waitress==1.4.3
 whichcraft==0.5.2
 
 # For some dependencies we use non released versions.
-# knowit==0.3.0-dev
-git+https://github.com/ratoaq2/knowit@eea9ac18e38c930230cf81b5dca4a9af9fb10d4e
+# knowit with https://github.com/ratoaq2/knowit/pull/30 fix
+git+https://github.com/labrys/knowit@d4f794b12796bd0651d25a2ee546cf1761e56fce
 
 # non releases
 #pysubs2==0.2.4 + patch for ASS.drawing, is available in 1.0.0
