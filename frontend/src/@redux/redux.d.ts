@@ -55,6 +55,7 @@ namespace ReduxStore {
 
   interface Movie {
     movieList: AsyncState<OrderIdState<Item.Movie>>;
+    wantedMovieList: AsyncState<Array<Wanted.Movie>>;
     historyList: AsyncState<Array<History.Movie>>;
     blacklist: AsyncState<Array<Blacklist.Movie>>;
   }

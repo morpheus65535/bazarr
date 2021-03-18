@@ -5,6 +5,7 @@ import {
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateInfoAll,
+  movieUpdateWantedAll,
   providerUpdateAll,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
@@ -220,17 +221,8 @@ export function useWantedSeries() {
 }
 
 export function useWantedMovies() {
-  const [movies, action] = useMovies();
-
-  const items = useMemo<AsyncState<Item.Movie[]>>(() => {
-    const items = movies.data.filter(
-      (v) => v !== null && v.missing_subtitles.length !== 0
-    ) as Item.Movie[];
-    return {
-      ...movies,
-      data: items,
-    };
-  }, [movies]);
+  const action = useReduxAction(movieUpdateWantedAll);
+  const items = useReduxStore((d) => d.movie.wantedMovieList);
 
   return stateBuilder(items, action);
 }

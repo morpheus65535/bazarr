@@ -4,12 +4,22 @@ import {
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_INFO,
   MOVIES_UPDATE_RANGE,
+  MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
 import { updateAsyncState, updateOrderIdState } from "./mapper";
 
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
+    [MOVIES_UPDATE_WANTED_LIST]: (
+      state,
+      action: AsyncAction<Wanted.Movie[]>
+    ) => {
+      return {
+        ...state,
+        wantedMovieList: updateAsyncState(action, state.wantedMovieList.data),
+      };
+    },
     [MOVIES_UPDATE_HISTORY_LIST]: (
       state,
       action: AsyncAction<History.Movie[]>
@@ -49,6 +59,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
   },
   {
     movieList: { updating: true, data: { items: {}, order: [] } },
+    wantedMovieList: { updating: true, data: [] },
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },
   }

@@ -1409,6 +1409,20 @@ class EpisodesWanted(Resource):
         return jsonify(data=data)
 
 
+# GET: Get Wanted Movies
+class MoviesWanted(Resource):
+    @authenticate
+    def get(self):
+        data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
+                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
+
+        for item in data:
+            postprocessMovie(item)
+
+        return jsonify(data=data)
+
+
 # GET: get blacklist
 # POST: add blacklist
 # DELETE: remove blacklist
@@ -1702,6 +1716,7 @@ api.add_resource(EpisodesHistory, '/episodes/history')
 api.add_resource(EpisodesBlacklist, '/episodes/blacklist')
 
 api.add_resource(Movies, '/movies')
+api.add_resource(MoviesWanted, '/movies/wanted')
 api.add_resource(MoviesSubtitles, '/movies/subtitles')
 api.add_resource(MoviesHistory, '/movies/history')
 api.add_resource(MoviesBlacklist, '/movies/blacklist')

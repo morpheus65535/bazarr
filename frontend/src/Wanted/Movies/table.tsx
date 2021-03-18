@@ -8,12 +8,12 @@ import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, PageTable } from "../../components";
 
 interface Props {
-  wanted: readonly Item.Movie[];
+  wanted: readonly Wanted.Movie[];
   update: () => void;
 }
 
 const Table: FunctionComponent<Props> = ({ wanted, update }) => {
-  const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
+  const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
     () => [
       {
         Header: "Name",
@@ -30,21 +30,21 @@ const Table: FunctionComponent<Props> = ({ wanted, update }) => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value }) => {
-          const wanted = row.original;
+        Cell: (row) => {
+          const wanted = row.row.original;
           const hi = wanted.hearing_impaired;
           const movieid = wanted.radarrId;
 
-          return value.map((item, idx) => (
+          return row.value.map((item, idx) => (
             <AsyncButton
               as={Badge}
               key={idx}
-              className="px-1 mr-2"
+              className="mx-1 mr-2"
               variant="secondary"
               promise={() =>
                 MoviesApi.downloadSubtitles(movieid, {
-                  hi,
                   language: item.code2,
+                  hi,
                   forced: false,
                 })
               }

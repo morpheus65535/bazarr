@@ -166,6 +166,8 @@ namespace Wanted {
       episode_number: string;
       seriesType: SonarrSeriesType;
     };
+
+  type Movie = Base & MovieIdType & TitleType;
 }
 
 namespace Blacklist {

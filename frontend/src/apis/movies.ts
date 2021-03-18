@@ -69,6 +69,18 @@ class MovieApi extends BaseApi {
     });
   }
 
+  async wanted(): Promise<Array<Wanted.Movie>> {
+    return new Promise<Array<Wanted.Movie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Wanted.Movie>>>("/wanted")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async history(id?: number): Promise<Array<History.Movie>> {
     return new Promise<Array<History.Movie>>((resolve, reject) => {
       this.get<DataWrapper<Array<History.Movie>>>("/history", {
