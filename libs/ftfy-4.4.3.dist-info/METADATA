@@ -1,0 +1,28 @@
+Metadata-Version: 2.1
+Name: ftfy
+Version: 4.4.3
+Summary: Fixes some problems with Unicode text after the fact
+Home-page: http://github.com/LuminosoInsight/python-ftfy
+Maintainer: Luminoso Technologies, Inc.
+Maintainer-email: info@luminoso.com
+License: MIT
+Platform: any
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Filters
+Classifier: Development Status :: 5 - Production/Stable
+Requires-Dist: html5lib
+Requires-Dist: wcwidth
+
+UNKNOWN
+
+

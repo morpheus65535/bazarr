@@ -31,7 +31,7 @@ import threading
 from typing import IO, Any, BinaryIO, Dict, List, Optional, Union
 
 from py7zr import UnsupportedCompressionMethodError
-from py7zr.extra import CopyDecompressor, DeflateDecompressor, ISevenZipDecompressor, ZstdDecompressor
+from py7zr.extra import AESDecompressor, CopyDecompressor, DeflateDecompressor, ISevenZipDecompressor, ZstdDecompressor
 from py7zr.helpers import MemIO, NullIO, calculate_crc32, readlink
 from py7zr.properties import READ_BLOCKSIZE, ArchivePassword, CompressionMethod
 
@@ -310,6 +310,10 @@ class SevenZipDecompressor:
             self.decompressor = CopyDecompressor()
         elif filter_id == self.FILTER_ZSTD and Zstd:
             self.decompressor = ZstdDecompressor()
+        elif filter_id == self.FILTER_AES:
+            password = ArchivePassword().get()
+            properties = coders[0].get('properties', None)
+            self.decompressor = AESDecompressor(properties, password, coders[1:])
         else:
             raise UnsupportedCompressionMethodError
 

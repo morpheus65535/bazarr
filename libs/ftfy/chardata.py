@@ -4,6 +4,7 @@ This gives other modules access to the gritty details about characters and the
 encodings that use them.
 """
 
+from __future__ import unicode_literals
 import re
 import zlib
 import unicodedata
@@ -14,13 +15,13 @@ from ftfy.compatibility import unichr
 # These are the encodings we will try to fix in ftfy, in the
 # order that they should be tried.
 CHARMAP_ENCODINGS = [
-    u'latin-1',
-    u'sloppy-windows-1252',
-    u'sloppy-windows-1250',
-    u'iso-8859-2',
-    u'sloppy-windows-1251',
-    u'macroman',
-    u'cp437',
+    'latin-1',
+    'sloppy-windows-1252',
+    'sloppy-windows-1250',
+    'iso-8859-2',
+    'sloppy-windows-1251',
+    'macroman',
+    'cp437',
 ]
 
 
@@ -28,25 +29,25 @@ def _build_regexes():
     """
     ENCODING_REGEXES contain reasonably fast ways to detect if we
     could represent a given string in a given encoding. The simplest one is
-    the u'ascii' detector, which of course just determines if all characters
+    the 'ascii' detector, which of course just determines if all characters
     are between U+0000 and U+007F.
     """
     # Define a regex that matches ASCII text.
-    encoding_regexes = {u'ascii': re.compile('^[\x00-\x7f]*$')}
+    encoding_regexes = {'ascii': re.compile('^[\x00-\x7f]*$')}
 
     for encoding in CHARMAP_ENCODINGS:
         # Make a sequence of characters that bytes \x80 to \xFF decode to
         # in each encoding, as well as byte \x1A, which is used to represent
         # the replacement character � in the sloppy-* encodings.
-        latin1table = u''.join(unichr(i) for i in range(128, 256)) + '\x1a'
-        charlist = latin1table.encode(u'latin-1').decode(encoding)
+        latin1table = ''.join(unichr(i) for i in range(128, 256)) + '\x1a'
+        charlist = latin1table.encode('latin-1').decode(encoding)
 
         # The rest of the ASCII bytes -- bytes \x00 to \x19 and \x1B
         # to \x7F -- will decode as those ASCII characters in any encoding we
         # support, so we can just include them as ranges. This also lets us
         # not worry about escaping regex special characters, because all of
         # them are in the \x1B to \x7F range.
-        regex = u'^[\x00-\x19\x1b-\x7f{0}]*$'.format(charlist)
+        regex = '^[\x00-\x19\x1b-\x7f{0}]*$'.format(charlist)
         encoding_regexes[encoding] = re.compile(regex)
     return encoding_regexes
 ENCODING_REGEXES = _build_regexes()
@@ -56,10 +57,10 @@ def _build_utf8_punct_regex():
     """
     Recognize UTF-8 mojibake that's so blatant that we can fix it even when the
     rest of the string doesn't decode as UTF-8 -- namely, UTF-8 sequences for
-    the u'General Punctuation' characters U+2000 to U+2040, re-encoded in
+    the 'General Punctuation' characters U+2000 to U+2040, re-encoded in
     Windows-1252.
 
-    These are recognizable by the distinctiveu'â€u' ('\xe2\x80') sequence they
+    These are recognizable by the distinctive 'â€' ('\xe2\x80') sequence they
     all begin with when decoded as Windows-1252.
     """
     # We're making a regex that has all the literal bytes from 0x80 to 0xbf in
@@ -71,10 +72,10 @@ def _build_utf8_punct_regex():
     # prettier when we deprecate Python 2.
     continuation_char_list = ''.join(
         unichr(i) for i in range(0x80, 0xc0)
-    ).encode(u'latin-1')
-    obvious_utf8 = (u'â€['
-                    + continuation_char_list.decode(u'sloppy-windows-1252')
-                    + u']')
+    ).encode('latin-1')
+    obvious_utf8 = ('â€['
+                    + continuation_char_list.decode('sloppy-windows-1252')
+                    + ']')
     return re.compile(obvious_utf8)
 PARTIAL_UTF8_PUNCT_RE = _build_utf8_punct_regex()
 
@@ -125,8 +126,8 @@ LOSSY_UTF8_RE = re.compile(
 )
 
 # These regexes match various Unicode variations on single and double quotes.
-SINGLE_QUOTE_RE = re.compile(u'[\u2018-\u201b]')
-DOUBLE_QUOTE_RE = re.compile(u'[\u201c-\u201f]')
+SINGLE_QUOTE_RE = re.compile('[\u2018-\u201b]')
+DOUBLE_QUOTE_RE = re.compile('[\u201c-\u201f]')
 
 
 def possible_encoding(text, encoding):
@@ -142,7 +143,7 @@ def possible_encoding(text, encoding):
 
 CHAR_CLASS_STRING = zlib.decompress(
     resource_string(__name__, 'char_classes.dat')
-).decode(u'ascii')
+).decode('ascii')
 
 def chars_to_classes(string):
     """
@@ -184,15 +185,15 @@ CONTROL_CHARS = _build_control_char_mapping()
 # Ligatures may also be separated by NFKC normalization, but that is sometimes
 # more normalization than you want.
 LIGATURES = {
-    ord(u'Ĳ'): u'IJ',
-    ord(u'ĳ'): u'ij',
-    ord(u'ﬀ'): u'ff',
-    ord(u'ﬁ'): u'fi',
-    ord(u'ﬂ'): u'fl',
-    ord(u'ﬃ'): u'ffi',
-    ord(u'ﬄ'): u'ffl',
-    ord(u'ﬅ'): u'ſt',
-    ord(u'ﬆ'): u'st'
+    ord('Ĳ'): 'IJ',
+    ord('ĳ'): 'ij',
+    ord('ﬀ'): 'ff',
+    ord('ﬁ'): 'fi',
+    ord('ﬂ'): 'fl',
+    ord('ﬃ'): 'ffi',
+    ord('ﬄ'): 'ffl',
+    ord('ﬅ'): 'ſt',
+    ord('ﬆ'): 'st'
 }
 
 
@@ -204,10 +205,10 @@ def _build_width_map():
     # Though it's not listed as a fullwidth character, we'll want to convert
     # U+3000 IDEOGRAPHIC SPACE to U+20 SPACE on the same principle, so start
     # with that in the dictionary.
-    width_map = {0x3000: u' '}
+    width_map = {0x3000: ' '}
     for i in range(0xff01, 0xfff0):
         char = unichr(i)
-        alternate = unicodedata.normalize(u'NFKC', char)
+        alternate = unicodedata.normalize('NFKC', char)
         if alternate != char:
             width_map[i] = alternate
     return width_map

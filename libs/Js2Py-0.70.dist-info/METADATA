@@ -1,0 +1,31 @@
+Metadata-Version: 2.1
+Name: Js2Py
+Version: 0.70
+Summary: JavaScript to Python Translator & JavaScript interpreter written in 100% pure Python.
+Home-page: https://github.com/PiotrDabkowski/Js2Py
+Author: Piotr Dabkowski
+Author-email: piodrus@gmail.com
+License: MIT
+Platform: UNKNOWN
+Requires-Dist: tzlocal (>=1.2)
+Requires-Dist: six (>=1.10)
+Requires-Dist: pyjsparser (>=2.5.1)
+
+Translates JavaScript to Python code. Js2Py is able to translate and execute virtually any JavaScript code.
+
+Js2Py is written in pure python and does not have any dependencies. Basically an implementation of JavaScript core in pure python.
+
+
+    import js2py
+
+    f = js2py.eval_js( "function $(name) {return name.length}" )
+
+    f("Hello world")
+
+    # returns 11
+
+Now also supports ECMA 6 through js2py.eval_js6(js6_code)!
+
+More examples at: https://github.com/PiotrDabkowski/Js2Py
+
+

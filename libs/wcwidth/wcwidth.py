@@ -159,14 +159,11 @@ def wcwidth(wc):
     # NOTE: created by hand, there isn't anything identifiable other than
     # general Cf category code to identify these, and some characters in Cf
     # category code are of non-zero width.
-
-    # pylint: disable=too-many-boolean-expressions
-    #          Too many boolean expressions in if statement (7/5)
-    if (ucs == 0 or
-            ucs == 0x034F or
+    if (0 == ucs or
+            0x034F == ucs or
             0x200B <= ucs <= 0x200F or
-            ucs == 0x2028 or
-            ucs == 0x2029 or
+            0x2028 == ucs or
+            0x2029 == ucs or
             0x202A <= ucs <= 0x202E or
             0x2060 <= ucs <= 0x2063):
         return 0

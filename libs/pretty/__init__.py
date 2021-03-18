@@ -8,16 +8,10 @@ __copyright__ = "Copyright 2010, S Anand"
 __license__ = "WTFPL"
 
 from datetime import datetime
-from six import PY3
 
 def _df(seconds, denominator=1, text='', past=True):
-    if PY3:
-        result = str(round(seconds / denominator))
-    else:
-        result = str((seconds + denominator/2)/ denominator)
-
-    if past:   return         result + text + ' ago'
-    else:      return 'in ' + result + text
+    if past:   return         str((seconds + denominator/2)/ denominator) + text + ' ago'
+    else:      return 'in ' + str((seconds + denominator/2)/ denominator) + text
 
 def date(time=False, asdays=False, short=False):
     '''Returns a pretty formatted date.

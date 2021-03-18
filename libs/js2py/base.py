@@ -126,7 +126,7 @@ def HJs(val):
             except Exception as e:
                 message = 'your Python function failed!  '
                 try:
-                    message += e.message
+                    message += str(e)
                 except:
                     pass
                 raise MakeError('Error', message)
@@ -319,7 +319,7 @@ class PyJs(object):
         #prop = prop.value
         if self.Class == 'Undefined' or self.Class == 'Null':
             raise MakeError('TypeError',
-                            'Undefined and null dont have properties!')
+                            'Undefined and null dont have properties (tried getting property %s)' % repr(prop))
         if not isinstance(prop, basestring):
             prop = prop.to_string().value
         if not isinstance(prop, basestring): raise RuntimeError('Bug')
@@ -361,7 +361,7 @@ class PyJs(object):
            * / % + - << >> & ^ |'''
         if self.Class == 'Undefined' or self.Class == 'Null':
             raise MakeError('TypeError',
-                            'Undefined and null dont have properties!')
+                            'Undefined and null don\'t have properties (tried setting property %s)' % repr(prop))
         if not isinstance(prop, basestring):
             prop = prop.to_string().value
         if NUMPY_AVAILABLE and prop.isdigit():
@@ -991,7 +991,8 @@ class PyJs(object):
         cand = self.get(prop)
         if not cand.is_callable():
             raise MakeError('TypeError',
-                            '%s is not a function' % cand.typeof())
+                            '%s is not a function (tried calling property %s of %s)' % (
+                            cand.typeof(), repr(prop), repr(self.Class)))
         return cand.call(self, args)
 
     def to_python(self):
@@ -1304,7 +1305,7 @@ class PyObjectWrapper(PyJs):
         except Exception as e:
             message = 'your Python function failed!  '
             try:
-                message += e.message
+                message += str(e)
             except:
                 pass
             raise MakeError('Error', message)
@@ -1464,9 +1465,11 @@ class PyJsFunction(PyJs):
         except NotImplementedError:
             raise
         except RuntimeError as e:  # maximum recursion
-            raise MakeError(
-                'RangeError', e.message if
-                not isinstance(e, NotImplementedError) else 'Not implemented!')
+            try:
+                msg = e.message
+            except:
+                msg = repr(e)
+            raise MakeError('RangeError', msg)
 
     def has_instance(self, other):
         # I am not sure here so instanceof may not work lol.

@@ -1,0 +1,44 @@
+Metadata-Version: 2.1
+Name: pysubs2
+Version: 0.2.4
+Summary: A library for editing subtitle files
+Home-page: https://github.com/tkarabela/pysubs2
+Author: Tomas Karabela
+Author-email: tkarabela@seznam.cz
+License: UNKNOWN
+Keywords: SubStation SubRip MicroDVD ass srt sub subtitles
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Markup
+Classifier: Topic :: Multimedia :: Video
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Operating System :: OS Independent
+Classifier: License :: OSI Approved :: MIT License
+
+\
+pysubs2 is a Python library for editing subtitle files.
+It’s based on *SubStation Alpha*, the native format of
+`Aegisub <http://www.aegisub.org/>`_; it also supports *SubRip (SRT)*,
+*MicroDVD*, *MPL2* and *TMP* formats. There is a small CLI tool for batch conversion
+and retiming.
+
+::
+
+    import pysubs2
+    subs = pysubs2.load("my_subtitles.ass", encoding="utf-8")
+    subs.shift(s=2.5)
+    for line in subs:
+        line.text = "{\\be1}" + line.text
+    subs.save("my_subtitles_edited.ass")
+
+
+

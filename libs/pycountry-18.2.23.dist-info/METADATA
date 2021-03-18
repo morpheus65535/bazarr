@@ -1,0 +1,415 @@
+Metadata-Version: 2.1
+Name: pycountry
+Version: 18.2.23
+Summary: ISO country, subdivision, language, currency and script definitions and their translations
+Home-page: UNKNOWN
+Author: Christian Theune
+Author-email: ct@flyingcircus.io
+License: LGPL 2.1
+Keywords: country subdivision language currency iso 3166 639 4217 15924 3166-2
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Topic :: Software Development :: Internationalization
+Classifier: Topic :: Software Development :: Localization
+
+=========
+pycountry
+=========
+
+pycountry provides the ISO databases for the standards:
+
+639-3
+  Languages
+
+3166
+  Countries
+
+3166-3
+  Deleted countries
+
+3166-2
+  Subdivisions of countries
+
+4217
+  Currencies
+
+15924
+  Scripts
+
+The package includes a copy from Debian's `pkg-isocodes` and makes the data
+accessible through a Python API.
+
+Translation files for the various strings are included as well.
+
+Data update policy
+==================
+
+No changes to the data will be accepted into pycountry. This is a pure wrapper
+around the ISO standard using the `pkg-isocodes` database from Debian *as is*.
+If you need changes to the politicial situation in the world, please talk to
+the ISO or Debian people, not me.
+
+Donations / Monetary Support
+============================
+
+This is a small project that I maintain in my personal time. I am not
+interested in personal financial gain. However, if you would like to support
+the project then I would love if you would donate to `Feminist Frequency
+<https://feministfrequency.com/donate/>`_ instead. Also, let the world know you
+did so, so that others can follow your path.
+
+Contributions
+=============
+
+The code lives in a `bitbucket Mercurial repository
+<https://bitbucket.org/flyingcircus/pycountry>`_, and issues must be reported in
+`project bugtracker
+<https://bitbucket.org/flyingcircus/pycountry/issues?status=new&status=open>`_.
+
+Countries (ISO 3166)
+====================
+
+Countries are accessible through a database object that is already configured
+upon import of pycountry and works as an iterable:
+
+  >>> import pycountry
+  >>> len(pycountry.countries)
+  249
+  >>> list(pycountry.countries)[0]
+  Country(alpha_2='AF', alpha_3='AFG', name='Afghanistan', numeric='004', official_name='Islamic Republic of Afghanistan')
+
+Specific countries can be looked up by their various codes and provide the
+information included in the standard as attributes:
+
+  >>> germany = pycountry.countries.get(alpha_2='DE')
+  >>> germany
+  Country(alpha_2='DE', alpha_3='DEU', name='Germany', numeric='276', official_name='Federal Republic of Germany')
+  >>> germany.alpha_2
+  'DE'
+  >>> germany.alpha_3
+  'DEU'
+  >>> germany.numeric
+  '276'
+  >>> germany.name
+  'Germany'
+  >>> germany.official_name
+  'Federal Republic of Germany'
+
+The `historic_countries` database contains former countries that have been
+removed from the standard and are now included in ISO 3166-3, excluding
+existing ones:
+
+ >>> ussr = pycountry.historic_countries.get(alpha_3='SUN')
+ >>> ussr
+ Country(alpha_3='SUN', alpha_4='SUHH', withdrawal_date='1992-08-30', name='USSR, Union of Soviet Socialist Republics', numeric='810')
+ >>> ussr.alpha_4
+ 'SUHH'
+ >>> ussr.alpha_3
+ 'SUN'
+ >>> ussr.name
+ 'USSR, Union of Soviet Socialist Republics'
+ >>> ussr.withdrawal_date
+ '1992-08-30'
+
+
+Country subdivisions (ISO 3166-2)
+=================================
+
+The country subdivisions are a little more complex than the countries itself
+because they provide a nested and typed structure.
+
+All subdivisons can be accessed directly:
+
+  >>> len(pycountry.subdivisions)
+  4847
+  >>> list(pycountry.subdivisions)[0]
+  Subdivision(code='AD-07', country_code='AD', name='Andorra la Vella', parent_code=None, type='Parish')
+
+Subdivisions can be accessed using their unique code and provide at least
+their code, name and type:
+
+  >>> de_st = pycountry.subdivisions.get(code='DE-ST')
+  >>> de_st.code
+  'DE-ST'
+  >>> de_st.name
+  'Sachsen-Anhalt'
+  >>> de_st.type
+  'State'
+  >>> de_st.country
+  Country(alpha_2='DE', alpha_3='DEU', name='Germany', numeric='276', official_name='Federal Republic of Germany')
+
+Some subdivisions specify another subdivision as a parent:
+
+  >>> al_br = pycountry.subdivisions.get(code='AL-BU')
+  >>> al_br.code
+  'AL-BU'
+  >>> al_br.name
+  'Bulqiz\xeb'
+  >>> al_br.type
+  'District'
+  >>> al_br.parent_code
+  'AL-09'
+  >>> al_br.parent
+  Subdivision(code='AL-09', country_code='AL', name='Dib\xebr', parent_code=None, type='County')
+  >>> al_br.parent.name
+  'Dib\xebr'
+
+The divisions of a single country can be queried using the country_code index:
+
+  >>> len(pycountry.subdivisions.get(country_code='DE'))
+  16
+
+  >>> len(pycountry.subdivisions.get(country_code='US'))
+  57
+
+
+Scripts (ISO 15924)
+===================
+
+Scripts are available from a database similar to the countries:
+
+  >>> len(pycountry.scripts)
+  169
+  >>> list(pycountry.scripts)[0]
+  Script(alpha_4='Afak', name='Afaka', numeric='439')
+
+  >>> latin = pycountry.scripts.get(name='Latin')
+  >>> latin
+  Script(alpha_4='Latn', name='Latin', numeric='215')
+  >>> latin.alpha4
+  'Latn'
+  >>> latin.name
+  'Latin'
+  >>> latin.numeric
+  '215'
+
+
+Currencies (ISO 4217)
+=====================
+
+The currencies database is, again, similar to the ones before:
+
+  >>> len(pycountry.currencies)
+  182
+  >>> list(pycountry.currencies)[0]
+  Currency(alpha_3='AED', name='UAE Dirham', numeric='784')
+  >>> argentine_peso = pycountry.currencies.get(alpha_3='ARS')
+  >>> argentine_peso
+  Currency(alpha_3='ARS', name='Argentine Peso', numeric='032')
+  >>> argentine_peso.alpha_3
+  'ARS'
+  >>> argentine_peso.name
+  'Argentine Peso'
+  >>> argentine_peso.numeric
+  '032'
+
+
+Languages (ISO 639-3)
+=====================
+
+The languages database is similar too:
+
+  >>> len(pycountry.languages)
+  7874
+  >>> list(pycountry.languages)[0]
+  Language(alpha_3='aaa', name='Ghotuo', scope='I', type='L')
+
+  >>> aragonese = pycountry.languages.get(alpha_2='an')
+  >>> aragonese.alpha_2
+  'an'
+  >>> aragonese.alpha_3
+  'arg'
+  >>> aragonese.name
+  'Aragonese'
+
+  >>> bengali = pycountry.languages.get(alpha_2='bn')
+  >>> bengali.name
+  'Bengali'
+  >>> bengali.common_name
+  'Bangla'
+
+Locales
+=======
+
+Locales are available in the `pycountry.LOCALES_DIR` subdirectory of this
+package. The translation domains are called `isoXXX` according to the standard
+they provide translations for. The directory is structured in a way compatible
+to Python's gettext module.
+
+Here is an example translating language names:
+
+  >>> import gettext
+  >>> german = gettext.translation('iso3166', pycountry.LOCALES_DIR,
+  ...                              languages=['de'])
+  >>> german.install()
+  >>> _('Germany')
+  'Deutschland'
+
+Lookups
+=======
+
+For each database (countries, languages, scripts, etc.), you can also look up
+entities case insensitively without knowing which key the value may match.  For
+example:
+
+  >>> pycountry.countries.lookup('de')
+  <pycountry.db.Country object at 0x...>
+
+The search ends with the first match, which is returned.
+
+Changes
+=======
+
+18.2.23 (2018-02-23)
+--------------------
+
+- Update to iso-codes 3.78.
+
+
+17.9.23 (2017-09-23)
+--------------------
+
+- Update to iso-codes 3.76, which fixes #13398.
+
+
+17.5.14 (2017-05-14)
+--------------------
+
+- Update to iso-codes 3.75, which fixes #13389 again.
+  (bad parent codes for GB).
+
+- Switch from building on drone.io (discontinued service) to
+  bitbucket's Pipelines.
+
+- Update pytest dependencies to get rid of API warnings.
+
+17.01.08 (2017-01-08)
+---------------------
+
+- Update to iso-codes 3.73, which fixes #13389 (bad parent codes for CZ).
+
+
+17.01.02 (2017-01-02)
+---------------------
+
+- Return empty lists from the subdivision database if the country exists
+  but does not have any subdivisions. Fixes #13374.
+
+- Some typo fixes. Thanks to @VictorMireyev.
+
+- Update to iso-codes-3.72.
+
+
+16.11.27.1 (2016-11-27)
+-----------------------
+
+- 16.11.27 was a brown bag release. I merged the PRs online, but didn't
+  pull them. Well. This is what 16.11.27 actually should have been.
+
+
+16.11.27 (2016-11-27)
+---------------------
+
+- Fix encoding issue on Python 3 (which seems to have been limited to
+  some platforms.) Via PR17, fixes #13386.
+  Thanks to @masroore and @hiaselhans.
+
+- Documentation fix: iso639_1_code is not a valid key for languages any
+  more. Fixes #13387, thanks to @jmitzka.
+
+- Update to iso-codes-3.71.
+
+
+16.11.08 (2016-11-08)
+---------------------
+
+This release was heavily supported by @zware who fixed some of the issues
+I overlooked in the last releases and a few enhancements.
+
+* All data objects now have a repr() that includes all values. (@zware)
+
+* All database objects now have a lookup method that takes a value and
+  returns the first data object that has an attribute that matches the value.
+  Note that searching is halted when the first match is found. (@zware)
+
+* Clean up historical countries: the deleted flag is gone and there is no
+  database that holds both historical and present countries any longer.
+  The record formats are too different to keep this facade up reasonably well.
+
+* Fix parent lookup for subdivisions.
+
+* Update README to correctly show the updated field names.
+
+* Update pins for the packages we depend on.
+
+* Reduce Python test coverage to Python 2.7 and 3.5 -- I can't sustain
+  running a bazillion Python versions all the time forever.
+
+* Fix Python 3 compatibility (@zware)
+
+
+
+16.10.23rc3 (2016-10-23)
+------------------------
+
+- Incorporate some typos and suggested README improvements from @Pander in #13375.
+
+
+16.10.23rc2 (2016-10-23)
+------------------------
+
+- Adapt README to the new attributes.
+
+
+16.10.23rc1 (2016-10-23)
+------------------------
+
+This is a major change. The upstream packages have been revamped from the
+former XML databases to use JSON. They adapted their schemata a bit and thus
+made some of the structures in pycountry superfluous (yay!). Memory usage went
+down when all databases are loaded (32.7 MiB down from 83.6 MiB) and
+performance has gone up (not measured scientifically, but it's noticable when
+loading the DBs in an interactive session).
+
+To mark this major change, I'm also switch from the existing (not useful)
+SemVer-based version numbers to CalVer-based numbers using YY.MM.DD.micro as
+the pattern.
+
+To avoid adding more complexity I have removed code that really only was
+necessary because of the complexity of using the XML databases.
+
+Here's what you need to know:
+
+- I updated to iso-codes 3.70 which is a lot fresher than the
+  last release.
+
+- Attribute names have changed. There is no longer a mapping
+  going on between the sources and the object attributes. Take
+  a look at the JSON files (or inspect the objects) to see
+  which fields are supported.
+
+  You can also inspect the automatically build indexes (db.indices) to see all
+  keys in a database. Not every object supports every attribute - this depends
+  on the quality of the data from pkg-isocodes.
+
+  Attribute names are more coherent now, too. Note that "alpha2", "alpha4",
+  etc. are now using an underscore as that's the pattern in the upstream
+  packages. So it's "alpha_2" now.
+
+- HistoricCountries no longer includes countries that still
+  exist. I removed the computed fields that were meant to
+  make it easy to filter.
+
+

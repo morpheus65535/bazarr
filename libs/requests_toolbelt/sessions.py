@@ -13,7 +13,7 @@ class BaseUrlSession(requests.Session):
         >>> from requests_toolbelt import sessions
         >>> s = sessions.BaseUrlSession(
         ...     base_url='https://example.com/resource/')
-        >>> r = s.get('sub-resource/', params={'foo': 'bar'})
+        >>> r = s.get('sub-resource/' params={'foo': 'bar'})
         >>> print(r.request.url)
         https://example.com/resource/sub-resource/?foo=bar
 
@@ -36,7 +36,7 @@ class BaseUrlSession(requests.Session):
         >>> from requests_toolbelt import sessions
         >>> s = sessions.BaseUrlSession(
         ...     base_url='https://example.com/resource/')
-        >>> r = s.get('/sub-resource/', params={'foo': 'bar'})
+        >>> r = s.get('/sub-resource/' params={'foo': 'bar'})
         >>> print(r.request.url)
         https://example.com/sub-resource/?foo=bar
 

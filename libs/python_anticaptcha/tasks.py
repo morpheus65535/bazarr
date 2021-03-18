@@ -115,7 +115,7 @@ class CustomCaptchaTask(BaseTask):
                      'imageUrl': self.imageUrl})
         if self.form:
             forms = []
-            for name, field in self.form.items():
+            for name, field in list(self.form.items()):
                 if isinstance(field, BaseField):
                     forms.append(field.serialize(name))
                 else:

@@ -26,6 +26,8 @@ import zlib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
+from Crypto.Cipher import AES
+
 from py7zr import UnsupportedCompressionMethodError
 from py7zr.helpers import Buffer, calculate_key
 from py7zr.properties import READ_BLOCKSIZE, CompressionMethod
@@ -86,6 +88,93 @@ class CopyDecompressor(ISevenZipDecompressor):
             res = self._buf[:length]
             self._buf = self._buf[length:] + data
         return res
+
+
+class AESDecompressor(ISevenZipDecompressor):
+
+    lzma_methods_map = {
+        CompressionMethod.LZMA: lzma.FILTER_LZMA1,
+        CompressionMethod.LZMA2: lzma.FILTER_LZMA2,
+        CompressionMethod.DELTA: lzma.FILTER_DELTA,
+        CompressionMethod.P7Z_BCJ: lzma.FILTER_X86,
+        CompressionMethod.BCJ_ARM: lzma.FILTER_ARM,
+        CompressionMethod.BCJ_ARMT: lzma.FILTER_ARMTHUMB,
+        CompressionMethod.BCJ_IA64: lzma.FILTER_IA64,
+        CompressionMethod.BCJ_PPC: lzma.FILTER_POWERPC,
+        CompressionMethod.BCJ_SPARC: lzma.FILTER_SPARC,
+    }
+
+    def __init__(self, aes_properties: bytes, password: str, coders: List[Dict[str, Any]]) -> None:
+        byte_password = password.encode('utf-16LE')
+        firstbyte = aes_properties[0]
+        numcyclespower = firstbyte & 0x3f
+        if firstbyte & 0xc0 != 0:
+            saltsize = (firstbyte >> 7) & 1
+            ivsize = (firstbyte >> 6) & 1
+            secondbyte = aes_properties[1]
+            saltsize += (secondbyte >> 4)
+            ivsize += (secondbyte & 0x0f)
+            assert len(aes_properties) == 2 + saltsize + ivsize
+            salt = aes_properties[2:2 + saltsize]
+            iv = aes_properties[2 + saltsize:2 + saltsize + ivsize]
+            assert len(salt) == saltsize
+            assert len(iv) == ivsize
+            assert numcyclespower <= 24
+            if ivsize < 16:
+                iv += bytes('\x00' * (16 - ivsize), 'ascii')
+            key = calculate_key(byte_password, numcyclespower, salt, 'sha256')
+            self.lzma_decompressor = self._set_lzma_decompressor(coders)  # type: lzma.LZMADecompressor
+            self.cipher = AES.new(key, AES.MODE_CBC, iv)
+            self.buf = Buffer(size=READ_BLOCKSIZE + 16)
+            self.flushed = False
+        else:
+            raise UnsupportedCompressionMethodError
+
+    # set pipeline decompressor
+    def _set_lzma_decompressor(self, coders: List[Dict[str, Any]]) -> lzma.LZMADecompressor:
+        filters = []  # type: List[Dict[str, Any]]
+        for coder in coders:
+            filter = self.lzma_methods_map.get(coder['method'], None)
+            if filter is not None:
+                properties = coder.get('properties', None)
+                if properties is not None:
+                    filters[:0] = [lzma._decode_filter_properties(filter, properties)]  # type: ignore
+                else:
+                    filters[:0] = [{'id': filter}]
+            else:
+                raise UnsupportedCompressionMethodError
+        return lzma.LZMADecompressor(format=lzma.FORMAT_RAW, filters=filters)
+
+    def decompress(self, data: Union[bytes, bytearray, memoryview], max_length: int = -1) -> bytes:
+        if len(data) == 0 and len(self.buf) == 0:  # action flush
+            return self.lzma_decompressor.decompress(b'', max_length)
+        elif len(data) == 0:  # action padding
+            self.flushded = True
+            # align = 16
+            # padlen = (align - offset % align) % align
+            #       = (align - (offset & (align - 1))) & (align - 1)
+            #       = -offset & (align -1)
+            #       = -offset & (16 - 1) = -offset & 15
+            padlen = -len(self.buf) & 15
+            self.buf.add(bytes(padlen))
+            temp = self.cipher.decrypt(self.buf.view)  # type: bytes
+            self.buf.reset()
+            return self.lzma_decompressor.decompress(temp, max_length)
+        else:
+            currentlen = len(self.buf) + len(data)
+            nextpos = (currentlen // 16) * 16
+            if currentlen == nextpos:
+                self.buf.add(data)
+                temp = self.cipher.decrypt(self.buf.view)
+                self.buf.reset()
+                return self.lzma_decompressor.decompress(temp, max_length)
+            else:
+                buflen = len(self.buf)
+                temp2 = data[nextpos - buflen:]
+                self.buf.add(data[:nextpos - buflen])
+                temp = self.cipher.decrypt(self.buf.view)
+                self.buf.set(temp2)
+                return self.lzma_decompressor.decompress(temp, max_length)
 
 
 class ZstdDecompressor(ISevenZipDecompressor):

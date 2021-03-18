@@ -1,0 +1,12 @@
+PySocks-1.6.7.dist-info/DESCRIPTION.rst,sha256=OCTuuN6LcWulhHS3d5rfjdsQtW22n7HENFRh6jC6ego,10
+PySocks-1.6.7.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+PySocks-1.6.7.dist-info/METADATA,sha256=npf7z1Ae0Vo3DMge2NhLo4jbpFjf7vX8SipAQiSHeOA,312
+PySocks-1.6.7.dist-info/RECORD,,
+PySocks-1.6.7.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+PySocks-1.6.7.dist-info/WHEEL,sha256=-aSo8rHuuPDEFzkcqqQ55pDyCjy25bYMLxSiHWKAOTc,92
+PySocks-1.6.7.dist-info/metadata.json,sha256=IMnMpSsW7hHh5shcFsyEnu0J01r8k-vFRDWCSjVdMuQ,498
+PySocks-1.6.7.dist-info/top_level.txt,sha256=TKSOIfCFBoK9EY8FBYbYqC3PWd3--G15ph9n8-QHPDk,19
+__pycache__/socks.cpython-39.pyc,,
+__pycache__/sockshandler.cpython-39.pyc,,
+socks.py,sha256=u1QkA0HXacvI0Y1UGMK_MnDFu470CNjR0tnsJniM2AM,32006
+sockshandler.py,sha256=ENwUUO3vt84_1yRHAq1A147TL_TAuFux2t_1QvNV2Vo,2913

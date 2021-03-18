@@ -21,8 +21,8 @@ ENCODING = 'UTF-8'
 
 
 _cih_instance = ClassInstanceHook()
-DEFAULT_ENCODERS = [json_date_time_encode, class_instance_encode, json_complex_encode, json_set_encode, numeric_types_encode,]
-DEFAULT_HOOKS = [json_date_time_hook, _cih_instance, json_complex_hook, json_set_hook, numeric_types_hook,]
+DEFAULT_ENCODERS = [json_date_time_encode, json_complex_encode, json_set_encode, numeric_types_encode, class_instance_encode,]
+DEFAULT_HOOKS = [json_date_time_hook, json_complex_hook, json_set_hook, numeric_types_hook, _cih_instance,]
 
 try:
 	import numpy
@@ -160,7 +160,7 @@ def loads(string, preserve_order=True, ignore_comments=True, decompression=None,
 	if not hasattr(extra_obj_pairs_hooks, '__iter__'):
 		raise TypeError('`extra_obj_pairs_hooks` should be a tuple in `json_tricks.load(s)`')
 	if decompression is None:
-		decompression = string[:2] == b'\x1f\x8b'
+		decompression = isinstance(string, bytes) and string[:2] == b'\x1f\x8b'
 	if decompression:
 		with GzipFile(fileobj=BytesIO(string), mode='rb') as zh:
 			string = zh.read()

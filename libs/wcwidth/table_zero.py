@@ -1,7 +1,7 @@
 """Zero_Width table. Created by setup.py."""
-# Generated: 2016-07-02T04:20:28.075504
-# Source: DerivedGeneralCategory-9.0.0.txt
-# Date:  2016-06-01, 10:34:26 GMT
+# Generated: 2015-09-14T01:48:19.532217
+# Source: DerivedGeneralCategory-8.0.0.txt
+# Date:  2015-02-13, 13:47:11 GMT [MD]
 ZERO_WIDTH = (
     (0x0300, 0x036f,),  # Combining Grave Accent  ..Combining Latin Small Le
     (0x0483, 0x0489,),  # Combining Cyrillic Titlo..Combining Cyrillic Milli
@@ -26,7 +26,6 @@ ZERO_WIDTH = (
     (0x0825, 0x0827,),  # Samaritan Vowel Sign Sho..Samaritan Vowel Sign U
     (0x0829, 0x082d,),  # Samaritan Vowel Sign Lon..Samaritan Mark Nequdaa
     (0x0859, 0x085b,),  # Mandaic Affrication Mark..Mandaic Gemination Mark
-    (0x08d4, 0x08e1,),  # (nil)                   ..
     (0x08e3, 0x0902,),  # Arabic Turned Damma Belo..Devanagari Sign Anusvara
     (0x093a, 0x093a,),  # Devanagari Vowel Sign Oe..Devanagari Vowel Sign Oe
     (0x093c, 0x093c,),  # Devanagari Sign Nukta   ..Devanagari Sign Nukta
@@ -121,7 +120,6 @@ ZERO_WIDTH = (
     (0x17c9, 0x17d3,),  # Khmer Sign Muusikatoan  ..Khmer Sign Bathamasat
     (0x17dd, 0x17dd,),  # Khmer Sign Atthacan     ..Khmer Sign Atthacan
     (0x180b, 0x180d,),  # Mongolian Free Variation..Mongolian Free Variation
-    (0x1885, 0x1886,),  # Mongolian Letter Ali Gal..Mongolian Letter Ali Gal
     (0x18a9, 0x18a9,),  # Mongolian Letter Ali Gal..Mongolian Letter Ali Gal
     (0x1920, 0x1922,),  # Limbu Vowel Sign A      ..Limbu Vowel Sign U
     (0x1927, 0x1928,),  # Limbu Vowel Sign E      ..Limbu Vowel Sign O
@@ -160,7 +158,7 @@ ZERO_WIDTH = (
     (0x1cf4, 0x1cf4,),  # Vedic Tone Candra Above ..Vedic Tone Candra Above
     (0x1cf8, 0x1cf9,),  # Vedic Tone Ring Above   ..Vedic Tone Double Ring A
     (0x1dc0, 0x1df5,),  # Combining Dotted Grave A..Combining Up Tack Above
-    (0x1dfb, 0x1dff,),  # (nil)                   ..Combining Right Arrowhea
+    (0x1dfc, 0x1dff,),  # Combining Double Inverte..Combining Right Arrowhea
     (0x20d0, 0x20f0,),  # Combining Left Harpoon A..Combining Asterisk Above
     (0x2cef, 0x2cf1,),  # Coptic Combining Ni Abov..Coptic Combining Spiritu
     (0x2d7f, 0x2d7f,),  # Tifinagh Consonant Joine..Tifinagh Consonant Joine
@@ -175,7 +173,7 @@ ZERO_WIDTH = (
     (0xa806, 0xa806,),  # Syloti Nagri Sign Hasant..Syloti Nagri Sign Hasant
     (0xa80b, 0xa80b,),  # Syloti Nagri Sign Anusva..Syloti Nagri Sign Anusva
     (0xa825, 0xa826,),  # Syloti Nagri Vowel Sign ..Syloti Nagri Vowel Sign
-    (0xa8c4, 0xa8c5,),  # Saurashtra Sign Virama  ..
+    (0xa8c4, 0xa8c4,),  # Saurashtra Sign Virama  ..Saurashtra Sign Virama
     (0xa8e0, 0xa8f1,),  # Combining Devanagari Dig..Combining Devanagari Sig
     (0xa926, 0xa92d,),  # Kayah Li Vowel Ue       ..Kayah Li Tone Calya Plop
     (0xa947, 0xa951,),  # Rejang Vowel Sign I     ..Rejang Consonant Sign R
@@ -227,7 +225,6 @@ ZERO_WIDTH = (
     (0x1122f, 0x11231,),  # Khojki Vowel Sign U     ..Khojki Vowel Sign Ai
     (0x11234, 0x11234,),  # Khojki Sign Anusvara    ..Khojki Sign Anusvara
     (0x11236, 0x11237,),  # Khojki Sign Nukta       ..Khojki Sign Shadda
-    (0x1123e, 0x1123e,),  # (nil)                   ..
     (0x112df, 0x112df,),  # Khudawadi Sign Anusvara ..Khudawadi Sign Anusvara
     (0x112e3, 0x112ea,),  # Khudawadi Vowel Sign U  ..Khudawadi Sign Virama
     (0x11300, 0x11301,),  # Grantha Sign Combining A..Grantha Sign Candrabindu
@@ -235,9 +232,6 @@ ZERO_WIDTH = (
     (0x11340, 0x11340,),  # Grantha Vowel Sign Ii   ..Grantha Vowel Sign Ii
     (0x11366, 0x1136c,),  # Combining Grantha Digit ..Combining Grantha Digit
     (0x11370, 0x11374,),  # Combining Grantha Letter..Combining Grantha Letter
-    (0x11438, 0x1143f,),  # (nil)                   ..
-    (0x11442, 0x11444,),  # (nil)                   ..
-    (0x11446, 0x11446,),  # (nil)                   ..
     (0x114b3, 0x114b8,),  # Tirhuta Vowel Sign U    ..Tirhuta Vowel Sign Vocal
     (0x114ba, 0x114ba,),  # Tirhuta Vowel Sign Short..Tirhuta Vowel Sign Short
     (0x114bf, 0x114c0,),  # Tirhuta Sign Candrabindu..Tirhuta Sign Anusvara
@@ -256,13 +250,6 @@ ZERO_WIDTH = (
     (0x1171d, 0x1171f,),  # Ahom Consonant Sign Medi..Ahom Consonant Sign Medi
     (0x11722, 0x11725,),  # Ahom Vowel Sign I       ..Ahom Vowel Sign Uu
     (0x11727, 0x1172b,),  # Ahom Vowel Sign Aw      ..Ahom Sign Killer
-    (0x11c30, 0x11c36,),  # (nil)                   ..
-    (0x11c38, 0x11c3d,),  # (nil)                   ..
-    (0x11c3f, 0x11c3f,),  # (nil)                   ..
-    (0x11c92, 0x11ca7,),  # (nil)                   ..
-    (0x11caa, 0x11cb0,),  # (nil)                   ..
-    (0x11cb2, 0x11cb3,),  # (nil)                   ..
-    (0x11cb5, 0x11cb6,),  # (nil)                   ..
     (0x16af0, 0x16af4,),  # Bassa Vah Combining High..Bassa Vah Combining High
     (0x16b30, 0x16b36,),  # Pahawh Hmong Mark Cim Tu..Pahawh Hmong Mark Cim Ta
     (0x16f8f, 0x16f92,),  # Miao Tone Right         ..Miao Tone Below
@@ -278,12 +265,6 @@ ZERO_WIDTH = (
     (0x1da84, 0x1da84,),  # Signwriting Location Hea..Signwriting Location Hea
     (0x1da9b, 0x1da9f,),  # Signwriting Fill Modifie..Signwriting Fill Modifie
     (0x1daa1, 0x1daaf,),  # Signwriting Rotation Mod..Signwriting Rotation Mod
-    (0x1e000, 0x1e006,),  # (nil)                   ..
-    (0x1e008, 0x1e018,),  # (nil)                   ..
-    (0x1e01b, 0x1e021,),  # (nil)                   ..
-    (0x1e023, 0x1e024,),  # (nil)                   ..
-    (0x1e026, 0x1e02a,),  # (nil)                   ..
     (0x1e8d0, 0x1e8d6,),  # Mende Kikakui Combining ..Mende Kikakui Combining
-    (0x1e944, 0x1e94a,),  # (nil)                   ..
     (0xe0100, 0xe01ef,),  # Variation Selector-17   ..Variation Selector-256
 )
