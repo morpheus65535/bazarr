@@ -52,7 +52,7 @@ declare module "react-table" {
   }
 
   interface useSelectionProps<D extends Record<string, unknown>> {
-    select?: boolean;
+    isSelecting?: boolean;
     onSelect?: (items: D[]) => void;
   }
 

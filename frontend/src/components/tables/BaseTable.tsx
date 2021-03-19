@@ -8,7 +8,7 @@ import {
   TableProps,
 } from "react-table";
 
-export interface BaseTableProps<T extends object> extends TableStyleProps {
+export interface BaseTableProps<T extends object> extends TableStyleProps<T> {
   // Table Options
   headers: HeaderGroup<T>[];
   rows: Row<T>[];
@@ -19,7 +19,7 @@ export interface BaseTableProps<T extends object> extends TableStyleProps {
   tableBodyProps: TableBodyProps;
 }
 
-export interface TableStyleProps {
+export interface TableStyleProps<T extends object> {
   emptyText?: string;
   responsive?: boolean;
   hoverable?: boolean;
@@ -27,15 +27,17 @@ export interface TableStyleProps {
   borderless?: boolean;
   small?: boolean;
   hideHeader?: boolean;
+  headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
+  rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
 }
 
 interface ExtractResult<T extends object> {
-  style: TableStyleProps;
+  style: TableStyleProps<T>;
   options: TableOptions<T>;
 }
 
 export function useStyleAndOptions<T extends object>(
-  props: TableStyleProps & TableOptions<T>
+  props: TableStyleProps<T> & TableOptions<T>
 ): ExtractResult<T> {
   const {
     emptyText,
@@ -45,6 +47,8 @@ export function useStyleAndOptions<T extends object>(
     borderless,
     small,
     hideHeader,
+    headersRenderer,
+    rowRenderer,
     ...options
   } = props;
   return {
@@ -56,6 +60,8 @@ export function useStyleAndOptions<T extends object>(
       borderless,
       small,
       hideHeader,
+      headersRenderer,
+      rowRenderer,
     },
     options,
   };

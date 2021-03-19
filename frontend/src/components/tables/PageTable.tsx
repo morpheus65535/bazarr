@@ -1,3 +1,4 @@
+import { isUndefined } from "lodash";
 import React, { useEffect } from "react";
 import {
   PluginHook,
@@ -17,27 +18,32 @@ import {
 } from "./plugins";
 
 type Props<T extends object> = TableOptions<T> &
-  TableStyleProps & {
+  TableStyleProps<T> & {
     async?: boolean;
     canSelect?: boolean;
     autoScroll?: boolean;
+    plugins?: PluginHook<T>[];
   };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { async, canSelect, autoScroll, ...remain } = props;
+  const { async, autoScroll, canSelect, plugins, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  const plugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
+  const allPlugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
 
   if (async) {
-    plugins.push(useAsyncPagination);
+    allPlugins.push(useAsyncPagination);
   }
 
   if (canSelect) {
-    plugins.push(useRowSelect, useCustomSelection);
+    allPlugins.push(useRowSelect, useCustomSelection);
   }
 
-  const instance = useTable(options, ...plugins);
+  if (plugins) {
+    allPlugins.push(...plugins);
+  }
+
+  const instance = useTable(options, ...allPlugins);
 
   const {
     getTableProps,
@@ -45,6 +51,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
     headerGroups,
     rows,
     prepareRow,
+
+    initialState,
 
     // page
     page,
@@ -54,6 +62,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
     gotoPage,
     nextPage,
     previousPage,
+    setPageSize,
     state: { pageIndex, pageSize, pageToLoad, needLoadingScreen },
   } = instance;
 
@@ -63,6 +72,24 @@ export default function PageTable<T extends object>(props: Props<T>) {
       ScrollToTop();
     }
   }, [pageIndex, autoScroll]);
+
+  useEffect(() => {
+    const selecting = options.isSelecting;
+    const defaultSize = initialState?.pageSize;
+    if (canSelect && !isUndefined(selecting) && !isUndefined(defaultSize)) {
+      if (selecting) {
+        setPageSize(rows.length);
+      } else {
+        setPageSize(defaultSize);
+      }
+    }
+  }, [
+    canSelect,
+    initialState?.pageSize,
+    options.isSelecting,
+    rows.length,
+    setPageSize,
+  ]);
 
   const total = options.idState
     ? options.idState.data.order.length

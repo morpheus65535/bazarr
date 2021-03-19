@@ -39,7 +39,7 @@ const Checkbox = forwardRef<
 function useCustomSelection<T extends object>(hooks: Hooks<T>) {
   hooks.visibleColumnsDeps.push((deps, { instance }) => [
     ...deps,
-    instance.select,
+    instance.isSelecting,
   ]);
   hooks.visibleColumns.push(visibleColumns);
   hooks.useInstance.push(useInstance);
@@ -52,7 +52,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
     plugins,
     rows,
     onSelect,
-    select,
+    isSelecting,
     state: { selectedRowIds },
   } = instance;
 
@@ -60,13 +60,13 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
 
   useEffect(() => {
     // Performance
-    if (select) {
+    if (isSelecting) {
       const items = Object.keys(selectedRowIds).flatMap(
         (v) => rows.find((n) => n.id === v)?.original ?? []
       );
       onSelect && onSelect(items);
     }
-  }, [selectedRowIds, onSelect, rows, select]);
+  }, [selectedRowIds, onSelect, rows, isSelecting]);
 }
 
 function visibleColumns<T extends object>(
@@ -74,7 +74,7 @@ function visibleColumns<T extends object>(
   meta: MetaBase<T>
 ): Column<T>[] {
   const { instance } = meta;
-  if (instance.select) {
+  if (instance.isSelecting) {
     const checkbox: Column<T> = {
       id: checkboxId,
       Header: ({ getToggleAllRowsSelectedProps }: HeaderProps<any>) => (

@@ -9,10 +9,9 @@ import {
   useExpanded,
   useGroupBy,
   useSortBy,
-  useTable,
 } from "react-table";
-import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
-import { useDefaultSettings } from "./plugins";
+import { TableStyleProps } from "./BaseTable";
+import SimpleTable from "./SimpleTable";
 
 function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
   if (cell.isGrouped) {
@@ -78,36 +77,18 @@ function renderHeaders<T extends object>(
     .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
 }
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps;
+type Props<T extends object> = TableOptions<T> & TableStyleProps<T>;
 
-export default function GroupTable<T extends object = {}>(props: Props<T>) {
-  const { style, options } = useStyleAndOptions(props);
-  const instance = useTable(
-    options,
-    useDefaultSettings,
-    useGroupBy,
-    useSortBy,
-    useExpanded
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-  } = instance;
-
+function GroupTable<T extends object = {}>(props: Props<T>) {
+  const plugins = [useGroupBy, useSortBy, useExpanded];
   return (
-    <BaseTable
-      {...style}
-      headers={headerGroups}
-      rows={rows}
-      prepareRow={prepareRow}
-      tableProps={getTableProps()}
-      tableBodyProps={getTableBodyProps()}
+    <SimpleTable
+      {...props}
+      plugins={plugins}
       headersRenderer={renderHeaders}
       rowRenderer={renderRow}
-    ></BaseTable>
+    ></SimpleTable>
   );
 }
+
+export default GroupTable;
