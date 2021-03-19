@@ -1,25 +1,108 @@
-import React, { FunctionComponent } from "react";
-import { Container, Row } from "react-bootstrap";
-import { Helmet } from "react-helmet";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { Column, Row } from "react-table";
 import { useMoviesHistory } from "../../@redux/hooks";
+import { HistoryIcon, LanguageText } from "../../components";
+import { MoviesBlacklistButton } from "../../generic/blacklist";
 import { useAutoUpdate } from "../../utilites/hooks";
-import Table from "./table";
+import HistoryGenericView from "../generic";
 
 interface Props {}
 
 const MoviesHistoryView: FunctionComponent<Props> = () => {
-  const [, update] = useMoviesHistory();
+  const [movies, update] = useMoviesHistory();
   useAutoUpdate(update);
 
+  const tableUpdate = useCallback((row: Row<History.Base>) => update(), [
+    update,
+  ]);
+
+  const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
+    () => [
+      {
+        accessor: "action",
+        className: "text-center",
+        Cell: (row) => <HistoryIcon action={row.value}></HistoryIcon>,
+      },
+      {
+        Header: "Name",
+        accessor: "title",
+        className: "text-nowrap",
+        Cell: (row) => {
+          const target = `/movies/${row.row.original.radarrId}`;
+
+          return (
+            <Link to={target}>
+              <span>{row.value}</span>
+            </Link>
+          );
+        },
+      },
+      {
+        Header: "Language",
+        accessor: "language",
+        Cell: ({ value }) => {
+          if (value) {
+            return (
+              <Badge variant="secondary">
+                <LanguageText text={value} long={true}></LanguageText>
+              </Badge>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+      {
+        Header: "Score",
+        accessor: "score",
+      },
+      {
+        Header: "Date",
+        accessor: "timestamp",
+        className: "text-nowrap",
+      },
+      {
+        accessor: "description",
+        Cell: ({ row, value }) => {
+          const overlay = (
+            <Popover id={`description-${row.id}`}>
+              <Popover.Content>{value}</Popover.Content>
+            </Popover>
+          );
+          return (
+            <OverlayTrigger overlay={overlay}>
+              <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
+            </OverlayTrigger>
+          );
+        },
+      },
+      {
+        accessor: "exist",
+        Cell: ({ row, update }) => {
+          const original = row.original;
+          return (
+            <MoviesBlacklistButton
+              update={() => update && update(row)}
+              {...original}
+            ></MoviesBlacklistButton>
+          );
+        },
+      },
+    ],
+    []
+  );
+
   return (
-    <Container fluid>
-      <Helmet>
-        <title>Movies History - Bazarr</title>
-      </Helmet>
-      <Row>
-        <Table></Table>
-      </Row>
-    </Container>
+    <HistoryGenericView
+      type="movies"
+      state={movies}
+      columns={columns as Column<History.Base>[]}
+      tableUpdater={tableUpdate}
+    ></HistoryGenericView>
   );
 };
 
