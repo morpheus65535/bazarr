@@ -8,7 +8,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateByRange } from "../@redux/actions";
+import { seriesUpdateByRange, seriesUpdateInfoAll } from "../@redux/actions";
 import { useRawSeries } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
@@ -18,7 +18,7 @@ import BaseItemView from "../generic/BaseItemView";
 interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
-  const [series, update] = useRawSeries();
+  const [series] = useRawSeries();
   const load = useReduxAction(seriesUpdateByRange);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -26,7 +26,7 @@ const SeriesView: FunctionComponent<Props> = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, select }) => {
+        Cell: ({ row, value, isSelecting: select }) => {
           if (select) {
             return value;
           } else {
@@ -133,7 +133,7 @@ const SeriesView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={series}
       name="Series"
-      update={update}
+      updateAction={seriesUpdateInfoAll}
       loader={load}
       columns={columns as Column<Item.Base>[]}
       modify={(form) => SeriesApi.modify(form)}

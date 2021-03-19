@@ -7,7 +7,11 @@ import {
   MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
-import { createAsyncAction, createCombineAction } from "./factory";
+import {
+  createAsyncAction,
+  createAsyncCombineAction,
+  createCombineAction,
+} from "./factory";
 import { badgeUpdateAll } from "./site";
 
 export const movieUpdateList = createAsyncAction(MOVIES_UPDATE_LIST, () =>
@@ -37,7 +41,7 @@ const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number[]) =>
   MoviesApi.movies(id)
 );
 
-export const movieUpdateInfoAll = createCombineAction((id?: number[]) => [
+export const movieUpdateInfoAll = createAsyncCombineAction((id?: number[]) => [
   movieUpdateInfo(id),
   badgeUpdateAll(),
 ]);

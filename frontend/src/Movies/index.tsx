@@ -10,7 +10,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateByRange } from "../@redux/actions";
+import { movieUpdateByRange, movieUpdateInfoAll } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
@@ -20,7 +20,7 @@ import BaseItemView from "../generic/BaseItemView";
 interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
-  const [movies, update] = useRawMovies();
+  const [movies] = useRawMovies();
   const load = useReduxAction(movieUpdateByRange);
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
@@ -38,7 +38,7 @@ const MovieView: FunctionComponent<Props> = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, select }) => {
+        Cell: ({ row, value, isSelecting: select }) => {
           if (select) {
             return value;
           } else {
@@ -120,8 +120,8 @@ const MovieView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={movies}
       name="Movies"
-      update={update}
       loader={load}
+      updateAction={movieUpdateInfoAll}
       columns={columns as Column<Item.Base>[]}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>

@@ -13,7 +13,7 @@ import {
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
-import { createCallbackAction } from "./factory";
+import { createAsyncAction, createCallbackAction } from "./factory";
 import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 
 export const bootstrap = createCallbackAction(
@@ -30,7 +30,7 @@ export const siteRedirectToAuth = createAction(SITE_NEED_AUTH);
 
 export const siteAuthSuccess = createAction(SITE_AUTH_SUCCESS);
 
-export const badgeUpdateAll = createAction(SITE_BADGE_UPDATE, () =>
+export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
   BadgesApi.all()
 );
 

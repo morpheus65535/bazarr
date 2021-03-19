@@ -13,6 +13,7 @@ import {
   SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
+import { AsyncAction } from "../types";
 
 function updateLocalStorage(): Partial<ReduxStore.Site> {
   return {
@@ -76,8 +77,12 @@ const reducer = handleActions<ReduxStore.Site, any>(
       };
     },
     [SITE_BADGE_UPDATE]: {
-      next: (state, action: Action<Badge>) => {
-        return { ...state, badges: action.payload };
+      next: (state, action: AsyncAction<Badge>) => {
+        const badges = action.payload.item;
+        if (badges && action.error !== true) {
+          return { ...state, badges: badges as Badge };
+        }
+        return state;
       },
       throw: (state) => state,
     },

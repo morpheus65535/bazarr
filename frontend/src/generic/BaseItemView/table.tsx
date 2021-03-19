@@ -9,6 +9,7 @@ interface Props extends SharedProps {
   dirtyItems: readonly Item.Base[];
   editMode: boolean;
   select: React.Dispatch<Item.Base[]>;
+  update: (ids?: number[]) => void;
 }
 
 const Table: FunctionComponent<Props> = ({
@@ -43,15 +44,15 @@ const Table: FunctionComponent<Props> = ({
     <React.Fragment>
       <PageTable
         async
-        canSelect
         autoScroll
+        canSelect
         columns={columns}
         data={data}
         idState={state}
         idGetter={getExtendItemId}
         loader={loader}
         loose={[profiles]}
-        select={editMode}
+        isSelecting={editMode}
         onSelect={select}
         emptyText={`No ${name} Found`}
         update={updateRow}

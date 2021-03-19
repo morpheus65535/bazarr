@@ -7,7 +7,11 @@ import {
   SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
-import { createAsyncAction, createCombineAction } from "./factory";
+import {
+  createAsyncAction,
+  createAsyncCombineAction,
+  createCombineAction,
+} from "./factory";
 import { badgeUpdateAll } from "./site";
 
 const seriesUpdateWantedList = createAsyncAction(
@@ -43,7 +47,7 @@ export const seriesUpdateHistoryList = createAsyncAction(
   () => EpisodesApi.history()
 );
 
-export const seriesUpdateInfoAll = createCombineAction(
+export const seriesUpdateInfoAll = createAsyncCombineAction(
   (seriesid?: number[]) => [seriesUpdateBy(seriesid), badgeUpdateAll()]
 );
 

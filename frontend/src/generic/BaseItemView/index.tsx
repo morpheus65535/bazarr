@@ -9,13 +9,14 @@ import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useLanguageProfiles } from "../../@redux/hooks";
+import { useReduxActionWith } from "../../@redux/hooks/base";
+import { AsyncActionDispatcher } from "../../@redux/types";
 import { ContentHeader } from "../../components";
-import { getExtendItemId, mergeArray } from "../../utilites";
+import { getExtendItemId, isNonNullable, mergeArray } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
   name: string;
-  update: (id?: number[]) => void;
   loader: (start: number, length: number) => void;
   columns: Column<Item.Base>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
@@ -26,11 +27,29 @@ export function ExtendItemComparer(lhs: Item.Base, rhs: Item.Base): boolean {
   return getExtendItemId(lhs) === getExtendItemId(rhs);
 }
 
-interface Props extends SharedProps {}
+interface Props extends SharedProps {
+  updateAction: (id?: number[]) => AsyncActionDispatcher<any>;
+}
 
-const BaseItemView: FunctionComponent<Props> = (shared) => {
+const BaseItemView: FunctionComponent<Props> = ({
+  updateAction,
+  ...shared
+}) => {
   const state = shared.state;
+
+  const [pendingEditMode, setPendingEdit] = useState(false);
   const [editMode, setEdit] = useState(false);
+
+  const onUpdated = useCallback(() => {
+    setPendingEdit((edit) => {
+      // Hack to remove all dependencies
+      setEdit(edit);
+      return edit;
+    });
+    setDirty([]);
+  }, []);
+
+  const update = useReduxActionWith(updateAction, onUpdated);
 
   const [selections, setSelections] = useState<Item.Base[]>([]);
   const [dirtyItems, setDirty] = useState<Item.Base[]>([]);
@@ -67,15 +86,29 @@ const BaseItemView: FunctionComponent<Props> = (shared) => {
     [selections, dirtyItems]
   );
 
-  const toggleMode = useCallback(() => {
-    if (dirtyItems.length > 0) {
-      const ids = dirtyItems.map(getExtendItemId);
-      shared.update(ids);
+  const startEdit = useCallback(() => {
+    if (shared.state.data.order.every(isNonNullable)) {
+      setEdit(true);
+    } else {
+      update();
     }
-    setEdit((edit) => !edit);
-    setDirty([]);
-    setSelections([]);
-  }, [dirtyItems, shared]);
+    setPendingEdit(true);
+  }, [shared.state.data.order, update]);
+
+  const endEdit = useCallback(
+    (cancel: boolean = false) => {
+      if (!cancel && dirtyItems.length > 0) {
+        const ids = dirtyItems.map(getExtendItemId);
+        update(ids);
+      } else {
+        setEdit(false);
+        setDirty([]);
+      }
+      setPendingEdit(false);
+      setSelections([]);
+    },
+    [dirtyItems, update]
+  );
 
   const saveItems = useCallback(() => {
     const form: FormType.ModifyItem = {
@@ -110,14 +143,14 @@ const BaseItemView: FunctionComponent<Props> = (shared) => {
               </Dropdown>
             </ContentHeader.Group>
             <ContentHeader.Group pos="end">
-              <ContentHeader.Button icon={faUndo} onClick={toggleMode}>
+              <ContentHeader.Button icon={faUndo} onClick={() => endEdit(true)}>
                 Cancel
               </ContentHeader.Button>
               <ContentHeader.AsyncButton
                 icon={faCheck}
                 disabled={dirtyItems.length === 0}
                 promise={saveItems}
-                onSuccess={toggleMode}
+                onSuccess={() => endEdit()}
               >
                 Save
               </ContentHeader.AsyncButton>
@@ -125,9 +158,10 @@ const BaseItemView: FunctionComponent<Props> = (shared) => {
           </React.Fragment>
         ) : (
           <ContentHeader.Button
+            updating={pendingEditMode !== editMode}
             disabled={state.data.order.length === 0 && state.updating}
             icon={faList}
-            onClick={toggleMode}
+            onClick={startEdit}
           >
             Mass Edit
           </ContentHeader.Button>
@@ -136,6 +170,7 @@ const BaseItemView: FunctionComponent<Props> = (shared) => {
       <Row>
         <Table
           {...shared}
+          update={update}
           dirtyItems={dirtyItems}
           editMode={editMode}
           select={setSelections}
