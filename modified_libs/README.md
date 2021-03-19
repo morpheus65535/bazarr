@@ -21,21 +21,24 @@ subscene_api
 ### subliminal_patch
 
 Originally developed in the plex Subzero plugin
-(Add attribution here to original author etc)
+Copyright https://github.com/pannal - MIT-Licensed
 
-(Add description of what it is etc)
+subliminal_patch patches subliminal to alter the API to fix a bunch of annoying
+or wrong behaviours. It also adds a bunch of new providers.
 
 ### subzero
 
-(Add attribution here)
+Copyright https://github.com/pannal - MIT-Licensed
 
-(Add description here)
+Subtitles for Plex, as good you would expect them to be.
+API and fuzzing logic from this plugin is used in bazarr.
 
 ### libfilebot
 
-(Add attribution here)
+Original: https://github.com/pannal/libfilebot
+Copyright https://github.com/pannal - MIT-Licensed
 
-(Add description here)
+A (nearly) python-dependency-less filebot extended attributes parser.
 
 ## Dependencies that cannot be tracked back to a normal version/commit
 
