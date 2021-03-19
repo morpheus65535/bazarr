@@ -1,0 +1,20 @@
+import { FunctionComponent, useMemo } from "react";
+import { BaseModal, BaseModalProps, usePayload } from "../../components";
+
+interface Props extends BaseModalProps {}
+
+const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
+  const stack = usePayload<string>(modal.modalKey);
+  const result = useMemo(
+    () =>
+      stack?.split("\\n").map((v) => <p className="text-nowrap my-1">{v}</p>),
+    [stack]
+  );
+  return (
+    <BaseModal title="Stack" {...modal}>
+      <div className="w-100 of-auto">{result}</div>
+    </BaseModal>
+  );
+};
+
+export default SystemLogModal;

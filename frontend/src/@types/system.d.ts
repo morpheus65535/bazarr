@@ -30,5 +30,6 @@ namespace System {
     type: System.LogType;
     timestamp: string;
     message: string;
+    exception?: string;
   }
 }
