@@ -152,7 +152,6 @@ namespace Item {
 
 namespace Wanted {
   type Base = MonitoredType &
-    PathType &
     TagType &
     SceneNameType & {
       // failedAttempts?: any;
@@ -186,11 +185,9 @@ namespace Blacklist {
 }
 
 namespace History {
-  type Base = PathType &
-    SubtitlePathType &
+  type Base = SubtitlePathType &
     TagType &
     MonitoredType &
-    PathType &
     Partial<ItemHistoryType> & {
       action: number;
       // blacklisted: boolean;

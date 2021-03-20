@@ -1234,6 +1234,8 @@ class EpisodesHistory(Resource):
                 if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
                     item.update({"upgradable": True})
 
+            del item['path']
+
             postprocessEpisode(item)
 
             if item['score']:
@@ -1314,6 +1316,8 @@ class MoviesHistory(Resource):
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
                 if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
                     item.update({"upgradable": True})
+
+            del item['path']
 
             postprocessMovie(item)
 
@@ -1397,7 +1401,7 @@ class EpisodesWanted(Resource):
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
-                                "table_episodes.sonarrSeriesId, table_episodes.path, "
+                                "table_episodes.sonarrSeriesId, "
                                 "table_episodes.sonarrEpisodeId, table_episodes.scene_name as sceneName, table_shows.tags, "
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
@@ -1414,7 +1418,7 @@ class EpisodesWanted(Resource):
 class MoviesWanted(Resource):
     @authenticate
     def get(self):
-        data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
+        data = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
                                 get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
 
