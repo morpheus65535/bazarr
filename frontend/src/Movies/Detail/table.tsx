@@ -6,7 +6,7 @@ import { Column } from "react-table";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
 
-const missingText = "Subtitle Missing";
+const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
@@ -35,11 +35,19 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Language",
         accessor: "name",
         Cell: ({ row }) => {
-          return (
-            <Badge variant="secondary">
-              <LanguageText text={row.original} long={true}></LanguageText>
-            </Badge>
-          );
+          if (row.original.path === missingText) {
+            return (
+              <Badge variant="primary">
+                <LanguageText text={row.original} long={true}></LanguageText>
+              </Badge>
+            );
+          } else {
+            return (
+              <Badge variant="secondary">
+                <LanguageText text={row.original} long={true}></LanguageText>
+              </Badge>
+            );
+          }
         },
       },
       {
