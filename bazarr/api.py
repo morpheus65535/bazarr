@@ -1440,6 +1440,8 @@ class HistoryStats(Resource):
 class EpisodesWanted(Resource):
     @authenticate
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -1448,26 +1450,35 @@ class EpisodesWanted(Resource):
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ ")
+                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             postprocessEpisode(item)
 
-        return jsonify(data=data)
+        count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
+                                      get_exclusion_clause('series'), only_one=True)['count']
+
+        return jsonify(data=data, total=count)
 
 
 # GET: Get Wanted Movies
 class MoviesWanted(Resource):
     @authenticate
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
         data = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
+                                get_exclusion_clause('movie') +
+                                " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             postprocessMovie(item)
 
-        return jsonify(data=data)
+        count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
+                                 get_exclusion_clause('series'), only_one=True)['count']
+
+        return jsonify(data=data, total=count)
 
 
 # GET: get blacklist
