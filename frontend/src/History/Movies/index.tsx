@@ -5,8 +5,9 @@ import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column, Row } from "react-table";
 import { useMoviesHistory } from "../../@redux/hooks";
+import { MoviesApi } from "../../apis";
 import { HistoryIcon, LanguageText } from "../../components";
-import { MoviesBlacklistButton } from "../../generic/blacklist";
+import { BlacklistButton } from "../../generic/blacklist";
 import { useAutoUpdate } from "../../utilites/hooks";
 import HistoryGenericView from "../generic";
 
@@ -81,14 +82,17 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
         },
       },
       {
-        accessor: "exist",
+        accessor: "blacklisted",
         Cell: ({ row, update }) => {
           const original = row.original;
           return (
-            <MoviesBlacklistButton
+            <BlacklistButton
+              history={original}
               update={() => update && update(row)}
-              {...original}
-            ></MoviesBlacklistButton>
+              promise={(form) =>
+                MoviesApi.addBlacklist(original.radarrId, form)
+              }
+            ></BlacklistButton>
           );
         },
       },

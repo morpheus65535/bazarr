@@ -1246,18 +1246,22 @@ class EpisodesHistory(Resource):
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             # Check if subtitles is blacklisted
-            # if item['action'] not in [0, 4, 5]:
-            #     blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist WHERE provider=? AND "
-            #                                     "subs_id=?", (item['provider'], item['subs_id']))
-            # else:
-            #     blacklist_db = []
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist WHERE provider=? AND "
+                                                "subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
 
-            # if len(blacklist_db):
-            #     item.update({"blacklisted": True})
-            # else:
-            #     item.update({"blacklisted": False})
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
-        return jsonify(data=episode_history)
+        count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
+                                     "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
+                                     "table_episodes.title is not NULL", only_one=True)['count']
+
+        return jsonify(data=episode_history, total=count)
 
 
 class MoviesHistory(Resource):
@@ -1329,18 +1333,22 @@ class MoviesHistory(Resource):
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             # Check if subtitles is blacklisted
-            # if item['action'] not in [0, 4, 5]:
-            #     blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie WHERE provider=? "
-            #                                     "AND subs_id=?", (item['provider'], item['subs_id']))
-            # else:
-            #     blacklist_db = []
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie WHERE provider=? "
+                                                "AND subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
 
-            # if len(blacklist_db):
-            #     item.update({"blacklisted": True})
-            # else:
-            #     item.update({"blacklisted": False})
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
-        return jsonify(data=movie_history)
+        count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies on "
+                                     "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
+                                     "is not NULL", only_one=True)['count']
+
+        return jsonify(data=movie_history, total=count)
 
 
 class HistoryStats(Resource):
@@ -1461,26 +1469,22 @@ class EpisodesBlacklist(Resource):
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        if hi == 'true':
-            language_str = language + ':hi'
-        elif forced == 'true':
-            language_str = language + ':forced'
-        else:
-            language_str = language
-        media_path = request.form.get('path')
+
+        episodeInfo = database.execute("SELECT path FROM table_episodes WHERE sonarrEpisodeId=?",
+                                       (sonarr_episode_id,), only_one=True)
+
+        media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')
 
         blacklist_log(sonarr_series_id=sonarr_series_id,
                       sonarr_episode_id=sonarr_episode_id,
                       provider=provider,
                       subs_id=subs_id,
-                      language=language_str)
+                      language=language)
         delete_subtitles(media_type='series',
                          language=alpha3_from_alpha2(language),
-                         forced=forced,
-                         hi=hi,
+                         forced=False,
+                         hi=False,
                          media_path=media_path,
                          subtitles_path=subtitles_path,
                          sonarr_series_id=sonarr_series_id,
@@ -1530,21 +1534,17 @@ class MoviesBlacklist(Resource):
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        if hi == 'true':
-            language_str = language + ':hi'
-        elif forced == 'true':
-            language_str = language + ':forced'
-        else:
-            language_str = language
-        media_path = request.form.get('path')
+
+        data = database.execute("SELECT title, radarrId, provider, subs_id, path"
+                                "timestamp FROM table_movies WHERE radarrId=?", (radarr_id), only_one=True)
+
+        media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')
 
         blacklist_log_movie(radarr_id=radarr_id,
                             provider=provider,
                             subs_id=subs_id,
-                            language=language_str)
+                            language=language)
         delete_subtitles(media_type='movie',
                          language=alpha3_from_alpha2(language),
                          forced=forced,

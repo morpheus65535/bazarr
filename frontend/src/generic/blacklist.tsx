@@ -1,99 +1,37 @@
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
-import { EpisodesApi, MoviesApi } from "../apis";
 import { AsyncButton } from "../components";
 
-// TODO: Group those button to a single one
-export const SeriesBlacklistButton: FunctionComponent<{
-  seriesid: number;
-  episodeid: number;
-  subs_id?: string;
-  language?: Language;
-  provider?: string;
-  subtitles_path: string;
-  path: string;
+interface Props {
+  history: History.Base;
   update: () => void;
-}> = ({
-  seriesid,
-  episodeid,
-  subs_id,
-  language,
-  provider,
-  subtitles_path,
-  path,
-  update,
-}) => {
-  if (!language) {
-    return null;
-  }
-  const { hi, forced, code2 } = language;
+  promise: (form: FormType.AddBlacklist) => Promise<void>;
+}
 
-  if (subs_id && provider && hi !== undefined && forced !== undefined) {
+export const BlacklistButton: FunctionComponent<Props> = ({
+  history,
+  update,
+  promise,
+}) => {
+  const { provider, subs_id, language, subtitles_path, blacklisted } = history;
+
+  if (subs_id && provider && language) {
     return (
       <AsyncButton
         size="sm"
         variant="light"
-        promise={() =>
-          EpisodesApi.addBlacklist(seriesid, episodeid, {
+        disabled={blacklisted}
+        promise={() => {
+          const { code2 } = language;
+          const form: FormType.AddBlacklist = {
             provider,
             subs_id,
-            path,
             subtitles_path,
             language: code2,
-            hi,
-            forced,
-          })
-        }
-        onSuccess={update}
-      >
-        <FontAwesomeIcon icon={faFileExcel}></FontAwesomeIcon>
-      </AsyncButton>
-    );
-  } else {
-    return null;
-  }
-};
-
-export const MoviesBlacklistButton: FunctionComponent<{
-  radarrId: number;
-  subs_id?: string;
-  language?: Language;
-  provider?: string;
-  subtitles_path: string;
-  path: string;
-  update: () => void;
-}> = ({
-  radarrId,
-  subs_id,
-  language,
-  provider,
-  subtitles_path,
-  path,
-  update,
-}) => {
-  if (!language) {
-    return null;
-  }
-
-  const { forced, code2 } = language;
-
-  if (subs_id && provider && forced !== undefined) {
-    return (
-      <AsyncButton
-        size="sm"
-        variant="light"
-        promise={() =>
-          MoviesApi.addBlacklist(radarrId, {
-            provider,
-            subs_id,
-            path,
-            subtitles_path,
-            language: code2,
-            hi: false,
-            forced,
-          })
-        }
+          };
+          return promise(form);
+        }}
         onSuccess={update}
       >
         <FontAwesomeIcon icon={faFileExcel}></FontAwesomeIcon>

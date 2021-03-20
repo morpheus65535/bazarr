@@ -190,9 +190,9 @@ namespace History {
     MonitoredType &
     Partial<ItemHistoryType> & {
       action: number;
-      // blacklisted: boolean;
+      blacklisted: boolean;
       score?: string;
-      // subs_id?: string;
+      subs_id?: string;
       timestamp: string;
       description: string;
       upgradable: boolean;

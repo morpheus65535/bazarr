@@ -8,10 +8,7 @@ import React, {
 import { Column } from "react-table";
 import { AsyncStateOverlay, HistoryIcon, LanguageText, PageTable } from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
-import {
-  MoviesBlacklistButton,
-  SeriesBlacklistButton,
-} from "../../generic/blacklist";
+import { BlacklistButton } from "../../generic/blacklist";
 import { updateAsyncState } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { usePayload } from "./provider";
@@ -71,14 +68,17 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
       },
       {
         // Actions
-        accessor: "exist",
+        accessor: "blacklisted",
         Cell: ({ row }) => {
           const original = row.original;
           return (
-            <MoviesBlacklistButton
+            <BlacklistButton
               update={update}
-              {...original}
-            ></MoviesBlacklistButton>
+              promise={(form) =>
+                MoviesApi.addBlacklist(original.radarrId, form)
+              }
+              history={original}
+            ></BlacklistButton>
           );
         },
       },
@@ -160,16 +160,18 @@ export const EpisodeHistoryModal: FunctionComponent<
       },
       {
         // Actions
-        accessor: "exist",
+        accessor: "blacklisted",
         Cell: ({ row }) => {
           const original = row.original;
+          const { sonarrSeriesId, sonarrEpisodeId } = original;
           return (
-            <SeriesBlacklistButton
-              seriesid={original.sonarrSeriesId}
-              episodeid={original.sonarrEpisodeId}
+            <BlacklistButton
+              history={original}
               update={update}
-              {...original}
-            ></SeriesBlacklistButton>
+              promise={(form) =>
+                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+              }
+            ></BlacklistButton>
           );
         },
       },

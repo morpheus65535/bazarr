@@ -50,11 +50,7 @@ namespace FormType {
   interface AddBlacklist {
     provider: string;
     subs_id: string;
-    // code2
-    language: string;
-    forced: boolean;
-    hi: boolean;
-    path: string;
+    language: LanguageCodeType;
     subtitles_path: string;
   }
 

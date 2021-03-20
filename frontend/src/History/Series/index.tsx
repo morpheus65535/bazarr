@@ -5,8 +5,9 @@ import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column, Row } from "react-table";
 import { useSeriesHistory } from "../../@redux/hooks";
+import { EpisodesApi } from "../../apis";
 import { HistoryIcon, LanguageText } from "../../components";
-import { SeriesBlacklistButton } from "../../generic/blacklist";
+import { BlacklistButton } from "../../generic/blacklist";
 import { useAutoUpdate } from "../../utilites/hooks";
 import HistoryGenericView from "../generic";
 
@@ -88,18 +89,19 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         },
       },
       {
-        accessor: "exist",
+        accessor: "blacklisted",
         Cell: ({ row, update }) => {
           const original = row.original;
 
           const { sonarrEpisodeId, sonarrSeriesId } = original;
           return (
-            <SeriesBlacklistButton
-              seriesid={sonarrSeriesId}
-              episodeid={sonarrEpisodeId}
+            <BlacklistButton
+              history={original}
               update={() => update && update(row)}
-              {...original}
-            ></SeriesBlacklistButton>
+              promise={(form) =>
+                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+              }
+            ></BlacklistButton>
           );
         },
       },
