@@ -12,7 +12,7 @@ import { useLanguageProfiles } from "../../@redux/hooks";
 import { useReduxActionWith } from "../../@redux/hooks/base";
 import { AsyncActionDispatcher } from "../../@redux/types";
 import { ContentHeader } from "../../components";
-import { getExtendItemId, isNonNullable, mergeArray } from "../../utilites";
+import { GetItemId, isNonNullable, mergeArray } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
@@ -24,7 +24,7 @@ export interface SharedProps {
 }
 
 export function ExtendItemComparer(lhs: Item.Base, rhs: Item.Base): boolean {
-  return getExtendItemId(lhs) === getExtendItemId(rhs);
+  return GetItemId(lhs) === GetItemId(rhs);
 }
 
 interface Props extends SharedProps {
@@ -98,7 +98,7 @@ const BaseItemView: FunctionComponent<Props> = ({
   const endEdit = useCallback(
     (cancel: boolean = false) => {
       if (!cancel && dirtyItems.length > 0) {
-        const ids = dirtyItems.map(getExtendItemId);
+        const ids = dirtyItems.map(GetItemId);
         update(ids);
       } else {
         setEdit(false);
@@ -116,7 +116,7 @@ const BaseItemView: FunctionComponent<Props> = ({
       profileid: [],
     };
     dirtyItems.forEach((v) => {
-      const id = getExtendItemId(v);
+      const id = GetItemId(v);
       form.id.push(id);
       form.profileid.push(v.profileId);
     });

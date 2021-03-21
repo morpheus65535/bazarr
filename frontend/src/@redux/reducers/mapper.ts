@@ -60,6 +60,15 @@ export function updateOrderIdState<T extends LooseObject>(
     const countDist = total - newOrder.length;
     if (countDist > 0) {
       newOrder.push(...Array(countDist).fill(null));
+    } else if (countDist < 0) {
+      const oldOrder = newOrder.slice(total);
+      // Remove old items
+      oldOrder.forEach((v) => {
+        if (v) {
+          delete newItems[v];
+        }
+      });
+      newOrder = newOrder.slice(0, total);
     }
 
     if (typeof start === "number" && typeof length === "number") {

@@ -3,7 +3,7 @@ import { TableUpdater } from "react-table";
 import { ExtendItemComparer, SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { ItemEditorModal, PageTable, useShowModal } from "../../components";
-import { buildOrderList, getExtendItemId, useMergeArray } from "../../utilites";
+import { buildOrderList, GetItemId, useMergeArray } from "../../utilites";
 
 interface Props extends SharedProps {
   dirtyItems: readonly Item.Base[];
@@ -49,7 +49,7 @@ const Table: FunctionComponent<Props> = ({
         columns={columns}
         data={data}
         idState={state}
-        idGetter={getExtendItemId}
+        idGetter={GetItemId}
         loader={loader}
         loose={[profiles]}
         isSelecting={editMode}
@@ -61,7 +61,7 @@ const Table: FunctionComponent<Props> = ({
         modalKey="edit"
         submit={modify}
         onSuccess={(item) => {
-          const id = getExtendItemId(item);
+          const id = GetItemId(item);
           update([id]);
         }}
       ></ItemEditorModal>

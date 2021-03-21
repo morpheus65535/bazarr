@@ -6,6 +6,7 @@ import {
   SERIES_UPDATE_INFO,
   SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
+  SERIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import {
   createAsyncAction,
@@ -16,7 +17,7 @@ import { badgeUpdateAll } from "./site";
 
 const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,
-  () => EpisodesApi.wanted()
+  (episodeid?: number) => EpisodesApi.wantedBy(episodeid)
 );
 
 const seriesUpdateBy = createAsyncAction(SERIES_UPDATE_INFO, (id?: number[]) =>
@@ -33,10 +34,14 @@ export const seriesUpdateByRange = createAsyncAction(
   (start: number, length: number) => SeriesApi.seriesBy(start, length)
 );
 
-export const seriesUpdateWantedAll = createCombineAction(() => [
-  seriesUpdateWantedList(),
-  badgeUpdateAll(),
-]);
+export const seriesUpdateWantedByRange = createAsyncAction(
+  SERIES_UPDATE_WANTED_RANGE,
+  (start: number, length: number) => EpisodesApi.wanted(start, length)
+);
+
+export const seriesUpdateWantedBy = createCombineAction(
+  (episodeid?: number) => [seriesUpdateWantedList(episodeid), badgeUpdateAll()]
+);
 
 export const episodeUpdateBySeriesId = createCombineAction(
   (seriesid: number) => [episodeUpdateBy(seriesid), badgeUpdateAll()]

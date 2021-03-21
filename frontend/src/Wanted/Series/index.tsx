@@ -4,17 +4,19 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { seriesUpdateWantedByRange } from "../../@redux/actions";
 import { useWantedSeries } from "../../@redux/hooks";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
-import { useAutoUpdate } from "../../utilites/hooks";
 import GenericWantedView from "../generic";
 
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
   const [series, update] = useWantedSeries();
-  useAutoUpdate(update);
+
+  const loader = useReduxAction(seriesUpdateWantedByRange);
 
   const searchAll = useCallback(
     () => SeriesApi.action({ action: "search-wanted" }),
@@ -64,7 +66,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
                   forced: false,
                 })
               }
-              onSuccess={update}
+              onSuccess={() => update(episodeid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
@@ -82,6 +84,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       columns={columns as Column<Wanted.Base>[]}
       state={series}
       update={update}
+      loader={loader}
       searchAll={searchAll}
     ></GenericWantedView>
   );

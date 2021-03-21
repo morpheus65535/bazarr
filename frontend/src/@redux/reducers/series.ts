@@ -6,6 +6,7 @@ import {
   SERIES_UPDATE_INFO,
   SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
+  SERIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
 import { updateAsyncState, updateOrderIdState } from "./mapper";
@@ -14,11 +15,28 @@ const reducer = handleActions<ReduxStore.Series, any>(
   {
     [SERIES_UPDATE_WANTED_LIST]: (
       state,
-      action: AsyncAction<Wanted.Episode[]>
+      action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
     ) => {
       return {
         ...state,
-        wantedSeriesList: updateAsyncState(action, state.wantedSeriesList.data),
+        wantedEpisodesList: updateOrderIdState(
+          action,
+          state.wantedEpisodesList,
+          "sonarrEpisodeId"
+        ),
+      };
+    },
+    [SERIES_UPDATE_WANTED_RANGE]: (
+      state,
+      action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
+    ) => {
+      return {
+        ...state,
+        wantedEpisodesList: updateOrderIdState(
+          action,
+          state.wantedEpisodesList,
+          "sonarrEpisodeId"
+        ),
       };
     },
     [SERIES_UPDATE_EPISODE_LIST]: (
@@ -90,7 +108,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
   },
   {
     seriesList: { updating: true, data: { items: {}, order: [] } },
-    wantedSeriesList: { updating: true, data: [] },
+    wantedEpisodesList: { updating: true, data: { items: {}, order: [] } },
     episodeList: { updating: true, data: {} },
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },

@@ -5,12 +5,12 @@ import {
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateInfoAll,
-  movieUpdateWantedAll,
+  movieUpdateWantedBy,
   providerUpdateAll,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
   seriesUpdateInfoAll,
-  seriesUpdateWantedAll,
+  seriesUpdateWantedBy,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
   systemUpdateSettingsAll,
@@ -216,14 +216,14 @@ export function useMovieBy(id?: number) {
 }
 
 export function useWantedSeries() {
-  const action = useReduxAction(seriesUpdateWantedAll);
-  const items = useReduxStore((d) => d.series.wantedSeriesList);
+  const action = useReduxAction(seriesUpdateWantedBy);
+  const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
   return stateBuilder(items, action);
 }
 
 export function useWantedMovies() {
-  const action = useReduxAction(movieUpdateWantedAll);
+  const action = useReduxAction(movieUpdateWantedBy);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
 
   return stateBuilder(items, action);

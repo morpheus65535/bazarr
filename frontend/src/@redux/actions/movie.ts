@@ -6,6 +6,7 @@ import {
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
+  MOVIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import {
   createAsyncAction,
@@ -18,12 +19,18 @@ export const movieUpdateList = createAsyncAction(MOVIES_UPDATE_LIST, () =>
   MoviesApi.movies()
 );
 
-const movieUpdateWantedList = createAsyncAction(MOVIES_UPDATE_WANTED_LIST, () =>
-  MoviesApi.wanted()
+const movieUpdateWantedList = createAsyncAction(
+  MOVIES_UPDATE_WANTED_LIST,
+  (radarrid?: number) => MoviesApi.wantedBy(radarrid)
 );
 
-export const movieUpdateWantedAll = createCombineAction(() => [
-  movieUpdateWantedList(),
+export const movieUpdateWantedByRange = createAsyncAction(
+  MOVIES_UPDATE_WANTED_RANGE,
+  (start: number, length: number) => MoviesApi.wanted(start, length)
+);
+
+export const movieUpdateWantedBy = createCombineAction((radarrid?: number) => [
+  movieUpdateWantedList(radarrid),
   badgeUpdateAll(),
 ]);
 

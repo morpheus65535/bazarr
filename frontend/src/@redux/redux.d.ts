@@ -47,7 +47,7 @@ namespace ReduxStore {
 
   interface Series {
     seriesList: AsyncState<OrderIdState<Item.Series>>;
-    wantedSeriesList: AsyncState<Array<Wanted.Episode>>;
+    wantedEpisodesList: AsyncState<OrderIdState<Wanted.Episode>>;
     episodeList: AsyncState<IdState<Item.Episode[]>>;
     historyList: AsyncState<Array<History.Episode>>;
     blacklist: AsyncState<Array<Blacklist.Episode>>;
@@ -55,7 +55,7 @@ namespace ReduxStore {
 
   interface Movie {
     movieList: AsyncState<OrderIdState<Item.Movie>>;
-    wantedMovieList: AsyncState<Array<Wanted.Movie>>;
+    wantedMovieList: AsyncState<OrderIdState<Wanted.Movie>>;
     historyList: AsyncState<Array<History.Movie>>;
     blacklist: AsyncState<Array<Blacklist.Movie>>;
   }

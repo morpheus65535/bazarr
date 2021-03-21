@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { getExtendItemId } from "../../utilites";
+import { GetItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal, usePayload } from "./provider";
 
@@ -36,7 +36,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       <AsyncButton
         onChange={setUpdating}
         promise={() => {
-          const itemId = getExtendItemId(item!);
+          const itemId = GetItemId(item!);
           return submit({
             id: [itemId],
             profileid: [id],

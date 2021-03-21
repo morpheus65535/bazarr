@@ -1,5 +1,5 @@
 import { Dispatch } from "react";
-import { isMovie, isNullable, isSeries } from "./validate";
+import { isEpisode, isMovie, isNullable, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -49,9 +49,11 @@ export function submodProcessColor(s: string) {
   return `color(name=${s})`;
 }
 
-export function getExtendItemId(item: Item.Base): number {
+export function GetItemId(item: any): number {
   if (isMovie(item)) {
     return item.radarrId;
+  } else if (isEpisode(item)) {
+    return item.sonarrEpisodeId;
   } else if (isSeries(item)) {
     return item.sonarrSeriesId;
   } else {
