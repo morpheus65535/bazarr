@@ -83,7 +83,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: capitalize(type),
         accessor: "from",
-        Cell: ({ value, row, update }) => (
+        Cell: ({ value, row, externalUpdate: update }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -106,7 +106,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: "Bazarr",
         accessor: "to",
-        Cell: ({ value, row, update }) => (
+        Cell: ({ value, row, externalUpdate: update }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -122,7 +122,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         id: "action",
         accessor: "to",
-        Cell: ({ row, update }) => (
+        Cell: ({ row, externalUpdate: update }) => (
           <ActionButton
             icon={faTrash}
             onClick={() => {
@@ -141,7 +141,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         responsive={false}
         columns={columns}
         data={data}
-        update={updateCell}
+        externalUpdate={updateCell}
       ></SimpleTable>
       <Button block variant="light" onClick={addRow}>
         Add

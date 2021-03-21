@@ -91,8 +91,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
     setPageSize,
   ]);
 
-  const total = options.idState
-    ? options.idState.data.order.length
+  const total = options.asyncState
+    ? options.asyncState.data.order.length
     : rows.length;
 
   if (needLoadingScreen) {

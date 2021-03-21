@@ -31,7 +31,7 @@ const HistoryGenericView: FunctionComponent<Props> = ({
               emptyText={`Nothing Found in ${typeName} History`}
               columns={columns}
               data={data}
-              update={tableUpdater}
+              externalUpdate={tableUpdater}
             ></PageTable>
           )}
         </AsyncStateOverlay>

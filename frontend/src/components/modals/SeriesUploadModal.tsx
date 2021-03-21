@@ -410,7 +410,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
       {
         Header: "Season / Episode",
         accessor: "season",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           const info = row.original;
           const season = info.season;
           const episode = info.episode;
@@ -454,7 +454,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
       },
       {
         accessor: "file",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           const info = row.original;
           return (
             <Button
@@ -478,7 +478,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
     <SimpleTable
       columns={columns}
       data={data}
-      update={updateItem}
+      externalUpdate={updateItem}
     ></SimpleTable>
   );
 };

@@ -105,7 +105,7 @@ const MovieView: FunctionComponent<Props> = () => {
       {
         accessor: "radarrId",
         selectHide: true,
-        Cell: ({ row, update }) => (
+        Cell: ({ row, externalUpdate: update }) => (
           <ActionBadge
             icon={faWrench}
             onClick={() => update && update(row, "edit")}

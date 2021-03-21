@@ -48,14 +48,14 @@ const Table: FunctionComponent<Props> = ({
         canSelect
         columns={columns}
         data={data}
-        idState={state}
-        idGetter={GetItemId}
-        loader={loader}
+        asyncState={state}
+        asyncId={GetItemId}
+        asyncLoader={loader}
         loose={[profiles]}
         isSelecting={editMode}
         onSelect={select}
         emptyText={`No ${name} Found`}
-        update={updateRow}
+        externalUpdate={updateRow}
       ></PageTable>
       <ItemEditorModal
         modalKey="edit"

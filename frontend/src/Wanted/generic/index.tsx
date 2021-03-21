@@ -53,12 +53,12 @@ const GenericWantedView: FunctionComponent<Props> = ({
       <Row>
         <PageTable
           async
-          idState={state}
-          idGetter={GetItemId}
-          loader={loader}
+          asyncState={state}
+          asyncId={GetItemId}
+          asyncLoader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}
-          update={updater}
+          externalUpdate={updater}
           data={data}
         ></PageTable>
       </Row>

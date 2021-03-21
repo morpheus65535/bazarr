@@ -82,7 +82,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     () => [
       {
         accessor: "subtitle",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           const result = row.original;
           return (
             <AsyncButton
@@ -204,7 +204,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             emptyText="No Result"
             columns={columns}
             data={result}
-            update={onDownload}
+            externalUpdate={onDownload}
           ></PageTable>
         </React.Fragment>
       );

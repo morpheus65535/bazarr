@@ -116,7 +116,7 @@ const SeriesView: FunctionComponent<Props> = () => {
       {
         accessor: "sonarrSeriesId",
         selectHide: true,
-        Cell: ({ row, update }) => (
+        Cell: ({ row, externalUpdate: update }) => (
           <ActionBadge
             icon={faWrench}
             onClick={() => {

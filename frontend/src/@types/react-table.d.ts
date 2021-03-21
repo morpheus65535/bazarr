@@ -41,9 +41,9 @@ declare module "react-table" {
   type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
 
   interface useAsyncPaginationProps<D extends Record<string, unknown>> {
-    loader?: (start: number, length: number) => void;
-    idState?: AsyncState<OrderIdState<D>>;
-    idGetter?: (item: D) => number;
+    asyncLoader?: (start: number, length: number) => void;
+    asyncState?: AsyncState<OrderIdState<D>>;
+    asyncId?: (item: D) => number;
   }
 
   interface useAsyncPaginationState<D extends Record<string, unknown>> {
@@ -61,7 +61,7 @@ declare module "react-table" {
   interface CustomTableProps<D extends Record<string, unknown>>
     extends useSelectionProps<D>,
       useAsyncPaginationProps<D> {
-    update?: TableUpdater<D>;
+    externalUpdate?: TableUpdater<D>;
     loose?: any[];
   }
 

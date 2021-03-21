@@ -65,7 +65,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       },
       {
         accessor: "exception",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value, externalUpdate: update }) => {
           if (!isUndefined(value)) {
             return (
               <ActionButton
@@ -84,7 +84,11 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
 
   return (
     <React.Fragment>
-      <PageTable columns={columns} data={logs} update={show}></PageTable>
+      <PageTable
+        columns={columns}
+        data={logs}
+        externalUpdate={show}
+      ></PageTable>
       <SystemLogModal size="lg" modalKey="system-log"></SystemLogModal>
     </React.Fragment>
   );

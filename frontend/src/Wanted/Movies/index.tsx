@@ -40,7 +40,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value, externalUpdate: update }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const movieid = wanted.radarrId;

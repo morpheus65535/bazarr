@@ -90,7 +90,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           const original = row.original;
 
           const { sonarrEpisodeId, sonarrSeriesId } = original;

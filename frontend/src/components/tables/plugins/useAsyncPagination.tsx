@@ -34,7 +34,7 @@ function reducer<T extends object>(
       | PageControlAction
       | undefined = action.pageToLoad as PageControlAction;
     let needLoadingScreen = false;
-    const { idState } = instance;
+    const { asyncState } = instance;
     const { pageIndex, pageSize } = state;
     let index = pageIndex;
     if (pageToLoad === "prev") {
@@ -46,8 +46,8 @@ function reducer<T extends object>(
     }
     const pageStart = index * pageSize;
     const pageEnd = pageStart + pageSize;
-    if (idState) {
-      const order = idState.data.order.slice(pageStart, pageEnd);
+    if (asyncState) {
+      const order = asyncState.data.order.slice(pageStart, pageEnd);
       if (order.every(isNull)) {
         needLoadingScreen = true;
       } else if (order.every(isNonNullable)) {
@@ -72,10 +72,10 @@ function useOptions<T extends object>(options: TableOptions<T>) {
 function useInstance<T extends object>(instance: TableInstance<T>) {
   const {
     plugins,
-    loader,
+    asyncLoader,
     dispatch,
-    idState,
-    idGetter,
+    asyncState,
+    asyncId,
     rows,
     nextPage,
     previousPage,
@@ -85,7 +85,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
 
   ensurePluginOrder(plugins, ["usePagination"], pluginName);
 
-  const totalCount = idState?.data.order.length ?? 0;
+  const totalCount = asyncState?.data.order.length ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
@@ -95,8 +95,8 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
     if (pageToLoad === undefined) {
       return;
     }
-    loader && loader(pageStart, pageSize);
-  }, [loader, pageStart, pageSize, pageToLoad]);
+    asyncLoader && asyncLoader(pageStart, pageSize);
+  }, [asyncLoader, pageStart, pageSize, pageToLoad]);
 
   const setPageToLoad = useCallback(
     (pageToLoad?: PageControlAction) => {
@@ -106,10 +106,10 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
   );
 
   useEffect(() => {
-    if (idState?.updating === false) {
+    if (asyncState?.updating === false) {
       setPageToLoad();
     }
-  }, [idState?.updating, setPageToLoad]);
+  }, [asyncState?.updating, setPageToLoad]);
 
   const newGoto = useCallback(
     (updater: number | ((pageIndex: number) => number)) => {
@@ -147,19 +147,19 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
   const newPages = useMemo(() => {
     // TODO: Performance
 
-    const order = (idState?.data.order
+    const order = (asyncState?.data.order
       .slice(pageStart, pageEnd)
       .filter(isNonNullable) ?? []) as number[];
 
     return order.flatMap((num) => {
-      const row = rows.find((v) => idGetter && idGetter(v.original) === num);
+      const row = rows.find((v) => asyncId && asyncId(v.original) === num);
       if (row) {
         return [row];
       } else {
         return [];
       }
     });
-  }, [pageStart, pageEnd, idGetter, idState?.data.order, rows]);
+  }, [pageStart, pageEnd, asyncId, asyncState?.data.order, rows]);
 
   Object.assign<TableInstance<T>, Partial<TableInstance<T>>>(instance, {
     previousPage: newPrevious,

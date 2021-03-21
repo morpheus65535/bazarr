@@ -129,7 +129,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           return (
             <ButtonGroup className="d-flex flex-nowrap">
               <ActionButton

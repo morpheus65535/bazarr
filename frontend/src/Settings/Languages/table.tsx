@@ -93,7 +93,7 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           const profile = row.original;
 
           return (
@@ -121,7 +121,7 @@ const Table: FunctionComponent = () => {
       <SimpleTable
         columns={columns}
         data={profiles}
-        update={updateRow}
+        externalUpdate={updateRow}
       ></SimpleTable>
       <Button
         block

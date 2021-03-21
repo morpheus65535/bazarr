@@ -135,7 +135,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Language",
         accessor: "language",
-        Cell: ({ value, row, update }) => {
+        Cell: ({ value, row, externalUpdate: update }) => {
           const code = value;
           const item = row.original;
           const lang = useMemo(() => languages.find((l) => l.code2 === code), [
@@ -160,7 +160,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Forced",
         accessor: "forced",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value, externalUpdate: update }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -178,7 +178,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "HI",
         accessor: "hi",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value, externalUpdate: update }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -196,7 +196,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Exclude Audio",
         accessor: "audio_exclude",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value, externalUpdate: update }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -214,7 +214,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         id: "action",
         accessor: "id",
-        Cell: ({ row, update }) => {
+        Cell: ({ row, externalUpdate: update }) => {
           return (
             <ActionButton
               icon={faTrash}
@@ -244,7 +244,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           responsive={false}
           columns={columns}
           data={current?.items ?? []}
-          update={updateRow}
+          externalUpdate={updateRow}
         ></SimpleTable>
         <Button block variant="light" onClick={addItem}>
           Add
