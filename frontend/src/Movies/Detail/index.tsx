@@ -103,7 +103,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
-            onClick={() => showModal("tools", item)}
+            onClick={() => showModal("tools", [item])}
           >
             Tools
           </ContentHeader.Button>

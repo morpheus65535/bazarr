@@ -326,7 +326,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
 };
 
 const STM: FunctionComponent<BaseModalProps> = (props) => {
-  const item = usePayload<SupportType>(props.modalKey);
+  const items = usePayload<SupportType[]>(props.modalKey);
 
   const [updating, setUpdate] = useState<boolean>(false);
   const [processState, setProcessState] = useState<ProcessState>({});
@@ -424,28 +424,28 @@ const STM: FunctionComponent<BaseModalProps> = (props) => {
     []
   );
 
-  const data = useMemo<TableColumnType[]>(() => {
-    if (item) {
-      const [id, type] = getIdAndType(item);
-      return item.subtitles.flatMap((v) => {
-        if (v.path !== null) {
-          return [
-            {
-              id,
-              type,
-              language: v.code2,
-              path: v.path,
-              _language: v,
-            },
-          ];
-        } else {
-          return [];
-        }
-      });
-    } else {
-      return [];
-    }
-  }, [item]);
+  const data = useMemo<TableColumnType[]>(
+    () =>
+      items?.flatMap((item) => {
+        const [id, type] = getIdAndType(item);
+        return item.subtitles.flatMap((v) => {
+          if (v.path !== null) {
+            return [
+              {
+                id,
+                type,
+                language: v.code2,
+                path: v.path,
+                _language: v,
+              },
+            ];
+          } else {
+            return [];
+          }
+        });
+      }) ?? [],
+    [items]
+  );
 
   const plugins = [useRowSelect, useCustomSelection];
 
@@ -518,7 +518,7 @@ const STM: FunctionComponent<BaseModalProps> = (props) => {
         {...props}
       >
         <SimpleTable
-          isSelecting={!updating}
+          isSelecting={!updating && data.length !== 0}
           emptyText="No External Subtitles Found"
           plugins={plugins}
           columns={columns}

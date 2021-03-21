@@ -160,7 +160,11 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
     (row, modalKey: string) => {
-      showModal(modalKey, row.original);
+      if (modalKey === "tools") {
+        showModal(modalKey, [row.original]);
+      } else {
+        showModal(modalKey, row.original);
+      }
     },
     [showModal]
   );

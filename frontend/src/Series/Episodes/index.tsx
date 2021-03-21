@@ -1,5 +1,6 @@
 import {
   faAdjust,
+  faBriefcase,
   faCloudUploadAlt,
   faHdd,
   faSearch,
@@ -94,6 +95,13 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           </ContentHeader.AsyncButton>
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
+          <ContentHeader.Button
+            disabled={item.episodeFileCount === 0 || !avaliable}
+            icon={faBriefcase}
+            onClick={() => showModal("tools", episodes.data)}
+          >
+            Tools
+          </ContentHeader.Button>
           <ContentHeader.Button
             disabled={
               item.episodeFileCount === 0 ||
