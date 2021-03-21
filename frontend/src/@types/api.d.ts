@@ -193,6 +193,7 @@ namespace History {
       blacklisted: boolean;
       score?: string;
       subs_id?: string;
+      raw_timestamp: int;
       timestamp: string;
       description: string;
       upgradable: boolean;

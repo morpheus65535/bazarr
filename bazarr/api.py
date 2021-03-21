@@ -1279,7 +1279,8 @@ class EpisodesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item['timestamp'] = pretty.date(int(item['timestamp']))
+                item["raw_timestamp"] = int(item['timestamp']);
+                item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
@@ -1366,7 +1367,8 @@ class MoviesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item['timestamp'] = pretty.date(int(item['timestamp']))
+                item["raw_timestamp"] = int(item['timestamp']);
+                item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
             item.update({"blacklisted": False})
