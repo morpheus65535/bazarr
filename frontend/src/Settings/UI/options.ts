@@ -1,9 +1,5 @@
 export const pageSizeOptions: SelectorOption<number>[] = [
   {
-    label: "Unlimited",
-    value: -1,
-  },
-  {
     label: "25",
     value: 25,
   },
