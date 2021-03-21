@@ -74,6 +74,8 @@ const StateIcon: FunctionComponent<StateIconProps> = ({ state }) => {
   let icon = faQuestionCircle;
   switch (state) {
     case State.Pending:
+      icon = faClock;
+      break;
     case State.Processing:
       icon = faCircleNotch;
       break;
