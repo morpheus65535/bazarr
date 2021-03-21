@@ -1,7 +1,5 @@
 import BaseApi from "./base";
 
-type SubtitleType = "episode" | "movie";
-
 class SubtitlesApi extends BaseApi {
   constructor() {
     super("/subtitles");
@@ -17,24 +15,9 @@ class SubtitlesApi extends BaseApi {
     });
   }
 
-  async modify(
-    action: string,
-    id: number,
-    type: SubtitleType,
-    language: string,
-    path: string
-  ) {
+  async modify(action: string, form: FormType.ModifySubtitle) {
     return new Promise<void>((resolve, reject) => {
-      this.patch<void>(
-        "",
-        {
-          type,
-          id,
-          language,
-          path,
-        },
-        { action }
-      )
+      this.patch<void>("", form, { action })
         .then(() => resolve())
         .catch(reject);
     });

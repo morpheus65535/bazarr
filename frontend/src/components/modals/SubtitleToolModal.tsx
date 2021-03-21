@@ -1,4 +1,7 @@
+import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import {
+  faCheck,
+  faCircleNotch,
   faClock,
   faCode,
   faDeaf,
@@ -28,11 +31,10 @@ import {
   Form,
   InputGroup,
 } from "react-bootstrap";
-import { Column } from "react-table";
+import { Column, useRowSelect } from "react-table";
 import {
   ActionButton,
   ActionButtonItem,
-  AsyncButton,
   LanguageSelector,
   LanguageText,
   Selector,
@@ -40,14 +42,52 @@ import {
   usePayload,
   useShowModal,
 } from "..";
-import { useReduxStore } from "../../@redux/hooks/base";
+import { useLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
 import { isMovie, submodProcessColor } from "../../utilites";
+import { log } from "../../utilites/logger";
+import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal } from "./provider";
+import { useCloseModalUntil } from "./provider";
 import { avaliableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
+
+type TableColumnType = FormType.ModifySubtitle & {
+  _language: Language;
+};
+
+enum State {
+  Pending,
+  Processing,
+  Done,
+}
+
+type ProcessState = StrictObject<State>;
+
+// TODO: Extract this
+interface StateIconProps {
+  state: State;
+}
+
+const StateIcon: FunctionComponent<StateIconProps> = ({ state }) => {
+  let icon = faQuestionCircle;
+  switch (state) {
+    case State.Pending:
+    case State.Processing:
+      icon = faCircleNotch;
+      break;
+    case State.Done:
+      icon = faCheck;
+      break;
+  }
+  return (
+    <FontAwesomeIcon
+      icon={icon}
+      spin={state === State.Processing}
+    ></FontAwesomeIcon>
+  );
+};
 
 function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
   if (isMovie(item)) {
@@ -65,118 +105,71 @@ function submodProcessOffset(h: number, m: number, s: number, ms: number) {
   return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
 }
 
-const AddColorModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { ...modal } = props;
-  const [updating, setUpdate] = useState(false);
+interface ToolModalProps {
+  process: (
+    action: string,
+    override?: Partial<FormType.ModifySubtitle>
+  ) => void;
+}
+
+const AddColorModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
+  props
+) => {
+  const { process, ...modal } = props;
   const [selection, setSelection] = useState<Nullable<string>>(null);
 
-  const item = usePayload<SupportType>(modal.modalKey, 1);
-  const subtitle = usePayload<Subtitle>(modal.modalKey);
-  const closeModal = useCloseModal();
-
   const submit = useCallback(() => {
-    if (subtitle && subtitle.path && selection && item) {
-      const [id, type] = getIdAndType(item);
-      return SubtitlesApi.modify(
-        selection,
-        id,
-        type,
-        subtitle.code2,
-        subtitle.path
-      );
-    } else {
-      return null;
+    if (selection) {
+      const action = submodProcessColor(selection);
+      process(action);
     }
-  }, [selection, subtitle, item]);
+  }, [selection, process]);
 
   const footer = useMemo(
     () => (
-      <AsyncButton
-        disabled={selection === null}
-        promise={submit}
-        onSuccess={closeModal}
-        onChange={setUpdate}
-      >
+      <Button disabled={selection === null} onClick={submit}>
         Save
-      </AsyncButton>
+      </Button>
     ),
-    [selection, submit, closeModal]
+    [selection, submit]
   );
   return (
-    <BaseModal
-      title="Choose Color"
-      footer={footer}
-      closeable={!updating}
-      {...modal}
-    >
-      <Selector
-        disabled={updating}
-        options={colorOptions}
-        onChange={(s) => {
-          if (s) {
-            s = submodProcessColor(s);
-          }
-          setSelection(s);
-        }}
-      ></Selector>
+    <BaseModal title="Choose Color" footer={footer} {...modal}>
+      <Selector options={colorOptions} onChange={setSelection}></Selector>
     </BaseModal>
   );
 };
 
-const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { ...modal } = props;
-
-  const [updating, setUpdate] = useState(false);
+const FrameRateModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
+  props
+) => {
+  const { process, ...modal } = props;
 
   const [from, setFrom] = useState<Nullable<number>>(null);
   const [to, setTo] = useState<Nullable<number>>(null);
 
-  const item = usePayload<SupportType>(modal.modalKey, 1);
-  const subtitle = usePayload<Subtitle>(modal.modalKey);
-  const closeModal = useCloseModal();
-
   const canSave = from !== null && to !== null && from !== to;
 
   const submit = useCallback(() => {
-    if (canSave && subtitle && subtitle.path && item) {
+    if (canSave) {
       const action = submodProcessFrameRate(from!, to!);
-      const [id, type] = getIdAndType(item);
-      return SubtitlesApi.modify(
-        action,
-        id,
-        type,
-        subtitle.code2,
-        subtitle.path
-      );
-    } else {
-      return null;
+      process(action);
     }
-  }, [subtitle, canSave, from, to, item]);
+  }, [canSave, from, to, process]);
 
   const footer = useMemo(
     () => (
-      <AsyncButton
-        disabled={!canSave}
-        promise={submit}
-        onSuccess={closeModal}
-        onChange={setUpdate}
-      >
+      <Button disabled={!canSave} onClick={submit}>
         Save
-      </AsyncButton>
+      </Button>
     ),
-    [submit, closeModal, canSave]
+    [submit, canSave]
   );
 
   return (
-    <BaseModal
-      title="Change Frame Rate"
-      footer={footer}
-      closeable={!updating}
-      {...modal}
-    >
+    <BaseModal title="Change Frame Rate" footer={footer} {...modal}>
       <InputGroup className="px-2">
         <Form.Control
-          disabled={updating}
           placeholder="From"
           type="number"
           onChange={(e) => {
@@ -189,7 +182,6 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
           }}
         ></Form.Control>
         <Form.Control
-          disabled={updating}
           placeholder="To"
           type="number"
           onChange={(e) => {
@@ -206,10 +198,11 @@ const ChangeFrameRateModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 };
 
-const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { ...modal } = props;
+const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
+  props
+) => {
+  const { process, ...modal } = props;
 
-  const [updating, setUpdate] = useState(false);
   const [isPlus, setPlus] = useState(true);
   const [offset, setOffset] = useState<[number, number, number, number]>([
     0,
@@ -233,14 +226,10 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
     [offset]
   );
 
-  const item = usePayload<SupportType>(modal.modalKey, 1);
-  const subtitle = usePayload<Subtitle>(modal.modalKey);
-  const closeModal = useCloseModal();
-
   const canSave = offset.some((v) => v !== 0);
 
   const submit = useCallback(() => {
-    if (canSave && subtitle && subtitle.path && item) {
+    if (canSave) {
       const newOffset = offset.map((v) => (isPlus ? v : -v));
       const action = submodProcessOffset(
         newOffset[0],
@@ -248,44 +237,24 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
         newOffset[2],
         newOffset[3]
       );
-      const [id, type] = getIdAndType(item);
-      return SubtitlesApi.modify(
-        action,
-        id,
-        type,
-        subtitle.code2,
-        subtitle.path
-      );
-    } else {
-      return null;
+      process(action);
     }
-  }, [subtitle, canSave, offset, isPlus, item]);
+  }, [process, canSave, offset, isPlus]);
 
   const footer = useMemo(
     () => (
-      <AsyncButton
-        disabled={!canSave}
-        promise={submit}
-        onSuccess={closeModal}
-        onChange={setUpdate}
-      >
+      <Button disabled={!canSave} onClick={submit}>
         Save
-      </AsyncButton>
+      </Button>
     ),
-    [submit, closeModal, canSave]
+    [submit, canSave]
   );
 
   return (
-    <BaseModal
-      title="Adjust Times"
-      footer={footer}
-      closeable={!updating}
-      {...modal}
-    >
+    <BaseModal title="Adjust Times" footer={footer} {...modal}>
       <InputGroup>
         <InputGroup.Prepend>
           <Button
-            disabled={updating}
             variant="secondary"
             title={isPlus ? "Later" : "Earlier"}
             onClick={() => setPlus(!isPlus)}
@@ -294,25 +263,21 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
           </Button>
         </InputGroup.Prepend>
         <Form.Control
-          disabled={updating}
           type="number"
           placeholder="hour"
           onChange={updateOffset(0)}
         ></Form.Control>
         <Form.Control
-          disabled={updating}
           type="number"
           placeholder="min"
           onChange={updateOffset(1)}
         ></Form.Control>
         <Form.Control
-          disabled={updating}
           type="number"
           placeholder="sec"
           onChange={updateOffset(2)}
         ></Form.Control>
         <Form.Control
-          disabled={updating}
           type="number"
           placeholder="ms"
           onChange={updateOffset(3)}
@@ -322,65 +287,36 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 };
 
-interface TranslateProps {
-  item?: SupportType;
-}
-
-const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
+const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
+  process,
   ...modal
 }) => {
-  const item = usePayload<SupportType>(modal.modalKey, 1);
-  const subtitle = usePayload<Subtitle>(modal.modalKey);
-
-  const languages = useReduxStore((s) => s.system.enabledLanguage.data);
+  const [languages] = useLanguages(true);
 
   const avaliable = useMemo(
-    () =>
-      languages.filter(
-        (v) => v.code2 !== subtitle?.code2 && v.code2 in avaliableTranslation
-      ),
-    [subtitle, languages]
+    () => languages.filter((v) => v.code2 in avaliableTranslation),
+    [languages]
   );
 
   const [selectedLanguage, setLanguage] = useState<Nullable<Language>>(null);
 
   const submit = useCallback(() => {
-    if (item && item.path && subtitle && subtitle.path && selectedLanguage) {
-      const [id, type] = getIdAndType(item);
-      return SubtitlesApi.modify(
-        "translate",
-        id,
-        type,
-        selectedLanguage.code2,
-        subtitle.path
-      );
+    if (selectedLanguage) {
+      process("translate", { language: selectedLanguage.code2 });
     }
-    return null;
-  }, [item, subtitle, selectedLanguage]);
-
-  const closeModal = useCloseModal();
+  }, [selectedLanguage, process]);
 
   const footer = useMemo(
     () => (
-      <AsyncButton
-        disabled={!selectedLanguage}
-        onSuccess={() => closeModal()}
-        promise={submit}
-      >
+      <Button disabled={!selectedLanguage} onClick={submit}>
         Translate
-      </AsyncButton>
+      </Button>
     ),
-    [submit, selectedLanguage, closeModal]
+    [submit, selectedLanguage]
   );
 
   return (
-    <BaseModal title="Translate Subtitle" footer={footer} {...modal}>
-      <InputGroup className="mb-3">
-        <InputGroup.Prepend>
-          <InputGroup.Text>Original</InputGroup.Text>
-        </InputGroup.Prepend>
-        <Form.Control disabled value={subtitle?.name ?? ""}></Form.Control>
-      </InputGroup>
+    <BaseModal title="Translate to" footer={footer} {...modal}>
       <LanguageSelector
         options={avaliable}
         onChange={setLanguage}
@@ -389,63 +325,84 @@ const TranslateModal: FunctionComponent<BaseModalProps & TranslateProps> = ({
   );
 };
 
-interface Props {
-  item?: SupportType;
-}
-
-const Table: FunctionComponent<Props> = ({ item }) => {
-  const submitAction = useCallback(
-    (action: string, sub: Subtitle) => {
-      if (sub.path && item) {
-        const [id, type] = getIdAndType(item);
-        setUpdate(true);
-        setActive(sub.path);
-        SubtitlesApi.modify(action, id, type, sub.code2, sub.path).finally(
-          () => {
-            setUpdate(false);
-            setActive(null);
-          }
-        );
-      }
-    },
-    [item]
-  );
+const STM: FunctionComponent<BaseModalProps> = (props) => {
+  const item = usePayload<SupportType>(props.modalKey);
 
   const [updating, setUpdate] = useState<boolean>(false);
-  const [active, setActive] = useState<Nullable<string>>(null);
+  const [processState, setProcessState] = useState<ProcessState>({});
+  const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const syncSubtitle = useCallback(
-    (sub: Subtitle) => {
-      if (sub.path && item) {
-        const [id, type] = getIdAndType(item);
+  const closeUntil = useCloseModalUntil(props.modalKey);
 
-        setUpdate(true);
-        setActive(sub.path);
-        SubtitlesApi.modify("sync", id, type, sub.code2, sub.path).finally(
-          () => {
-            setUpdate(false);
-            setActive(null);
-          }
-        );
+  const process = useCallback(
+    async (action: string, override?: Partial<FormType.ModifySubtitle>) => {
+      log("info", "executing action", action);
+      closeUntil();
+      setUpdate(true);
+
+      let states = selections.reduce<ProcessState>(
+        (v, curr) => ({ [curr.path]: State.Pending, ...v }),
+        {}
+      );
+      setProcessState(states);
+
+      for (const raw of selections) {
+        states = {
+          ...states,
+          [raw.path]: State.Processing,
+        };
+        setProcessState(states);
+        const form: FormType.ModifySubtitle = {
+          id: raw.id,
+          type: raw.type,
+          language: raw.language,
+          path: raw.path,
+          ...override,
+        };
+        await SubtitlesApi.modify(action, form);
+
+        states = {
+          ...states,
+          [raw.path]: State.Done,
+        };
+        setProcessState(states);
       }
+      setUpdate(false);
     },
-    [item]
+    [closeUntil, selections]
   );
 
   const showModal = useShowModal();
 
-  const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
+  const columns: Column<TableColumnType>[] = useMemo<Column<TableColumnType>[]>(
     () => [
       {
-        accessor: "name",
-        Cell: ({ row }) => (
+        id: "state",
+        accessor: "path",
+        selectHide: true,
+        Cell: ({ value, loose }) => {
+          if (loose) {
+            const stateList = loose[0] as ProcessState;
+            if (value in stateList) {
+              const state = stateList[value];
+              return <StateIcon state={state}></StateIcon>;
+            }
+          }
+          return null;
+        },
+      },
+      {
+        Header: "Language",
+        accessor: "_language",
+        Cell: ({ value }) => (
           <Badge variant="secondary">
-            <LanguageText text={row.original} long={true}></LanguageText>
+            <LanguageText text={value} long={true}></LanguageText>
           </Badge>
         ),
       },
       {
-        Header: "File Name",
+        id: "file",
+        Header: "File",
         accessor: "path",
         Cell: (row) => {
           const path = row.value!;
@@ -463,123 +420,128 @@ const Table: FunctionComponent<Props> = ({ item }) => {
           }
         },
       },
-      {
-        Header: "Tools",
-        accessor: "code2",
-        Cell: (row) => {
-          const sub = row.row.original;
-
-          const isActive = sub.path !== null && sub.path === active;
-
-          return (
-            <Dropdown
-              as={ButtonGroup}
-              onSelect={(k) => k && submitAction(k, sub)}
-            >
-              <ActionButton
-                size="sm"
-                loading={isActive}
-                disabled={updating}
-                icon={faPlay}
-                onClick={() => syncSubtitle(sub)}
-              >
-                Sync
-              </ActionButton>
-              <Dropdown.Toggle
-                disabled={updating}
-                split
-                variant="light"
-                size="sm"
-                className="px-2"
-              ></Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item eventKey="remove_HI">
-                  <ActionButtonItem icon={faDeaf}>
-                    Remove HI Tags
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item eventKey="remove_tags">
-                  <ActionButtonItem icon={faCode}>
-                    Remove Style Tags
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item eventKey="OCR_fixes">
-                  <ActionButtonItem icon={faImage}>OCR Fixes</ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item eventKey="common">
-                  <ActionButtonItem icon={faMagic}>
-                    Common Fixes
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item eventKey="fix_uppercase">
-                  <ActionButtonItem icon={faTextHeight}>
-                    Fix Uppercase
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item eventKey="reverse_rtl">
-                  <ActionButtonItem icon={faExchangeAlt}>
-                    Reverse RTL
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item onSelect={() => showModal("add-color", sub)}>
-                  <ActionButtonItem icon={faPaintBrush}>
-                    Add Color
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item
-                  onSelect={() => showModal("change-frame-rate", sub)}
-                >
-                  <ActionButtonItem icon={faFilm}>
-                    Change Frame Rate
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item onSelect={() => showModal("adjust-times", sub)}>
-                  <ActionButtonItem icon={faClock}>
-                    Adjust Times
-                  </ActionButtonItem>
-                </Dropdown.Item>
-                <Dropdown.Item onSelect={() => showModal("translate-sub", sub)}>
-                  <ActionButtonItem icon={faLanguage}>
-                    Translate
-                  </ActionButtonItem>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          );
-        },
-      },
     ],
-    [submitAction, updating, syncSubtitle, active, showModal]
+    []
   );
 
-  const data: Subtitle[] = useMemo<Subtitle[]>(
-    () => item?.subtitles.filter((val) => val.path !== null) ?? [],
-    [item]
+  const data = useMemo<TableColumnType[]>(() => {
+    if (item) {
+      const [id, type] = getIdAndType(item);
+      return item.subtitles.flatMap((v) => {
+        if (v.path !== null) {
+          return [
+            {
+              id,
+              type,
+              language: v.code2,
+              path: v.path,
+              _language: v,
+            },
+          ];
+        } else {
+          return [];
+        }
+      });
+    } else {
+      return [];
+    }
+  }, [item]);
+
+  const plugins = [useRowSelect, useCustomSelection];
+
+  const footer = useMemo(
+    () => (
+      <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
+        <ActionButton
+          size="sm"
+          loading={updating}
+          disabled={selections.length === 0}
+          icon={faPlay}
+          onClick={() => process("sync")}
+        >
+          Sync
+        </ActionButton>
+        <Dropdown.Toggle
+          disabled={updating || selections.length === 0}
+          split
+          variant="light"
+          size="sm"
+          className="px-2"
+        ></Dropdown.Toggle>
+        <Dropdown.Menu>
+          <Dropdown.Item eventKey="remove_HI">
+            <ActionButtonItem icon={faDeaf}>Remove HI Tags</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item eventKey="remove_tags">
+            <ActionButtonItem icon={faCode}>Remove Style Tags</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item eventKey="OCR_fixes">
+            <ActionButtonItem icon={faImage}>OCR Fixes</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item eventKey="common">
+            <ActionButtonItem icon={faMagic}>Common Fixes</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item eventKey="fix_uppercase">
+            <ActionButtonItem icon={faTextHeight}>
+              Fix Uppercase
+            </ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item eventKey="reverse_rtl">
+            <ActionButtonItem icon={faExchangeAlt}>
+              Reverse RTL
+            </ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item onSelect={() => showModal("add-color")}>
+            <ActionButtonItem icon={faPaintBrush}>Add Color</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item onSelect={() => showModal("change-frame-rate")}>
+            <ActionButtonItem icon={faFilm}>Change Frame Rate</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item onSelect={() => showModal("adjust-times")}>
+            <ActionButtonItem icon={faClock}>Adjust Times</ActionButtonItem>
+          </Dropdown.Item>
+          <Dropdown.Item onSelect={() => showModal("translate-sub")}>
+            <ActionButtonItem icon={faLanguage}>Translate</ActionButtonItem>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    ),
+    [showModal, updating, selections.length, process]
   );
 
-  return (
-    <SimpleTable
-      emptyText="No External Subtitles Found"
-      responsive={false}
-      columns={columns}
-      data={data}
-    ></SimpleTable>
-  );
-};
-
-const Tools: FunctionComponent<BaseModalProps> = (props) => {
-  const item = usePayload<SupportType>(props.modalKey);
   return (
     <React.Fragment>
-      <BaseModal title={`Tools - ${item?.title ?? ""}`} {...props}>
-        <Table item={item ?? undefined} {...props}></Table>
+      <BaseModal
+        title={"Subtitle Tools"}
+        footer={footer}
+        closeable={!updating}
+        {...props}
+      >
+        <SimpleTable
+          isSelecting={!updating}
+          emptyText="No External Subtitles Found"
+          plugins={plugins}
+          columns={columns}
+          onSelect={setSelections}
+          data={data}
+          loose={[processState]}
+        ></SimpleTable>
       </BaseModal>
-      <AddColorModal modalKey="add-color"></AddColorModal>
-      <ChangeFrameRateModal modalKey="change-frame-rate"></ChangeFrameRateModal>
-      <AdjustTimesModal modalKey="adjust-times"></AdjustTimesModal>
-      <TranslateModal modalKey="translate-sub"></TranslateModal>
+      <AddColorModal process={process} modalKey="add-color"></AddColorModal>
+      <FrameRateModal
+        process={process}
+        modalKey="change-frame-rate"
+      ></FrameRateModal>
+      <AdjustTimesModal
+        process={process}
+        modalKey="adjust-times"
+      ></AdjustTimesModal>
+      <TranslateModal
+        process={process}
+        modalKey="translate-sub"
+      ></TranslateModal>
     </React.Fragment>
   );
 };
 
-export default Tools;
+export default STM;

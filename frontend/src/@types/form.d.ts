@@ -36,6 +36,13 @@ namespace FormType {
     path: string;
   }
 
+  interface ModifySubtitle {
+    id: number;
+    type: "episode" | "movie";
+    language: string;
+    path: string;
+  }
+
   interface DownloadSeries {
     episodePath: string;
     sceneName?: string;
