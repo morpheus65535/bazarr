@@ -6,7 +6,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { RouteComponentProps, withRouter } from "react-router-dom";
@@ -35,14 +35,9 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const [serie, update] = useSerieBy(id);
   const item = serie.data;
 
-  const [episodes, updateEpisodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
+  const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
 
-  const combineUpdate = useCallback(() => {
-    update();
-    updateEpisodes();
-  }, [update, updateEpisodes]);
-
-  useAutoUpdate(combineUpdate);
+  useAutoUpdate(update);
 
   const avaliable = episodes.data.length !== 0;
 
@@ -122,7 +117,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes} update={updateEpisodes}></Table>
+        <Table episodes={episodes} update={update}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
