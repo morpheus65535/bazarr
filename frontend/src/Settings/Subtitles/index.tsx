@@ -12,14 +12,19 @@ import {
 } from "../components";
 import { antiCaptchaOption, colorOptions, folderOptions } from "./options";
 
-const SettingsSubtitlesView: FunctionComponent = () => {
-  // TODO: Performance
-  const subzeroOverride = (key: string) => {
-    return (settings: Settings) => {
-      return settings.general.subzero_mods?.includes(key) ?? false;
-    };
+const subzeroOverride = (key: string) => {
+  return (settings: Settings) => {
+    return settings.general.subzero_mods?.includes(key) ?? false;
   };
+};
 
+const subzeroColorOverride = (settings: Settings) => {
+  return (
+    settings.general.subzero_mods?.find((v) => v.startsWith("color")) ?? null
+  );
+};
+
+const SettingsSubtitlesView: FunctionComponent = () => {
   return (
     <SettingsProvider title="Subtitles - Bazarr (Settings)">
       <Group header="Subtitles Options">
@@ -248,32 +253,19 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             Tries to make subtitles that are completely uppercase readable.
           </Message>
         </Input>
-        {/* TODO: Support Color Modification */}
-        <CollapseBox>
-          <CollapseBox.Control>
-            <Input>
-              <Check
-                label="Color"
-                override={subzeroOverride("color")}
-                settingKey="subzero-color"
-              ></Check>
-              <Message>
-                Adds color to your subtitles (for playback devices/software that
-                don't ship their own color modes; only works for players that
-                support color tags).
-              </Message>
-            </Input>
-          </CollapseBox.Control>
-          <CollapseBox.Content>
-            <Input>
-              <Selector
-                options={colorOptions}
-                override={(s) => s.general.subzero_color_selection ?? null}
-                settingKey="subzero-color-selection"
-              ></Selector>
-            </Input>
-          </CollapseBox.Content>
-        </CollapseBox>
+        <Input name="Color">
+          <Selector
+            clearable
+            options={colorOptions}
+            override={subzeroColorOverride}
+            settingKey="subzero-color"
+          ></Selector>
+          <Message>
+            Adds color to your subtitles (for playback devices/software that
+            don't ship their own color modes; only works for players that
+            support color tags).
+          </Message>
+        </Input>
         <Input>
           <Check
             label="Reverse RTL"

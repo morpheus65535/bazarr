@@ -42,11 +42,10 @@ import {
 } from "..";
 import { useReduxStore } from "../../@redux/hooks/base";
 import { SubtitlesApi } from "../../apis";
-import { colorOptions } from "../../Settings/Subtitles/options";
 import { isMovie, submodProcessColor } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./provider";
-import { avaliableTranslation } from "./toolOptions";
+import { avaliableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
 

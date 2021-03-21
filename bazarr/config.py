@@ -336,12 +336,23 @@ def save_settings(settings_items):
         if settings_keys[0] == 'subzero':
             mod = settings_keys[1]
             enabled = value == 'True'
-            if mod in subzero_mods:
-                if not enabled:
-                    subzero_mods.remove(mod)
-            else:
-                if enabled:
-                    subzero_mods.append(mod)
+            if mod in subzero_mods and not enabled:
+                subzero_mods.remove(mod)
+            elif enabled:
+                subzero_mods.append(mod)
+
+            # Handle color
+            if mod == 'color':
+                previous = None
+                for exist_mod in subzero_mods:
+                    if exist_mod.startswith('color'):
+                        previous = exist_mod
+                        break
+                if previous is not None:
+                    subzero_mods.remove(previous)
+                if value not in empty_values:
+                    subzero_mods.append(value)
+
             update_subzero = True
 
     if update_subzero:

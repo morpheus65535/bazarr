@@ -106,3 +106,70 @@ export const avaliableTranslation = {
   fil: "Filipino",
   he: "Hebrew",
 };
+
+export const colorOptions: SelectorOption<string>[] = [
+  {
+    label: "White",
+    value: "white",
+  },
+  {
+    label: "Light Gray",
+    value: "lightgray",
+  },
+  {
+    label: "Red",
+    value: "red",
+  },
+  {
+    label: "Green",
+    value: "green",
+  },
+  {
+    label: "Yellow",
+    value: "yellow",
+  },
+  {
+    label: "Blue",
+    value: "blue",
+  },
+  {
+    label: "Magenta",
+    value: "magenta",
+  },
+  {
+    label: "Cyan",
+    value: "cyan",
+  },
+  {
+    label: "Black",
+    value: "black",
+  },
+  {
+    label: "Dark Red",
+    value: "darkred",
+  },
+  {
+    label: "Dark Green",
+    value: "darkgreen",
+  },
+  {
+    label: "Dark Yellow",
+    value: "darkyellow",
+  },
+  {
+    label: "Dark Blue",
+    value: "darkblue",
+  },
+  {
+    label: "Dark Magenta",
+    value: "darkmagenta",
+  },
+  {
+    label: "Dark Cyan",
+    value: "darkcyan",
+  },
+  {
+    label: "Dark Grey",
+    value: "darkgrey",
+  },
+];

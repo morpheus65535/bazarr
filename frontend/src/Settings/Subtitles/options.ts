@@ -24,69 +24,73 @@ export const antiCaptchaOption: SelectorOption<string>[] = [
   },
 ];
 
+function buildColor(name: string) {
+  return `color(name=${name})`;
+}
+
 export const colorOptions: SelectorOption<string>[] = [
   {
     label: "White",
-    value: "white",
+    value: buildColor("white"),
   },
   {
     label: "Light Gray",
-    value: "lightgray",
+    value: buildColor("lightgray"),
   },
   {
     label: "Red",
-    value: "red",
+    value: buildColor("red"),
   },
   {
     label: "Green",
-    value: "green",
+    value: buildColor("green"),
   },
   {
     label: "Yellow",
-    value: "yellow",
+    value: buildColor("yellow"),
   },
   {
     label: "Blue",
-    value: "blue",
+    value: buildColor("blue"),
   },
   {
     label: "Magenta",
-    value: "magenta",
+    value: buildColor("magenta"),
   },
   {
     label: "Cyan",
-    value: "cyan",
+    value: buildColor("cyan"),
   },
   {
     label: "Black",
-    value: "black",
+    value: buildColor("black"),
   },
   {
     label: "Dark Red",
-    value: "darkred",
+    value: buildColor("darkred"),
   },
   {
     label: "Dark Green",
-    value: "darkgreen",
+    value: buildColor("darkgreen"),
   },
   {
     label: "Dark Yellow",
-    value: "darkyellow",
+    value: buildColor("darkyellow"),
   },
   {
     label: "Dark Blue",
-    value: "darkblue",
+    value: buildColor("darkblue"),
   },
   {
     label: "Dark Magenta",
-    value: "darkmagenta",
+    value: buildColor("darkmagenta"),
   },
   {
     label: "Dark Cyan",
-    value: "darkcyan",
+    value: buildColor("darkcyan"),
   },
   {
     label: "Dark Grey",
-    value: "darkgrey",
+    value: buildColor("darkgrey"),
   },
 ];
