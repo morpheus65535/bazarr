@@ -83,7 +83,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: capitalize(type),
         accessor: "from",
-        Cell: ({ value, row, externalUpdate: update }) => (
+        Cell: ({ value, row, externalUpdate }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -91,7 +91,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.from = path;
-              update && update(row, newItem);
+              externalUpdate && externalUpdate(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -106,7 +106,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: "Bazarr",
         accessor: "to",
-        Cell: ({ value, row, externalUpdate: update }) => (
+        Cell: ({ value, row, externalUpdate }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -114,7 +114,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.to = path;
-              update && update(row, newItem);
+              externalUpdate && externalUpdate(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -122,11 +122,11 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         id: "action",
         accessor: "to",
-        Cell: ({ row, externalUpdate: update }) => (
+        Cell: ({ row, externalUpdate }) => (
           <ActionButton
             icon={faTrash}
             onClick={() => {
-              update && update(row);
+              externalUpdate && externalUpdate(row);
             }}
           ></ActionButton>
         ),

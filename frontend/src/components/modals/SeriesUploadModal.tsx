@@ -410,7 +410,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
       {
         Header: "Season / Episode",
         accessor: "season",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const info = row.original;
           const season = info.season;
           const episode = info.episode;
@@ -428,7 +428,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== season) {
                     info.season = v;
-                    update && update(row, info);
+                    externalUpdate && externalUpdate(row, info);
                   }
                 }}
               ></Form.Control>
@@ -444,7 +444,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                   const v = Number.parseInt(e.target.value);
                   if (!Number.isNaN(v) && v !== episode) {
                     info.episode = v;
-                    update && update(row, info);
+                    externalUpdate && externalUpdate(row, info);
                   }
                 }}
               ></Form.Control>
@@ -454,7 +454,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
       },
       {
         accessor: "file",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const info = row.original;
           return (
             <Button
@@ -462,7 +462,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
               variant="light"
               disabled={info.state === SubtitleState.update || uploading}
               onClick={() => {
-                update && update(row);
+                externalUpdate && externalUpdate(row);
               }}
             >
               <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>

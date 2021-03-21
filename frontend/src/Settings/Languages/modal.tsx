@@ -135,7 +135,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Language",
         accessor: "language",
-        Cell: ({ value, row, externalUpdate: update }) => {
+        Cell: ({ value, row, externalUpdate }) => {
           const code = value;
           const item = row.original;
           const lang = useMemo(() => languages.find((l) => l.code2 === code), [
@@ -149,7 +149,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
                 onChange={(l) => {
                   if (l) {
                     item.language = l.code2;
-                    update && update(row, item);
+                    externalUpdate && externalUpdate(row, item);
                   }
                 }}
               ></LanguageSelector>
@@ -160,7 +160,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Forced",
         accessor: "forced",
-        Cell: ({ row, value, externalUpdate: update }) => {
+        Cell: ({ row, value, externalUpdate }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -169,7 +169,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               defaultChecked={value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                externalUpdate && externalUpdate(row, item);
               }}
             ></Form.Check>
           );
@@ -178,7 +178,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "HI",
         accessor: "hi",
-        Cell: ({ row, value, externalUpdate: update }) => {
+        Cell: ({ row, value, externalUpdate }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -187,7 +187,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               defaultChecked={value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                externalUpdate && externalUpdate(row, item);
               }}
             ></Form.Check>
           );
@@ -196,7 +196,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Exclude Audio",
         accessor: "audio_exclude",
-        Cell: ({ row, value, externalUpdate: update }) => {
+        Cell: ({ row, value, externalUpdate }) => {
           const item = row.original;
           return (
             <Form.Check
@@ -205,7 +205,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               defaultChecked={value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                externalUpdate && externalUpdate(row, item);
               }}
             ></Form.Check>
           );
@@ -214,11 +214,11 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         id: "action",
         accessor: "id",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           return (
             <ActionButton
               icon={faTrash}
-              onClick={() => update && update(row)}
+              onClick={() => externalUpdate && externalUpdate(row)}
             ></ActionButton>
           );
         },

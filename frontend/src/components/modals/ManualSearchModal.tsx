@@ -82,14 +82,14 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
     () => [
       {
         accessor: "subtitle",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const result = row.original;
           return (
             <AsyncButton
               size="sm"
               variant="light"
               promise={() => onSelect(item!, result)}
-              onSuccess={() => update && update(row)}
+              onSuccess={() => externalUpdate && externalUpdate(row)}
             >
               <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
             </AsyncButton>

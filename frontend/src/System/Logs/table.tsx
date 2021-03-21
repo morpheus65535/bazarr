@@ -65,12 +65,12 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       },
       {
         accessor: "exception",
-        Cell: ({ row, value, externalUpdate: update }) => {
+        Cell: ({ row, value, externalUpdate }) => {
           if (!isUndefined(value)) {
             return (
               <ActionButton
                 icon={faLayerGroup}
-                onClick={() => update && update(row, value)}
+                onClick={() => externalUpdate && externalUpdate(row, value)}
               ></ActionButton>
             );
           } else {

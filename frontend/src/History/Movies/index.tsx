@@ -83,12 +83,12 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const original = row.original;
           return (
             <BlacklistButton
               history={original}
-              update={() => update && update(row)}
+              update={() => externalUpdate && externalUpdate(row)}
               promise={(form) =>
                 MoviesApi.addBlacklist(original.radarrId, form)
               }

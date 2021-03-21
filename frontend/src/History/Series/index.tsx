@@ -90,14 +90,14 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const original = row.original;
 
           const { sonarrEpisodeId, sonarrSeriesId } = original;
           return (
             <BlacklistButton
               history={original}
-              update={() => update && update(row)}
+              update={() => externalUpdate && externalUpdate(row)}
               promise={(form) =>
                 EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
               }

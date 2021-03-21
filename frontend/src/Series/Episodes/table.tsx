@@ -129,25 +129,25 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           return (
             <ButtonGroup className="d-flex flex-nowrap">
               <ActionButton
                 icon={faUser}
                 onClick={() => {
-                  update && update(row, "manual-search");
+                  externalUpdate && externalUpdate(row, "manual-search");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
                 onClick={() => {
-                  update && update(row, "history");
+                  externalUpdate && externalUpdate(row, "history");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
                 onClick={() => {
-                  update && update(row, "tools");
+                  externalUpdate && externalUpdate(row, "tools");
                 }}
               ></ActionButton>
             </ButtonGroup>
@@ -178,7 +178,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
     return {
       columns,
       data: episodes.data,
-      update: updateRow,
+      externalUpdate: updateRow,
       initialState: {
         sortBy: [
           { id: "season", desc: true },

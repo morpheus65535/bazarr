@@ -93,7 +93,7 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: ({ row, externalUpdate: update }) => {
+        Cell: ({ row, externalUpdate }) => {
           const profile = row.original;
 
           return (
@@ -101,12 +101,12 @@ const Table: FunctionComponent = () => {
               <ActionButton
                 icon={faWrench}
                 onClick={() => {
-                  update && update(row, profile);
+                  externalUpdate && externalUpdate(row, profile);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => update && update(row)}
+                onClick={() => externalUpdate && externalUpdate(row)}
               ></ActionButton>
             </ButtonGroup>
           );
