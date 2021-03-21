@@ -40,12 +40,12 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: (row) => {
-          const wanted = row.row.original;
+        Cell: ({ row, value, update }) => {
+          const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const movieid = wanted.radarrId;
 
-          return row.value.map((item, idx) => (
+          return value.map((item, idx) => (
             <AsyncButton
               as={Badge}
               key={idx}
@@ -58,7 +58,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
                   forced: false,
                 })
               }
-              onSuccess={() => update(movieid)}
+              onSuccess={() => update && update(row, movieid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
@@ -67,7 +67,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
         },
       },
     ],
-    [update]
+    []
   );
 
   return (

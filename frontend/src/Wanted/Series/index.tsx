@@ -47,13 +47,13 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: (row) => {
-          const wanted = row.row.original;
+        Cell: ({ row, update, value }) => {
+          const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const seriesid = wanted.sonarrSeriesId;
           const episodeid = wanted.sonarrEpisodeId;
 
-          return row.value.map((item, idx) => (
+          return value.map((item, idx) => (
             <AsyncButton
               as={Badge}
               key={idx}
@@ -66,7 +66,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
                   forced: false,
                 })
               }
-              onSuccess={() => update(episodeid)}
+              onSuccess={() => update && update(row, episodeid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
@@ -75,7 +75,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
         },
       },
     ],
-    [update]
+    []
   );
 
   return (

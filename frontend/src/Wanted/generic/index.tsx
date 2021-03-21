@@ -1,9 +1,9 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { capitalize } from "lodash";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Column } from "react-table";
+import { Column, TableUpdater } from "react-table";
 import { ContentHeader, PageTable } from "../../components";
 import { buildOrderList, GetItemId } from "../../utilites";
 
@@ -28,6 +28,13 @@ const GenericWantedView: FunctionComponent<Props> = ({
 
   const data = useMemo(() => buildOrderList(state.data), [state.data]);
 
+  const updater = useCallback<TableUpdater<Wanted.Base>>(
+    (row, id: number) => {
+      update(id);
+    },
+    [update]
+  );
+
   return (
     <Container fluid>
       <Helmet>
@@ -51,6 +58,7 @@ const GenericWantedView: FunctionComponent<Props> = ({
           loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}
+          update={updater}
           data={data}
         ></PageTable>
       </Row>
