@@ -14,7 +14,7 @@ import {
 const gLimiter: Map<PromiseCreator, Date> = new Map();
 const gArgs: Map<PromiseCreator, any[]> = new Map();
 
-const LIMIT_CALL_SECONDS = 1;
+const LIMIT_CALL_MS = 200;
 
 function asyncActionFactory<T extends PromiseCreator>(
   type: string,
@@ -29,8 +29,8 @@ function asyncActionFactory<T extends PromiseCreator>(
       // Get last execute date
       const previousExec = gLimiter.get(promise);
       if (previousExec) {
-        const distInSeconds = (date.getTime() - previousExec.getTime()) / 1000;
-        if (distInSeconds < LIMIT_CALL_SECONDS) {
+        const distInMs = date.getTime() - previousExec.getTime();
+        if (distInMs < LIMIT_CALL_MS) {
           log(
             "warning",
             "Multiple calls to API within the range",
