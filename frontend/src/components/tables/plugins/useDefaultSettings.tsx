@@ -25,6 +25,10 @@ function useOptions<T extends object>(options: TableOptions<T>) {
     options.initialState.pageSize = pageSize;
   }
 
+  if (options.asyncLoader === undefined) {
+    options.initialState.pageToLoad = undefined;
+  }
+
   return options;
 }
 
