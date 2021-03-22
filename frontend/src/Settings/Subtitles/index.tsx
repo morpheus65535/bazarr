@@ -71,11 +71,11 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </Input>
             <Input>
               <Check
-                label="Upgrade Manually Downloaded Subtitles"
+                label="Upgrade Manually Downloaded or Translated Subtitles"
                 settingKey="settings-general-upgrade_manual"
               ></Check>
               <Message>
-                Enable or disable upgrade of manually searched and downloaded
+                Enable or disable upgrade of manually downloaded or translated
                 subtitles.
               </Message>
             </Input>
