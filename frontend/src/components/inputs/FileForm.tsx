@@ -12,12 +12,12 @@ export interface FileFormProps {
   disabled?: boolean;
   multiple?: boolean;
   emptyText: string;
-  files?: File[];
+  value?: File[];
   onChange?: (files: File[]) => void;
 }
 
 export const FileForm: FunctionComponent<FileFormProps> = ({
-  files,
+  value: files,
   emptyText,
   multiple,
   disabled,

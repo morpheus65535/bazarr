@@ -13,7 +13,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Button, Container, Form, InputGroup } from "react-bootstrap";
+import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import {
   AsyncButton,
@@ -26,443 +26,310 @@ import {
 } from "..";
 import {
   useEpisodesBy,
-  useLanguageBy,
-  useLanguages,
   useProfileBy,
+  useProfileItems,
 } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
+import { Selector } from "../inputs";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 
-enum SubtitleState {
-  update,
-  valid,
-  warning,
-  error,
+enum State {
+  Update,
+  Valid,
+  Warning,
+  Error,
 }
+
+interface PendingSubtitle {
+  form: FormType.UploadSubtitle;
+  didCheck: boolean;
+  instance?: Item.Episode;
+}
+
+type SubtitleState = {
+  state: State;
+  infos: string[];
+};
+
+type ProcessState = {
+  [name: string]: SubtitleState;
+};
+
+type EpisodeMap = {
+  [name: string]: Item.Episode;
+};
 
 interface MovieProps {}
 
 const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
-  props
+  modal
 ) => {
-  const modal = props;
-
-  const [avaliableLanguages] = useLanguages(true);
-
   const series = usePayload<Item.Series>(modal.modalKey);
 
-  const [episodes, update] = useEpisodesBy(series?.sonarrSeriesId);
+  const [episodes, updateEpisodes] = useEpisodesBy(series?.sonarrSeriesId);
 
   const [uploading, setUpload] = useState(false);
 
   const closeModal = useCloseModal();
 
-  const [subtitleInfoList, setSubtitleInfo] = useState<SubtitleInfo[]>([]);
+  const [pending, setPending] = useState<PendingSubtitle[]>([]);
 
-  const [language, setLanguage] = useState<Nullable<Language>>(null);
+  const [processState, setProcessState] = useState<ProcessState>({});
 
   const profile = useProfileBy(series?.profileId);
 
-  const defaultLanguage = useLanguageBy(profile?.items[0]?.language);
+  const languages = useProfileItems(profile);
 
-  useEffect(() => setLanguage(defaultLanguage ?? null), [defaultLanguage]);
+  const filelist = useMemo(() => pending.map((v) => v.form.file), [pending]);
 
-  const filelist = useMemo(() => subtitleInfoList.map((v) => v.file), [
-    subtitleInfoList,
-  ]);
+  // Vaildate
+  useEffect(() => {
+    const states = pending.reduce<ProcessState>((prev, info) => {
+      const subState: SubtitleState = {
+        state: State.Valid,
+        infos: [],
+      };
 
-  const [maxSeason, maxEpisode] = useMemo(() => {
-    if (episodes) {
-      const season = episodes.data.reduce((v, e) => Math.max(v, e.season), 0);
-      const episode = episodes.data.reduce((v, e) => Math.max(v, e.episode), 0);
-      return [season, episode];
-    }
-    return [0, 0];
-  }, [episodes]);
+      const { form, instance } = info;
 
-  const validItem = useCallback(
-    (info: SubtitleInfo, lang: Nullable<Language>) => {
-      info.stateText = [];
-      if (info.state === SubtitleState.update) {
-        return;
+      if (!info.didCheck) {
+        subState.state = State.Update;
+      } else if (!instance) {
+        subState.infos.push("Season or episode info is missing");
+        subState.state = State.Error;
+      } else {
+        if (
+          instance.subtitles.find((v) => v.code2 === form.language) !==
+          undefined
+        ) {
+          subState.infos.push("Overwrite existing subtitle");
+          subState.state = State.Warning;
+        }
       }
 
-      if (!info.episode || !info.season) {
-        info.stateText.push("Season or episode info is missing");
-        info.state = SubtitleState.error;
-        return;
-      }
+      prev[form.file.name] = subState;
+      return prev;
+    }, {});
 
-      if (
-        episodes &&
-        (!info.instance ||
-          info.season !== info.instance.season ||
-          info.episode !== info.instance.episode)
-      ) {
-        info.instance = episodes.data.find(
-          (e) => e.season === info.season && e.episode === info.episode
+    setProcessState(states);
+  }, [pending]);
+
+  const checkEpisodes = useCallback(
+    async (list: PendingSubtitle[]) => {
+      const names = list.map((v) => v.form.file.name);
+
+      if (names.length > 0) {
+        const results = await SubtitlesApi.info(names);
+
+        const episodeMap = results.reduce<EpisodeMap>((prev, curr) => {
+          const ep = episodes.data.find(
+            (v) => v.season === curr.season && v.episode === curr.episode
+          );
+          if (ep) {
+            prev[curr.filename] = ep;
+          }
+          return prev;
+        }, {});
+
+        setPending((pd) =>
+          pd.map((v) => ({
+            ...v,
+            didCheck: true,
+            instance: episodeMap[v.form.file.name],
+          }))
         );
       }
-
-      if (!info.instance) {
-        info.stateText.push("Cannot find episode for this subtitle");
-        info.state = SubtitleState.error;
-        return;
-      }
-
-      if (
-        info.episode > maxEpisode ||
-        info.season > maxSeason ||
-        info.episode <= 0 ||
-        info.season <= 0
-      ) {
-        info.state = SubtitleState.error;
-        info.stateText.push("Cannot find episode for this subtitle");
-        return;
-      }
-
-      if (
-        info.instance.subtitles &&
-        info.instance.subtitles.find((s) => s.code2 === lang?.code2)
-      ) {
-        info.stateText.push("Overwrite existing subtitle");
-      }
-
-      if (info.stateText.length !== 0) {
-        info.state = SubtitleState.warning;
-      } else {
-        info.state = SubtitleState.valid;
-      }
     },
-    [maxSeason, maxEpisode, episodes]
+    [episodes.data]
   );
 
   const updateLanguage = useCallback(
     (lang: Nullable<Language>) => {
-      setLanguage(lang);
-
-      subtitleInfoList.forEach((v) => validItem(v, lang));
-      setSubtitleInfo(subtitleInfoList);
-    },
-    [subtitleInfoList, validItem]
-  );
-
-  const setFiles = useCallback((list: File[]) => {
-    const infoList: SubtitleInfo[] = list.map((f) => {
-      return {
-        file: f,
-        state: SubtitleState.update,
-        stateText: [],
-      };
-    });
-
-    setSubtitleInfo(infoList);
-  }, []);
-
-  const updateSubtitleInfo = useCallback(
-    (list: SubtitleInfo[], process: boolean = true) => {
-      const newList = [...list];
-      if (process) {
-        newList.forEach((v) => validItem(v, language));
-      }
-      setSubtitleInfo(newList);
-    },
-    [validItem, language]
-  );
-
-  const uploadSubtitles = useCallback(
-    async (list: SubtitleInfo[]) => {
-      if (series === null) {
-        return;
-      }
-
-      const { sonarrSeriesId } = series;
-      const langCode = language?.code2;
-
-      if (langCode) {
-        list.forEach((v) => {
-          v.state = SubtitleState.update;
-          v.stateText = [];
+      if (lang) {
+        const list = pending.map((v) => {
+          const form = v.form;
+          return {
+            ...v,
+            form: {
+              ...form,
+              language: lang.code2,
+              hi: lang.hi ?? false,
+              forced: lang.forced ?? false,
+            },
+          };
         });
-        updateSubtitleInfo(list, false);
-
-        for (const info of list) {
-          if (info.instance) {
-            const { sonarrEpisodeId } = info.instance;
-            await EpisodesApi.uploadSubtitles(sonarrSeriesId, sonarrEpisodeId, {
-              file: info.file,
-              language: langCode,
-              // TODO
-              hi: false,
-              forced: false,
-            });
-
-            list.find((i) => i === info)!.state = SubtitleState.valid;
-            updateSubtitleInfo(list, false);
-          }
-        }
+        setPending(list);
       }
     },
-    [series, language, updateSubtitleInfo]
+    [pending]
   );
 
-  const tableShow = subtitleInfoList.length !== 0;
+  const setFiles = useCallback(
+    (files: File[]) => {
+      // At lease 1 language is required
+      const lang = languages[0];
+      const list: PendingSubtitle[] = files.map((f) => {
+        return {
+          form: {
+            file: f,
+            language: lang.code2,
+            hi: lang.hi ?? false,
+            forced: lang.forced ?? false,
+          },
+          didCheck: false,
+        };
+      });
+      setPending(list);
 
-  const isValid = useMemo(
-    () =>
-      subtitleInfoList.every(
-        (v) =>
-          v.state === SubtitleState.valid || v.state === SubtitleState.warning
-      ),
-    [subtitleInfoList]
-  );
-
-  const canUpload = tableShow && isValid && language?.code2;
-
-  const footer = useMemo(
-    () => (
-      <div className="d-flex flex-row flex-grow-1 justify-content-between">
-        <div className="w-25">
-          <LanguageSelector
-            disabled={uploading}
-            options={avaliableLanguages}
-            value={language}
-            onChange={updateLanguage}
-          ></LanguageSelector>
-        </div>
-        <div>
-          <Button
-            hidden={!tableShow || uploading}
-            variant="outline-secondary"
-            className="mr-2"
-            onClick={() => setFiles([])}
-          >
-            Clean
-          </Button>
-          <AsyncButton
-            disabled={!canUpload}
-            onChange={setUpload}
-            promise={() => uploadSubtitles(subtitleInfoList)}
-            onSuccess={() => {
-              closeModal();
-              setFiles([]);
-              update();
-            }}
-          >
-            Upload
-          </AsyncButton>
-        </div>
-      </div>
-    ),
-    [
-      uploading,
-      avaliableLanguages,
-      language,
-      tableShow,
-      setFiles,
-      canUpload,
-      subtitleInfoList,
-      update,
-      uploadSubtitles,
-      updateLanguage,
-      closeModal,
-    ]
-  );
-
-  return (
-    <BaseModal
-      size="lg"
-      title={`Upload - ${series?.title}`}
-      closeable={!uploading}
-      footer={footer}
-      {...modal}
-    >
-      <Container fluid className="flex-column">
-        <Form>
-          <Form.Group>
-            <FileForm
-              emptyText="Select..."
-              disabled={tableShow}
-              multiple
-              files={filelist}
-              onChange={setFiles}
-            ></FileForm>
-          </Form.Group>
-        </Form>
-        <div hidden={!tableShow}>
-          <Table
-            uploading={uploading}
-            maxSeason={maxSeason}
-            maxEpisode={maxEpisode}
-            data={subtitleInfoList}
-            update={updateSubtitleInfo}
-          ></Table>
-        </div>
-      </Container>
-    </BaseModal>
-  );
-};
-
-interface SubtitleInfo {
-  file: File;
-  state: SubtitleState;
-  stateText: string[];
-  season?: number;
-  episode?: number;
-  instance?: Item.Episode;
-}
-
-interface TableProps {
-  maxSeason: number;
-  maxEpisode: number;
-  data: SubtitleInfo[];
-  uploading: boolean;
-  update: (info: SubtitleInfo[]) => void;
-}
-
-const Table: FunctionComponent<TableProps> = (props) => {
-  const { maxSeason, maxEpisode, data, update, uploading } = props;
-
-  const updateItem = useCallback<TableUpdater<SubtitleInfo>>(
-    (row, info?: SubtitleInfo) => {
-      if (info) {
-        data[row.index] = info;
-      } else {
-        data.splice(row.index, 1);
-      }
-      update(data);
+      const states = files.reduce<ProcessState>(
+        (v, curr) => ({
+          ...v,
+          [curr.name]: { state: State.Update, infos: [] },
+        }),
+        {}
+      );
+      setProcessState(states);
+      checkEpisodes(list);
     },
-    [data, update]
+    [languages, checkEpisodes]
   );
 
-  useEffect(() => {
-    if (uploading) return;
-
-    const names = data.flatMap((v) => {
-      if (v.state === SubtitleState.update) {
-        return v.file.name;
-      } else {
-        return [];
-      }
-    });
-
-    if (names.length !== 0) {
-      SubtitlesApi.info(names)
-        .then((result) => {
-          result.forEach((v) => {
-            const idx = data.findIndex((d) => d.file.name === v.filename);
-
-            if (idx !== -1) {
-              data[idx].season = v.season;
-              data[idx].episode = v.episode;
-            }
-          });
-        })
-        .catch(() => {
-          // TODO
-        })
-        .finally(() => {
-          data.forEach((v) => (v.state = SubtitleState.warning));
-          update(data);
-        });
+  const uploadSubtitles = useCallback(async () => {
+    if (series === null) {
+      return;
     }
-  }, [uploading, data, update]);
 
-  const columns = useMemo<Column<SubtitleInfo>[]>(
+    const { sonarrSeriesId: seriesid } = series;
+
+    let uploadStates = pending.reduce<ProcessState>((prev, curr) => {
+      prev[curr.form.file.name] = { state: State.Update, infos: [] };
+      return prev;
+    }, {});
+
+    setProcessState(uploadStates);
+
+    for (const info of pending) {
+      if (info.instance) {
+        const { sonarrEpisodeId: episodeid } = info.instance;
+        await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
+
+        uploadStates = {
+          ...uploadStates,
+          [info.form.file.name]: { state: State.Valid, infos: [] },
+        };
+
+        setProcessState(uploadStates);
+      }
+    }
+  }, [series, pending]);
+
+  const canUpload = useMemo(
+    () => pending.length > 0 && pending.every((v) => v.instance !== undefined),
+    [pending]
+  );
+
+  const tableShow = pending.length > 0;
+
+  const columns = useMemo<Column<PendingSubtitle>[]>(
     () => [
       {
-        accessor: "state",
+        id: "Icon",
+        accessor: "instance",
         className: "text-center",
-        Cell: (row) => {
-          const state = row.value;
-          const { stateText } = row.row.original;
+        Cell: ({ row, loose }) => {
+          const {
+            form: { file },
+          } = row.original;
 
-          let icon;
-          let color;
-          if (state === SubtitleState.error) {
-            icon = faExclamationTriangle;
-            color = "var(--danger)";
-          } else if (state === SubtitleState.valid) {
-            icon = faCheck;
-            color = "var(--success)";
-          } else if (state === SubtitleState.warning) {
-            icon = faInfoCircle;
-            color = "var(--warning)";
-          } else {
-            icon = faCircleNotch;
-            color = undefined;
+          const name = file.name;
+          const states = loose![1] as ProcessState;
+
+          let icon = faCircleNotch;
+          let color: string | undefined = undefined;
+          let spin = false;
+          let msgs: string[] = [];
+
+          if (name in states) {
+            const state = states[name];
+            msgs = state.infos;
+            switch (state.state) {
+              case State.Error:
+                icon = faExclamationTriangle;
+                color = "var(--danger)";
+                break;
+              case State.Valid:
+                icon = faCheck;
+                color = "var(--success)";
+                break;
+              case State.Warning:
+                icon = faInfoCircle;
+                color = "var(--warning)";
+                break;
+              case State.Update:
+                spin = true;
+                break;
+              default:
+                break;
+            }
           }
 
           return (
             <MessageIcon
-              messages={stateText}
+              messages={msgs}
               color={color}
               icon={icon}
-              spin={state === SubtitleState.update}
+              spin={spin}
             ></MessageIcon>
           );
         },
       },
       {
         Header: "File",
-        accessor: (d) => d.file.name,
+        accessor: (d) => d.form.file.name,
       },
       {
-        Header: "Season / Episode",
-        accessor: "season",
-        Cell: ({ row, externalUpdate, loose }) => {
-          const info = row.original;
-          const season = info.season;
-          const episode = info.episode;
-          const [uploading, maxSeason, maxEpisode] = loose!;
+        Header: "Episode",
+        accessor: "instance",
+        className: "vw-1",
+        Cell: ({ value, loose, row, externalUpdate }) => {
+          const avaliables = loose![2] as Item.Episode[];
+
+          const options = avaliables.map<SelectorOption<Item.Episode>>(
+            (ep) => ({
+              label: `(${ep.season}x${ep.episode}) ${ep.title}`,
+              value: ep,
+            })
+          );
+
+          const change = useCallback(
+            (ep: Nullable<Item.Episode>) => {
+              if (ep) {
+                const newInfo = { ...row.original };
+                newInfo.instance = ep;
+                externalUpdate && externalUpdate(row, newInfo);
+              }
+            },
+            [row, externalUpdate]
+          );
+
           return (
-            <InputGroup className="d-flex flex-nowrap">
-              <Form.Control
-                style={{ maxWidth: 72, minWidth: 56 }}
-                disabled={info.state === SubtitleState.update || uploading}
-                isInvalid={
-                  season ? season > maxSeason || season <= 0 : undefined
-                }
-                type="text"
-                defaultValue={season}
-                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                  const v = Number.parseInt(e.target.value);
-                  if (!Number.isNaN(v) && v !== season) {
-                    info.season = v;
-                    externalUpdate && externalUpdate(row, info);
-                  }
-                }}
-              ></Form.Control>
-              <Form.Control
-                style={{ maxWidth: 96, minWidth: 56 }}
-                disabled={info.state === SubtitleState.update || uploading}
-                isInvalid={
-                  episode ? episode > maxEpisode || episode <= 0 : false
-                }
-                type="text"
-                defaultValue={episode}
-                onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                  const v = Number.parseInt(e.target.value);
-                  if (!Number.isNaN(v) && v !== episode) {
-                    info.episode = v;
-                    externalUpdate && externalUpdate(row, info);
-                  }
-                }}
-              ></Form.Control>
-            </InputGroup>
+            <Selector
+              options={options}
+              value={value ?? null}
+              onChange={change}
+            ></Selector>
           );
         },
       },
       {
-        accessor: "file",
+        accessor: "form",
         Cell: ({ row, externalUpdate, loose }) => {
-          const info = row.original;
           const [uploading] = loose!;
           return (
             <Button
               size="sm"
               variant="light"
-              disabled={info.state === SubtitleState.update || uploading}
+              disabled={uploading}
               onClick={() => {
                 externalUpdate && externalUpdate(row);
               }}
@@ -476,13 +343,88 @@ const Table: FunctionComponent<TableProps> = (props) => {
     []
   );
 
+  const updateItem = useCallback<TableUpdater<PendingSubtitle>>(
+    (row, info?: PendingSubtitle) => {
+      setPending((pd) => {
+        const newPending = [...pd];
+        if (info) {
+          newPending[row.index] = info;
+        } else {
+          newPending.splice(row.index, 1);
+        }
+        return newPending;
+      });
+    },
+    []
+  );
+
+  const footer = (
+    <div className="d-flex flex-row flex-grow-1 justify-content-between">
+      <div className="w-25">
+        <LanguageSelector
+          disabled={uploading}
+          options={languages}
+          value={languages.length > 0 ? languages[0] : undefined}
+          onChange={updateLanguage}
+        ></LanguageSelector>
+      </div>
+      <div>
+        <Button
+          hidden={uploading}
+          disabled={pending.length === 0}
+          variant="outline-secondary"
+          className="mr-2"
+          onClick={() => setFiles([])}
+        >
+          Clean
+        </Button>
+        <AsyncButton
+          disabled={!canUpload}
+          onChange={setUpload}
+          promise={uploadSubtitles}
+          onSuccess={() => {
+            closeModal();
+            setFiles([]);
+            updateEpisodes();
+          }}
+        >
+          Upload
+        </AsyncButton>
+      </div>
+    </div>
+  );
+
   return (
-    <SimpleTable
-      columns={columns}
-      data={data}
-      externalUpdate={updateItem}
-      loose={[uploading, maxSeason, maxEpisode]}
-    ></SimpleTable>
+    <BaseModal
+      size="lg"
+      title="Upload Subtitles"
+      closeable={!uploading}
+      footer={footer}
+      {...modal}
+    >
+      <Container fluid className="flex-column">
+        <Form>
+          <Form.Group>
+            <FileForm
+              emptyText="Select..."
+              disabled={tableShow || languages.length === 0}
+              multiple
+              value={filelist}
+              onChange={setFiles}
+            ></FileForm>
+          </Form.Group>
+        </Form>
+        <div hidden={!tableShow}>
+          <SimpleTable
+            columns={columns}
+            data={pending}
+            loose={[uploading, processState, episodes.data]}
+            responsive={false}
+            externalUpdate={updateItem}
+          ></SimpleTable>
+        </div>
+      </Container>
+    </BaseModal>
   );
 };
 
