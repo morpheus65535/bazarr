@@ -410,10 +410,11 @@ const Table: FunctionComponent<TableProps> = (props) => {
       {
         Header: "Season / Episode",
         accessor: "season",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row, externalUpdate, loose }) => {
           const info = row.original;
           const season = info.season;
           const episode = info.episode;
+          const [uploading, maxSeason, maxEpisode] = loose!;
           return (
             <InputGroup className="d-flex flex-nowrap">
               <Form.Control
@@ -454,8 +455,9 @@ const Table: FunctionComponent<TableProps> = (props) => {
       },
       {
         accessor: "file",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row, externalUpdate, loose }) => {
           const info = row.original;
+          const [uploading] = loose!;
           return (
             <Button
               size="sm"
@@ -471,7 +473,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
         },
       },
     ],
-    [maxSeason, maxEpisode, uploading]
+    []
   );
 
   return (
@@ -479,6 +481,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
       columns={columns}
       data={data}
       externalUpdate={updateItem}
+      loose={[uploading, maxSeason, maxEpisode]}
     ></SimpleTable>
   );
 };
