@@ -48,7 +48,7 @@ function reducer<T extends object>(
     const pageEnd = pageStart + pageSize;
     if (asyncState) {
       const order = asyncState.data.order.slice(pageStart, pageEnd);
-      if (order.every(isNull)) {
+      if (order.length !== 0 && order.every(isNull)) {
         needLoadingScreen = true;
       } else if (order.every(isNonNullable)) {
         pageToLoad = undefined;
