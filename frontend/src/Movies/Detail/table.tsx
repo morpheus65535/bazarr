@@ -38,13 +38,13 @@ const Table: FunctionComponent<Props> = (props) => {
           if (row.original.path === missingText) {
             return (
               <Badge variant="primary">
-                <LanguageText text={row.original} long={true}></LanguageText>
+                <LanguageText text={row.original} long></LanguageText>
               </Badge>
             );
           } else {
             return (
               <Badge variant="secondary">
-                <LanguageText text={row.original} long={true}></LanguageText>
+                <LanguageText text={row.original} long></LanguageText>
               </Badge>
             );
           }

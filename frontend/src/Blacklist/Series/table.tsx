@@ -39,7 +39,7 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long={true}></LanguageText>;
+            return <LanguageText text={value} long></LanguageText>;
           } else {
             return null;
           }

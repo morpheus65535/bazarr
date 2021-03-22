@@ -47,7 +47,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long={true}></LanguageText>;
+            return <LanguageText text={value} long></LanguageText>;
           } else {
             return null;
           }
@@ -138,7 +138,7 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long={true}></LanguageText>;
+            return <LanguageText text={value} long></LanguageText>;
           } else {
             return null;
           }
