@@ -34,7 +34,7 @@ const SettingsNotificationsView: FunctionComponent = () => {
       <Group header="Options">
         <Input>
           <Check
-            label="Slient for Manual Actions"
+            label="Silent for Manual Actions"
             settingKey="settings-general-dont_notify_manual_actions"
           ></Check>
           <Message>

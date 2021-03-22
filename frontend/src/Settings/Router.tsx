@@ -8,7 +8,7 @@ import Languages from "./Languages";
 import Notifications from "./Notifications";
 import Providers from "./Providers";
 import Radarr from "./Radarr";
-import Schedular from "./Schedular";
+import Scheduler from "./Scheduler";
 import Sonarr from "./Sonarr";
 import Subtitles from "./Subtitles";
 import UI from "./UI";
@@ -39,8 +39,8 @@ const Router: FunctionComponent<Props> = () => {
       <Route exact path="/settings/subtitles">
         <Subtitles></Subtitles>
       </Route>
-      <Route exact path="/settings/schedular">
-        <Schedular></Schedular>
+      <Route exact path="/settings/scheduler">
+        <Scheduler></Scheduler>
       </Route>
       <Route exact path="/settings/providers">
         <Providers></Providers>

@@ -15,7 +15,7 @@ import {
   upgradeOptions,
 } from "./options";
 
-const SettingsSchedularView: FunctionComponent = () => {
+const SettingsSchedulerView: FunctionComponent = () => {
   const timeOptions = useMemo(() => {
     return Array(24)
       .fill(null)
@@ -26,7 +26,7 @@ const SettingsSchedularView: FunctionComponent = () => {
   }, []);
 
   return (
-    <SettingsProvider title="Schedular - Bazarr (Settings)">
+    <SettingsProvider title="Scheduler - Bazarr (Settings)">
       <Group header="Sonarr/Radarr Sync">
         <Input name="Update Series List from Sonarr">
           <Selector
@@ -125,4 +125,4 @@ const SettingsSchedularView: FunctionComponent = () => {
   );
 };
 
-export default SettingsSchedularView;
+export default SettingsSchedulerView;
