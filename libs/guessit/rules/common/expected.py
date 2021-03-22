@@ -3,7 +3,7 @@
 """
 Expected property factory
 """
-import re
+from rebulk.remodule import re
 
 from rebulk import Rebulk
 from rebulk.utils import find_all

@@ -479,7 +479,7 @@ class SeePatternRange(Rule):
     consequence = [RemoveMatch, AppendMatch]
 
     def __init__(self, range_separators):
-        super(SeePatternRange, self).__init__()
+        super().__init__()
         self.range_separators = range_separators
 
     def when(self, matches, context):
@@ -516,7 +516,7 @@ class AbstractSeparatorRange(Rule):
     consequence = [RemoveMatch, AppendMatch]
 
     def __init__(self, range_separators, property_name):
-        super(AbstractSeparatorRange, self).__init__()
+        super().__init__()
         self.range_separators = range_separators
         self.property_name = property_name
 
@@ -608,7 +608,7 @@ class EpisodeNumberSeparatorRange(AbstractSeparatorRange):
     """
 
     def __init__(self, range_separators):
-        super(EpisodeNumberSeparatorRange, self).__init__(range_separators, "episode")
+        super().__init__(range_separators, "episode")
 
 
 class SeasonSeparatorRange(AbstractSeparatorRange):
@@ -617,7 +617,7 @@ class SeasonSeparatorRange(AbstractSeparatorRange):
     """
 
     def __init__(self, range_separators):
-        super(SeasonSeparatorRange, self).__init__(range_separators, "season")
+        super().__init__(range_separators, "season")
 
 
 class RemoveWeakIfMovie(Rule):
@@ -662,7 +662,7 @@ class RemoveWeak(Rule):
     consequence = RemoveMatch, AppendMatch
 
     def __init__(self, episode_words):
-        super(RemoveWeak, self).__init__()
+        super().__init__()
         self.episode_words = episode_words
 
     def when(self, matches, context):

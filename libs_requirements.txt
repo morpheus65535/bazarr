@@ -25,7 +25,7 @@ Flask-SocketIO==4.2.1
 Flask==1.1.1
 GitPython==2.1.11
 guess-language-spirit==0.5.3
-guessit==3.1.1
+guessit==3.3.1
 py-pretty==1
 pycountry==18.2.23
 pyga==2.6.2
@@ -105,7 +105,7 @@ html5lib==1.0.1           # Required-by: BeautifulSoup4 vendored had tests inclu
 idna==2.8                 # Required-by: yarl, requests
 itsdangerous==1.1.0       # Required-by: Flask, Flask-DebugToolbar
 MarkupSafe==1.1.1         # Required-by: Jinja2
-rebulk==2.0.1             # Required-by: guessit
+rebulk==3.0.1             # Required-by: guessit
 tzlocal==2.1              # Required-by: APScheduler
 websocket-client==0.44.0  # Not in pip freeze, Optional Required-by: python-engineio
 

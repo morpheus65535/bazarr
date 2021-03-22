@@ -125,7 +125,7 @@ class Chain(Pattern, Builder):
         :rtype:
         """
         # pylint: disable=too-many-locals
-        ret = super(Chain, self)._process_match(match, match_index, child=child)
+        ret = super()._process_match(match, match_index, child=child)
         if ret:
             return True
 
@@ -144,7 +144,7 @@ class Chain(Pattern, Builder):
                     for last_match in last_matches:
                         match.children.remove(last_match)
                     match.end = match.children[-1].end if match.children else match.start
-                    ret = super(Chain, self)._process_match(match, match_index, child=child)
+                    ret = super()._process_match(match, match_index, child=child)
                     if ret:
                         return True
 

@@ -4,26 +4,18 @@
 Entry point module
 """
 # pragma: no cover
-from __future__ import print_function
-
 import json
 import logging
-import os
 import sys
 
-import six
+from collections import OrderedDict
+
 from rebulk.__version__ import __version__ as __rebulk_version__
 
 from guessit import api
 from guessit.__version__ import __version__
 from guessit.jsonutils import GuessitEncoder
 from guessit.options import argument_parser, parse_options, load_config, merge_options
-
-
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no-cover
-    from ordereddict import OrderedDict  # pylint:disable=import-error
 
 
 def guess_filename(filename, options):
@@ -48,6 +40,7 @@ def guess_filename(filename, options):
     if options.get('json'):
         print(json.dumps(guess, cls=GuessitEncoder, ensure_ascii=False))
     elif options.get('yaml'):
+        # pylint:disable=import-outside-toplevel
         import yaml
         from guessit import yamlutils
 
@@ -78,6 +71,7 @@ def display_properties(options):
         else:
             print(json.dumps(list(properties.keys()), cls=GuessitEncoder, ensure_ascii=False))
     elif options.get('yaml'):
+        # pylint:disable=import-outside-toplevel
         import yaml
         from guessit import yamlutils
         if options.get('values'):
@@ -97,24 +91,10 @@ def display_properties(options):
                     print(4 * ' ' + '[!] %s' % (property_value,))
 
 
-def fix_argv_encoding():
-    """
-    Fix encoding of sys.argv on windows Python 2
-    """
-    if six.PY2 and os.name == 'nt':  # pragma: no cover
-        # see http://bugs.python.org/issue2128
-        import locale
-
-        for i, j in enumerate(sys.argv):
-            sys.argv[i] = j.decode(locale.getpreferredencoding())
-
-
 def main(args=None):  # pylint:disable=too-many-branches
     """
     Main function for entry point
     """
-    fix_argv_encoding()
-
     if args is None:  # pragma: no cover
         options = parse_options()
     else:
@@ -142,7 +122,7 @@ def main(args=None):  # pylint:disable=too-many-branches
 
     if options.get('yaml'):
         try:
-            import yaml  # pylint:disable=unused-variable,unused-import
+            import yaml  # pylint:disable=unused-variable,unused-import,import-outside-toplevel
         except ImportError:  # pragma: no cover
             del options['yaml']
             print('PyYAML is not installed. \'--yaml\' option will be ignored ...', file=sys.stderr)
@@ -156,10 +136,7 @@ def main(args=None):  # pylint:disable=too-many-branches
         for filename in options.get('filename'):
             filenames.append(filename)
     if options.get('input_file'):
-        if six.PY2:
-            input_file = open(options.get('input_file'), 'r')
-        else:
-            input_file = open(options.get('input_file'), 'r', encoding='utf-8')
+        input_file = open(options.get('input_file'), 'r', encoding='utf-8')
         try:
             filenames.extend([line.strip() for line in input_file.readlines()])
         finally:

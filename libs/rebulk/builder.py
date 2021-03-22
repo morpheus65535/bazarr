@@ -7,16 +7,13 @@ from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from logging import getLogger
 
-from six import add_metaclass
-
 from .loose import set_defaults
 from .pattern import RePattern, StringPattern, FunctionalPattern
 
 log = getLogger(__name__).log
 
 
-@add_metaclass(ABCMeta)
-class Builder(object):
+class Builder(metaclass=ABCMeta):
     """
     Base builder class for patterns
     """
@@ -147,7 +144,7 @@ class Builder(object):
         :return:
         :rtype:
         """
-        from .chain import Chain
+        from .chain import Chain  # pylint:disable=import-outside-toplevel
         set_defaults(self._chain_defaults, kwargs)
         set_defaults(self._defaults, kwargs)
         chain = Chain(self, **kwargs)

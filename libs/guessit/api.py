@@ -4,15 +4,12 @@
 API functions that can be used by external software
 """
 
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no-cover
-    from ordereddict import OrderedDict  # pylint:disable=import-error
+from collections import OrderedDict
 
+from pathlib import Path
 import os
 import traceback
 
-import six
 from rebulk.introspector import introspect
 
 from .__version__ import __version__
@@ -26,18 +23,18 @@ class GuessitException(Exception):
     """
 
     def __init__(self, string, options):
-        super(GuessitException, self).__init__("An internal error has occured in guessit.\n"
-                                               "===================== Guessit Exception Report =====================\n"
-                                               "version=%s\n"
-                                               "string=%s\n"
-                                               "options=%s\n"
-                                               "--------------------------------------------------------------------\n"
-                                               "%s"
-                                               "--------------------------------------------------------------------\n"
-                                               "Please report at "
-                                               "https://github.com/guessit-io/guessit/issues.\n"
-                                               "====================================================================" %
-                                               (__version__, str(string), str(options), traceback.format_exc()))
+        super().__init__("An internal error has occured in guessit.\n"
+                         "===================== Guessit Exception Report =====================\n"
+                         "version=%s\n"
+                         "string=%s\n"
+                         "options=%s\n"
+                         "--------------------------------------------------------------------\n"
+                         "%s"
+                         "--------------------------------------------------------------------\n"
+                         "Please report at "
+                         "https://github.com/guessit-io/guessit/issues.\n"
+                         "====================================================================" %
+                         (__version__, str(string), str(options), traceback.format_exc()))
 
         self.string = string
         self.options = options
@@ -113,9 +110,7 @@ class GuessItApi(object):
             return [cls._fix_encoding(item) for item in value]
         if isinstance(value, dict):
             return {cls._fix_encoding(k): cls._fix_encoding(v) for k, v in value.items()}
-        if six.PY2 and isinstance(value, six.text_type):
-            return value.encode('utf-8')
-        if six.PY3 and isinstance(value, six.binary_type):
+        if isinstance(value, bytes):
             return value.decode('ascii')
         return value
 
@@ -175,16 +170,12 @@ class GuessItApi(object):
         :return:
         :rtype:
         """
-        try:
-            from pathlib import Path
-            if isinstance(string, Path):
-                try:
-                    # Handle path-like object
-                    string = os.fspath(string)
-                except AttributeError:
-                    string = str(string)
-        except ImportError:
-            pass
+        if isinstance(string, Path):
+            try:
+                # Handle path-like object
+                string = os.fspath(string)
+            except AttributeError:
+                string = str(string)
 
         try:
             options = parse_options(options, True)
@@ -194,32 +185,27 @@ class GuessItApi(object):
             result_decode = False
             result_encode = False
 
-            if six.PY2:
-                if isinstance(string, six.text_type):
-                    string = string.encode("utf-8")
-                    result_decode = True
-                elif isinstance(string, six.binary_type):
-                    string = six.binary_type(string)
-            if six.PY3:
-                if isinstance(string, six.binary_type):
-                    string = string.decode('ascii')
-                    result_encode = True
-                elif isinstance(string, six.text_type):
-                    string = six.text_type(string)
+            if isinstance(string, bytes):
+                string = string.decode('ascii')
+                result_encode = True
 
             matches = self.rebulk.matches(string, options)
             if result_decode:
                 for match in matches:
-                    if isinstance(match.value, six.binary_type):
+                    if isinstance(match.value, bytes):
                         match.value = match.value.decode("utf-8")
             if result_encode:
                 for match in matches:
-                    if isinstance(match.value, six.text_type):
+                    if isinstance(match.value, str):
                         match.value = match.value.encode("ascii")
-            return matches.to_dict(options.get('advanced', False), options.get('single_value', False),
-                                   options.get('enforce_list', False))
-        except:
-            raise GuessitException(string, options)
+            matches_dict = matches.to_dict(options.get('advanced', False), options.get('single_value', False),
+                                           options.get('enforce_list', False))
+            output_input_string = options.get('output_input_string', False)
+            if output_input_string:
+                matches_dict['input_string'] = matches.input_string
+            return matches_dict
+        except Exception as err:
+            raise GuessitException(string, options) from err
 
     def properties(self, options=None):
         """
@@ -235,8 +221,8 @@ class GuessItApi(object):
         options = merge_options(config, options)
         unordered = introspect(self.rebulk, options).properties
         ordered = OrderedDict()
-        for k in sorted(unordered.keys(), key=six.text_type):
-            ordered[k] = list(sorted(unordered[k], key=six.text_type))
+        for k in sorted(unordered.keys(), key=str):
+            ordered[k] = list(sorted(unordered[k], key=str))
         if hasattr(self.rebulk, 'customize_properties'):
             ordered = self.rebulk.customize_properties(ordered)
         return ordered
