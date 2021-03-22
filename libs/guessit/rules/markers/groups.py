@@ -5,6 +5,7 @@ Groups markers (...), [...] and {...}
 """
 from rebulk import Rebulk
 
+from ...options import ConfigurationException
 
 def groups(config):
     """
@@ -21,6 +22,9 @@ def groups(config):
     starting = config['starting']
     ending = config['ending']
 
+    if len(starting) != len(ending):
+        raise ConfigurationException("Starting and ending groups must have the same length")
+
     def mark_groups(input_string):
         """
         Functional pattern to mark groups (...), [...] and {...}.
@@ -28,7 +32,7 @@ def groups(config):
         :param input_string:
         :return:
         """
-        openings = ([], [], [])
+        openings = ([], ) * len(starting)
         i = 0
 
         ret = []

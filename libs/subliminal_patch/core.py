@@ -546,6 +546,10 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
     if dont_use_actual_file and not hash_from:
         return video
 
+    # if all providers are throttled, skip hashing
+    if not providers:
+        skip_hashing = True
+
     # size and hashes
     if not skip_hashing:
         hash_path = hash_from or path

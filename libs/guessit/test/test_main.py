@@ -1,15 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name
-
+import json
 import os
+import sys
 
 import pytest
+from _pytest.capture import CaptureFixture
 
 from ..__main__ import main
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+
+# Prevent output from spamming the console
+@pytest.fixture(scope="function", autouse=True)
+def no_stdout(monkeypatch):
+    with open(os.devnull, "w") as f:
+        monkeypatch.setattr(sys, "stdout", f)
+        yield
 
 def test_main_no_args():
     main([])
@@ -24,7 +33,7 @@ def test_main_unicode():
 
 
 def test_main_forced_unicode():
-    main([u'Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv'])
+    main(['Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv'])
 
 
 def test_main_verbose():
@@ -70,3 +79,22 @@ def test_main_help():
 
 def test_main_version():
     main(['--version'])
+
+
+def test_json_output_input_string(capsys: CaptureFixture):
+    main(['--json', '--output-input-string', 'test.avi'])
+
+    outerr = capsys.readouterr()
+    data = json.loads(outerr.out)
+
+    assert 'input_string' in data
+    assert data['input_string'] == 'test.avi'
+
+
+def test_json_no_output_input_string(capsys: CaptureFixture):
+    main(['--json', 'test.avi'])
+
+    outerr = capsys.readouterr()
+    data = json.loads(outerr.out)
+
+    assert 'input_string' not in data

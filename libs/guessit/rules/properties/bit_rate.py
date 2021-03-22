@@ -3,7 +3,7 @@
 """
 video_bit_rate and audio_bit_rate properties
 """
-import re
+from rebulk.remodule import re
 
 from rebulk import Rebulk
 from rebulk.rules import Rule, RemoveMatch, RenameMatch

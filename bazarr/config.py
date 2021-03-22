@@ -4,6 +4,8 @@ import hashlib
 import os
 import ast
 
+from urllib.parse import quote_plus
+
 from subliminal.cache import region
 
 from simpleconfigparser import simpleconfigparser
@@ -478,8 +480,8 @@ def configure_captcha_func():
 def configure_proxy_func():
     if settings.proxy.type != 'None':
         if settings.proxy.username != '' and settings.proxy.password != '':
-            proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + \
-                    settings.proxy.url + ':' + settings.proxy.port
+            proxy = settings.proxy.type + '://' + quote_plus(settings.proxy.username) + ':' + \
+                    quote_plus(settings.proxy.password) + '@' + settings.proxy.url + ':' + settings.proxy.port
         else:
             proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
         os.environ['HTTP_PROXY'] = str(proxy)

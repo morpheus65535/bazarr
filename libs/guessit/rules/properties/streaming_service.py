@@ -3,7 +3,7 @@
 """
 streaming_service property
 """
-import re
+from rebulk.remodule import re
 
 from rebulk import Rebulk
 from rebulk.rules import Rule, RemoveMatch
@@ -25,13 +25,22 @@ def streaming_service(config):  # pylint: disable=too-many-statements,unused-arg
     rebulk = rebulk.string_defaults(ignore_case=True).regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
     rebulk.defaults(name='streaming_service', tags=['source-prefix'])
 
+    regex_prefix = 're:'
+
     for value, items in config.items():
         patterns = items if isinstance(items, list) else [items]
         for pattern in patterns:
-            if pattern.startswith('re:'):
-                rebulk.regex(pattern, value=value)
+            if isinstance(pattern, dict):
+                pattern_value = pattern.pop('pattern')
+                kwargs = pattern
+                pattern = pattern_value
             else:
-                rebulk.string(pattern, value=value)
+                kwargs = {}
+            regex = kwargs.pop('regex', False)
+            if regex or pattern.startswith(regex_prefix):
+                rebulk.regex(pattern[len(regex_prefix):], value=value, **kwargs)
+            else:
+                rebulk.string(pattern, value=value, **kwargs)
 
     rebulk.rules(ValidateStreamingService)
 

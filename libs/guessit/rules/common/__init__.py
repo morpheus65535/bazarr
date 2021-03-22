@@ -3,7 +3,7 @@
 """
 Common module
 """
-import re
+from rebulk.remodule import re
 
 seps = r' [](){}+*|=-_~#/\\.,;:'  # list of tags/words separators
 seps_no_groups = seps.replace('[](){}', '')

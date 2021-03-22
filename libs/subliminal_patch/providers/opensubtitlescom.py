@@ -24,6 +24,7 @@ from guessit import guessit
 logger = logging.getLogger(__name__)
 
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
+TOKEN_EXPIRATION_TIME = datetime.timedelta(hours=12).total_seconds()
 
 
 def fix_tv_naming(title):
@@ -143,16 +144,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.use_hash = use_hash
 
     def initialize(self):
+        self.login()
         self.token = region.get("oscom_token")
-        if self.token:
-            self.session.headers.update({'Authorization': 'Beaker ' + self.token})
-            return True
-        else:
-            self.login()
 
     def terminate(self):
         self.session.close()
 
+    @region.cache_on_arguments(expiration_time=TOKEN_EXPIRATION_TIME)
     def login(self):
         try:
             r = self.session.post(self.server_url + 'login',
@@ -168,7 +166,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 except ValueError:
                     raise ProviderError('Invalid JSON returned by provider')
                 else:
-                    self.session.headers.update({'Authorization': 'Beaker ' + self.token})
                     region.set("oscom_token", self.token)
                     return True
             elif r.status_code == 401:
@@ -324,7 +321,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle)
 
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
+                   'Authorization': 'Beaker ' + self.token}
         res = self.session.post(self.server_url + 'download',
                                 json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
                                 headers=headers,

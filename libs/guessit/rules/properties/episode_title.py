@@ -47,7 +47,7 @@ class RemoveConflictsWithEpisodeTitle(Rule):
     consequence = RemoveMatch
 
     def __init__(self, previous_names):
-        super(RemoveConflictsWithEpisodeTitle, self).__init__()
+        super().__init__()
         self.previous_names = previous_names
         self.next_names = ('streaming_service', 'screen_size', 'source',
                            'video_codec', 'audio_codec', 'other', 'container')
@@ -129,7 +129,7 @@ class EpisodeTitleFromPosition(TitleBaseRule):
     dependency = TitleToEpisodeTitle
 
     def __init__(self, previous_names):
-        super(EpisodeTitleFromPosition, self).__init__('episode_title', ['title'])
+        super().__init__('episode_title', ['title'])
         self.previous_names = previous_names
 
     def hole_filter(self, hole, matches):
@@ -150,12 +150,12 @@ class EpisodeTitleFromPosition(TitleBaseRule):
     def should_remove(self, match, matches, filepart, hole, context):
         if match.name == 'episode_details':
             return False
-        return super(EpisodeTitleFromPosition, self).should_remove(match, matches, filepart, hole, context)
+        return super().should_remove(match, matches, filepart, hole, context)
 
     def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
         if matches.named('episode_title'):
             return
-        return super(EpisodeTitleFromPosition, self).when(matches, context)
+        return super().when(matches, context)
 
 
 class AlternativeTitleReplace(Rule):
@@ -166,7 +166,7 @@ class AlternativeTitleReplace(Rule):
     consequence = RenameMatch
 
     def __init__(self, previous_names):
-        super(AlternativeTitleReplace, self).__init__()
+        super().__init__()
         self.previous_names = previous_names
 
     def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
