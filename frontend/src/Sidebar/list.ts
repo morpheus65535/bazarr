@@ -79,6 +79,10 @@ export const SidebarList: SidebarDefinition[] = [
         link: "/settings/languages",
       },
       {
+        name: "Providers",
+        link: "/settings/providers",
+      },
+      {
         name: "Subtitles",
         link: "/settings/subtitles",
       },
@@ -89,10 +93,6 @@ export const SidebarList: SidebarDefinition[] = [
       {
         name: "Radarr",
         link: "/settings/radarr",
-      },
-      {
-        name: "Providers",
-        link: "/settings/providers",
       },
       {
         name: "Notifications",
