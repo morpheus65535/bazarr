@@ -54,21 +54,16 @@ export function updateOrderIdState<T extends LooseObject>(
 
     const dataOrder: number[] = data.map((v) => v[id]);
 
-    const newItems = { ...state.data.items, ...idState };
+    let newItems = { ...state.data.items, ...idState };
     let newOrder = state.data.order;
 
     const countDist = total - newOrder.length;
     if (countDist > 0) {
       newOrder.push(...Array(countDist).fill(null));
     } else if (countDist < 0) {
-      const oldOrder = newOrder.slice(total);
-      // Remove old items
-      oldOrder.forEach((v) => {
-        if (v) {
-          delete newItems[v];
-        }
-      });
-      newOrder = newOrder.slice(0, total);
+      // Completely drop old data if list has shrinked
+      newOrder = Array(total).fill(null);
+      newItems = { ...idState };
     }
 
     if (typeof start === "number" && typeof length === "number") {
