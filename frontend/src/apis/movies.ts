@@ -81,11 +81,12 @@ class MovieApi extends BaseApi {
     });
   }
 
+  // TODO: Implement this on backend
   async wantedBy(radarrid?: number) {
-    return new Promise<Array<Wanted.Movie>>((resolve, reject) => {
+    return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { radarrid })
         .then((result) => {
-          resolve(result.data.data);
+          resolve(result.data);
         })
         .catch((reason) => {
           reject(reason);

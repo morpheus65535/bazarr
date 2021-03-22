@@ -29,11 +29,12 @@ class EpisodeApi extends BaseApi {
     });
   }
 
+  // TODO: Implement this on backend
   async wantedBy(episodeid?: number) {
-    return new Promise<Wanted.Episode[]>((resolve, reject) => {
+    return new Promise<AsyncDataWrapper<Wanted.Episode>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", { episodeid })
         .then((result) => {
-          resolve(result.data.data);
+          resolve(result.data);
         })
         .catch((reason) => {
           reject(reason);
