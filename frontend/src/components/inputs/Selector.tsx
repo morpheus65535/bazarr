@@ -51,9 +51,9 @@ export function Selector<T = string, M extends boolean = false>(
             value: v,
           }));
         } else {
-          const v = value as SelectorValueType<T, false>;
+          const v = value as T;
           return {
-            label: label ? label(v!) : nameFromItems(v!) ?? "Unknown",
+            label: label ? label(v) : nameFromItems(v) ?? "Unknown",
             value: v,
           };
         }

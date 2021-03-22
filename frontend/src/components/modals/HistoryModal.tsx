@@ -45,13 +45,12 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
       {
         Header: "Language",
         accessor: "language",
-        Cell: ({ row }) => {
-          return (
-            <LanguageText
-              text={row.original.language!}
-              long={true}
-            ></LanguageText>
-          );
+        Cell: ({ value }) => {
+          if (value) {
+            return <LanguageText text={value} long={true}></LanguageText>;
+          } else {
+            return null;
+          }
         },
       },
       {

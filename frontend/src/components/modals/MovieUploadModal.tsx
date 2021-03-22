@@ -50,14 +50,18 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
     <AsyncButton
       disabled={!canUpload}
       onChange={setUpload}
-      promise={() =>
-        MoviesApi.uploadSubtitles(movie!.radarrId, {
-          file: file!,
-          forced,
-          hi: false,
-          language: language!.code2!,
-        })
-      }
+      promise={() => {
+        if (file && movie && language) {
+          return MoviesApi.uploadSubtitles(movie.radarrId, {
+            file: file,
+            forced,
+            hi: false,
+            language: language.code2,
+          });
+        } else {
+          return null;
+        }
+      }}
       onSuccess={() => {
         closeModal();
         update();

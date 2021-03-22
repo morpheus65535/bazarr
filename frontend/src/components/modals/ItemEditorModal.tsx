@@ -36,15 +36,19 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       <AsyncButton
         onChange={setUpdating}
         promise={() => {
-          const itemId = GetItemId(item!);
-          return submit({
-            id: [itemId],
-            profileid: [id],
-          });
+          if (item) {
+            const itemId = GetItemId(item);
+            return submit({
+              id: [itemId],
+              profileid: [id],
+            });
+          } else {
+            return null;
+          }
         }}
         onSuccess={() => {
           closeModal();
-          onSuccess && onSuccess(item!);
+          onSuccess && item && onSuccess(item);
         }}
       >
         Save
