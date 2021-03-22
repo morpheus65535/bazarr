@@ -22,7 +22,7 @@ from functools import reduce
 class CyclicDependency(ValueError):
     def __init__(self, cyclic):
         s = 'Cyclic dependencies exist among these items: {0}'.format(', '.join(repr(x) for x in cyclic.items()))
-        super(CyclicDependency, self).__init__(s)
+        super().__init__(s)
         self.cyclic = cyclic
 
 

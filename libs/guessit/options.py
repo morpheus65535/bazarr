@@ -11,8 +11,6 @@ import shlex
 
 from argparse import ArgumentParser
 
-import six
-
 
 def build_argument_parser():
     """
@@ -68,6 +66,8 @@ def build_argument_parser():
                              help='Display information for filename guesses as json output')
     output_opts.add_argument('-y', '--yaml', dest='yaml', action='store_true', default=None,
                              help='Display information for filename guesses as yaml output')
+    output_opts.add_argument('-i', '--output-input-string', dest='output_input_string', action='store_true',
+                             default=False, help='Add input_string property in the output')
 
     conf_opts = opts.add_argument_group("Configuration")
     conf_opts.add_argument('-c', '--config', dest='config', action='append', default=None,
@@ -108,7 +108,7 @@ def parse_options(options=None, api=False):
     :return:
     :rtype:
     """
-    if isinstance(options, six.string_types):
+    if isinstance(options, str):
         args = shlex.split(options)
         options = vars(argument_parser.parse_args(args))
     elif options is None:
@@ -153,7 +153,7 @@ def load_config(options):
         cwd = os.getcwd()
         yaml_supported = False
         try:
-            import yaml  # pylint:disable=unused-variable,unused-import
+            import yaml  # pylint:disable=unused-variable,unused-import,import-outside-toplevel
             yaml_supported = True
         except ImportError:
             pass
@@ -225,7 +225,7 @@ def merge_option_value(option, value, merged):
     if value is not None and option != 'pristine':
         if option in merged.keys() and isinstance(merged[option], list):
             for val in value:
-                if val not in merged[option]:
+                if val not in merged[option] and val is not None:
                     merged[option].append(val)
         elif option in merged.keys() and isinstance(merged[option], dict):
             merged[option] = merge_options(merged[option], value)
@@ -250,13 +250,13 @@ def load_config_file(filepath):
             return json.load(config_file_data)
     if filepath.endswith('.yaml') or filepath.endswith('.yml'):
         try:
-            import yaml
+            import yaml  # pylint:disable=import-outside-toplevel
             with open(filepath) as config_file_data:
                 return yaml.load(config_file_data, yaml.SafeLoader)
-        except ImportError:  # pragma: no cover
+        except ImportError as err:  # pragma: no cover
             raise ConfigurationException('Configuration file extension is not supported. '
                                          'PyYAML should be installed to support "%s" file' % (
-                                             filepath,))
+                                             filepath,)) from err
 
     try:
         # Try to load input as JSON

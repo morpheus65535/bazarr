@@ -577,13 +577,13 @@
   release_group: BTW
   type: episode
 
-# Streaming service: RTÉ One
+# Streaming service: RTE One
 ? Show.Name.S10E01.576p.RTE.WEBRip.AAC2.0.H.264-RTN
 : title: Show Name
   season: 10
   episode: 1
   screen_size: 576p
-  streaming_service: RTÉ One
+  streaming_service: RTE One
   source: Web
   other: Rip
   audio_codec: AAC
@@ -818,7 +818,6 @@
   episode: 0
   episode_details: Pilot
   episode_title: Pilot
-  language: zh
   other:
   - Proper
   - Rip
@@ -862,7 +861,6 @@
 ? What.The.Fuck.France.S01E01.Le.doublage.CNLP.WEBRip.AAC2.0.x264-TURTLE
 : audio_channels: '2.0'
   audio_codec: AAC
-  country: FR
   episode: 1
   episode_title: Le doublage
   other: Rip
@@ -870,7 +868,7 @@
   season: 1
   source: Web
   streaming_service: Canal+
-  title: What The Fuck
+  title: What The Fuck France
   type: episode
   video_codec: H.264
 
@@ -943,14 +941,13 @@
 ? The.Amazing.Race.Canada.S03.720p.CTV.WEBRip.AAC2.0.H.264-BTW
 : audio_channels: '2.0'
   audio_codec: AAC
-  country: CA
   other: Rip
   release_group: BTW
   screen_size: 720p
   season: 3
   source: Web
   streaming_service: CTV
-  title: The Amazing Race
+  title: The Amazing Race Canada
   type: episode
   video_codec: H.264
 
@@ -1240,13 +1237,12 @@
 ? Big.Brother.Canada.S05.GLBL.WEBRip.AAC2.0.H.264-RTN
 : audio_channels: '2.0'
   audio_codec: AAC
-  country: CA
   other: Rip
   release_group: RTN
   season: 5
   source: Web
   streaming_service: Global
-  title: Big Brother
+  title: Big Brother Canada
   type: episode
   video_codec: H.264
 
@@ -1330,7 +1326,6 @@
 ? Handmade.in.Japan.S01E01.720p.iP.WEBRip.AAC2.0.H.264-SUP
 : audio_channels: '2.0'
   audio_codec: AAC
-  country: JP
   episode: 1
   other: Rip
   release_group: SUP
@@ -1338,7 +1333,7 @@
   season: 1
   source: Web
   streaming_service: BBC iPlayer
-  title: Handmade in
+  title: Handmade in Japan
   type: episode
   video_codec: H.264
 
@@ -1463,9 +1458,8 @@
 ? Bunsen.is.a.Beast.S01E23.Guinea.Some.Lovin.1080p.NICK.WEBRip.AAC2.0.x264-TVSmash
 : audio_channels: '2.0'
   audio_codec: AAC
-  country: GN
   episode: 23
-  episode_title: Some Lovin
+  episode_title: Guinea Some Lovin
   other: Rip
   release_group: TVSmash
   screen_size: 1080p
@@ -1538,13 +1532,14 @@
   episode_title: The Masquerade
   other: Rip
   part: 2
-  release_group: VP9-BTW
+  release_group: BTW
   screen_size: 1080p
   season: 2
   source: Web
   streaming_service: YouTube Red
   title: Escape The Night
   type: episode
+  video_codec: VP9
 
 ? Escape.The.Night.S02E02.The.Masquerade.Part.II.2160p.RED.WEBRip.AAC5.1.VP9-BTW
 : audio_channels: '5.1'
@@ -1553,13 +1548,14 @@
   episode_title: The Masquerade
   other: Rip
   part: 2
-  release_group: VP9-BTW
+  release_group: BTW
   screen_size: 2160p
   season: 2
   source: Web
   streaming_service: YouTube Red
   title: Escape The Night
   type: episode
+  video_codec: VP9
 
 ? Escape.The.Night.S02E02.The.Masquerade.Part.II.720p.RED.WEBRip.AAC5.1.VP9-BTW
 : audio_channels: '5.1'
@@ -1568,13 +1564,14 @@
   episode_title: The Masquerade
   other: Rip
   part: 2
-  release_group: VP9-BTW
+  release_group: BTW
   screen_size: 720p
   season: 2
   source: Web
   streaming_service: YouTube Red
   title: Escape The Night
   type: episode
+  video_codec: VP9
 
 ? The.Family.Law.S02E01.720p.SBS.WEB-DL.AAC2.0.H.264-BTN
 : audio_channels: '2.0'
@@ -1892,7 +1889,7 @@
   season: 1
   source: Web
   streaming_service: Vimeo
-  title: '555'
+  # title: '555'
   type: episode
   video_codec: H.264
 

@@ -416,6 +416,10 @@
       "Animal Planet": "ANPL",
       "AnimeLab": "ANLB",
       "AOL": "AOL",
+      "AppleTV": [
+        "ATVP",
+        "ATV+"
+      ],
       "ARD": "ARD",
       "BBC iPlayer": [
         "iP",
@@ -482,6 +486,7 @@
         "HBO",
         "re:HBO-?Go"
       ],
+      "HBO Max": "HMAX",
       "HGTV": "HGTV",
       "History": [
         "HIST",
@@ -490,7 +495,10 @@
       "Hulu": "HULU",
       "Investigation Discovery": "ID",
       "IFC": "IFC",
-      "iTunes": "iTunes",
+      "iTunes": [
+        "iTunes",
+        {"pattern": "iT", "ignore_case": false}
+      ],
       "ITV": "ITV",
       "Knowledge Network": "KNOW",
       "Lifetime": "LIFE",
@@ -537,6 +545,7 @@
         "SeeSo"
       ],
       "Shomi": "SHMI",
+      "Showtime": "SHO",
       "Spike": "SPIK",
       "Spike TV": [
         "SPKE",

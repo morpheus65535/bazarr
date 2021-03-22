@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=no-self-use, pointless-statement, missing-docstring, unbalanced-tuple-unpacking, len-as-condition
+# pylint: disable=no-self-use, pointless-statement, missing-docstring, unbalanced-tuple-unpacking, len-as-condition, no-member
 
 import re
 import pytest
 
-from ..pattern import StringPattern, RePattern, FunctionalPattern, REGEX_AVAILABLE
+from ..pattern import StringPattern, RePattern, FunctionalPattern, REGEX_ENABLED
 from ..match import Match
 
 class TestStringPattern(object):
@@ -706,7 +706,7 @@ class TestFormatter(object):
         assert len(matches) == 1
 
         match = matches[0]
-        if REGEX_AVAILABLE:
+        if REGEX_ENABLED:
             assert len(match.children) == 5
             assert [child.value for child in match.children] == ["02", "03", "04", "05", "06"]
         else:

@@ -53,7 +53,7 @@ class Rebulk(Builder):
         :return:
         :rtype:
         """
-        super(Rebulk, self).__init__()
+        super().__init__()
         if not callable(disabled):
             self.disabled = lambda context: disabled
         else:

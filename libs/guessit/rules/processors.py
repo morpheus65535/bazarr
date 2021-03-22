@@ -6,8 +6,6 @@ Processors
 from collections import defaultdict
 import copy
 
-import six
-
 from rebulk import Rebulk, Rule, CustomRule, POST_PROCESS, PRE_PROCESS, AppendMatch, RemoveMatch
 
 from .common import seps_no_groups
@@ -68,7 +66,7 @@ class EquivalentHoles(Rule):
             for name in matches.names:
                 for hole in list(holes):
                     for current_match in matches.named(name):
-                        if isinstance(current_match.value, six.string_types) and \
+                        if isinstance(current_match.value, str) and \
                                         hole.value.lower() == current_match.value.lower():
                             if 'equivalent-ignore' in current_match.tags:
                                 continue
@@ -96,7 +94,7 @@ class RemoveAmbiguous(Rule):
     consequence = RemoveMatch
 
     def __init__(self, sort_function=marker_sorted, predicate=None):
-        super(RemoveAmbiguous, self).__init__()
+        super().__init__()
         self.sort_function = sort_function
         self.predicate = predicate
 
@@ -131,7 +129,7 @@ class RemoveLessSpecificSeasonEpisode(RemoveAmbiguous):
     keep the one tagged as 'SxxExx' or in the rightmost filepart.
     """
     def __init__(self, name):
-        super(RemoveLessSpecificSeasonEpisode, self).__init__(
+        super().__init__(
             sort_function=(lambda markers, matches:
                            marker_sorted(list(reversed(markers)), matches,
                                          lambda match: match.name == name and 'SxxExx' in match.tags)),
