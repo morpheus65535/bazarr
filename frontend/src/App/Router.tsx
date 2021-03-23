@@ -8,6 +8,7 @@ import MovieRouter from "../Movies/Router";
 import SeriesRouter from "../Series/Router";
 import SettingRouter from "../Settings/Router";
 import SystemRouter from "../System/Router";
+import { ScrollToTop } from "../utilites";
 import WantedRouter from "../Wanted/Router";
 
 const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
@@ -24,6 +25,7 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
   }, [sonarr, radarr]);
   return (
     <div className={className}>
+      <ScrollToTop />
       <Switch>
         <Route exact path="/">
           <Redirect exact to={redirectPath}></Redirect>
