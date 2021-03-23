@@ -292,9 +292,9 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
         accessor: "instance",
         className: "vw-1",
         Cell: ({ value, loose, row, externalUpdate }) => {
-          const avaliables = loose![2] as Item.Episode[];
+          const availables = loose![2] as Item.Episode[];
 
-          const options = avaliables.map<SelectorOption<Item.Episode>>(
+          const options = availables.map<SelectorOption<Item.Episode>>(
             (ep) => ({
               label: `(${ep.season}x${ep.episode}) ${ep.title}`,
               value: ep,

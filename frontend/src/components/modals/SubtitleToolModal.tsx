@@ -49,7 +49,7 @@ import { log } from "../../utilites/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModalUntil } from "./provider";
-import { avaliableTranslation, colorOptions } from "./toolOptions";
+import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
 
@@ -295,8 +295,8 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
 }) => {
   const [languages] = useLanguages(true);
 
-  const avaliable = useMemo(
-    () => languages.filter((v) => v.code2 in avaliableTranslation),
+  const available = useMemo(
+    () => languages.filter((v) => v.code2 in availableTranslation),
     [languages]
   );
 
@@ -320,7 +320,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   return (
     <BaseModal title="Translate to" footer={footer} {...modal}>
       <LanguageSelector
-        options={avaliable}
+        options={available}
         onChange={setLanguage}
       ></LanguageSelector>
     </BaseModal>

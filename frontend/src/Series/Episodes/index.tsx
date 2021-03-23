@@ -41,7 +41,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   useAutoUpdate(update);
 
-  const avaliable = episodes.data.length !== 0;
+  const available = episodes.data.length !== 0;
 
   const details = useMemo(
     () => [
@@ -76,7 +76,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ContentHeader.Group pos="start">
           <ContentHeader.AsyncButton
             icon={faSync}
-            disabled={!avaliable}
+            disabled={!available}
             promise={() =>
               SeriesApi.action({ action: "scan-disk", seriesid: id })
             }
@@ -93,7 +93,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={
               item.episodeFileCount === 0 ||
               item.profileId === null ||
-              !avaliable
+              !available
             }
           >
             Search
@@ -101,7 +101,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={item.episodeFileCount === 0 || !avaliable}
+            disabled={item.episodeFileCount === 0 || !available}
             icon={faBriefcase}
             onClick={() => showModal("tools", episodes.data)}
           >
@@ -111,7 +111,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={
               item.episodeFileCount === 0 ||
               item.profileId === null ||
-              !avaliable
+              !available
             }
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", item)}

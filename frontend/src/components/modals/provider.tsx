@@ -58,7 +58,7 @@ export function useCloseModalUntil(key: string) {
       setKeys(newKey);
       setPayloads(newPayload);
     } else {
-      log("error", "Cannot close modal, key is unavaliable");
+      log("error", "Cannot close modal, key is unavailable");
     }
   }, [keys, payloads, setKeys, setPayloads, key]);
 }

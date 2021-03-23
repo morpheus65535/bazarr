@@ -22,7 +22,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const modal = props;
 
-  const [avaliableLanguages] = useLanguages(true);
+  const [availableLanguages] = useLanguages(true);
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
   const [, update] = useMovieBy(movie?.radarrId);
@@ -84,7 +84,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           <Form.Group>
             <Form.Label>Language</Form.Label>
             <LanguageSelector
-              options={avaliableLanguages}
+              options={availableLanguages}
               value={language}
               onChange={(lang) => {
                 if (lang) {

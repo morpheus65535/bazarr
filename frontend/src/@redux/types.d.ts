@@ -7,7 +7,7 @@ interface AsyncPayload<Payload> {
   parameters: any[];
 }
 
-type AvaliableType<T> = Action<T> | ActionDispatcher<T>;
+type AvailableType<T> = Action<T> | ActionDispatcher<T>;
 
 type AsyncAction<Payload> = Action<AsyncPayload<Payload>>;
 type ActionDispatcher<T = any> = (dispatch: Dispatch<Action<T>>) => void;
@@ -16,7 +16,7 @@ type AsyncActionDispatcher<T> = (
 ) => Promise<void>;
 
 type PromiseCreator = (...args: any[]) => Promise<any>;
-type AvaliableCreator = (...args: any[]) => AvaliableType<any>[];
+type AvailableCreator = (...args: any[]) => AvailableType<any>[];
 type AsyncActionCreator = (...args: any[]) => AsyncActionDispatcher<any>[];
 
 type ActionCallback = () => Action<any> | void;

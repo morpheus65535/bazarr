@@ -5,8 +5,8 @@ import {
   ActionDispatcher,
   AsyncActionCreator,
   AsyncActionDispatcher,
-  AvaliableCreator,
-  AvaliableType,
+  AvailableCreator,
+  AvailableType,
   PromiseCreator,
 } from "../types";
 
@@ -92,7 +92,7 @@ export function createAsyncAction<T extends PromiseCreator>(
 
 // Create a action which combine multiple ActionDispatcher and execute them at once
 function combineActionFactory(
-  dispatchers: AvaliableType<any>[]
+  dispatchers: AvailableType<any>[]
 ): ActionDispatcher {
   return (dispatch) => {
     dispatchers.forEach((fn) => {
@@ -105,7 +105,7 @@ function combineActionFactory(
   };
 }
 
-export function createCombineAction<T extends AvaliableCreator>(fn: T) {
+export function createCombineAction<T extends AvailableCreator>(fn: T) {
   return (...args: Parameters<T>) => combineActionFactory(fn(...args));
 }
 

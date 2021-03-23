@@ -1,4 +1,4 @@
-export const avaliableTranslation = {
+export const availableTranslation = {
   af: "afrikaans",
   sq: "albanian",
   am: "amharic",

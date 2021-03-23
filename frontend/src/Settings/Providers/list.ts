@@ -1,13 +1,13 @@
 import { ReactText } from "react";
 
-type AvaliableType = ReactText | boolean;
+type AvailableType = ReactText | boolean;
 export interface ProviderInfo {
   key: string;
   name?: string;
   description?: string;
   message?: string;
   defaultKey?: {
-    [key: string]: AvaliableType;
+    [key: string]: AvailableType;
   };
   keyNameOverride?: {
     [key: string]: string;

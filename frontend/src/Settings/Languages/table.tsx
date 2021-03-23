@@ -166,7 +166,7 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
   return (
     <Badge
       className={className}
-      title={cutoff ? "Ignore others if this one is avaliable" : undefined}
+      title={cutoff ? "Ignore others if this one is available" : undefined}
       variant={cutoff ? "primary" : "secondary"}
     >
       {text}
