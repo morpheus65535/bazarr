@@ -319,6 +319,9 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
 
   return (
     <BaseModal title="Translate to" footer={footer} {...modal}>
+      <Form.Label>
+        Enabled languages not listed here are unsupported by Google Translate.
+      </Form.Label>
       <LanguageSelector
         options={available}
         onChange={setLanguage}
