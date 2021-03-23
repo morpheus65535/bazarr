@@ -327,7 +327,14 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   );
 };
 
-const STM: FunctionComponent<BaseModalProps> = (props) => {
+interface STMProps {
+  update: () => void;
+}
+
+const STM: FunctionComponent<BaseModalProps & STMProps> = ({
+  update,
+  ...props
+}) => {
   const items = usePayload<SupportType[]>(props.modalKey);
 
   const [updating, setUpdate] = useState<boolean>(false);
@@ -370,8 +377,10 @@ const STM: FunctionComponent<BaseModalProps> = (props) => {
         setProcessState(states);
       }
       setUpdate(false);
+
+      update();
     },
-    [closeUntil, selections]
+    [closeUntil, selections, update]
   );
 
   const showModal = useShowModal();
