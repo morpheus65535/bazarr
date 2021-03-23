@@ -13,6 +13,7 @@ import {
   URLTestButton,
 } from "../components";
 import { PathMappingTable } from "../components/pathMapper";
+import { moviesEnabledKey } from "../keys";
 
 interface Props {}
 
@@ -27,10 +28,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
         <CollapseBox.Control>
           <Group header="Use Radarr">
             <Input>
-              <Check
-                label="Enabled"
-                settingKey="settings-general-use_radarr"
-              ></Check>
+              <Check label="Enabled" settingKey={moviesEnabledKey}></Check>
             </Input>
           </Group>
         </CollapseBox.Control>

@@ -1,13 +1,19 @@
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { capitalize, isArray } from "lodash";
+import { capitalize, isArray, isBoolean } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { FilesApi } from "../../apis";
 import { ActionButton, FileBrowser, SimpleTable } from "../../components";
-import { pathMappingsKey, pathMappingsMovieKey } from "../keys";
-import { useLatest, useSingleUpdate } from "./hooks";
+import {
+  moviesEnabledKey,
+  pathMappingsKey,
+  pathMappingsMovieKey,
+  seriesEnabledKey,
+} from "../keys";
+import { Message } from "./forms";
+import { useExtract, useLatest, useSingleUpdate } from "./hooks";
 
 type SupportType = "sonarr" | "radarr";
 
@@ -16,6 +22,14 @@ function getSupportKey(type: SupportType) {
     return pathMappingsKey;
   } else {
     return pathMappingsMovieKey;
+  }
+}
+
+function getEnabledKey(type: SupportType) {
+  if (type === "sonarr") {
+    return seriesEnabledKey;
+  } else {
+    return moviesEnabledKey;
   }
 }
 
@@ -30,8 +44,10 @@ interface TableProps {
 
 export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   const key = getSupportKey(type);
-
   const items = useLatest<[string, string][]>(key, isArray);
+
+  const enabledKey = getEnabledKey(type);
+  const enabled = useExtract<boolean>(enabledKey, isBoolean);
 
   const update = useSingleUpdate();
 
@@ -134,18 +150,27 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     ],
     [type, request]
   );
-  return (
-    <React.Fragment>
-      <SimpleTable
-        emptyText="No Mapping"
-        responsive={false}
-        columns={columns}
-        data={data}
-        externalUpdate={updateCell}
-      ></SimpleTable>
-      <Button block variant="light" onClick={addRow}>
-        Add
-      </Button>
-    </React.Fragment>
-  );
+
+  if (enabled) {
+    return (
+      <React.Fragment>
+        <SimpleTable
+          emptyText="No Mapping"
+          responsive={false}
+          columns={columns}
+          data={data}
+          externalUpdate={updateCell}
+        ></SimpleTable>
+        <Button block variant="light" onClick={addRow}>
+          Add
+        </Button>
+      </React.Fragment>
+    );
+  } else {
+    return (
+      <Message>
+        Path Mappings will be available after staged changes are saved
+      </Message>
+    );
+  }
 };

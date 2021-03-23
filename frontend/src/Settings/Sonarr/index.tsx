@@ -14,6 +14,7 @@ import {
   URLTestButton,
 } from "../components";
 import { PathMappingTable } from "../components/pathMapper";
+import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
 
 interface Props {}
@@ -29,10 +30,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
         <CollapseBox.Control>
           <Group header="Use Sonarr">
             <Input>
-              <Check
-                label="Enabled"
-                settingKey="settings-general-use_sonarr"
-              ></Check>
+              <Check label="Enabled" settingKey={seriesEnabledKey}></Check>
             </Input>
           </Group>
         </CollapseBox.Control>
