@@ -89,7 +89,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
         data={logs}
         externalUpdate={show}
       ></PageTable>
-      <SystemLogModal size="lg" modalKey="system-log"></SystemLogModal>
+      <SystemLogModal size="xl" modalKey="system-log"></SystemLogModal>
     </React.Fragment>
   );
 };
