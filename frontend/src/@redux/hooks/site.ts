@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useSystemSettings } from ".";
 import { siteAddError, siteRemoveErrorByTimestamp } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
@@ -22,4 +23,14 @@ export function useNotification(id: string, sec: number = 5) {
 
 export function useIsOffline() {
   return useReduxStore((s) => s.site.offline);
+}
+
+export function useIsSonarrEnabled() {
+  const [settings] = useSystemSettings();
+  return settings.data?.general.use_sonarr ?? true;
+}
+
+export function useIsRadarrEnabled() {
+  const [settings] = useSystemSettings();
+  return settings.data?.general.use_radarr ?? true;
 }

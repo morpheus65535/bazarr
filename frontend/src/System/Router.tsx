@@ -1,5 +1,6 @@
 import React, { FunctionComponent } from "react";
-import { Route, Switch } from "react-router-dom";
+import { Redirect, Route, Switch } from "react-router-dom";
+import { RouterEmptyPath } from "../404";
 import Logs from "./Logs";
 import Providers from "./Providers";
 import Releases from "./Releases";
@@ -23,6 +24,9 @@ const Router: FunctionComponent = () => {
       </Route>
       <Route exact path="/system/releases">
         <Releases></Releases>
+      </Route>
+      <Route path="/system/*">
+        <Redirect to={RouterEmptyPath}></Redirect>
       </Route>
     </Switch>
   );

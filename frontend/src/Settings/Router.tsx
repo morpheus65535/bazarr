@@ -1,5 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
+import { RouterEmptyPath } from "../404";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useAutoUpdate } from "../utilites/hooks";
@@ -50,6 +51,9 @@ const Router: FunctionComponent<Props> = () => {
       </Route>
       <Route exact path="/settings/notifications">
         <Notifications></Notifications>
+      </Route>
+      <Route path="/settings/*">
+        <Redirect to={RouterEmptyPath}></Redirect>
       </Route>
     </Switch>
   );

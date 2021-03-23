@@ -7,8 +7,8 @@ import React, {
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import { badgeUpdateAll, siteChangeSidebar } from "../@redux/actions";
-import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
 import { useAutoUpdate } from "../utilites/hooks";
@@ -55,10 +55,8 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
     [movies, episodes, providers]
   );
 
-  const [settings] = useSystemSettings();
-
-  const sonarrEnabled = settings.data?.general.use_sonarr ?? true;
-  const radarrEnabled = settings.data?.general.use_radarr ?? true;
+  const sonarrEnabled = useIsSonarrEnabled();
+  const radarrEnabled = useIsRadarrEnabled();
 
   const hiddenKeys = useMemo<string[]>(() => {
     const list = [];
