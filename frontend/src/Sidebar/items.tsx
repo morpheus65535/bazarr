@@ -120,6 +120,10 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
     [children, hiddenKeys, childValue, toggleSidebar]
   );
 
+  if (childrenElems.length === 0) {
+    return null;
+  }
+
   return (
     <div className={collapseBoxClass}>
       <ListGroupItem
