@@ -206,7 +206,11 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
           ></GroupTable>
         )}
       </AsyncStateOverlay>
-      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
+      <SubtitleToolModal
+        modalKey="tools"
+        size="lg"
+        update={update}
+      ></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
         modalKey="manual-search"

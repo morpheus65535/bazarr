@@ -141,7 +141,11 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         submit={(form) => MoviesApi.modify(form)}
         onSuccess={update}
       ></ItemEditorModal>
-      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
+      <SubtitleToolModal
+        modalKey="tools"
+        size="lg"
+        update={update}
+      ></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
       <ManualSearchModal

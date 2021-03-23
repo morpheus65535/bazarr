@@ -118,7 +118,6 @@ export function useSeries(order = true) {
 
 export function useSerieBy(id?: number) {
   const [series, updateSerie] = useRawSeries();
-  const updateEpisodes = useReduxAction(episodeUpdateBySeriesId);
   const serie = useMemo<AsyncState<Item.Series | null>>(() => {
     const items = series.data.items;
     let item: Item.Series | null = null;
@@ -134,20 +133,22 @@ export function useSerieBy(id?: number) {
   const update = useCallback(() => {
     if (id && !isNaN(id)) {
       updateSerie([id]);
-      updateEpisodes(id);
     }
-  }, [id, updateSerie, updateEpisodes]);
+  }, [id, updateSerie]);
 
   return stateBuilder(serie, update);
 }
 
 export function useEpisodesBy(seriesId?: number) {
   const action = useReduxAction(episodeUpdateBySeriesId);
+  const [, updateSeries] = useSerieBy(seriesId);
+
   const callback = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
+      updateSeries();
       action(seriesId);
     }
-  }, [action, seriesId]);
+  }, [action, seriesId, updateSeries]);
 
   const list = useReduxStore((d) => d.series.episodeList);
 
