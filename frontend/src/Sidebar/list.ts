@@ -9,16 +9,21 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { SidebarDefinition } from "./types";
 
+export const SonarrDisabledKey = "sonarr-disabled";
+export const RadarrDisabledKey = "radarr-disabled";
+
 export const SidebarList: SidebarDefinition[] = [
   {
     icon: faPlay,
     name: "Series",
     link: "/series",
+    hiddenKey: SonarrDisabledKey,
   },
   {
     icon: faFilm,
     name: "Movies",
     link: "/movies",
+    hiddenKey: RadarrDisabledKey,
   },
   {
     icon: faClock,
@@ -27,10 +32,12 @@ export const SidebarList: SidebarDefinition[] = [
       {
         name: "Series",
         link: "/history/series",
+        hiddenKey: SonarrDisabledKey,
       },
       {
         name: "Movies",
         link: "/history/movies",
+        hiddenKey: RadarrDisabledKey,
       },
       {
         name: "Statistics",
@@ -45,10 +52,12 @@ export const SidebarList: SidebarDefinition[] = [
       {
         name: "Series",
         link: "/blacklist/series",
+        hiddenKey: SonarrDisabledKey,
       },
       {
         name: "Movies",
         link: "/blacklist/movies",
+        hiddenKey: RadarrDisabledKey,
       },
     ],
   },
@@ -59,10 +68,12 @@ export const SidebarList: SidebarDefinition[] = [
       {
         name: "Series",
         link: "/wanted/series",
+        hiddenKey: SonarrDisabledKey,
       },
       {
         name: "Movies",
         link: "/wanted/movies",
+        hiddenKey: RadarrDisabledKey,
       },
     ],
   },

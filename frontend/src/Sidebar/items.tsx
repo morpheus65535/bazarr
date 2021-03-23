@@ -12,6 +12,8 @@ import {
   LinkItemType,
 } from "./types";
 
+export const HiddenKeysContext = React.createContext<string[]>([]);
+
 export const BadgesContext = React.createContext<BadgeProvider>({});
 
 export const LinkItem: FunctionComponent<LinkItemType> = ({
@@ -55,6 +57,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
   children,
 }) => {
   const badges = useContext(BadgesContext);
+  const hiddenKeys = useContext(HiddenKeysContext);
   const toggleSidebar = useContext(SidebarToggleContext);
 
   const itemKey = name.toLowerCase();
@@ -90,6 +93,33 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
     [active]
   );
 
+  const childrenElems = useMemo(
+    () =>
+      children
+        .filter((v) => !hiddenKeys.includes(v.hiddenKey ?? ""))
+        .map((ch) => {
+          let badge: Nullable<number> = null;
+          if (childValue && ch.name in childValue) {
+            badge = childValue[ch.name];
+          }
+          return (
+            <NavLink
+              key={ch.name}
+              activeClassName="sb-active"
+              className="list-group-item list-group-item-action sidebar-button sb-collapse"
+              to={ch.link}
+              onClick={toggleSidebar}
+            >
+              <DisplayItem
+                badge={badge === 0 ? undefined : badge ?? undefined}
+                name={ch.name}
+              ></DisplayItem>
+            </NavLink>
+          );
+        }),
+    [children, hiddenKeys, childValue, toggleSidebar]
+  );
+
   return (
     <div className={collapseBoxClass}>
       <ListGroupItem
@@ -110,28 +140,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
         ></DisplayItem>
       </ListGroupItem>
       <Collapse in={active}>
-        <div className="sidebar-collapse">
-          {children.map((ch) => {
-            let badge: Nullable<number> = null;
-            if (childValue && ch.name in childValue) {
-              badge = childValue[ch.name];
-            }
-            return (
-              <NavLink
-                key={ch.name}
-                activeClassName="sb-active"
-                className="list-group-item list-group-item-action sidebar-button sb-collapse"
-                to={ch.link}
-                onClick={toggleSidebar}
-              >
-                <DisplayItem
-                  badge={badge === 0 ? undefined : badge ?? undefined}
-                  name={ch.name}
-                ></DisplayItem>
-              </NavLink>
-            );
-          })}
-        </div>
+        <div className="sidebar-collapse">{childrenElems}</div>
       </Collapse>
     </div>
   );

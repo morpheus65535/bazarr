@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { Route, Switch } from "react-router-dom";
+import { Redirect, Route, Switch } from "react-router-dom";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useAutoUpdate } from "../utilites/hooks";
@@ -21,6 +21,9 @@ const Router: FunctionComponent<Props> = () => {
 
   return (
     <Switch>
+      <Route exact path="/settings">
+        <Redirect exact to="/settings/general"></Redirect>
+      </Route>
       <Route exact path="/settings/general">
         <General></General>
       </Route>

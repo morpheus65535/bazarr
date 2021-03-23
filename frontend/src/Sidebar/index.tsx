@@ -7,12 +7,18 @@ import React, {
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import { badgeUpdateAll, siteChangeSidebar } from "../@redux/actions";
+import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
 import { useAutoUpdate } from "../utilites/hooks";
-import { BadgesContext, CollapseItem, LinkItem } from "./items";
-import { SidebarList } from "./list";
+import {
+  BadgesContext,
+  CollapseItem,
+  HiddenKeysContext,
+  LinkItem,
+} from "./items";
+import { RadarrDisabledKey, SidebarList, SonarrDisabledKey } from "./list";
 import "./style.scss";
 import { BadgeProvider } from "./types";
 
@@ -49,6 +55,22 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
     [movies, episodes, providers]
   );
 
+  const [settings] = useSystemSettings();
+
+  const sonarrEnabled = settings.data?.general.use_sonarr ?? true;
+  const radarrEnabled = settings.data?.general.use_radarr ?? true;
+
+  const hiddenKeys = useMemo<string[]>(() => {
+    const list = [];
+    if (!sonarrEnabled) {
+      list.push(SonarrDisabledKey);
+    }
+    if (!radarrEnabled) {
+      list.push(RadarrDisabledKey);
+    }
+    return list;
+  }, [sonarrEnabled, radarrEnabled]);
+
   const history = useHistory();
 
   const updateSidebar = useUpdateSidebar();
@@ -74,13 +96,16 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const sidebarItems = useMemo(
     () =>
       SidebarList.map((v) => {
+        if (hiddenKeys.includes(v.hiddenKey ?? "")) {
+          return null;
+        }
         if ("children" in v) {
           return <CollapseItem key={v.name} {...v}></CollapseItem>;
         } else {
           return <LinkItem key={v.link} {...v}></LinkItem>;
         }
       }),
-    []
+    [hiddenKeys]
   );
 
   return (
@@ -89,9 +114,11 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image alt="brand" src={logo} width="32" height="32"></Image>
         </Container>
-        <BadgesContext.Provider value={badges}>
-          <ListGroup variant="flush">{sidebarItems}</ListGroup>
-        </BadgesContext.Provider>
+        <HiddenKeysContext.Provider value={hiddenKeys}>
+          <BadgesContext.Provider value={badges}>
+            <ListGroup variant="flush">{sidebarItems}</ListGroup>
+          </BadgesContext.Provider>
+        </HiddenKeysContext.Provider>
       </aside>
       <div className={overlay.join(" ")} onClick={toggle}></div>
     </React.Fragment>
