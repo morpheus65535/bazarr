@@ -34,10 +34,10 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [serie] = useSerieBy(id);
+  const [serie, update] = useSerieBy(id);
   const item = serie.data;
 
-  const [episodes, update] = useEpisodesBy(serie.data?.sonarrSeriesId);
+  const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
 
   useAutoUpdate(update);
 
