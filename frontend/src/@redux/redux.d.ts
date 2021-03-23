@@ -16,7 +16,7 @@ interface ReduxStore {
 
 namespace ReduxStore {
   interface Notification {
-    type: "error" | "warning";
+    type: "error" | "warning" | "info";
     message: string;
     timestamp: Date;
     id: string;

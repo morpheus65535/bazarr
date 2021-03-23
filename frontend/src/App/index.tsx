@@ -10,9 +10,10 @@ import { Alert, Button, Container, Row } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import { bootstrap as ReduxBootstrap } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import { useNotification } from "../@redux/hooks/site";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
-import { Reload } from "../utilites";
+import { Reload, useHasUpdateInject } from "../utilites";
 import Header from "./Header";
 import NotificationContainer from "./notifications";
 import Router from "./Router";
@@ -26,6 +27,22 @@ const App: FunctionComponent<Props> = () => {
   const bootstrap = useReduxAction(ReduxBootstrap);
 
   const { initialized, auth } = useReduxStore((s) => s.site);
+
+  const notify = useNotification("has-update", 10);
+
+  // Has any update?
+  const hasUpdate = useHasUpdateInject();
+  useEffect(() => {
+    if (initialized) {
+      if (hasUpdate) {
+        notify({
+          type: "info",
+          message: "A new version of Bazarr is ready",
+          // TODO: Restart action
+        });
+      }
+    }
+  }, [initialized, hasUpdate, notify]);
 
   useEffect(() => {
     bootstrap();

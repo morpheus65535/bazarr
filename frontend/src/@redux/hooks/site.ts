@@ -7,9 +7,9 @@ export function useNotification(id: string, sec: number = 5) {
   const remove = useReduxAction(siteRemoveErrorByTimestamp);
 
   return useCallback(
-    (err: Omit<ReduxStore.Notification, "id" | "timestamp">) => {
+    (msg: Omit<ReduxStore.Notification, "id" | "timestamp">) => {
       const error: ReduxStore.Notification = {
-        ...err,
+        ...msg,
         id,
         timestamp: new Date(),
       };
