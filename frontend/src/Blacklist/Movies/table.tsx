@@ -55,6 +55,7 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
             <AsyncButton
               size="sm"
               variant="light"
+              noReset
               promise={() =>
                 MoviesApi.deleteBlacklist(false, {
                   provider: row.row.original.provider,

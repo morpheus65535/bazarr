@@ -379,6 +379,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           Clean
         </Button>
         <AsyncButton
+          noReset
           disabled={!canUpload}
           onChange={setUpload}
           promise={uploadSubtitles}

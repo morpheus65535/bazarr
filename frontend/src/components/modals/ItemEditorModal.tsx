@@ -34,6 +34,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const footer = useMemo(
     () => (
       <AsyncButton
+        noReset
         onChange={setUpdating}
         promise={() => {
           if (item) {

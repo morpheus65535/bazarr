@@ -21,6 +21,7 @@ export const BlacklistButton: FunctionComponent<Props> = ({
       <AsyncButton
         size="sm"
         variant="light"
+        noReset
         disabled={blacklisted}
         promise={() => {
           const { code2 } = language;

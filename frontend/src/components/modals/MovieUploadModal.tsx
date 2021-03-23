@@ -48,6 +48,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const footer = (
     <AsyncButton
+      noReset
       disabled={!canUpload}
       onChange={setUpload}
       promise={() => {

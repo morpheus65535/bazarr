@@ -87,13 +87,13 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
       {
         Header: "Subtitles",
         accessor: "missing_subtitles",
-        Cell: (row) => {
-          const episode = row.row.original;
+        Cell: ({ row }) => {
+          const episode = row.original;
 
           const seriesid = episode.sonarrSeriesId;
-          const episodeid = episode.sonarrEpisodeId;
 
           const elements = useMemo(() => {
+            const episodeid = episode.sonarrEpisodeId;
             const missing = episode.missing_subtitles.map((val, idx) => (
               <SubtitleAction
                 missing
@@ -121,7 +121,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, episodeid, seriesid]);
+          }, [episode, seriesid]);
 
           return elements;
         },
