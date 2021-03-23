@@ -37,7 +37,7 @@ const App: FunctionComponent<Props> = () => {
       if (hasUpdate) {
         notify({
           type: "info",
-          message: "A new version of Bazarr is ready",
+          message: "A new version of Bazarr is ready, restart is required",
           // TODO: Restart action
         });
       }
