@@ -10,7 +10,8 @@ import {
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { RouterEmptyPath } from "../../404";
 import { useMovieBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -52,6 +53,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const item = movie.data;
 
   const showModal = useShowModal();
+
+  if (isNaN(id) || (!movie.updating && movie.data === null)) {
+    return <Redirect to={RouterEmptyPath}></Redirect>;
+  }
 
   if (!item) {
     return <LoadingIndicator></LoadingIndicator>;

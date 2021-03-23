@@ -122,7 +122,7 @@ export function useSerieBy(id?: number) {
   const serie = useMemo<AsyncState<Item.Series | null>>(() => {
     const items = series.data.items;
     let item: Item.Series | null = null;
-    if (id && id in items) {
+    if (id && !isNaN(id) && id in items) {
       item = items[id];
     }
     return {
@@ -132,7 +132,7 @@ export function useSerieBy(id?: number) {
   }, [id, series]);
 
   const update = useCallback(() => {
-    if (id) {
+    if (id && !isNaN(id)) {
       updateSerie([id]);
       updateEpisodes(id);
     }
@@ -144,7 +144,7 @@ export function useSerieBy(id?: number) {
 export function useEpisodesBy(seriesId?: number) {
   const action = useReduxAction(episodeUpdateBySeriesId);
   const callback = useCallback(() => {
-    if (seriesId !== undefined) {
+    if (seriesId !== undefined && !isNaN(seriesId)) {
       action(seriesId);
     }
   }, [action, seriesId]);
@@ -152,7 +152,7 @@ export function useEpisodesBy(seriesId?: number) {
   const list = useReduxStore((d) => d.series.episodeList);
 
   const items = useMemo(() => {
-    if (seriesId !== undefined) {
+    if (seriesId !== undefined && !isNaN(seriesId)) {
       return list.data[seriesId] ?? [];
     } else {
       return [];
@@ -197,7 +197,7 @@ export function useMovieBy(id?: number) {
   const movie = useMemo<AsyncState<Item.Movie | null>>(() => {
     const items = movies.data.items;
     let item: Item.Movie | null = null;
-    if (id && id in items) {
+    if (id && !isNaN(id) && id in items) {
       item = items[id];
     }
     return {
@@ -207,7 +207,7 @@ export function useMovieBy(id?: number) {
   }, [id, movies]);
 
   const update = useCallback(() => {
-    if (id) {
+    if (id && !isNaN(id)) {
       updateMovies([id]);
     }
   }, [id, updateMovies]);

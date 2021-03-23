@@ -10,7 +10,8 @@ import {
 import React, { FunctionComponent, useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { RouterEmptyPath } from "../../404";
 import { useEpisodesBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
@@ -57,6 +58,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   );
 
   const showModal = useShowModal();
+
+  if (isNaN(id) || (!serie.updating && serie.data === null)) {
+    return <Redirect to={RouterEmptyPath}></Redirect>;
+  }
 
   if (!item) {
     return <LoadingIndicator></LoadingIndicator>;
