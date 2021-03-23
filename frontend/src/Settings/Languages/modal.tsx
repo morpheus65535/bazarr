@@ -25,6 +25,15 @@ interface Props {
   update: (profile: Profile.Languages) => void;
 }
 
+function createDefaultProfile(): Profile.Languages {
+  return {
+    profileId: -1,
+    name: "",
+    items: [],
+    cutoff: null,
+  };
+}
+
 const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   props
 ) => {
@@ -36,14 +45,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 
   const languages = useEnabledLanguages();
 
-  const [current, setProfile] = useState(
-    profile ?? {
-      profileId: -1,
-      name: "",
-      items: [],
-      cutoff: null,
-    }
-  );
+  const [current, setProfile] = useState(profile ?? createDefaultProfile());
 
   useEffect(() => {
     if (profile) {
@@ -233,7 +235,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Form.Control
           type="text"
           placeholder="Name"
-          defaultValue={current?.name}
+          value={current?.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}
