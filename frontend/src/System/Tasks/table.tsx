@@ -36,6 +36,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
           const { job_id } = row.row.original;
           return (
             <AsyncButton
+              resetSuccess
               promise={() => SystemApi.runTask(job_id)}
               onSuccess={() => run(job_id)}
               variant="light"

@@ -155,6 +155,8 @@ interface AsyncButtonProps<T> {
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 
+  resetSuccess?: boolean;
+
   promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
   error?: () => void;
@@ -167,7 +169,8 @@ export function AsyncButton<T>(
     children: propChildren,
     className,
     promise,
-    onSuccess: success,
+    onSuccess,
+    resetSuccess,
     error,
     onChange,
     disabled,
@@ -181,7 +184,10 @@ export function AsyncButton<T>(
   const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
 
   useEffect(() => {
-    if (state === RequestState.Error) {
+    if (
+      state === RequestState.Error ||
+      (resetSuccess && state === RequestState.Success)
+    ) {
       const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
       setHandle(handle);
     }
@@ -195,7 +201,7 @@ export function AsyncButton<T>(
         return null;
       });
     };
-  }, [state]);
+  }, [state, resetSuccess]);
 
   const click = useCallback(() => {
     if (state !== RequestState.Invalid) {
@@ -210,7 +216,7 @@ export function AsyncButton<T>(
       result
         .then((res) => {
           setState(RequestState.Success);
-          success && success(res);
+          onSuccess && onSuccess(res);
         })
         .catch(() => {
           setState(RequestState.Error);
@@ -221,7 +227,7 @@ export function AsyncButton<T>(
           onChange && onChange(false);
         });
     }
-  }, [error, onChange, promise, success, state]);
+  }, [error, onChange, promise, onSuccess, state]);
 
   let children = propChildren;
   if (loading) {
