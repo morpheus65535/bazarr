@@ -9,6 +9,7 @@ import { useWantedSeries } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
+import { BuildKey } from "../../utilites";
 import GenericWantedView from "../generic";
 
 interface Props {}
@@ -56,7 +57,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
           return value.map((item, idx) => (
             <AsyncButton
               as={Badge}
-              key={idx}
+              key={BuildKey(idx, item.code2)}
               className="mx-1 mr-2"
               variant="secondary"
               promise={() =>

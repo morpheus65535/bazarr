@@ -99,6 +99,10 @@ export function mergeArray<T>(
   return list;
 }
 
+export function BuildKey(...args: any[]) {
+  return args.join("-");
+}
+
 export function Reload() {
   window.location.reload();
 }

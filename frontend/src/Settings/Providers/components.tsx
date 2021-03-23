@@ -14,7 +14,7 @@ import {
   usePayload,
   useShowModal,
 } from "../../components";
-import { isReactText } from "../../utilites";
+import { BuildKey, isReactText } from "../../utilites";
 import {
   Check,
   ColCard,
@@ -54,7 +54,7 @@ export const ProviderView: FunctionComponent = () => {
         })
         .map((v, idx) => (
           <ColCard
-            key={idx}
+            key={BuildKey(idx, v.name)}
             header={v.name ?? capitalize(v.key)}
             subheader={v.description}
             onClick={() => select(v)}

@@ -16,6 +16,7 @@ import {
   usePayload,
   useShowModal,
 } from "../../components";
+import { BuildKey } from "../../utilites";
 import { ColCard, useLatestMergeArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
@@ -169,7 +170,7 @@ export const NotificationView: FunctionComponent = () => {
       ?.filter((v) => v.enabled)
       .map((v, idx) => (
         <ColCard
-          key={idx}
+          key={BuildKey(idx, v.name)}
           header={v.name}
           onClick={() => showModal("notifications", v)}
         ></ColCard>

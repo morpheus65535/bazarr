@@ -23,7 +23,7 @@ const NotificationContainer: FunctionComponent<NotificationContainerProps> = () 
   const items = useMemo(
     () =>
       list.map((v, idx) => (
-        <NotificationToast key={idx} {...v}></NotificationToast>
+        <NotificationToast key={v.id} {...v}></NotificationToast>
       )),
     [list]
   );
