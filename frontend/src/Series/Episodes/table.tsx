@@ -19,6 +19,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
+import { BuildKey } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
@@ -94,10 +95,11 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
 
           const elements = useMemo(() => {
             const episodeid = episode.sonarrEpisodeId;
-            const missing = episode.missing_subtitles.map((val) => (
+
+            const missing = episode.missing_subtitles.map((val, idx) => (
               <SubtitleAction
                 missing
-                key={`${val.code2}-missing`}
+                key={BuildKey(idx, val.code2, "missing")}
                 seriesid={seriesid}
                 episodeid={episodeid}
                 subtitle={val}
@@ -111,9 +113,9 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
                 ) === -1
             );
 
-            const subtitles = existing.map((val) => (
+            const subtitles = existing.map((val, idx) => (
               <SubtitleAction
-                key={`${val.code2}-valid`}
+                key={BuildKey(idx, val.code2, "valid")}
                 seriesid={seriesid}
                 episodeid={episodeid}
                 subtitle={val}

@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 import { systemUpdateReleases } from "../../@redux/actions";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import { AsyncStateOverlay } from "../../components";
+import { BuildKey } from "../../utilites";
 import { useAutoUpdate } from "../../utilites/hooks";
 
 interface Props {}
@@ -23,7 +24,7 @@ const ReleasesView: FunctionComponent<Props> = () => {
           <Row>
             {item.map((v, idx) => (
               <Col xs={12}>
-                <InfoElement key={idx} {...v}></InfoElement>
+                <InfoElement key={BuildKey(idx, v.date)} {...v}></InfoElement>
               </Col>
             ))}
           </Row>

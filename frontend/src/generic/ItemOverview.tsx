@@ -22,6 +22,7 @@ import {
 } from "react-bootstrap";
 import { useProfileBy, useProfileItems } from "../@redux/hooks";
 import { LanguageText } from "../components";
+import { BuildKey } from "../utilites";
 
 interface Props {
   item: Item.Base;
@@ -41,7 +42,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
     badges.push(
       ...(details?.map((val, idx) => (
-        <DetailBadge key={`detail-${idx}`} icon={val.icon}>
+        <DetailBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
           {val.text}
         </DetailBadge>
       )) ?? [])
@@ -61,7 +62,11 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const audioBadges = useMemo(
     () =>
       item.audio_language.map((v, idx) => (
-        <DetailBadge key={`audio-${idx}`} icon={faMusic} desc="Audio Language">
+        <DetailBadge
+          key={BuildKey(idx, "audio", v.code2)}
+          icon={faMusic}
+          desc="Audio Language"
+        >
           {v.name}
         </DetailBadge>
       )),
@@ -87,7 +92,11 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
       badges.push(
         ...profileItems.map((v, idx) => (
-          <DetailBadge key={`lang-${idx}`} icon={faLanguage} desc="Language">
+          <DetailBadge
+            key={BuildKey(idx, "lang", v.code2)}
+            icon={faLanguage}
+            desc="Language"
+          >
             <LanguageText long text={v}></LanguageText>
           </DetailBadge>
         ))
