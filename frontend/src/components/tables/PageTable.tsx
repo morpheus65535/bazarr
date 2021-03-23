@@ -1,5 +1,5 @@
-import { isUndefined } from "lodash";
-import React, { useEffect } from "react";
+import { isNull, isUndefined } from "lodash";
+import React, { useCallback, useEffect } from "react";
 import {
   PluginHook,
   TableOptions,
@@ -7,8 +7,8 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
-import { LoadingIndicator } from "..";
 import { ScrollToTop } from "../../utilites";
+import { AsyncStateOverlay } from "../async";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import {
@@ -95,8 +95,22 @@ export default function PageTable<T extends object>(props: Props<T>) {
     ? options.asyncState.data.order.length
     : rows.length;
 
-  if (needLoadingScreen) {
-    return <LoadingIndicator></LoadingIndicator>;
+  const orderIdStateValidater = useCallback(
+    (state: OrderIdState<any>) => {
+      const start = pageIndex * pageSize;
+      const end = start + pageSize;
+      return state.order.slice(start, end).every(isNull) === false;
+    },
+    [pageIndex, pageSize]
+  );
+
+  if (needLoadingScreen && options.asyncState) {
+    return (
+      <AsyncStateOverlay
+        state={options.asyncState}
+        exist={orderIdStateValidater}
+      ></AsyncStateOverlay>
+    );
   }
 
   return (

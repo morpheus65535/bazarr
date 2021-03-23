@@ -28,7 +28,7 @@ enum RequestState {
 interface AsyncStateOverlayProps<T> {
   state: AsyncState<T>;
   exist?: (item: T) => boolean;
-  children: (item: NonNullable<Readonly<T>>, error?: Error) => JSX.Element;
+  children?: (item: NonNullable<Readonly<T>>, error?: Error) => JSX.Element;
 }
 
 function defaultExist(item: any) {
@@ -83,7 +83,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     }
   }
 
-  return children(state.data!, state.error);
+  return children ? children(state.data!, state.error) : null;
 }
 
 interface PromiseProps<T> {
