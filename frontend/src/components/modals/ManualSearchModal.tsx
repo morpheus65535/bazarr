@@ -88,6 +88,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             <AsyncButton
               size="sm"
               variant="light"
+              noReset
               promise={() => onSelect(item!, result)}
               onSuccess={() => externalUpdate && externalUpdate(row)}
             >

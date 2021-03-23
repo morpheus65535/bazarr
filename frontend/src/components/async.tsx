@@ -155,7 +155,7 @@ interface AsyncButtonProps<T> {
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 
-  resetSuccess?: boolean;
+  noReset?: boolean;
 
   promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
@@ -170,7 +170,7 @@ export function AsyncButton<T>(
     className,
     promise,
     onSuccess,
-    resetSuccess,
+    noReset,
     error,
     onChange,
     disabled,
@@ -184,10 +184,11 @@ export function AsyncButton<T>(
   const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
 
   useEffect(() => {
-    if (
-      state === RequestState.Error ||
-      (resetSuccess && state === RequestState.Success)
-    ) {
+    if (noReset) {
+      return;
+    }
+
+    if (state === RequestState.Error || state === RequestState.Success) {
       const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
       setHandle(handle);
     }
@@ -201,7 +202,7 @@ export function AsyncButton<T>(
         return null;
       });
     };
-  }, [state, resetSuccess]);
+  }, [state, noReset]);
 
   const click = useCallback(() => {
     if (state !== RequestState.Invalid) {
