@@ -7,6 +7,7 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
+import { useReduxStore } from "../../@redux/hooks/base";
 import { ScrollToTop } from "../../utilites";
 import { AsyncStateOverlay } from "../async";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
@@ -52,8 +53,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
     rows,
     prepareRow,
 
-    initialState,
-
     // page
     page,
     canNextPage,
@@ -66,6 +65,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
     state: { pageIndex, pageSize, pageToLoad, needLoadingScreen },
   } = instance;
 
+  const globalPageSize = useReduxStore((s) => s.site.pageSize);
+
   // Scroll to top when page is changed
   useEffect(() => {
     if (autoScroll) {
@@ -75,17 +76,16 @@ export default function PageTable<T extends object>(props: Props<T>) {
 
   useEffect(() => {
     const selecting = options.isSelecting;
-    const defaultSize = initialState?.pageSize;
-    if (canSelect && !isUndefined(selecting) && !isUndefined(defaultSize)) {
+    if (canSelect && !isUndefined(selecting)) {
       if (selecting) {
         setPageSize(rows.length);
       } else {
-        setPageSize(defaultSize);
+        setPageSize(globalPageSize);
       }
     }
   }, [
     canSelect,
-    initialState?.pageSize,
+    globalPageSize,
     options.isSelecting,
     rows.length,
     setPageSize,
