@@ -297,19 +297,31 @@ class SystemReleases(Resource):
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
                 releases = json.loads(f.read())
-            releases = releases[:25]
-            for i, release in enumerate(releases):
+
+            filtered_releases = []
+            for release in releases:
+                if settings.general.branch == 'master' and not release['prerelease']:
+                    filtered_releases.append(release)
+                elif settings.general.branch != 'master' and any(not x['prerelease'] for x in filtered_releases):
+                    continue
+                elif settings.general.branch != 'master':
+                    filtered_releases.append(release)
+            if settings.general.branch == 'master':
+                filtered_releases = filtered_releases[:5]
+
+            for i, release in enumerate(filtered_releases):
                 body = release['body'].replace('- ', '').split('\n')[1:]
-                releases[i] = {"body": body,
-                               "name": release['name'],
-                               "date": release['date'][:10],
-                               "prerelease": release['prerelease'],
-                               "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"] else False}
+                filtered_releases[i] = {"body": body,
+                                        "name": release['name'],
+                                        "date": release['date'][:10],
+                                        "prerelease": release['prerelease'],
+                                        "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"]
+                                        else False}
 
         except Exception as e:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-        return jsonify(data=releases)
+        return jsonify(data=filtered_releases)
 
 
 class Series(Resource):
