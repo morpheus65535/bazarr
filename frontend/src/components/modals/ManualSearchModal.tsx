@@ -223,8 +223,11 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   const title = useMemo(() => {
     let title = "Unknown";
+
     if (item) {
-      if (isMovie(item)) {
+      if (item.sceneName) {
+        title = item.sceneName;
+      } else if (isMovie(item)) {
         title = item.title;
       } else {
         title = item.title;
