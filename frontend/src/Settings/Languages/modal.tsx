@@ -114,18 +114,18 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     }
   }, [current.items, updateProfile, languages]);
 
-  const footer = useMemo(
-    () => (
-      <Button
-        onClick={() => {
-          closeModal();
-          update(current);
-        }}
-      >
-        Save
-      </Button>
-    ),
-    [update, current, closeModal]
+  const canSave = current.name.length > 0 && current.items.length > 0;
+
+  const footer = (
+    <Button
+      disabled={!canSave}
+      onClick={() => {
+        closeModal();
+        update(current);
+      }}
+    >
+      Save
+    </Button>
   );
 
   const columns = useMemo<Column<Profile.Item>[]>(
