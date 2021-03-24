@@ -23,8 +23,8 @@ const ReleasesView: FunctionComponent<Props> = () => {
           </Helmet>
           <Row>
             {item.map((v, idx) => (
-              <Col xs={12}>
-                <InfoElement key={BuildKey(idx, v.date)} {...v}></InfoElement>
+              <Col xs={12} key={BuildKey(idx, v.date)}>
+                <InfoElement {...v}></InfoElement>
               </Col>
             ))}
           </Row>
