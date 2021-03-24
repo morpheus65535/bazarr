@@ -109,7 +109,6 @@ export function Reload() {
 
 export function ScrollToTop() {
   window.scrollTo(0, 0);
-  return null;
 }
 
 export * from "./hooks";

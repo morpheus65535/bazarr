@@ -1,5 +1,5 @@
-import React, { FunctionComponent, useMemo } from "react";
-import { Redirect, Route, Switch } from "react-router-dom";
+import React, { FunctionComponent, useEffect, useMemo } from "react";
+import { Redirect, Route, Switch, useHistory } from "react-router-dom";
 import EmptyPage, { RouterEmptyPath } from "../404";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import BlacklistRouter from "../Blacklist/Router";
@@ -23,9 +23,15 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
       return "/settings";
     }
   }, [sonarr, radarr]);
+
+  const history = useHistory();
+
+  useEffect(() => {
+    ScrollToTop();
+  }, [history.location]);
+
   return (
     <div className={className}>
-      <ScrollToTop />
       <Switch>
         <Route exact path="/">
           <Redirect exact to={redirectPath}></Redirect>
