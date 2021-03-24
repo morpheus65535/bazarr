@@ -1,3 +1,4 @@
+import "fontsource-roboto";
 import React, { FunctionComponent } from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
