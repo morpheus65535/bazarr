@@ -58,51 +58,19 @@ export function useMergeArray<T>(
 }
 
 export function useAutoUpdate(action: () => void, interval?: number) {
-  const [, setHandle] = useState<NodeJS.Timeout | undefined>(undefined);
+  useEffect(() => {
+    action();
 
-  const removeTimer = useCallback(() => {
-    setHandle((hd) => {
-      if (hd !== undefined) {
+    let hd: NodeJS.Timeout | null = null;
+    if (interval !== undefined) {
+      hd = setInterval(action, interval);
+    }
+    return () => {
+      if (hd !== null) {
         clearInterval(hd);
       }
-      return undefined;
-    });
-  }, [setHandle]);
-
-  const createTimer = useCallback(
-    (action?: () => void) => {
-      setHandle((hd) => {
-        if (hd !== undefined) {
-          clearInterval(hd);
-        }
-        if (action && interval !== undefined) {
-          return setInterval(action, interval);
-        } else {
-          return undefined;
-        }
-      });
-    },
-    [interval]
-  );
-
-  const update = useCallback(() => {
-    if (document.visibilityState === "visible") {
-      action();
-      createTimer(action);
-    } else if (document.visibilityState === "hidden") {
-      removeTimer();
-    }
-  }, [action, createTimer, removeTimer]);
-
-  useEffect(() => {
-    document.addEventListener("visibilitychange", update);
-    update();
-
-    return () => {
-      document.removeEventListener("visibilitychange", update);
-      removeTimer();
     };
-  }, [update, removeTimer]);
+  }, [action, interval]);
 }
 
 export function useWatcher<T>(
