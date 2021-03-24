@@ -7,7 +7,12 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useMemo } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
@@ -22,7 +27,7 @@ import {
   useShowModal,
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
-import { useAutoUpdate } from "../../utilites";
+import { useAutoUpdate, useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -59,7 +64,17 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const showModal = useShowModal();
 
-  if (isNaN(id) || (!serie.updating && serie.data === null)) {
+  const [valid, setValid] = useState(true);
+
+  const validator = useCallback(() => {
+    if (serie.data === null) {
+      setValid(false);
+    }
+  }, [serie.data]);
+
+  useWhenLoadingFinish(serie, validator);
+
+  if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 

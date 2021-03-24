@@ -104,3 +104,32 @@ export function useAutoUpdate(action: () => void, interval?: number) {
     };
   }, [update, removeTimer]);
 }
+
+export function useWatcher<T>(
+  curr: T,
+  expected: T,
+  onSame?: () => void,
+  onDiff?: () => void
+) {
+  const [, setPrevious] = useState(curr);
+
+  useEffect(() => {
+    setPrevious((prev) => {
+      if (prev !== curr) {
+        if (curr !== expected) {
+          onDiff && onDiff();
+        } else {
+          onSame && onSame();
+        }
+      }
+      return curr;
+    });
+  }, [curr, expected, onDiff, onSame]);
+}
+
+export function useWhenLoadingFinish(
+  state: Readonly<AsyncState<any>>,
+  callback: () => void
+) {
+  return useWatcher(state.updating, true, undefined, callback);
+}
