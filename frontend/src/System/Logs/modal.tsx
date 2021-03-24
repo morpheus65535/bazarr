@@ -7,7 +7,11 @@ const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
   const stack = usePayload<string>(modal.modalKey);
   const result = useMemo(
     () =>
-      stack?.split("\\n").map((v) => <p className="text-nowrap my-1">{v}</p>),
+      stack?.split("\\n").map((v, idx) => (
+        <p key={idx} className="text-nowrap my-1">
+          {v}
+        </p>
+      )),
     [stack]
   );
   return (
