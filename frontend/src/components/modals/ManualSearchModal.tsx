@@ -81,23 +81,6 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
       {
-        accessor: "subtitle",
-        Cell: ({ row, externalUpdate }) => {
-          const result = row.original;
-          return (
-            <AsyncButton
-              size="sm"
-              variant="light"
-              noReset
-              promise={() => onSelect(item!, result)}
-              onSuccess={() => externalUpdate && externalUpdate(row)}
-            >
-              <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
-            </AsyncButton>
-          );
-        },
-      },
-      {
         Header: "Score",
         accessor: (d) => `${d.score}%`,
       },
@@ -157,7 +140,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
               <Dropdown>
                 <Dropdown.Toggle
                   disabled={value.length === 1}
-                  className="dropdown-hidden text-dark opacity-100"
+                  className="dropdown-hidden text-dark"
                   variant={value.length === 1 ? "link" : "light"}
                 >
                   {display}
@@ -179,6 +162,23 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         Cell: (row) => {
           const { matches, dont_matches } = row.row.original;
           return <StateIcon matches={matches} dont={dont_matches}></StateIcon>;
+        },
+      },
+      {
+        accessor: "subtitle",
+        Cell: ({ row, externalUpdate }) => {
+          const result = row.original;
+          return (
+            <AsyncButton
+              size="sm"
+              variant="light"
+              noReset
+              promise={() => onSelect(item!, result)}
+              onSuccess={() => externalUpdate && externalUpdate(row)}
+            >
+              <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
+            </AsyncButton>
+          );
         },
       },
     ],
