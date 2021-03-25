@@ -15,7 +15,7 @@ from get_args import args
 from config import settings, url_sonarr, url_radarr
 from database import database
 from event_handler import event_stream
-from get_languages import alpha2_from_alpha3, language_from_alpha3, alpha3_from_alpha2
+from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
@@ -282,15 +282,16 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     if not subtitles_path.endswith('.srt'):
         logging.error('BAZARR can only delete .srt files.')
         return False
+
+    language_log = language
+    language_string = language_from_alpha2(language)
     if hi in [True, 'true', 'True']:
-        language_log = alpha2_from_alpha3(language) + ':hi'
-        language_string = language_from_alpha3(language) + ' HI'
+        language_log += ':hi'
+        language_string += ' HI'
     elif forced in [True, 'true', 'True']:
-        language_log = alpha2_from_alpha3(language) + ':forced'
-        language_string = language_from_alpha3(language) + ' forced'
-    else:
-        language_log = alpha2_from_alpha3(language)
-        language_string = language_from_alpha3(language)
+        language_log += ':forced'
+        language_string += ' forced'
+        
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -323,7 +324,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
 
 
 def subtitles_apply_mods(language, subtitle_path, mods):
-
+    language = alpha3_from_alpha2(language)
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     elif language == 'zht':
@@ -349,6 +350,7 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    to_lang = alpha3_from_alpha2(to_lang)
     lang_obj = Language(to_lang)
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)

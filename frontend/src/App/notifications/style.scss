@@ -1,0 +1,23 @@
+@import "../../@scss/variable.scss";
+
+.alert-container {
+  position: fixed;
+  display: block;
+  top: 0;
+  right: 0;
+  margin-top: $header-height;
+
+  z-index: 9999;
+
+  .toast-container {
+    padding: 1rem;
+
+    .toast {
+      max-width: 260px;
+      min-width: 200px;
+
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+  }
+}

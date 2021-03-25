@@ -1,6 +1,5 @@
 name: release_minor_and_merge
-on:
-  workflow_dispatch
+on: workflow_dispatch
 
 jobs:
   Release:
@@ -14,7 +13,7 @@ jobs:
         run: |
           echo This action can only be run on development branch, not ${{ github.ref }}
           exit 1
-      
+
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -24,11 +23,11 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: '15.x'
+          node-version: "15.x"
       - run: npm install -D release-it
       - run: npm install -D @release-it/bumper
       - run: npm install -D auto-changelog
-      
+
       - id: latest_release
         uses: pozetroninc/github-action-get-latest-release@master
         with:
@@ -37,8 +36,8 @@ jobs:
 
       - name: Define LAST_VERSION environment variable
         run: |
-            echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
-      
+          echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
+
       - name: Update version and create release
         uses: TheRealWaldo/release-it@v0.2.1
         with:
