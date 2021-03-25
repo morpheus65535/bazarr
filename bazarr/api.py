@@ -1468,8 +1468,10 @@ class EpisodesWanted(Resource):
         for item in data:
             postprocessEpisode(item)
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                      get_exclusion_clause('series'), only_one=True)['count']
+        count = database.execute("SELECT COUNT(*) as count, table_shows.tags, table_shows.seriesType FROM "
+                                 "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                 "table_episodes.sonarrSeriesId WHERE missing_subtitles != '[]'" +
+                                 get_exclusion_clause('series'), only_one=True)['count']
 
         return jsonify(data=data, total=count)
 
