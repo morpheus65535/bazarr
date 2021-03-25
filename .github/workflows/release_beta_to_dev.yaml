@@ -24,18 +24,18 @@ jobs:
       - run: npm install -D release-it
       - run: npm install -D @release-it/bumper
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.working-directory }}
+      #- name: Install dependencies
+      #  run: npm install
+      #  working-directory: ${{ env.working-directory }}
 
-      - name: Remove previous build directory
-        uses: JesseTG/rm@v1.0.2
-        with:
-          path: ${{ env.working-directory }}/build
+      #- name: Remove previous build directory
+      #  uses: JesseTG/rm@v1.0.2
+      #  with:
+      #    path: ${{ env.working-directory }}/build
 
-      - name: Build
-        run: npm run build
-        working-directory: ${{ env.working-directory }}
+      #- name: Build
+      #  run: npm run build
+      #  working-directory: ${{ env.working-directory }}
 
       - id: latest_release
         uses: pozetroninc/github-action-get-latest-release@master
