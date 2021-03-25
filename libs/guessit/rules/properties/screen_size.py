@@ -69,7 +69,7 @@ class PostProcessScreenSize(Rule):
     consequence = AppendMatch
 
     def __init__(self, standard_heights, min_ar, max_ar):
-        super(PostProcessScreenSize, self).__init__()
+        super().__init__()
         self.standard_heights = standard_heights
         self.min_ar = min_ar
         self.max_ar = max_ar

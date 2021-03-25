@@ -297,19 +297,31 @@ class SystemReleases(Resource):
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
                 releases = json.loads(f.read())
-            releases = releases[:5]
-            for i, release in enumerate(releases):
+
+            filtered_releases = []
+            for release in releases:
+                if settings.general.branch == 'master' and not release['prerelease']:
+                    filtered_releases.append(release)
+                elif settings.general.branch != 'master' and any(not x['prerelease'] for x in filtered_releases):
+                    continue
+                elif settings.general.branch != 'master':
+                    filtered_releases.append(release)
+            if settings.general.branch == 'master':
+                filtered_releases = filtered_releases[:5]
+
+            for i, release in enumerate(filtered_releases):
                 body = release['body'].replace('- ', '').split('\n')[1:]
-                releases[i] = {"body": body,
-                               "name": release['name'],
-                               "date": release['date'][:10],
-                               "prerelease": release['prerelease'],
-                               "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"] else False}
+                filtered_releases[i] = {"body": body,
+                                        "name": release['name'],
+                                        "date": release['date'][:10],
+                                        "prerelease": release['prerelease'],
+                                        "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"]
+                                        else False}
 
         except Exception as e:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-        return jsonify(data=releases)
+        return jsonify(data=filtered_releases)
 
 
 class Series(Resource):
@@ -856,7 +868,7 @@ class EpisodesTools(Resource):
     def get(self):
         episodeid = request.args.get('episodeid')
 
-        episode_ext_subs = database.execute("SELECT path, subtitles FROM table_episodes WHERE sonarrEpisodeId=?",
+        episode_ext_subs = database.execute("SELECT path, subtitles, season FROM table_episodes WHERE sonarrEpisodeId=?",
                                             (episodeid,), only_one=True)
         try:
             all_subs = ast.literal_eval(episode_ext_subs['subtitles'])
@@ -875,6 +887,7 @@ class EpisodesTools(Resource):
                     episode_external_subtitles.append({'language': subs[0],
                                                        'path': path_mappings.path_replace(subs[1]),
                                                        'filename': os.path.basename(subs[1]),
+                                                       'season' : episode_ext_subs['season'],
                                                        'videopath': path_mappings.path_replace(episode_ext_subs['path'])})
 
         return jsonify(data=episode_external_subtitles)
@@ -1912,6 +1925,46 @@ class SyncSubtitles(Resource):
 
         return '', 200
 
+class SyncAllSubtitles(Resource):
+    @authenticate
+    def post(self):
+        language = request.form.get('language')
+        media_type = request.form.get('mediaType')
+        season =  request.form.get('season')
+        show =  request.form.get('show')
+        if media_type == 'series' and show:
+            if season:
+                episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId, path, subtitles FROM table_episodes"
+                                                    " WHERE sonarrSeriesId = ?1 AND season = ?2", (show,season,))
+            else:
+                episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId, path, subtitles FROM table_episodes"
+                                                    " WHERE sonarrSeriesId = ?1", (show,))
+
+            ret = ''
+            #ret += json.dumps(episode_metadata)
+            for episode in episode_metadata:
+                #ret += str(episode['sonarrSeriesId']) +" "+str(episode['sonarrEpisodeId'])
+                if episode['subtitles']:
+                    episode.update({"subtitles": ast.literal_eval(episode['subtitles'])})
+                    for subs in episode['subtitles']:
+                        lang = subs[0].split(':')
+                        if lang[0] == "en":
+                            video_path =  path_mappings.path_replace(episode['path'])
+                            subtitles_path =  path_mappings.path_replace(subs[1])
+                            language = language
+                            media_type = media_type
+                            sonarr_series_id = episode['sonarrSeriesId']
+                            sonarr_episode_id = episode['sonarrEpisodeId']
+                            if video_path and subtitles_path and language and media_type and sonarr_series_id and sonarr_episode_id:
+                                logging.info('Batch-syncing subtitle '+subtitles_path+' for series '+str(sonarr_series_id) + ' episode ' + str(sonarr_episode_id))
+                                subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                                             srt_lang=language, media_type=media_type, sonarr_series_id=sonarr_series_id,
+                                             sonarr_episode_id=sonarr_episode_id)
+
+                            #ret+= " " + json.dumps(video_path) + " " + json.dumps(subtitles_path) + " " + json.dumps(language)  + " " + json.dumps(media_type)  + " " + json.dumps(sonarr_series_id)  + " " + json.dumps(sonarr_episode_id)
+            logging.info('Finished batch-sync')
+        return ret, 200
+
 
 class SubMods(Resource):
     @authenticate
@@ -2078,9 +2131,11 @@ api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remo
 api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
+api.add_resource(SyncAllSubtitles, '/sync_all_subtitles')
 api.add_resource(SubMods, '/sub_mods')
 api.add_resource(SubTranslate, '/sub_translate')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
 api.add_resource(BrowseRadarrFS, '/browse_radarr_filesystem')
+

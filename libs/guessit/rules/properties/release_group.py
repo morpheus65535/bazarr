@@ -98,7 +98,7 @@ class DashSeparatedReleaseGroup(Rule):
 
     def __init__(self, value_formatter):
         """Default constructor."""
-        super(DashSeparatedReleaseGroup, self).__init__()
+        super().__init__()
         self.value_formatter = value_formatter
 
     @classmethod
@@ -212,7 +212,7 @@ class SceneReleaseGroup(Rule):
 
     def __init__(self, value_formatter):
         """Default constructor."""
-        super(SceneReleaseGroup, self).__init__()
+        super().__init__()
         self.value_formatter = value_formatter
 
     @staticmethod
@@ -321,7 +321,6 @@ class AnimeReleaseGroup(Rule):
 
         for filepart in marker_sorted(matches.markers.named('path'), matches):
 
-            # pylint:disable=bad-continuation
             empty_group = matches.markers.range(filepart.start,
                                                 filepart.end,
                                                 lambda marker: (marker.name == 'group'

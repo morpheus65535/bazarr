@@ -4,10 +4,7 @@
 Options
 """
 
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no-cover
-    from ordereddict import OrderedDict  # pylint:disable=import-error
+from collections import OrderedDict
 import babelfish
 
 import yaml  # pylint:disable=wrong-import-order
@@ -24,8 +21,8 @@ class OrderedDictYAMLLoader(yaml.SafeLoader):
     def __init__(self, *args, **kwargs):
         yaml.SafeLoader.__init__(self, *args, **kwargs)
 
-        self.add_constructor(u'tag:yaml.org,2002:map', type(self).construct_yaml_map)
-        self.add_constructor(u'tag:yaml.org,2002:omap', type(self).construct_yaml_map)
+        self.add_constructor('tag:yaml.org,2002:map', type(self).construct_yaml_map)
+        self.add_constructor('tag:yaml.org,2002:omap', type(self).construct_yaml_map)
 
     def construct_yaml_map(self, node):
         data = OrderedDict()

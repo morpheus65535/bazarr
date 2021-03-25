@@ -105,7 +105,7 @@ def get_providers():
                     logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                     del tp[provider]
                     set_throttled_providers(str(tp))
-        
+
         # if forced only is enabled: # fixme: Prepared for forced only implementation to remove providers with don't support forced only subtitles
         #     for provider in providers_list:
         #         if provider in PROVIDERS_FORCED_OFF:
@@ -298,4 +298,12 @@ def set_throttled_providers(data):
         handle.write(data)
 
 
-tp = eval(str(get_throttled_providers()))
+try:
+    tp = eval(str(get_throttled_providers()))
+    if not isinstance(tp, dict):
+        raise ValueError('tp should be a dict')
+except Exception:
+    logging.error("Invalid content in throttled_providers.dat. Resetting")
+    # set empty content in throttled_providers.dat
+    set_throttled_providers('')
+    tp = eval(str(get_throttled_providers()))
