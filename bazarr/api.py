@@ -1492,7 +1492,7 @@ class MoviesWanted(Resource):
             postprocessMovie(item)
 
         count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
-                                 get_exclusion_clause('series'), only_one=True)['count']
+                                 get_exclusion_clause('movie'), only_one=True)['count']
 
         return jsonify(data=data, total=count)
 
