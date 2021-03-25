@@ -521,8 +521,9 @@ class SystemLogs(Resource):
                 log["timestamp"] = lin[0]
                 log["type"] = lin[1].rstrip()
                 log["message"] = lin[3]
-                if lin[4] != '\n':
-                    log['exception'] = lin[4].strip('\'').replace('  ', '\u2003\u2003')
+                if len(lin) > 4:
+                    if lin[4] != '\n':
+                        log['exception'] = lin[4].strip('\'').replace('  ', '\u2003\u2003')
                 logs.append(log)
             logs.reverse()
         return jsonify(data=logs)
