@@ -95,8 +95,8 @@ def download_log():
 def series_images(url):
     url = url.strip("/")
     apikey = settings.sonarr.apikey
-    baseUrl = settings.sonarr.base_url.strip("/")
-    url_image = (url_sonarr() + '/api' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    baseUrl = settings.sonarr.base_url
+    url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
