@@ -268,7 +268,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             desired_subtitles_temp = get_profiles_list(profile_id=episode_subtitles['profileId'])
             desired_subtitles_list = []
             if desired_subtitles_temp:
-                for language in ast.literal_eval(desired_subtitles_temp['items']):
+                for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
                         cutoff_lang_temp = get_profile_cutoff(profile_id=episode_subtitles['profileId'])
                         if cutoff_lang_temp:
@@ -380,7 +380,7 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
             desired_subtitles_temp = get_profiles_list(profile_id=movie_subtitles['profileId'])
             desired_subtitles_list = []
             if desired_subtitles_temp:
-                for language in ast.literal_eval(desired_subtitles_temp['items']):
+                for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
                         cutoff_lang_temp = get_profile_cutoff(profile_id=movie_subtitles['profileId'])
                         if cutoff_lang_temp:

@@ -1,7 +1,7 @@
 name: release_beta_to_dev
 on:
   push:
-    branches: [ development ]
+    branches: [development]
 
 jobs:
   Release:
@@ -9,6 +9,7 @@ jobs:
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      working-directory: ./frontend
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -19,10 +20,23 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: '15.x'
+          node-version: "15.x"
       - run: npm install -D release-it
       - run: npm install -D @release-it/bumper
-      
+
+      #- name: Install dependencies
+      #  run: npm install
+      #  working-directory: ${{ env.working-directory }}
+
+      #- name: Remove previous build directory
+      #  uses: JesseTG/rm@v1.0.2
+      #  with:
+      #    path: ${{ env.working-directory }}/build
+
+      #- name: Build
+      #  run: npm run build
+      #  working-directory: ${{ env.working-directory }}
+
       - id: latest_release
         uses: pozetroninc/github-action-get-latest-release@master
         with:
@@ -31,8 +45,8 @@ jobs:
 
       - name: Define LAST_VERSION environment variable
         run: |
-            echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
-      
+          echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
+
       - name: Update version and create release
         uses: TheRealWaldo/release-it@v0.2.1
         with:

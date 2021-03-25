@@ -5,6 +5,7 @@ import logging
 import json
 import requests
 import semver
+from shutil import rmtree
 from zipfile import ZipFile
 
 from get_args import args
@@ -13,7 +14,7 @@ from config import settings
 
 def check_releases():
     releases = []
-    url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases'
+    url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
     try:
         logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
         r = requests.get(url_releases, allow_redirects=True)
@@ -107,12 +108,22 @@ def apply_update():
     update_dir = os.path.join(args.config_dir, 'update')
     bazarr_zip = os.path.join(update_dir, 'bazarr.zip')
     bazarr_dir = os.path.dirname(os.path.dirname(__file__))
+    build_dir = os.path.join(os.path.dirname(__file__), 'frontend', 'build')
+
     if os.path.isdir(update_dir):
         if os.path.isfile(bazarr_zip):
             logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
             try:
                 with ZipFile(bazarr_zip, 'r') as archive:
                     zip_root_directory = archive.namelist()[0]
+
+                    if os.path.isdir(build_dir):
+                        try:
+                            rmtree(build_dir, ignore_errors=True)
+                        except Exception as e:
+                            logging.exception(
+                                'BAZARR was unable to delete the previous build directory during upgrade process.')
+
                     for file in archive.namelist():
                         if file.startswith(zip_root_directory) and file != zip_root_directory and not \
                                 file.endswith('bazarr.py'):
