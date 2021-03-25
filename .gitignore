@@ -16,7 +16,6 @@ bazarr.pid
 
 # Frontend
 node_modules
-frontend/build
 frontend/dist
 frontend/*.local
 frontend/.eslintcache
