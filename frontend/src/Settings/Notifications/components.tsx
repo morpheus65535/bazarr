@@ -98,7 +98,6 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           onClick={() => {
             if (current) {
               current.enabled = false;
-              current.url = null;
               update(current);
             }
             closeModal();
