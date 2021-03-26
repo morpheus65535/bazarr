@@ -25,8 +25,7 @@ jobs:
       - run: npm install -D @release-it/bumper
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.working-directory }}
+        run: npm --prefix ${{ env.working-directory }} install
 
       - name: Remove previous build directory
         uses: JesseTG/rm@v1.0.2
@@ -34,8 +33,7 @@ jobs:
           path: ${{ env.working-directory }}/build
 
       - name: Build
-        run: npm run build
-        working-directory: ${{ env.working-directory }}
+        run: npm --prefix ${{ env.working-directory }} run build
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
