@@ -91,6 +91,7 @@ const MovieView: FunctionComponent<Props> = () => {
         },
       },
       {
+        Header: "Missing Subtitles",
         accessor: "missing_subtitles",
         selectHide: true,
         Cell: (row) => {
