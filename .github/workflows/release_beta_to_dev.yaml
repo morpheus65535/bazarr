@@ -1,55 +1,47 @@
 name: release_beta_to_dev
-on:
-  push:
-    branches: [development]
+on: workflow_dispatch
 
 jobs:
   Release:
     runs-on: ubuntu-latest
     env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      working-directory: ./frontend
+      UI_DIRECTORY: ./frontend
+      FETCH_DEPTH: 15 # Should be enough
     steps:
-      - name: Checkout source code
+      - name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ env.FETCH_DEPTH }}
           ref: development
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions" &&
+          git fetch --depth ${{ env.FETCH_DEPTH }} --tags
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
 
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
           node-version: "15.x"
-      - run: npm install -D release-it
-      - run: npm install -D @release-it/bumper
 
-      - name: Install dependencies
-        run: npm --prefix ${{ env.working-directory }} install
+      - name: Install Global Tools
+        run: npm install -g release-it @release-it/bumper auto-changelog
 
-      - name: Remove previous build directory
-        uses: JesseTG/rm@v1.0.2
-        with:
-          path: ${{ env.working-directory }}/build
+      - name: Install UI Dependencies
+        run: npm install
+        working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Build
-        run: npm --prefix ${{ env.working-directory }} run build
+      - name: Build & Stage UI
+        run: npm run build && git add .
+        working-directory: ${{ env.UI_DIRECTORY }}
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Release commit build
-
-      - id: latest_release
-        uses: pozetroninc/github-action-get-latest-release@master
-        with:
-          repository: ${{ github.repository }}
-          excludes: draft
-
-      - name: Define LAST_VERSION environment variable
-        run: |
-          echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
-
-      - name: Update version and create release
-        uses: TheRealWaldo/release-it@v0.2.1
-        with:
-          json-opts: '{"preRelease": true, "increment": "prepatch", "preReleaseId": "beta"}'
+      - name: Create Release
+        run: release-it --ci --increment prerelease --preRelease=beta

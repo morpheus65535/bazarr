@@ -2,33 +2,41 @@ name: CI
 
 on:
   push:
-    branches: [frontend-upgrade]
+    branches: [development]
   pull_request:
-    branches: [frontend-upgrade]
+    branches: [development]
 
 jobs:
   Frontend:
     runs-on: ubuntu-latest
     env:
-      working-directory: ./frontend
-
-    strategy:
-      matrix:
-        node-version: [14.x]
+      UI_DIRECTORY: ./frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Cache node_modules
+        uses: actions/cache@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "15.x"
 
       - name: Install dependencies
         run: npm install
-        working-directory: ${{ env.working-directory }}
+        working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Build
         run: npm run build
-        working-directory: ${{ env.working-directory }}
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "ui"
+          path: "${{ env.UI_DIRECTORY }}/build"
