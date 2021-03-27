@@ -11,6 +11,9 @@ bazarr.pid
 /bin
 /.vscode
 
+/package.json
+/package-lock.json
+
 # Allow
 !*.dll
 
@@ -20,3 +23,4 @@ frontend/dist
 frontend/*.local
 frontend/.eslintcache
 frontend/.idea/*
+frontend/**/*.map

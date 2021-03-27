@@ -1,0 +1,7 @@
+{
+  "template": "./changelog.hbs",
+  "unreleased": true,
+  "commitLimit": true,
+  "ignoreCommitPattern": "^Release.*",
+  "sortCommits": "date-desc"
+}
