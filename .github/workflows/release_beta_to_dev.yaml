@@ -9,6 +9,12 @@ jobs:
       UI_DIRECTORY: ./frontend
       FETCH_DEPTH: 15 # Should be enough
     steps:
+      - name: Validate branch
+        if: ${{ github.ref != 'refs/heads/development' }}
+        run: |
+          echo This action can only be run on development branch, not ${{ github.ref }}
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
