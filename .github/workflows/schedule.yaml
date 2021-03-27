@@ -1,0 +1,50 @@
+name: Schedule Trigger
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  Release-Nightly:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REPO: "morpheus65535/bazarr"
+      GIT_BRANCH: "development"
+      WORKFLOW_TO_TRIGGER: "release_beta_to_dev.yaml"
+    steps:
+      - name: Get Previous Version
+        uses: actions/cache@v2
+        with:
+          path: ./LAST_VERSION_SAVED
+          key: bazarr-${{ env.GIT_BRANCH }}-${{ env.WORKFLOW_TO_TRIGGER }}-trigger
+      - name: Execute
+        run: |
+          echo "**** Checking branch ${{ env.GIT_BRANCH }} ****"
+          LATEST_VERSION=$(git ls-remote https://github.com/${{ env.GITHUB_REPO }}.git refs/heads/${{ env.GIT_BRANCH }} | cut -f1)
+          if [[ $? != 0 ]]; then
+            echo "**** Cannot get latest hash from GitHub, exiting... ****"
+            exit 1
+          fi
+          FILE_TO_CHECK='./LAST_VERSION_SAVED'
+          PREV_VERSION=0
+          [[ -f $FILE_TO_CHECK ]] && PREV_VERSION=$(cat $FILE_TO_CHECK)
+          echo "**** Previous version: $PREV_VERSION ****"
+          echo "**** Latest version: $LATEST_VERSION ****"
+          echo $LATEST_VERSION > $FILE_TO_CHECK
+          if [[ 16#$LATEST_VERSION -eq 16#$PREV_VERSION  ]]; then
+            echo "**** No Changes Found ****"
+          else
+            echo "**** Changes Found ****"
+            if curl -sfX GET https://raw.githubusercontent.com/${{ env.GITHUB_REPO }}/${{ env.GIT_BRANCH }}/.github/workflows/${{ env.WORKFLOW_TO_TRIGGER }} > /dev/null 2>&1; then
+              echo "**** Workflow exists. Triggering workflow for branch ${{ env.GIT_BRANCH }} ****"
+              curl -iX POST \
+                  -H "Authorization: token ${{ secrets.WF_GITHUB_TOKEN }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -d "{\"ref\":\"refs/heads/${{ env.GIT_BRANCH }}\"}" \
+                  https://api.github.com/repos/${{ env.GITHUB_REPO }}/actions/workflows/${{ env.WORKFLOW_TO_TRIGGER }}/dispatches
+            else
+              echo "**** Workflow doesn't exist! Skipping... ****"
+            fi
+          fi
+          
+
