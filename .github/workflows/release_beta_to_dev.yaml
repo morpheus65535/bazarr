@@ -1,7 +1,5 @@
 name: release_beta_to_dev
-on:
-  push:
-    branches: [development]
+on: workflow_dispatch
 
 jobs:
   Release:
