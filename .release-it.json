@@ -1,7 +1,8 @@
 {
   "git": {
     "requireCleanWorkingDir": false,
-    "changelog": "auto-changelog --stdout"
+    "changelog": "auto-changelog --stdout",
+    "tagName": "v${version}"
   },
   "github": {
     "release": true,

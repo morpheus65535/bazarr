@@ -7,6 +7,7 @@ jobs:
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       UI_DIRECTORY: ./frontend
+      ASSET_DIRECTORY: ./__builds__
       FETCH_DEPTH: 15 # Should be enough
     steps:
       - name: Checkout
@@ -42,6 +43,12 @@ jobs:
       - name: Build & Stage UI
         run: npm run build && git add .
         working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Save UI to Asset
+        run: |
+          mkdir -p ../.${{ env.ASSET_DIRECTORY }} &&
+          zip -r ../.${{ env.ASSET_DIRECTORY }}/ui.zip ./ -x '*.map' -b $(mktemp -d)
+        working-directory: ${{ env.UI_DIRECTORY }}/build
 
       - name: Create Release
         run: release-it --ci --increment prerelease --preRelease=beta
