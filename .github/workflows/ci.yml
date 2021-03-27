@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [development]
   paths:
-  - frontend/**
-  - .github/workflows/ci.yml
+    - frontend/**
+    - .github/workflows/ci.yml
 
 jobs:
   Frontend:
