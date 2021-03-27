@@ -12,10 +12,6 @@ jobs:
     env:
       UI_DIRECTORY: ./frontend
 
-    strategy:
-      matrix:
-        node-version: [14.x]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -27,10 +23,10 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-modules-
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "15.x"
 
       - name: Install dependencies
         run: npm install
@@ -43,4 +39,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: "ui"
-          path: "${{ env.UI_DIRECTORY }}/frontend/build"
+          path: "${{ env.UI_DIRECTORY }}/build"
