@@ -5,6 +5,9 @@ on:
     branches: [development]
   pull_request:
     branches: [development]
+  paths:
+  - frontend/**
+  - .github/workflows/ci.yml
 
 jobs:
   Frontend:
