@@ -11,6 +11,8 @@ bazarr.pid
 /bin
 /.vscode
 
+# CI
+/__builds__
 /package.json
 /package-lock.json
 
