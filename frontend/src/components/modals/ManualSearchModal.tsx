@@ -140,10 +140,10 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
               <Dropdown>
                 <Dropdown.Toggle
                   disabled={value.length === 1}
-                  className="dropdown-hidden text-dark"
+                  className="dropdown-hidden text-dark dropdown-toggle-wrap"
                   variant={value.length === 1 ? "link" : "light"}
                 >
-                  {display}
+                  <span>{display}</span>
                 </Dropdown.Toggle>
                 <Dropdown.Menu>{items}</Dropdown.Menu>
               </Dropdown>
