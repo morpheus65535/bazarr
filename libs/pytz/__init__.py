@@ -22,8 +22,8 @@ from pytz.tzfile import build_tzinfo
 
 
 # The IANA (nee Olson) database is updated several times a year.
-OLSON_VERSION = '2019c'
-VERSION = '2019.3'  # pip compatible version number.
+OLSON_VERSION = '2021a'
+VERSION = '2021.1'  # pip compatible version number.
 __version__ = VERSION
 
 OLSEN_VERSION = OLSON_VERSION  # Old releases had this misspelling
@@ -34,7 +34,7 @@ __all__ = [
     'NonExistentTimeError', 'UnknownTimeZoneError',
     'all_timezones', 'all_timezones_set',
     'common_timezones', 'common_timezones_set',
-    'BaseTzInfo',
+    'BaseTzInfo', 'FixedOffset',
 ]
 
 
@@ -111,6 +111,13 @@ def open_resource(name):
 def resource_exists(name):
     """Return true if the given resource exists"""
     try:
+        if os.environ.get('PYTZ_SKIPEXISTSCHECK', ''):
+            # In "standard" distributions, we can assume that
+            # all the listed timezones are present. As an
+            # import-speed optimization, you can set the
+            # PYTZ_SKIPEXISTSCHECK flag to skip checking
+            # for the presence of the resource file on disk.
+            return True
         open_resource(name).close()
         return True
     except IOError:
@@ -263,8 +270,8 @@ def _UTC():
     module global.
 
     These examples belong in the UTC class above, but it is obscured; or in
-    the README.txt, but we are not depending on Python 2.4 so integrating
-    the README.txt examples with the unit tests is not trivial.
+    the README.rst, but we are not depending on Python 2.4 so integrating
+    the README.rst examples with the unit tests is not trivial.
 
     >>> import datetime, pickle
     >>> dt = datetime.datetime(2005, 3, 1, 14, 13, 21, tzinfo=utc)
@@ -683,6 +690,7 @@ all_timezones = \
  'America/North_Dakota/Beulah',
  'America/North_Dakota/Center',
  'America/North_Dakota/New_Salem',
+ 'America/Nuuk',
  'America/Ojinaga',
  'America/Panama',
  'America/Pangnirtung',
@@ -1210,7 +1218,6 @@ common_timezones = \
  'America/Fort_Nelson',
  'America/Fortaleza',
  'America/Glace_Bay',
- 'America/Godthab',
  'America/Goose_Bay',
  'America/Grand_Turk',
  'America/Grenada',
@@ -1264,6 +1271,7 @@ common_timezones = \
  'America/North_Dakota/Beulah',
  'America/North_Dakota/Center',
  'America/North_Dakota/New_Salem',
+ 'America/Nuuk',
  'America/Ojinaga',
  'America/Panama',
  'America/Pangnirtung',
@@ -1412,7 +1420,6 @@ common_timezones = \
  'Australia/Adelaide',
  'Australia/Brisbane',
  'Australia/Broken_Hill',
- 'Australia/Currie',
  'Australia/Darwin',
  'Australia/Eucla',
  'Australia/Hobart',
