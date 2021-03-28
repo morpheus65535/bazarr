@@ -126,7 +126,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
           const items = useMemo(
             () =>
-              value.slice(1).map((v, idx) => (
+              value.map((v, idx) => (
                 <Dropdown.Item key={idx} disabled className="text-dark">
                   {v}
                 </Dropdown.Item>
@@ -139,9 +139,10 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             return (
               <Dropdown>
                 <Dropdown.Toggle
-                  disabled={value.length === 1}
                   className="dropdown-hidden text-dark dropdown-toggle-wrap"
-                  variant={value.length === 1 ? "link" : "light"}
+                  title={display}
+                  variant={"light"}
+                  size={"sm"}
                 >
                   <span>{display}</span>
                 </Dropdown.Toggle>
