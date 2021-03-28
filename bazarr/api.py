@@ -515,17 +515,20 @@ class SystemLogs(Resource):
     def get(self):
         logs = []
         with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
-            for line in file.readlines():
-                lin = line.split('|')
-                if len(lin) > 4:
+            raw_lines = file.read()
+            lines = raw_lines.split('|\n')
+            for line in lines:
+                raw_message = line.split('|')
+                raw_message_len = len(raw_message)
+                if raw_message_len > 3:
                     log = dict()
-                    log["timestamp"] = lin[0]
-                    log["type"] = lin[1].rstrip()
-                    log["message"] = lin[3]
-                    if lin[4] != '\n':
-                        log['exception'] = lin[4].strip('\'').replace('  ', '\u2003\u2003')
-
+                    log["timestamp"] = raw_message[0]
+                    log["type"] = raw_message[1].rstrip()
+                    log["message"] = raw_message[3]
+                    if raw_message_len > 4 and raw_message[4] != '\n':
+                        log['exception'] = raw_message[4].strip('\'').replace('  ', '\u2003\u2003')
                 logs.append(log)
+
             logs.reverse()
         return jsonify(data=logs)
 
