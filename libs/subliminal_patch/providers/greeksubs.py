@@ -70,7 +70,14 @@ class GreekSubsProvider(Provider):
         search_link = self.server_url + 'en/view/' + imdb_id
 
         r = self.session.get(search_link, timeout=30)
-        r.raise_for_status()
+
+        # 404 is returned if the imdb_id was not found
+        if r.status_code != 404:
+            r.raise_for_status()
+
+        if r.status_code != 200:
+            logger.debug('No subtitles found')
+            return subtitles
 
         soup_page = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
 

@@ -27,7 +27,7 @@ def website(config):
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE).string_defaults(ignore_case=True)
     rebulk.defaults(name="website")
 
-    with resource_stream('guessit', 'tlds-alpha-by-domain.txt') as tld_file:
+    with resource_stream('guessit', 'data/tlds-alpha-by-domain.txt') as tld_file:
         tlds = [
             tld.strip().decode('utf-8')
             for tld in tld_file.readlines()

@@ -8,7 +8,6 @@ import inspect
 from itertools import groupby
 from logging import getLogger
 
-import six
 from .utils import is_iterable
 
 from .toposort import toposort
@@ -18,8 +17,7 @@ from . import debug
 log = getLogger(__name__).log
 
 
-@six.add_metaclass(ABCMeta)
-class Consequence(object):
+class Consequence(metaclass=ABCMeta):
     """
     Definition of a consequence to apply.
     """
@@ -40,8 +38,7 @@ class Consequence(object):
         pass
 
 
-@six.add_metaclass(ABCMeta)
-class Condition(object):
+class Condition(metaclass=ABCMeta):
     """
     Definition of a condition to check.
     """
@@ -60,8 +57,7 @@ class Condition(object):
         pass
 
 
-@six.add_metaclass(ABCMeta)
-class CustomRule(Condition, Consequence):
+class CustomRule(Condition, Consequence, metaclass=ABCMeta):
     """
     Definition of a rule to apply
     """
@@ -243,7 +239,7 @@ class Rules(list):
     """
 
     def __init__(self, *rules):
-        super(Rules, self).__init__()
+        super().__init__()
         self.load(*rules)
 
     def load(self, *rules):

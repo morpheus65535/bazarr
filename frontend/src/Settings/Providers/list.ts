@@ -205,4 +205,3 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   { key: "yify", name: "YIFY Subtitles" },
   { key: "zimuku", description: "Chinese Subtitles Provider" },
 ];
-

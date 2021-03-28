@@ -3,7 +3,7 @@
 """
 size property
 """
-import re
+from rebulk.remodule import re
 
 from rebulk import Rebulk
 

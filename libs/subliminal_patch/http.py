@@ -362,7 +362,7 @@ def patch_create_connection():
                     except dns.exception.DNSException:
                         logger.warning("DNS: Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
 
-        logger.debug("DNS: Falling back to default DNS or IP on %s", host)
+        # logger.debug("DNS: Falling back to default DNS or IP on %s", host) <-- commented because it makes way too much noise in debug logs
         return _orig_create_connection((host, port), *args, **kwargs)
 
     patch_create_connection._sz_patched = True

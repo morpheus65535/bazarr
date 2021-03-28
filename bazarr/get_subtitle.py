@@ -22,7 +22,7 @@ from subliminal_patch.score import compute_score
 from subliminal_patch.subtitle import Subtitle
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
     alpha2_from_language, alpha3_from_language
-from config import settings
+from config import settings, get_array_from
 from helper import path_mappings, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, get_binary, get_blacklist, notify_sonarr, notify_radarr
@@ -115,10 +115,6 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         hi = "force HI"
     else:
         hi = "force non-HI"
-    language_set = set()
-
-    if not isinstance(language, list):
-        language = [language]
 
     if forced == "True":
         providers_auth['podnapisi']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
@@ -129,7 +125,15 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         providers_auth['subscene']['only_foreign'] = False
         providers_auth['opensubtitles']['only_foreign'] = False
 
+    language_set = set()
+
+    if not isinstance(language, list):
+        language = [language]
+
     for l in language:
+        # Always use alpha2 in API Request
+        l = alpha3_from_alpha2(l)
+
         if l == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
@@ -190,7 +194,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.info("BAZARR All providers are throttled")
             return None
 
-        subz_mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.items():
@@ -323,12 +327,15 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_set = set()
 
     # where [3] is items list of dict(id, lang, forced, hi)
-    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
+    language_items = get_profiles_list(profile_id=int(profileId))['items']
 
     for language in language_items:
-        lang_id, lang, forced, hi, audio_exclude = language.values()
+        forced = language['forced']
+        hi = language['hi']
+        audio_exclude = language['audio_exclude']
+        language = language['language']
 
-        lang = alpha3_from_alpha2(lang)
+        lang = alpha3_from_alpha2(language)
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
@@ -433,9 +440,6 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 if not initial_hi_match:
                     initial_hi = None
 
-                if initial_hi_match:
-                    matches.add('hearing_impaired')
-
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
                     not_matched = scores - matches
@@ -455,23 +459,25 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                             if s_item.strip():
                                 releases.append(s_item)
 
-                if len(releases) == 0:
-                    releases = ['n/a']
-
                 if s.uploader and s.uploader.strip():
                     s_uploader = s.uploader.strip()
                 else:
-                    s_uploader = 'n/a'
+                    s_uploader = None
 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
-                         score_without_hash=score_without_hash, forced=str(s.language.forced),
-                         language=str(s.language.basename), hearing_impaired=str(s.hearing_impaired),
+                         score_without_hash=score_without_hash,
+                         forced=str(s.language.forced),
+                         language=str(s.language.basename),
+                         hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
-                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
-                         release_info=releases, uploader=s_uploader))
+                         url=s.page_link,
+                         matches=list(matches),
+                         dont_matches=list(not_matched),
+                         release_info=releases,
+                         uploader=s_uploader))
 
             final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
                                      reverse=True)
@@ -493,7 +499,15 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
-    subtitle.mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+    if hi == 'True':
+        subtitle.language.hi = True
+    else:
+        subtitle.language.hi = False
+    if forced == 'True':
+        subtitle.language.forced = True
+    else:
+        subtitle.language.forced = False
+    subtitle.mods = get_array_from(settings.general.subzero_mods)
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
@@ -654,7 +668,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     sub = Subtitle(
         lang_obj,
-        mods=settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        mods = get_array_from(settings.general.subzero_mods)
     )
 
     sub.content = subtitle.read()
@@ -754,7 +768,7 @@ def series_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -811,7 +825,7 @@ def episode_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -871,7 +885,7 @@ def movies_download_subtitles(no):
                     audio_language = 'None'
 
                 result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                           str(alpha3_from_alpha2(language.split(':')[0])),
+                                           language.split(':')[0],
                                            audio_language,
                                            "True" if language.endswith(':hi') else "False",
                                            "True" if language.endswith(':forced') else "False",
@@ -941,7 +955,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1009,7 +1023,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1306,7 +1320,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace(episode['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,
@@ -1365,7 +1379,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,
