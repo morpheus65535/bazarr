@@ -6,7 +6,8 @@
   },
   "github": {
     "release": true,
-    "releaseName": "v${version}"
+    "releaseName": "v${version}",
+    "assets": ["__builds__/*.zip"]
   },
   "npm": {
     "publish": false,

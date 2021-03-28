@@ -1,12 +1,19 @@
-name: release_minor_and_merge
-on: workflow_dispatch
+name: release_dev_to_master
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: "Increment Type (major, minor, patch)"
+        required: true
+        default: "patch"
 
 jobs:
   Release:
     runs-on: ubuntu-latest
     env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      UI_DIRECTORY: ./frontend
+      ASSET_DIRECTORY: ./__builds__
     steps:
       - name: Validate branch
         if: ${{ github.ref != 'refs/heads/development' }}
@@ -20,33 +27,30 @@ jobs:
           fetch-depth: 0
           ref: development
 
+      - name: Setup Git
+        run: git config --global user.name "github-actions"
+
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
           node-version: "15.x"
-      - run: npm install -D release-it
-      - run: npm install -D @release-it/bumper
-      - run: npm install -D auto-changelog
 
-      - id: latest_release
-        uses: pozetroninc/github-action-get-latest-release@master
-        with:
-          repository: ${{ github.repository }}
-          excludes: prerelease, draft
+      - name: Install Global Tools
+        run: npm install -g release-it @release-it/bumper auto-changelog
 
-      - name: Define LAST_VERSION environment variable
+      - name: Save UI to Asset
         run: |
-          echo "LAST_VERSION=${{steps.latest_release.outputs.release}}" >> $GITHUB_ENV
+          mkdir -p ../.${{ env.ASSET_DIRECTORY }} &&
+          zip -r ../.${{ env.ASSET_DIRECTORY }}/ui.zip ./ -x '*.map' -b $(mktemp -d)
+        working-directory: ${{ env.UI_DIRECTORY }}/build
 
-      - name: Update version and create release
-        uses: TheRealWaldo/release-it@v0.2.1
-        with:
-          json-opts: '{"increment": "minor"}'
+      - name: Create Release
+        run: release-it --ci --increment ${{ github.event.inputs.increment }}
   Merge:
     needs: Release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Merge development -> master
