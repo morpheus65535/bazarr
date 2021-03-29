@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useHistory } from "react-router";
 import { mergeArray } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -11,6 +12,11 @@ export function useBaseUrl(slash: boolean = false) {
     }
     return url;
   }
+}
+
+export function useGotoHomepage() {
+  const history = useHistory();
+  return useCallback(() => history.push("/"), [history]);
 }
 
 export function useCanUpdateInject() {
