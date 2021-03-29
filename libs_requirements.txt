@@ -3,7 +3,7 @@
 # $ PIP_TARGET=./libs/ pip install -r libs_requirements.txt --upgrade
 # Remove indirect dependencies that have platform specific versions.
 # These are listed in requirements.txt and are installed during bazarr install
-# $ rm -rf ./libs/*webrtcvad* ./libs/numpy/
+# $ rm -rf ./libs/*webrtcvad* ./libs/numpy*
 # Next step is optional, but probably a good plan for the tree that
 # is used to create release tarballs/installers
 # Remove pip/installer info files, not needed to run the application
@@ -78,8 +78,6 @@ Markdown==2.6.11  # Required-by: apprise
 oauthlib==2.1.0  # Required-by: requests-oauthlib -> apprise
 # pip found requests-oauthlib==1.3.0
 requests-oauthlib==1.0.0  # Required-by: apprise
-# pip found pytz==2021.1
-pytz==2019.3  # Required-by: tzlocal, Flask-RESTful, APScheduler
 # pip found PyYAML==5.4.1
 PyYAML==5.1  # Required-by: vcrpy, knowit, appris
 # pip found six==1.15.0
@@ -105,6 +103,7 @@ html5lib==1.0.1           # Required-by: BeautifulSoup4 vendored had tests inclu
 idna==2.8                 # Required-by: yarl, requests
 itsdangerous==1.1.0       # Required-by: Flask, Flask-DebugToolbar
 MarkupSafe==1.1.1         # Required-by: Jinja2
+pytz==2021.1              # Required-by: tzlocal, Flask-RESTful, APScheduler
 rebulk==3.0.1             # Required-by: guessit
 tzlocal==2.1              # Required-by: APScheduler
 websocket-client==0.44.0  # Not in pip freeze, Optional Required-by: python-engineio
