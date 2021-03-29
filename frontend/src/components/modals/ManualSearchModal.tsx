@@ -309,7 +309,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   );
 
   return (
-    <OverlayTrigger overlay={popover}>
+    <OverlayTrigger overlay={popover} placement={"left"}>
       <FontAwesomeIcon icon={icon} color={color}></FontAwesomeIcon>
     </OverlayTrigger>
   );
