@@ -1,8 +1,13 @@
 {
+  "git": {
+    "requireCleanWorkingDir": false,
+    "changelog": "auto-changelog --stdout",
+    "tagName": "v${version}"
+  },
   "github": {
     "release": true,
     "releaseName": "v${version}",
-    "releaseNotes": "echo \"From newest to oldest:\" && git log --pretty=format:\"- %s [%h](${repo.protocol}://${repo.host}/${repo.owner}/${repo.project}/commit/%H)\" --no-merges --grep \"^Release\" --invert-grep $LAST_VERSION..HEAD"
+    "assets": ["__builds__/*.zip"]
   },
   "npm": {
     "publish": false,

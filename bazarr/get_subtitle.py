@@ -768,7 +768,7 @@ def series_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -825,7 +825,7 @@ def episode_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -885,7 +885,7 @@ def movies_download_subtitles(no):
                     audio_language = 'None'
 
                 result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                           str(alpha3_from_alpha2(language.split(':')[0])),
+                                           language.split(':')[0],
                                            audio_language,
                                            "True" if language.endswith(':hi') else "False",
                                            "True" if language.endswith(':forced') else "False",
@@ -955,7 +955,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1023,7 +1023,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1320,7 +1320,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace(episode['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,
@@ -1379,7 +1379,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,

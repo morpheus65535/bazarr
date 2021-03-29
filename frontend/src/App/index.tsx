@@ -1,3 +1,4 @@
+import { faSadCry as fasSadCry } from "@fortawesome/free-regular-svg-icons";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
@@ -64,21 +65,39 @@ const App: FunctionComponent<Props> = () => {
   } else if (typeof initialized === "string") {
     return <InitializationErrorView>{initialized}</InitializationErrorView>;
   }
-
-  return (
-    <SidebarToggleContext.Provider value={toggleSidebar}>
-      <Row noGutters className="header-container">
-        <Header></Header>
-      </Row>
-      <Row noGutters className="flex-nowrap">
-        <Sidebar open={sidebar}></Sidebar>
-        <ModalProvider>
-          <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
-        </ModalProvider>
-      </Row>
-      <NotificationContainer></NotificationContainer>
-    </SidebarToggleContext.Provider>
-  );
+  try {
+    return (
+      <SidebarToggleContext.Provider value={toggleSidebar}>
+        <Row noGutters className="header-container">
+          <Header></Header>
+        </Row>
+        <Row noGutters className="flex-nowrap">
+          <Sidebar open={sidebar}></Sidebar>
+          <ModalProvider>
+            <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+          </ModalProvider>
+        </Row>
+        <NotificationContainer></NotificationContainer>
+      </SidebarToggleContext.Provider>
+    );
+  } catch (error) {
+    // TODO: Extract me!
+    return (
+      <Container className="d-flex flex-column align-items-center my-5">
+        <h1>
+          <FontAwesomeIcon className="mr-2" icon={fasSadCry}></FontAwesomeIcon>
+          Ouch! UI is crashed!
+        </h1>
+        <Button
+          href="https://github.com/morpheus65535/bazarr/issues/new/choose"
+          target="_blank"
+          variant="light"
+        >
+          Report Issue
+        </Button>
+      </Container>
+    );
+  }
 };
 
 const InitializationErrorView: FunctionComponent<{

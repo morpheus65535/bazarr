@@ -126,7 +126,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
           const items = useMemo(
             () =>
-              value.slice(1).map((v, idx) => (
+              value.map((v, idx) => (
                 <Dropdown.Item key={idx} disabled className="text-dark">
                   {v}
                 </Dropdown.Item>
@@ -139,11 +139,12 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             return (
               <Dropdown>
                 <Dropdown.Toggle
-                  disabled={value.length === 1}
-                  className="dropdown-hidden text-dark"
-                  variant={value.length === 1 ? "link" : "light"}
+                  className="dropdown-hidden text-dark dropdown-toggle-wrap"
+                  title={display}
+                  variant={"light"}
+                  size={"sm"}
                 >
-                  {display}
+                  <span>{display}</span>
                 </Dropdown.Toggle>
                 <Dropdown.Menu>{items}</Dropdown.Menu>
               </Dropdown>
@@ -308,7 +309,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   );
 
   return (
-    <OverlayTrigger overlay={popover}>
+    <OverlayTrigger overlay={popover} placement={"left"}>
       <FontAwesomeIcon icon={icon} color={color}></FontAwesomeIcon>
     </OverlayTrigger>
   );

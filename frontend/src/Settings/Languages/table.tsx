@@ -1,4 +1,5 @@
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { cloneDeep } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
@@ -17,7 +18,7 @@ import { anyCutoff } from "./options";
 const Table: FunctionComponent = () => {
   const originalProfiles = useProfiles();
 
-  const [profiles, setProfiles] = useState([...originalProfiles]);
+  const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
 
   const nextProfileId = useMemo(
     () =>
@@ -56,7 +57,7 @@ const Table: FunctionComponent = () => {
   const updateRow = useCallback<TableUpdater<Profile.Languages>>(
     (row, item?: Profile.Languages) => {
       if (item) {
-        showModal("profile", item);
+        showModal("profile", cloneDeep(item));
       } else {
         const list = [...profiles];
         list.splice(row.index, 1);

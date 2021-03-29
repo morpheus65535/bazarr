@@ -219,15 +219,12 @@ def get_settings():
                         value = []
                     else:
                         continue
+                elif key in array_keys:
+                    value = get_array_from(value)
                 elif value == 'True':
                     value = True
                 elif value == 'False':
                     value = False
-                elif (value[0] == '[' and value[-1] == ']'):
-                    value = ast.literal_eval(value)
-                elif value.find(',') != -1:
-                    value = value.split(',')
-                    pass
                 else:
                     if key not in str_keys:
                         try:
@@ -458,8 +455,10 @@ def get_array_from(property):
     if property:
         if '[' in property:
             return ast.literal_eval(property)
-        else:
+        elif ',' in property:
             return property.split(',')
+        else:
+            return [property]
     else:
         return []
 

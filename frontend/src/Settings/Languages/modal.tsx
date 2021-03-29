@@ -45,11 +45,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 
   const languages = useEnabledLanguages();
 
-  const [current, setProfile] = useState(profile ?? createDefaultProfile());
+  const [current, setProfile] = useState(createDefaultProfile);
 
   useEffect(() => {
     if (profile) {
       setProfile(profile);
+    } else {
+      setProfile(createDefaultProfile);
     }
   }, [profile]);
 
@@ -71,9 +73,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       key: K,
       value: Profile.Languages[K]
     ) => {
-      const object = { ...current };
-      object[key] = value;
-      setProfile(object);
+      const newProfile = { ...current };
+      newProfile[key] = value;
+      setProfile(newProfile);
     },
     [current]
   );
@@ -140,14 +142,15 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         Cell: ({ value, row, externalUpdate }) => {
           const code = value;
           const item = row.original;
-          const lang = useMemo(() => languages.find((l) => l.code2 === code), [
-            code,
-          ]);
+          const lang = useMemo(
+            () => languages.find((l) => l.code2 === code) ?? null,
+            [code]
+          );
           return (
             <div style={{ width: "8rem" }}>
               <LanguageSelector
                 options={languages}
-                defaultValue={lang}
+                value={lang}
                 onChange={(l) => {
                   if (l) {
                     item.language = l.code2;
@@ -168,7 +171,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
             <Form.Check
               custom
               id={`${item.language}-forced`}
-              defaultChecked={value === "True"}
+              checked={value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
                 externalUpdate && externalUpdate(row, item);
@@ -186,7 +189,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
             <Form.Check
               custom
               id={`${item.language}-hi`}
-              defaultChecked={value === "True"}
+              checked={value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
                 externalUpdate && externalUpdate(row, item);
@@ -204,7 +207,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
             <Form.Check
               custom
               id={`${item.language}-audio`}
-              defaultChecked={value === "True"}
+              checked={value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";
                 externalUpdate && externalUpdate(row, item);
@@ -235,7 +238,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Form.Control
           type="text"
           placeholder="Name"
-          value={current?.name}
+          value={current.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}
@@ -245,7 +248,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <SimpleTable
           responsive={false}
           columns={columns}
-          data={current?.items ?? []}
+          data={current.items}
           externalUpdate={updateRow}
         ></SimpleTable>
         <Button block variant="light" onClick={addItem}>
@@ -256,7 +259,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         <Selector
           clearable
           options={cutoff}
-          value={current?.cutoff}
+          value={current.cutoff}
           onChange={(num) => updateProfile("cutoff", num)}
         ></Selector>
         <Message>Ignore others if existing</Message>

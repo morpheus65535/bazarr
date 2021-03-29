@@ -19,3 +19,22 @@ body {
 .progress-bar {
   cursor: default;
 }
+
+.dropdown-toggle-wrap {
+  position: relative;
+  &::after {
+    position: absolute;
+    right: 0.1rem;
+    bottom: 50%;
+  }
+  span {
+    display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 500px;
+  }
+}
+
+#manual-search-matches-info {
+  width: 100%;
+}

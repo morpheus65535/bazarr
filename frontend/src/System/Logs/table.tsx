@@ -11,12 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isUndefined } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column, Row } from "react-table";
-import {
-  ActionButton,
-  DateFormatter,
-  PageTable,
-  useShowModal,
-} from "../../components";
+import { ActionButton, PageTable, useShowModal } from "../../components";
 import SystemLogModal from "./modal";
 
 interface Props {
@@ -58,10 +53,9 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
         accessor: "message",
       },
       {
-        Header: "Time",
+        Header: "Date",
         accessor: "timestamp",
         className: "text-nowrap",
-        Cell: (row) => <DateFormatter>{row.value}</DateFormatter>,
       },
       {
         accessor: "exception",
