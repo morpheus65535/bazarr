@@ -10,10 +10,12 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
+import { isNull, isUndefined } from "lodash";
 import moment from "moment";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   OverlayTrigger,
+  OverlayTriggerProps,
   Popover,
   Spinner,
   SpinnerProps,
@@ -145,6 +147,35 @@ export const LanguageText: FunctionComponent<LanguageTextProps> = ({
     <span title={text.name} className={className}>
       {result}
     </span>
+  );
+};
+
+interface TextPopoverProps {
+  children: React.ReactElement<any, any>;
+  text: string | undefined | null;
+  placement?: OverlayTriggerProps["placement"];
+  delay?: number;
+}
+
+export const TextPopover: FunctionComponent<TextPopoverProps> = ({
+  children,
+  text,
+  placement,
+  delay,
+}) => {
+  if (isNull(text) || isUndefined(text)) {
+    return children;
+  }
+
+  const popover = (
+    <Popover className="mw-100 py-1" id={text}>
+      <span className="mx-2">{text}</span>
+    </Popover>
+  );
+  return (
+    <OverlayTrigger delay={delay} overlay={popover} placement={placement}>
+      {children}
+    </OverlayTrigger>
   );
 };
 
