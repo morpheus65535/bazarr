@@ -282,7 +282,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
 
   const popover = useMemo(
     () => (
-      <Popover id="manual-search-matches-info">
+      <Popover className="w-100" id="manual-search-matches-info">
         <Popover.Content>
           <Container fluid>
             <Row>

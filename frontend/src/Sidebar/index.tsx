@@ -11,7 +11,7 @@ import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
-import { useAutoUpdate } from "../utilites/hooks";
+import { useAutoUpdate, useGotoHomepage } from "../utilites/hooks";
 import {
   BadgesContext,
   CollapseItem,
@@ -106,11 +106,20 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
     [hiddenKeys]
   );
 
+  const goHome = useGotoHomepage();
+
   return (
     <React.Fragment>
       <aside className={cls.join(" ")}>
         <Container className="sidebar-title d-flex align-items-center d-md-none">
-          <Image alt="brand" src={logo} width="32" height="32"></Image>
+          <Image
+            alt="brand"
+            src={logo}
+            width="32"
+            height="32"
+            onClick={goHome}
+            className="cursor-pointer"
+          ></Image>
         </Container>
         <HiddenKeysContext.Provider value={hiddenKeys}>
           <BadgesContext.Provider value={badges}>

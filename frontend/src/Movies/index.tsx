@@ -14,7 +14,7 @@ import { movieUpdateByRange, movieUpdateInfoAll } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
-import { ActionBadge } from "../components";
+import { ActionBadge, TextPopover } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {}
@@ -44,9 +44,11 @@ const MovieView: FunctionComponent<Props> = () => {
           } else {
             const target = `/movies/${row.original.radarrId}`;
             return (
-              <Link to={target} title={row.original.sceneName ?? value}>
-                <span>{value}</span>
-              </Link>
+              <TextPopover text={row.original.sceneName} delay={1}>
+                <Link to={target}>
+                  <span>{value}</span>
+                </Link>
+              </TextPopover>
             );
           }
         },

@@ -15,6 +15,10 @@ function useOptions<T extends object>(options: TableOptions<T>) {
     options.autoResetPage = false;
   }
 
+  if (options.autoResetExpanded === undefined) {
+    options.autoResetExpanded = false;
+  }
+
   if (options.initialState === undefined) {
     options.initialState = {};
   }

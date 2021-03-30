@@ -29,7 +29,7 @@ import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
-import { useBaseUrl } from "../utilites";
+import { useGotoHomepage } from "../utilites";
 import "./header.scss";
 
 async function SearchItem(text: string) {
@@ -106,14 +106,19 @@ const Header: FunctionComponent<Props> = () => {
     SystemApi.status().finally(() => setReconnect(false));
   }, []);
 
-  const baseUrl = useBaseUrl();
+  const goHome = useGotoHomepage();
 
   return (
     <Navbar bg="primary" className="flex-grow-1 px-0">
       <div className="header-icon px-3 m-0 d-none d-md-block">
-        <Navbar.Brand href={baseUrl} className="">
-          <Image alt="brand" src={logo} width="32" height="32"></Image>
-        </Navbar.Brand>
+        <Image
+          alt="brand"
+          src={logo}
+          width="32"
+          height="32"
+          onClick={goHome}
+          className="cursor-pointer"
+        ></Image>
       </div>
       <Button className="mx-2 m-0 d-md-none" onClick={toggleSidebar}>
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>

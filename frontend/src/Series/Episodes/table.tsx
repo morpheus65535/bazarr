@@ -16,6 +16,7 @@ import {
   EpisodeHistoryModal,
   GroupTable,
   SubtitleToolModal,
+  TextPopover,
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
@@ -73,6 +74,11 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
         Header: "Title",
         accessor: "title",
         className: "text-nowrap",
+        Cell: ({ value, row }) => (
+          <TextPopover text={row.original.sceneName} delay={1}>
+            <span>{value}</span>
+          </TextPopover>
+        ),
       },
       {
         Header: "Audio",
