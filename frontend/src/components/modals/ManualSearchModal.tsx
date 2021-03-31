@@ -1,4 +1,5 @@
 import {
+  faCaretDown,
   faCheck,
   faDownload,
   faInfoCircle,
@@ -16,8 +17,8 @@ import {
   Badge,
   Button,
   Col,
+  Collapse,
   Container,
-  Dropdown,
   OverlayTrigger,
   Popover,
   Row,
@@ -34,8 +35,15 @@ import {
 } from "..";
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
+import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
+
+enum SearchState {
+  Ready,
+  Searching,
+  Finished,
+}
 
 interface Props {
   onSelect: (item: SupportType, result: SearchResultType) => Promise<void>;
@@ -48,35 +56,29 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   const { onSelect, onDownload, ...modal } = props;
 
   const [result, setResult] = useState<SearchResultType[]>([]);
-  const [searching, setSearch] = useState(false);
-  const [start, setStart] = useState(false);
+  const [searchState, setSearchState] = useState(SearchState.Ready);
 
   const item = usePayload<SupportType>(modal.modalKey);
 
-  const search = useCallback(() => {
+  const search = useCallback(async () => {
     if (item) {
-      setStart(true);
-      setSearch(true);
-      let promise: Promise<SearchResultType[]>;
+      setSearchState(SearchState.Searching);
+      let results: SearchResultType[] = [];
       if (isMovie(item)) {
-        promise = ProvidersApi.movies(item.radarrId);
+        results = await ProvidersApi.movies(item.radarrId);
       } else {
-        promise = ProvidersApi.episodes(item.sonarrEpisodeId);
+        results = await ProvidersApi.episodes(item.sonarrEpisodeId);
       }
-      promise.then((data) => setResult(data)).finally(() => setSearch(false));
+      setResult(results);
+      setSearchState(SearchState.Finished);
     }
   }, [item]);
 
-  const reset = useCallback(() => {
-    setStart(false);
-    setSearch(false);
-  }, []);
-
   useEffect(() => {
-    if (item) {
-      reset();
+    if (item !== null) {
+      setSearchState(SearchState.Ready);
     }
-  }, [item, reset]);
+  }, [item]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -124,34 +126,51 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         Cell: (row) => {
           const value = row.value;
 
+          const [open, setOpen] = useState(false);
+
           const items = useMemo(
             () =>
-              value.map((v, idx) => (
-                <Dropdown.Item key={idx} disabled className="text-dark">
+              value.slice(1).map((v, idx) => (
+                <span className="release-text hidden-item" key={idx}>
                   {v}
-                </Dropdown.Item>
+                </span>
               )),
             [value]
           );
 
-          if (value.length !== 0) {
-            const display = value[0];
-            return (
-              <Dropdown>
-                <Dropdown.Toggle
-                  className="dropdown-hidden text-dark dropdown-toggle-wrap"
-                  title={display}
-                  variant={"light"}
-                  size={"sm"}
-                >
-                  <span>{display}</span>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>{items}</Dropdown.Menu>
-              </Dropdown>
-            );
-          } else {
-            return "Cannot get release info";
+          if (value.length === 0) {
+            return <span className="text-muted">Cannot get release info</span>;
           }
+
+          const cls = [
+            "release-container",
+            "d-flex",
+            "justify-content-between",
+            "align-items-center",
+          ];
+
+          if (value.length > 1) {
+            cls.push("release-multi");
+          }
+
+          return (
+            <div className={cls.join(" ")} onClick={() => setOpen((o) => !o)}>
+              <div className="text-container">
+                <span className="release-text">{value[0]}</span>
+                <Collapse in={open}>
+                  <div>{items}</div>
+                </Collapse>
+              </div>
+
+              {value.length > 1 && (
+                <FontAwesomeIcon
+                  className="release-icon"
+                  icon={faCaretDown}
+                  rotation={open ? 180 : undefined}
+                ></FontAwesomeIcon>
+              )}
+            </div>
+          );
         },
       },
       {
@@ -187,7 +206,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   );
 
   const content = useMemo<JSX.Element>(() => {
-    if (!start) {
+    if (searchState === SearchState.Ready) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
@@ -196,7 +215,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
           </Button>
         </div>
       );
-    } else if (searching) {
+    } else if (searchState === SearchState.Searching) {
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
@@ -211,15 +230,19 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         </React.Fragment>
       );
     }
-  }, [start, searching, columns, result, search, item?.path, onDownload]);
+  }, [searchState, columns, result, search, item?.path, onDownload]);
 
   const footer = useMemo(
     () => (
-      <Button variant="light" disabled={!start} onClick={reset}>
-        Reset
+      <Button
+        variant="light"
+        hidden={searchState !== SearchState.Finished}
+        onClick={search}
+      >
+        Search Again
       </Button>
     ),
-    [start, reset]
+    [searchState, search]
   );
 
   const title = useMemo(() => {
@@ -239,7 +262,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   return (
     <BaseModal
-      closeable={!searching}
+      closeable={searchState !== SearchState.Searching}
       size="xl"
       title={title}
       footer={footer}
