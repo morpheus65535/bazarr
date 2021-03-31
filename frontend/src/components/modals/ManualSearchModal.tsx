@@ -55,25 +55,8 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { onSelect, onDownload, ...modal } = props;
 
-  const [result, setResult] = useState<SearchResultType[]>([
-    {
-      matches: [],
-      dont_matches: [],
-      language: "zh",
-      forced: "True",
-      hearing_impaired: "True",
-      orig_score: 100,
-      provider: "assrt",
-      release_info: [
-        "ladbgklsafbsbfliksbfiasvbgsdbfashfsdgvfvasblgvbsdlfagviugas",
-        "ailuysdbliaubfhysvaugsdhfahjsdfhjasoi;fhsdfb",
-      ],
-      score: 99,
-      score_without_hash: 99,
-      subtitle: {},
-    },
-  ]);
-  const [searchState, setSearchState] = useState(SearchState.Finished);
+  const [result, setResult] = useState<SearchResultType[]>([]);
+  const [searchState, setSearchState] = useState(SearchState.Ready);
 
   const item = usePayload<SupportType>(modal.modalKey);
 
@@ -93,7 +76,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   useEffect(() => {
     if (item !== null) {
-      // setSearchState(SearchState.Ready);
+      setSearchState(SearchState.Ready);
     }
   }, [item]);
 
