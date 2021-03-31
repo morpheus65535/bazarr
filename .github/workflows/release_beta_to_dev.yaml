@@ -51,6 +51,12 @@ jobs:
         run: npm run build && git add .
         working-directory: ${{ env.UI_DIRECTORY }}
         # TODO: Remove Stage Step
+        
+      - name: Generate Package Info
+        run: |
+          mkdir -p ${{ env.ASSET_DIRECTORY }}/bazarr
+          echo "BRANCH=development
+          COMMIT=${{ github.sha }}" > ${{ env.ASSET_DIRECTORY }}/bazarr/PACKAGE_INFO
 
       - name: Create Release
         run: release-it --ci --increment prerelease --preRelease=beta
