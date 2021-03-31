@@ -220,13 +220,16 @@ class TVsubtitlesProvider(Provider):
         r.raise_for_status()
 
         # generate the download link from the sliced strings in the page source (js)
-        download_link_part = re.findall(r'(?<=s\d\=\ \')(.*?)(?=\'\;)', r.text)
-        r = self.session.get(self.server_url + ''.join(download_link_part), timeout=10)
-        r.raise_for_status()
+        download_link_part = re.findall(r'(?<=s\d=\s\')(.*?)(?=\';\n)', r.text)
+        if len(download_link_part):
+            download = self.session.get(self.server_url + ''.join(download_link_part), timeout=10)
+            download.raise_for_status()
 
-        # open the zip
-        with ZipFile(io.BytesIO(r.content)) as zf:
-            if len(zf.namelist()) > 1:
-                raise ProviderError('More than one file to unzip')
+            # open the zip
+            with ZipFile(io.BytesIO(download.content)) as zf:
+                if len(zf.namelist()) > 1:
+                    raise ProviderError('More than one file to unzip')
 
-            subtitle.content = fix_line_ending(zf.read(zf.namelist()[0]))
+                subtitle.content = fix_line_ending(zf.read(zf.namelist()[0]))
+        else:
+            raise ProviderError('Cannot get download link')
