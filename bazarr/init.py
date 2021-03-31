@@ -96,7 +96,7 @@ if isinstance(settings.general.enabled_providers, str) and not settings.general.
         settings.write(handle)
 
 # make sure settings.general.branch is properly set when running inside a docker container
-package_info_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'package_info')
+package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
 if os.path.isfile(package_info_file):
     try:
         package_info = {}
