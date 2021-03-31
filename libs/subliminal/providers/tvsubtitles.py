@@ -219,6 +219,11 @@ class TVsubtitlesProvider(Provider):
         r = self.session.get(self.server_url + 'download-%d.html' % subtitle.subtitle_id, timeout=10)
         r.raise_for_status()
 
+        # generate the download link from the sliced strings in the page source (js)
+        download_link_part = re.findall(r'(?<=s\d\=\ \')(.*?)(?=\'\;)', r.text)
+        r = self.session.get(self.server_url + ''.join(download_link_part), timeout=10)
+        r.raise_for_status()
+
         # open the zip
         with ZipFile(io.BytesIO(r.content)) as zf:
             if len(zf.namelist()) > 1:
