@@ -1,4 +1,5 @@
 import {
+  faCaretDown,
   faCheck,
   faDownload,
   faInfoCircle,
@@ -16,8 +17,8 @@ import {
   Badge,
   Button,
   Col,
+  Collapse,
   Container,
-  Dropdown,
   OverlayTrigger,
   Popover,
   Row,
@@ -34,6 +35,7 @@ import {
 } from "..";
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
+import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -53,8 +55,25 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { onSelect, onDownload, ...modal } = props;
 
-  const [result, setResult] = useState<SearchResultType[]>([]);
-  const [searchState, setSearchState] = useState(SearchState.Ready);
+  const [result, setResult] = useState<SearchResultType[]>([
+    {
+      matches: [],
+      dont_matches: [],
+      language: "zh",
+      forced: "True",
+      hearing_impaired: "True",
+      orig_score: 100,
+      provider: "assrt",
+      release_info: [
+        "ladbgklsafbsbfliksbfiasvbgsdbfashfsdgvfvasblgvbsdlfagviugas",
+        "ailuysdbliaubfhysvaugsdhfahjsdfhjasoi;fhsdfb",
+      ],
+      score: 99,
+      score_without_hash: 99,
+      subtitle: {},
+    },
+  ]);
+  const [searchState, setSearchState] = useState(SearchState.Finished);
 
   const item = usePayload<SupportType>(modal.modalKey);
 
@@ -74,7 +93,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   useEffect(() => {
     if (item !== null) {
-      setSearchState(SearchState.Ready);
+      // setSearchState(SearchState.Ready);
     }
   }, [item]);
 
@@ -124,34 +143,51 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         Cell: (row) => {
           const value = row.value;
 
+          const [open, setOpen] = useState(false);
+
           const items = useMemo(
             () =>
-              value.map((v, idx) => (
-                <Dropdown.Item key={idx} disabled className="text-dark">
+              value.slice(1).map((v, idx) => (
+                <span className="release-text hidden-item" key={idx}>
                   {v}
-                </Dropdown.Item>
+                </span>
               )),
             [value]
           );
 
-          if (value.length !== 0) {
-            const display = value[0];
-            return (
-              <Dropdown>
-                <Dropdown.Toggle
-                  className="dropdown-hidden text-dark dropdown-toggle-wrap"
-                  title={display}
-                  variant={"light"}
-                  size={"sm"}
-                >
-                  <span>{display}</span>
-                </Dropdown.Toggle>
-                <Dropdown.Menu>{items}</Dropdown.Menu>
-              </Dropdown>
-            );
-          } else {
-            return "Cannot get release info";
+          if (value.length === 0) {
+            return <span className="text-muted">Cannot get release info</span>;
           }
+
+          const cls = [
+            "release-container",
+            "d-flex",
+            "justify-content-between",
+            "align-items-center",
+          ];
+
+          if (value.length > 1) {
+            cls.push("release-multi");
+          }
+
+          return (
+            <div className={cls.join(" ")} onClick={() => setOpen((o) => !o)}>
+              <div className="text-container">
+                <span className="release-text">{value[0]}</span>
+                <Collapse in={open}>
+                  <div>{items}</div>
+                </Collapse>
+              </div>
+
+              {value.length > 1 && (
+                <FontAwesomeIcon
+                  className="release-icon"
+                  icon={faCaretDown}
+                  rotation={open ? 180 : undefined}
+                ></FontAwesomeIcon>
+              )}
+            </div>
+          );
         },
       },
       {
