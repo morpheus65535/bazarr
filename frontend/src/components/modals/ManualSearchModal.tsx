@@ -37,6 +37,12 @@ import { isMovie } from "../../utilites";
 
 type SupportType = Item.Movie | Item.Episode;
 
+enum SearchState {
+  Ready,
+  Searching,
+  Finished,
+}
+
 interface Props {
   onSelect: (item: SupportType, result: SearchResultType) => Promise<void>;
   onDownload?: () => void;
@@ -48,35 +54,29 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   const { onSelect, onDownload, ...modal } = props;
 
   const [result, setResult] = useState<SearchResultType[]>([]);
-  const [searching, setSearch] = useState(false);
-  const [start, setStart] = useState(false);
+  const [searchState, setSearchState] = useState(SearchState.Ready);
 
   const item = usePayload<SupportType>(modal.modalKey);
 
-  const search = useCallback(() => {
+  const search = useCallback(async () => {
     if (item) {
-      setStart(true);
-      setSearch(true);
-      let promise: Promise<SearchResultType[]>;
+      setSearchState(SearchState.Searching);
+      let results: SearchResultType[] = [];
       if (isMovie(item)) {
-        promise = ProvidersApi.movies(item.radarrId);
+        results = await ProvidersApi.movies(item.radarrId);
       } else {
-        promise = ProvidersApi.episodes(item.sonarrEpisodeId);
+        results = await ProvidersApi.episodes(item.sonarrEpisodeId);
       }
-      promise.then((data) => setResult(data)).finally(() => setSearch(false));
+      setResult(results);
+      setSearchState(SearchState.Finished);
     }
   }, [item]);
 
-  const reset = useCallback(() => {
-    setStart(false);
-    setSearch(false);
-  }, []);
-
   useEffect(() => {
-    if (item) {
-      reset();
+    if (item !== null) {
+      setSearchState(SearchState.Ready);
     }
-  }, [item, reset]);
+  }, [item]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -187,7 +187,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   );
 
   const content = useMemo<JSX.Element>(() => {
-    if (!start) {
+    if (searchState === SearchState.Ready) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
@@ -196,7 +196,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
           </Button>
         </div>
       );
-    } else if (searching) {
+    } else if (searchState === SearchState.Searching) {
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
@@ -211,15 +211,19 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
         </React.Fragment>
       );
     }
-  }, [start, searching, columns, result, search, item?.path, onDownload]);
+  }, [searchState, columns, result, search, item?.path, onDownload]);
 
   const footer = useMemo(
     () => (
-      <Button variant="light" disabled={!start} onClick={reset}>
-        Reset
+      <Button
+        variant="light"
+        hidden={searchState !== SearchState.Finished}
+        onClick={search}
+      >
+        Search Again
       </Button>
     ),
-    [start, reset]
+    [searchState, search]
   );
 
   const title = useMemo(() => {
@@ -239,7 +243,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
 
   return (
     <BaseModal
-      closeable={!searching}
+      closeable={searchState !== SearchState.Searching}
       size="xl"
       title={title}
       footer={footer}
