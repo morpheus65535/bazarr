@@ -126,7 +126,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Romanian Subtitles Provider",
   },
   {
-    key: "soustitres",
+    key: "soustitreseu",
     name: "Sous-Titres.eu",
     description: "Mostly French Subtitles Provider",
   },
@@ -162,7 +162,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "subsynchro", description: "French Subtitles Provider" },
   {
-    key: "subtitri",
+    key: "subtitriid",
     name: "subtitri.id.lv",
     description: "Latvian Subtitles Provider",
   },
@@ -198,10 +198,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     },
   },
   {
-    key: "yavka",
+    key: "yavkanet",
     name: "Yavka.net",
     description: "Bulgarian Subtitles Provider",
   },
-  { key: "yify", name: "YIFY Subtitles" },
+  { key: "yifysubtitles", name: "YIFY Subtitles" },
   { key: "zimuku", description: "Chinese Subtitles Provider" },
 ];

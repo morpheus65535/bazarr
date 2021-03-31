@@ -13,6 +13,12 @@
     "publish": false,
     "ignoreVersion": true
   },
+  "hooks": {
+    "after:git:release": [
+      "chmod +x .github/scripts/*",
+      ".github/scripts/create_asset.sh"
+    ]
+  },
   "plugins": {
     "@release-it/bumper": {
       "in": {

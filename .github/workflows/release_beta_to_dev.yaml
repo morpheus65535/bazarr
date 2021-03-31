@@ -41,6 +41,7 @@ jobs:
 
       - name: Install Global Tools
         run: npm install -g release-it @release-it/bumper auto-changelog
+        # TODO: Remove @release-it/bumper
 
       - name: Install UI Dependencies
         run: npm install
@@ -49,12 +50,7 @@ jobs:
       - name: Build & Stage UI
         run: npm run build && git add .
         working-directory: ${{ env.UI_DIRECTORY }}
-
-      - name: Save UI to Asset
-        run: |
-          mkdir -p ../.${{ env.ASSET_DIRECTORY }} &&
-          zip -r ../.${{ env.ASSET_DIRECTORY }}/ui.zip ./ -x '*.map' -b $(mktemp -d)
-        working-directory: ${{ env.UI_DIRECTORY }}/build
+        # TODO: Remove Stage Step
 
       - name: Create Release
         run: release-it --ci --increment prerelease --preRelease=beta

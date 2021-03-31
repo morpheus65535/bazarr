@@ -1,0 +1,7 @@
+bazarr
+frontend/build
+libs
+___init__.py
+bazarr.py
+requirements.txt
+VERSION
