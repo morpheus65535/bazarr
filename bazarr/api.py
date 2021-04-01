@@ -1553,7 +1553,7 @@ class EpisodesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=False,
                          hi=False,
-                         media_path=media_path,
+                         media_path=path_mappings.path_replace(media_path),
                          subtitles_path=subtitles_path,
                          sonarr_series_id=sonarr_series_id,
                          sonarr_episode_id=sonarr_episode_id)
@@ -1620,7 +1620,7 @@ class MoviesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=forced,
                          hi=hi,
-                         media_path=media_path,
+                         media_path=path_mappings.path_replace_movie(media_path),
                          subtitles_path=subtitles_path,
                          radarr_id=radarr_id)
         movies_download_subtitles(radarr_id)
