@@ -171,6 +171,7 @@ namespace Wanted {
 
 namespace Blacklist {
   type Base = ItemHistoryType & {
+    parsed_timestamp: string;
     timestamp: string;
     subs_id: string;
   };
@@ -194,6 +195,7 @@ namespace History {
       score?: string;
       subs_id?: string;
       raw_timestamp: int;
+      parsed_timestamp: string;
       timestamp: string;
       description: string;
       upgradable: boolean;

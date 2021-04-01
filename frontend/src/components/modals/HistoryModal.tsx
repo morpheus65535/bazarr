@@ -6,7 +6,13 @@ import React, {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { AsyncStateOverlay, HistoryIcon, LanguageText, PageTable } from "..";
+import {
+  AsyncStateOverlay,
+  HistoryIcon,
+  LanguageText,
+  PageTable,
+  TextPopover,
+} from "..";
 import { EpisodesApi, MoviesApi } from "../../apis";
 import { BlacklistButton } from "../../generic/blacklist";
 import { updateAsyncState } from "../../utilites";
@@ -64,6 +70,17 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
       {
         Header: "Date",
         accessor: "timestamp",
+        Cell: (row) => {
+          if (row.value) {
+            return (
+              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+                <span>{row.value}</span>
+              </TextPopover>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         // Actions
@@ -155,6 +172,17 @@ export const EpisodeHistoryModal: FunctionComponent<
       {
         Header: "Date",
         accessor: "timestamp",
+        Cell: (row) => {
+          if (row.value) {
+            return (
+              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+                <span>{row.value}</span>
+              </TextPopover>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         // Actions

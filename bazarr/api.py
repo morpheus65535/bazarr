@@ -1295,7 +1295,8 @@ class EpisodesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp']);
+                item["raw_timestamp"] = int(item['timestamp'])
+                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1383,7 +1384,8 @@ class MoviesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp']);
+                item["raw_timestamp"] = int(item['timestamp'])
+                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1521,6 +1523,7 @@ class EpisodesBlacklist(Resource):
 
         for item in data:
             # Make timestamp pretty
+            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
             postprocessEpisode(item)
@@ -1589,6 +1592,7 @@ class MoviesBlacklist(Resource):
             postprocessMovie(item)
 
             # Make timestamp pretty
+            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
         return jsonify(data=data)
