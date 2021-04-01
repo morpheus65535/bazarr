@@ -29,11 +29,17 @@ def check_releases():
         logging.exception("Error trying to get releases from Github.")
     else:
         for release in r.json():
+            download_link = None
+            for asset in release['assets']:
+                if asset['name'] == 'bazarr.zip':
+                    download_link = asset['browser_download_url']
+            if not download_link:
+                download_link = release['zipball_url']
             releases.append({'name': release['name'],
                              'body': release['body'],
                              'date': release['published_at'],
                              'prerelease': release['prerelease'],
-                             'download_link': release['zipball_url']})
+                             'download_link': download_link})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
         logging.debug('BAZARR saved {} releases to releases.txt'.format(len(r.json())))
