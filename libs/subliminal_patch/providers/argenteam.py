@@ -212,7 +212,7 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
                     movie_kind = "episode" if is_episode else "movie"
                     page_link = f"{BASE_URL}{movie_kind}/{aid}"
                     release_info = self.combine_release_info(r)
-                    download_link = s["uri"].replace("http", "https")
+                    download_link = s["uri"].replace("http://", "https://")
 
                     matches_ = self.get_query_matches(
                         video,
