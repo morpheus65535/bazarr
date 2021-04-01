@@ -1603,9 +1603,11 @@ class MoviesBlacklist(Resource):
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
+        # TODO
+        forced = False
+        hi = False
 
-        data = database.execute("SELECT title, radarrId, provider, subs_id, path"
-                                "timestamp FROM table_movies WHERE radarrId=?", (radarr_id), only_one=True)
+        data = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
 
         media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')
