@@ -11,7 +11,6 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { isNull, isUndefined } from "lodash";
-import moment from "moment";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   OverlayTrigger,
@@ -96,22 +95,6 @@ export const LoadingIndicator: FunctionComponent<{
       {children}
     </div>
   );
-};
-
-interface FormatterProps {
-  format?: string;
-  children: string | Date;
-}
-
-export const DateFormatter: FunctionComponent<FormatterProps> = ({
-  children,
-  format,
-}) => {
-  const result = useMemo(
-    () => moment(children, format ?? "DD/MM/YYYY h:mm:ss").fromNow(),
-    [children, format]
-  );
-  return <span>{result}</span>;
 };
 
 interface LanguageTextProps {
