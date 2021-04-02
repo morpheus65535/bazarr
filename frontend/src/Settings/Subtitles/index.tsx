@@ -225,8 +225,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         <Input>
           <Check
             label="OCR Fixes"
-            override={subzeroOverride("OCR_fixed")}
-            settingKey="subzero-OCR_fixed"
+            override={subzeroOverride("OCR_fixes")}
+            settingKey="subzero-OCR_fixes"
           ></Check>
           <Message>
             Fix issues that happen when a subtitle gets converted from bitmap to

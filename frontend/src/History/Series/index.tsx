@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Column, Row } from "react-table";
 import { useSeriesHistory } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
-import { HistoryIcon, LanguageText } from "../../components";
+import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../generic/blacklist";
 import { useAutoUpdate } from "../../utilites/hooks";
 import HistoryGenericView from "../generic";
@@ -71,7 +71,17 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
       {
         Header: "Date",
         accessor: "timestamp",
-        className: "text-nowrap",
+        Cell: (row) => {
+          if (row.value) {
+            return (
+              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+                <span>{row.value}</span>
+              </TextPopover>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         accessor: "description",

@@ -37,7 +37,6 @@
     "axios": "^0.21.0",
     "bootstrap": "^4.0.0",
     "lodash": "^4.0.0",
-    "moment": "^2.29.1",
     "rc-slider": "^9.7.1",
     "react": "^16.0.0",
     "react-bootstrap": "^1.0.0",

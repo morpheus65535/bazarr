@@ -4,7 +4,12 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { EpisodesApi } from "../../apis";
-import { AsyncButton, LanguageText, PageTable } from "../../components";
+import {
+  AsyncButton,
+  LanguageText,
+  PageTable,
+  TextPopover,
+} from "../../components";
 
 interface Props {
   blacklist: readonly Blacklist.Episode[];
@@ -52,6 +57,17 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
       {
         Header: "Date",
         accessor: "timestamp",
+        Cell: (row) => {
+          if (row.value) {
+            return (
+              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+                <span>{row.value}</span>
+              </TextPopover>
+            );
+          } else {
+            return null;
+          }
+        },
       },
       {
         accessor: "subs_id",

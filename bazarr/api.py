@@ -1295,7 +1295,8 @@ class EpisodesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp']);
+                item["raw_timestamp"] = int(item['timestamp'])
+                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1383,7 +1384,8 @@ class MoviesHistory(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
-                item["raw_timestamp"] = int(item['timestamp']);
+                item["raw_timestamp"] = int(item['timestamp'])
+                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1521,6 +1523,7 @@ class EpisodesBlacklist(Resource):
 
         for item in data:
             # Make timestamp pretty
+            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
             postprocessEpisode(item)
@@ -1550,7 +1553,7 @@ class EpisodesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=False,
                          hi=False,
-                         media_path=media_path,
+                         media_path=path_mappings.path_replace(media_path),
                          subtitles_path=subtitles_path,
                          sonarr_series_id=sonarr_series_id,
                          sonarr_episode_id=sonarr_episode_id)
@@ -1589,6 +1592,7 @@ class MoviesBlacklist(Resource):
             postprocessMovie(item)
 
             # Make timestamp pretty
+            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
         return jsonify(data=data)
@@ -1599,9 +1603,11 @@ class MoviesBlacklist(Resource):
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
+        # TODO
+        forced = False
+        hi = False
 
-        data = database.execute("SELECT title, radarrId, provider, subs_id, path"
-                                "timestamp FROM table_movies WHERE radarrId=?", (radarr_id), only_one=True)
+        data = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
 
         media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')
@@ -1614,7 +1620,7 @@ class MoviesBlacklist(Resource):
                          language=alpha3_from_alpha2(language),
                          forced=forced,
                          hi=hi,
-                         media_path=media_path,
+                         media_path=path_mappings.path_replace_movie(media_path),
                          subtitles_path=subtitles_path,
                          radarr_id=radarr_id)
         movies_download_subtitles(radarr_id)
