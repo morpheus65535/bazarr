@@ -34,12 +34,12 @@ class SubtitleModifications(object):
 
     def load(self, fn=None, content=None, language=None, encoding="utf-8"):
         """
-        
+
         :param encoding: used for decoding the content when fn is given, not used in case content is given
         :param language: babelfish.Language language of the subtitle
         :param fn:  filename
-        :param content: unicode 
-        :return: 
+        :param content: unicode
+        :return:
         """
         if language:
             self.language = Language.rebuild(language, forced=False)
@@ -64,11 +64,14 @@ class SubtitleModifications(object):
     @classmethod
     def parse_identifier(cls, identifier):
         # simple identifier
-        if identifier in registry.mods:
+        # ("=" conditional used to avoid unpack exceptions related to bad 
+        # identifiers from old configs)
+        if identifier in registry.mods or "=" not in identifier:
             return identifier, {}
 
         # identifier with params; identifier(param=value)
         split_args = identifier[identifier.find("(")+1:-1].split(",")
+
         args = dict((key, value) for key, value in [sub.split("=") for sub in split_args])
         return identifier[:identifier.find("(")], args
 
