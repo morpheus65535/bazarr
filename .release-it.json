@@ -14,10 +14,11 @@
     "ignoreVersion": true
   },
   "hooks": {
-    "after:git:release": [
+    "before:init": [
       "chmod +x .github/scripts/*",
-      ".github/scripts/create_asset.sh"
-    ]
+      ".github/scripts/pre_check.sh"
+    ],
+    "after:git:release": ".github/scripts/create_asset.sh"
   },
   "plugins": {
     "@release-it/bumper": {
