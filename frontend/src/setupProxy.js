@@ -4,7 +4,7 @@ const target = "http://localhost:6767";
 
 module.exports = function (app) {
   app.use(
-    proxy("/api", {
+    proxy("/", {
       target,
     })
   );
