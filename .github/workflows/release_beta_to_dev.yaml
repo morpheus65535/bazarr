@@ -54,3 +54,20 @@ jobs:
 
       - name: Create Release
         run: release-it --ci --increment prerelease --preRelease=beta
+
+      # The following steps are a hack to schedule.yaml
+      # TODO: Remove this when we are no longer using @release-it/bumper to update VERSION file and push a new commit to the repo
+      - name: (Hack) Get Latest Version
+        id: current-version
+        run: |
+          CURRENT_VERSION=$(git rev-parse HEAD)
+          echo "::set-output name=CURRENT_VERSION::$CURRENT_VERSION"
+
+      - name: (Hack) Generate Schedule Cache
+        uses: actions/cache@v2
+        with:
+          path: ./LAST_VERSION_SAVED
+          key: bazarr-development-release_beta_to_dev.yaml-${{ steps.current-version.outputs.CURRENT_VERSION }}
+      
+      - name: (Hack) Cache Current Version
+        run: echo "1" > LAST_VERSION_SAVED
