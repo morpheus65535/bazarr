@@ -647,7 +647,7 @@ class Series(Resource):
 
             list_missing_subtitles(no=seriesId)
 
-        # event_stream(type='series', action='update', series=seriesId)
+        event_stream(type='series', action='update', series=seriesId)
 
         return '', 204
 
