@@ -16,7 +16,7 @@ def event_stream(type, action: str = "update", id=None):
     try:
         if id is not None:
             id = int(id)
-        socketio.emit(type, {"action": action, "id": id})
+        socketio.emit("data", {"type": type, "action": action, "id": id})
     except:
         # TODO
         pass
