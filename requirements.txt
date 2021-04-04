@@ -1,4 +1,4 @@
-gevent>=21.1.2
+gevent>=21
 gevent-websocket>=0.10.1
 lxml>=4.3.0
 numpy>=1.12.0

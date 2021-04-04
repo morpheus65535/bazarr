@@ -4,7 +4,6 @@ import warnings
 import logging
 import os
 import io
-from waitress.server import create_server
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
@@ -32,14 +31,10 @@ class Server:
             self.server = app.run(host=str(settings.general.ip),
                                   port=(int(args.port) if args.port else int(settings.general.port)))
         else:
-            self.server = pywsgi.StreamServer((str(settings.general.ip), int(args.port) if args.port else
-            int(settings.general.port)), app, handler_class=WebSocketHandler).serve_forever()
-            self.server.start()
-
-            #self.server = create_server(app,
-            #                            host=str(settings.general.ip),
-            #                            port=int(args.port) if args.port else int(settings.general.port),
-            #                            threads=24)
+            self.server = pywsgi.WSGIServer((str(settings.general.ip),
+                                             int(args.port) if args.port else int(settings.general.port)),
+                                            app,
+                                            handler_class=WebSocketHandler)
 
     def start(self):
         try:
@@ -47,13 +42,13 @@ class Server:
                 'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
                     args.port) if args.port else str(settings.general.port)) + str(base_url))
             if not args.dev:
-                self.server.run()
+                self.server.serve_forever()
         except KeyboardInterrupt:
             self.shutdown()
 
     def shutdown(self):
         try:
-            self.server.close()
+            self.server.stop()
         except Exception as e:
             logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:
@@ -70,7 +65,7 @@ class Server:
 
     def restart(self):
         try:
-            self.server.close()
+            self.server.stop()
         except Exception as e:
             logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:

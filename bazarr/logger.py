@@ -104,7 +104,7 @@ def configure_logging(debug=False):
         logging.getLogger("ffsubsync.ffsubsync").setLevel(logging.ERROR)
         logging.getLogger("srt").setLevel(logging.ERROR)
 
-    logging.getLogger("waitress").setLevel(logging.CRITICAL)
+    logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
