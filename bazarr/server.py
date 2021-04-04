@@ -5,6 +5,8 @@ import logging
 import os
 import io
 from waitress.server import create_server
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 from get_args import args
 from config import settings, base_url
@@ -30,10 +32,14 @@ class Server:
             self.server = app.run(host=str(settings.general.ip),
                                   port=(int(args.port) if args.port else int(settings.general.port)))
         else:
-            self.server = create_server(app,
-                                        host=str(settings.general.ip),
-                                        port=int(args.port) if args.port else int(settings.general.port),
-                                        threads=24)
+            self.server = pywsgi.StreamServer((str(settings.general.ip), int(args.port) if args.port else
+            int(settings.general.port)), app, handler_class=WebSocketHandler).serve_forever()
+            self.server.start()
+
+            #self.server = create_server(app,
+            #                            host=str(settings.general.ip),
+            #                            port=int(args.port) if args.port else int(settings.general.port),
+            #                            threads=24)
 
     def start(self):
         try:
