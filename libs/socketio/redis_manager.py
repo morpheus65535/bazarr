@@ -30,7 +30,7 @@ class RedisManager(PubSubManager):  # pragma: no cover
                 store running on the same host, use ``redis://``.
     :param channel: The channel name on which the server sends and receives
                     notifications. Must be the same in all the servers.
-    :param write_only: If set ot ``True``, only initialize to emit events. The
+    :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
                        and receiving.
     :param redis_options: additional keyword arguments to be passed to
@@ -78,7 +78,7 @@ class RedisManager(PubSubManager):  # pragma: no cover
                 if not retry:
                     self._redis_connect()
                 return self.redis.publish(self.channel, pickle.dumps(data))
-            except redis.exceptions.ConnectionError:
+            except redis.exceptions.RedisError:
                 if retry:
                     logger.error('Cannot publish to redis... retrying')
                     retry = False
@@ -94,9 +94,10 @@ class RedisManager(PubSubManager):  # pragma: no cover
                 if connect:
                     self._redis_connect()
                     self.pubsub.subscribe(self.channel)
+                    retry_sleep = 1
                 for message in self.pubsub.listen():
                     yield message
-            except redis.exceptions.ConnectionError:
+            except redis.exceptions.RedisError:
                 logger.error('Cannot receive from redis... '
                              'retrying in {} secs'.format(retry_sleep))
                 connect = True

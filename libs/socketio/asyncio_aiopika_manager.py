@@ -30,7 +30,7 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                     notifications. Must be the same in all the servers.
                     With this manager, the channel name is the exchange name
                     in rabbitmq
-    :param write_only: If set ot ``True``, only initialize to emit events. The
+    :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
                        and receiving.
     """
@@ -89,6 +89,7 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                     self.listener_queue = await self._queue(
                         self.listener_channel, exchange
                     )
+                    retry_sleep = 1
 
                 async with self.listener_queue.iterator() as queue_iter:
                     async for message in queue_iter:

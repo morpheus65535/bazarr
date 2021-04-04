@@ -3,7 +3,6 @@ import uuid
 
 import json
 import pickle
-import six
 
 from .asyncio_manager import AsyncManager
 
@@ -60,7 +59,7 @@ class AsyncPubSubManager(AsyncManager):
                                    'context of a server.')
             if room is None:
                 raise ValueError('Cannot use callback without a room set.')
-            id = self._generate_ack_id(room, namespace, callback)
+            id = self._generate_ack_id(room, callback)
             callback = (room, namespace, id)
         else:
             callback = None
@@ -68,6 +67,15 @@ class AsyncPubSubManager(AsyncManager):
                              'namespace': namespace, 'room': room,
                              'skip_sid': skip_sid, 'callback': callback,
                              'host_id': self.host_id})
+
+    async def can_disconnect(self, sid, namespace):
+        if self.is_connected(sid, namespace):
+            # client is in this server, so we can disconnect directly
+            return await super().can_disconnect(sid, namespace)
+        else:
+            # client is in another server, so we post request to the queue
+            await self._publish({'method': 'disconnect', 'sid': sid,
+                                'namespace': namespace or '/'})
 
     async def close_room(self, room, namespace=None):
         await self._publish({'method': 'close_room', 'room': room,
@@ -113,12 +121,11 @@ class AsyncPubSubManager(AsyncManager):
         if self.host_id == message.get('host_id'):
             try:
                 sid = message['sid']
-                namespace = message['namespace']
                 id = message['id']
                 args = message['args']
             except KeyError:
                 return
-            await self.trigger_callback(sid, namespace, id, args)
+            await self.trigger_callback(sid, id, args)
 
     async def _return_callback(self, host_id, sid, namespace, callback_id,
                                *args):
@@ -127,6 +134,11 @@ class AsyncPubSubManager(AsyncManager):
         await self._publish({'method': 'callback', 'host_id': host_id,
                              'sid': sid, 'namespace': namespace,
                              'id': callback_id, 'args': args})
+
+    async def _handle_disconnect(self, message):
+        await self.server.disconnect(sid=message.get('sid'),
+                                     namespace=message.get('namespace'),
+                                     ignore_queue=True)
 
     async def _handle_close_room(self, message):
         await super().close_room(
@@ -144,7 +156,7 @@ class AsyncPubSubManager(AsyncManager):
             if isinstance(message, dict):
                 data = message
             else:
-                if isinstance(message, six.binary_type):  # pragma: no cover
+                if isinstance(message, bytes):  # pragma: no cover
                     try:
                         data = pickle.loads(message)
                     except:
@@ -155,9 +167,13 @@ class AsyncPubSubManager(AsyncManager):
                     except:
                         pass
             if data and 'method' in data:
+                self._get_logger().info('pubsub message: {}'.format(
+                    data['method']))
                 if data['method'] == 'emit':
                     await self._handle_emit(data)
                 elif data['method'] == 'callback':
                     await self._handle_callback(data)
+                elif data['method'] == 'disconnect':
+                    await self._handle_disconnect(data)
                 elif data['method'] == 'close_room':
                     await self._handle_close_room(data)

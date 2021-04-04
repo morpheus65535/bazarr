@@ -31,7 +31,7 @@ class KombuManager(PubSubManager):  # pragma: no cover
                 connection URLs.
     :param channel: The channel name on which the server sends and receives
                     notifications. Must be the same in all the servers.
-    :param write_only: If set ot ``True``, only initialize to emit events. The
+    :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
                        and receiving.
     :param connection_options: additional keyword arguments to be passed to

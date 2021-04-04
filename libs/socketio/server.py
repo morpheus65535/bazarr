@@ -1,7 +1,6 @@
 import logging
 
 import engineio
-import six
 
 from . import base_manager
 from . import exceptions
@@ -23,13 +22,8 @@ class Server(object):
                            multiple connected servers is not possible.
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``. The default is
-                   ``False``.
-    :param binary: ``True`` to support binary payloads, ``False`` to treat all
-                   payloads as text. On Python 2, if this is set to ``True``,
-                   ``unicode`` values are treated as text, and ``str`` and
-                   ``bytes`` values are treated as binary.  This option has no
-                   effect on Python 3, where text and binary payloads are
-                   always automatically discovered.
+                   ``False``. Note that fatal errors are logged even when
+                   ``logger`` is ``False``.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
@@ -60,13 +54,16 @@ class Server(object):
                        "gevent_uwsgi", then "gevent", and finally "threading".
                        The first async mode that has all its dependencies
                        installed is then one that is chosen.
+    :param ping_interval: The interval in seconds at which the server pings
+                          the client. The default is 25 seconds. For advanced
+                          control, a two element tuple can be given, where
+                          the first number is the ping interval and the second
+                          is a grace period added by the server.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
-                         is 60 seconds.
-    :param ping_interval: The interval in seconds at which the client pings
-                          the server. The default is 25 seconds.
+                         is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport. The default is 100,000,000
+                                 polling transport. The default is 1,000,000
                                  bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not. The
                            default is ``True``.
@@ -75,9 +72,14 @@ class Server(object):
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value. The default is
                                   1024 bytes.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
-                   The default is ``'io'``.
+    :param cookie: If set to a string, it is the name of the HTTP cookie the
+                   server sends back tot he client containing the client
+                   session id. If set to a dictionary, the ``'name'`` key
+                   contains the cookie name and other keys define cookie
+                   attributes, where the value of each attribute can be a
+                   string, a callable with no arguments, or a boolean. If set
+                   to ``None`` (the default), a cookie is not sent to the
+                   client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -92,11 +94,12 @@ class Server(object):
                             default is ``True``.
     :param engineio_logger: To enable Engine.IO logging set to ``True`` or pass
                             a logger object to use. To disable logging set to
-                            ``False``. The default is ``False``.
+                            ``False``. The default is ``False``. Note that
+                            fatal errors are logged even when
+                            ``engineio_logger`` is ``False``.
     """
-    def __init__(self, client_manager=None, logger=False, binary=False,
-                 json=None, async_handlers=True, always_connect=False,
-                 **kwargs):
+    def __init__(self, client_manager=None, logger=False, json=None,
+                 async_handlers=True, always_connect=False, **kwargs):
         engineio_options = kwargs
         engineio_logger = engineio_options.pop('engineio_logger', None)
         if engineio_logger is not None:
@@ -109,7 +112,6 @@ class Server(object):
         self.eio.on('connect', self._handle_eio_connect)
         self.eio.on('message', self._handle_eio_message)
         self.eio.on('disconnect', self._handle_eio_disconnect)
-        self.binary = binary
 
         self.environ = {}
         self.handlers = {}
@@ -121,8 +123,7 @@ class Server(object):
             self.logger = logger
         else:
             self.logger = default_logger
-            if not logging.root.handlers and \
-                    self.logger.level == logging.NOTSET:
+            if self.logger.level == logging.NOTSET:
                 if logger:
                     self.logger.setLevel(logging.INFO)
                 else:
@@ -169,7 +170,7 @@ class Server(object):
             def message_handler(sid, msg):
                 print('Received message: ', msg)
                 eio.send(sid, 'response')
-            socket_io.on('message', namespace='/chat', message_handler)
+            socket_io.on('message', namespace='/chat', handler=message_handler)
 
         The handler function receives the ``sid`` (session ID) for the
         client as first argument. The ``'connect'`` event handler receives the
@@ -250,8 +251,9 @@ class Server(object):
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
                       reserved and should not be used.
         :param data: The data to send to the client or clients. Data can be of
-                     type ``str``, ``bytes``, ``list`` or ``dict``. If a
-                     ``list`` or ``dict``, the data will be serialized as JSON.
+                     type ``str``, ``bytes``, ``list`` or ``dict``. To send
+                     multiple arguments, use a tuple where each element is of
+                     one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
                    session ID of a client to address only that client, or to
                    to any custom room created by the application to address all
@@ -277,6 +279,12 @@ class Server(object):
                              single server process is used. It is recommended
                              to always leave this parameter with its default
                              value of ``False``.
+
+        Note: this method is not thread safe. If multiple threads are emitting
+        at the same time to the same client, then messages composed of
+        multiple packets may end up being sent in an incorrect sequence. Use
+        standard concurrency solutions (such as a Lock object) to prevent this
+        situation.
         """
         namespace = namespace or '/'
         room = to or room
@@ -293,8 +301,9 @@ class Server(object):
         :func:`emit` to issue custom event names.
 
         :param data: The data to send to the client or clients. Data can be of
-                     type ``str``, ``bytes``, ``list`` or ``dict``. If a
-                     ``list`` or ``dict``, the data will be serialized as JSON.
+                     type ``str``, ``bytes``, ``list`` or ``dict``. To send
+                     multiple arguments, use a tuple where each element is of
+                     one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
                    session ID of a client to address only that client, or to
                    to any custom room created by the application to address all
@@ -332,8 +341,9 @@ class Server(object):
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
                       reserved and should not be used.
         :param data: The data to send to the client or clients. Data can be of
-                     type ``str``, ``bytes``, ``list`` or ``dict``. If a
-                     ``list`` or ``dict``, the data will be serialized as JSON.
+                     type ``str``, ``bytes``, ``list`` or ``dict``. To send
+                     multiple arguments, use a tuple where each element is of
+                     one of the types indicated above.
         :param to: The session ID of the recipient client.
         :param sid: Alias for the ``to`` parameter.
         :param namespace: The Socket.IO namespace for the event. If this
@@ -349,7 +359,15 @@ class Server(object):
                              single server process is used. It is recommended
                              to always leave this parameter with its default
                              value of ``False``.
+
+        Note: this method is not thread safe. If multiple threads are emitting
+        at the same time to the same client, then messages composed of
+        multiple packets may end up being sent in an incorrect sequence. Use
+        standard concurrency solutions (such as a Lock object) to prevent this
+        situation.
         """
+        if to is None and sid is None:
+            raise ValueError('Cannot use call() to broadcast.')
         if not self.async_handlers:
             raise RuntimeError(
                 'Cannot use call() when async_handlers is False.')
@@ -434,7 +452,8 @@ class Server(object):
         is used.
         """
         namespace = namespace or '/'
-        eio_session = self.eio.get_session(sid)
+        eio_sid = self.manager.eio_sid_from_sid(sid, namespace)
+        eio_session = self.eio.get_session(eio_sid)
         return eio_session.setdefault(namespace, {})
 
     def save_session(self, sid, session, namespace=None):
@@ -446,7 +465,8 @@ class Server(object):
                           the default namespace is used.
         """
         namespace = namespace or '/'
-        eio_session = self.eio.get_session(sid)
+        eio_sid = self.manager.eio_sid_from_sid(sid, namespace)
+        eio_session = self.eio.get_session(eio_sid)
         eio_session[namespace] = session
 
     def session(self, sid, namespace=None):
@@ -489,23 +509,30 @@ class Server(object):
 
         return _session_context_manager(self, sid, namespace)
 
-    def disconnect(self, sid, namespace=None):
+    def disconnect(self, sid, namespace=None, ignore_queue=False):
         """Disconnect a client.
 
         :param sid: Session ID of the client.
         :param namespace: The Socket.IO namespace to disconnect. If this
                           argument is omitted the default namespace is used.
+        :param ignore_queue: Only used when a message queue is configured. If
+                             set to ``True``, the disconnect is processed
+                             locally, without broadcasting on the queue. It is
+                             recommended to always leave this parameter with
+                             its default value of ``False``.
         """
         namespace = namespace or '/'
-        if self.manager.is_connected(sid, namespace=namespace):
+        if ignore_queue:
+            delete_it = self.manager.is_connected(sid, namespace)
+        else:
+            delete_it = self.manager.can_disconnect(sid, namespace)
+        if delete_it:
             self.logger.info('Disconnecting %s [%s]', sid, namespace)
-            self.manager.pre_disconnect(sid, namespace=namespace)
-            self._send_packet(sid, packet.Packet(packet.DISCONNECT,
-                                                 namespace=namespace))
+            eio_sid = self.manager.pre_disconnect(sid, namespace=namespace)
+            self._send_packet(eio_sid, packet.Packet(
+                packet.DISCONNECT, namespace=namespace))
             self._trigger_event('disconnect', namespace, sid)
             self.manager.disconnect(sid, namespace=namespace)
-            if namespace == '/':
-                self.eio.disconnect(sid)
 
     def transport(self, sid):
         """Return the name of the transport used by the client.
@@ -516,6 +543,16 @@ class Server(object):
         :param sid: The session of the client.
         """
         return self.eio.transport(sid)
+
+    def get_environ(self, sid, namespace=None):
+        """Return the WSGI environ dictionary for a client.
+
+        :param sid: The session of the client.
+        :param namespace: The Socket.IO namespace. If this argument is omitted
+                          the default namespace is used.
+        """
+        eio_sid = self.manager.eio_sid_from_sid(sid, namespace or '/')
+        return self.environ.get(eio_sid)
 
     def handle_request(self, environ, start_response):
         """Handle an HTTP request from the client.
@@ -560,44 +597,47 @@ class Server(object):
         """
         return self.eio.sleep(seconds)
 
-    def _emit_internal(self, sid, event, data, namespace=None, id=None):
+    def _emit_internal(self, eio_sid, event, data, namespace=None, id=None):
         """Send a message to a client."""
-        if six.PY2 and not self.binary:
-            binary = False  # pragma: nocover
-        else:
-            binary = None
         # tuples are expanded to multiple arguments, everything else is sent
         # as a single argument
         if isinstance(data, tuple):
             data = list(data)
-        else:
+        elif data is not None:
             data = [data]
-        self._send_packet(sid, packet.Packet(packet.EVENT, namespace=namespace,
-                                             data=[event] + data, id=id,
-                                             binary=binary))
+        else:
+            data = []
+        self._send_packet(eio_sid, packet.Packet(
+            packet.EVENT, namespace=namespace, data=[event] + data, id=id))
 
-    def _send_packet(self, sid, pkt):
+    def _send_packet(self, eio_sid, pkt):
         """Send a Socket.IO packet to a client."""
         encoded_packet = pkt.encode()
         if isinstance(encoded_packet, list):
-            binary = False
             for ep in encoded_packet:
-                self.eio.send(sid, ep, binary=binary)
-                binary = True
+                self.eio.send(eio_sid, ep)
         else:
-            self.eio.send(sid, encoded_packet, binary=False)
+            self.eio.send(eio_sid, encoded_packet)
 
-    def _handle_connect(self, sid, namespace):
+    def _handle_connect(self, eio_sid, namespace, data):
         """Handle a client connection request."""
         namespace = namespace or '/'
-        self.manager.connect(sid, namespace)
+        sid = self.manager.connect(eio_sid, namespace)
         if self.always_connect:
-            self._send_packet(sid, packet.Packet(packet.CONNECT,
-                                                 namespace=namespace))
-        fail_reason = None
+            self._send_packet(eio_sid, packet.Packet(
+                packet.CONNECT, {'sid': sid}, namespace=namespace))
+        fail_reason = exceptions.ConnectionRefusedError().error_args
         try:
-            success = self._trigger_event('connect', namespace, sid,
-                                          self.environ[sid])
+            if data:
+                success = self._trigger_event(
+                    'connect', namespace, sid, self.environ[eio_sid], data)
+            else:
+                try:
+                    success = self._trigger_event(
+                        'connect', namespace, sid, self.environ[eio_sid])
+                except TypeError:
+                    success = self._trigger_event(
+                        'connect', namespace, sid, self.environ[eio_sid], None)
         except exceptions.ConnectionRefusedError as exc:
             fail_reason = exc.error_args
             success = False
@@ -605,36 +645,31 @@ class Server(object):
         if success is False:
             if self.always_connect:
                 self.manager.pre_disconnect(sid, namespace)
-                self._send_packet(sid, packet.Packet(
+                self._send_packet(eio_sid, packet.Packet(
                     packet.DISCONNECT, data=fail_reason, namespace=namespace))
+            else:
+                self._send_packet(eio_sid, packet.Packet(
+                    packet.CONNECT_ERROR, data=fail_reason,
+                    namespace=namespace))
             self.manager.disconnect(sid, namespace)
-            if not self.always_connect:
-                self._send_packet(sid, packet.Packet(
-                    packet.ERROR, data=fail_reason, namespace=namespace))
-            if sid in self.environ:  # pragma: no cover
-                del self.environ[sid]
         elif not self.always_connect:
-            self._send_packet(sid, packet.Packet(packet.CONNECT,
-                                                 namespace=namespace))
+            self._send_packet(eio_sid, packet.Packet(
+                packet.CONNECT, {'sid': sid}, namespace=namespace))
 
-    def _handle_disconnect(self, sid, namespace):
+    def _handle_disconnect(self, eio_sid, namespace):
         """Handle a client disconnect."""
         namespace = namespace or '/'
-        if namespace == '/':
-            namespace_list = list(self.manager.get_namespaces())
-        else:
-            namespace_list = [namespace]
-        for n in namespace_list:
-            if n != '/' and self.manager.is_connected(sid, n):
-                self._trigger_event('disconnect', n, sid)
-                self.manager.disconnect(sid, n)
-        if namespace == '/' and self.manager.is_connected(sid, namespace):
-            self._trigger_event('disconnect', '/', sid)
-            self.manager.disconnect(sid, '/')
+        sid = self.manager.sid_from_eio_sid(eio_sid, namespace)
+        if not self.manager.is_connected(sid, namespace):  # pragma: no cover
+            return
+        self.manager.pre_disconnect(sid, namespace=namespace)
+        self._trigger_event('disconnect', namespace, sid)
+        self.manager.disconnect(sid, namespace)
 
-    def _handle_event(self, sid, namespace, id, data):
+    def _handle_event(self, eio_sid, namespace, id, data):
         """Handle an incoming client event."""
         namespace = namespace or '/'
+        sid = self.manager.sid_from_eio_sid(eio_sid, namespace)
         self.logger.info('received event "%s" from %s [%s]', data[0], sid,
                          namespace)
         if not self.manager.is_connected(sid, namespace):
@@ -643,11 +678,13 @@ class Server(object):
             return
         if self.async_handlers:
             self.start_background_task(self._handle_event_internal, self, sid,
-                                       data, namespace, id)
+                                       eio_sid, data, namespace, id)
         else:
-            self._handle_event_internal(self, sid, data, namespace, id)
+            self._handle_event_internal(self, sid, eio_sid, data, namespace,
+                                        id)
 
-    def _handle_event_internal(self, server, sid, data, namespace, id):
+    def _handle_event_internal(self, server, sid, eio_sid, data, namespace,
+                               id):
         r = server._trigger_event(data[0], namespace, sid, *data[1:])
         if id is not None:
             # send ACK packet with the response returned by the handler
@@ -658,20 +695,15 @@ class Server(object):
                 data = list(r)
             else:
                 data = [r]
-            if six.PY2 and not self.binary:
-                binary = False  # pragma: nocover
-            else:
-                binary = None
-            server._send_packet(sid, packet.Packet(packet.ACK,
-                                                   namespace=namespace,
-                                                   id=id, data=data,
-                                                   binary=binary))
+            server._send_packet(eio_sid, packet.Packet(
+                packet.ACK, namespace=namespace, id=id, data=data))
 
-    def _handle_ack(self, sid, namespace, id, data):
+    def _handle_ack(self, eio_sid, namespace, id, data):
         """Handle ACK packets from the client."""
         namespace = namespace or '/'
+        sid = self.manager.sid_from_eio_sid(eio_sid, namespace)
         self.logger.info('received ack from %s [%s]', sid, namespace)
-        self.manager.trigger_callback(sid, namespace, id, data)
+        self.manager.trigger_callback(sid, id, data)
 
     def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
@@ -684,47 +716,48 @@ class Server(object):
             return self.namespace_handlers[namespace].trigger_event(
                 event, *args)
 
-    def _handle_eio_connect(self, sid, environ):
+    def _handle_eio_connect(self, eio_sid, environ):
         """Handle the Engine.IO connection event."""
         if not self.manager_initialized:
             self.manager_initialized = True
             self.manager.initialize()
-        self.environ[sid] = environ
-        return self._handle_connect(sid, '/')
+        self.environ[eio_sid] = environ
 
-    def _handle_eio_message(self, sid, data):
+    def _handle_eio_message(self, eio_sid, data):
         """Dispatch Engine.IO messages."""
-        if sid in self._binary_packet:
-            pkt = self._binary_packet[sid]
+        if eio_sid in self._binary_packet:
+            pkt = self._binary_packet[eio_sid]
             if pkt.add_attachment(data):
-                del self._binary_packet[sid]
+                del self._binary_packet[eio_sid]
                 if pkt.packet_type == packet.BINARY_EVENT:
-                    self._handle_event(sid, pkt.namespace, pkt.id, pkt.data)
+                    self._handle_event(eio_sid, pkt.namespace, pkt.id,
+                                       pkt.data)
                 else:
-                    self._handle_ack(sid, pkt.namespace, pkt.id, pkt.data)
+                    self._handle_ack(eio_sid, pkt.namespace, pkt.id, pkt.data)
         else:
             pkt = packet.Packet(encoded_packet=data)
             if pkt.packet_type == packet.CONNECT:
-                self._handle_connect(sid, pkt.namespace)
+                self._handle_connect(eio_sid, pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:
-                self._handle_disconnect(sid, pkt.namespace)
+                self._handle_disconnect(eio_sid, pkt.namespace)
             elif pkt.packet_type == packet.EVENT:
-                self._handle_event(sid, pkt.namespace, pkt.id, pkt.data)
+                self._handle_event(eio_sid, pkt.namespace, pkt.id, pkt.data)
             elif pkt.packet_type == packet.ACK:
-                self._handle_ack(sid, pkt.namespace, pkt.id, pkt.data)
+                self._handle_ack(eio_sid, pkt.namespace, pkt.id, pkt.data)
             elif pkt.packet_type == packet.BINARY_EVENT or \
                     pkt.packet_type == packet.BINARY_ACK:
-                self._binary_packet[sid] = pkt
-            elif pkt.packet_type == packet.ERROR:
-                raise ValueError('Unexpected ERROR packet.')
+                self._binary_packet[eio_sid] = pkt
+            elif pkt.packet_type == packet.CONNECT_ERROR:
+                raise ValueError('Unexpected CONNECT_ERROR packet.')
             else:
                 raise ValueError('Unknown packet type.')
 
-    def _handle_eio_disconnect(self, sid):
+    def _handle_eio_disconnect(self, eio_sid):
         """Handle Engine.IO disconnect event."""
-        self._handle_disconnect(sid, '/')
-        if sid in self.environ:
-            del self.environ[sid]
+        for n in list(self.manager.get_namespaces()).copy():
+            self._handle_disconnect(eio_sid, n)
+        if eio_sid in self.environ:
+            del self.environ[eio_sid]
 
     def _engineio_server_class(self):
         return engineio.Server

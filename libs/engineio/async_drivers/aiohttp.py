@@ -3,7 +3,6 @@ import sys
 from urllib.parse import urlsplit
 
 from aiohttp.web import Response, WebSocketResponse
-import six
 
 
 def create_route(app, engineio_server, engineio_endpoint):
@@ -113,8 +112,8 @@ class WebSocket(object):  # pragma: no cover
 
     async def wait(self):
         msg = await self._sock.receive()
-        if not isinstance(msg.data, six.binary_type) and \
-                not isinstance(msg.data, six.text_type):
+        if not isinstance(msg.data, bytes) and \
+                not isinstance(msg.data, str):
             raise IOError()
         return msg.data
 

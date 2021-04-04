@@ -1,4 +1,3 @@
-import six
 import sys
 import time
 
@@ -15,11 +14,10 @@ class Socket(object):
         self.server = server
         self.sid = sid
         self.queue = self.server.create_queue()
-        self.last_ping = time.time()
+        self.last_ping = None
         self.connected = False
         self.upgrading = False
         self.upgraded = False
-        self.packet_backlog = []
         self.closing = False
         self.closed = False
         self.session = {}
@@ -28,7 +26,8 @@ class Socket(object):
         """Wait for packets to send to the client."""
         queue_empty = self.server.get_queue_empty_exception()
         try:
-            packets = [self.queue.get(timeout=self.server.ping_timeout)]
+            packets = [self.queue.get(
+                timeout=self.server.ping_interval + self.server.ping_timeout)]
             self.queue.task_done()
         except queue_empty:
             raise exceptions.QueueEmpty()
@@ -36,8 +35,12 @@ class Socket(object):
             return []
         while True:
             try:
-                packets.append(self.queue.get(block=False))
+                pkt = self.queue.get(block=False)
                 self.queue.task_done()
+                if pkt is None:
+                    self.queue.put(None)
+                    break
+                packets.append(pkt)
             except queue_empty:
                 break
         return packets
@@ -50,9 +53,8 @@ class Socket(object):
                                 self.sid, packet_name,
                                 pkt.data if not isinstance(pkt.data, bytes)
                                 else '<binary>')
-        if pkt.packet_type == packet.PING:
-            self.last_ping = time.time()
-            self.send(packet.Packet(packet.PONG, pkt.data))
+        if pkt.packet_type == packet.PONG:
+            self.schedule_ping()
         elif pkt.packet_type == packet.MESSAGE:
             self.server._trigger_event('message', self.sid, pkt.data,
                                        run_async=self.server.async_handlers)
@@ -64,14 +66,11 @@ class Socket(object):
             raise exceptions.UnknownPacketError()
 
     def check_ping_timeout(self):
-        """Make sure the client is still sending pings.
-
-        This helps detect disconnections for long-polling clients.
-        """
+        """Make sure the client is still responding to pings."""
         if self.closed:
             raise exceptions.SocketIsClosedError()
-        if time.time() - self.last_ping > self.server.ping_interval + \
-                self.server.ping_interval_grace_period:
+        if self.last_ping and \
+                time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             # Passing abort=False here will cause close() to write a
@@ -85,8 +84,6 @@ class Socket(object):
         """Send a packet to the client."""
         if not self.check_ping_timeout():
             return
-        if self.upgrading:
-            self.packet_backlog.append(pkt)
         else:
             self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
@@ -105,12 +102,16 @@ class Socket(object):
                                     self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
+        if self.upgrading or self.upgraded:
+            # we are upgrading to WebSocket, do not return any more packets
+            # through the polling endpoint
+            return [packet.Packet(packet.NOOP)]
         try:
             packets = self.poll()
         except exceptions.QueueEmpty:
             exc = sys.exc_info()
             self.close(wait=False)
-            six.reraise(*exc)
+            raise exc[1].with_traceback(exc[2])
         return packets
 
     def handle_post_request(self, environ):
@@ -119,7 +120,7 @@ class Socket(object):
         if length > self.server.max_http_buffer_size:
             raise exceptions.ContentTooLongError()
         else:
-            body = environ['wsgi.input'].read(length)
+            body = environ['wsgi.input'].read(length).decode('utf-8')
             p = payload.Payload(encoded_payload=body)
             for pkt in p.packets:
                 self.receive(pkt)
@@ -136,6 +137,16 @@ class Socket(object):
             if wait:
                 self.queue.join()
 
+    def schedule_ping(self):
+        def send_ping():
+            self.last_ping = None
+            self.server.sleep(self.server.ping_interval)
+            if not self.closing and not self.closed:
+                self.last_ping = time.time()
+                self.send(packet.Packet(packet.PING))
+
+        self.server.start_background_task(send_ping)
+
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
@@ -149,9 +160,11 @@ class Socket(object):
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
         # try to set a socket timeout matching the configured ping interval
+        # and timeout
         for attr in ['_sock', 'socket']:  # pragma: no cover
             if hasattr(ws, attr) and hasattr(getattr(ws, attr), 'settimeout'):
-                getattr(ws, attr).settimeout(self.server.ping_timeout)
+                getattr(ws, attr).settimeout(
+                    self.server.ping_interval + self.server.ping_timeout)
 
         if self.connected:
             # the socket was already connected, so this is an upgrade
@@ -163,10 +176,9 @@ class Socket(object):
                     decoded_pkt.data != 'probe':
                 self.server.logger.info(
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
+                self.upgrading = False
                 return []
-            ws.send(packet.Packet(
-                packet.PONG,
-                data=six.text_type('probe')).encode(always_bytes=False))
+            ws.send(packet.Packet(packet.PONG, data='probe').encode())
             self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             pkt = ws.wait()
@@ -177,13 +189,9 @@ class Socket(object):
                     ('%s: Failed websocket upgrade, expected UPGRADE packet, '
                      'received %s instead.'),
                     self.sid, pkt)
+                self.upgrading = False
                 return []
             self.upgraded = True
-
-            # flush any packets that were sent during the upgrade
-            for pkt in self.packet_backlog:
-                self.queue.put(pkt)
-            self.packet_backlog = []
             self.upgrading = False
         else:
             self.connected = True
@@ -202,7 +210,7 @@ class Socket(object):
                     break
                 try:
                     for pkt in packets:
-                        ws.send(pkt.encode(always_bytes=False))
+                        ws.send(pkt.encode())
                 except:
                     break
         writer_task = self.server.start_background_task(writer)
@@ -225,8 +233,6 @@ class Socket(object):
             if p is None:
                 # connection closed by client
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
             pkt = packet.Packet(encoded_packet=p)
             try:
                 self.receive(pkt)
