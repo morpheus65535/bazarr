@@ -4,7 +4,7 @@ import reduxStore from "../../@redux/store";
 import { log } from "../../utilites/logger";
 
 export class SocketIOClient {
-  socket: Socket;
+  private socket: Socket;
 
   constructor(baseUrl: string) {
     this.socket = io({
@@ -15,6 +15,10 @@ export class SocketIOClient {
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect);
     this.socket.on("data", this.onDataEvent);
+  }
+
+  reconnect() {
+    this.socket.connect();
   }
 
   onConnect() {

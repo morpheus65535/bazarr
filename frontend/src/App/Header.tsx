@@ -9,6 +9,7 @@ import React, {
   FunctionComponent,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -27,7 +28,7 @@ import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
-import { SystemApi } from "../apis";
+import apis, { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage } from "../utilites";
 import "./header.scss";
@@ -103,8 +104,14 @@ const Header: FunctionComponent<Props> = () => {
   const [reconnecting, setReconnect] = useState(false);
   const reconnect = useCallback(() => {
     setReconnect(true);
-    SystemApi.status().finally(() => setReconnect(false));
+    apis.socketIO.reconnect();
   }, []);
+
+  useEffect(() => {
+    if (!offline) {
+      setReconnect(false);
+    }
+  }, [offline]);
 
   const goHome = useGotoHomepage();
 
