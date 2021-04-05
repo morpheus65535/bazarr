@@ -2,7 +2,7 @@ import { handleActions } from "redux-actions";
 import {
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
-  MOVIES_UPDATE_INFO,
+  MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
   MOVIES_UPDATE_WANTED_RANGE,
@@ -47,7 +47,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
         historyList: updateAsyncState(action, state.historyList.data),
       };
     },
-    [MOVIES_UPDATE_INFO]: (
+    [MOVIES_UPDATE_LIST]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Item.Movie>>
     ) => {

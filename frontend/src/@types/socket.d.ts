@@ -7,9 +7,7 @@ namespace SocketIOType {
     | "movie-history"
     | "episode-blacklist"
     | "movie-blacklist"
-    | "badges-movies"
-    | "badges-series"
-    | "badges-providers"
+    | "badges"
     | "task";
 
   type Action = "update" | "insert" | "delete";

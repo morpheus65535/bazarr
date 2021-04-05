@@ -1,16 +1,16 @@
 import { useCallback, useMemo } from "react";
 import { buildOrderList } from "../../utilites";
 import {
-  episodeUpdateBySeriesId,
+  episodeUpdateBy,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
-  movieUpdateInfoAll,
-  movieUpdateWantedBy,
-  providerUpdateAll,
+  movieUpdateList,
+  movieUpdateWantedList,
+  providerUpdateList,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
-  seriesUpdateInfoAll,
-  seriesUpdateWantedBy,
+  seriesUpdateList,
+  seriesUpdateWantedList,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
   systemUpdateSettingsAll,
@@ -92,7 +92,7 @@ export function useProfileItems(profile?: Profile.Languages) {
 }
 
 export function useRawSeries() {
-  const action = useReduxAction(seriesUpdateInfoAll);
+  const action = useReduxAction(seriesUpdateList);
   const items = useReduxStore((d) => d.series.seriesList);
   return stateBuilder(items, action);
 }
@@ -118,7 +118,7 @@ export function useSeries(order = true) {
 
 export function useSerieBy(id?: number) {
   const [series, updateSerie] = useRawSeries();
-  const updateEpisodes = useReduxAction(episodeUpdateBySeriesId);
+  const updateEpisodes = useReduxAction(episodeUpdateBy);
   const serie = useMemo<AsyncState<Item.Series | null>>(() => {
     const items = series.data.items;
     let item: Item.Series | null = null;
@@ -142,7 +142,7 @@ export function useSerieBy(id?: number) {
 }
 
 export function useEpisodesBy(seriesId?: number) {
-  const action = useReduxAction(episodeUpdateBySeriesId);
+  const action = useReduxAction(episodeUpdateBy);
   const callback = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
       action(seriesId);
@@ -168,7 +168,7 @@ export function useEpisodesBy(seriesId?: number) {
 }
 
 export function useRawMovies() {
-  const action = useReduxAction(movieUpdateInfoAll);
+  const action = useReduxAction(movieUpdateList);
   const items = useReduxStore((d) => d.movie.movieList);
   return stateBuilder(items, action);
 }
@@ -216,21 +216,21 @@ export function useMovieBy(id?: number) {
 }
 
 export function useWantedSeries() {
-  const action = useReduxAction(seriesUpdateWantedBy);
+  const action = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
   return stateBuilder(items, action);
 }
 
 export function useWantedMovies() {
-  const action = useReduxAction(movieUpdateWantedBy);
+  const action = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
 
   return stateBuilder(items, action);
 }
 
 export function useProviders() {
-  const action = useReduxAction(providerUpdateAll);
+  const action = useReduxAction(providerUpdateList);
   const items = useReduxStore((d) => d.system.providers);
 
   return stateBuilder(items, action);

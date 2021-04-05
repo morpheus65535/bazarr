@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { siteUpdateOffline } from "../../@redux/actions";
+import { badgeUpdateAll, siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import { log } from "../../utilites/logger";
 
@@ -21,17 +21,28 @@ export class SocketIOClient {
     this.socket.connect();
   }
 
+  private dispatch(action: any) {
+    reduxStore.dispatch(action);
+  }
+
   onConnect() {
     log("info", "Socket.IO has connected");
-    reduxStore.dispatch(siteUpdateOffline(false));
+    this.dispatch(siteUpdateOffline(false));
   }
 
   onDisconnect() {
     log("warning", "Socket.IO has disconnected");
-    reduxStore.dispatch(siteUpdateOffline(true));
+    this.dispatch(siteUpdateOffline(true));
   }
 
   onDataEvent(event: SocketIOType.Body) {
     log("info", "Socket.IO receives", event);
+    switch (event.type) {
+      case "badges":
+        this.dispatch(badgeUpdateAll());
+        break;
+      default:
+        log("error", "SocketIO receives a unhandle event", event);
+    }
   }
 }

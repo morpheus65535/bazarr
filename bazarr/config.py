@@ -380,8 +380,7 @@ def save_settings(settings_items):
 
     if exclusion_updated:
         from event_handler import event_stream
-        event_stream(type='badges-series')
-        event_stream(type='badges-movies')
+        event_stream(type='badges')
 
 
 def url_sonarr():
