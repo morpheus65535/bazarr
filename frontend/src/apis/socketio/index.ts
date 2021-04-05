@@ -2,7 +2,9 @@ import { io, Socket } from "socket.io-client";
 import {
   badgeUpdateAll,
   movieUpdateBlacklist,
+  movieUpdateHistoryList,
   seriesUpdateBlacklist,
+  seriesUpdateHistoryList,
   siteUpdateOffline,
   systemUpdateTasks,
 } from "../../@redux/actions";
@@ -55,6 +57,12 @@ export class SocketIOClient {
         break;
       case "movie-blacklist":
         this.dispatch(movieUpdateBlacklist());
+        break;
+      case "episode-history":
+        this.dispatch(seriesUpdateHistoryList());
+        break;
+      case "movie-history":
+        this.dispatch(movieUpdateHistoryList());
         break;
       default:
         log("error", "SocketIO receives a unhandle event", event);

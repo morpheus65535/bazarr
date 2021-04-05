@@ -1,9 +1,9 @@
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { Column, Row } from "react-table";
+import { Column } from "react-table";
 import { useSeriesHistory } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
@@ -16,10 +16,6 @@ interface Props {}
 const SeriesHistoryView: FunctionComponent<Props> = () => {
   const [series, update] = useSeriesHistory();
   useAutoUpdate(update);
-
-  const tableUpdate = useCallback((row: Row<History.Base>) => update(), [
-    update,
-  ]);
 
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [
@@ -100,14 +96,13 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row }) => {
           const original = row.original;
 
           const { sonarrEpisodeId, sonarrSeriesId } = original;
           return (
             <BlacklistButton
               history={original}
-              update={() => externalUpdate && externalUpdate(row)}
               promise={(form) =>
                 EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
               }
@@ -124,7 +119,6 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
       type="series"
       state={series}
       columns={columns as Column<History.Base>[]}
-      tableUpdater={tableUpdate}
     ></HistoryGenericView>
   );
 };
