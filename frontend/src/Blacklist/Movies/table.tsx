@@ -13,10 +13,9 @@ import {
 
 interface Props {
   blacklist: readonly Blacklist.Movie[];
-  update: () => void;
 }
 
-const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
+const Table: FunctionComponent<Props> = ({ blacklist }) => {
   const columns = useMemo<Column<Blacklist.Movie>[]>(
     () => [
       {
@@ -78,7 +77,6 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
                   subs_id,
                 })
               }
-              onSuccess={update}
             >
               <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
             </AsyncButton>
@@ -86,7 +84,7 @@ const Table: FunctionComponent<Props> = ({ blacklist, update }) => {
         },
       },
     ],
-    [update]
+    []
   );
   return (
     <PageTable
