@@ -3,7 +3,6 @@
 import os
 import requests
 import logging
-import ast
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -11,6 +10,8 @@ from database import database, dict_converter
 from utils import get_sonarr_version
 from helper import path_mappings
 from event_handler import event_stream
+
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 def update_series():
@@ -34,7 +35,7 @@ def update_series():
     # Get shows data from Sonarr
     url_sonarr_api_series = url_sonarr() + "/api/series?apikey=" + apikey_sonarr
     try:
-        r = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+        r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
@@ -171,7 +172,7 @@ def get_profile_list():
         url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
 
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
         return None
@@ -209,7 +210,7 @@ def get_tags():
     url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
 
     try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
         return []

@@ -12,6 +12,8 @@ from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 from get_subtitle import movies_download_subtitles
 from database import database, dict_converter, get_exclusion_clause
 
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+
 
 def update_all_movies():
     movies_full_scan_subtitles()
@@ -45,7 +47,7 @@ def update_movies():
             url_radarr_api_movies = url_radarr() + "/api/v3/movie?apikey=" + apikey_radarr
 
         try:
-            r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
+            r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
@@ -288,7 +290,7 @@ def get_profile_list():
         url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
 
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError as errc:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
@@ -371,7 +373,7 @@ def get_tags():
     url_sonarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
 
     try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
         return []
