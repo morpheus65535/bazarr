@@ -77,8 +77,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-        'series_sync': '1',
-        'episodes_sync': '5',
+        'series_sync': '5',
         'excluded_tags': '[]',
         'excluded_series_types': '[]'
     },

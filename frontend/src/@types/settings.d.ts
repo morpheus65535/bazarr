@@ -128,7 +128,6 @@ namespace Settings {
     full_update_hour: number;
     only_monitored: boolean;
     series_sync: number;
-    episodes_sync: number;
     excluded_tags: string[];
     excluded_series_types: SonarrSeriesType[];
   }

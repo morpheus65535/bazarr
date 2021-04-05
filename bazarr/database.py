@@ -102,6 +102,7 @@ def db_upgrade():
         ['table_shows', 'seriesType', 'text', ''],
         ['table_shows', 'imdbId', 'text', ''],
         ['table_shows', 'profileId', 'integer'],
+        ['table_shows', 'sizeOnDisk', 'integer'],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],

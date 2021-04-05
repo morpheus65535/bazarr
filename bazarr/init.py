@@ -163,6 +163,9 @@ if settings.analytics.visitor:
 with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
     settings.remove_option('general', 'throtteled_providers')
     settings.remove_option('general', 'update_restart')
+    settings.remove_option('sonarr', 'episodes_sync')
+    if settings.sonarr.series_sync == '1':
+        settings.sonarr.series_sync = '5'
     settings.write(handle)
 
 

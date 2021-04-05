@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from get_episodes import sync_episodes, update_all_episodes
+from get_episodes import update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
@@ -143,18 +143,14 @@ class Scheduler:
         if settings.general.getboolean('use_sonarr'):
             self.aps_scheduler.add_job(
                 update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='update_series', name='Update Series list from Sonarr',
-                replace_existing=True)
-            self.aps_scheduler.add_job(
-                sync_episodes, IntervalTrigger(minutes=int(settings.sonarr.episodes_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr',
+                coalesce=True, misfire_grace_time=15, id='update_series', name='Sync with Sonarr',
                 replace_existing=True)
 
     def __radarr_update_task(self):
         if settings.general.getboolean('use_radarr'):
             self.aps_scheduler.add_job(
                 update_movies, IntervalTrigger(minutes=int(settings.radarr.movies_sync)), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='update_movies', name='Update Movie list from Radarr',
+                coalesce=True, misfire_grace_time=15, id='update_movies', name='Sync with Radarr',
                 replace_existing=True)
 
     def __cache_cleanup_task(self):
@@ -257,7 +253,6 @@ scheduler = Scheduler()
 if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
     if settings.general.getboolean('use_sonarr'):
         scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
-        scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
     if settings.general.getboolean('use_radarr'):
         scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
     del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']
