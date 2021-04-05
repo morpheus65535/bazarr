@@ -11,7 +11,6 @@ from database import database, dict_converter
 from utils import get_sonarr_version
 from helper import path_mappings
 from event_handler import event_stream
-from get_episodes import sync_episodes
 
 
 def update_series():
@@ -57,7 +56,6 @@ def update_series():
     current_shows_sonarr = []
     series_to_update = []
     series_to_add = []
-    episodes_to_sync = []
 
     series_list_length = len(r.json())
     for i, show in enumerate(r.json(), 1):
@@ -89,13 +87,6 @@ def update_series():
         # Add shows in Sonarr to current shows list
         current_shows_sonarr.append(show['id'])
 
-        # Get sizeOnDisk for show
-        sizeOnDisk = show['sizeOnDisk'] if 'sizeOnDisk' in show else 0
-        show_size_in_db = database.execute('SELECT sizeOnDisk FROM table_shows WHERE sonarrSeriesId = ?', (show['id'],))
-        if len(show_size_in_db):
-            if sizeOnDisk != show_size_in_db[0]['sizeOnDisk']:
-                episodes_to_sync.append(show['id'])
-
         if show['id'] in current_shows_db_list:
             series_to_update.append({'title': show["title"],
                                      'path': show["path"],
@@ -110,8 +101,7 @@ def update_series():
                                      'alternateTitles': alternate_titles,
                                      'tags': str(tags),
                                      'seriesType': show['seriesType'],
-                                     'imdbId': imdbId,
-                                     'sizeOnDisk': sizeOnDisk})
+                                     'imdbId': imdbId})
         else:
             series_to_add.append({'title': show["title"],
                                   'path': show["path"],
@@ -127,22 +117,19 @@ def update_series():
                                   'tags': str(tags),
                                   'seriesType': show['seriesType'],
                                   'imdbId': imdbId,
-                                  'profileId': serie_default_profile,
-                                  'sizeOnDisk': sizeOnDisk})
+                                  'profileId': serie_default_profile})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
     for series in removed_series:
-        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series,))
-        database.execute("DELETE FROM table_episodes WHERE sonarrSeriesId=?", (series,))
+        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
         event_stream(type='series', action='delete', series=series)
 
     # Update existing series in DB
     series_in_db_list = []
     series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
-                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId, "
-                                    "sizeOnDisk FROM table_shows")
+                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId FROM table_shows")
 
     for item in series_in_db:
         series_in_db_list.append(item)
@@ -155,9 +142,6 @@ def update_series():
                          query.values + (updated_series['sonarrSeriesId'],))
         event_stream(type='series', action='update', series=updated_series['sonarrSeriesId'])
 
-        if updated_series['sonarrSeriesId'] in episodes_to_sync:
-            sync_episodes(series_id=updated_series['sonarrSeriesId'])
-
     # Insert new series in DB
     for added_series in series_to_add:
         query = dict_converter.convert(added_series)
@@ -166,15 +150,13 @@ def update_series():
             query.question_marks + ''')''', query.values)
         if result:
             list_missing_subtitles(no=added_series['sonarrSeriesId'])
-            event_stream(type='series', action='insert', id=added_series['sonarrSeriesId'])
-
-            if added_series['sonarrSeriesId'] in episodes_to_sync:
-                sync_episodes(series_id=added_series['sonarrSeriesId'])
         else:
             logging.debug('BAZARR unable to insert this series into the database:',
                           path_mappings.path_replace(added_series['path']))
 
-    logging.debug('BAZARR All series synced from Sonarr into database.')
+            event_stream(type='series', action='insert', series=added_series['sonarrSeriesId'])
+
+            logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
 def get_profile_list():

@@ -9,6 +9,7 @@ import {
 import {
   dayOptions,
   diskUpdateOptions,
+  episodesSyncOptions,
   moviesSyncOptions,
   seriesSyncOptions,
   upgradeOptions,
@@ -27,13 +28,19 @@ const SettingsSchedulerView: FunctionComponent = () => {
   return (
     <SettingsProvider title="Scheduler - Bazarr (Settings)">
       <Group header="Sonarr/Radarr Sync">
-        <Input name="Sync with Sonarr">
+        <Input name="Update Series List from Sonarr">
           <Selector
             options={seriesSyncOptions}
             settingKey="settings-sonarr-series_sync"
           ></Selector>
         </Input>
-        <Input name="Sync with Radarr">
+        <Input name="Update Episodes List from Sonarr">
+          <Selector
+            options={episodesSyncOptions}
+            settingKey="settings-sonarr-episodes_sync"
+          ></Selector>
+        </Input>
+        <Input name="Update Movies List from Radarr">
           <Selector
             options={moviesSyncOptions}
             settingKey="settings-radarr-movies_sync"
