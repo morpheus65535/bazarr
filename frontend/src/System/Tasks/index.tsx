@@ -14,8 +14,7 @@ const SystemTasksView: FunctionComponent<Props> = () => {
   const tasks = useReduxStore((s) => s.system.tasks);
   const update = useReduxAction(systemUpdateTasks);
 
-  // TODO: Use Websocket
-  useAutoUpdate(update, 10 * 1000);
+  useAutoUpdate(update);
 
   return (
     <AsyncStateOverlay state={tasks}>

@@ -1,5 +1,9 @@
 import { io, Socket } from "socket.io-client";
-import { badgeUpdateAll, siteUpdateOffline } from "../../@redux/actions";
+import {
+  badgeUpdateAll,
+  siteUpdateOffline,
+  systemUpdateTasks,
+} from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import { log } from "../../utilites/logger";
 
@@ -40,6 +44,9 @@ export class SocketIOClient {
     switch (event.type) {
       case "badges":
         this.dispatch(badgeUpdateAll());
+        break;
+      case "task":
+        this.dispatch(systemUpdateTasks());
         break;
       default:
         log("error", "SocketIO receives a unhandle event", event);
