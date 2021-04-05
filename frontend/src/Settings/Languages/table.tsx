@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useProfiles } from ".";
+import { useEnabledLanguages, useProfiles } from ".";
 import { ActionButton, SimpleTable, useShowModal } from "../../components";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
@@ -17,6 +17,8 @@ import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
   const originalProfiles = useProfiles();
+
+  const languages = useEnabledLanguages();
 
   const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
 
@@ -117,6 +119,8 @@ const Table: FunctionComponent = () => {
     []
   );
 
+  const canAdd = languages.length !== 0;
+
   return (
     <React.Fragment>
       <SimpleTable
@@ -126,6 +130,7 @@ const Table: FunctionComponent = () => {
       ></SimpleTable>
       <Button
         block
+        disabled={!canAdd}
         variant="light"
         onClick={() => {
           const profile = {
@@ -137,7 +142,7 @@ const Table: FunctionComponent = () => {
           showModal("profile", profile);
         }}
       >
-        Add New Profile
+        {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
       <Modal update={updateProfile} modalKey="profile"></Modal>
     </React.Fragment>
