@@ -554,12 +554,11 @@ class SystemStatus(Resource):
 class SystemReleases(Resource):
     @authenticate
     def get(self):
-        releases = []
+        filtered_releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
                 releases = json.loads(f.read())
 
-            filtered_releases = []
             for release in releases:
                 if settings.general.branch == 'master' and not release['prerelease']:
                     filtered_releases.append(release)
@@ -570,14 +569,15 @@ class SystemReleases(Resource):
             if settings.general.branch == 'master':
                 filtered_releases = filtered_releases[:5]
 
+            current_version = os.environ["BAZARR_VERSION"]
+
             for i, release in enumerate(filtered_releases):
                 body = release['body'].replace('- ', '').split('\n')[1:]
                 filtered_releases[i] = {"body": body,
                                         "name": release['name'],
                                         "date": release['date'][:10],
                                         "prerelease": release['prerelease'],
-                                        "current": True if release['name'].lstrip('v') == os.environ["BAZARR_VERSION"]
-                                        else False}
+                                        "current": release['name'].lstrip('v') == current_version}
 
         except Exception as e:
             logging.exception(
