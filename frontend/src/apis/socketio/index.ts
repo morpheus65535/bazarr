@@ -1,11 +1,10 @@
 import { io, Socket } from "socket.io-client";
-import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 import { siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import { log } from "../../utilites/logger";
 
 export class SocketIOClient {
-  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+  socket: Socket;
 
   constructor(baseUrl: string) {
     this.socket = io({
@@ -13,10 +12,9 @@ export class SocketIOClient {
       transports: ["websocket", "polling"],
     });
 
-    this.socket.on("connect", this.onConnect);
+    this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect);
-
-    this.socket.onAny(this.onEvent);
+    this.socket.on("data", this.onDataEvent);
   }
 
   onConnect() {
@@ -29,7 +27,7 @@ export class SocketIOClient {
     reduxStore.dispatch(siteUpdateOffline(true));
   }
 
-  onEvent(eventName: string, ...args: any[]) {
-    console.log("Socket.IO receives event", eventName, args);
+  onDataEvent(event: SocketIOType.Body) {
+    log("info", "Socket.IO receives", event);
   }
 }
