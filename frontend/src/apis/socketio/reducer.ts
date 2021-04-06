@@ -3,8 +3,10 @@ import {
   badgeUpdateAll,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
+  movieUpdateList,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
+  seriesUpdateList,
   systemUpdateTasks,
 } from "../../@redux/actions";
 
@@ -36,5 +38,17 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "task",
     update: () => systemUpdateTasks,
+  },
+  {
+    key: "series",
+    update: () => seriesUpdateList,
+  },
+  {
+    key: "movie",
+    update: () => movieUpdateList,
+  },
+  {
+    key: "episode",
+    // update: () => episodeUpdateBy
   },
 ];

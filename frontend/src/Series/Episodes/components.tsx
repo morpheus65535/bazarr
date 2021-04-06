@@ -2,7 +2,6 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
-import { useSerieBy } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
 
@@ -20,8 +19,6 @@ export const SubtitleAction: FunctionComponent<Props> = ({
   subtitle,
 }) => {
   const { hi, forced } = subtitle;
-
-  const [, update] = useSerieBy(seriesid);
 
   const path = subtitle.path;
 
@@ -46,7 +43,6 @@ export const SubtitleAction: FunctionComponent<Props> = ({
             return null;
           }
         }}
-        onSuccess={update}
         as={Badge}
         className="mr-1"
         variant={missing ? "primary" : "secondary"}

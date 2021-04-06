@@ -66,7 +66,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const series = usePayload<Item.Series>(modal.modalKey);
 
-  const [episodes, updateEpisodes] = useEpisodesBy(series?.sonarrSeriesId);
+  const [episodes] = useEpisodesBy(series?.sonarrSeriesId);
 
   const [uploading, setUpload] = useState(false);
 
@@ -386,7 +386,6 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           onSuccess={() => {
             closeModal();
             setFiles([]);
-            updateEpisodes();
           }}
         >
           Upload

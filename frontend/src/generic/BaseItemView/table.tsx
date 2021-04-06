@@ -9,13 +9,11 @@ interface Props extends SharedProps {
   dirtyItems: readonly Item.Base[];
   editMode: boolean;
   select: React.Dispatch<Item.Base[]>;
-  update: (ids?: number[]) => void;
 }
 
 const Table: FunctionComponent<Props> = ({
   state,
   dirtyItems,
-  update,
   modify,
   editMode,
   select,
@@ -57,14 +55,7 @@ const Table: FunctionComponent<Props> = ({
         emptyText={`No ${name} Found`}
         externalUpdate={updateRow}
       ></PageTable>
-      <ItemEditorModal
-        modalKey="edit"
-        submit={modify}
-        onSuccess={(item) => {
-          const id = GetItemId(item);
-          update([id]);
-        }}
-      ></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );
 };

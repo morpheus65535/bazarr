@@ -95,7 +95,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "scan-disk", seriesid: id })
             }
-            onSuccess={update}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
@@ -104,7 +103,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
-            onSuccess={update}
             disabled={
               item.episodeFileCount === 0 ||
               item.profileId === null ||
@@ -145,12 +143,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes} update={update}></Table>
+        <Table episodes={episodes}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
-        onSuccess={update}
       ></ItemEditorModal>
       <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
     </Container>
