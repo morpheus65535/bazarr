@@ -33,17 +33,17 @@ export class SocketIOClient {
     reduxStore.dispatch(action);
   }
 
-  onConnect() {
+  private onConnect() {
     log("info", "Socket.IO has connected");
     this.dispatch(siteUpdateOffline(false));
   }
 
-  onDisconnect() {
+  private onDisconnect() {
     log("warning", "Socket.IO has disconnected");
     this.dispatch(siteUpdateOffline(true));
   }
 
-  onDataEvent(event: SocketIOType.Body) {
+  private onDataEvent(event: SocketIOType.Body) {
     log("info", "Socket.IO receives", event);
     switch (event.type) {
       case "badges":
