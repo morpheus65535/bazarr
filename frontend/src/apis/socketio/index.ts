@@ -29,8 +29,11 @@ export class SocketIOClient {
     this.socket.connect();
   }
 
-  private dispatch(action: any) {
-    reduxStore.dispatch(action);
+  private dispatch(action: any, state?: AsyncState<any>) {
+    const canDispatch = state ? state.updating === false : true;
+    if (canDispatch) {
+      reduxStore.dispatch(action);
+    }
   }
 
   private onConnect() {
@@ -45,24 +48,25 @@ export class SocketIOClient {
 
   private onDataEvent(event: SocketIOType.Body) {
     log("info", "Socket.IO receives", event);
+    const store = reduxStore.getState();
     switch (event.type) {
       case "badges":
         this.dispatch(badgeUpdateAll());
         break;
       case "task":
-        this.dispatch(systemUpdateTasks());
+        this.dispatch(systemUpdateTasks(), store.system.tasks);
         break;
       case "episode-blacklist":
-        this.dispatch(seriesUpdateBlacklist());
+        this.dispatch(seriesUpdateBlacklist(), store.series.blacklist);
         break;
       case "movie-blacklist":
-        this.dispatch(movieUpdateBlacklist());
+        this.dispatch(movieUpdateBlacklist(), store.movie.blacklist);
         break;
       case "episode-history":
-        this.dispatch(seriesUpdateHistoryList());
+        this.dispatch(seriesUpdateHistoryList(), store.series.historyList);
         break;
       case "movie-history":
-        this.dispatch(movieUpdateHistoryList());
+        this.dispatch(movieUpdateHistoryList(), store.movie.historyList);
         break;
       default:
         log("error", "SocketIO receives a unhandle event", event);
