@@ -1,18 +1,14 @@
+import { debounce } from "lodash";
 import { io, Socket } from "socket.io-client";
-import {
-  badgeUpdateAll,
-  movieUpdateBlacklist,
-  movieUpdateHistoryList,
-  seriesUpdateBlacklist,
-  seriesUpdateHistoryList,
-  siteUpdateOffline,
-  systemUpdateTasks,
-} from "../../@redux/actions";
+import { siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import { log } from "../../utilites/logger";
+import { SocketIOReducer } from "./reducer";
 
 export class SocketIOClient {
   private socket: Socket;
+  private events: SocketIO.Event[];
+  private debounceReduce: () => void;
 
   constructor(baseUrl: string) {
     this.socket = io({
@@ -23,10 +19,64 @@ export class SocketIOClient {
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect.bind(this));
     this.socket.on("data", this.onDataEvent.bind(this));
+
+    this.events = [];
+    this.debounceReduce = debounce(this.reduce, 200);
   }
 
   reconnect() {
     this.socket.connect();
+  }
+
+  private reduce() {
+    const events = [...this.events];
+    this.events = [];
+
+    const store = reduxStore.getState();
+
+    const records: SocketIO.ActionRecord = {};
+
+    events.forEach((e) => {
+      if (!(e.type in records)) {
+        records[e.type] = {};
+      }
+      const record = records[e.type]!;
+      if (!(e.action in record)) {
+        record[e.action] = [];
+      }
+      if (e.id) {
+        record[e.action]?.push(e.id);
+      }
+    });
+
+    for (const key in records) {
+      const type = key as SocketIO.Type;
+      const element = records[type]!;
+
+      const handler = SocketIOReducer.find((v) => v.key === type);
+      if (handler) {
+        if (handler.state && handler.state(store).updating) {
+          return;
+        }
+
+        for (const actionKey in element) {
+          const action = actionKey as SocketIO.Action;
+          const ids = element[action]!;
+          if (action in handler) {
+            const realAction = handler[action]!();
+            if (ids.length === 0) {
+              reduxStore.dispatch(realAction());
+            } else {
+              reduxStore.dispatch(realAction(ids));
+            }
+          } else {
+            log("error", "Unhandle action of SocketIO event", action, type);
+          }
+        }
+      } else {
+        log("error", "Unhandle SocketIO event", type);
+      }
+    }
   }
 
   private dispatch(action: any, state?: AsyncState<any>) {
@@ -46,30 +96,9 @@ export class SocketIOClient {
     this.dispatch(siteUpdateOffline(true));
   }
 
-  private onDataEvent(event: SocketIOType.Body) {
+  private onDataEvent(event: SocketIO.Event) {
     log("info", "Socket.IO receives", event);
-    const store = reduxStore.getState();
-    switch (event.type) {
-      case "badges":
-        this.dispatch(badgeUpdateAll());
-        break;
-      case "task":
-        this.dispatch(systemUpdateTasks(), store.system.tasks);
-        break;
-      case "episode-blacklist":
-        this.dispatch(seriesUpdateBlacklist(), store.series.blacklist);
-        break;
-      case "movie-blacklist":
-        this.dispatch(movieUpdateBlacklist(), store.movie.blacklist);
-        break;
-      case "episode-history":
-        this.dispatch(seriesUpdateHistoryList(), store.series.historyList);
-        break;
-      case "movie-history":
-        this.dispatch(movieUpdateHistoryList(), store.movie.historyList);
-        break;
-      default:
-        log("error", "SocketIO receives a unhandle event", event);
-    }
+    this.events.push(event);
+    this.debounceReduce();
   }
 }
