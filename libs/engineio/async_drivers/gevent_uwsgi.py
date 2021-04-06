@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import six
-
 import gevent
 from gevent import queue
 from gevent.event import Event
@@ -75,7 +73,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
     def _send(self, msg):
         """Transmits message either in binary or UTF-8 text mode,
         depending on its type."""
-        if isinstance(msg, six.binary_type):
+        if isinstance(msg, bytes):
             method = uwsgi.websocket_send_binary
         else:
             method = uwsgi.websocket_send
@@ -86,11 +84,11 @@ class uWSGIWebSocket(object):  # pragma: no cover
 
     def _decode_received(self, msg):
         """Returns either bytes or str, depending on message type."""
-        if not isinstance(msg, six.binary_type):
+        if not isinstance(msg, bytes):
             # already decoded - do nothing
             return msg
         # only decode from utf-8 if message is not binary data
-        type = six.byte2int(msg[0:1])
+        type = ord(msg[0:1])
         if type >= 48:  # no binary
             return msg.decode('utf-8')
         # binary message, don't try to decode

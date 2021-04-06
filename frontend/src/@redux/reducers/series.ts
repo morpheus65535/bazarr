@@ -3,7 +3,7 @@ import {
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
-  SERIES_UPDATE_INFO,
+  SERIES_UPDATE_LIST,
   SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
   SERIES_UPDATE_WANTED_RANGE,
@@ -70,7 +70,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
         historyList: updateAsyncState(action, state.historyList.data),
       };
     },
-    [SERIES_UPDATE_INFO]: (
+    [SERIES_UPDATE_LIST]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Item.Series>>
     ) => {

@@ -40,24 +40,24 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_
                      "video_path, language, provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                      (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
                       provider, score, subs_id, subtitles_path))
-    event_stream(type='episodeHistory')
+    event_stream(type='episode-history')
 
 
 def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
     database.execute("INSERT INTO table_blacklist (sonarr_series_id, sonarr_episode_id, timestamp, provider, "
                      "subs_id, language) VALUES (?,?,?,?,?,?)",
                      (sonarr_series_id, sonarr_episode_id, time.time(), provider, subs_id, language))
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist')
 
 
 def blacklist_delete(provider, subs_id):
     database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist')
 
 
 def blacklist_delete_all():
     database.execute("DELETE FROM table_blacklist")
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
@@ -65,23 +65,23 @@ def history_log_movie(action, radarr_id, description, video_path=None, language=
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
                      "provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
                      (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id, subtitles_path))
-    event_stream(type='movieHistory')
+    event_stream(type='movie-history')
 
 
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
     database.execute("INSERT INTO table_blacklist_movie (radarr_id, timestamp, provider, subs_id, language) "
                      "VALUES (?,?,?,?,?)", (radarr_id, time.time(), provider, subs_id, language))
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_movie(provider, subs_id):
     database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_all_movie():
     database.execute("DELETE FROM table_blacklist_movie")
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist')
 
 
 @region.cache_on_arguments()

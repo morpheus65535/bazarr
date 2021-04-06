@@ -3,7 +3,6 @@ import uuid
 
 import json
 import pickle
-import six
 
 from .base_manager import BaseManager
 
@@ -58,7 +57,7 @@ class PubSubManager(BaseManager):
                                    'context of a server.')
             if room is None:
                 raise ValueError('Cannot use callback without a room set.')
-            id = self._generate_ack_id(room, namespace, callback)
+            id = self._generate_ack_id(room, callback)
             callback = (room, namespace, id)
         else:
             callback = None
@@ -66,6 +65,15 @@ class PubSubManager(BaseManager):
                        'namespace': namespace, 'room': room,
                        'skip_sid': skip_sid, 'callback': callback,
                        'host_id': self.host_id})
+
+    def can_disconnect(self, sid, namespace):
+        if self.is_connected(sid, namespace):
+            # client is in this server, so we can disconnect directly
+            return super().can_disconnect(sid, namespace)
+        else:
+            # client is in another server, so we post request to the queue
+            self._publish({'method': 'disconnect', 'sid': sid,
+                           'namespace': namespace or '/'})
 
     def close_room(self, room, namespace=None):
         self._publish({'method': 'close_room', 'room': room,
@@ -111,19 +119,23 @@ class PubSubManager(BaseManager):
         if self.host_id == message.get('host_id'):
             try:
                 sid = message['sid']
-                namespace = message['namespace']
                 id = message['id']
                 args = message['args']
             except KeyError:
                 return
-            self.trigger_callback(sid, namespace, id, args)
+            self.trigger_callback(sid, id, args)
 
     def _return_callback(self, host_id, sid, namespace, callback_id, *args):
         # When an event callback is received, the callback is returned back
-        # the sender, which is identified by the host_id
+        # to the sender, which is identified by the host_id
         self._publish({'method': 'callback', 'host_id': host_id,
                        'sid': sid, 'namespace': namespace, 'id': callback_id,
                        'args': args})
+
+    def _handle_disconnect(self, message):
+        self.server.disconnect(sid=message.get('sid'),
+                               namespace=message.get('namespace'),
+                               ignore_queue=True)
 
     def _handle_close_room(self, message):
         super(PubSubManager, self).close_room(
@@ -135,7 +147,7 @@ class PubSubManager(BaseManager):
             if isinstance(message, dict):
                 data = message
             else:
-                if isinstance(message, six.binary_type):  # pragma: no cover
+                if isinstance(message, bytes):  # pragma: no cover
                     try:
                         data = pickle.loads(message)
                     except:
@@ -146,9 +158,13 @@ class PubSubManager(BaseManager):
                     except:
                         pass
             if data and 'method' in data:
+                self._get_logger().info('pubsub message: {}'.format(
+                    data['method']))
                 if data['method'] == 'emit':
                     self._handle_emit(data)
                 elif data['method'] == 'callback':
                     self._handle_callback(data)
+                elif data['method'] == 'disconnect':
+                    self._handle_disconnect(data)
                 elif data['method'] == 'close_room':
                     self._handle_close_room(data)

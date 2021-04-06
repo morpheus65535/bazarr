@@ -5,7 +5,6 @@ try:
     import eventlet.green.zmq as zmq
 except ImportError:
     zmq = None
-import six
 
 from .pubsub_manager import PubSubManager
 
@@ -98,7 +97,7 @@ class ZmqManager(PubSubManager):  # pragma: no cover
 
     def _listen(self):
         for message in self.zmq_listen():
-            if isinstance(message, six.binary_type):
+            if isinstance(message, bytes):
                 try:
                     message = pickle.loads(message)
                 except Exception:

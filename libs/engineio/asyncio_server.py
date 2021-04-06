@@ -1,7 +1,5 @@
 import asyncio
-
-import six
-from six.moves import urllib
+import urllib
 
 from . import exceptions
 from . import packet
@@ -24,23 +22,30 @@ class AsyncServer(server.Server):
                        "tornado", and finally "asgi". The first async mode that
                        has all its dependencies installed is the one that is
                        chosen.
-    :param ping_timeout: The time in seconds that the client waits for the
-                         server to respond before disconnecting.
-    :param ping_interval: The interval in seconds at which the client pings
-                          the server. The default is 25 seconds. For advanced
+    :param ping_interval: The interval in seconds at which the server pings
+                          the client. The default is 25 seconds. For advanced
                           control, a two element tuple can be given, where
                           the first number is the ping interval and the second
-                          is a grace period added by the server. The default
-                          grace period is 5 seconds.
+                          is a grace period added by the server.
+    :param ping_timeout: The time in seconds that the client waits for the
+                         server to respond before disconnecting. The default
+                         is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport.
+                                 polling transport. The default is 1,000,000
+                                 bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not.
     :param http_compression: Whether to compress packages when using the
                              polling transport.
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
+    :param cookie: If set to a string, it is the name of the HTTP cookie the
+                   server sends back tot he client containing the client
+                   session id. If set to a dictionary, the ``'name'`` key
+                   contains the cookie name and other keys define cookie
+                   attributes, where the value of each attribute can be a
+                   string, a callable with no arguments, or a boolean. If set
+                   to ``None`` (the default), a cookie is not sent to the
+                   client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -49,7 +54,8 @@ class AsyncServer(server.Server):
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server.
     :param logger: To enable logging set to ``True`` or pass a logger object to
-                   use. To disable logging set to ``False``.
+                   use. To disable logging set to ``False``. Note that fatal
+                   errors are logged even when ``logger`` is ``False``.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
@@ -71,17 +77,13 @@ class AsyncServer(server.Server):
         engineio_path = engineio_path.strip('/')
         self._async['create_route'](app, self, '/{}/'.format(engineio_path))
 
-    async def send(self, sid, data, binary=None):
+    async def send(self, sid, data):
         """Send a message to a client.
 
         :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
 
         Note: this method is a coroutine.
         """
@@ -91,8 +93,7 @@ class AsyncServer(server.Server):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        await socket.send(packet.Packet(packet.MESSAGE, data=data,
-                                        binary=binary))
+        await socket.send(packet.Packet(packet.MESSAGE, data=data))
 
     async def get_session(self, sid):
         """Return the user session for a client.
@@ -172,7 +173,7 @@ class AsyncServer(server.Server):
                     del self.sockets[sid]
         else:
             await asyncio.wait([client.close()
-                                for client in six.itervalues(self.sockets)])
+                                for client in self.sockets.values()])
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):
@@ -198,28 +199,32 @@ class AsyncServer(server.Server):
                 allowed_origins = self._cors_allowed_origins(environ)
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
-                    self.logger.info(origin + ' is not an accepted origin.')
-                    r = self._bad_request()
-                    make_response = self._async['make_response']
-                    if asyncio.iscoroutinefunction(make_response):
-                        response = await make_response(
-                            r['status'], r['headers'], r['response'], environ)
-                    else:
-                        response = make_response(r['status'], r['headers'],
-                                                 r['response'], environ)
-                    return response
+                    self._log_error_once(
+                        origin + ' is not an accepted origin.', 'bad-origin')
+                    return await self._make_response(
+                        self._bad_request(
+                            origin + ' is not an accepted origin.'),
+                        environ)
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
 
         sid = query['sid'][0] if 'sid' in query else None
-        b64 = False
         jsonp = False
         jsonp_index = None
 
-        if 'b64' in query:
-            if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
-                b64 = True
+        # make sure the client speaks a compatible Engine.IO version
+        sid = query['sid'][0] if 'sid' in query else None
+        if sid is None and query.get('EIO') != ['4']:
+            self._log_error_once(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols', 'bad-version'
+            )
+            return await self._make_response(self._bad_request(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols'
+            ), environ)
+
         if 'j' in query:
             jsonp = True
             try:
@@ -229,28 +234,34 @@ class AsyncServer(server.Server):
                 pass
 
         if jsonp and jsonp_index is None:
-            self.logger.warning('Invalid JSONP index number')
-            r = self._bad_request()
+            self._log_error_once('Invalid JSONP index number',
+                                 'bad-jsonp-index')
+            r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
-                if transport != 'polling' and transport != 'websocket':
-                    self.logger.warning('Invalid transport %s', transport)
-                    r = self._bad_request()
-                else:
+                # transport must be one of 'polling' or 'websocket'.
+                # if 'websocket', the HTTP_UPGRADE header must match.
+                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                    if 'HTTP_UPGRADE' in environ else None
+                if transport == 'polling' \
+                        or transport == upgrade_header == 'websocket':
                     r = await self._handle_connect(environ, transport,
-                                                   b64, jsonp_index)
+                                                   jsonp_index)
+                else:
+                    self._log_error_once('Invalid transport ' + transport,
+                                         'bad-transport')
+                    r = self._bad_request('Invalid transport ' + transport)
             else:
                 if sid not in self.sockets:
-                    self.logger.warning('Invalid session %s', sid)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                    r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
                     try:
                         packets = await socket.handle_get_request(environ)
                         if isinstance(packets, list):
-                            r = self._ok(packets, b64=b64,
-                                         jsonp_index=jsonp_index)
+                            r = self._ok(packets, jsonp_index=jsonp_index)
                         else:
                             r = packets
                     except exceptions.EngineIOError:
@@ -261,8 +272,8 @@ class AsyncServer(server.Server):
                         del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self.logger.warning('Invalid session %s', sid)
-                r = self._bad_request()
+                self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                r = self._bad_request('Invalid session ' + sid)
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -294,16 +305,7 @@ class AsyncServer(server.Server):
                         getattr(self, '_' + encoding)(r['response'])
                     r['headers'] += [('Content-Encoding', encoding)]
                     break
-        cors_headers = self._cors_headers(environ)
-        make_response = self._async['make_response']
-        if asyncio.iscoroutinefunction(make_response):
-            response = await make_response(r['status'],
-                                           r['headers'] + cors_headers,
-                                           r['response'], environ)
-        else:
-            response = make_response(r['status'], r['headers'] + cors_headers,
-                                     r['response'], environ)
-        return response
+        return await self._make_response(r, environ)
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
@@ -362,15 +364,29 @@ class AsyncServer(server.Server):
         """
         return asyncio.Event(*args, **kwargs)
 
-    async def _handle_connect(self, environ, transport, b64=False,
-                              jsonp_index=None):
+    async def _make_response(self, response_dict, environ):
+        cors_headers = self._cors_headers(environ)
+        make_response = self._async['make_response']
+        if asyncio.iscoroutinefunction(make_response):
+            response = await make_response(
+                response_dict['status'],
+                response_dict['headers'] + cors_headers,
+                response_dict['response'], environ)
+        else:
+            response = make_response(
+                response_dict['status'],
+                response_dict['headers'] + cors_headers,
+                response_dict['response'], environ)
+        return response
+
+    async def _handle_connect(self, environ, transport, jsonp_index=None):
         """Handle a client connection request."""
         if self.start_service_task:
             # start the service task to monitor connected clients
             self.start_service_task = False
             self.start_background_task(self._service_task)
 
-        sid = self._generate_id()
+        sid = self.generate_id()
         s = asyncio_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 
@@ -380,17 +396,18 @@ class AsyncServer(server.Server):
                           'pingTimeout': int(self.ping_timeout * 1000),
                           'pingInterval': int(self.ping_interval * 1000)})
         await s.send(pkt)
+        s.schedule_ping()
 
         ret = await self._trigger_event('connect', sid, environ,
                                         run_async=False)
-        if ret is False:
+        if ret is not None and ret is not True:
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
-            return self._unauthorized()
+            return self._unauthorized(ret or None)
 
         if transport == 'websocket':
             ret = await s.handle_get_request(environ)
-            if s.closed:
+            if s.closed and sid in self.sockets:
                 # websocket connection ended, so we are done
                 del self.sockets[sid]
             return ret
@@ -398,9 +415,20 @@ class AsyncServer(server.Server):
             s.connected = True
             headers = None
             if self.cookie:
-                headers = [('Set-Cookie', self.cookie + '=' + sid)]
+                if isinstance(self.cookie, dict):
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, self.cookie)
+                    )]
+                else:
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, {
+                            'name': self.cookie, 'path': '/', 'SameSite': 'Lax'
+                        })
+                    )]
             try:
-                return self._ok(await s.poll(), headers=headers, b64=b64,
+                return self._ok(await s.poll(), headers=headers,
                                 jsonp_index=jsonp_index)
             except exceptions.QueueEmpty:
                 return self._bad_request()
@@ -459,7 +487,12 @@ class AsyncServer(server.Server):
                     if not socket.closing and not socket.closed:
                         await socket.check_ping_timeout()
                     await self.sleep(sleep_interval)
-            except (SystemExit, KeyboardInterrupt, asyncio.CancelledError):
+            except (
+                SystemExit,
+                KeyboardInterrupt,
+                asyncio.CancelledError,
+                GeneratorExit,
+            ):
                 self.logger.info('service task canceled')
                 break
             except:

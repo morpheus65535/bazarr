@@ -38,7 +38,7 @@ def create_app():
 
     toolbar = DebugToolbarExtension(app)
 
-    socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*', async_mode='threading')
+    socketio.init_app(app, path=base_url.rstrip('/')+'/api/socket.io', cors_allowed_origins='*', async_mode='gevent')
     return app
 
 

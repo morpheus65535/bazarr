@@ -1,19 +1,24 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
+import { siteRedirectToAuth } from "../@redux/actions";
 import reduxStore from "../@redux/store";
+import { SocketIOClient } from "./socketio";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
+  socketIO: SocketIOClient;
 
   constructor() {
     if (process.env.NODE_ENV === "development") {
-      this.initialize("/api/", process.env["REACT_APP_APIKEY"]!);
+      const devUrl = "/api/";
+      this.initialize(devUrl, process.env["REACT_APP_APIKEY"]!);
+      this.socketIO = new SocketIOClient(devUrl);
     } else {
       const baseUrl =
         window.Bazarr.baseUrl === "/"
           ? "/api/"
           : `${window.Bazarr.baseUrl}/api/`;
       this.initialize(baseUrl, window.Bazarr.apiKey);
+      this.socketIO = new SocketIOClient(baseUrl);
     }
   }
 
@@ -34,7 +39,6 @@ class Api {
 
     this.axios.interceptors.response.use(
       (resp) => {
-        this.onOnline();
         if (resp.status >= 200 && resp.status < 300) {
           return Promise.resolve(resp);
         } else {
@@ -46,25 +50,12 @@ class Api {
         if (error.response) {
           const response = error.response;
           this.handleError(response.status);
-          this.onOnline();
         } else {
-          this.onOffline();
           error.message = "You have disconnected to Bazarr backend";
         }
         return Promise.reject(error);
       }
     );
-  }
-
-  onOnline() {
-    const offline = reduxStore.getState().site.offline;
-    if (offline) {
-      reduxStore.dispatch(siteUpdateOffline(false));
-    }
-  }
-
-  onOffline() {
-    reduxStore.dispatch(siteUpdateOffline(true));
   }
 
   handleError(code: number) {

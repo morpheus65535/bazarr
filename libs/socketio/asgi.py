@@ -16,6 +16,10 @@ class ASGIApp(engineio.ASGIApp):  # pragma: no cover
     :param socketio_path: The endpoint where the Socket.IO application should
                           be installed. The default value is appropriate for
                           most cases.
+    :param on_startup: function to be called on application startup; can be
+                       coroutine
+    :param on_shutdown: function to be called on application shutdown; can be
+                        coroutine
 
     Example usage::
 
@@ -30,7 +34,9 @@ class ASGIApp(engineio.ASGIApp):  # pragma: no cover
         uvicorn.run(app, host='127.0.0.1', port=5000)
     """
     def __init__(self, socketio_server, other_asgi_app=None,
-                 static_files=None, socketio_path='socket.io'):
+                 static_files=None, socketio_path='socket.io',
+                 on_startup=None, on_shutdown=None):
         super().__init__(socketio_server, other_asgi_app,
                          static_files=static_files,
-                         engineio_path=socketio_path)
+                         engineio_path=socketio_path, on_startup=on_startup,
+                         on_shutdown=on_shutdown)

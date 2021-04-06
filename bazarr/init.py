@@ -45,7 +45,7 @@ import logging
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad
+        import lxml, numpy, webrtcvad, gevent, geventwebsocket
     except ImportError:
         try:
             import pip

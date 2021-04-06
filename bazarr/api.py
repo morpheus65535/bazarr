@@ -645,9 +645,10 @@ class Series(Resource):
 
             database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
 
-            list_missing_subtitles(no=seriesId)
+            list_missing_subtitles(no=seriesId, send_event=False)
 
-        # event_stream(type='series', action='update', series=seriesId)
+            event_stream(type='series', id=seriesId)
+        event_stream(type='badges')
 
         return '', 204
 
@@ -745,7 +746,7 @@ class EpisodesSubtitles(Resource):
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
-                event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
+                event_stream(type='episode', id=sonarrEpisodeId)
 
         except OSError:
             pass
@@ -875,7 +876,8 @@ class Movies(Resource):
 
             list_missing_subtitles_movies(no=radarrId)
 
-        # event_stream(type='movies', action='update', movie=radarrId)
+            event_stream(type='movies', action='update', id=radarrId)
+        event_stream(type='badges')
 
         return '', 204
 
@@ -951,7 +953,7 @@ class MoviesSubtitles(Resource):
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
-                event_stream(type='movie', action='update', movie=int(radarrId))
+                event_stream(type='movie', id=radarrId)
         except OSError:
             pass
 
@@ -1558,7 +1560,7 @@ class EpisodesBlacklist(Resource):
                          sonarr_series_id=sonarr_series_id,
                          sonarr_episode_id=sonarr_episode_id)
         episode_download_subtitles(sonarr_episode_id)
-        event_stream(type='episodeHistory')
+        event_stream(type='episode-history')
         return '', 200
 
     @authenticate
@@ -1624,7 +1626,7 @@ class MoviesBlacklist(Resource):
                          subtitles_path=subtitles_path,
                          radarr_id=radarr_id)
         movies_download_subtitles(radarr_id)
-        event_stream(type='movieHistory')
+        event_stream(type='movie-history')
         return '', 200
 
     @authenticate
