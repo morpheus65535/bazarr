@@ -1,4 +1,4 @@
-import { debounce } from "lodash";
+import { debounce, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import { siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
@@ -61,7 +61,7 @@ export class SocketIOClient {
 
         for (const actionKey in element) {
           const action = actionKey as SocketIO.Action;
-          const ids = element[action]!;
+          const ids = uniq(element[action]!);
           if (action in handler) {
             const realAction = handler[action]!();
             if (ids.length === 0) {
