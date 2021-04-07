@@ -145,7 +145,7 @@ export function useEpisodesBy(seriesId?: number) {
   const action = useReduxAction(episodeUpdateBy);
   const callback = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
-      action(seriesId);
+      action([seriesId]);
     }
   }, [action, seriesId]);
 

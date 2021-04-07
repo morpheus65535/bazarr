@@ -20,7 +20,7 @@ from logger import empty_log
 from init import *
 import logging
 from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
-    get_audio_profile_languages, update_profile_id_list
+    get_audio_profile_languages, update_profile_id_list, convert_list_to_clause
 from helper import path_mappings
 from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
@@ -154,7 +154,8 @@ def postprocessSeries(item):
 
 def postprocessEpisode(item, desired=None):
     if desired is None:
-        desired = []
+        desired = dict()
+
     postprocess(item)
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
@@ -182,9 +183,10 @@ def postprocessEpisode(item, desired=None):
 
         item.update({"subtitles": subtitles})
 
-        if settings.general.getboolean('embedded_subs_show_desired'):
+        if settings.general.getboolean('embedded_subs_show_desired') and 'profileId' in item and item['profileId'] in desired:
+            desired_code = desired[item['profileId']]
             item['subtitles'] = [x for x in item['subtitles'] if
-                                 x['code2'] in desired or x['path']]
+                                 x['code2'] in desired_code or x['path']]
 
     # Parse missing subtitles
     if 'missing_subtitles' in item:
@@ -438,8 +440,7 @@ class SystemSettings(Resource):
         enabled_languages = request.form.getlist('languages-enabled')
         if len(enabled_languages) != 0:
             database.execute("UPDATE table_settings_languages SET enabled=0")
-            for code in enabled_languages:
-                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (code,))
+            database.execute(f"UPDATE table_settings_languages SET enabled=1 WHERE code2 in {convert_list_to_clause(enabled_languages)}")
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
@@ -595,9 +596,8 @@ class Series(Resource):
         count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
 
         if len(seriesId) != 0:
-            seriesIdList = ','.join(seriesId)
             result = database.execute(
-                f"SELECT * FROM table_shows WHERE sonarrSeriesId in ({seriesIdList}) ORDER BY sortTitle ASC")
+                f"SELECT * FROM table_shows WHERE sonarrSeriesId in {convert_list_to_clause(seriesId)} ORDER BY sortTitle ASC")
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?"
                                       , (length, start))
@@ -672,20 +672,26 @@ class Series(Resource):
 class Episodes(Resource):
     @authenticate
     def get(self):
-        seriesId = request.args.get('seriesid')
-        episodeId = request.args.get('episodeid')
-        if episodeId:
-            result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
-        elif seriesId:
-            result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
-                                      "episode DESC", (seriesId,))
+        seriesId = request.args.getlist('seriesid[]')
+        episodeId = request.args.getlist('episodeid[]')
+
+        desired = dict()
+        if len(episodeId) > 0:
+            result = database.execute(f"SELECT * FROM table_episodes WHERE sonarrEpisodeId in {convert_list_to_clause(episodeId)}")
+        elif len(seriesId) > 0:
+            clause = convert_list_to_clause(seriesId)
+            result = database.execute(f"SELECT * FROM table_episodes WHERE sonarrSeriesId in {clause} ORDER BY season DESC, "
+                                      "episode DESC")
+            profileIdResult = database.execute(f"SELECT profileId FROM table_shows WHERE sonarrSeriesId in {clause}")
+
+            for profileId in profileIdResult:
+                profileId = profileId['profileId']
+                desired_languages = str(get_desired_languages(profileId))
+                desired_code = ast.literal_eval(desired_languages)
+                desired[profileId] = desired_code
+            
         else:
             return "Series ID not provided", 400
-
-        profileId = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId = ?", (seriesId,),
-                                     only_one=True)['profileId']
-        desired_languages = str(get_desired_languages(profileId))
-        desired = ast.literal_eval(desired_languages)
 
         for item in result:
             postprocessEpisode(item, desired)
@@ -839,14 +845,12 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        id = request.args.getlist('radarrid[]')
+        radarrId = request.args.getlist('radarrid[]')
 
         count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
 
         if len(id) != 0:
-            movieIdList = ','.join(id)
-            result = database.execute(
-                f"SELECT * FROM table_movies WHERE radarrId in ({movieIdList}) ORDER BY sortTitle ASC")
+            result = database.execute(f"SELECT * FROM table_movies WHERE radarrId in {convert_list_to_clause(radarrId)} ORDER BY sortTitle ASC")
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))

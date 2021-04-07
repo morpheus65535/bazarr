@@ -402,3 +402,9 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
                 )
 
     return audio_languages
+
+def convert_list_to_clause(arr: list):
+    if isinstance(arr, list):
+        return f"({','.join(arr)})"
+    else:
+        return ""

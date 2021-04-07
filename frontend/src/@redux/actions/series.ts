@@ -22,7 +22,7 @@ export const seriesUpdateList = createAsyncAction(
 
 export const episodeUpdateBy = createAsyncAction(
   SERIES_UPDATE_EPISODE_LIST,
-  (seriesid: number) => EpisodesApi.bySeriesId(seriesid)
+  (seriesid: number[]) => EpisodesApi.bySeriesId(seriesid)
 );
 
 export const seriesUpdateByRange = createAsyncAction(
