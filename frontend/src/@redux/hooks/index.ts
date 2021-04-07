@@ -293,20 +293,12 @@ export function useMovieBy(id?: number) {
 export function useWantedSeries() {
   const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
-
-  useEffect(() => {
-    update();
-  }, [update]);
   return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
   const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
-
-  useEffect(() => {
-    update();
-  }, [update]);
   return stateBuilder(items, update);
 }
 
