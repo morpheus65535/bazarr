@@ -755,7 +755,7 @@ class EpisodesSubtitles(Resource):
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
-                event_stream(type='episode', id=sonarrSeriesId)
+                event_stream(type='episode', id=sonarrEpisodeId)
 
         except OSError:
             pass
