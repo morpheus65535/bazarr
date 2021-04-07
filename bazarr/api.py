@@ -1469,17 +1469,30 @@ class HistoryStats(Resource):
 class EpisodesWanted(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
-                                "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                                "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
-                                "table_episodes.sonarrSeriesId, "
-                                "table_episodes.sonarrEpisodeId, table_episodes.scene_name as sceneName, table_shows.tags, "
-                                "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
-                                "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+        episodeid = request.args.getlist('episodeid[]')
+        if len(episodeid) > 0:
+            data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
+                                    "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
+                                    "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
+                                    "table_episodes.sonarrSeriesId, "
+                                    "table_episodes.sonarrEpisodeId, table_episodes.scene_name as sceneName, table_shows.tags, "
+                                    "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
+                                    "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                                    "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
+                                    f" AND sonarrEpisodeId in {convert_list_to_clause(episodeid)}")
+            pass
+        else:
+            start = request.args.get('start') or 0
+            length = request.args.get('length') or -1
+            data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
+                                    "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
+                                    "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
+                                    "table_episodes.sonarrSeriesId, "
+                                    "table_episodes.sonarrEpisodeId, table_episodes.scene_name as sceneName, table_shows.tags, "
+                                    "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
+                                    "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                                    "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
+                                    " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             postprocessEpisode(item)
@@ -1496,20 +1509,28 @@ class EpisodesWanted(Resource):
 class MoviesWanted(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        data = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
-                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') +
-                                " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+        radarrid = request.args.getlist("radarrid[]")
+        if len(radarrid) > 0:
+            result = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
+                                      "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+                                      get_exclusion_clause('movie') +
+                                      f" AND radarrId in {convert_list_to_clause(radarrid)}")
+            pass
+        else:
+            start = request.args.get('start') or 0
+            length = request.args.get('length') or -1
+            result = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
+                                    "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+                                    get_exclusion_clause('movie') +
+                                    " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
-        for item in data:
+        for item in result:
             postprocessMovie(item)
 
         count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
                                  get_exclusion_clause('movie'), only_one=True)['count']
 
-        return jsonify(data=data, total=count)
+        return jsonify(data=result, total=count)
 
 
 # GET: get blacklist
