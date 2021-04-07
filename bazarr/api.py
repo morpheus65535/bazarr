@@ -849,7 +849,7 @@ class Movies(Resource):
 
         count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
 
-        if len(id) != 0:
+        if len(radarrId) != 0:
             result = database.execute(f"SELECT * FROM table_movies WHERE radarrId in {convert_list_to_clause(radarrId)} ORDER BY sortTitle ASC")
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
