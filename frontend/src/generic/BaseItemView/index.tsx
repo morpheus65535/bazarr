@@ -1,4 +1,5 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { uniqBy } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
@@ -12,7 +13,7 @@ import { useLanguageProfiles } from "../../@redux/hooks";
 import { useReduxActionWith } from "../../@redux/hooks/base";
 import { AsyncActionDispatcher } from "../../@redux/types";
 import { ContentHeader } from "../../components";
-import { GetItemId, isNonNullable, mergeArray } from "../../utilites";
+import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
@@ -80,7 +81,7 @@ const BaseItemView: FunctionComponent<Props> = ({
         item.profileId = id;
         return item;
       });
-      const newDirty = mergeArray(dirtyItems, newItems, ExtendItemComparer);
+      const newDirty = uniqBy([...newItems, ...dirtyItems], GetItemId);
       setDirty(newDirty);
     },
     [selections, dirtyItems]

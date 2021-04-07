@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router";
-import { mergeArray } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
   if (process.env.NODE_ENV === "development") {
@@ -49,18 +48,6 @@ export function useSessionStorage(
     [key]
   );
   return [sessionStorage.getItem(key), dispatch];
-}
-
-export function useMergeArray<T>(
-  olds: readonly T[],
-  news: readonly T[],
-  comparer: Comparer<NonNullable<T>>
-) {
-  return useMemo(() => mergeArray(olds, news, comparer), [
-    olds,
-    news,
-    comparer,
-  ]);
 }
 
 export function useWatcher<T>(

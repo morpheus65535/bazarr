@@ -9,8 +9,8 @@ import {
   seriesUpdateList,
   systemUpdateTasks,
 } from "../../@redux/actions";
-import { createCombineAction } from "../../@redux/actions/factory";
-import { ActionDispatcher } from "../../@redux/types";
+import { createAsyncCombineAction } from "../../@redux/actions/factory";
+import { AsyncActionDispatcher } from "../../@redux/types";
 
 export const SocketIOReducer: SocketIO.Reducer[] = [
   {
@@ -46,8 +46,8 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     key: "series",
     state: (s) => s.series.seriesList,
     update: () =>
-      createCombineAction((id?: number[]) => {
-        const actions: ActionDispatcher<any>[] = [seriesUpdateList(id)];
+      createAsyncCombineAction((id?: number[]) => {
+        const actions: AsyncActionDispatcher<any>[] = [seriesUpdateList(id)];
         if (id !== undefined) {
           actions.push(episodeUpdateBy(id));
         }
