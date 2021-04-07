@@ -1430,6 +1430,9 @@ def postprocessing(command, path):
         if out == "":
             logging.info(
                 'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+        elif err:
+            logging.error(
+                'BAZARR Post-processing result for file ' + path + ' : ' + err.replace('\n', ' ').replace('\r', ' '))
         else:
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 
