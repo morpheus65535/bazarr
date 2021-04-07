@@ -440,7 +440,8 @@ class SystemSettings(Resource):
         enabled_languages = request.form.getlist('languages-enabled')
         if len(enabled_languages) != 0:
             database.execute("UPDATE table_settings_languages SET enabled=0")
-            database.execute(f"UPDATE table_settings_languages SET enabled=1 WHERE code2 in {convert_list_to_clause(enabled_languages)}")
+            for code in enabled_languages:
+                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?",(code,))
             event_stream("languages");
 
         languages_profiles = request.form.get('languages-profiles')
