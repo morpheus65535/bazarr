@@ -223,7 +223,7 @@ export function useEpisodesBy(seriesId?: number) {
 
   const items = useMemo(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
-      return list.data[seriesId] ?? [];
+      return list.data.filter((v) => v.sonarrSeriesId === seriesId);
     } else {
       return [];
     }
