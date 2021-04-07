@@ -2,12 +2,13 @@
 
 import os
 
-bazarr_version = ''
+bazarr_version = 'unknown'
 
 version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
 if os.path.isfile(version_file):
     with open(version_file, 'r') as f:
-        bazarr_version = f.read()
+        bazarr_version = f.readline()
+        bazarr_version = bazarr_version.rstrip('\n')
 
 os.environ["BAZARR_VERSION"] = bazarr_version
 

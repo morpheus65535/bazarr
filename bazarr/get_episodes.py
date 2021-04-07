@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import requests
 import logging
 from database import database, dict_converter, get_exclusion_clause
@@ -10,42 +11,36 @@ from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream
 
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+
 
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
-def sync_episodes(series_id=None):
+def sync_episodes():
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
     # Get current episodes id in DB
     current_episodes_db = database.execute("SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes")
 
-    if series_id:
-        current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db if x['sonarrSeriesId'] == series_id]
-    else:
-        current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
+    current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
 
     current_episodes_sonarr = []
     episodes_to_update = []
     episodes_to_add = []
     altered_episodes = []
     
-    if series_id and isinstance(series_id, int):
-        # Get sonarrId for each series from database
-        seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows WHERE sonarrSeriesId = ?",
-                                        (series_id,))
-    else:
-        # Get sonarrId for each series from database
-        seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
+    # Get sonarrId for each series from database
+    seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
     
     for i, seriesId in enumerate(seriesIdList):
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
+            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False, headers=headers)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")

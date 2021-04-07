@@ -99,11 +99,13 @@ if isinstance(settings.general.enabled_providers, str) and not settings.general.
 package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
 if os.path.isfile(package_info_file):
     try:
+        splitted_lines = []
         package_info = {}
         with open(package_info_file) as file:
-            for line in file.readlines():
-                if line == '\n':
-                    break
+            lines = file.readlines()
+            for line in lines:
+                splitted_lines += line.split(r'\n')
+            for line in splitted_lines:
                 splitted_line = line.split('=')
                 if len(splitted_line) == 2:
                     package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
@@ -163,9 +165,6 @@ if settings.analytics.visitor:
 with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
     settings.remove_option('general', 'throtteled_providers')
     settings.remove_option('general', 'update_restart')
-    settings.remove_option('sonarr', 'episodes_sync')
-    if settings.sonarr.series_sync == '1':
-        settings.sonarr.series_sync = '5'
     settings.write(handle)
 
 

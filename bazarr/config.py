@@ -77,7 +77,8 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-        'series_sync': '5',
+        'series_sync': '1',
+        'episodes_sync': '5',
         'excluded_tags': '[]',
         'excluded_series_types': '[]'
     },
@@ -289,7 +290,12 @@ def save_settings(settings_items):
             configure_captcha = True
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
-                   'settings-general-auto_update', 'settings-general-upgrade_subs']:
+                   'settings-general-auto_update', 'settings-general-upgrade_subs',
+                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
+                   'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
+                   'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
+                   'settings-general-upgrade_frequency']:
             update_schedule = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
