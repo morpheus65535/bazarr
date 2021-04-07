@@ -1,6 +1,7 @@
 import {
   badgeUpdateAll,
   episodeUpdateBy,
+  episodeUpdateById,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
@@ -13,6 +14,26 @@ import {
 } from "../../@redux/actions";
 import { createAsyncCombineAction } from "../../@redux/actions/factory";
 import { AsyncActionDispatcher } from "../../@redux/types";
+
+const episodeUpdateBySeriesWrap = createAsyncCombineAction(
+  (seriesid?: number[]) => {
+    const actions: AsyncActionDispatcher<any>[] = [];
+    if (seriesid !== undefined) {
+      actions.push(episodeUpdateBy(seriesid));
+    }
+    return actions;
+  }
+);
+
+const episodeUpdateByIdWrap = createAsyncCombineAction(
+  (episodeid?: number[]) => {
+    const actions: AsyncActionDispatcher<any>[] = [];
+    if (episodeid !== undefined) {
+      actions.push(episodeUpdateById(episodeid));
+    }
+    return actions;
+  }
+);
 
 export const SocketIOReducer: SocketIO.Reducer[] = [
   {
@@ -47,14 +68,12 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "series",
     state: (s) => s.series.seriesList,
-    update: () =>
-      createAsyncCombineAction((id?: number[]) => {
-        const actions: AsyncActionDispatcher<any>[] = [seriesUpdateList(id)];
-        if (id !== undefined) {
-          actions.push(episodeUpdateBy(id));
-        }
-        return actions;
-      }),
+    update: () => seriesUpdateList,
+  },
+  {
+    key: "series",
+    state: (s) => s.series.episodeList,
+    update: () => episodeUpdateBySeriesWrap,
   },
   {
     key: "movie",
@@ -64,8 +83,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode",
     state: (s) => s.series.episodeList,
-    // TODO
-    // update: () => episodeUpdateBy
+    update: () => episodeUpdateByIdWrap,
   },
   {
     key: "settings",

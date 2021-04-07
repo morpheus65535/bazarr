@@ -53,8 +53,13 @@ export class SocketIOClient {
       const type = key as SocketIO.Type;
       const element = records[type]!;
 
-      const handler = SocketIOReducer.find((v) => v.key === type);
-      if (handler) {
+      const handlers = SocketIOReducer.filter((v) => v.key === type);
+      if (handlers.length === 0) {
+        log("error", "Unhandle SocketIO event", type);
+        continue;
+      }
+      // eslint-disable-next-line no-loop-func
+      handlers.forEach((handler) => {
         if (handler.state && handler.state(store).updating) {
           return;
         }
@@ -73,9 +78,7 @@ export class SocketIOClient {
             log("error", "Unhandle action of SocketIO event", action, type);
           }
         }
-      } else {
-        log("error", "Unhandle SocketIO event", type);
-      }
+      });
     }
   }
 
