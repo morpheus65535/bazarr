@@ -8,14 +8,12 @@ import { useMoviesHistory } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../generic/blacklist";
-import { useAutoUpdate } from "../../utilites/hooks";
 import HistoryGenericView from "../generic";
 
 interface Props {}
 
 const MoviesHistoryView: FunctionComponent<Props> = () => {
-  const [movies, update] = useMoviesHistory();
-  useAutoUpdate(update);
+  const [movies] = useMoviesHistory();
 
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [

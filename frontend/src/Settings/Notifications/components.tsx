@@ -17,17 +17,12 @@ import {
   useShowModal,
 } from "../../components";
 import { BuildKey } from "../../utilites";
-import { ColCard, useLatestMergeArray, useUpdateArray } from "../components";
+import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
 interface ModalProps {
   selections: readonly Settings.NotificationInfo[];
 }
-
-const notificationComparer = (
-  one: Settings.NotificationInfo,
-  another: Settings.NotificationInfo
-) => one.name === another.name;
 
 const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   selections,
@@ -46,7 +41,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 
   const update = useUpdateArray<Settings.NotificationInfo>(
     notificationsKey,
-    notificationComparer
+    "name"
   );
 
   const payload = usePayload<Settings.NotificationInfo>(modal.modalKey);
@@ -156,10 +151,10 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 };
 
 export const NotificationView: FunctionComponent = () => {
-  const notifications = useLatestMergeArray<Settings.NotificationInfo>(
+  const notifications = useLatestArray<Settings.NotificationInfo>(
     notificationsKey,
-    notificationComparer,
-    (settings) => settings.notifications.providers
+    "name",
+    (s) => s.notifications.providers
   );
 
   const showModal = useShowModal();

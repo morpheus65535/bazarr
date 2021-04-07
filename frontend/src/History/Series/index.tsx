@@ -8,14 +8,12 @@ import { useSeriesHistory } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../generic/blacklist";
-import { useAutoUpdate } from "../../utilites/hooks";
 import HistoryGenericView from "../generic";
 
 interface Props {}
 
 const SeriesHistoryView: FunctionComponent<Props> = () => {
-  const [series, update] = useSeriesHistory();
-  useAutoUpdate(update);
+  const [series] = useSeriesHistory();
 
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [

@@ -25,7 +25,6 @@ import { SubtitleAction } from "./components";
 
 interface Props {
   episodes: AsyncState<Item.Episode[]>;
-  update: () => void;
 }
 
 const download = (item: any, result: SearchResultType) => {
@@ -44,7 +43,7 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ episodes, update }) => {
+const Table: FunctionComponent<Props> = ({ episodes }) => {
   const showModal = useShowModal();
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
@@ -214,15 +213,10 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
           ></GroupTable>
         )}
       </AsyncStateOverlay>
-      <SubtitleToolModal
-        modalKey="tools"
-        size="lg"
-        update={update}
-      ></SubtitleToolModal>
+      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onDownload={update}
         onSelect={download}
       ></ManualSearchModal>
     </React.Fragment>

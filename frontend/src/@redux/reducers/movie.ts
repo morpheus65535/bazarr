@@ -5,7 +5,6 @@ import {
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
 import { updateAsyncState, updateOrderIdState } from "./mapper";
@@ -13,19 +12,6 @@ import { updateAsyncState, updateOrderIdState } from "./mapper";
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
     [MOVIES_UPDATE_WANTED_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Movie>>
-    ) => {
-      return {
-        ...state,
-        wantedMovieList: updateOrderIdState(
-          action,
-          state.wantedMovieList,
-          "radarrId"
-        ),
-      };
-    },
-    [MOVIES_UPDATE_WANTED_RANGE]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Wanted.Movie>>
     ) => {

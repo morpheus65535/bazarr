@@ -6,12 +6,12 @@ import React, {
 } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-import { badgeUpdateAll, siteChangeSidebar } from "../@redux/actions";
+import { siteChangeSidebar } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
-import { useAutoUpdate, useGotoHomepage } from "../utilites/hooks";
+import { useGotoHomepage } from "../utilites/hooks";
 import {
   BadgesContext,
   CollapseItem,
@@ -35,9 +35,6 @@ interface Props {
 }
 
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
-  const updateBadges = useReduxAction(badgeUpdateAll);
-  useAutoUpdate(updateBadges);
-
   const toggle = useContext(SidebarToggleContext);
 
   const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);

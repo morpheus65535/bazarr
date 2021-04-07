@@ -1,5 +1,5 @@
 import { Dispatch } from "react";
-import { isEpisode, isMovie, isNullable, isSeries } from "./validate";
+import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -71,32 +71,6 @@ export function buildOrderList<T>(state: OrderIdState<T>): T[] {
 
     return [];
   });
-}
-
-// Replace elements in old array with news
-export function mergeArray<T>(
-  olds: readonly T[],
-  news: readonly T[],
-  comparer: Comparer<NonNullable<T>>
-) {
-  const list = [...olds];
-  const newList = news.filter((v) => !isNullable(v)) as NonNullable<T>[];
-  // Performance
-  newList.forEach((v) => {
-    const idx = list.findIndex((n, idx) => {
-      if (!isNullable(n)) {
-        return comparer(n, v);
-      } else {
-        return false;
-      }
-    });
-    if (idx !== -1) {
-      list[idx] = v;
-    } else {
-      list.push(v);
-    }
-  });
-  return list;
 }
 
 export function BuildKey(...args: any[]) {

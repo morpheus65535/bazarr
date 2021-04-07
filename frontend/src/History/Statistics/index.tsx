@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useLanguages, useProviders } from "../../@redux/hooks";
+import { useLanguages, useSystemProviders } from "../../@redux/hooks";
 import { HistoryApi } from "../../apis";
 import {
   AsyncSelector,
@@ -21,7 +21,6 @@ import {
   PromiseOverlay,
   Selector,
 } from "../../components";
-import { useAutoUpdate } from "../../utilites/hooks";
 import { actionOptions, timeframeOptions } from "./options";
 
 function converter(item: History.Stat) {
@@ -48,8 +47,7 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 const HistoryStats: FunctionComponent = () => {
   const [languages] = useLanguages(true);
 
-  const [providerList, update] = useProviders();
-  useAutoUpdate(update);
+  const [providerList] = useSystemProviders();
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);

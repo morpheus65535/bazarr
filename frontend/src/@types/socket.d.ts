@@ -4,11 +4,15 @@ namespace SocketIO {
     | "series"
     | "episode"
     | "episode-history"
-    | "movie-history"
     | "episode-blacklist"
+    | "episode-wanted"
+    | "movie-history"
     | "movie-blacklist"
+    | "movie-wanted"
     | "badges"
-    | "task";
+    | "task"
+    | "settings"
+    | "languages";
 
   type Action = "update" | "insert" | "delete";
 

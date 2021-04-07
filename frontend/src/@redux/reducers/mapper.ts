@@ -1,4 +1,4 @@
-import { mergeArray } from "../../utilites";
+import { uniqBy } from "lodash";
 import { AsyncAction } from "../types";
 
 export function updateAsyncState<Payload>(
@@ -100,9 +100,10 @@ export function updateAsyncList<T, ID extends keyof T>(
       error: action.payload.item as Error,
     };
   } else {
-    const list = state.data as T[];
-    const payload = action.payload.item as T[];
-    const result = mergeArray(list, payload, (l, r) => l[match] === r[match]);
+    const olds = state.data as T[];
+    const news = action.payload.item as T[];
+
+    const result = uniqBy([...news, ...olds], match);
 
     return {
       updating: false,

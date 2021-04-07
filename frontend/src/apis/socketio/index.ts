@@ -1,4 +1,4 @@
-import { debounce } from "lodash";
+import { debounce, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import { siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
@@ -53,15 +53,20 @@ export class SocketIOClient {
       const type = key as SocketIO.Type;
       const element = records[type]!;
 
-      const handler = SocketIOReducer.find((v) => v.key === type);
-      if (handler) {
+      const handlers = SocketIOReducer.filter((v) => v.key === type);
+      if (handlers.length === 0) {
+        log("error", "Unhandle SocketIO event", type);
+        continue;
+      }
+      // eslint-disable-next-line no-loop-func
+      handlers.forEach((handler) => {
         if (handler.state && handler.state(store).updating) {
           return;
         }
 
         for (const actionKey in element) {
           const action = actionKey as SocketIO.Action;
-          const ids = element[action]!;
+          const ids = uniq(element[action]!);
           if (action in handler) {
             const realAction = handler[action]!();
             if (ids.length === 0) {
@@ -73,9 +78,7 @@ export class SocketIOClient {
             log("error", "Unhandle action of SocketIO event", action, type);
           }
         }
-      } else {
-        log("error", "Unhandle SocketIO event", type);
-      }
+      });
     }
   }
 

@@ -1,21 +1,20 @@
+import { uniqBy } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { TableUpdater } from "react-table";
-import { ExtendItemComparer, SharedProps } from ".";
+import { SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { ItemEditorModal, PageTable, useShowModal } from "../../components";
-import { buildOrderList, GetItemId, useMergeArray } from "../../utilites";
+import { buildOrderList, GetItemId } from "../../utilites";
 
 interface Props extends SharedProps {
   dirtyItems: readonly Item.Base[];
   editMode: boolean;
   select: React.Dispatch<Item.Base[]>;
-  update: (ids?: number[]) => void;
 }
 
 const Table: FunctionComponent<Props> = ({
   state,
   dirtyItems,
-  update,
   modify,
   editMode,
   select,
@@ -36,7 +35,10 @@ const Table: FunctionComponent<Props> = ({
 
   const orderList = useMemo(() => buildOrderList(idState), [idState]);
 
-  const data = useMergeArray(orderList, dirtyItems, ExtendItemComparer);
+  const data = useMemo(() => uniqBy([...dirtyItems, ...orderList], GetItemId), [
+    dirtyItems,
+    orderList,
+  ]);
 
   const [profiles] = useLanguageProfiles();
 
@@ -57,14 +59,7 @@ const Table: FunctionComponent<Props> = ({
         emptyText={`No ${name} Found`}
         externalUpdate={updateRow}
       ></PageTable>
-      <ItemEditorModal
-        modalKey="edit"
-        submit={modify}
-        onSuccess={(item) => {
-          const id = GetItemId(item);
-          update([id]);
-        }}
-      ></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );
 };

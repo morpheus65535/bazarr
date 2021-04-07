@@ -1,4 +1,5 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { uniqBy } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
@@ -12,7 +13,7 @@ import { useLanguageProfiles } from "../../@redux/hooks";
 import { useReduxActionWith } from "../../@redux/hooks/base";
 import { AsyncActionDispatcher } from "../../@redux/types";
 import { ContentHeader } from "../../components";
-import { GetItemId, isNonNullable, mergeArray } from "../../utilites";
+import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps {
@@ -80,7 +81,7 @@ const BaseItemView: FunctionComponent<Props> = ({
         item.profileId = id;
         return item;
       });
-      const newDirty = mergeArray(dirtyItems, newItems, ExtendItemComparer);
+      const newDirty = uniqBy([...newItems, ...dirtyItems], GetItemId);
       setDirty(newDirty);
     },
     [selections, dirtyItems]
@@ -95,20 +96,12 @@ const BaseItemView: FunctionComponent<Props> = ({
     setPendingEdit(true);
   }, [shared.state.data.order, update]);
 
-  const endEdit = useCallback(
-    (cancel: boolean = false) => {
-      if (!cancel && dirtyItems.length > 0) {
-        const ids = dirtyItems.map(GetItemId);
-        update(ids);
-      } else {
-        setEdit(false);
-        setDirty([]);
-      }
-      setPendingEdit(false);
-      setSelections([]);
-    },
-    [dirtyItems, update]
-  );
+  const endEdit = useCallback(() => {
+    setEdit(false);
+    setDirty([]);
+    setPendingEdit(false);
+    setSelections([]);
+  }, []);
 
   const saveItems = useCallback(() => {
     const form: FormType.ModifyItem = {
@@ -143,14 +136,14 @@ const BaseItemView: FunctionComponent<Props> = ({
               </Dropdown>
             </ContentHeader.Group>
             <ContentHeader.Group pos="end">
-              <ContentHeader.Button icon={faUndo} onClick={() => endEdit(true)}>
+              <ContentHeader.Button icon={faUndo} onClick={endEdit}>
                 Cancel
               </ContentHeader.Button>
               <ContentHeader.AsyncButton
                 icon={faCheck}
                 disabled={dirtyItems.length === 0}
                 promise={saveItems}
-                onSuccess={() => endEdit()}
+                onSuccess={endEdit}
               >
                 Save
               </ContentHeader.AsyncButton>
@@ -170,7 +163,6 @@ const BaseItemView: FunctionComponent<Props> = ({
       <Row>
         <Table
           {...shared}
-          update={update}
           dirtyItems={dirtyItems}
           editMode={editMode}
           select={setSelections}

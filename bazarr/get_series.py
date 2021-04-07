@@ -124,8 +124,7 @@ def update_series():
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
     for series in removed_series:
-        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series,))
-        database.execute("DELETE FROM table_episodes WHERE sonarrSeriesId=?", (series,))
+        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
         event_stream(type='series', action='delete', id=series)
 
     # Update existing series in DB

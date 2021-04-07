@@ -1,9 +1,8 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
 import { RouterEmptyPath } from "../404";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
-import { useAutoUpdate } from "../utilites/hooks";
 import General from "./General";
 import Languages from "./Languages";
 import Notifications from "./Notifications";
@@ -18,7 +17,7 @@ interface Props {}
 
 const Router: FunctionComponent<Props> = () => {
   const update = useReduxAction(systemUpdateSettings);
-  useAutoUpdate(update);
+  useEffect(() => update, [update]);
 
   return (
     <Switch>

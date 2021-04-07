@@ -10,11 +10,10 @@ const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
-  update: (id: number) => void;
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movie, update } = props;
+  const { movie } = props;
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
@@ -66,7 +65,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     forced: original.forced,
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
                 variant="light"
                 size="sm"
               >
@@ -86,7 +84,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     path: original.path ?? "",
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
               >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
               </AsyncButton>
@@ -95,7 +92,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    [movie, update]
+    [movie]
   );
 
   const data: Subtitle[] = useMemo(() => {

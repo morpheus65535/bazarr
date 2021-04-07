@@ -5,7 +5,6 @@ import {
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { createAsyncAction } from "./factory";
 
@@ -16,11 +15,11 @@ export const movieUpdateList = createAsyncAction(
 
 export const movieUpdateWantedList = createAsyncAction(
   MOVIES_UPDATE_WANTED_LIST,
-  (radarrid?: number) => MoviesApi.wantedBy(radarrid)
+  (radarrid: number[]) => MoviesApi.wantedBy(radarrid)
 );
 
 export const movieUpdateWantedByRange = createAsyncAction(
-  MOVIES_UPDATE_WANTED_RANGE,
+  MOVIES_UPDATE_WANTED_LIST,
   (start: number, length: number) => MoviesApi.wanted(start, length)
 );
 

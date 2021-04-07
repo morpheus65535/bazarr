@@ -15,7 +15,7 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
-  const [series, update] = useWantedSeries();
+  const [series] = useWantedSeries();
 
   const loader = useReduxAction(seriesUpdateWantedByRange);
 
@@ -84,7 +84,6 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       type="series"
       columns={columns as Column<Wanted.Base>[]}
       state={series}
-      update={update}
       loader={loader}
       searchAll={searchAll}
     ></GenericWantedView>
