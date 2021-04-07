@@ -6,7 +6,6 @@ import {
   SERIES_UPDATE_LIST,
   SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
-  SERIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
 import {
@@ -18,19 +17,6 @@ import {
 const reducer = handleActions<ReduxStore.Series, any>(
   {
     [SERIES_UPDATE_WANTED_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
-    ) => {
-      return {
-        ...state,
-        wantedEpisodesList: updateOrderIdState(
-          action,
-          state.wantedEpisodesList,
-          "sonarrEpisodeId"
-        ),
-      };
-    },
-    [SERIES_UPDATE_WANTED_RANGE]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
     ) => {
