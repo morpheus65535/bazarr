@@ -102,7 +102,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
     pp_command = pp_command.replace('{{episode_name}}', os.path.splitext(os.path.basename(episode))[0])
-    pp_command = pp_command.replace('{{subtitles}}', str(subtitles))
+    pp_command = pp_command.replace('{{subtitles}}', '"' + str(subtitles) + '"')
     pp_command = pp_command.replace('{{subtitles_language}}', str(language) + is_forced_string)
     pp_command = pp_command.replace('{{subtitles_language_code2}}', str(language_code2) + is_forced)
     pp_command = pp_command.replace('{{subtitles_language_code3}}', str(language_code3) + is_forced)
