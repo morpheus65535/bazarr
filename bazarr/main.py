@@ -1,5 +1,13 @@
 # coding=utf-8
 
+# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
+try:
+    from gevent import monkey
+except ImportError:
+    pass
+else:
+    monkey.patch_all()
+
 import os
 
 bazarr_version = 'unknown'
@@ -35,6 +43,7 @@ from flask import make_response, request, redirect, abort, render_template, Resp
 from get_series import *
 from get_episodes import *
 from get_movies import *
+from signalr_client import sonarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
@@ -154,6 +163,10 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
+
+
+if settings.general.getboolean('use_sonarr'):
+    sonarr_signalr_client.start()
 
 
 if __name__ == "__main__":

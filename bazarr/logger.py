@@ -105,6 +105,7 @@ def configure_logging(debug=False):
         logging.getLogger("srt").setLevel(logging.ERROR)
 
     logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
+    logging.getLogger("engineio.server").setLevel(logging.WARNING)
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

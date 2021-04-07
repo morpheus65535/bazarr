@@ -138,6 +138,53 @@ def sync_episodes():
                       "now.")
 
 
+def sync_one_episode(episode, action):
+    logging.debug('BAZARR syncing a single episode from Sonarr.')
+
+    # Validate the episode provided
+    try:
+        episodeId = episode['body']['resource']['id']
+        episode = episodeParser(episode['body']['resource'])
+    except Exception:
+        logging.debug('BAZARR cannot parse episode returned by SignalR feed.')
+        return
+
+    exist = database.execute('SELECT COUNT(*) FROM table_episodes WHERE sonarrEpisodeId = ?', (episodeId,))
+
+    if not episode:
+        # Remove episode from DB
+        database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
+        event_stream(type='episode', action='delete', id=episodeId)
+
+    # Update existing episodes in DB
+    elif len(exist):
+        query = dict_converter.convert(episode)
+        database.execute('''UPDATE table_episodes SET ''' + query.keys_update + ''' WHERE sonarrEpisodeId = ?''',
+                         query.values + (episode['sonarrEpisodeId'],))
+        event_stream(type='episode', action='update', id=episode['sonarrEpisodeId'])
+        logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
+            episode['path'])))
+
+    # Insert new episodes in DB
+    else:
+        query = dict_converter.convert(episode)
+        database.execute('''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' +
+                         query.question_marks + ''')''', query.values)
+        event_stream(type='episode', action='insert', id=episode['sonarrEpisodeId'])
+        logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
+            episode['path'])))
+
+    # Storing existing subtitles
+    logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(
+            episode['path'])))
+    store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+
+    # Downloading missing subtitles
+    logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
+        episode['path'])))
+    episode_download_subtitles(episode['sonarrEpisodeId'])
+
+
 def SonarrFormatAudioCodec(audio_codec):
     if audio_codec == 'AC-3':
         return 'AC3'
@@ -179,58 +226,62 @@ def SonarrFormatVideoCodec(video_codec):
 
 
 def episodeParser(episode):
-    if 'sceneName' in episode['episodeFile']:
-        sceneName = episode['episodeFile']['sceneName']
-    else:
-        sceneName = None
+    if 'hasFile' in episode:
+        if episode['hasFile'] is True:
+            if 'episodeFile' in episode:
+                if episode['episodeFile']['size'] > 20480:
+                    if 'sceneName' in episode['episodeFile']:
+                        sceneName = episode['episodeFile']['sceneName']
+                    else:
+                        sceneName = None
 
-    audio_language = []
-    if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
-        item = episode['episodeFile']['language']
-        if isinstance(item, dict):
-            if 'name' in item:
-                audio_language.append(item['name'])
-    else:
-        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE "
-                                          "sonarrSeriesId=?", (episode['seriesId'],),
-                                          only_one=True)['audio_language']
+                    audio_language = []
+                    if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
+                        item = episode['episodeFile']['language']
+                        if isinstance(item, dict):
+                            if 'name' in item:
+                                audio_language.append(item['name'])
+                    else:
+                        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE "
+                                                          "sonarrSeriesId=?", (episode['seriesId'],),
+                                                          only_one=True)['audio_language']
 
-    if 'mediaInfo' in episode['episodeFile']:
-        if 'videoCodec' in episode['episodeFile']['mediaInfo']:
-            videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
-            videoCodec = SonarrFormatVideoCodec(videoCodec)
-        else:
-            videoCodec = None
+                    if 'mediaInfo' in episode['episodeFile']:
+                        if 'videoCodec' in episode['episodeFile']['mediaInfo']:
+                            videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                            videoCodec = SonarrFormatVideoCodec(videoCodec)
+                        else:
+                            videoCodec = None
 
-        if 'audioCodec' in episode['episodeFile']['mediaInfo']:
-            audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
-            audioCodec = SonarrFormatAudioCodec(audioCodec)
-        else:
-            audioCodec = None
-    else:
-        videoCodec = None
-        audioCodec = None
+                        if 'audioCodec' in episode['episodeFile']['mediaInfo']:
+                            audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                            audioCodec = SonarrFormatAudioCodec(audioCodec)
+                        else:
+                            audioCodec = None
+                    else:
+                        videoCodec = None
+                        audioCodec = None
 
-    try:
-        video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
-    except:
-        video_format = episode['episodeFile']['quality']['quality']['name']
-        try:
-            video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
-        except:
-            video_resolution = None
+                    try:
+                        video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                    except:
+                        video_format = episode['episodeFile']['quality']['quality']['name']
+                        try:
+                            video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                        except:
+                            video_resolution = None
 
-    return {'sonarrSeriesId': episode['seriesId'],
-            'sonarrEpisodeId': episode['id'],
-            'title': episode['title'],
-            'path': episode['episodeFile']['path'],
-            'season': episode['seasonNumber'],
-            'episode': episode['episodeNumber'],
-            'scene_name': sceneName,
-            'monitored': str(bool(episode['monitored'])),
-            'format': video_format,
-            'resolution': video_resolution,
-            'video_codec': videoCodec,
-            'audio_codec': audioCodec,
-            'episode_file_id': episode['episodeFile']['id'],
-            'audio_language': str(audio_language)}
+                    return {'sonarrSeriesId': episode['seriesId'],
+                            'sonarrEpisodeId': episode['id'],
+                            'title': episode['title'],
+                            'path': episode['episodeFile']['path'],
+                            'season': episode['seasonNumber'],
+                            'episode': episode['episodeNumber'],
+                            'scene_name': sceneName,
+                            'monitored': str(bool(episode['monitored'])),
+                            'format': video_format,
+                            'resolution': video_resolution,
+                            'video_codec': videoCodec,
+                            'audio_codec': audioCodec,
+                            'episode_file_id': episode['episodeFile']['id'],
+                            'audio_language': str(audio_language)}
