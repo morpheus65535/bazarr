@@ -1,6 +1,6 @@
-import {} from "socket.io-client";
 import {
   badgeUpdateAll,
+  episodeUpdateBy,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
@@ -9,6 +9,8 @@ import {
   seriesUpdateList,
   systemUpdateTasks,
 } from "../../@redux/actions";
+import { createCombineAction } from "../../@redux/actions/factory";
+import { ActionDispatcher } from "../../@redux/types";
 
 export const SocketIOReducer: SocketIO.Reducer[] = [
   {
@@ -37,18 +39,30 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   },
   {
     key: "task",
+    state: (s) => s.system.tasks,
     update: () => systemUpdateTasks,
   },
   {
     key: "series",
-    update: () => seriesUpdateList,
+    state: (s) => s.series.seriesList,
+    update: () =>
+      createCombineAction((id?: number[]) => {
+        const actions: ActionDispatcher<any>[] = [seriesUpdateList(id)];
+        if (id !== undefined) {
+          actions.push(episodeUpdateBy(id));
+        }
+        return actions;
+      }),
   },
   {
     key: "movie",
+    state: (s) => s.movie.movieList,
     update: () => movieUpdateList,
   },
   {
     key: "episode",
+    state: (s) => s.series.episodeList,
+    // TODO
     // update: () => episodeUpdateBy
   },
 ];

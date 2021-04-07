@@ -17,7 +17,7 @@ import { createAsyncAction, createCallbackAction } from "./factory";
 import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 
 export const bootstrap = createCallbackAction(
-  () => [systemUpdateLanguagesAll(), systemUpdateSettings()],
+  () => [systemUpdateLanguagesAll(), systemUpdateSettings(), badgeUpdateAll()],
   () => siteInitialized(),
   () => siteInitializeFailed()
 );

@@ -5,14 +5,12 @@ import { Helmet } from "react-helmet";
 import { useBlacklistSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 interface Props {}
 
 const BlacklistSeriesView: FunctionComponent<Props> = () => {
-  const [blacklist, update] = useBlacklistSeries();
-  useAutoUpdate(update);
+  const [blacklist] = useBlacklistSeries();
   return (
     <AsyncStateOverlay state={blacklist}>
       {(data) => (

@@ -9,9 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { systemUpdateStatus } from "../../@redux/actions";
-import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
-import { useAutoUpdate } from "../../utilites/hooks";
+import { useSystemStatus } from "../../@redux/hooks";
 
 interface InfoProps {
   title: string;
@@ -64,9 +62,7 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
-  const status = useReduxStore((s) => s.system.status.data);
-  const update = useReduxAction(systemUpdateStatus);
-  useAutoUpdate(update);
+  const [status] = useSystemStatus();
 
   return (
     <Container className="p-5">

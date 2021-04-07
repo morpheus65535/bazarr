@@ -63,22 +63,6 @@ export function useMergeArray<T>(
   ]);
 }
 
-export function useAutoUpdate(action: () => void, interval?: number) {
-  useEffect(() => {
-    action();
-
-    let hd: NodeJS.Timeout | null = null;
-    if (interval !== undefined) {
-      hd = setInterval(action, interval);
-    }
-    return () => {
-      if (hd !== null) {
-        clearInterval(hd);
-      }
-    };
-  }, [action, interval]);
-}
-
 export function useWatcher<T>(
   curr: T,
   expected: T,

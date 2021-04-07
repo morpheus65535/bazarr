@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { isArray, isNull, isUndefined } from "lodash";
+import { useCallback, useEffect, useMemo } from "react";
 import { buildOrderList } from "../../utilites";
 import {
   episodeUpdateBy,
@@ -13,7 +14,11 @@ import {
   seriesUpdateWantedList,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
+  systemUpdateLogs,
+  systemUpdateReleases,
   systemUpdateSettingsAll,
+  systemUpdateStatus,
+  systemUpdateTasks,
 } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
@@ -24,10 +29,76 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
   return [t, d];
 }
 
+function useUpdateIfNecessary(state: AsyncState<any>, action: () => void) {
+  useEffect(() => {
+    let empty = false;
+    if (isArray(state.data)) {
+      empty = state.data.length === 0;
+    } else {
+      empty = isNull(state.data) || isUndefined(state.data);
+    }
+    if (empty) {
+      action();
+    }
+  }, [state.data, action]);
+}
+
 export function useSystemSettings() {
-  const action = useReduxAction(systemUpdateSettingsAll);
+  const update = useReduxAction(systemUpdateSettingsAll);
   const items = useReduxStore((s) => s.system.settings);
-  return stateBuilder(items, action);
+
+  useUpdateIfNecessary(items, update);
+  return stateBuilder(items, update);
+}
+
+export function useSystemLogs() {
+  const items = useReduxStore(({ system }) => system.logs);
+  const update = useReduxAction(systemUpdateLogs);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemTasks() {
+  const items = useReduxStore((s) => s.system.tasks);
+  const update = useReduxAction(systemUpdateTasks);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemStatus() {
+  const items = useReduxStore((s) => s.system.status.data);
+  const update = useReduxAction(systemUpdateStatus);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemProviders() {
+  const update = useReduxAction(providerUpdateList);
+  const items = useReduxStore((d) => d.system.providers);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemReleases() {
+  const items = useReduxStore(({ system }) => system.releases);
+  const update = useReduxAction(systemUpdateReleases);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useLanguageProfiles() {
@@ -118,7 +189,6 @@ export function useSeries(order = true) {
 
 export function useSerieBy(id?: number) {
   const [series, updateSerie] = useRawSeries();
-  const updateEpisodes = useReduxAction(episodeUpdateBy);
   const serie = useMemo<AsyncState<Item.Series | null>>(() => {
     const items = series.data.items;
     let item: Item.Series | null = null;
@@ -134,16 +204,16 @@ export function useSerieBy(id?: number) {
   const update = useCallback(() => {
     if (id && !isNaN(id)) {
       updateSerie([id]);
-      updateEpisodes(id);
     }
-  }, [id, updateSerie, updateEpisodes]);
+  }, [id, updateSerie]);
 
+  useUpdateIfNecessary(serie, update);
   return stateBuilder(serie, update);
 }
 
 export function useEpisodesBy(seriesId?: number) {
   const action = useReduxAction(episodeUpdateBy);
-  const callback = useCallback(() => {
+  const update = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
       action([seriesId]);
     }
@@ -159,12 +229,16 @@ export function useEpisodesBy(seriesId?: number) {
     }
   }, [seriesId, list.data]);
 
-  const state: AsyncState<Item.Episode[]> = {
-    ...list,
-    data: items,
-  };
+  const state: AsyncState<Item.Episode[]> = useMemo(
+    () => ({
+      ...list,
+      data: items,
+    }),
+    [list, items]
+  );
 
-  return stateBuilder(state, callback);
+  useUpdateIfNecessary(state, update);
+  return stateBuilder(state, update);
 }
 
 export function useRawMovies() {
@@ -212,34 +286,35 @@ export function useMovieBy(id?: number) {
     }
   }, [id, updateMovies]);
 
+  useUpdateIfNecessary(movie, update);
   return stateBuilder(movie, update);
 }
 
 export function useWantedSeries() {
-  const action = useReduxAction(seriesUpdateWantedList);
+  const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
-  const action = useReduxAction(movieUpdateWantedList);
+  const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
 
-  return stateBuilder(items, action);
-}
-
-export function useProviders() {
-  const action = useReduxAction(providerUpdateList);
-  const items = useReduxStore((d) => d.system.providers);
-
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useBlacklistMovies() {
   const action = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
 
+  useUpdateIfNecessary(items, action);
   return stateBuilder(items, action);
 }
 
@@ -247,6 +322,7 @@ export function useBlacklistSeries() {
   const action = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
 
+  useUpdateIfNecessary(items, action);
   return stateBuilder(items, action);
 }
 
@@ -254,6 +330,7 @@ export function useMoviesHistory() {
   const action = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
 
+  useUpdateIfNecessary(items, action);
   return stateBuilder(items, action);
 }
 
@@ -261,5 +338,6 @@ export function useSeriesHistory() {
   const action = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
 
+  useUpdateIfNecessary(items, action);
   return stateBuilder(items, action);
 }

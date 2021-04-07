@@ -27,7 +27,7 @@ import {
   useShowModal,
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
-import { useAutoUpdate, useWhenLoadingFinish } from "../../utilites";
+import { useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -39,12 +39,10 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [serie, update] = useSerieBy(id);
+  const [serie] = useSerieBy(id);
   const item = serie.data;
 
   const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
-
-  useAutoUpdate(update);
 
   const available = episodes.data.length !== 0;
 
@@ -149,7 +147,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
       ></ItemEditorModal>
-      <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
+      <SeriesUploadModal
+        modalKey="upload"
+        episodes={episodes.data}
+      ></SeriesUploadModal>
     </Container>
   );
 };

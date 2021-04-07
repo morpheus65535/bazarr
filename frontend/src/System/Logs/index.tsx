@@ -2,20 +2,16 @@ import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { systemUpdateLogs } from "../../@redux/actions";
-import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
+import { useSystemLogs } from "../../@redux/hooks";
 import { SystemApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
 import { useBaseUrl } from "../../utilites";
-import { useAutoUpdate } from "../../utilites/hooks";
 import Table from "./table";
 
 interface Props {}
 
 const SystemLogsView: FunctionComponent<Props> = () => {
-  const logs = useReduxStore(({ system }) => system.logs);
-  const update = useReduxAction(systemUpdateLogs);
-  useAutoUpdate(update);
+  const [logs, update] = useSystemLogs();
 
   const [resetting, setReset] = useState(false);
 
