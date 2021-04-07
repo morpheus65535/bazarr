@@ -8,9 +8,19 @@ from urllib.parse import quote_plus
 
 from subliminal.cache import region
 
-from simpleconfigparser import simpleconfigparser
+from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
 
 from get_args import args
+
+
+class SimpleConfigParser(simpleconfigparser):
+
+    def get(self, section, option, raw=False, vars=None):
+        try:
+            return configparser.get(self, section, option, raw=raw, vars=vars)
+        except NoOptionError:
+            return None
+
 
 defaults = {
     'general': {
@@ -172,7 +182,7 @@ defaults = {
     }
 }
 
-settings = simpleconfigparser(defaults=defaults, interpolation=None)
+settings = SimpleConfigParser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
