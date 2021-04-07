@@ -441,6 +441,7 @@ class SystemSettings(Resource):
         if len(enabled_languages) != 0:
             database.execute("UPDATE table_settings_languages SET enabled=0")
             database.execute(f"UPDATE table_settings_languages SET enabled=1 WHERE code2 in {convert_list_to_clause(enabled_languages)}")
+            event_stream("languages");
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
@@ -470,6 +471,7 @@ class SystemSettings(Resource):
                 database.execute('DELETE FROM table_languages_profiles WHERE profileId = ?', (profileId,))
 
             update_profile_id_list()
+            event_stream("languages");
 
             if settings.general.getboolean('use_sonarr'):
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
@@ -484,6 +486,7 @@ class SystemSettings(Resource):
                              (item['enabled'], item['url'], item['name']))
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
+        event_stream("settings");
         return '', 204
 
 

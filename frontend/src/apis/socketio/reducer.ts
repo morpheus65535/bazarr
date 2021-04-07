@@ -7,6 +7,8 @@ import {
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
   seriesUpdateList,
+  systemUpdateLanguagesAll,
+  systemUpdateSettings,
   systemUpdateTasks,
 } from "../../@redux/actions";
 import { createAsyncCombineAction } from "../../@redux/actions/factory";
@@ -64,5 +66,15 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     state: (s) => s.series.episodeList,
     // TODO
     // update: () => episodeUpdateBy
+  },
+  {
+    key: "settings",
+    state: (s) => s.system.settings,
+    update: () => systemUpdateSettings,
+  },
+  {
+    key: "languages",
+    state: (s) => s.system.languages,
+    update: () => systemUpdateLanguagesAll,
   },
 ];

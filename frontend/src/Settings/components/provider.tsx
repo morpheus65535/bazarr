@@ -10,13 +10,12 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import {
-  siteSaveLocalstorage,
-  systemUpdateSettingsAll,
-} from "../../@redux/actions";
-import { useReduxAction, useReduxActionWith } from "../../@redux/hooks/base";
+import { siteSaveLocalstorage } from "../../@redux/actions";
+import { useSystemSettings } from "../../@redux/hooks";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
+import { useWhenLoadingFinish } from "../../utilites";
 import { log } from "../../utilites/logger";
 import {
   enabledLanguageKey,
@@ -66,17 +65,15 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     setUpdating(false);
   }, []);
 
-  const update = useReduxActionWith(systemUpdateSettingsAll, cleanup);
+  const [settings] = useSystemSettings();
+  useWhenLoadingFinish(settings, cleanup);
 
-  const saveSettings = useCallback(
-    (settings: LooseObject) => {
-      submitHooks(settings);
-      setUpdating(true);
-      log("info", "submitting settings", settings);
-      SystemApi.setSettings(settings).finally(update);
-    },
-    [update]
-  );
+  const saveSettings = useCallback((settings: LooseObject) => {
+    submitHooks(settings);
+    setUpdating(true);
+    log("info", "submitting settings", settings);
+    SystemApi.setSettings(settings);
+  }, []);
 
   const saveLocalStorage = useCallback(
     (settings: LooseObject) => {

@@ -8,7 +8,9 @@ namespace SocketIO {
     | "episode-blacklist"
     | "movie-blacklist"
     | "badges"
-    | "task";
+    | "task"
+    | "settings"
+    | "languages";
 
   type Action = "update" | "insert" | "delete";
 
