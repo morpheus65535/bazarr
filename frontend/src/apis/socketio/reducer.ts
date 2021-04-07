@@ -5,6 +5,7 @@ import {
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
+  movieUpdateWantedList,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
   seriesUpdateList,
@@ -12,43 +13,24 @@ import {
   systemUpdateSettings,
   systemUpdateTasks,
 } from "../../@redux/actions";
-import { createAsyncCombineAction } from "../../@redux/actions/factory";
-import { AsyncActionDispatcher } from "../../@redux/types";
+import { createCombineAction } from "../../@redux/actions/factory";
+import { ActionDispatcher } from "../../@redux/types";
 
-const episodeUpdateBySeriesWrap = createAsyncCombineAction(
-  (seriesid?: number[]) => {
-    const actions: AsyncActionDispatcher<any>[] = [];
-    if (seriesid !== undefined) {
-      actions.push(episodeUpdateBy(seriesid));
+function warpToOptionalId(fn: (id: number[]) => ActionDispatcher<any>) {
+  return createCombineAction((ids?: number[]) => {
+    const actions: ActionDispatcher<any>[] = [];
+    if (ids !== undefined) {
+      actions.push(fn(ids));
     }
     return actions;
-  }
-);
-
-const episodeUpdateByIdWrap = createAsyncCombineAction(
-  (episodeid?: number[]) => {
-    const actions: AsyncActionDispatcher<any>[] = [];
-    if (episodeid !== undefined) {
-      actions.push(episodeUpdateById(episodeid));
-    }
-    return actions;
-  }
-);
+  });
+}
 
 export const SocketIOReducer: SocketIO.Reducer[] = [
-  {
-    key: "badges",
-    update: () => badgeUpdateAll,
-  },
   {
     key: "episode-blacklist",
     state: (s) => s.series.blacklist,
     update: () => seriesUpdateBlacklist,
-  },
-  {
-    key: "movie-blacklist",
-    state: (s) => s.movie.blacklist,
-    update: () => movieUpdateBlacklist,
   },
   {
     key: "episode-history",
@@ -56,14 +38,24 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     update: () => seriesUpdateHistoryList,
   },
   {
+    key: "episode-wanted",
+    state: (s) => s.series.wantedEpisodesList,
+    update: () => warpToOptionalId(episodeUpdateById),
+  },
+  {
+    key: "movie-blacklist",
+    state: (s) => s.movie.blacklist,
+    update: () => movieUpdateBlacklist,
+  },
+  {
     key: "movie-history",
     state: (s) => s.movie.historyList,
     update: () => movieUpdateHistoryList,
   },
   {
-    key: "task",
-    state: (s) => s.system.tasks,
-    update: () => systemUpdateTasks,
+    key: "movie-wanted",
+    state: (s) => s.movie.wantedMovieList,
+    update: () => warpToOptionalId(movieUpdateWantedList),
   },
   {
     key: "series",
@@ -73,7 +65,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "series",
     state: (s) => s.series.episodeList,
-    update: () => episodeUpdateBySeriesWrap,
+    update: () => warpToOptionalId(episodeUpdateBy),
   },
   {
     key: "movie",
@@ -83,7 +75,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode",
     state: (s) => s.series.episodeList,
-    update: () => episodeUpdateByIdWrap,
+    update: () => warpToOptionalId(episodeUpdateById),
   },
   {
     key: "settings",
@@ -94,5 +86,14 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     key: "languages",
     state: (s) => s.system.languages,
     update: () => systemUpdateLanguagesAll,
+  },
+  {
+    key: "task",
+    state: (s) => s.system.tasks,
+    update: () => systemUpdateTasks,
+  },
+  {
+    key: "badges",
+    update: () => badgeUpdateAll,
   },
 ];
