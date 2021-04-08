@@ -74,7 +74,6 @@ export class SocketIOClient {
           const anyAction = handler.any;
           if (anyAction) {
             this.dispatch(anyAction());
-            return;
           }
 
           forIn(element, (ids, key) => {
@@ -82,7 +81,7 @@ export class SocketIOClient {
             const action = handler[key as SocketIO.ActionType];
             if (action) {
               this.dispatch(action());
-            } else {
+            } else if (anyAction === undefined) {
               log("error", "Unhandle action of SocketIO event", key, type);
             }
           });

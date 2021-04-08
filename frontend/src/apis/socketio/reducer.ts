@@ -30,12 +30,12 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode-blacklist",
     state: (s) => s.series.blacklist,
-    update: () => seriesUpdateBlacklist,
+    any: () => seriesUpdateBlacklist,
   },
   {
     key: "episode-history",
     state: (s) => s.series.historyList,
-    update: () => seriesUpdateHistoryList,
+    any: () => seriesUpdateHistoryList,
   },
   {
     key: "episode-wanted",

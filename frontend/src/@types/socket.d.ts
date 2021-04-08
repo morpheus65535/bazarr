@@ -22,13 +22,11 @@ namespace SocketIO {
     id: number | null;
   }
 
-  type IdAction = (id?: number[]) => any;
-
   type Reducer = {
     key: EventType;
     state?: (store: ReduxStore) => AsyncState<any>;
     any?: Factory<() => any>;
-  } & Partial<Record<ActionType, Factory<IdAction>>>;
+  } & Partial<Record<ActionType, Factory<(id?: number[]) => any>>>;
 
   type ActionRecord = OptionalRecord<
     EventType,
