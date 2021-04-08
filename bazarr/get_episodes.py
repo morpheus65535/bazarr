@@ -138,28 +138,39 @@ def sync_episodes():
                       "now.")
 
 
-def sync_one_episode(episode, action):
-    logging.debug('BAZARR syncing a single episode from Sonarr.')
-
-    # Validate the episode provided
+def sync_one_episode(episode):
+    # Get some values before altering the episode dict
     hasFile = False
+    if 'body' not in episode:
+        return
+    if 'resource' not in episode['body']:
+        return
+    if 'id' not in episode['body']['resource']:
+        return
+
+    episodeId = episode['body']['resource']['id']
+    logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episodeId))
+
+    if 'hasFile' in episode['body']['resource']:
+        hasFile = episode['body']['resource']['hasFile']
+
+    # Validate the provided episode
     try:
-        episodeId = episode['body']['resource']['id']
-        if 'hasFile' in episode['body']['resource']:
-            hasFile = episode['body']['resource']['hasFile']
         episode = episodeParser(episode['body']['resource'])
     except Exception:
         logging.debug('BAZARR cannot parse episode returned by SignalR feed.')
         return
 
+    # Check if there's a row in database for this episode ID
     existing_episode = database.execute('SELECT path FROM table_episodes WHERE sonarrEpisodeId = ?', (episodeId,),
                                         only_one=True)
 
+    # Drop useless events
     if not hasFile and not existing_episode:
         return
 
+    # Remove episode from DB
     if not hasFile and existing_episode:
-        # Remove episode from DB
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
         event_stream(type='episode', action='delete', id=episodeId)
         logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(

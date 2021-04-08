@@ -7,6 +7,7 @@ from requests.exceptions import ConnectionError
 
 from config import settings, url_sonarr
 from get_episodes import sync_episodes, sync_one_episode
+from get_series import update_series, update_one_series
 from scheduler import scheduler
 
 
@@ -31,17 +32,16 @@ class SonarrSignalrClient:
             pass
         else:
             logging.debug('BAZARR SignalR client for Sonarr is connected.')
+            scheduler.add_job(update_series)
             scheduler.add_job(sync_episodes)
 
 
 def dispatcher(data):
     topic = data['name']
-    action = data['body']['action']
     if topic == 'series':
-        series_id = data['body']['resource']['id']
-        episode_id = None
+        update_one_series(data)
     elif topic == 'episode':
-        sync_one_episode(data, action)
+        sync_one_episode(data)
 
 
 sonarr_signalr_client = SonarrSignalrClient()

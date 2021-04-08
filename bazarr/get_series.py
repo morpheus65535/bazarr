@@ -60,65 +60,17 @@ def update_series():
 
     series_list_length = len(r.json())
     for i, show in enumerate(r.json(), 1):
-        overview = show['overview'] if 'overview' in show else ''
-        poster = ''
-        fanart = ''
-        for image in show['images']:
-            if image['coverType'] == 'poster':
-                poster_big = image['url'].split('?')[0]
-                poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
-
-            if image['coverType'] == 'fanart':
-                fanart = image['url'].split('?')[0]
-
-        alternate_titles = None
-        if show['alternateTitles'] is not None:
-            alternate_titles = str([item['title'] for item in show['alternateTitles']])
-
-        audio_language = []
-        if sonarr_version.startswith('2'):
-            audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
-        else:
-            audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
-
-        tags = [d['label'] for d in tagsDict if d['id'] in show['tags']]
-
-        imdbId = show['imdbId'] if 'imdbId' in show else None
-
         # Add shows in Sonarr to current shows list
         current_shows_sonarr.append(show['id'])
 
         if show['id'] in current_shows_db_list:
-            series_to_update.append({'title': show["title"],
-                                     'path': show["path"],
-                                     'tvdbId': int(show["tvdbId"]),
-                                     'sonarrSeriesId': int(show["id"]),
-                                     'overview': overview,
-                                     'poster': poster,
-                                     'fanart': fanart,
-                                     'audio_language': str(audio_language),
-                                     'sortTitle': show['sortTitle'],
-                                     'year': str(show['year']),
-                                     'alternateTitles': alternate_titles,
-                                     'tags': str(tags),
-                                     'seriesType': show['seriesType'],
-                                     'imdbId': imdbId})
+            series_to_update.append(seriesParser(show, action='update', sonarr_version=sonarr_version,
+                                                 tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                                                 audio_profiles=audio_profiles))
         else:
-            series_to_add.append({'title': show["title"],
-                                  'path': show["path"],
-                                  'tvdbId': show["tvdbId"],
-                                  'sonarrSeriesId': show["id"],
-                                  'overview': overview,
-                                  'poster': poster,
-                                  'fanart': fanart,
-                                  'audio_language': str(audio_language),
-                                  'sortTitle': show['sortTitle'],
-                                  'year': str(show['year']),
-                                  'alternateTitles': alternate_titles,
-                                  'tags': str(tags),
-                                  'seriesType': show['seriesType'],
-                                  'imdbId': imdbId,
-                                  'profileId': serie_default_profile})
+            series_to_add.append(seriesParser(show, action='insert', sonarr_version=sonarr_version,
+                                              tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                                              audio_profiles=audio_profiles))
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
@@ -130,7 +82,8 @@ def update_series():
     # Update existing series in DB
     series_in_db_list = []
     series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
-                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId FROM table_shows")
+                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId FROM "
+                                    "table_shows")
 
     for item in series_in_db:
         series_in_db_list.append(item)
@@ -155,9 +108,82 @@ def update_series():
             logging.debug('BAZARR unable to insert this series into the database:',
                           path_mappings.path_replace(added_series['path']))
 
-            event_stream(type='series', action='insert', series=added_series['sonarrSeriesId'])
+            event_stream(type='series', action='insert', id=added_series['sonarrSeriesId'])
 
             logging.debug('BAZARR All series synced from Sonarr into database.')
+
+
+def update_one_series(series):
+    # Get some values before altering the series dict
+    if 'body' not in series:
+        return
+    if 'resource' not in series['body']:
+        return
+    if 'id' not in series['body']['resource']:
+        return
+
+    action = series['body']['action']
+    seriesId = series['body']['resource']['id']
+    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(seriesId))
+
+    # Check if there's a row in database for this series ID
+    existing_series = database.execute('SELECT path FROM table_shows WHERE sonarrSeriesId = ?', (seriesId,),
+                                       only_one=True)
+
+    # Validate the provided series
+    sonarr_version = get_sonarr_version()
+    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+
+    if serie_default_enabled is True:
+        serie_default_profile = settings.general.serie_default_profile
+        if serie_default_profile == '':
+            serie_default_profile = None
+    else:
+        serie_default_profile = None
+
+    audio_profiles = get_profile_list()
+    tagsDict = get_tags()
+
+    try:
+        if action == 'updated' and existing_series:
+            series = seriesParser(series['body']['resource'], action='update', sonarr_version=sonarr_version,
+                                  tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                                  audio_profiles=audio_profiles)
+        elif action == 'updated' and not existing_series:
+            series = seriesParser(series['body']['resource'], action='insert', sonarr_version=sonarr_version,
+                                  tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                                  audio_profiles=audio_profiles)
+        else:
+            series = None
+    except Exception:
+        logging.debug('BAZARR cannot parse series returned by SignalR feed.')
+        return
+
+    # Remove series from DB
+    if action == 'deleted':
+        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (seriesId,))
+        event_stream(type='series', action='delete', id=seriesId)
+        logging.debug('BAZARR deleted this series from the database:{}'.format(path_mappings.path_replace(
+            existing_series['path'])))
+        return
+
+    # Update existing series in DB
+    elif action == 'updated' and existing_series:
+        query = dict_converter.convert(series)
+        database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
+                         query.values + (series['sonarrSeriesId'],))
+        event_stream(type='series', action='update', id=seriesId)
+        logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
+            series['path'])))
+
+    # Insert new series in DB
+    elif action == 'updated' and not existing_series:
+        query = dict_converter.convert(series)
+        database.execute('''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
+                         query.question_marks + ''')''', query.values)
+        event_stream(type='series', action='insert', id=seriesId)
+        logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
+            series['path'])))
 
 
 def get_profile_list():
@@ -222,3 +248,62 @@ def get_tags():
         return []
     else:
         return tagsDict.json()
+
+
+def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile, audio_profiles):
+    overview = show['overview'] if 'overview' in show else ''
+    poster = ''
+    fanart = ''
+    for image in show['images']:
+        if image['coverType'] == 'poster':
+            poster_big = image['url'].split('?')[0]
+            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+
+        if image['coverType'] == 'fanart':
+            fanart = image['url'].split('?')[0]
+
+    alternate_titles = None
+    if show['alternateTitles'] is not None:
+        alternate_titles = str([item['title'] for item in show['alternateTitles']])
+
+    audio_language = []
+    if sonarr_version.startswith('2'):
+        audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
+    else:
+        audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+
+    tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
+
+    imdbId = show['imdbId'] if 'imdbId' in show else None
+
+    if action == 'update':
+        return {'title': show["title"],
+                'path': show["path"],
+                'tvdbId': int(show["tvdbId"]),
+                'sonarrSeriesId': int(show["id"]),
+                'overview': overview,
+                'poster': poster,
+                'fanart': fanart,
+                'audio_language': str(audio_language),
+                'sortTitle': show['sortTitle'],
+                'year': str(show['year']),
+                'alternateTitles': alternate_titles,
+                'tags': str(tags),
+                'seriesType': show['seriesType'],
+                'imdbId': imdbId}
+    else:
+        return {'title': show["title"],
+                'path': show["path"],
+                'tvdbId': show["tvdbId"],
+                'sonarrSeriesId': show["id"],
+                'overview': overview,
+                'poster': poster,
+                'fanart': fanart,
+                'audio_language': str(audio_language),
+                'sortTitle': show['sortTitle'],
+                'year': str(show['year']),
+                'alternateTitles': alternate_titles,
+                'tags': str(tags),
+                'seriesType': show['seriesType'],
+                'imdbId': imdbId,
+                'profileId': serie_default_profile}
