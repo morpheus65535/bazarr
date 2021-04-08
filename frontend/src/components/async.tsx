@@ -156,6 +156,7 @@ interface AsyncButtonProps<T> {
   onChange?: (v: boolean) => void;
 
   noReset?: boolean;
+  animation?: boolean;
 
   promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
@@ -171,6 +172,7 @@ export function AsyncButton<T>(
     promise,
     onSuccess,
     noReset,
+    animation,
     error,
     onChange,
     disabled,
@@ -230,15 +232,19 @@ export function AsyncButton<T>(
     }
   }, [error, onChange, promise, onSuccess, state]);
 
-  let children = propChildren;
-  if (loading) {
-    children = <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>;
-  }
+  const showAnimation = animation ?? true;
 
-  if (state === RequestState.Success) {
-    children = <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>;
-  } else if (state === RequestState.Error) {
-    children = <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>;
+  let children = propChildren;
+  if (showAnimation) {
+    if (loading) {
+      children = <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>;
+    }
+
+    if (state === RequestState.Success) {
+      children = <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>;
+    } else if (state === RequestState.Error) {
+      children = <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>;
+    }
   }
 
   return (

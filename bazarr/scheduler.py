@@ -36,12 +36,12 @@ class Scheduler:
         def task_listener_add(event):
             if event.job_id not in self.__running_tasks:
                 self.__running_tasks.append(event.job_id)
-                event_stream(type='task', id=event.job_id)
+                event_stream(type='task')
 
         def task_listener_remove(event):
             if event.job_id in self.__running_tasks:
                 self.__running_tasks.remove(event.job_id)
-                event_stream(type='task', id=event.job_id)
+                event_stream(type='task')
 
         self.aps_scheduler.add_listener(task_listener_add, EVENT_JOB_SUBMITTED)
         self.aps_scheduler.add_listener(task_listener_remove, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)

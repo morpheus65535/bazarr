@@ -41,6 +41,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
               variant="light"
               size="sm"
               disabled={row.value}
+              animation={false}
             >
               <FontAwesomeIcon icon={faSync} spin={row.value}></FontAwesomeIcon>
             </AsyncButton>
