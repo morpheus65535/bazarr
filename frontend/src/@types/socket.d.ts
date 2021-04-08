@@ -1,5 +1,5 @@
 namespace SocketIO {
-  type Type =
+  type EventType =
     | "movie"
     | "series"
     | "episode"
@@ -14,20 +14,24 @@ namespace SocketIO {
     | "settings"
     | "languages";
 
-  type Action = "update" | "delete";
+  type ActionType = "update" | "delete";
 
   interface Event {
-    type: Type;
-    action: Action;
+    type: EventType;
+    action: ActionType;
     id: number | null;
   }
 
-  type ReducerAction = () => (id?: number[]) => any;
+  type IdAction = (id?: number[]) => any;
 
   type Reducer = {
-    key: Type;
+    key: EventType;
     state?: (store: ReduxStore) => AsyncState<any>;
-  } & Partial<Record<Action, ReducerAction>>;
+    any?: Factory<() => any>;
+  } & Partial<Record<ActionType, Factory<IdAction>>>;
 
-  type ActionRecord = OptionalRecord<Type, OptionalRecord<Action, number[]>>;
+  type ActionRecord = OptionalRecord<
+    EventType,
+    OptionalRecord<ActionType, number[]>
+  >;
 }

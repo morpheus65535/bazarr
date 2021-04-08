@@ -32,3 +32,5 @@ type SimpleStateType<T> = [
   T,
   ((item: T) => void) | ((fn: (item: T) => T) => void)
 ];
+
+type Factory<T> = () => T;

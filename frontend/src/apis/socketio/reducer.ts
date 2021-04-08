@@ -45,12 +45,12 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "movie-blacklist",
     state: (s) => s.movie.blacklist,
-    update: () => movieUpdateBlacklist,
+    any: () => movieUpdateBlacklist,
   },
   {
     key: "movie-history",
     state: (s) => s.movie.historyList,
-    update: () => movieUpdateHistoryList,
+    any: () => movieUpdateHistoryList,
   },
   {
     key: "movie-wanted",
@@ -80,20 +80,20 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "settings",
     state: (s) => s.system.settings,
-    update: () => systemUpdateSettings,
+    any: () => systemUpdateSettings,
   },
   {
     key: "languages",
     state: (s) => s.system.languages,
-    update: () => systemUpdateLanguagesAll,
+    any: () => systemUpdateLanguagesAll,
   },
   {
     key: "task",
     state: (s) => s.system.tasks,
-    update: () => systemUpdateTasks,
+    any: () => systemUpdateTasks,
   },
   {
     key: "badges",
-    update: () => badgeUpdateAll,
+    any: () => badgeUpdateAll,
   },
 ];
