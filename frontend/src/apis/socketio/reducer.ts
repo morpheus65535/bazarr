@@ -16,7 +16,7 @@ import {
 import { createCombineAction } from "../../@redux/actions/factory";
 import { ActionDispatcher } from "../../@redux/types";
 
-function warpToOptionalId(fn: (id: number[]) => ActionDispatcher<any>) {
+function wrapToOptionalId(fn: (id: number[]) => ActionDispatcher<any>) {
   return createCombineAction((ids?: number[]) => {
     const actions: ActionDispatcher<any>[] = [];
     if (ids !== undefined) {
@@ -40,7 +40,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode-wanted",
     state: (s) => s.series.wantedEpisodesList,
-    update: () => warpToOptionalId(episodeUpdateById),
+    update: () => wrapToOptionalId(episodeUpdateById),
   },
   {
     key: "movie-blacklist",
@@ -55,7 +55,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "movie-wanted",
     state: (s) => s.movie.wantedMovieList,
-    update: () => warpToOptionalId(movieUpdateWantedList),
+    update: () => wrapToOptionalId(movieUpdateWantedList),
   },
   {
     key: "series",
@@ -65,7 +65,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "series",
     state: (s) => s.series.episodeList,
-    update: () => warpToOptionalId(episodeUpdateBy),
+    update: () => wrapToOptionalId(episodeUpdateBy),
   },
   {
     key: "movie",
@@ -75,7 +75,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode",
     state: (s) => s.series.episodeList,
-    update: () => warpToOptionalId(episodeUpdateById),
+    update: () => wrapToOptionalId(episodeUpdateById),
   },
   {
     key: "settings",
