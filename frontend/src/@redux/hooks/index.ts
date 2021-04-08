@@ -1,4 +1,3 @@
-import { isArray, isNull, isUndefined } from "lodash";
 import { useCallback, useEffect, useMemo } from "react";
 import { buildOrderList } from "../../utilites";
 import {
@@ -29,25 +28,10 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
   return [t, d];
 }
 
-function useUpdateIfNecessary(state: AsyncState<any>, action: () => void) {
-  useEffect(() => {
-    let empty = false;
-    if (isArray(state.data)) {
-      empty = state.data.length === 0;
-    } else {
-      empty = isNull(state.data) || isUndefined(state.data);
-    }
-    if (empty) {
-      action();
-    }
-  }, [state.data, action]);
-}
-
 export function useSystemSettings() {
   const update = useReduxAction(systemUpdateSettingsAll);
   const items = useReduxStore((s) => s.system.settings);
 
-  useUpdateIfNecessary(items, update);
   return stateBuilder(items, update);
 }
 
@@ -207,7 +191,11 @@ export function useSerieBy(id?: number) {
     }
   }, [id, updateSerie]);
 
-  useUpdateIfNecessary(serie, update);
+  useEffect(() => {
+    if (serie === null) {
+      update();
+    }
+  }, [serie, update]);
   return stateBuilder(serie, update);
 }
 
@@ -237,7 +225,9 @@ export function useEpisodesBy(seriesId?: number) {
     [list, items]
   );
 
-  useUpdateIfNecessary(state, update);
+  useEffect(() => {
+    update();
+  }, [update]);
   return stateBuilder(state, update);
 }
 
@@ -286,7 +276,11 @@ export function useMovieBy(id?: number) {
     }
   }, [id, updateMovies]);
 
-  useUpdateIfNecessary(movie, update);
+  useEffect(() => {
+    if (movie === null) {
+      update();
+    }
+  }, [movie, update]);
   return stateBuilder(movie, update);
 }
 
@@ -303,33 +297,41 @@ export function useWantedMovies() {
 }
 
 export function useBlacklistMovies() {
-  const action = useReduxAction(movieUpdateBlacklist);
+  const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
 
-  useUpdateIfNecessary(items, action);
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useBlacklistSeries() {
-  const action = useReduxAction(seriesUpdateBlacklist);
+  const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
 
-  useUpdateIfNecessary(items, action);
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useMoviesHistory() {
-  const action = useReduxAction(movieUpdateHistoryList);
+  const update = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
 
-  useUpdateIfNecessary(items, action);
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useSeriesHistory() {
-  const action = useReduxAction(seriesUpdateHistoryList);
+  const update = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
 
-  useUpdateIfNecessary(items, action);
-  return stateBuilder(items, action);
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
