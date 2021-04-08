@@ -94,7 +94,7 @@ def update_series():
         query = dict_converter.convert(updated_series)
         database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                          query.values + (updated_series['sonarrSeriesId'],))
-        event_stream(type='series', action='update', id=updated_series['sonarrSeriesId'])
+        event_stream(type='series', id=updated_series['sonarrSeriesId'])
 
     # Insert new series in DB
     for added_series in series_to_add:

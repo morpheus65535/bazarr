@@ -108,7 +108,7 @@ def sync_episodes():
             altered_episodes.append([added_episode['sonarrEpisodeId'],
                                      added_episode['path'],
                                      added_episode['monitored']])
-            event_stream(type='episode', action='insert', id=added_episode['sonarrEpisodeId'])
+            event_stream(type='episode', id=added_episode['sonarrEpisodeId'])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:{}'.format(
                 path_mappings.path_replace(added_episode['path'])))

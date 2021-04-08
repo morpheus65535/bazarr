@@ -4,7 +4,7 @@ import json
 from app import socketio
 
 
-def event_stream(type, action: str = "update", id=None):
+def event_stream(type, action = "update", id=None):
     """
         :param type: The type of element.
         :type type: str

@@ -1,4 +1,4 @@
-import { debounce, uniq } from "lodash";
+import { debounce, forIn, isUndefined, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import { siteUpdateOffline } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
@@ -28,6 +28,14 @@ export class SocketIOClient {
     this.socket.connect();
   }
 
+  private dispatch(action: (ids?: number[]) => any, ids?: number[]) {
+    if (isUndefined(ids)) {
+      reduxStore.dispatch(action());
+    } else {
+      reduxStore.dispatch(action(ids));
+    }
+  }
+
   private reduce() {
     const events = [...this.events];
     this.events = [];
@@ -49,54 +57,47 @@ export class SocketIOClient {
       }
     });
 
-    for (const key in records) {
-      const type = key as SocketIO.Type;
-      const element = records[type]!;
-
-      const handlers = SocketIOReducer.filter((v) => v.key === type);
-      if (handlers.length === 0) {
-        log("error", "Unhandle SocketIO event", type);
-        continue;
-      }
-      // eslint-disable-next-line no-loop-func
-      handlers.forEach((handler) => {
-        if (handler.state && handler.state(store).updating) {
+    forIn(records, (element, type) => {
+      if (element) {
+        const handlers = SocketIOReducer.filter((v) => v.key === type);
+        if (handlers.length === 0) {
+          log("error", "Unhandle SocketIO event", type);
           return;
         }
 
-        for (const actionKey in element) {
-          const action = actionKey as SocketIO.Action;
-          const ids = uniq(element[action]!);
-          if (action in handler) {
-            const realAction = handler[action]!();
-            if (ids.length === 0) {
-              reduxStore.dispatch(realAction());
-            } else {
-              reduxStore.dispatch(realAction(ids));
-            }
-          } else {
-            log("error", "Unhandle action of SocketIO event", action, type);
+        // eslint-disable-next-line no-loop-func
+        handlers.forEach((handler) => {
+          if (handler.state && handler.state(store).updating) {
+            return;
           }
-        }
-      });
-    }
-  }
 
-  private dispatch(action: any, state?: AsyncState<any>) {
-    const canDispatch = state ? state.updating === false : true;
-    if (canDispatch) {
-      reduxStore.dispatch(action);
-    }
+          const anyAction = handler.any;
+          if (anyAction) {
+            this.dispatch(anyAction());
+          }
+
+          forIn(element, (ids, key) => {
+            ids = uniq(ids);
+            const action = handler[key as SocketIO.ActionType];
+            if (action) {
+              this.dispatch(action());
+            } else if (anyAction === undefined) {
+              log("error", "Unhandle action of SocketIO event", key, type);
+            }
+          });
+        });
+      }
+    });
   }
 
   private onConnect() {
     log("info", "Socket.IO has connected");
-    this.dispatch(siteUpdateOffline(false));
+    reduxStore.dispatch(siteUpdateOffline(false));
   }
 
   private onDisconnect() {
     log("warning", "Socket.IO has disconnected");
-    this.dispatch(siteUpdateOffline(true));
+    reduxStore.dispatch(siteUpdateOffline(true));
   }
 
   private onDataEvent(event: SocketIO.Event) {

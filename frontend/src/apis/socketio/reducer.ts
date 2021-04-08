@@ -16,7 +16,7 @@ import {
 import { createCombineAction } from "../../@redux/actions/factory";
 import { ActionDispatcher } from "../../@redux/types";
 
-function warpToOptionalId(fn: (id: number[]) => ActionDispatcher<any>) {
+function wrapToOptionalId(fn: (id: number[]) => ActionDispatcher<any>) {
   return createCombineAction((ids?: number[]) => {
     const actions: ActionDispatcher<any>[] = [];
     if (ids !== undefined) {
@@ -30,32 +30,32 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode-blacklist",
     state: (s) => s.series.blacklist,
-    update: () => seriesUpdateBlacklist,
+    any: () => seriesUpdateBlacklist,
   },
   {
     key: "episode-history",
     state: (s) => s.series.historyList,
-    update: () => seriesUpdateHistoryList,
+    any: () => seriesUpdateHistoryList,
   },
   {
     key: "episode-wanted",
     state: (s) => s.series.wantedEpisodesList,
-    update: () => warpToOptionalId(episodeUpdateById),
+    update: () => wrapToOptionalId(episodeUpdateById),
   },
   {
     key: "movie-blacklist",
     state: (s) => s.movie.blacklist,
-    update: () => movieUpdateBlacklist,
+    any: () => movieUpdateBlacklist,
   },
   {
     key: "movie-history",
     state: (s) => s.movie.historyList,
-    update: () => movieUpdateHistoryList,
+    any: () => movieUpdateHistoryList,
   },
   {
     key: "movie-wanted",
     state: (s) => s.movie.wantedMovieList,
-    update: () => warpToOptionalId(movieUpdateWantedList),
+    update: () => wrapToOptionalId(movieUpdateWantedList),
   },
   {
     key: "series",
@@ -65,7 +65,7 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "series",
     state: (s) => s.series.episodeList,
-    update: () => warpToOptionalId(episodeUpdateBy),
+    update: () => wrapToOptionalId(episodeUpdateBy),
   },
   {
     key: "movie",
@@ -75,25 +75,25 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
   {
     key: "episode",
     state: (s) => s.series.episodeList,
-    update: () => warpToOptionalId(episodeUpdateById),
+    update: () => wrapToOptionalId(episodeUpdateById),
   },
   {
     key: "settings",
     state: (s) => s.system.settings,
-    update: () => systemUpdateSettings,
+    any: () => systemUpdateSettings,
   },
   {
     key: "languages",
     state: (s) => s.system.languages,
-    update: () => systemUpdateLanguagesAll,
+    any: () => systemUpdateLanguagesAll,
   },
   {
     key: "task",
     state: (s) => s.system.tasks,
-    update: () => systemUpdateTasks,
+    any: () => systemUpdateTasks,
   },
   {
     key: "badges",
-    update: () => badgeUpdateAll,
+    any: () => badgeUpdateAll,
   },
 ];
