@@ -192,7 +192,7 @@ export function useSerieBy(id?: number) {
   }, [id, updateSerie]);
 
   useEffect(() => {
-    if (serie === null) {
+    if (serie.data === null) {
       update();
     }
   }, [serie, update]);
@@ -277,7 +277,7 @@ export function useMovieBy(id?: number) {
   }, [id, updateMovies]);
 
   useEffect(() => {
-    if (movie === null) {
+    if (movie.data === null) {
       update();
     }
   }, [movie, update]);
