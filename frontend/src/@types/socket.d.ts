@@ -14,7 +14,7 @@ namespace SocketIO {
     | "settings"
     | "languages";
 
-  type Action = "update" | "insert" | "delete";
+  type Action = "update" | "delete";
 
   interface Event {
     type: Type;
