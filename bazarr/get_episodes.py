@@ -142,35 +142,45 @@ def sync_one_episode(episode, action):
     logging.debug('BAZARR syncing a single episode from Sonarr.')
 
     # Validate the episode provided
+    hasFile = False
     try:
         episodeId = episode['body']['resource']['id']
+        if 'hasFile' in episode['body']['resource']:
+            hasFile = episode['body']['resource']['hasFile']
         episode = episodeParser(episode['body']['resource'])
     except Exception:
         logging.debug('BAZARR cannot parse episode returned by SignalR feed.')
         return
 
-    exist = database.execute('SELECT COUNT(*) FROM table_episodes WHERE sonarrEpisodeId = ?', (episodeId,))
+    existing_episode = database.execute('SELECT path FROM table_episodes WHERE sonarrEpisodeId = ?', (episodeId,),
+                                        only_one=True)
 
-    if not episode:
+    if not hasFile and not existing_episode:
+        return
+
+    if not hasFile and existing_episode:
         # Remove episode from DB
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
         event_stream(type='episode', action='delete', id=episodeId)
+        logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
+            existing_episode['path'])))
+        return
 
     # Update existing episodes in DB
-    elif len(exist):
+    elif hasFile and existing_episode:
         query = dict_converter.convert(episode)
         database.execute('''UPDATE table_episodes SET ''' + query.keys_update + ''' WHERE sonarrEpisodeId = ?''',
                          query.values + (episode['sonarrEpisodeId'],))
-        event_stream(type='episode', action='update', id=episode['sonarrEpisodeId'])
+        event_stream(type='episode', action='update', id=episodeId)
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
     # Insert new episodes in DB
-    else:
+    elif hasFile and not existing_episode:
         query = dict_converter.convert(episode)
         database.execute('''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='episode', action='insert', id=episode['sonarrEpisodeId'])
+        event_stream(type='episode', action='insert', id=episodeId)
         logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
@@ -182,7 +192,7 @@ def sync_one_episode(episode, action):
     # Downloading missing subtitles
     logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
         episode['path'])))
-    episode_download_subtitles(episode['sonarrEpisodeId'])
+    episode_download_subtitles(episodeId)
 
 
 def SonarrFormatAudioCodec(audio_codec):
