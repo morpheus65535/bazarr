@@ -117,7 +117,7 @@ def _is_no_proxy_host(hostname, no_proxy):
 
 def get_proxy_info(
         hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None,
-        no_proxy=None):
+        no_proxy=None, proxy_type='http'):
     """
     try to retrieve proxy host and port from environment
     if not provided in options.
@@ -137,6 +137,9 @@ def get_proxy_info(
                 "http_proxy_auth" - http proxy auth information.
                                     tuple of username and password.
                                     default is None
+                "proxy_type"      - if set to "socks5" PySocks wrapper
+                                    will be used in place of a http proxy.
+                                    default is "http"
     """
     if _is_no_proxy_host(hostname, no_proxy):
         return None, 0, None

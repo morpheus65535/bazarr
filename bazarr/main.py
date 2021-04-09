@@ -43,7 +43,7 @@ from flask import make_response, request, redirect, abort, render_template, Resp
 from get_series import *
 from get_episodes import *
 from get_movies import *
-from signalr_client import sonarr_signalr_client
+from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
@@ -167,6 +167,8 @@ def proxy(protocol, url):
 
 if settings.general.getboolean('use_sonarr'):
     sonarr_signalr_client.start()
+if settings.general.getboolean('use_radarr'):
+    radarr_signalr_client.start()
 
 
 if __name__ == "__main__":

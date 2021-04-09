@@ -119,24 +119,6 @@ def sync_episodes():
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 
-    # Search for desired subtitles if no more than 5 episodes have been added.
-    if len(altered_episodes) <= 5:
-        logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
-        for altered_episode in altered_episodes:
-            data = database.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.monitored, table_shows.tags,"
-                                    " table_shows.seriesType FROM table_episodes LEFT JOIN table_shows on "
-                                    "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
-                                    "sonarrEpisodeId = ?" + get_exclusion_clause('series'), (altered_episode[0],),
-                                    only_one=True)
-
-            if data:
-                episode_download_subtitles(data['sonarrEpisodeId'])
-            else:
-                logging.debug("BAZARR skipping download for this episode as it is excluded.")
-    else:
-        logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right "
-                      "now.")
-
 
 def sync_one_episode(episode):
     # Get some values before altering the episode dict
