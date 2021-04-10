@@ -9,6 +9,7 @@ from signalrcore.hub_connection_builder import HubConnectionBuilder
 from config import settings, url_sonarr, url_radarr
 from get_episodes import sync_episodes, sync_one_episode
 from get_series import update_series, update_one_series
+from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
 
 
@@ -33,8 +34,8 @@ class SonarrSignalrClient:
             pass
         else:
             logging.debug('BAZARR SignalR client for Sonarr is connected.')
-            scheduler.add_job(update_series)
-            scheduler.add_job(sync_episodes)
+            scheduler.execute_job_now('update_series')
+            scheduler.execute_job_now('sync_episodes')
 
 
 class RadarrSignalrClient:
@@ -46,24 +47,20 @@ class RadarrSignalrClient:
             .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
                       options={
                           "verify_ssl": False
-                      }) \
-            .configure_logging(logging.INFO) \
-            .with_automatic_reconnect({
-                "type": "interval",
-                "keep_alive_interval": 10,
-                "reconnect_interval": 5,
-                "max_attempts": 0
-            }).build()
+                      }).build()
         hub_connection.on_open(lambda: logging.debug("BAZARR SignalR client for Radarr is connected."))
         hub_connection.on_close(lambda: logging.debug("BAZARR SignalR client for Radarr is disconnected."))
         hub_connection.on_error(lambda data: logging.debug(f"BAZARR SignalR client for Radarr: An exception was thrown "
                                                            f"closed{data.error}"))
         hub_connection.on("receiveMessage", dispatcher)
-        hub_connection.start()
 
-    @staticmethod
-    def devnull(data):
-        pass
+        try:
+            hub_connection.start()
+        except ConnectionError:
+            pass
+        else:
+            logging.debug('BAZARR SignalR client for Radarr is connected.')
+            scheduler.execute_job_now('update_movies')
 
 
 def dispatcher(data):
@@ -72,14 +69,14 @@ def dispatcher(data):
     elif isinstance(data, list):
         topic = data[0]['name']
 
-    if topic in ['version', 'queue/details', 'queue', 'health', 'command']:
-        return
     if topic == 'series':
         update_one_series(data)
     elif topic == 'episode':
         sync_one_episode(data)
     elif topic == 'movie':
-        print(data[0])
+        update_one_movie(data[0])
+    else:
+        return
 
 
 sonarr_signalr_client = SonarrSignalrClient()
