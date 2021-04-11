@@ -53,6 +53,7 @@ export const ActionButton: FunctionComponent<ActionButtonProps> = ({
 
 interface ActionButtonItemProps {
   loading?: boolean;
+  alwaysShowText?: boolean;
   icon: IconDefinition;
   children?: string;
 }
@@ -61,7 +62,9 @@ export const ActionButtonItem: FunctionComponent<ActionButtonItemProps> = ({
   icon,
   children,
   loading,
+  alwaysShowText,
 }) => {
+  const showText = alwaysShowText === true || loading !== true;
   return (
     <React.Fragment>
       <FontAwesomeIcon
@@ -69,7 +72,7 @@ export const ActionButtonItem: FunctionComponent<ActionButtonItemProps> = ({
         icon={loading ? faCircleNotch : icon}
         spin={loading}
       ></FontAwesomeIcon>
-      {children && !loading ? (
+      {children && showText ? (
         <span className="ml-2 font-weight-bold">{children}</span>
       ) : null}
     </React.Fragment>

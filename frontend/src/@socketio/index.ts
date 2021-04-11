@@ -28,10 +28,6 @@ class SocketIOClient {
     this.reducers = SocketIOReducer;
   }
 
-  reconnect() {
-    this.socket.connect();
-  }
-
   addReducer(reducer: SocketIO.Reducer) {
     this.reducers.push(reducer);
   }
