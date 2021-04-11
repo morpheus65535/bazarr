@@ -1,24 +1,17 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth } from "../@redux/actions";
 import reduxStore from "../@redux/store";
-import { SocketIOClient } from "./socketio";
+import { getBaseUrl } from "../utilites";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
-  socketIO: SocketIOClient;
 
   constructor() {
+    const baseUrl = `${getBaseUrl()}/api/`;
     if (process.env.NODE_ENV === "development") {
-      const devUrl = "/api/";
-      this.initialize(devUrl, process.env["REACT_APP_APIKEY"]!);
-      this.socketIO = new SocketIOClient(devUrl);
+      this.initialize(baseUrl, process.env["REACT_APP_APIKEY"]!);
     } else {
-      const baseUrl =
-        window.Bazarr.baseUrl === "/"
-          ? "/api/"
-          : `${window.Bazarr.baseUrl}/api/`;
       this.initialize(baseUrl, window.Bazarr.apiKey);
-      this.socketIO = new SocketIOClient(baseUrl);
     }
   }
 

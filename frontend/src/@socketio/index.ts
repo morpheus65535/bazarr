@@ -1,39 +1,35 @@
-import { debounce, forIn, isUndefined, uniq } from "lodash";
+import { debounce, forIn, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
-import { siteUpdateOffline } from "../../@redux/actions";
-import reduxStore from "../../@redux/store";
-import { log } from "../../utilites/logger";
+import reduxStore from "../@redux/store";
+import { getBaseUrl } from "../utilites";
+import { log } from "../utilites/logger";
 import { SocketIOReducer } from "./reducer";
 
-export class SocketIOClient {
+class SocketIOClient {
   private socket: Socket;
   private events: SocketIO.Event[];
   private debounceReduce: () => void;
 
-  constructor(baseUrl: string) {
+  private reducers: SocketIO.Reducer[];
+
+  constructor() {
+    const baseUrl = getBaseUrl();
     this.socket = io({
-      path: `${baseUrl}socket.io`,
+      path: `${baseUrl}/api/socket.io`,
       transports: ["websocket", "polling"],
     });
 
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect.bind(this));
-    this.socket.on("data", this.onDataEvent.bind(this));
+    this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
     this.debounceReduce = debounce(this.reduce, 200);
+    this.reducers = SocketIOReducer;
   }
 
   reconnect() {
     this.socket.connect();
-  }
-
-  private dispatch(action: (ids?: number[]) => any, ids?: number[]) {
-    if (isUndefined(ids)) {
-      reduxStore.dispatch(action());
-    } else {
-      reduxStore.dispatch(action(ids));
-    }
   }
 
   private reduce() {
@@ -59,7 +55,7 @@ export class SocketIOClient {
 
     forIn(records, (element, type) => {
       if (element) {
-        const handlers = SocketIOReducer.filter((v) => v.key === type);
+        const handlers = this.reducers.filter((v) => v.key === type);
         if (handlers.length === 0) {
           log("error", "Unhandle SocketIO event", type);
           return;
@@ -73,14 +69,14 @@ export class SocketIOClient {
 
           const anyAction = handler.any;
           if (anyAction) {
-            this.dispatch(anyAction());
+            anyAction();
           }
 
           forIn(element, (ids, key) => {
             ids = uniq(ids);
             const action = handler[key as SocketIO.ActionType];
             if (action) {
-              this.dispatch(action());
+              action();
             } else if (anyAction === undefined) {
               log("error", "Unhandle action of SocketIO event", key, type);
             }
@@ -92,17 +88,19 @@ export class SocketIOClient {
 
   private onConnect() {
     log("info", "Socket.IO has connected");
-    reduxStore.dispatch(siteUpdateOffline(false));
+    this.onEvent({ type: "connect", action: "update", id: null });
   }
 
   private onDisconnect() {
     log("warning", "Socket.IO has disconnected");
-    reduxStore.dispatch(siteUpdateOffline(true));
+    this.onEvent({ type: "disconnect", action: "update", id: null });
   }
 
-  private onDataEvent(event: SocketIO.Event) {
+  private onEvent(event: SocketIO.Event) {
     log("info", "Socket.IO receives", event);
     this.events.push(event);
     this.debounceReduce();
   }
 }
+
+export default new SocketIOClient();

@@ -26,6 +26,21 @@ export function updateAsyncState<T>(
     });
 }
 
+export function getBaseUrl(slash: boolean = false) {
+  let url: string = "/";
+  if (process.env.NODE_ENV !== "development") {
+    url = window.Bazarr.baseUrl;
+  }
+
+  const endsWithSlash = url.endsWith("/");
+  if (slash && !endsWithSlash) {
+    return `${url}/`;
+  } else if (!slash && endsWithSlash) {
+    return url.slice(0, -1);
+  }
+  return url;
+}
+
 export function copyToClipboard(s: string) {
   let field = document.createElement("textarea");
   field.innerText = s;

@@ -27,8 +27,9 @@ import { siteRedirectToAuth } from "../@redux/actions";
 import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
+import socketio from "../@socketio";
 import logo from "../@static/logo64.png";
-import apis, { SystemApi } from "../apis";
+import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage } from "../utilites";
 import "./header.scss";
@@ -104,7 +105,7 @@ const Header: FunctionComponent<Props> = () => {
   const [reconnecting, setReconnect] = useState(false);
   const reconnect = useCallback(() => {
     setReconnect(true);
-    apis.socketIO.reconnect();
+    socketio.reconnect();
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,7 @@
 namespace SocketIO {
   type EventType =
+    | "connect"
+    | "disconnect"
     | "movie"
     | "series"
     | "episode"
@@ -22,11 +24,13 @@ namespace SocketIO {
     id: number | null;
   }
 
+  type ActionFn = (id?: number[]) => void;
+
   type Reducer = {
     key: EventType;
     state?: (store: ReduxStore) => AsyncState<any>;
-    any?: Factory<() => any>;
-  } & Partial<Record<ActionType, Factory<(id?: number[]) => any>>>;
+    any?: () => any;
+  } & Partial<Record<ActionType, ActionFn>>;
 
   type ActionRecord = OptionalRecord<
     EventType,
