@@ -1,0 +1,3 @@
+[console_scripts]
+py7zr = py7zr.__main__:main
+

@@ -13,6 +13,7 @@
 """ExtensionManager
 """
 
+import operator
 import pkg_resources
 
 import logging
@@ -152,20 +153,39 @@ class ExtensionManager(object):
 
     def _init_plugins(self, extensions):
         self.extensions = extensions
-        self._extensions_by_name = None
+        self._extensions_by_name_cache = None
+
+    @property
+    def _extensions_by_name(self):
+        if self._extensions_by_name_cache is None:
+            d = {}
+            for e in self.extensions:
+                d[e.name] = e
+            self._extensions_by_name_cache = d
+        return self._extensions_by_name_cache
 
     ENTRY_POINT_CACHE = {}
 
-    def _find_entry_points(self, namespace):
-        if namespace not in self.ENTRY_POINT_CACHE:
-            eps = list(pkg_resources.iter_entry_points(namespace))
-            self.ENTRY_POINT_CACHE[namespace] = eps
-        return self.ENTRY_POINT_CACHE[namespace]
+    def list_entry_points(self):
+        """Return the list of entry points for this namespace.
+
+        The entry points are not actually loaded, their list is just read and
+        returned.
+
+        """
+        if self.namespace not in self.ENTRY_POINT_CACHE:
+            eps = list(pkg_resources.iter_entry_points(self.namespace))
+            self.ENTRY_POINT_CACHE[self.namespace] = eps
+        return self.ENTRY_POINT_CACHE[self.namespace]
+
+    def entry_points_names(self):
+        """Return the list of entry points names for this namespace."""
+        return list(map(operator.attrgetter("name"), self.list_entry_points()))
 
     def _load_plugins(self, invoke_on_load, invoke_args, invoke_kwds,
                       verify_requirements):
         extensions = []
-        for ep in self._find_entry_points(self.namespace):
+        for ep in self.list_entry_points():
             LOG.debug('found extension %r', ep)
             try:
                 ext = self._load_one_plugin(ep,
@@ -280,6 +300,14 @@ class ExtensionManager(object):
                 LOG.error('error calling %r: %s', e.name, err)
                 LOG.exception(err)
 
+    def items(self):
+        """
+        Return an iterator of tuples of the form (name, extension).
+
+        This is analogous to the Mapping.items() method.
+        """
+        return self._extensions_by_name.items()
+
     def __iter__(self):
         """Produce iterator for the manager.
 
@@ -295,11 +323,6 @@ class ExtensionManager(object):
         produces the :class:`Extension` instance with the
         specified name.
         """
-        if self._extensions_by_name is None:
-            d = {}
-            for e in self.extensions:
-                d[e.name] = e
-            self._extensions_by_name = d
         return self._extensions_by_name[name]
 
     def __contains__(self, name):

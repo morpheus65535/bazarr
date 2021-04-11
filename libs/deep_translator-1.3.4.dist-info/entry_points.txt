@@ -1,0 +1,3 @@
+[console_scripts]
+deep_translator = deep_translator.cli:main
+

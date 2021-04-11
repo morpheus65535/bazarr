@@ -1,0 +1,44 @@
+#!/Users/mvanbaak/.dotfiles/virtualenvs/bazarr-unbundled-libs/bin/python
+from __future__ import print_function, unicode_literals
+import argparse
+import sys
+import cchardet
+
+
+PY2 = sys.version_info.major == 2
+
+def read_chunks(f, chunk_size):
+    chunk = f.read(chunk_size)
+    while chunk:
+        yield chunk
+        chunk = f.read(chunk_size)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('files',
+                        nargs='*',
+                        help="Files to detect encoding of",
+                        type=argparse.FileType('rb'),
+                        default=[sys.stdin if PY2 else sys.stdin.buffer])
+    parser.add_argument('--chunk-size',
+                        type=int,
+                        default=(256 * 1024))
+    parser.add_argument('--version',
+                        action='version',
+                        version='%(prog)s {0}'.format(cchardet.__version__))
+    args = parser.parse_args()
+
+    for f in args.files:
+        detector = cchardet.UniversalDetector()
+        for chunk in read_chunks(f, args.chunk_size):
+            detector.feed(chunk)
+        detector.close()
+        print('{file.name}: {result[encoding]} with confidence {result[confidence]}'.format(
+            file=f,
+            result=detector.result
+        ))
+
+
+if __name__ == '__main__':
+    main()

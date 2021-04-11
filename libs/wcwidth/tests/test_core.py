@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 """Core tests module for wcwidth."""
 import wcwidth
@@ -94,7 +95,7 @@ def test_combining_width_negative_1():
 
 
 def test_combining_cafe():
-    u"""Phrase cafe + COMBINING ACUTE ACCENT is café of length 4."""
+    u"""cafe + COMBINING ACUTE ACCENT is café of length 4."""
     phrase = u"cafe\u0301"
     expect_length_each = (1, 1, 1, 1, 0)
     expect_length_phrase = 4

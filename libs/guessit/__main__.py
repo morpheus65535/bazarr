@@ -56,7 +56,7 @@ def guess_filename(filename, options):
                 print(yline)
             i += 1
     else:
-        print('GuessIt found:', json.dumps(guess, cls=GuessitEncoder, ensure_ascii=False))
+        print('GuessIt found:', json.dumps(guess, cls=GuessitEncoder, indent=4, ensure_ascii=False))
 
 
 def display_properties(options):

@@ -7,7 +7,7 @@ from ..byte_trans import ByteCodeGenerator, Code
 
 def Function(this, args):
     # convert arguments to python list of strings
-    a = map(to_string, tuple(args))
+    a = list(map(to_string, tuple(args)))
     _body = u';'
     _args = ()
     if len(a):

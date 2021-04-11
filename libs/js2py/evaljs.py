@@ -128,26 +128,40 @@ def translate_js6(js):
 class EvalJs(object):
     """This class supports continuous execution of javascript under same context.
 
-        >>> js = EvalJs()
-        >>> js.execute('var a = 10;function f(x) {return x*x};')
-        >>> js.f(9)
+        >>> ctx = EvalJs()
+        >>> ctx.execute('var a = 10;function f(x) {return x*x};')
+        >>> ctx.f(9)
         81
-        >>> js.a
+        >>> ctx.a
         10
 
         context is a python dict or object that contains python variables that should be available to JavaScript
         For example:
-        >>> js = EvalJs({'a': 30})
-        >>> js.execute('var x = a')
-        >>> js.x
+        >>> ctx = EvalJs({'a': 30})
+        >>> ctx.execute('var x = a')
+        >>> ctx.x
         30
+
+        You can enable JS require function via enable_require. With this feature enabled you can use js modules
+        from npm, for example:
+        >>> ctx = EvalJs(enable_require=True)
+        >>> ctx.execute("var esprima = require('esprima');")
+        >>> ctx.execute("esprima.parse('var a = 1')")
 
        You can run interactive javascript console with console method!"""
 
-    def __init__(self, context={}):
+    def __init__(self, context={}, enable_require=False):
         self.__dict__['_context'] = {}
         exec (DEFAULT_HEADER, self._context)
         self.__dict__['_var'] = self._context['var'].to_python()
+
+        if enable_require:
+            def _js_require_impl(npm_module_name):
+                from .node_import import require
+                from .base import to_python
+                return require(to_python(npm_module_name), context=self._context)
+            setattr(self._var, 'require', _js_require_impl)
+
         if not isinstance(context, dict):
             try:
                 context = context.__dict__

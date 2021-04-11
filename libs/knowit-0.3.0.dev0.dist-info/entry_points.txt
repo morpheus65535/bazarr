@@ -1,0 +1,3 @@
+[console_scripts]
+knowit = knowit.__main__:main
+

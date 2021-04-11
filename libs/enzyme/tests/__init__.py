@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-from . import test_mkv, test_parsers, test_subtitle
+from . import test_mkv, test_parsers
 import unittest
 
 
-suite = unittest.TestSuite([test_mkv.suite(), test_parsers.suite(), test_subtitle.suite()])
-
-
+suite = unittest.TestSuite([test_mkv.suite(), test_parsers.suite()])
 
 
 if __name__ == '__main__':

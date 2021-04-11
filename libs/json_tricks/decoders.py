@@ -115,7 +115,6 @@ class ClassInstanceHook(object):
 	def __call__(self, dct):
 		if isinstance(dct, dict) and '__instance_type__' in dct:
 			mod, name = dct['__instance_type__']
-			attrs = dct['attributes']
 			if mod is None:
 				try:
 					Cls = getattr((__import__('__main__')), name)
@@ -148,10 +147,19 @@ class ClassInstanceHook(object):
 				raise TypeError(('problem while decoding instance of "{0:s}"; this instance has a special '
 					'__new__ method and can\'t be restored').format(name))
 			if hasattr(obj, '__json_decode__'):
-				obj.__json_decode__(**attrs)
+				properties = {}
+				if 'slots' in dct:
+					properties.update(dct['slots'])
+				if 'attributes' in dct:
+					properties.update(dct['attributes'])
+				obj.__json_decode__(**properties)
 			else:
-				obj.__dict__ = dict(attrs)
-			return  obj
+				if 'slots' in dct:
+					for slot,value in dct['slots'].items():
+						setattr(obj, slot, value)
+				if 'attributes' in dct:
+					obj.__dict__ = dict(dct['attributes'])
+			return obj
 		return dct
 
 

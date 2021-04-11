@@ -23,12 +23,16 @@ from .std_nodes import *
 from pprint import pprint
 import sys
 
-__all__ = ['PyJsParser', 'parse', 'ENABLE_JS2PY_ERRORS', 'ENABLE_PYIMPORT', 'JsSyntaxError']
-REGEXP_SPECIAL_SINGLE = ('\\', '^', '$', '*', '+', '?', '.', '[', ']', '(', ')', '{', '{', '|', '-')
+__all__ = [
+    'PyJsParser', 'parse', 'ENABLE_JS2PY_ERRORS', 'ENABLE_PYIMPORT',
+    'JsSyntaxError'
+]
+REGEXP_SPECIAL_SINGLE = ('\\', '^', '$', '*', '+', '?', '.', '[', ']', '(',
+                         ')', '{', '{', '|', '-')
 ENABLE_PYIMPORT = False
 ENABLE_JS2PY_ERRORS = False
 
-PY3 = sys.version_info >= (3,0)
+PY3 = sys.version_info >= (3, 0)
 
 if PY3:
     basestring = str
@@ -84,9 +88,9 @@ class PyJsParser:
     # 7.4 Comments
 
     def skipSingleLineComment(self, offset):
-        start = self.index - offset;
+        start = self.index - offset
         while self.index < self.length:
-            ch = self.source[self.index];
+            ch = self.source[self.index]
             self.index += 1
             if isLineTerminator(ch):
                 if (ord(ch) == 13 and ord(self.source[self.index]) == 10):
@@ -144,14 +148,15 @@ class PyJsParser:
                     break
             elif (start and ch == 0x2D):  # U+002D is '-'
                 # U+003E is '>'
-                if (ord(self.source[self.index + 1]) == 0x2D) and (ord(self.source[self.index + 2]) == 0x3E):
+                if (ord(self.source[self.index + 1]) == 0x2D) and (ord(
+                        self.source[self.index + 2]) == 0x3E):
                     # '-->' is a single-line comment
                     self.index += 3
                     self.skipSingleLineComment(3)
                 else:
                     break
             elif (ch == 0x3C):  # U+003C is '<'
-                if self.source[self.index + 1: self.index + 4] == '!--':
+                if self.source[self.index + 1:self.index + 4] == '!--':
                     # <!--
                     self.index += 4
                     self.skipSingleLineComment(4)
@@ -164,7 +169,8 @@ class PyJsParser:
         code = 0
         leng = 4 if (prefix == 'u') else 2
         for i in xrange(leng):
-            if self.index < self.length and isHexDigit(self.source[self.index]):
+            if self.index < self.length and isHexDigit(
+                    self.source[self.index]):
                 ch = self.source[self.index]
                 self.index += 1
                 code = code * 16 + HEX_CONV[ch]
@@ -189,8 +195,8 @@ class PyJsParser:
         # UTF-16 Encoding
         if (code <= 0xFFFF):
             return unichr(code)
-        cu1 = ((code - 0x10000) >> 10) + 0xD800;
-        cu2 = ((code - 0x10000) & 1023) + 0xDC00;
+        cu1 = ((code - 0x10000) >> 10) + 0xD800
+        cu2 = ((code - 0x10000) & 1023) + 0xDC00
         return unichr(cu1) + unichr(cu2)
 
     def ccode(self, offset=0):
@@ -231,11 +237,11 @@ class PyJsParser:
 
             # '\u' (U+005C, U+0075) denotes an escaped character.
             if (ch == 0x5C):
-                d = d[0: len(d) - 1]
+                d = d[0:len(d) - 1]
                 if (self.ccode() != 0x75):
                     self.throwUnexpectedToken()
                 self.index += 1
-                ch = self.scanHexEscape('u');
+                ch = self.scanHexEscape('u')
                 if (not ch or ch == '\\' or not isIdentifierPart(ch[0])):
                     self.throwUnexpectedToken()
                 d += ch
@@ -254,13 +260,14 @@ class PyJsParser:
                 self.index += 1
             else:
                 break
-        return self.source[start: self.index]
+        return self.source[start:self.index]
 
     def scanIdentifier(self):
         start = self.index
 
         # Backslash (U+005C) starts an escaped character.
-        d = self.getEscapedIdentifier() if (self.ccode() == 0x5C) else self.getIdentifier()
+        d = self.getEscapedIdentifier() if (
+            self.ccode() == 0x5C) else self.getIdentifier()
 
         # There is no keyword or literal with only one character.
         # Thus, it must be an identifier.
@@ -273,10 +280,11 @@ class PyJsParser:
         elif (d == 'true' or d == 'false'):
             type = Token.BooleanLiteral
         else:
-            type = Token.Identifier;
+            type = Token.Identifier
         return {
             'type': type,
             'value': d,
+            'raw': self.source[start:self.index],
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
@@ -317,17 +325,19 @@ class PyJsParser:
                 else:
                     # 2-character punctuators.
                     st = st[0:2]
-                    if st in ('&&', '||', '==', '!=', '+=', '-=', '*=', '/=', '++', '--', '<<', '>>', '&=', '|=', '^=',
-                              '%=', '<=', '>=', '=>'):
+                    if st in ('&&', '||', '==', '!=', '+=', '-=', '*=', '/=',
+                              '++', '--', '<<', '>>', '&=', '|=', '^=', '%=',
+                              '<=', '>=', '=>'):
                         self.index += 2
                     else:
                         # 1-character punctuators.
                         st = self.source[self.index]
-                        if st in ('<', '>', '=', '!', '+', '-', '*', '%', '&', '|', '^', '/'):
+                        if st in ('<', '>', '=', '!', '+', '-', '*', '%', '&',
+                                  '|', '^', '/'):
                             self.index += 1
         if self.index == token['start']:
             self.throwUnexpectedToken()
-        token['end'] = self.index;
+        token['end'] = self.index
         token['value'] = st
         return token
 
@@ -347,10 +357,12 @@ class PyJsParser:
         return {
             'type': Token.NumericLiteral,
             'value': int(number, 16),
+            'raw': self.source[start:self.index],
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def scanBinaryLiteral(self, start):
         number = ''
@@ -368,14 +380,16 @@ class PyJsParser:
             ch = self.source[self.index]
             # istanbul ignore else
             if (isIdentifierStart(ch) or isDecimalDigit(ch)):
-                self.throwUnexpectedToken();
+                self.throwUnexpectedToken()
         return {
             'type': Token.NumericLiteral,
             'value': int(number, 2),
+            'raw': self.source[start:self.index],
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def scanOctalLiteral(self, prefix, start):
         if isOctalDigit(prefix):
@@ -399,44 +413,48 @@ class PyJsParser:
         return {
             'type': Token.NumericLiteral,
             'value': int(number, 8),
+            'raw': self.source[start:self.index],
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def octalToDecimal(self, ch):
         # \0 is not octal escape sequence
         octal = (ch != '0')
         code = int(ch, 8)
 
-        if (self.index < self.length and isOctalDigit(self.source[self.index])):
+        if (self.index < self.length
+                and isOctalDigit(self.source[self.index])):
             octal = True
             code = code * 8 + int(self.source[self.index], 8)
             self.index += 1
 
             # 3 digits are only allowed when string starts
             # with 0, 1, 2, 3
-            if (ch in '0123' and self.index < self.length and isOctalDigit(self.source[self.index])):
+            if (ch in '0123' and self.index < self.length
+                    and isOctalDigit(self.source[self.index])):
                 code = code * 8 + int((self.source[self.index]), 8)
                 self.index += 1
-        return {
-            'code': code,
-            'octal': octal}
+        return {'code': code, 'octal': octal}
 
     def isImplicitOctalLiteral(self):
         # Implicit octal, unless there is a non-octal digit.
         # (Annex B.1.1 on Numeric Literals)
         for i in xrange(self.index + 1, self.length):
-            ch = self.source[i];
+            ch = self.source[i]
             if (ch == '8' or ch == '9'):
-                return False;
+                return False
             if (not isOctalDigit(ch)):
                 return True
         return True
 
     def scanNumericLiteral(self):
         ch = self.source[self.index]
-        assert isDecimalDigit(ch) or (ch == '.'), 'Numeric literal must start with a decimal digit or a decimal point'
+        assert isDecimalDigit(ch) or (
+            ch == '.'
+        ), 'Numeric literal must start with a decimal digit or a decimal point'
         start = self.index
         number = ''
         if ch != '.':
@@ -450,7 +468,7 @@ class PyJsParser:
             if (number == '0'):
                 if (ch == 'x' or ch == 'X'):
                     self.index += 1
-                    return self.scanHexLiteral(start);
+                    return self.scanHexLiteral(start)
                 if (ch == 'b' or ch == 'B'):
                     self.index += 1
                     return self.scanBinaryLiteral(start)
@@ -458,11 +476,11 @@ class PyJsParser:
                     return self.scanOctalLiteral(ch, start)
                 if (isOctalDigit(ch)):
                     if (self.isImplicitOctalLiteral()):
-                        return self.scanOctalLiteral(ch, start);
+                        return self.scanOctalLiteral(ch, start)
             while (isDecimalDigit(self.ccode())):
                 number += self.source[self.index]
                 self.index += 1
-            ch = self.source[self.index];
+            ch = self.source[self.index]
         if (ch == '.'):
             number += self.source[self.index]
             self.index += 1
@@ -484,14 +502,16 @@ class PyJsParser:
             else:
                 self.throwUnexpectedToken()
         if (isIdentifierStart(self.source[self.index])):
-            self.throwUnexpectedToken();
+            self.throwUnexpectedToken()
         return {
             'type': Token.NumericLiteral,
             'value': float(number),
+            'raw': self.source[start:self.index],
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     # 7.8.4 String Literals
 
@@ -565,7 +585,8 @@ class PyJsParser:
                     else:
                         if isDecimalDigit(ch):
                             num = ch
-                            while self.index < self.length and isDecimalDigit(self.source[self.index]):
+                            while self.index < self.length and isDecimalDigit(
+                                    self.source[self.index]):
                                 num += self.source[self.index]
                                 self.index += 1
                             st += '\\' + num
@@ -592,7 +613,7 @@ class PyJsParser:
 
         quote = self.source[self.index]
         assert quote == '\'' or quote == '"', 'String literal must starts with a quote'
-        start = self.index;
+        start = self.index
         self.index += 1
 
         while (self.index < self.length):
@@ -612,18 +633,19 @@ class PyJsParser:
                         else:
                             unescaped = self.scanHexEscape(ch)
                             if (not unescaped):
-                                self.throwUnexpectedToken()  # with throw I don't know whats the difference
+                                self.throwUnexpectedToken(
+                                )  # with throw I don't know whats the difference
                             st += unescaped
                     elif ch == 'n':
-                        st += '\n';
+                        st += '\n'
                     elif ch == 'r':
-                        st += '\r';
+                        st += '\r'
                     elif ch == 't':
-                        st += '\t';
+                        st += '\t'
                     elif ch == 'b':
-                        st += '\b';
+                        st += '\b'
                     elif ch == 'f':
-                        st += '\f';
+                        st += '\f'
                     elif ch == 'v':
                         st += '\x0B'
                     # elif ch in '89':
@@ -643,17 +665,19 @@ class PyJsParser:
             elif isLineTerminator(ch):
                 break
             else:
-                st += ch;
+                st += ch
         if (quote != ''):
             self.throwUnexpectedToken()
         return {
             'type': Token.StringLiteral,
             'value': st,
+            'raw': self.source[start:self.index],
             'octal': octal,
             'lineNumber': self.lineNumber,
             'lineStart': self.startLineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def scanTemplate(self):
         cooked = ''
@@ -669,7 +693,7 @@ class PyJsParser:
             ch = self.source[self.index]
             self.index += 1
             if (ch == '`'):
-                rawOffset = 1;
+                rawOffset = 1
                 tail = True
                 terminated = True
                 break
@@ -678,7 +702,7 @@ class PyJsParser:
                     self.state['curlyStack'].append('${')
                     self.index += 1
                     terminated = True
-                    break;
+                    break
                 cooked += ch
             elif (ch == '\\'):
                 ch = self.source[self.index]
@@ -731,24 +755,26 @@ class PyJsParser:
                 self.lineStart = self.index
                 cooked += '\n'
             else:
-                cooked += ch;
+                cooked += ch
         if (not terminated):
             self.throwUnexpectedToken()
 
         if (not head):
-            self.state['curlyStack'].pop();
+            self.state['curlyStack'].pop()
 
         return {
             'type': Token.Template,
             'value': {
                 'cooked': cooked,
-                'raw': self.source[start + 1:self.index - rawOffset]},
+                'raw': self.source[start + 1:self.index - rawOffset]
+            },
             'head': head,
             'tail': tail,
             'lineNumber': self.lineNumber,
             'lineStart': self.lineStart,
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def testRegExp(self, pattern, flags):
         # todo: you should return python regexp object
@@ -771,7 +797,8 @@ class PyJsParser:
                 self.index += 1
                 # ECMA-262 7.8.5
                 if (isLineTerminator(ch)):
-                    self.throwUnexpectedToken(None, Messages.UnterminatedRegExp)
+                    self.throwUnexpectedToken(None,
+                                              Messages.UnterminatedRegExp)
                 st += ch
             elif (isLineTerminator(ch)):
                 self.throwUnexpectedToken(None, Messages.UnterminatedRegExp)
@@ -783,15 +810,13 @@ class PyJsParser:
                     terminated = True
                     break
                 elif (ch == '['):
-                    classMarker = True;
+                    classMarker = True
         if (not terminated):
             self.throwUnexpectedToken(None, Messages.UnterminatedRegExp)
 
         # Exclude leading and trailing slash.
         body = st[1:-1]
-        return {
-            'value': body,
-            'literal': st}
+        return {'value': body, 'literal': st}
 
     def scanRegExpFlags(self):
         st = ''
@@ -824,9 +849,7 @@ class PyJsParser:
             else:
                 flags += ch
                 st += ch
-        return {
-            'value': flags,
-            'literal': st}
+        return {'value': flags, 'literal': st}
 
     def scanRegExp(self):
         self.scanning = True
@@ -841,15 +864,17 @@ class PyJsParser:
         return {
             'literal': body['literal'] + flags['literal'],
             'value': value,
+            'raw': self.source[start:self.index],
             'regex': {
                 'pattern': body['value'],
                 'flags': flags['value']
             },
             'start': start,
-            'end': self.index}
+            'end': self.index
+        }
 
     def collectRegex(self):
-        self.skipComment();
+        self.skipComment()
         return self.scanRegExp()
 
     def isIdentifierName(self, token):
@@ -864,7 +889,8 @@ class PyJsParser:
                 'lineNumber': self.lineNumber,
                 'lineStart': self.lineStart,
                 'start': self.index,
-                'end': self.index}
+                'end': self.index
+            }
         ch = self.ccode()
 
         if isIdentifierStart(ch):
@@ -885,7 +911,7 @@ class PyJsParser:
         if (ch == 0x2E):
             if (isDecimalDigit(self.ccode(1))):
                 return self.scanNumericLiteral()
-            return self.scanPunctuator();
+            return self.scanPunctuator()
 
         if (isDecimalDigit(ch)):
             return self.scanNumericLiteral()
@@ -896,9 +922,12 @@ class PyJsParser:
 
         # Template literals start with ` (U+0060) for template head
         # or } (U+007D) for template middle or template tail.
-        if (ch == 0x60 or (ch == 0x7D and self.state['curlyStack'][len(self.state['curlyStack']) - 1] == '${')):
+        if (ch == 0x60
+                or (ch == 0x7D
+                    and self.state['curlyStack'][len(self.state['curlyStack'])
+                                                 - 1] == '${')):
             return self.scanTemplate()
-        return self.scanPunctuator();
+        return self.scanPunctuator()
 
     # def collectToken(self):
     #    loc = {
@@ -924,7 +953,6 @@ class PyJsParser:
     #                'flags': token['regex']['flags']}
     #        self.extra['tokens'].append(entry)
     #    return token;
-
 
     def lex(self):
         self.scanning = True
@@ -965,20 +993,15 @@ class PyJsParser:
         global ENABLE_PYIMPORT
         msg = 'Line ' + unicode(line) + ': ' + unicode(description)
         if ENABLE_JS2PY_ERRORS:
-            if isinstance(ENABLE_JS2PY_ERRORS, bool):
-                import js2py.base
-                return js2py.base.MakeError('SyntaxError', msg)
-            else:
-                return ENABLE_JS2PY_ERRORS(msg)
+            return ENABLE_JS2PY_ERRORS(msg)
         else:
             return JsSyntaxError(msg)
-
 
     # Throw an exception
 
     def throwError(self, messageFormat, *args):
         msg = messageFormat % tuple(unicode(e) for e in args)
-        raise self.createError(self.lastLineNumber, self.lastIndex, msg);
+        raise self.createError(self.lastLineNumber, self.lastIndex, msg)
 
     def tolerateError(self, messageFormat, *args):
         return self.throwError(messageFormat, *args)
@@ -1001,20 +1024,23 @@ class PyJsParser:
                 elif (typ == Token.Template):
                     msg = Messages.UnexpectedTemplate
                 else:
-                    msg = Messages.UnexpectedToken;
+                    msg = Messages.UnexpectedToken
                 if (typ == Token.Keyword):
                     if (isFutureReservedWord(token['value'])):
                         msg = Messages.UnexpectedReserved
-                    elif (self.strict and isStrictModeReservedWord(token['value'])):
+                    elif (self.strict
+                          and isStrictModeReservedWord(token['value'])):
                         msg = Messages.StrictReservedWord
-            value = token['value']['raw'] if (typ == Token.Template)  else token.get('value')
+            value = token['value']['raw'] if (
+                typ == Token.Template) else token.get('value')
         else:
             value = 'ILLEGAL'
         msg = msg.replace('%s', unicode(value))
 
-        return (self.createError(token['lineNumber'], token['start'], msg) if (token and token.get('lineNumber')) else
-                self.createError(self.lineNumber if self.scanning else self.lastLineNumber,
-                                 self.index if self.scanning else self.lastIndex, msg))
+        return (self.createError(token['lineNumber'], token['start'], msg) if
+                (token and token.get('lineNumber')) else self.createError(
+                    self.lineNumber if self.scanning else self.lastLineNumber,
+                    self.index if self.scanning else self.lastIndex, msg))
 
     def throwUnexpectedToken(self, token={}, message=''):
         raise self.unexpectedTokenError(token, message)
@@ -1043,33 +1069,37 @@ class PyJsParser:
     # If not, an exception will be thrown.
 
     def expectKeyword(self, keyword):
-        token = self.lex();
+        token = self.lex()
         if (token['type'] != Token.Keyword or token['value'] != keyword):
             self.throwUnexpectedToken(token)
 
     # Return true if the next token matches the specified punctuator.
 
     def match(self, value):
-        return self.lookahead['type'] == Token.Punctuator and self.lookahead['value'] == value
+        return self.lookahead['type'] == Token.Punctuator and self.lookahead[
+            'value'] == value
 
     # Return true if the next token matches the specified keyword
 
     def matchKeyword(self, keyword):
-        return self.lookahead['type'] == Token.Keyword and self.lookahead['value'] == keyword
+        return self.lookahead['type'] == Token.Keyword and self.lookahead[
+            'value'] == keyword
 
     # Return true if the next token matches the specified contextual keyword
     # (where an identifier is sometimes a keyword depending on the context)
 
     def matchContextualKeyword(self, keyword):
-        return self.lookahead['type'] == Token.Identifier and self.lookahead['value'] == keyword
+        return self.lookahead['type'] == Token.Identifier and self.lookahead[
+            'value'] == keyword
 
     # Return true if the next token is an assignment operator
 
     def matchAssign(self):
         if (self.lookahead['type'] != Token.Punctuator):
-            return False;
+            return False
         op = self.lookahead['value']
-        return op in ('=', '*=', '/=', '%=', '+=', '-=', '<<=', '>>=', '>>>=', '&=', '^=', '|=')
+        return op in ('=', '*=', '/=', '%=', '+=', '-=', '<<=', '>>=', '>>>=',
+                      '&=', '^=', '|=')
 
     def consumeSemicolon(self):
         # Catch the very common case first: immediately a semicolon (U+003B).
@@ -1150,9 +1180,11 @@ class PyJsParser:
         return result
 
     def parseArrayPattern(self):
+        raise Ecma51NotSupported('ArrayPattern')
+
         node = Node()
         elements = []
-        self.expect('[');
+        self.expect('[')
         while (not self.match(']')):
             if (self.match(',')):
                 self.lex()
@@ -1177,12 +1209,15 @@ class PyJsParser:
         if (self.lookahead['type'] == Token.Identifier):
             key = self.parseVariableIdentifier()
             if (self.match('=')):
-                self.lex();
+                self.lex()
                 init = self.parseAssignmentExpression()
                 return node.finishProperty(
-                    'init', key, false, WrappingNode(key).finishAssignmentPattern(key, init), false, false)
+                    'init', key, false,
+                    WrappingNode(key).finishAssignmentPattern(key, init),
+                    false, false)
             elif (not self.match(':')):
-                return node.finishProperty('init', key, false, key, false, true)
+                return node.finishProperty('init', key, false, key, false,
+                                           true)
         else:
             key = self.parseObjectPropertyKey()
         self.expect(':')
@@ -1190,6 +1225,7 @@ class PyJsParser:
         return node.finishProperty('init', key, computed, init, false, false)
 
     def parseObjectPattern(self):
+        raise Ecma51NotSupported('ObjectPattern')
         node = Node()
         properties = []
         self.expect('{')
@@ -1216,7 +1252,8 @@ class PyJsParser:
         if (self.match('=')):
             self.lex()
             right = self.isolateCoverGrammar(self.parseAssignmentExpression)
-            pattern = WrappingNode(startToken).finishAssignmentPattern(pattern, right)
+            pattern = WrappingNode(startToken).finishAssignmentPattern(
+                pattern, right)
         return pattern
 
     # 11.1.4 Array Initialiser
@@ -1234,16 +1271,18 @@ class PyJsParser:
             elif (self.match('...')):
                 restSpread = Node()
                 self.lex()
-                restSpread.finishSpreadElement(self.inheritCoverGrammar(self.parseAssignmentExpression))
+                restSpread.finishSpreadElement(
+                    self.inheritCoverGrammar(self.parseAssignmentExpression))
                 if (not self.match(']')):
                     self.isAssignmentTarget = self.isBindingElement = false
                     self.expect(',')
                 elements.append(restSpread)
             else:
-                elements.append(self.inheritCoverGrammar(self.parseAssignmentExpression))
+                elements.append(
+                    self.inheritCoverGrammar(self.parseAssignmentExpression))
                 if (not self.match(']')):
                     self.expect(',')
-        self.lex();
+        self.lex()
 
         return node.finishArrayExpression(elements)
 
@@ -1251,30 +1290,33 @@ class PyJsParser:
 
     def parsePropertyFunction(self, node, paramInfo):
 
-        self.isAssignmentTarget = self.isBindingElement = false;
+        self.isAssignmentTarget = self.isBindingElement = false
 
-        previousStrict = self.strict;
-        body = self.isolateCoverGrammar(self.parseFunctionSourceElements);
+        previousStrict = self.strict
+        body = self.isolateCoverGrammar(self.parseFunctionSourceElements)
 
         if (self.strict and paramInfo['firstRestricted']):
-            self.tolerateUnexpectedToken(paramInfo['firstRestricted'], paramInfo.get('message'))
+            self.tolerateUnexpectedToken(paramInfo['firstRestricted'],
+                                         paramInfo.get('message'))
         if (self.strict and paramInfo.get('stricted')):
-            self.tolerateUnexpectedToken(paramInfo.get('stricted'), paramInfo.get('message'));
+            self.tolerateUnexpectedToken(
+                paramInfo.get('stricted'), paramInfo.get('message'))
 
-        self.strict = previousStrict;
-        return node.finishFunctionExpression(null, paramInfo.get('params'), paramInfo.get('defaults'), body)
+        self.strict = previousStrict
+        return node.finishFunctionExpression(null, paramInfo.get('params'),
+                                             paramInfo.get('defaults'), body)
 
     def parsePropertyMethodFunction(self):
-        node = Node();
+        node = Node()
 
-        params = self.parseParams(null);
-        method = self.parsePropertyFunction(node, params);
-        return method;
+        params = self.parseParams(null)
+        method = self.parsePropertyFunction(node, params)
+        return method
 
     def parseObjectPropertyKey(self):
         node = Node()
 
-        token = self.lex();
+        token = self.lex()
 
         # // Note: This function is called only from parseObjectProperty(), where
         # // EOF and Punctuator tokens are already filtered out.
@@ -1283,10 +1325,12 @@ class PyJsParser:
 
         if typ in [Token.StringLiteral, Token.NumericLiteral]:
             if self.strict and token.get('octal'):
-                self.tolerateUnexpectedToken(token, Messages.StrictOctalLiteral);
-            return node.finishLiteral(token);
-        elif typ in (Token.Identifier, Token.BooleanLiteral, Token.NullLiteral, Token.Keyword):
-            return node.finishIdentifier(token['value']);
+                self.tolerateUnexpectedToken(token,
+                                             Messages.StrictOctalLiteral)
+            return node.finishLiteral(token)
+        elif typ in (Token.Identifier, Token.BooleanLiteral, Token.NullLiteral,
+                     Token.Keyword):
+            return node.finishIdentifier(token['value'])
         elif typ == Token.Punctuator:
             if (token['value'] == '['):
                 expr = self.isolateCoverGrammar(self.parseAssignmentExpression)
@@ -1296,8 +1340,8 @@ class PyJsParser:
 
     def lookaheadPropertyName(self):
         typ = self.lookahead['type']
-        if typ in (Token.Identifier, Token.StringLiteral, Token.BooleanLiteral, Token.NullLiteral, Token.NumericLiteral,
-                   Token.Keyword):
+        if typ in (Token.Identifier, Token.StringLiteral, Token.BooleanLiteral,
+                   Token.NullLiteral, Token.NumericLiteral, Token.Keyword):
             return true
         if typ == Token.Punctuator:
             return self.lookahead['value'] == '['
@@ -1314,19 +1358,21 @@ class PyJsParser:
             # check for `get` and `set`;
 
             if (token['value'] == 'get' and self.lookaheadPropertyName()):
-                computed = self.match('[');
+                computed = self.match('[')
                 key = self.parseObjectPropertyKey()
                 methodNode = Node()
                 self.expect('(')
                 self.expect(')')
-                value = self.parsePropertyFunction(methodNode, {
-                    'params': [],
-                    'defaults': [],
-                    'stricted': null,
-                    'firstRestricted': null,
-                    'message': null
-                })
-                return node.finishProperty('get', key, computed, value, false, false)
+                value = self.parsePropertyFunction(
+                    methodNode, {
+                        'params': [],
+                        'defaults': [],
+                        'stricted': null,
+                        'firstRestricted': null,
+                        'message': null
+                    })
+                return node.finishProperty('get', key, computed, value, false,
+                                           false)
             elif (token['value'] == 'set' and self.lookaheadPropertyName()):
                 computed = self.match('[')
                 key = self.parseObjectPropertyKey()
@@ -1341,76 +1387,86 @@ class PyJsParser:
                     'paramSet': {}
                 }
                 if (self.match(')')):
-                    self.tolerateUnexpectedToken(self.lookahead);
+                    self.tolerateUnexpectedToken(self.lookahead)
                 else:
-                    self.parseParam(options);
+                    self.parseParam(options)
                     if (options['defaultCount'] == 0):
                         options['defaults'] = []
                 self.expect(')')
 
-                value = self.parsePropertyFunction(methodNode, options);
-                return node.finishProperty('set', key, computed, value, false, false);
+                value = self.parsePropertyFunction(methodNode, options)
+                return node.finishProperty('set', key, computed, value, false,
+                                           false)
         if (self.match('(')):
-            value = self.parsePropertyMethodFunction();
-            return node.finishProperty('init', key, computed, value, true, false)
-        return null;
+            value = self.parsePropertyMethodFunction()
+            return node.finishProperty('init', key, computed, value, true,
+                                       false)
+        return null
 
     def checkProto(self, key, computed, hasProto):
-        if (computed == false and (key['type'] == Syntax.Identifier and key['name'] == '__proto__' or
-                                               key['type'] == Syntax.Literal and key['value'] == '__proto__')):
+        return
+        if (computed == false and
+            (key['type'] == Syntax.Identifier and key['name'] == '__proto__' or
+             key['type'] == Syntax.Literal and key['value'] == '__proto__')):
             if (hasProto['value']):
-                self.tolerateError(Messages.DuplicateProtoProperty);
+                self.tolerateError(Messages.DuplicateProtoProperty)
             else:
-                hasProto['value'] = true;
+                hasProto['value'] = true
 
     def parseObjectProperty(self, hasProto):
         token = self.lookahead
         node = Node()
 
-        computed = self.match('[');
-        key = self.parseObjectPropertyKey();
+        computed = self.match('[')
+        key = self.parseObjectPropertyKey()
         maybeMethod = self.tryParseMethodDefinition(token, key, computed, node)
 
         if (maybeMethod):
-            self.checkProto(maybeMethod['key'], maybeMethod['computed'], hasProto);
-            return maybeMethod;
+            self.checkProto(maybeMethod['key'], maybeMethod['computed'],
+                            hasProto)
+            return maybeMethod
 
         # // init property or short hand property.
-        self.checkProto(key, computed, hasProto);
+        self.checkProto(key, computed, hasProto)
 
         if (self.match(':')):
-            self.lex();
+            self.lex()
             value = self.inheritCoverGrammar(self.parseAssignmentExpression)
-            return node.finishProperty('init', key, computed, value, false, false)
+            return node.finishProperty('init', key, computed, value, false,
+                                       false)
 
         if (token['type'] == Token.Identifier):
             if (self.match('=')):
-                self.firstCoverInitializedNameError = self.lookahead;
-                self.lex();
-                value = self.isolateCoverGrammar(self.parseAssignmentExpression);
-                return node.finishProperty('init', key, computed,
-                                           WrappingNode(token).finishAssignmentPattern(key, value), false, true)
+                self.firstCoverInitializedNameError = self.lookahead
+                self.lex()
+                value = self.isolateCoverGrammar(
+                    self.parseAssignmentExpression)
+                return node.finishProperty(
+                    'init', key, computed,
+                    WrappingNode(token).finishAssignmentPattern(key, value),
+                    false, true)
             return node.finishProperty('init', key, computed, key, false, true)
         self.throwUnexpectedToken(self.lookahead)
 
     def parseObjectInitialiser(self):
         properties = []
         hasProto = {'value': false}
-        node = Node();
+        node = Node()
 
-        self.expect('{');
+        self.expect('{')
 
         while (not self.match('}')):
-            properties.append(self.parseObjectProperty(hasProto));
+            properties.append(self.parseObjectProperty(hasProto))
 
             if (not self.match('}')):
                 self.expectCommaSeparator()
-        self.expect('}');
+        self.expect('}')
         return node.finishObjectExpression(properties)
 
     def reinterpretExpressionAsPattern(self, expr):
         typ = (expr['type'])
-        if typ in (Syntax.Identifier, Syntax.MemberExpression, Syntax.RestElement, Syntax.AssignmentPattern):
+        if typ in (Syntax.Identifier, Syntax.MemberExpression,
+                   Syntax.RestElement, Syntax.AssignmentPattern):
             pass
         elif typ == Syntax.SpreadElement:
             expr['type'] = Syntax.RestElement
@@ -1423,9 +1479,11 @@ class PyJsParser:
         elif typ == Syntax.ObjectExpression:
             expr['type'] = Syntax.ObjectPattern
             for i in xrange(len(expr['properties'])):
-                self.reinterpretExpressionAsPattern(expr['properties'][i]['value']);
+                self.reinterpretExpressionAsPattern(
+                    expr['properties'][i]['value'])
         elif Syntax.AssignmentExpression:
-            expr['type'] = Syntax.AssignmentPattern;
+            raise Ecma51NotSupported('AssignmentPattern')
+            expr['type'] = Syntax.AssignmentPattern
             self.reinterpretExpressionAsPattern(expr['left'])
         else:
             # // Allow other node type for tolerant parsing.
@@ -1433,14 +1491,17 @@ class PyJsParser:
 
     def parseTemplateElement(self, option):
 
-        if (self.lookahead['type'] != Token.Template or (option['head'] and not self.lookahead['head'])):
+        if (self.lookahead['type'] != Token.Template
+                or (option['head'] and not self.lookahead['head'])):
             self.throwUnexpectedToken()
 
-        node = Node();
-        token = self.lex();
+        node = Node()
+        token = self.lex()
 
-        return node.finishTemplateElement({'raw': token['value']['raw'], 'cooked': token['value']['cooked']},
-                                          token['tail'])
+        return node.finishTemplateElement({
+            'raw': token['value']['raw'],
+            'cooked': token['value']['cooked']
+        }, token['tail'])
 
     def parseTemplateLiteral(self):
         node = Node()
@@ -1450,74 +1511,88 @@ class PyJsParser:
         expressions = []
 
         while (not quasi['tail']):
-            expressions.append(self.parseExpression());
-            quasi = self.parseTemplateElement({'head': false});
+            expressions.append(self.parseExpression())
+            quasi = self.parseTemplateElement({
+                'head': false
+            })
             quasis.append(quasi)
         return node.finishTemplateLiteral(quasis, expressions)
 
     # 11.1.6 The Grouping Operator
 
     def parseGroupExpression(self):
-        self.expect('(');
+        self.expect('(')
 
         if (self.match(')')):
-            self.lex();
+            raise Ecma51NotSupported('ArrowFunction')
+            self.lex()
             if (not self.match('=>')):
                 self.expect('=>')
             return {
                 'type': PlaceHolders.ArrowParameterPlaceHolder,
-                'params': []}
+                'params': []
+            }
 
         startToken = self.lookahead
         if (self.match('...')):
-            expr = self.parseRestElement();
-            self.expect(')');
+            expr = self.parseRestElement()
+            self.expect(')')
             if (not self.match('=>')):
                 self.expect('=>')
             return {
                 'type': PlaceHolders.ArrowParameterPlaceHolder,
-                'params': [expr]}
+                'params': [expr]
+            }
 
-        self.isBindingElement = true;
-        expr = self.inheritCoverGrammar(self.parseAssignmentExpression);
+        self.isBindingElement = true
+        expr = self.inheritCoverGrammar(self.parseAssignmentExpression)
 
         if (self.match(',')):
-            self.isAssignmentTarget = false;
+            self.isAssignmentTarget = false
             expressions = [expr]
 
             while (self.startIndex < self.length):
                 if (not self.match(',')):
                     break
-                self.lex();
+                self.lex()
 
                 if (self.match('...')):
+                    raise Ecma51NotSupported('ArrowFunction')
                     if (not self.isBindingElement):
                         self.throwUnexpectedToken(self.lookahead)
                     expressions.append(self.parseRestElement())
-                    self.expect(')');
+                    self.expect(')')
                     if (not self.match('=>')):
-                        self.expect('=>');
+                        self.expect('=>')
                     self.isBindingElement = false
                     for i in xrange(len(expressions)):
                         self.reinterpretExpressionAsPattern(expressions[i])
                     return {
                         'type': PlaceHolders.ArrowParameterPlaceHolder,
-                        'params': expressions}
-                expressions.append(self.inheritCoverGrammar(self.parseAssignmentExpression))
-            expr = WrappingNode(startToken).finishSequenceExpression(expressions);
+                        'params': expressions
+                    }
+                expressions.append(
+                    self.inheritCoverGrammar(self.parseAssignmentExpression))
+            expr = WrappingNode(startToken).finishSequenceExpression(
+                expressions)
         self.expect(')')
 
         if (self.match('=>')):
+            raise Ecma51NotSupported('ArrowFunction')
             if (not self.isBindingElement):
-                self.throwUnexpectedToken(self.lookahead);
+                self.throwUnexpectedToken(self.lookahead)
             if (expr['type'] == Syntax.SequenceExpression):
                 for i in xrange(len(expr.expressions)):
                     self.reinterpretExpressionAsPattern(expr['expressions'][i])
             else:
-                self.reinterpretExpressionAsPattern(expr);
+                self.reinterpretExpressionAsPattern(expr)
             expr = {
-                'type': PlaceHolders.ArrowParameterPlaceHolder,
-                'params': expr['expressions'] if expr['type'] == Syntax.SequenceExpression  else [expr]}
+                'type':
+                PlaceHolders.ArrowParameterPlaceHolder,
+                'params':
+                expr['expressions']
+                if expr['type'] == Syntax.SequenceExpression else [expr]
+            }
         self.isBindingElement = false
         return expr
 
@@ -1525,7 +1600,7 @@ class PyJsParser:
 
     def parsePrimaryExpression(self):
         if (self.match('(')):
-            self.isBindingElement = false;
+            self.isBindingElement = false
             return self.inheritCoverGrammar(self.parseGroupExpression)
         if (self.match('[')):
             return self.inheritCoverGrammar(self.parseArrayInitialiser)
@@ -1534,14 +1609,15 @@ class PyJsParser:
             return self.inheritCoverGrammar(self.parseObjectInitialiser)
 
         typ = self.lookahead['type']
-        node = Node();
+        node = Node()
 
         if (typ == Token.Identifier):
-            expr = node.finishIdentifier(self.lex()['value']);
+            expr = node.finishIdentifier(self.lex()['value'])
         elif (typ == Token.StringLiteral or typ == Token.NumericLiteral):
             self.isAssignmentTarget = self.isBindingElement = false
             if (self.strict and self.lookahead.get('octal')):
-                self.tolerateUnexpectedToken(self.lookahead, Messages.StrictOctalLiteral)
+                self.tolerateUnexpectedToken(self.lookahead,
+                                             Messages.StrictOctalLiteral)
             expr = node.finishLiteral(self.lex())
         elif (typ == Token.Keyword):
             self.isAssignmentTarget = self.isBindingElement = false
@@ -1555,45 +1631,47 @@ class PyJsParser:
             self.throwUnexpectedToken(self.lex())
         elif (typ == Token.BooleanLiteral):
             isAssignmentTarget = self.isBindingElement = false
-            token = self.lex();
+            token = self.lex()
             token['value'] = (token['value'] == 'true')
             expr = node.finishLiteral(token)
         elif (typ == Token.NullLiteral):
             self.isAssignmentTarget = self.isBindingElement = false
             token = self.lex()
-            token['value'] = null;
+            token['value'] = null
             expr = node.finishLiteral(token)
         elif (self.match('/') or self.match('/=')):
-            self.isAssignmentTarget = self.isBindingElement = false;
-            self.index = self.startIndex;
-            token = self.scanRegExp();  # hehe, here you are!
-            self.lex();
-            expr = node.finishLiteral(token);
+            self.isAssignmentTarget = self.isBindingElement = false
+            self.index = self.startIndex
+            token = self.scanRegExp()
+            # hehe, here you are!
+            self.lex()
+            expr = node.finishLiteral(token)
         elif (typ == Token.Template):
             expr = self.parseTemplateLiteral()
         else:
-            self.throwUnexpectedToken(self.lex());
-        return expr;
+            self.throwUnexpectedToken(self.lex())
+        return expr
 
     # 11.2 Left-Hand-Side Expressions
 
     def parseArguments(self):
-        args = [];
+        args = []
 
-        self.expect('(');
+        self.expect('(')
         if (not self.match(')')):
             while (self.startIndex < self.length):
-                args.append(self.isolateCoverGrammar(self.parseAssignmentExpression))
+                args.append(
+                    self.isolateCoverGrammar(self.parseAssignmentExpression))
                 if (self.match(')')):
                     break
                 self.expectCommaSeparator()
         self.expect(')')
-        return args;
+        return args
 
     def parseNonComputedProperty(self):
         node = Node()
 
-        token = self.lex();
+        token = self.lex()
 
         if (not self.isIdentifierName(token)):
             self.throwUnexpectedToken(token)
@@ -1601,7 +1679,7 @@ class PyJsParser:
 
     def parseNonComputedMember(self):
         self.expect('.')
-        return self.parseNonComputedProperty();
+        return self.parseNonComputedProperty()
 
     def parseComputedMember(self):
         self.expect('[')
@@ -1624,37 +1702,44 @@ class PyJsParser:
     def parseLeftHandSideExpressionAllowCall(self):
         previousAllowIn = self.state['allowIn']
 
-        startToken = self.lookahead;
-        self.state['allowIn'] = true;
+        startToken = self.lookahead
+        self.state['allowIn'] = true
 
         if (self.matchKeyword('super') and self.state['inFunctionBody']):
-            expr = Node();
-            self.lex();
+            expr = Node()
+            self.lex()
             expr = expr.finishSuper()
-            if (not self.match('(') and not self.match('.') and not self.match('[')):
-                self.throwUnexpectedToken(self.lookahead);
+            if (not self.match('(') and not self.match('.')
+                    and not self.match('[')):
+                self.throwUnexpectedToken(self.lookahead)
         else:
             expr = self.inheritCoverGrammar(
-                self.parseNewExpression if self.matchKeyword('new') else self.parsePrimaryExpression)
+                self.parseNewExpression if self.matchKeyword('new') else self.
+                parsePrimaryExpression)
         while True:
             if (self.match('.')):
-                self.isBindingElement = false;
-                self.isAssignmentTarget = true;
-                property = self.parseNonComputedMember();
-                expr = WrappingNode(startToken).finishMemberExpression('.', expr, property)
+                self.isBindingElement = false
+                self.isAssignmentTarget = true
+                property = self.parseNonComputedMember()
+                expr = WrappingNode(startToken).finishMemberExpression(
+                    '.', expr, property)
             elif (self.match('(')):
-                self.isBindingElement = false;
-                self.isAssignmentTarget = false;
-                args = self.parseArguments();
-                expr = WrappingNode(startToken).finishCallExpression(expr, args)
+                self.isBindingElement = false
+                self.isAssignmentTarget = false
+                args = self.parseArguments()
+                expr = WrappingNode(startToken).finishCallExpression(
+                    expr, args)
             elif (self.match('[')):
-                self.isBindingElement = false;
-                self.isAssignmentTarget = true;
-                property = self.parseComputedMember();
-                expr = WrappingNode(startToken).finishMemberExpression('[', expr, property)
-            elif (self.lookahead['type'] == Token.Template and self.lookahead['head']):
+                self.isBindingElement = false
+                self.isAssignmentTarget = true
+                property = self.parseComputedMember()
+                expr = WrappingNode(startToken).finishMemberExpression(
+                    '[', expr, property)
+            elif (self.lookahead['type'] == Token.Template
+                  and self.lookahead['head']):
                 quasi = self.parseTemplateLiteral()
-                expr = WrappingNode(startToken).finishTaggedTemplateExpression(expr, quasi)
+                expr = WrappingNode(startToken).finishTaggedTemplateExpression(
+                    expr, quasi)
             else:
                 break
         self.state['allowIn'] = previousAllowIn
@@ -1662,34 +1747,40 @@ class PyJsParser:
         return expr
 
     def parseLeftHandSideExpression(self):
-        assert self.state['allowIn'], 'callee of new expression always allow in keyword.'
+        assert self.state[
+            'allowIn'], 'callee of new expression always allow in keyword.'
 
         startToken = self.lookahead
 
         if (self.matchKeyword('super') and self.state['inFunctionBody']):
-            expr = Node();
-            self.lex();
-            expr = expr.finishSuper();
+            expr = Node()
+            self.lex()
+            expr = expr.finishSuper()
             if (not self.match('[') and not self.match('.')):
                 self.throwUnexpectedToken(self.lookahead)
         else:
             expr = self.inheritCoverGrammar(
-                self.parseNewExpression if self.matchKeyword('new') else self.parsePrimaryExpression);
+                self.parseNewExpression if self.matchKeyword('new') else self.
+                parsePrimaryExpression)
 
         while True:
             if (self.match('[')):
-                self.isBindingElement = false;
-                self.isAssignmentTarget = true;
-                property = self.parseComputedMember();
-                expr = WrappingNode(startToken).finishMemberExpression('[', expr, property)
+                self.isBindingElement = false
+                self.isAssignmentTarget = true
+                property = self.parseComputedMember()
+                expr = WrappingNode(startToken).finishMemberExpression(
+                    '[', expr, property)
             elif (self.match('.')):
-                self.isBindingElement = false;
-                self.isAssignmentTarget = true;
-                property = self.parseNonComputedMember();
-                expr = WrappingNode(startToken).finishMemberExpression('.', expr, property);
-            elif (self.lookahead['type'] == Token.Template and self.lookahead['head']):
-                quasi = self.parseTemplateLiteral();
-                expr = WrappingNode(startToken).finishTaggedTemplateExpression(expr, quasi)
+                self.isBindingElement = false
+                self.isAssignmentTarget = true
+                property = self.parseNonComputedMember()
+                expr = WrappingNode(startToken).finishMemberExpression(
+                    '.', expr, property)
+            elif (self.lookahead['type'] == Token.Template
+                  and self.lookahead['head']):
+                quasi = self.parseTemplateLiteral()
+                expr = WrappingNode(startToken).finishTaggedTemplateExpression(
+                    expr, quasi)
             else:
                 break
         return expr
@@ -1699,61 +1790,73 @@ class PyJsParser:
     def parsePostfixExpression(self):
         startToken = self.lookahead
 
-        expr = self.inheritCoverGrammar(self.parseLeftHandSideExpressionAllowCall)
+        expr = self.inheritCoverGrammar(
+            self.parseLeftHandSideExpressionAllowCall)
 
-        if (not self.hasLineTerminator and self.lookahead['type'] == Token.Punctuator):
+        if (not self.hasLineTerminator
+                and self.lookahead['type'] == Token.Punctuator):
             if (self.match('++') or self.match('--')):
                 # 11.3.1, 11.3.2
-                if (self.strict and expr.type == Syntax.Identifier and isRestrictedWord(expr.name)):
+                if (self.strict and expr.type == Syntax.Identifier
+                        and isRestrictedWord(expr.name)):
                     self.tolerateError(Messages.StrictLHSPostfix)
                 if (not self.isAssignmentTarget):
-                    self.tolerateError(Messages.InvalidLHSInAssignment);
-                self.isAssignmentTarget = self.isBindingElement = false;
+                    self.tolerateError(Messages.InvalidLHSInAssignment)
+                self.isAssignmentTarget = self.isBindingElement = false
 
-                token = self.lex();
-                expr = WrappingNode(startToken).finishPostfixExpression(token['value'], expr);
-        return expr;
+                token = self.lex()
+                expr = WrappingNode(startToken).finishPostfixExpression(
+                    token['value'], expr)
+        return expr
 
     # 11.4 Unary Operators
 
     def parseUnaryExpression(self):
 
-        if (self.lookahead['type'] != Token.Punctuator and self.lookahead['type'] != Token.Keyword):
-            expr = self.parsePostfixExpression();
+        if (self.lookahead['type'] != Token.Punctuator
+                and self.lookahead['type'] != Token.Keyword):
+            expr = self.parsePostfixExpression()
         elif (self.match('++') or self.match('--')):
-            startToken = self.lookahead;
-            token = self.lex();
-            expr = self.inheritCoverGrammar(self.parseUnaryExpression);
+            startToken = self.lookahead
+            token = self.lex()
+            expr = self.inheritCoverGrammar(self.parseUnaryExpression)
             # 11.4.4, 11.4.5
-            if (self.strict and expr.type == Syntax.Identifier and isRestrictedWord(expr.name)):
+            if (self.strict and expr.type == Syntax.Identifier
+                    and isRestrictedWord(expr.name)):
                 self.tolerateError(Messages.StrictLHSPrefix)
             if (not self.isAssignmentTarget):
                 self.tolerateError(Messages.InvalidLHSInAssignment)
-            expr = WrappingNode(startToken).finishUnaryExpression(token['value'], expr)
+            expr = WrappingNode(startToken).finishUnaryExpression(
+                token['value'], expr)
             self.isAssignmentTarget = self.isBindingElement = false
-        elif (self.match('+') or self.match('-') or self.match('~') or self.match('!')):
-            startToken = self.lookahead;
-            token = self.lex();
-            expr = self.inheritCoverGrammar(self.parseUnaryExpression);
-            expr = WrappingNode(startToken).finishUnaryExpression(token['value'], expr)
-            self.isAssignmentTarget = self.isBindingElement = false;
-        elif (self.matchKeyword('delete') or self.matchKeyword('void') or self.matchKeyword('typeof')):
-            startToken = self.lookahead;
-            token = self.lex();
-            expr = self.inheritCoverGrammar(self.parseUnaryExpression);
-            expr = WrappingNode(startToken).finishUnaryExpression(token['value'], expr);
-            if (self.strict and expr.operator == 'delete' and expr.argument.type == Syntax.Identifier):
+        elif (self.match('+') or self.match('-') or self.match('~')
+              or self.match('!')):
+            startToken = self.lookahead
+            token = self.lex()
+            expr = self.inheritCoverGrammar(self.parseUnaryExpression)
+            expr = WrappingNode(startToken).finishUnaryExpression(
+                token['value'], expr)
+            self.isAssignmentTarget = self.isBindingElement = false
+        elif (self.matchKeyword('delete') or self.matchKeyword('void')
+              or self.matchKeyword('typeof')):
+            startToken = self.lookahead
+            token = self.lex()
+            expr = self.inheritCoverGrammar(self.parseUnaryExpression)
+            expr = WrappingNode(startToken).finishUnaryExpression(
+                token['value'], expr)
+            if (self.strict and expr.operator == 'delete'
+                    and expr.argument.type == Syntax.Identifier):
                 self.tolerateError(Messages.StrictDelete)
-            self.isAssignmentTarget = self.isBindingElement = false;
+            self.isAssignmentTarget = self.isBindingElement = false
         else:
             expr = self.parsePostfixExpression()
         return expr
 
     def binaryPrecedence(self, token, allowIn):
-        prec = 0;
+        prec = 0
         typ = token['type']
         if (typ != Token.Punctuator and typ != Token.Keyword):
-            return 0;
+            return 0
         val = token['value']
         if val == 'in' and not allowIn:
             return 0
@@ -1769,49 +1872,53 @@ class PyJsParser:
 
     def parseBinaryExpression(self):
 
-        marker = self.lookahead;
-        left = self.inheritCoverGrammar(self.parseUnaryExpression);
+        marker = self.lookahead
+        left = self.inheritCoverGrammar(self.parseUnaryExpression)
 
-        token = self.lookahead;
-        prec = self.binaryPrecedence(token, self.state['allowIn']);
+        token = self.lookahead
+        prec = self.binaryPrecedence(token, self.state['allowIn'])
         if (prec == 0):
             return left
-        self.isAssignmentTarget = self.isBindingElement = false;
+        self.isAssignmentTarget = self.isBindingElement = false
         token['prec'] = prec
         self.lex()
 
-        markers = [marker, self.lookahead];
-        right = self.isolateCoverGrammar(self.parseUnaryExpression);
+        markers = [marker, self.lookahead]
+        right = self.isolateCoverGrammar(self.parseUnaryExpression)
 
-        stack = [left, token, right];
+        stack = [left, token, right]
 
         while True:
             prec = self.binaryPrecedence(self.lookahead, self.state['allowIn'])
             if not prec > 0:
                 break
             # Reduce: make a binary expression from the three topmost entries.
-            while ((len(stack) > 2) and (prec <= stack[len(stack) - 2]['prec'])):
-                right = stack.pop();
+            while ((len(stack) > 2)
+                   and (prec <= stack[len(stack) - 2]['prec'])):
+                right = stack.pop()
                 operator = stack.pop()['value']
                 left = stack.pop()
                 markers.pop()
-                expr = WrappingNode(markers[len(markers) - 1]).finishBinaryExpression(operator, left, right)
+                expr = WrappingNode(
+                    markers[len(markers) - 1]).finishBinaryExpression(
+                        operator, left, right)
                 stack.append(expr)
 
             # Shift
-            token = self.lex();
-            token['prec'] = prec;
-            stack.append(token);
-            markers.append(self.lookahead);
-            expr = self.isolateCoverGrammar(self.parseUnaryExpression);
-            stack.append(expr);
+            token = self.lex()
+            token['prec'] = prec
+            stack.append(token)
+            markers.append(self.lookahead)
+            expr = self.isolateCoverGrammar(self.parseUnaryExpression)
+            stack.append(expr)
 
         # Final reduce to clean-up the stack.
-        i = len(stack) - 1;
+        i = len(stack) - 1
         expr = stack[i]
         markers.pop()
         while (i > 1):
-            expr = WrappingNode(markers.pop()).finishBinaryExpression(stack[i - 1]['value'], stack[i - 2], expr);
+            expr = WrappingNode(markers.pop()).finishBinaryExpression(
+                stack[i - 1]['value'], stack[i - 2], expr)
             i -= 2
         return expr
 
@@ -1821,18 +1928,21 @@ class PyJsParser:
 
         startToken = self.lookahead
 
-        expr = self.inheritCoverGrammar(self.parseBinaryExpression);
+        expr = self.inheritCoverGrammar(self.parseBinaryExpression)
         if (self.match('?')):
             self.lex()
             previousAllowIn = self.state['allowIn']
-            self.state['allowIn'] = true;
-            consequent = self.isolateCoverGrammar(self.parseAssignmentExpression);
-            self.state['allowIn'] = previousAllowIn;
-            self.expect(':');
-            alternate = self.isolateCoverGrammar(self.parseAssignmentExpression)
+            self.state['allowIn'] = true
+            consequent = self.isolateCoverGrammar(
+                self.parseAssignmentExpression)
+            self.state['allowIn'] = previousAllowIn
+            self.expect(':')
+            alternate = self.isolateCoverGrammar(
+                self.parseAssignmentExpression)
 
-            expr = WrappingNode(startToken).finishConditionalExpression(expr, consequent, alternate);
-            self.isAssignmentTarget = self.isBindingElement = false;
+            expr = WrappingNode(startToken).finishConditionalExpression(
+                expr, consequent, alternate)
+            self.isAssignmentTarget = self.isBindingElement = false
         return expr
 
     # [ES6] 14.2 Arrow Function
@@ -1845,7 +1955,7 @@ class PyJsParser:
     def checkPatternParam(self, options, param):
         typ = param.type
         if typ == Syntax.Identifier:
-            self.validateParam(options, param, param.name);
+            self.validateParam(options, param, param.name)
         elif typ == Syntax.RestElement:
             self.checkPatternParam(options, param.argument)
         elif typ == Syntax.AssignmentPattern:
@@ -1853,16 +1963,16 @@ class PyJsParser:
         elif typ == Syntax.ArrayPattern:
             for i in xrange(len(param.elements)):
                 if (param.elements[i] != null):
-                    self.checkPatternParam(options, param.elements[i]);
+                    self.checkPatternParam(options, param.elements[i])
         else:
             assert typ == Syntax.ObjectPattern, 'Invalid type'
             for i in xrange(len(param.properties)):
-                self.checkPatternParam(options, param.properties[i]['value']);
+                self.checkPatternParam(options, param.properties[i]['value'])
 
     def reinterpretAsCoverFormalsList(self, expr):
-        defaults = [];
-        defaultCount = 0;
-        params = [expr];
+        defaults = []
+        defaultCount = 0
+        params = [expr]
         typ = expr.type
         if typ == Syntax.Identifier:
             pass
@@ -1870,23 +1980,23 @@ class PyJsParser:
             params = expr.params
         else:
             return null
-        options = {
-            'paramSet': {}}
+        options = {'paramSet': {}}
         le = len(params)
         for i in xrange(le):
             param = params[i]
             if param.type == Syntax.AssignmentPattern:
-                params[i] = param.left;
-                defaults.append(param.right);
+                params[i] = param.left
+                defaults.append(param.right)
                 defaultCount += 1
-                self.checkPatternParam(options, param.left);
+                self.checkPatternParam(options, param.left)
             else:
-                self.checkPatternParam(options, param);
-                params[i] = param;
-                defaults.append(null);
+                self.checkPatternParam(options, param)
+                params[i] = param
+                defaults.append(null)
         if (options.get('message') == Messages.StrictParamDupe):
-            token = options.get('stricted') if self.strict else options['firstRestricted']
-            self.throwUnexpectedToken(token, options.get('message'));
+            token = options.get(
+                'stricted') if self.strict else options['firstRestricted']
+            self.throwUnexpectedToken(token, options.get('message'))
         if (defaultCount == 0):
             defaults = []
         return {
@@ -1894,57 +2004,68 @@ class PyJsParser:
             'defaults': defaults,
             'stricted': options['stricted'],
             'firstRestricted': options['firstRestricted'],
-            'message': options.get('message')}
+            'message': options.get('message')
+        }
 
     def parseArrowFunctionExpression(self, options, node):
+        raise Ecma51NotSupported('ArrowFunctionExpression')
         if (self.hasLineTerminator):
             self.tolerateUnexpectedToken(self.lookahead)
         self.expect('=>')
-        previousStrict = self.strict;
+        previousStrict = self.strict
 
-        body = self.parseConciseBody();
+        body = self.parseConciseBody()
 
         if (self.strict and options['firstRestricted']):
-            self.throwUnexpectedToken(options['firstRestricted'], options.get('message'));
+            self.throwUnexpectedToken(options['firstRestricted'],
+                                      options.get('message'))
         if (self.strict and options['stricted']):
-            self.tolerateUnexpectedToken(options['stricted'], options['message']);
+            self.tolerateUnexpectedToken(options['stricted'],
+                                         options['message'])
 
         self.strict = previousStrict
 
-        return node.finishArrowFunctionExpression(options['params'], options['defaults'], body,
-                                                  body.type != Syntax.BlockStatement)
+        return node.finishArrowFunctionExpression(
+            options['params'], options['defaults'], body,
+            body.type != Syntax.BlockStatement)
 
     # 11.13 Assignment Operators
 
     def parseAssignmentExpression(self):
-        startToken = self.lookahead;
-        token = self.lookahead;
+        startToken = self.lookahead
+        token = self.lookahead
 
-        expr = self.parseConditionalExpression();
+        expr = self.parseConditionalExpression()
 
-        if (expr.type == PlaceHolders.ArrowParameterPlaceHolder or self.match('=>')):
-            self.isAssignmentTarget = self.isBindingElement = false;
+        if (expr.type == PlaceHolders.ArrowParameterPlaceHolder
+                or self.match('=>')):
+            raise Ecma51NotSupported('ArrowFunctionExpression')
+            self.isAssignmentTarget = self.isBindingElement = false
             lis = self.reinterpretAsCoverFormalsList(expr)
 
             if (lis):
-                self.firstCoverInitializedNameError = null;
-                return self.parseArrowFunctionExpression(lis, WrappingNode(startToken))
+                self.firstCoverInitializedNameError = null
+                return self.parseArrowFunctionExpression(
+                    lis, WrappingNode(startToken))
             return expr
 
         if (self.matchAssign()):
-            if (not self.isAssignmentTarget or expr.type==Syntax.Literal):
+            if (not self.isAssignmentTarget):
                 self.tolerateError(Messages.InvalidLHSInAssignment)
             # 11.13.1
 
-            if (self.strict and expr.type == Syntax.Identifier and isRestrictedWord(expr.name)):
-                self.tolerateUnexpectedToken(token, Messages.StrictLHSAssignment);
+            if (self.strict and expr.type == Syntax.Identifier
+                    and isRestrictedWord(expr.name)):
+                self.tolerateUnexpectedToken(token,
+                                             Messages.StrictLHSAssignment)
             if (not self.match('=')):
-                self.isAssignmentTarget = self.isBindingElement = false;
+                self.isAssignmentTarget = self.isBindingElement = false
             else:
                 self.reinterpretExpressionAsPattern(expr)
-            token = self.lex();
+            token = self.lex()
             right = self.isolateCoverGrammar(self.parseAssignmentExpression)
-            expr = WrappingNode(startToken).finishAssignmentExpression(token['value'], expr, right);
+            expr = WrappingNode(startToken).finishAssignmentExpression(
+                token['value'], expr, right)
             self.firstCoverInitializedNameError = null
         return expr
 
@@ -1955,14 +2076,16 @@ class PyJsParser:
         expr = self.isolateCoverGrammar(self.parseAssignmentExpression)
 
         if (self.match(',')):
-            expressions = [expr];
+            expressions = [expr]
 
             while (self.startIndex < self.length):
                 if (not self.match(',')):
                     break
-                self.lex();
-                expressions.append(self.isolateCoverGrammar(self.parseAssignmentExpression))
-            expr = WrappingNode(startToken).finishSequenceExpression(expressions);
+                self.lex()
+                expressions.append(
+                    self.isolateCoverGrammar(self.parseAssignmentExpression))
+            expr = WrappingNode(startToken).finishSequenceExpression(
+                expressions)
         return expr
 
     # 12.1 Block
@@ -1971,26 +2094,24 @@ class PyJsParser:
         if (self.lookahead['type'] == Token.Keyword):
             val = (self.lookahead['value'])
             if val == 'export':
-                if (self.sourceType != 'module'):
-                    self.tolerateUnexpectedToken(self.lookahead, Messages.IllegalExportDeclaration)
-                return self.parseExportDeclaration();
+                raise Ecma51NotSupported('ExportDeclaration')
             elif val == 'import':
-                if (self.sourceType != 'module'):
-                    self.tolerateUnexpectedToken(self.lookahead, Messages.IllegalImportDeclaration);
-                return self.parseImportDeclaration();
+                raise Ecma51NotSupported('ImportDeclaration')
             elif val == 'const' or val == 'let':
-                return self.parseLexicalDeclaration({'inFor': false});
+                return self.parseLexicalDeclaration({
+                    'inFor': false
+                })
             elif val == 'function':
-                return self.parseFunctionDeclaration(Node());
+                return self.parseFunctionDeclaration(Node())
             elif val == 'class':
-                return self.parseClassDeclaration();
+                raise Ecma51NotSupported('ClassDeclaration')
             elif ENABLE_PYIMPORT and val == 'pyimport':  # <<<<< MODIFIED HERE
                 return self.parsePyimportStatement()
-        return self.parseStatement();
+        return self.parseStatement()
 
     def parsePyimportStatement(self):
-        print(ENABLE_PYIMPORT)
-        assert ENABLE_PYIMPORT
+        if not ENABLE_PYIMPORT:
+            raise Ecma51NotSupported('PyimportStatement')
         n = Node()
         self.lex()
         n.finishPyimport(self.parseVariableIdentifier())
@@ -1998,7 +2119,7 @@ class PyJsParser:
         return n
 
     def parseStatementList(self):
-        list = [];
+        list = []
         while (self.startIndex < self.length):
             if (self.match('}')):
                 break
@@ -2006,15 +2127,15 @@ class PyJsParser:
         return list
 
     def parseBlock(self):
-        node = Node();
+        node = Node()
 
-        self.expect('{');
+        self.expect('{')
 
         block = self.parseStatementList()
 
-        self.expect('}');
+        self.expect('}')
 
-        return node.finishBlockStatement(block);
+        return node.finishBlockStatement(block)
 
     # 12.2 Variable Statement
 
@@ -2024,25 +2145,27 @@ class PyJsParser:
         token = self.lex()
 
         if (token['type'] != Token.Identifier):
-            if (self.strict and token['type'] == Token.Keyword and isStrictModeReservedWord(token['value'])):
-                self.tolerateUnexpectedToken(token, Messages.StrictReservedWord);
+            if (self.strict and token['type'] == Token.Keyword
+                    and isStrictModeReservedWord(token['value'])):
+                self.tolerateUnexpectedToken(token,
+                                             Messages.StrictReservedWord)
             else:
                 self.throwUnexpectedToken(token)
         return node.finishIdentifier(token['value'])
 
     def parseVariableDeclaration(self):
         init = null
-        node = Node();
+        node = Node()
 
-        d = self.parsePattern();
+        d = self.parsePattern()
 
         # 12.2.1
         if (self.strict and isRestrictedWord(d.name)):
-            self.tolerateError(Messages.StrictVarName);
+            self.tolerateError(Messages.StrictVarName)
 
         if (self.match('=')):
-            self.lex();
-            init = self.isolateCoverGrammar(self.parseAssignmentExpression);
+            self.lex()
+            init = self.isolateCoverGrammar(self.parseAssignmentExpression)
         elif (d.type != Syntax.Identifier):
             self.expect('=')
         return node.finishVariableDeclarator(d, init)
@@ -2054,11 +2177,11 @@ class PyJsParser:
             lis.append(self.parseVariableDeclaration())
             if (not self.match(',')):
                 break
-            self.lex();
+            self.lex()
             if not (self.startIndex < self.length):
                 break
 
-        return lis;
+        return lis
 
     def parseVariableStatement(self, node):
         self.expectKeyword('var')
@@ -2073,88 +2196,91 @@ class PyJsParser:
         init = null
         node = Node()
 
-        d = self.parsePattern();
+        d = self.parsePattern()
 
         # 12.2.1
-        if (self.strict and d.type == Syntax.Identifier and isRestrictedWord(d.name)):
-            self.tolerateError(Messages.StrictVarName);
+        if (self.strict and d.type == Syntax.Identifier
+                and isRestrictedWord(d.name)):
+            self.tolerateError(Messages.StrictVarName)
 
         if (kind == 'const'):
             if (not self.matchKeyword('in')):
                 self.expect('=')
                 init = self.isolateCoverGrammar(self.parseAssignmentExpression)
-        elif ((not options['inFor'] and d.type != Syntax.Identifier) or self.match('=')):
-            self.expect('=');
-            init = self.isolateCoverGrammar(self.parseAssignmentExpression);
+        elif ((not options['inFor'] and d.type != Syntax.Identifier)
+              or self.match('=')):
+            self.expect('=')
+            init = self.isolateCoverGrammar(self.parseAssignmentExpression)
         return node.finishVariableDeclarator(d, init)
 
     def parseBindingList(self, kind, options):
-        list = [];
+        list = []
 
         while True:
-            list.append(self.parseLexicalBinding(kind, options));
+            list.append(self.parseLexicalBinding(kind, options))
             if (not self.match(',')):
                 break
-            self.lex();
+            self.lex()
             if not (self.startIndex < self.length):
                 break
-        return list;
+        return list
 
     def parseLexicalDeclaration(self, options):
-        node = Node();
+        node = Node()
 
         kind = self.lex()['value']
         assert kind == 'let' or kind == 'const', 'Lexical declaration must be either let or const'
-        declarations = self.parseBindingList(kind, options);
-        self.consumeSemicolon();
-        return node.finishLexicalDeclaration(declarations, kind);
+        declarations = self.parseBindingList(kind, options)
+        self.consumeSemicolon()
+        return node.finishLexicalDeclaration(declarations, kind)
 
     def parseRestElement(self):
-        node = Node();
+        raise Ecma51NotSupported('RestElement')
+        node = Node()
 
-        self.lex();
+        self.lex()
 
         if (self.match('{')):
             self.throwError(Messages.ObjectPatternAsRestParameter)
-        param = self.parseVariableIdentifier();
+        param = self.parseVariableIdentifier()
         if (self.match('=')):
-            self.throwError(Messages.DefaultRestParameter);
+            self.throwError(Messages.DefaultRestParameter)
 
         if (not self.match(')')):
-            self.throwError(Messages.ParameterAfterRestParameter);
-        return node.finishRestElement(param);
+            self.throwError(Messages.ParameterAfterRestParameter)
+        return node.finishRestElement(param)
 
     # 12.3 Empty Statement
 
     def parseEmptyStatement(self, node):
-        self.expect(';');
+        self.expect(';')
         return node.finishEmptyStatement()
 
     # 12.4 Expression Statement
 
     def parseExpressionStatement(self, node):
-        expr = self.parseExpression();
-        self.consumeSemicolon();
-        return node.finishExpressionStatement(expr);
+        expr = self.parseExpression()
+        self.consumeSemicolon()
+        return node.finishExpressionStatement(expr)
 
     # 12.5 If statement
 
     def parseIfStatement(self, node):
-        self.expectKeyword('if');
+        self.expectKeyword('if')
 
-        self.expect('(');
+        self.expect('(')
 
-        test = self.parseExpression();
+        test = self.parseExpression()
 
-        self.expect(')');
+        self.expect(')')
 
-        consequent = self.parseStatement();
+        consequent = self.parseStatement()
 
         if (self.matchKeyword('else')):
-            self.lex();
-            alternate = self.parseStatement();
+            self.lex()
+            alternate = self.parseStatement()
         else:
-            alternate = null;
+            alternate = null
         return node.finishIfStatement(test, consequent, alternate)
 
     # 12.6 Iteration Statements
@@ -2166,15 +2292,15 @@ class PyJsParser:
         oldInIteration = self.state['inIteration']
         self.state['inIteration'] = true
 
-        body = self.parseStatement();
+        body = self.parseStatement()
 
-        self.state['inIteration'] = oldInIteration;
+        self.state['inIteration'] = oldInIteration
 
-        self.expectKeyword('while');
+        self.expectKeyword('while')
 
-        self.expect('(');
+        self.expect('(')
 
-        test = self.parseExpression();
+        test = self.parseExpression()
 
         self.expect(')')
 
@@ -2217,8 +2343,9 @@ class PyJsParser:
                 init = Node()
                 self.lex()
 
-                self.state['allowIn'] = false;
-                init = init.finishVariableDeclaration(self.parseVariableDeclarationList())
+                self.state['allowIn'] = false
+                init = init.finishVariableDeclaration(
+                    self.parseVariableDeclarationList())
                 self.state['allowIn'] = previousAllowIn
 
                 if (len(init.declarations) == 1 and self.matchKeyword('in')):
@@ -2236,83 +2363,88 @@ class PyJsParser:
                 declarations = self.parseBindingList(kind, {'inFor': true})
                 self.state['allowIn'] = previousAllowIn
 
-                if (len(declarations) == 1 and declarations[0].init == null and self.matchKeyword('in')):
-                    init = init.finishLexicalDeclaration(declarations, kind);
-                    self.lex();
-                    left = init;
-                    right = self.parseExpression();
-                    init = null;
+                if (len(declarations) == 1 and declarations[0].init == null
+                        and self.matchKeyword('in')):
+                    init = init.finishLexicalDeclaration(declarations, kind)
+                    self.lex()
+                    left = init
+                    right = self.parseExpression()
+                    init = null
                 else:
-                    self.consumeSemicolon();
-                    init = init.finishLexicalDeclaration(declarations, kind);
+                    self.consumeSemicolon()
+                    init = init.finishLexicalDeclaration(declarations, kind)
             else:
                 initStartToken = self.lookahead
                 self.state['allowIn'] = false
-                init = self.inheritCoverGrammar(self.parseAssignmentExpression);
-                self.state['allowIn'] = previousAllowIn;
+                init = self.inheritCoverGrammar(self.parseAssignmentExpression)
+                self.state['allowIn'] = previousAllowIn
 
                 if (self.matchKeyword('in')):
                     if (not self.isAssignmentTarget):
                         self.tolerateError(Messages.InvalidLHSInForIn)
-                    self.lex();
-                    self.reinterpretExpressionAsPattern(init);
-                    left = init;
-                    right = self.parseExpression();
-                    init = null;
+                    self.lex()
+                    self.reinterpretExpressionAsPattern(init)
+                    left = init
+                    right = self.parseExpression()
+                    init = null
                 else:
                     if (self.match(',')):
-                        initSeq = [init];
+                        initSeq = [init]
                         while (self.match(',')):
-                            self.lex();
-                            initSeq.append(self.isolateCoverGrammar(self.parseAssignmentExpression))
-                        init = WrappingNode(initStartToken).finishSequenceExpression(initSeq)
-                    self.expect(';');
+                            self.lex()
+                            initSeq.append(
+                                self.isolateCoverGrammar(
+                                    self.parseAssignmentExpression))
+                        init = WrappingNode(
+                            initStartToken).finishSequenceExpression(initSeq)
+                    self.expect(';')
 
         if ('left' not in locals()):
             if (not self.match(';')):
-                test = self.parseExpression();
+                test = self.parseExpression()
 
-            self.expect(';');
+            self.expect(';')
 
             if (not self.match(')')):
-                update = self.parseExpression();
+                update = self.parseExpression()
 
-        self.expect(')');
+        self.expect(')')
 
         oldInIteration = self.state['inIteration']
-        self.state['inIteration'] = true;
+        self.state['inIteration'] = true
 
         body = self.isolateCoverGrammar(self.parseStatement)
 
-        self.state['inIteration'] = oldInIteration;
+        self.state['inIteration'] = oldInIteration
 
         return node.finishForStatement(init, test, update, body) if (
-        'left' not in locals()) else node.finishForInStatement(left, right, body);
+            'left' not in locals()) else node.finishForInStatement(
+                left, right, body)
 
     # 12.7 The continue statement
 
     def parseContinueStatement(self, node):
         label = null
 
-        self.expectKeyword('continue');
+        self.expectKeyword('continue')
 
         # Optimize the most common form: 'continue;'.
         if ord(self.source[self.startIndex]) == 0x3B:
-            self.lex();
+            self.lex()
             if (not self.state['inIteration']):
                 self.throwError(Messages.IllegalContinue)
             return node.finishContinueStatement(null)
         if (self.hasLineTerminator):
             if (not self.state['inIteration']):
-                self.throwError(Messages.IllegalContinue);
-            return node.finishContinueStatement(null);
+                self.throwError(Messages.IllegalContinue)
+            return node.finishContinueStatement(null)
 
         if (self.lookahead['type'] == Token.Identifier):
-            label = self.parseVariableIdentifier();
+            label = self.parseVariableIdentifier()
 
-            key = '$' + label.name;
+            key = '$' + label.name
             if not key in self.state['labelSet']:  # todo make sure its correct!
-                self.throwError(Messages.UnknownLabel, label.name);
+                self.throwError(Messages.UnknownLabel, label.name)
         self.consumeSemicolon()
 
         if (label == null and not self.state['inIteration']):
@@ -2324,46 +2456,47 @@ class PyJsParser:
     def parseBreakStatement(self, node):
         label = null
 
-        self.expectKeyword('break');
+        self.expectKeyword('break')
 
         # Catch the very common case first: immediately a semicolon (U+003B).
         if (ord(self.source[self.lastIndex]) == 0x3B):
-            self.lex();
+            self.lex()
 
             if (not (self.state['inIteration'] or self.state['inSwitch'])):
                 self.throwError(Messages.IllegalBreak)
             return node.finishBreakStatement(null)
         if (self.hasLineTerminator):
             if (not (self.state['inIteration'] or self.state['inSwitch'])):
-                self.throwError(Messages.IllegalBreak);
-            return node.finishBreakStatement(null);
+                self.throwError(Messages.IllegalBreak)
+            return node.finishBreakStatement(null)
         if (self.lookahead['type'] == Token.Identifier):
-            label = self.parseVariableIdentifier();
+            label = self.parseVariableIdentifier()
 
-            key = '$' + label.name;
+            key = '$' + label.name
             if not (key in self.state['labelSet']):
-                self.throwError(Messages.UnknownLabel, label.name);
-        self.consumeSemicolon();
+                self.throwError(Messages.UnknownLabel, label.name)
+        self.consumeSemicolon()
 
-        if (label == null and not (self.state['inIteration'] or self.state['inSwitch'])):
+        if (label == null
+                and not (self.state['inIteration'] or self.state['inSwitch'])):
             self.throwError(Messages.IllegalBreak)
-        return node.finishBreakStatement(label);
+        return node.finishBreakStatement(label)
 
     # 12.9 The return statement
 
     def parseReturnStatement(self, node):
-        argument = null;
+        argument = null
 
-        self.expectKeyword('return');
+        self.expectKeyword('return')
 
         if (not self.state['inFunctionBody']):
-            self.tolerateError(Messages.IllegalReturn);
+            self.tolerateError(Messages.IllegalReturn)
 
         # 'return' followed by a space and an identifier is very common.
         if (ord(self.source[self.lastIndex]) == 0x20):
             if (isIdentifierStart(self.source[self.lastIndex + 1])):
-                argument = self.parseExpression();
-                self.consumeSemicolon();
+                argument = self.parseExpression()
+                self.consumeSemicolon()
                 return node.finishReturnStatement(argument)
         if (self.hasLineTerminator):
             # HACK
@@ -2371,10 +2504,10 @@ class PyJsParser:
 
         if (not self.match(';')):
             if (not self.match('}') and self.lookahead['type'] != Token.EOF):
-                argument = self.parseExpression();
-        self.consumeSemicolon();
+                argument = self.parseExpression()
+        self.consumeSemicolon()
 
-        return node.finishReturnStatement(argument);
+        return node.finishReturnStatement(argument)
 
     # 12.10 The with statement
 
@@ -2382,35 +2515,36 @@ class PyJsParser:
         if (self.strict):
             self.tolerateError(Messages.StrictModeWith)
 
-        self.expectKeyword('with');
+        self.expectKeyword('with')
 
-        self.expect('(');
+        self.expect('(')
 
-        obj = self.parseExpression();
+        obj = self.parseExpression()
 
-        self.expect(')');
+        self.expect(')')
 
-        body = self.parseStatement();
+        body = self.parseStatement()
 
-        return node.finishWithStatement(obj, body);
+        return node.finishWithStatement(obj, body)
 
     # 12.10 The swith statement
 
     def parseSwitchCase(self):
         consequent = []
-        node = Node();
+        node = Node()
 
         if (self.matchKeyword('default')):
-            self.lex();
-            test = null;
+            self.lex()
+            test = null
         else:
-            self.expectKeyword('case');
-            test = self.parseExpression();
+            self.expectKeyword('case')
+            test = self.parseExpression()
 
-        self.expect(':');
+        self.expect(':')
 
         while (self.startIndex < self.length):
-            if (self.match('}') or self.matchKeyword('default') or self.matchKeyword('case')):
+            if (self.match('}') or self.matchKeyword('default')
+                    or self.matchKeyword('case')):
                 break
             statement = self.parseStatementListItem()
             consequent.append(statement)
@@ -2418,91 +2552,91 @@ class PyJsParser:
 
     def parseSwitchStatement(self, node):
 
-        self.expectKeyword('switch');
+        self.expectKeyword('switch')
 
-        self.expect('(');
+        self.expect('(')
 
-        discriminant = self.parseExpression();
+        discriminant = self.parseExpression()
 
-        self.expect(')');
+        self.expect(')')
 
-        self.expect('{');
+        self.expect('{')
 
-        cases = [];
+        cases = []
 
         if (self.match('}')):
-            self.lex();
-            return node.finishSwitchStatement(discriminant, cases);
+            self.lex()
+            return node.finishSwitchStatement(discriminant, cases)
 
-        oldInSwitch = self.state['inSwitch'];
-        self.state['inSwitch'] = true;
-        defaultFound = false;
+        oldInSwitch = self.state['inSwitch']
+        self.state['inSwitch'] = true
+        defaultFound = false
 
         while (self.startIndex < self.length):
             if (self.match('}')):
-                break;
-            clause = self.parseSwitchCase();
+                break
+            clause = self.parseSwitchCase()
             if (clause.test == null):
                 if (defaultFound):
-                    self.throwError(Messages.MultipleDefaultsInSwitch);
-                defaultFound = true;
-            cases.append(clause);
+                    self.throwError(Messages.MultipleDefaultsInSwitch)
+                defaultFound = true
+            cases.append(clause)
 
-        self.state['inSwitch'] = oldInSwitch;
+        self.state['inSwitch'] = oldInSwitch
 
-        self.expect('}');
+        self.expect('}')
 
-        return node.finishSwitchStatement(discriminant, cases);
+        return node.finishSwitchStatement(discriminant, cases)
 
     # 12.13 The throw statement
 
     def parseThrowStatement(self, node):
 
-        self.expectKeyword('throw');
+        self.expectKeyword('throw')
 
         if (self.hasLineTerminator):
-            self.throwError(Messages.NewlineAfterThrow);
+            self.throwError(Messages.NewlineAfterThrow)
 
-        argument = self.parseExpression();
+        argument = self.parseExpression()
 
-        self.consumeSemicolon();
+        self.consumeSemicolon()
 
-        return node.finishThrowStatement(argument);
+        return node.finishThrowStatement(argument)
 
     # 12.14 The try statement
 
     def parseCatchClause(self):
-        node = Node();
+        node = Node()
 
-        self.expectKeyword('catch');
+        self.expectKeyword('catch')
 
-        self.expect('(');
+        self.expect('(')
         if (self.match(')')):
-            self.throwUnexpectedToken(self.lookahead);
-        param = self.parsePattern();
+            self.throwUnexpectedToken(self.lookahead)
+        param = self.parsePattern()
 
         # 12.14.1
         if (self.strict and isRestrictedWord(param.name)):
-            self.tolerateError(Messages.StrictCatchVariable);
+            self.tolerateError(Messages.StrictCatchVariable)
 
-        self.expect(')');
-        body = self.parseBlock();
-        return node.finishCatchClause(param, body);
+        self.expect(')')
+        body = self.parseBlock()
+        return node.finishCatchClause(param, body)
 
     def parseTryStatement(self, node):
         handler = null
-        finalizer = null;
+        finalizer = null
 
-        self.expectKeyword('try');
+        self.expectKeyword('try')
 
-        block = self.parseBlock();
+        block = self.parseBlock()
 
         if (self.matchKeyword('catch')):
             handler = self.parseCatchClause()
 
         if (self.matchKeyword('finally')):
-            self.lex();
-            finalizer = self.parseBlock();
+            self.lex()
+            finalizer = self.parseBlock()
 
         if (not handler and not finalizer):
             self.throwError(Messages.NoCatchOrFinally)
@@ -2512,11 +2646,11 @@ class PyJsParser:
     # 12.15 The debugger statement
 
     def parseDebuggerStatement(self, node):
-        self.expectKeyword('debugger');
+        self.expectKeyword('debugger')
 
-        self.consumeSemicolon();
+        self.consumeSemicolon()
 
-        return node.finishDebuggerStatement();
+        return node.finishDebuggerStatement()
 
     # 12 Statements
 
@@ -2529,59 +2663,59 @@ class PyJsParser:
         if (typ == Token.Punctuator and self.lookahead['value'] == '{'):
             return self.parseBlock()
 
-        self.isAssignmentTarget = self.isBindingElement = true;
-        node = Node();
+        self.isAssignmentTarget = self.isBindingElement = true
+        node = Node()
         val = self.lookahead['value']
 
         if (typ == Token.Punctuator):
             if val == ';':
-                return self.parseEmptyStatement(node);
+                return self.parseEmptyStatement(node)
             elif val == '(':
-                return self.parseExpressionStatement(node);
+                return self.parseExpressionStatement(node)
         elif (typ == Token.Keyword):
             if val == 'break':
-                return self.parseBreakStatement(node);
+                return self.parseBreakStatement(node)
             elif val == 'continue':
-                return self.parseContinueStatement(node);
+                return self.parseContinueStatement(node)
             elif val == 'debugger':
-                return self.parseDebuggerStatement(node);
+                return self.parseDebuggerStatement(node)
             elif val == 'do':
-                return self.parseDoWhileStatement(node);
+                return self.parseDoWhileStatement(node)
             elif val == 'for':
-                return self.parseForStatement(node);
+                return self.parseForStatement(node)
             elif val == 'function':
-                return self.parseFunctionDeclaration(node);
+                return self.parseFunctionDeclaration(node)
             elif val == 'if':
-                return self.parseIfStatement(node);
+                return self.parseIfStatement(node)
             elif val == 'return':
-                return self.parseReturnStatement(node);
+                return self.parseReturnStatement(node)
             elif val == 'switch':
-                return self.parseSwitchStatement(node);
+                return self.parseSwitchStatement(node)
             elif val == 'throw':
-                return self.parseThrowStatement(node);
+                return self.parseThrowStatement(node)
             elif val == 'try':
-                return self.parseTryStatement(node);
+                return self.parseTryStatement(node)
             elif val == 'var':
-                return self.parseVariableStatement(node);
+                return self.parseVariableStatement(node)
             elif val == 'while':
-                return self.parseWhileStatement(node);
+                return self.parseWhileStatement(node)
             elif val == 'with':
-                return self.parseWithStatement(node);
+                return self.parseWithStatement(node)
 
-        expr = self.parseExpression();
+        expr = self.parseExpression()
 
         # 12.12 Labelled Statements
         if ((expr.type == Syntax.Identifier) and self.match(':')):
-            self.lex();
+            self.lex()
 
             key = '$' + expr.name
             if key in self.state['labelSet']:
-                self.throwError(Messages.Redeclaration, 'Label', expr.name);
+                self.throwError(Messages.Redeclaration, 'Label', expr.name)
             self.state['labelSet'][key] = true
             labeledBody = self.parseStatement()
             del self.state['labelSet'][key]
             return node.finishLabeledStatement(expr, labeledBody)
-        self.consumeSemicolon();
+        self.consumeSemicolon()
         return node.finishExpressionStatement(expr)
 
     # 13 Function Definition
@@ -2596,21 +2730,22 @@ class PyJsParser:
         while (self.startIndex < self.length):
             if (self.lookahead['type'] != Token.StringLiteral):
                 break
-            token = self.lookahead;
+            token = self.lookahead
 
             statement = self.parseStatementListItem()
             body.append(statement)
             if (statement.expression.type != Syntax.Literal):
                 # this is not directive
                 break
-            directive = self.source[token['start'] + 1: token['end'] - 1]
+            directive = self.source[token['start'] + 1:token['end'] - 1]
             if (directive == 'use strict'):
-                self.strict = true;
+                self.strict = true
                 if (firstRestricted):
-                    self.tolerateUnexpectedToken(firstRestricted, Messages.StrictOctalLiteral);
+                    self.tolerateUnexpectedToken(firstRestricted,
+                                                 Messages.StrictOctalLiteral)
             else:
                 if (not firstRestricted and token.get('octal')):
-                    firstRestricted = token;
+                    firstRestricted = token
 
         oldLabelSet = self.state['labelSet']
         oldInIteration = self.state['inIteration']
@@ -2630,11 +2765,11 @@ class PyJsParser:
             body.append(self.parseStatementListItem())
         self.expect('}')
 
-        self.state['labelSet'] = oldLabelSet;
-        self.state['inIteration'] = oldInIteration;
-        self.state['inSwitch'] = oldInSwitch;
-        self.state['inFunctionBody'] = oldInFunctionBody;
-        self.state['parenthesizedCount'] = oldParenthesisCount;
+        self.state['labelSet'] = oldLabelSet
+        self.state['inIteration'] = oldInIteration
+        self.state['inSwitch'] = oldInSwitch
+        self.state['inFunctionBody'] = oldInFunctionBody
+        self.state['parenthesizedCount'] = oldParenthesisCount
 
         return node.finishBlockStatement(body)
 
@@ -2642,40 +2777,40 @@ class PyJsParser:
         key = '$' + name
         if (self.strict):
             if (isRestrictedWord(name)):
-                options['stricted'] = param;
+                options['stricted'] = param
                 options['message'] = Messages.StrictParamName
             if key in options['paramSet']:
-                options['stricted'] = param;
-                options['message'] = Messages.StrictParamDupe;
+                options['stricted'] = param
+                options['message'] = Messages.StrictParamDupe
         elif (not options['firstRestricted']):
             if (isRestrictedWord(name)):
-                options['firstRestricted'] = param;
-                options['message'] = Messages.StrictParamName;
+                options['firstRestricted'] = param
+                options['message'] = Messages.StrictParamName
             elif (isStrictModeReservedWord(name)):
-                options['firstRestricted'] = param;
-                options['message'] = Messages.StrictReservedWord;
+                options['firstRestricted'] = param
+                options['message'] = Messages.StrictReservedWord
             elif key in options['paramSet']:
                 options['firstRestricted'] = param
-                options['message'] = Messages.StrictParamDupe;
+                options['message'] = Messages.StrictParamDupe
         options['paramSet'][key] = true
 
     def parseParam(self, options):
         token = self.lookahead
         de = None
         if (token['value'] == '...'):
-            param = self.parseRestElement();
-            self.validateParam(options, param.argument, param.argument.name);
-            options['params'].append(param);
-            options['defaults'].append(null);
+            param = self.parseRestElement()
+            self.validateParam(options, param.argument, param.argument.name)
+            options['params'].append(param)
+            options['defaults'].append(null)
             return false
-        param = self.parsePatternWithDefault();
-        self.validateParam(options, token, token['value']);
+        param = self.parsePatternWithDefault()
+        self.validateParam(options, token, token['value'])
 
         if (param.type == Syntax.AssignmentPattern):
-            de = param.right;
-            param = param.left;
+            de = param.right
+            param = param.left
             options['defaultCount'] += 1
-        options['params'].append(param);
+        options['params'].append(param)
         options['defaults'].append(de)
         return not self.match(')')
 
@@ -2684,27 +2819,29 @@ class PyJsParser:
             'params': [],
             'defaultCount': 0,
             'defaults': [],
-            'firstRestricted': firstRestricted}
+            'firstRestricted': firstRestricted
+        }
 
-        self.expect('(');
+        self.expect('(')
 
         if (not self.match(')')):
-            options['paramSet'] = {};
+            options['paramSet'] = {}
             while (self.startIndex < self.length):
                 if (not self.parseParam(options)):
                     break
-                self.expect(',');
-        self.expect(')');
+                self.expect(',')
+        self.expect(')')
 
         if (options['defaultCount'] == 0):
-            options['defaults'] = [];
+            options['defaults'] = []
 
         return {
             'params': options['params'],
             'defaults': options['defaults'],
             'stricted': options.get('stricted'),
             'firstRestricted': options.get('firstRestricted'),
-            'message': options.get('message')}
+            'message': options.get('message')
+        }
 
     def parseFunctionDeclaration(self, node, identifierIsOptional=None):
         d = null
@@ -2713,64 +2850,23 @@ class PyJsParser:
         message = None
         firstRestricted = None
 
-        self.expectKeyword('function');
+        self.expectKeyword('function')
         if (identifierIsOptional or not self.match('(')):
-            token = self.lookahead;
-            d = self.parseVariableIdentifier();
+            token = self.lookahead
+            d = self.parseVariableIdentifier()
             if (self.strict):
                 if (isRestrictedWord(token['value'])):
-                    self.tolerateUnexpectedToken(token, Messages.StrictFunctionName);
+                    self.tolerateUnexpectedToken(token,
+                                                 Messages.StrictFunctionName)
             else:
                 if (isRestrictedWord(token['value'])):
-                    firstRestricted = token;
-                    message = Messages.StrictFunctionName;
+                    firstRestricted = token
+                    message = Messages.StrictFunctionName
                 elif (isStrictModeReservedWord(token['value'])):
-                    firstRestricted = token;
-                    message = Messages.StrictReservedWord;
+                    firstRestricted = token
+                    message = Messages.StrictReservedWord
 
-        tmp = self.parseParams(firstRestricted);
-        params = tmp['params']
-        defaults = tmp['defaults']
-        stricted = tmp.get('stricted')
-        firstRestricted = tmp['firstRestricted']
-        if (tmp.get('message')):
-            message = tmp['message'];
-
-        previousStrict = self.strict;
-        body = self.parseFunctionSourceElements();
-        if (self.strict and firstRestricted):
-            self.throwUnexpectedToken(firstRestricted, message);
-
-        if (self.strict and stricted):
-            self.tolerateUnexpectedToken(stricted, message);
-        self.strict = previousStrict;
-
-        return node.finishFunctionDeclaration(d, params, defaults, body);
-
-    def parseFunctionExpression(self):
-        id = null
-        params = []
-        defaults = []
-        node = Node();
-        firstRestricted = None
-        message = None
-
-        self.expectKeyword('function');
-
-        if (not self.match('(')):
-            token = self.lookahead;
-            id = self.parseVariableIdentifier();
-            if (self.strict):
-                if (isRestrictedWord(token['value'])):
-                    self.tolerateUnexpectedToken(token, Messages.StrictFunctionName);
-            else:
-                if (isRestrictedWord(token['value'])):
-                    firstRestricted = token;
-                    message = Messages.StrictFunctionName;
-                elif (isStrictModeReservedWord(token['value'])):
-                    firstRestricted = token;
-                    message = Messages.StrictReservedWord;
-        tmp = self.parseParams(firstRestricted);
+        tmp = self.parseParams(firstRestricted)
         params = tmp['params']
         defaults = tmp['defaults']
         stricted = tmp.get('stricted')
@@ -2778,23 +2874,66 @@ class PyJsParser:
         if (tmp.get('message')):
             message = tmp['message']
 
-        previousStrict = self.strict;
-        body = self.parseFunctionSourceElements();
+        previousStrict = self.strict
+        body = self.parseFunctionSourceElements()
         if (self.strict and firstRestricted):
-            self.throwUnexpectedToken(firstRestricted, message);
-        if (self.strict and stricted):
-            self.tolerateUnexpectedToken(stricted, message);
-        self.strict = previousStrict;
+            self.throwUnexpectedToken(firstRestricted, message)
 
-        return node.finishFunctionExpression(id, params, defaults, body);
+        if (self.strict and stricted):
+            self.tolerateUnexpectedToken(stricted, message)
+        self.strict = previousStrict
+
+        return node.finishFunctionDeclaration(d, params, defaults, body)
+
+    def parseFunctionExpression(self):
+        id = null
+        params = []
+        defaults = []
+        node = Node()
+        firstRestricted = None
+        message = None
+
+        self.expectKeyword('function')
+
+        if (not self.match('(')):
+            token = self.lookahead
+            id = self.parseVariableIdentifier()
+            if (self.strict):
+                if (isRestrictedWord(token['value'])):
+                    self.tolerateUnexpectedToken(token,
+                                                 Messages.StrictFunctionName)
+            else:
+                if (isRestrictedWord(token['value'])):
+                    firstRestricted = token
+                    message = Messages.StrictFunctionName
+                elif (isStrictModeReservedWord(token['value'])):
+                    firstRestricted = token
+                    message = Messages.StrictReservedWord
+        tmp = self.parseParams(firstRestricted)
+        params = tmp['params']
+        defaults = tmp['defaults']
+        stricted = tmp.get('stricted')
+        firstRestricted = tmp['firstRestricted']
+        if (tmp.get('message')):
+            message = tmp['message']
+
+        previousStrict = self.strict
+        body = self.parseFunctionSourceElements()
+        if (self.strict and firstRestricted):
+            self.throwUnexpectedToken(firstRestricted, message)
+        if (self.strict and stricted):
+            self.tolerateUnexpectedToken(stricted, message)
+        self.strict = previousStrict
+
+        return node.finishFunctionExpression(id, params, defaults, body)
 
     # todo Translate parse class functions!
 
     def parseClassExpression(self):
-        raise NotImplementedError()
+        raise Ecma51NotSupported('ClassExpression')
 
     def parseClassDeclaration(self):
-        raise NotImplementedError()
+        raise Ecma51NotSupported('ClassDeclaration')
 
     # 14 Program
 
@@ -2803,29 +2942,30 @@ class PyJsParser:
         firstRestricted = None
 
         while (self.startIndex < self.length):
-            token = self.lookahead;
+            token = self.lookahead
             if (token['type'] != Token.StringLiteral):
                 break
-            statement = self.parseStatementListItem();
-            body.append(statement);
+            statement = self.parseStatementListItem()
+            body.append(statement)
             if (statement.expression.type != Syntax.Literal):
                 # this is not directive
                 break
-            directive = self.source[token['start'] + 1: token['end'] - 1]
+            directive = self.source[token['start'] + 1:token['end'] - 1]
             if (directive == 'use strict'):
-                self.strict = true;
+                self.strict = true
                 if (firstRestricted):
-                    self.tolerateUnexpectedToken(firstRestricted, Messages.StrictOctalLiteral)
+                    self.tolerateUnexpectedToken(firstRestricted,
+                                                 Messages.StrictOctalLiteral)
             else:
                 if (not firstRestricted and token.get('octal')):
-                    firstRestricted = token;
+                    firstRestricted = token
         while (self.startIndex < self.length):
-            statement = self.parseStatementListItem();
+            statement = self.parseStatementListItem()
             # istanbul ignore if
             if (statement is None):
                 break
-            body.append(statement);
-        return body;
+            body.append(statement)
+        return body
 
     def parseProgram(self):
         self.peek()
@@ -2837,18 +2977,21 @@ class PyJsParser:
     # DONE!!!
     def parse(self, code, options={}):
         if options:
-            raise NotImplementedError('Options not implemented! You can only use default settings.')
+            raise NotImplementedError(
+                'Options not implemented! You can only use default settings.')
 
         self.clean()
-        self.source = unicode(code) + ' \n ; //END'  # I have to add it in order not to check for EOF every time
+        self.source = unicode(
+            code
+        ) + ' \n ; //END'  # I have to add it in order not to check for EOF every time
         self.index = 0
         self.lineNumber = 1 if len(self.source) > 0 else 0
         self.lineStart = 0
         self.startIndex = self.index
-        self.startLineNumber = self.lineNumber;
-        self.startLineStart = self.lineStart;
+        self.startLineNumber = self.lineNumber
+        self.startLineStart = self.lineStart
         self.length = len(self.source)
-        self.lookahead = null;
+        self.lookahead = null
         self.state = {
             'allowIn': true,
             'labelSet': {},
@@ -2857,12 +3000,15 @@ class PyJsParser:
             'inSwitch': false,
             'lastCommentStart': -1,
             'curlyStack': [],
-            'parenthesizedCount': None}
-        self.sourceType = 'script';
-        self.strict = false;
-        program = self.parseProgram();
+            'parenthesizedCount': None
+        }
+        self.sourceType = 'script'
+        self.strict = false
+        try:
+            program = self.parseProgram()
+        except Ecma51NotSupported as e:
+            raise self.createError(self.lineNumber, self.lastIndex, unicode(e))
         return node_to_dict(program)
-
 
 
 def parse(javascript_code):
@@ -2893,6 +3039,3 @@ if __name__ == '__main__':
     print()
     print('Parsed everyting in', round(dt, 5), 'seconds.')
     print('Thats %d characters per second' % int(len(x) / dt))
-
-
-

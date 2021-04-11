@@ -102,7 +102,7 @@ def class_instance_encode(obj, primitives=False):
 	"""
 	if isinstance(obj, list) or isinstance(obj, dict):
 		return obj
-	if hasattr(obj, '__class__') and hasattr(obj, '__dict__'):
+	if hasattr(obj, '__class__') and (hasattr(obj, '__dict__') or hasattr(obj, '__slots__')):
 		if not hasattr(obj, '__new__'):
 			raise TypeError('class "{0:s}" does not have a __new__ method; '.format(obj.__class__) +
 				('perhaps it is an old-style class not derived from `object`; add `object` as a base class to encode it.'
@@ -121,12 +121,27 @@ def class_instance_encode(obj, primitives=False):
 		name = obj.__class__.__name__
 		if hasattr(obj, '__json_encode__'):
 			attrs = obj.__json_encode__()
-		else:
-			attrs = hashodict(obj.__dict__.items())
+			if primitives:
+				return attrs
+			else:
+				return hashodict((('__instance_type__', (mod, name)), ('attributes', attrs)))
+		dct = hashodict([('__instance_type__',(mod, name))])
+		if hasattr(obj, '__slots__'):
+			slots = obj.__slots__
+			if isinstance(slots, str):
+				slots = [slots]
+			slots = list(item for item in slots if item != '__dict__')
+			dct['slots'] = hashodict([])
+			for s in slots:
+				dct['slots'][s] = getattr(obj, s)
+		if hasattr(obj, '__dict__'):
+			dct['attributes'] = hashodict(obj.__dict__)
 		if primitives:
+			attrs = dct.get('attributes',{})
+			attrs.update(dct.get('slots',{}))
 			return attrs
 		else:
-			return hashodict((('__instance_type__', (mod, name)), ('attributes', attrs)))
+			return dct
 	return obj
 
 

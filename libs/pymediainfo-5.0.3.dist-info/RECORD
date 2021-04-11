@@ -1,0 +1,13 @@
+../../docs/License.html,sha256=rmRIMVfVTOyFpoirViJF8M7mRu3OJ-DDW3hrq4Umapk,4849
+pymediainfo-5.0.3.dist-info/AUTHORS,sha256=38KIOxhqkhfSz4gLaVoQ0g9SsvlJ7nPbflT47JTKWfw,143
+pymediainfo-5.0.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+pymediainfo-5.0.3.dist-info/LICENSE,sha256=MvjTJkPHxeLn1_eZcd3exq0cAVnSbqKSS4g7jUdCgos,1213
+pymediainfo-5.0.3.dist-info/METADATA,sha256=AWAOFbNAK3QB84HxJE7ymgZbWk_LGDz6chlaQSsERPk,2081
+pymediainfo-5.0.3.dist-info/RECORD,,
+pymediainfo-5.0.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+pymediainfo-5.0.3.dist-info/WHEEL,sha256=IccFO9-ByPitLa9lyXT8F0oQQN4XBTFvmB5DMzG0vYg,108
+pymediainfo-5.0.3.dist-info/namespace_packages.txt,sha256=AbpHGcgLb-kRsJGnwFEktk7uzpZOCcBY74-YBdrKVGs,1
+pymediainfo-5.0.3.dist-info/top_level.txt,sha256=OKqFwmlXFyPK7eRKNhlIAQot6cXSsvU-BNeG19EqOpk,12
+pymediainfo/__init__.py,sha256=MSqqeM7p9V5rAE-r7axliYaay_XldEWlzUB6MXVR47k,21201
+pymediainfo/__pycache__/__init__.cpython-39.pyc,,
+pymediainfo/libmediainfo.0.dylib,sha256=qg2iaEwgBBxrl4Jbptad31AqxMB6PGr3_LGWsjqQIrk,16490032

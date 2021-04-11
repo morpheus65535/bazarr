@@ -115,7 +115,7 @@ class MultipartDecoder(object):
         mimetype = ct_info[0]
         if mimetype.split('/')[0].lower() != 'multipart':
             raise NonMultipartContentTypeException(
-                "Unexpected mimetype in content-type: '{}'".format(mimetype)
+                "Unexpected mimetype in content-type: '{0}'".format(mimetype)
             )
         for item in ct_info[1:]:
             attr, value = _split_on_find(

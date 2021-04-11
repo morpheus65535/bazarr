@@ -171,7 +171,7 @@ class MediaInfoCTypesExecutor(MediaInfoExecutor):
         """Create the executor instance."""
         for candidate in define_candidate(cls.locations, cls.names, os_family, suggested_path):
             if MediaInfo.can_parse(candidate):
-                lib = MediaInfo._get_library(candidate)
+                lib, handle, lib_version_str, lib_version = MediaInfo._get_library(candidate)
                 lib.MediaInfo_Option.argtypes = [c_void_p, c_wchar_p, c_wchar_p]
                 lib.MediaInfo_Option.restype = c_wchar_p
                 version = MediaInfoExecutor._get_version(lib.MediaInfo_Option(None, "Info_Version", ""))

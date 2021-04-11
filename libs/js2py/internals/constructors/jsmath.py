@@ -16,7 +16,8 @@ CONSTANTS = {
     'SQRT1_2': 0.7071067811865476,
     'SQRT2': 1.4142135623730951
 }
-
+def is_infinity(x):
+    return x - 1e10 == x
 
 class MathFunctions:
     def abs(this, args):
@@ -65,22 +66,22 @@ class MathFunctions:
     def ceil(this, args):
         x = get_arg(args, 0)
         a = to_number(x)
-        if a != a:  # it must be a nan
-            return NaN
+        if not is_finite(x):
+            return x
         return float(math.ceil(a))
 
     def floor(this, args):
         x = get_arg(args, 0)
         a = to_number(x)
-        if a != a:  # it must be a nan
-            return NaN
+        if not is_finite(x):
+            return x
         return float(math.floor(a))
 
     def round(this, args):
         x = get_arg(args, 0)
         a = to_number(x)
-        if a != a:  # it must be a nan
-            return NaN
+        if not is_finite(x):
+            return x
         return float(round(a))
 
     def sin(this, args):

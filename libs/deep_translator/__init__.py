@@ -12,7 +12,7 @@ from .detection import single_detection, batch_detection
 
 __author__ = """Nidhal Baccouri"""
 __email__ = 'nidhalbacc@gmail.com'
-__version__ = '1.3.2'
+__version__ = '1.3.4'
 
 __all__ = [GoogleTranslator,
            PonsTranslator,

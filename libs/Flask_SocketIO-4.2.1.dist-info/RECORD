@@ -1,0 +1,15 @@
+Flask_SocketIO-4.2.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+Flask_SocketIO-4.2.1.dist-info/LICENSE,sha256=aNCWbkgKjS_T1cJtACyZbvCM36KxWnfQ0LWTuavuYKQ,1082
+Flask_SocketIO-4.2.1.dist-info/METADATA,sha256=L-PmXGiiDVZHu80GBY0KoXMP06EDnspJEJEadfpXP4w,873
+Flask_SocketIO-4.2.1.dist-info/RECORD,,
+Flask_SocketIO-4.2.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+Flask_SocketIO-4.2.1.dist-info/WHEEL,sha256=h_aVn5OB2IERUjMbi2pucmR_zzWJtk303YXvhh60NJ8,110
+Flask_SocketIO-4.2.1.dist-info/top_level.txt,sha256=C1ugzQBJ3HHUJsWGzyt70XRVOX-y4CUAR8MWKjwJOQ8,15
+flask_socketio/__init__.py,sha256=aburhZcXf3Ubm5HWqg7nWOFNDCV4yXLsfHHo2u0iDfM,44245
+flask_socketio/__pycache__/__init__.cpython-39.pyc,,
+flask_socketio/__pycache__/cli.cpython-39.pyc,,
+flask_socketio/__pycache__/namespace.cpython-39.pyc,,
+flask_socketio/__pycache__/test_client.cpython-39.pyc,,
+flask_socketio/cli.py,sha256=4ymPf4kmrmiFgr60Wt0ZDDm2QWPnrHtkx7xcHjo_Irg,2916
+flask_socketio/namespace.py,sha256=kXy10sQFl3nbQr2CWgxM9IxzcHzKTWTPLDYl3vzPLLQ,2020
+flask_socketio/test_client.py,sha256=t7cDFgkb2hVaKbbBZm2Vnzz8OEwNtyeXds7NUKxUIzM,9695

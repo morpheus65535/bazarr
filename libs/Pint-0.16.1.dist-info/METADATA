@@ -1,0 +1,207 @@
+Metadata-Version: 2.1
+Name: Pint
+Version: 0.16.1
+Summary: Physical quantities module
+Home-page: https://github.com/hgrecco/pint
+Author: Hernan E. Grecco
+Author-email: hernan.grecco@gmail.com
+License: BSD
+Keywords: physical,quantities,unit,conversion,science
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Requires-Python: >=3.6
+Requires-Dist: packaging
+Requires-Dist: importlib-resources ; python_version < "3.7"
+Requires-Dist: importlib-metadata ; python_version < "3.8"
+Provides-Extra: numpy
+Requires-Dist: numpy (>=1.14) ; extra == 'numpy'
+Provides-Extra: test
+Requires-Dist: pytest ; extra == 'test'
+Requires-Dist: pytest-mpl ; extra == 'test'
+Requires-Dist: pytest-cov ; extra == 'test'
+Provides-Extra: uncertainties
+Requires-Dist: uncertainties (>=3.0) ; extra == 'uncertainties'
+
+.. image:: https://img.shields.io/pypi/v/pint.svg
+    :target: https://pypi.python.org/pypi/pint
+    :alt: Latest Version
+
+.. image:: https://readthedocs.org/projects/pip/badge/
+    :target: http://pint.readthedocs.org/
+    :alt: Documentation
+
+.. image:: https://img.shields.io/pypi/l/pint.svg
+    :target: https://pypi.python.org/pypi/pint
+    :alt: License
+
+.. image:: https://img.shields.io/pypi/pyversions/pint.svg
+    :target: https://pypi.python.org/pypi/pint
+    :alt: Python Versions
+
+.. image:: https://travis-ci.org/hgrecco/pint.svg?branch=master
+    :target: https://travis-ci.org/hgrecco/pint
+    :alt: CI
+
+.. image:: https://coveralls.io/repos/github/hgrecco/pint/badge.svg?branch=master
+    :target: https://coveralls.io/github/hgrecco/pint?branch=master
+    :alt: Coverage
+
+.. image:: https://readthedocs.org/projects/pint/badge/
+    :target: http://pint.readthedocs.org/
+    :alt: Docs
+
+
+Pint: makes units easy
+======================
+
+Pint is a Python package to define, operate and manipulate physical
+quantities: the product of a numerical value and a unit of measurement.
+It allows arithmetic operations between them and conversions from and
+to different units.
+
+It is distributed with a comprehensive list of physical units, prefixes
+and constants. Due to its modular design, you can extend (or even rewrite!)
+the complete list without changing the source code. It supports a lot of
+numpy mathematical operations **without monkey patching or wrapping numpy**.
+
+It has a complete test coverage. It runs in Python 3.6+ with no other dependency.
+If you need Python 2.7 or 3.4/3.5 compatibility, use Pint 0.9.
+It is licensed under BSD.
+
+It is extremely easy and natural to use:
+
+.. code-block:: python
+
+    >>> import pint
+    >>> ureg = pint.UnitRegistry()
+    >>> 3 * ureg.meter + 4 * ureg.cm
+    <Quantity(3.04, 'meter')>
+
+and you can make good use of numpy if you want:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> [3, 4] * ureg.meter + [4, 3] * ureg.cm
+    <Quantity([ 3.04  4.03], 'meter')>
+    >>> np.sum(_)
+    <Quantity(7.07, 'meter')>
+
+
+Quick Installation
+------------------
+
+To install Pint, simply:
+
+.. code-block:: bash
+
+    $ pip install pint
+
+or utilizing conda, with the conda-forge channel:
+
+.. code-block:: bash
+
+    $ conda install -c conda-forge pint
+
+and then simply enjoy it!
+
+
+Documentation
+-------------
+
+Full documentation is available at http://pint.readthedocs.org/
+
+
+GUI Website 
+-----------
+
+This Website_ wraps Pint's "dimensional analysis" methods to provide a GUI.
+
+
+Command-line converter
+----------------------
+
+A command-line script `pint-convert` provides a quick way to convert between
+units or get conversion factors.
+
+
+Design principles
+-----------------
+
+Although there are already a few very good Python packages to handle physical
+quantities, no one was really fitting my needs. Like most developers, I
+programmed Pint to scratch my own itches.
+
+**Unit parsing**: prefixed and pluralized forms of units are recognized without
+explicitly defining them. In other words: as the prefix *kilo* and the unit
+*meter* are defined, Pint understands *kilometers*. This results in a much
+shorter and maintainable unit definition list as compared to other packages.
+
+**Standalone unit definitions**: units definitions are loaded from a text file
+which is simple and easy to edit. Adding and changing units and their
+definitions does not involve changing the code.
+
+**Advanced string formatting**: a quantity can be formatted into string using
+`PEP 3101`_ syntax. Extended conversion flags are given to provide symbolic,
+LaTeX and pretty formatting. Unit name translation is available if Babel_ is
+installed.
+
+**Free to choose the numerical type**: You can use any numerical type
+(`fraction`, `float`, `decimal`, `numpy.ndarray`, etc). NumPy_ is not required
+but supported.
+
+**Awesome NumPy integration**: When you choose to use a NumPy_ ndarray, its methods and
+ufuncs are supported including automatic conversion of units. For example
+`numpy.arccos(q)` will require a dimensionless `q` and the units of the output
+quantity will be radian.
+
+**Uncertainties integration**:  transparently handles calculations with
+quantities with uncertainties (like 3.14±0.01) meter via the `uncertainties
+package`_.
+
+**Handle temperature**: conversion between units with different reference
+points, like positions on a map or absolute temperature scales.
+
+**Dependency free**: it depends only on Python and its standard library. It interacts with other packages
+like numpy and uncertainties if they are installed
+
+**Pandas integration**: Thanks to `Pandas Extension Types`_ it is now possible to use Pint with Pandas. Operations on DataFrames and between columns are units aware, providing even more convenience for users of Pandas DataFrames. For full details, see the `pint-pandas Jupyter notebook`_.
+
+
+When you choose to use a NumPy_ ndarray, its methods and
+ufuncs are supported including automatic conversion of units. For example
+`numpy.arccos(q)` will require a dimensionless `q` and the units of the output
+quantity will be radian.
+
+
+Pint is maintained by a community of scientists, programmers and entusiasts around the world.
+See AUTHORS_ for a complete list.
+
+To review an ordered list of notable changes for each version of a project,
+see CHANGES_
+
+
+.. _Website: http://www.dimensionalanalysis.org/
+.. _`comprehensive list of physical units, prefixes and constants`: https://github.com/hgrecco/pint/blob/master/pint/default_en.txt
+.. _`uncertainties package`: https://pythonhosted.org/uncertainties/
+.. _`NumPy`: http://www.numpy.org/
+.. _`PEP 3101`: https://www.python.org/dev/peps/pep-3101/
+.. _`Babel`: http://babel.pocoo.org/
+.. _`Pandas Extension Types`: https://pandas.pydata.org/pandas-docs/stable/extending.html#extension-types
+.. _`pint-pandas Jupyter notebook`: https://github.com/hgrecco/pint-pandas/blob/master/notebooks/pandas_support.ipynb
+.. _`AUTHORS`: https://github.com/hgrecco/pint/blob/master/AUTHORS
+.. _`CHANGES`: https://github.com/hgrecco/pint/blob/master/CHANGES
+
+

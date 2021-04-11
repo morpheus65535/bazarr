@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: py-pretty
+Version: 1
+Summary: Formats dates, numbers, etc. in a pretty, human readable format.
+Home-page: http://code.google.com/p/py-pretty/
+Author: S Anand
+Author-email: sanand@s-anand.net
+License: UNKNOWN
+Platform: UNKNOWN
+Requires: datetime
+
+UNKNOWN
+
+

@@ -43,13 +43,6 @@ class VendorImporter:
                 __import__(extant)
                 mod = sys.modules[extant]
                 sys.modules[fullname] = mod
-                # mysterious hack:
-                # Remove the reference to the extant package/module
-                # on later Python versions to cause relative imports
-                # in the vendor package to resolve the same modules
-                # as those going through this importer.
-                if prefix and sys.version_info > (3, 3):
-                    del sys.modules[extant]
                 return mod
             except ImportError:
                 pass
@@ -61,6 +54,12 @@ class VendorImporter:
                 "distribution.".format(**locals())
             )
 
+    def create_module(self, spec):
+        return self.load_module(spec.name)
+
+    def exec_module(self, module):
+        pass
+
     def install(self):
         """
         Install this importer into sys.meta_path if not already present.
@@ -69,5 +68,5 @@ class VendorImporter:
             sys.meta_path.append(self)
 
 
-names = 'packaging', 'pyparsing', 'six', 'appdirs'
+names = 'packaging', 'pyparsing', 'appdirs'
 VendorImporter(__name__, names).install()

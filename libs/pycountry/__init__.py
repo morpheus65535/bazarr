@@ -101,13 +101,12 @@ class Subdivisions(pycountry.db.Database):
         try:
             return super(Subdivisions, self).get(**kw)
         except KeyError:
-            # This propagates a KeyError if the country does not exist and
-            # returns an empty list if it exists but it does not have (or we do
-            # not know about)  any sub-divisions.
             if 'country_code' in kw:
+                # This propagates a KeyError if the country does not exists
+                # and returns an empty list if it exists but we it does not
+                # have (or we do not know) any sub-divisions.
                 countries.get(alpha_2=kw['country_code'])
                 return []
-            raise
 
 
 countries = ExistingCountries(os.path.join(DATABASE_DIR, 'iso3166-1.json'))

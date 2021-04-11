@@ -1,9 +1,8 @@
 # vim:fileencoding=utf-8
 
 from io import open
-import json
 import logging
-import threading
+import json
 
 logger = logging.getLogger('pycountry.db')
 
@@ -40,8 +39,7 @@ class Data(object):
 def lazy_load(f):
     def load_if_needed(self, *args, **kw):
         if not self._is_loaded:
-            with self._load_lock:
-                self._load()
+            self._load()
         return f(self, *args, **kw)
     return load_if_needed
 
@@ -56,13 +54,8 @@ class Database(object):
     def __init__(self, filename):
         self.filename = filename
         self._is_loaded = False
-        self._load_lock = threading.Lock()
 
     def _load(self):
-        if self._is_loaded:
-            # Help keeping the _load_if_needed code easier
-            # to read.
-            return
         self.objects = []
         self.index_names = set()
         self.indices = {}

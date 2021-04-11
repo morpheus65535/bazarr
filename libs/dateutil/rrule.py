@@ -2,12 +2,13 @@
 """
 The rrule module offers a small, complete, and very fast, implementation of
 the recurrence rules documented in the
-`iCalendar RFC <http://www.ietf.org/rfc/rfc2445.txt>`_,
+`iCalendar RFC <https://tools.ietf.org/html/rfc5545>`_,
 including support for caching of results.
 """
 import itertools
 import datetime
 import calendar
+import re
 import sys
 
 try:
@@ -20,6 +21,7 @@ from six.moves import _thread, range
 import heapq
 
 from ._common import weekday as weekdaybase
+from .tz import tzutc, tzlocal
 
 # For warning about deprecation of until and count
 from warnings import warn
@@ -46,7 +48,7 @@ del M29, M30, M31, M365MASK[59], MDAY365MASK[59], NMDAY365MASK[31]
 MDAY365MASK = tuple(MDAY365MASK)
 M365MASK = tuple(M365MASK)
 
-FREQNAMES = ['YEARLY','MONTHLY','WEEKLY','DAILY','HOURLY','MINUTELY','SECONDLY']
+FREQNAMES = ['YEARLY', 'MONTHLY', 'WEEKLY', 'DAILY', 'HOURLY', 'MINUTELY', 'SECONDLY']
 
 (YEARLY,
  MONTHLY,
@@ -60,6 +62,7 @@ FREQNAMES = ['YEARLY','MONTHLY','WEEKLY','DAILY','HOURLY','MINUTELY','SECONDLY']
 easter = None
 parser = None
 
+
 class weekday(weekdaybase):
     """
     This version of weekday does not allow n = 0.
@@ -70,7 +73,8 @@ class weekday(weekdaybase):
 
         super(weekday, self).__init__(wkday, n)
 
-MO, TU, WE, TH, FR, SA, SU = weekdays = tuple([weekday(x) for x in range(7)])
+
+MO, TU, WE, TH, FR, SA, SU = weekdays = tuple(weekday(x) for x in range(7))
 
 
 def _invalidates_cache(f):
@@ -256,12 +260,12 @@ class rrulebase(object):
         n = 0
         for d in gen:
             if comp(d, dt):
-                yield d
-
                 if count is not None:
                     n += 1
-                    if n >= count:
+                    if n > count:
                         break
+
+                yield d
 
     def between(self, after, before, inc=False, count=1):
         """ Returns all the occurrences of the rrule between after and before.
@@ -333,10 +337,6 @@ class rrule(rrulebase):
 
     Additionally, it supports the following keyword arguments:
 
-    :param cache:
-        If given, it must be a boolean value specifying to enable or disable
-        caching of results. If you will use the same rrule instance multiple
-        times, enabling caching will improve the performance considerably.
     :param dtstart:
         The recurrence start. Besides being the base for the recurrence,
         missing parameters in the final recurrence instances will also be
@@ -357,16 +357,16 @@ class rrule(rrulebase):
 
         .. note::
             As of version 2.5.0, the use of the ``until`` keyword together
-            with the ``count`` keyword is deprecated per RFC-2445 Sec. 4.3.10.
+            with the ``count`` keyword is deprecated per RFC-5545 Sec. 3.3.10.
     :param until:
         If given, this must be a datetime instance, that will specify the
         limit of the recurrence. The last recurrence in the rule is the greatest
         datetime that is less than or equal to the value specified in the
         ``until`` parameter.
-        
+
         .. note::
             As of version 2.5.0, the use of the ``until`` keyword together
-            with the ``count`` keyword is deprecated per RFC-2445 Sec. 4.3.10.
+            with the ``count`` keyword is deprecated per RFC-5545 Sec. 3.3.10.
     :param bysetpos:
         If given, it must be either an integer, or a sequence of integers,
         positive or negative. Each given integer will specify an occurrence
@@ -383,6 +383,11 @@ class rrule(rrulebase):
     :param byyearday:
         If given, it must be either an integer, or a sequence of integers,
         meaning the year days to apply the recurrence to.
+    :param byeaster:
+        If given, it must be either an integer, or a sequence of integers,
+        positive or negative. Each integer will define an offset from the
+        Easter Sunday. Passing the offset 0 to byeaster will yield the Easter
+        Sunday itself. This is an extension to the RFC specification.
     :param byweekno:
         If given, it must be either an integer, or a sequence of integers,
         meaning the week numbers to apply the recurrence to. Week numbers
@@ -408,11 +413,10 @@ class rrule(rrulebase):
     :param bysecond:
         If given, it must be either an integer, or a sequence of integers,
         meaning the seconds to apply the recurrence to.
-    :param byeaster:
-        If given, it must be either an integer, or a sequence of integers,
-        positive or negative. Each integer will define an offset from the
-        Easter Sunday. Passing the offset 0 to byeaster will yield the Easter
-        Sunday itself. This is an extension to the RFC specification.
+    :param cache:
+        If given, it must be a boolean value specifying to enable or disable
+        caching of results. If you will use the same rrule instance multiple
+        times, enabling caching will improve the performance considerably.
      """
     def __init__(self, freq, dtstart=None,
                  interval=1, wkst=None, count=None, until=None, bysetpos=None,
@@ -423,7 +427,10 @@ class rrule(rrulebase):
         super(rrule, self).__init__(cache)
         global easter
         if not dtstart:
-            dtstart = datetime.datetime.now().replace(microsecond=0)
+            if until and until.tzinfo:
+                dtstart = datetime.datetime.now(tz=until.tzinfo).replace(microsecond=0)
+            else:           
+                dtstart = datetime.datetime.now().replace(microsecond=0)
         elif not isinstance(dtstart, datetime.datetime):
             dtstart = datetime.datetime.fromordinal(dtstart.toordinal())
         else:
@@ -444,8 +451,22 @@ class rrule(rrulebase):
             until = datetime.datetime.fromordinal(until.toordinal())
         self._until = until
 
-        if count and until:
-            warn("Using both 'count' and 'until' is inconsistent with RFC 2445"
+        if self._dtstart and self._until:
+            if (self._dtstart.tzinfo is not None) != (self._until.tzinfo is not None):
+                # According to RFC5545 Section 3.3.10:
+                # https://tools.ietf.org/html/rfc5545#section-3.3.10
+                #
+                # > If the "DTSTART" property is specified as a date with UTC
+                # > time or a date with local time and time zone reference,
+                # > then the UNTIL rule part MUST be specified as a date with
+                # > UTC time.
+                raise ValueError(
+                    'RRULE UNTIL values must be specified in UTC when DTSTART '
+                    'is timezone-aware'
+                )
+
+        if count is not None and until:
+            warn("Using both 'count' and 'until' is inconsistent with RFC 5545"
                  " and has been deprecated in dateutil. Future versions will "
                  "raise an error.", DeprecationWarning)
 
@@ -533,8 +554,8 @@ class rrule(rrulebase):
 
             bymonthday = set(bymonthday)            # Ensure it's unique
 
-            self._bymonthday = tuple(sorted([x for x in bymonthday if x > 0]))
-            self._bynmonthday = tuple(sorted([x for x in bymonthday if x < 0]))
+            self._bymonthday = tuple(sorted(x for x in bymonthday if x > 0))
+            self._bynmonthday = tuple(sorted(x for x in bymonthday if x < 0))
 
             # Storing positive numbers first, then negative numbers
             if 'bymonthday' not in self._original_rule:
@@ -582,13 +603,13 @@ class rrule(rrulebase):
                 self._byweekday = tuple(sorted(self._byweekday))
                 orig_byweekday = [weekday(x) for x in self._byweekday]
             else:
-                orig_byweekday = tuple()
+                orig_byweekday = ()
 
             if self._bynweekday is not None:
                 self._bynweekday = tuple(sorted(self._bynweekday))
                 orig_bynweekday = [weekday(*x) for x in self._bynweekday]
             else:
-                orig_bynweekday = tuple()
+                orig_bynweekday = ()
 
             if 'byweekday' not in self._original_rule:
                 self._original_rule['byweekday'] = tuple(itertools.chain(
@@ -597,7 +618,7 @@ class rrule(rrulebase):
         # byhour
         if byhour is None:
             if freq < HOURLY:
-                self._byhour = set((dtstart.hour,))
+                self._byhour = {dtstart.hour}
             else:
                 self._byhour = None
         else:
@@ -617,7 +638,7 @@ class rrule(rrulebase):
         # byminute
         if byminute is None:
             if freq < MINUTELY:
-                self._byminute = set((dtstart.minute,))
+                self._byminute = {dtstart.minute}
             else:
                 self._byminute = None
         else:
@@ -672,7 +693,7 @@ class rrule(rrulebase):
     def __str__(self):
         """
         Output a string that would generate this RRULE if passed to rrulestr.
-        This is mostly compatible with RFC2445, except for the
+        This is mostly compatible with RFC5545, except for the
         dateutil-specific extension BYEASTER.
         """
 
@@ -689,7 +710,7 @@ class rrule(rrulebase):
         if self._wkst:
             parts.append('WKST=' + repr(weekday(self._wkst))[0:2])
 
-        if self._count:
+        if self._count is not None:
             parts.append('COUNT=' + str(self._count))
 
         if self._until:
@@ -697,7 +718,7 @@ class rrule(rrulebase):
 
         if self._original_rule.get('byweekday') is not None:
             # The str() method on weekday objects doesn't generate
-            # RFC2445-compliant strings, so we should modify that.
+            # RFC5545-compliant strings, so we should modify that.
             original_rule = dict(self._original_rule)
             wday_strings = []
             for wday in original_rule['byweekday']:
@@ -728,7 +749,7 @@ class rrule(rrulebase):
                 parts.append(partfmt.format(name=name, vals=(','.join(str(v)
                                                              for v in value))))
 
-        output.append(';'.join(parts))
+        output.append('RRULE:' + ';'.join(parts))
         return '\n'.join(output)
 
     def replace(self, **kwargs):
@@ -744,7 +765,6 @@ class rrule(rrulebase):
         new_kwargs.update(self._original_rule)
         new_kwargs.update(kwargs)
         return rrule(**new_kwargs)
-
 
     def _iter(self):
         year, month, day, hour, minute, second, weekday, yearday, _ = \
@@ -844,13 +864,13 @@ class rrule(rrulebase):
                         self._len = total
                         return
                     elif res >= self._dtstart:
-                        total += 1
-                        yield res
-                        if count:
+                        if count is not None:
                             count -= 1
-                            if not count:
+                            if count < 0:
                                 self._len = total
                                 return
+                        total += 1
+                        yield res
             else:
                 for i in dayset[start:end]:
                     if i is not None:
@@ -861,13 +881,14 @@ class rrule(rrulebase):
                                 self._len = total
                                 return
                             elif res >= self._dtstart:
-                                total += 1
-                                yield res
-                                if count:
+                                if count is not None:
                                     count -= 1
-                                    if not count:
+                                    if count < 0:
                                         self._len = total
                                         return
+
+                                total += 1
+                                yield res
 
             # Handle frequency and interval
             fixday = False
@@ -1494,11 +1515,17 @@ class _rrulestr(object):
                    forceset=False,
                    compatible=False,
                    ignoretz=False,
+                   tzids=None,
                    tzinfos=None):
         global parser
         if compatible:
             forceset = True
             unfold = True
+
+        TZID_NAMES = dict(map(
+            lambda x: (x.upper(), x),
+            re.findall('TZID=(?P<name>[^:]+):', s)
+        ))
         s = s.upper()
         if not s.strip():
             raise ValueError("empty string")
@@ -1555,15 +1582,52 @@ class _rrulestr(object):
                 elif name == "EXDATE":
                     for parm in parms:
                         if parm != "VALUE=DATE-TIME":
-                            raise ValueError("unsupported RDATE parm: "+parm)
+                            raise ValueError("unsupported EXDATE parm: "+parm)
                     exdatevals.append(value)
                 elif name == "DTSTART":
+                    # RFC 5445 3.8.2.4: The VALUE parameter is optional, but
+                    # may be found only once.
+                    value_found = False
+                    TZID = None
+                    valid_values = {"VALUE=DATE-TIME", "VALUE=DATE"}
                     for parm in parms:
-                        raise ValueError("unsupported DTSTART parm: "+parm)
+                        if parm.startswith("TZID="):
+                            try:
+                                tzkey = TZID_NAMES[parm.split('TZID=')[-1]]
+                            except KeyError:
+                                continue
+                            if tzids is None:
+                                from . import tz
+                                tzlookup = tz.gettz
+                            elif callable(tzids):
+                                tzlookup = tzids
+                            else:
+                                tzlookup = getattr(tzids, 'get', None)
+                                if tzlookup is None:
+                                    msg = ('tzids must be a callable, ' +
+                                           'mapping, or None, ' +
+                                           'not %s' % tzids)
+                                    raise ValueError(msg)
+
+                            TZID = tzlookup(tzkey)
+                            continue
+                        if parm not in valid_values:
+                            raise ValueError("unsupported DTSTART parm: "+parm)
+                        else:
+                            if value_found:
+                                msg = ("Duplicate value parameter found in " +
+                                       "DTSTART: " + parm)
+                                raise ValueError(msg)
+                            value_found = True
                     if not parser:
                         from dateutil import parser
                     dtstart = parser.parse(value, ignoretz=ignoretz,
                                            tzinfos=tzinfos)
+                    if TZID is not None:
+                        if dtstart.tzinfo is None:
+                            dtstart = dtstart.replace(tzinfo=TZID)
+                        else:
+                            raise ValueError('DTSTART specifies multiple timezones')
                 else:
                     raise ValueError("unsupported property: "+name)
             if (forceset or len(rrulevals) > 1 or rdatevals
@@ -1601,6 +1665,7 @@ class _rrulestr(object):
 
     def __call__(self, s, **kwargs):
         return self._parse_rfc(s, **kwargs)
+
 
 rrulestr = _rrulestr()
 

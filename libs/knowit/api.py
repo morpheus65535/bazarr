@@ -8,11 +8,11 @@ from .config import Config
 from .providers import (
     EnzymeProvider,
     FFmpegProvider,
-#    MediaInfoProvider,
+    MediaInfoProvider,
 )
 
 _provider_map = OrderedDict([
-#    ('mediainfo', MediaInfoProvider),
+    ('mediainfo', MediaInfoProvider),
     ('ffmpeg', FFmpegProvider),
     ('enzyme', EnzymeProvider)
 ])

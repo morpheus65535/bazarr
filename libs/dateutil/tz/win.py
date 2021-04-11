@@ -12,7 +12,6 @@ except ValueError:
     # ValueError is raised on non-Windows systems for some horrible reason.
     raise ImportError("Running tzwin on non-Windows system")
 
-from ._common import tzname_in_python2, _tzinfo
 from ._common import tzrangebase
 
 __all__ = ["tzwin", "tzwinlocal", "tzres"]
@@ -34,6 +33,7 @@ def _settzkeyname():
     handle.Close()
     return TZKEYNAME
 
+
 TZKEYNAME = _settzkeyname()
 
 
@@ -49,7 +49,7 @@ class tzres(object):
     def __init__(self, tzres_loc='tzres.dll'):
         # Load the user32 DLL so we can load strings from tzres
         user32 = ctypes.WinDLL('user32')
-        
+
         # Specify the LoadStringW function
         user32.LoadStringW.argtypes = (wintypes.HINSTANCE,
                                        wintypes.UINT,
@@ -63,7 +63,7 @@ class tzres(object):
     def load_name(self, offset):
         """
         Load a timezone name from a DLL offset (integer).
-        
+
         >>> from dateutil.tzwin import tzres
         >>> tzr = tzres()
         >>> print(tzr.load_name(112))
@@ -192,9 +192,8 @@ class tzwin(tzwinbase):
     def __init__(self, name):
         self._name = name
 
-        # multiple contexts only possible in 2.7 and 3.1, we still support 2.6
         with winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE) as handle:
-            tzkeyname = text_type("{kn}\{name}").format(kn=TZKEYNAME, name=name)
+            tzkeyname = text_type("{kn}\\{name}").format(kn=TZKEYNAME, name=name)
             with winreg.OpenKey(handle, tzkeyname) as tzkey:
                 keydict = valuestodict(tzkey)
 
@@ -244,7 +243,7 @@ class tzwinlocal(tzwinbase):
             self._dst_abbr = keydict["DaylightName"]
 
             try:
-                tzkeyname = text_type('{kn}\{sn}').format(kn=TZKEYNAME,
+                tzkeyname = text_type('{kn}\\{sn}').format(kn=TZKEYNAME,
                                                           sn=self._std_abbr)
                 with winreg.OpenKey(handle, tzkeyname) as tzkey:
                     _keydict = valuestodict(tzkey)
@@ -266,7 +265,7 @@ class tzwinlocal(tzwinbase):
          self._stdweeknumber,  # Last = 5
          self._stdhour,
          self._stdminute) = tup[1:5]
-        
+
         self._stddayofweek = tup[7]
 
         tup = struct.unpack("=8h", keydict["DaylightStart"])
