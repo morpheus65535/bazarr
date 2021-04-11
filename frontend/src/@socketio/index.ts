@@ -1,8 +1,8 @@
-import { debounce, forIn, uniq } from "lodash";
+import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import reduxStore from "../@redux/store";
 import { getBaseUrl } from "../utilites";
-import { log } from "../utilites/logger";
+import { conditionalLog, log } from "../utilites/logger";
 import { SocketIOReducer } from "./reducer";
 
 class SocketIOClient {
@@ -32,6 +32,15 @@ class SocketIOClient {
     this.socket.connect();
   }
 
+  addReducer(reducer: SocketIO.Reducer) {
+    this.reducers.push(reducer);
+  }
+
+  removeReducer(reducer: SocketIO.Reducer) {
+    const removed = remove(this.reducers, (r) => r === reducer);
+    conditionalLog(removed.length === 0, "Fail to remove reducer", reducer);
+  }
+
   private reduce() {
     const events = [...this.events];
     this.events = [];
@@ -57,7 +66,7 @@ class SocketIOClient {
       if (element) {
         const handlers = this.reducers.filter((v) => v.key === type);
         if (handlers.length === 0) {
-          log("error", "Unhandle SocketIO event", type);
+          log("warning", "Unhandle SocketIO event", type);
           return;
         }
 
@@ -78,7 +87,7 @@ class SocketIOClient {
             if (action) {
               action();
             } else if (anyAction === undefined) {
-              log("error", "Unhandle action of SocketIO event", key, type);
+              log("warning", "Unhandle action of SocketIO event", key, type);
             }
           });
         });

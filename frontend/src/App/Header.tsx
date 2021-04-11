@@ -27,7 +27,7 @@ import { siteRedirectToAuth } from "../@redux/actions";
 import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
-import socketio from "../@socketio";
+import Socketio from "../@socketio";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
@@ -105,7 +105,7 @@ const Header: FunctionComponent<Props> = () => {
   const [reconnecting, setReconnect] = useState(false);
   const reconnect = useCallback(() => {
     setReconnect(true);
-    socketio.reconnect();
+    Socketio.reconnect();
   }, []);
 
   useEffect(() => {

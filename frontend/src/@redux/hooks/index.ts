@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { useSocketIOReducer } from "../../@socketio/hooks";
 import { buildOrderList } from "../../utilites";
 import {
   episodeUpdateBy,
@@ -48,6 +49,7 @@ export function useSystemLogs() {
 export function useSystemTasks() {
   const items = useReduxStore((s) => s.system.tasks);
   const update = useReduxAction(systemUpdateTasks);
+  useSocketIOReducer("task", update);
 
   useEffect(() => {
     update();

@@ -12,7 +12,6 @@ import {
   siteUpdateOffline,
   systemUpdateLanguagesAll,
   systemUpdateSettings,
-  systemUpdateTasks,
 } from "../@redux/actions";
 import { createCombineAction } from "../@redux/actions/factory";
 import reduxStore from "../@redux/store";
@@ -100,11 +99,6 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     key: "languages",
     state: (s) => s.system.languages,
     any: bindToReduxStore(systemUpdateLanguagesAll),
-  },
-  {
-    key: "task",
-    state: (s) => s.system.tasks,
-    any: bindToReduxStore(systemUpdateTasks),
   },
   {
     key: "badges",
