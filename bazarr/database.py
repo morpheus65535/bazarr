@@ -404,6 +404,6 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
 
 def convert_list_to_clause(arr: list):
     if isinstance(arr, list):
-        return f"({','.join(arr)})"
+        return f"({','.join(str(x) for x in arr)})"
     else:
         return ""
