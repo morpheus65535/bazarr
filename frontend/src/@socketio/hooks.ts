@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import Socketio from ".";
 
 export function useSocketIOReducer(
@@ -17,4 +17,17 @@ export function useSocketIOReducer(
       Socketio.removeReducer(reducer);
     };
   }, [reducer]);
+}
+
+export function useWrapToOptionalId(
+  fn: (id: number[]) => void
+): SocketIO.ActionFn {
+  return useCallback(
+    (id?: number[]) => {
+      if (id) {
+        fn(id);
+      }
+    },
+    [fn]
+  );
 }

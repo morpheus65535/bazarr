@@ -1,14 +1,9 @@
 import {
   badgeUpdateAll,
-  episodeUpdateBy,
-  episodeUpdateById,
-  movieUpdateBlacklist,
-  movieUpdateHistoryList,
   movieUpdateList,
   movieUpdateWantedList,
-  seriesUpdateBlacklist,
-  seriesUpdateHistoryList,
   seriesUpdateList,
+  seriesUpdateWantedList,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
   systemUpdateSettings,
@@ -41,29 +36,9 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     any: () => reduxStore.dispatch(siteUpdateOffline(true)),
   },
   {
-    key: "episode-blacklist",
-    state: (s) => s.series.blacklist,
-    any: bindToReduxStore(seriesUpdateBlacklist),
-  },
-  {
-    key: "episode-history",
-    state: (s) => s.series.historyList,
-    any: bindToReduxStore(seriesUpdateHistoryList),
-  },
-  {
     key: "episode-wanted",
     state: (s) => s.series.wantedEpisodesList,
-    update: bindToReduxStore(wrapToOptionalId(episodeUpdateById)),
-  },
-  {
-    key: "movie-blacklist",
-    state: (s) => s.movie.blacklist,
-    any: bindToReduxStore(movieUpdateBlacklist),
-  },
-  {
-    key: "movie-history",
-    state: (s) => s.movie.historyList,
-    any: bindToReduxStore(movieUpdateHistoryList),
+    update: bindToReduxStore(wrapToOptionalId(seriesUpdateWantedList)),
   },
   {
     key: "movie-wanted",
@@ -76,19 +51,9 @@ export const SocketIOReducer: SocketIO.Reducer[] = [
     update: bindToReduxStore(seriesUpdateList),
   },
   {
-    key: "series",
-    state: (s) => s.series.episodeList,
-    update: bindToReduxStore(wrapToOptionalId(episodeUpdateBy)),
-  },
-  {
     key: "movie",
     state: (s) => s.movie.movieList,
     update: bindToReduxStore(movieUpdateList),
-  },
-  {
-    key: "episode",
-    state: (s) => s.series.episodeList,
-    update: bindToReduxStore(wrapToOptionalId(episodeUpdateById)),
   },
   {
     key: "settings",

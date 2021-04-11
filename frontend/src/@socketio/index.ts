@@ -85,7 +85,7 @@ class SocketIOClient {
             ids = uniq(ids);
             const action = handler[key as SocketIO.ActionType];
             if (action) {
-              action();
+              action(ids);
             } else if (anyAction === undefined) {
               log("warning", "Unhandle action of SocketIO event", key, type);
             }
