@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import reduxStore from "../@redux/store";
 import { getBaseUrl } from "../utilites";
 import { conditionalLog, log } from "../utilites/logger";
-import { SocketIOReducer } from "./reducer";
+import { SocketIODefaultReducer } from "./reducer";
 
 class SocketIOClient {
   private socket: Socket;
@@ -25,7 +25,7 @@ class SocketIOClient {
 
     this.events = [];
     this.debounceReduce = debounce(this.reduce, 200);
-    this.reducers = SocketIOReducer;
+    this.reducers = SocketIODefaultReducer;
   }
 
   addReducer(reducer: SocketIO.Reducer) {

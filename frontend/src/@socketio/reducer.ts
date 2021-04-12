@@ -26,7 +26,7 @@ function bindToReduxStore(fn: (ids?: number[]) => any): SocketIO.ActionFn {
   return (ids?: number[]) => reduxStore.dispatch(fn(ids));
 }
 
-export const SocketIOReducer: SocketIO.Reducer[] = [
+export const SocketIODefaultReducer: SocketIO.Reducer[] = [
   {
     key: "connect",
     any: () => reduxStore.dispatch(siteUpdateOffline(false)),
