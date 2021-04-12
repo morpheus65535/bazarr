@@ -8,7 +8,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column, TableOptions, TableUpdater } from "react-table";
+import { Column, TableUpdater } from "react-table";
+import { useProfileItems } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
@@ -20,11 +21,12 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey } from "../../utilites";
+import { BuildKey, useShowOnlyDesired } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
   episodes: AsyncState<Item.Episode[]>;
+  profile?: Profile.Languages;
 }
 
 const download = (item: any, result: SearchResultType) => {
@@ -43,8 +45,12 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ episodes }) => {
+const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
   const showModal = useShowModal();
+
+  const onlyDesired = useShowOnlyDesired();
+
+  const profileItems = useProfileItems(profile);
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
@@ -93,10 +99,13 @@ const Table: FunctionComponent<Props> = ({ episodes }) => {
       {
         Header: "Subtitles",
         accessor: "missing_subtitles",
-        Cell: ({ row }) => {
+        Cell: ({ row, loose }) => {
           const episode = row.original;
 
           const seriesid = episode.sonarrSeriesId;
+
+          const desired = loose![0] as boolean;
+          const items = loose![1] as Language[];
 
           const elements = useMemo(() => {
             const episodeid = episode.sonarrEpisodeId;
@@ -111,12 +120,12 @@ const Table: FunctionComponent<Props> = ({ episodes }) => {
               ></SubtitleAction>
             ));
 
-            const existing = episode.subtitles.filter(
-              (val) =>
-                episode.missing_subtitles.findIndex(
-                  (v) => v.code2 === val.code2
-                ) === -1
-            );
+            let existing = episode.subtitles;
+            if (desired) {
+              existing = existing.filter(
+                (v) => items.findIndex((inn) => inn.code2 === v.code2) !== -1
+              );
+            }
 
             const subtitles = existing.map((val, idx) => (
               <SubtitleAction
@@ -128,7 +137,7 @@ const Table: FunctionComponent<Props> = ({ episodes }) => {
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, seriesid]);
+          }, [episode, seriesid, desired, items]);
 
           return elements;
         },
@@ -185,31 +194,26 @@ const Table: FunctionComponent<Props> = ({ episodes }) => {
     [episodes]
   );
 
-  const options: TableOptions<Item.Episode> = useMemo(() => {
-    return {
-      columns,
-      data: episodes.data,
-      externalUpdate: updateRow,
-      initialState: {
-        sortBy: [
-          { id: "season", desc: true },
-          { id: "episode", desc: true },
-        ],
-        groupBy: ["season"],
-        expanded: {
-          [`season:${maxSeason}`]: true,
-        },
-      },
-    };
-  }, [episodes, columns, maxSeason, updateRow]);
-
   return (
     <React.Fragment>
       <AsyncStateOverlay state={episodes}>
-        {() => (
+        {(data) => (
           <GroupTable
+            columns={columns}
+            data={data}
+            externalUpdate={updateRow}
+            loose={[onlyDesired, profileItems]}
+            initialState={{
+              sortBy: [
+                { id: "season", desc: true },
+                { id: "episode", desc: true },
+              ],
+              groupBy: ["season"],
+              expanded: {
+                [`season:${maxSeason}`]: true,
+              },
+            }}
             emptyText="No Episode Found For This Series"
-            {...options}
           ></GroupTable>
         )}
       </AsyncStateOverlay>

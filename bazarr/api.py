@@ -152,10 +152,7 @@ def postprocessSeries(item):
         item['fanart'] = f"{base_url}/images/series{fanart}"
 
 
-def postprocessEpisode(item, desired=None):
-    if desired is None:
-        desired = dict()
-
+def postprocessEpisode(item):
     postprocess(item)
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
@@ -183,11 +180,6 @@ def postprocessEpisode(item, desired=None):
 
         item.update({"subtitles": subtitles})
 
-        if settings.general.getboolean('embedded_subs_show_desired') and 'sonarrSeriesId' in item and item['sonarrSeriesId'] in desired:
-            desired_code = desired[item['sonarrSeriesId']]
-            item['subtitles'] = [x for x in item['subtitles'] if
-                                 x['code2'] in desired_code or x['path']]
-
     # Parse missing subtitles
     if 'missing_subtitles' in item:
         if item['missing_subtitles'] is None:
@@ -211,11 +203,10 @@ def postprocessEpisode(item, desired=None):
         item["sceneName"] = item["scene_name"]
         del item["scene_name"]
 
-    if 'path' in item:
-        if item['path']:
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-            item['exist'] = os.path.isfile(item['path'])
+    if 'path' in item and item['path']:
+        # Provide mapped path
+        item['path'] = path_mappings.path_replace(item['path'])
+        item['exist'] = os.path.isfile(item['path'])
 
 
 # TODO: Move
@@ -688,21 +679,8 @@ class Episodes(Resource):
         else:
             return "Series or Episode ID not provided", 400
 
-        series_id_list = set(item['sonarrSeriesId'] for item in result)
-
-        profile_id_result = database.execute("SELECT profileId, sonarrSeriesId FROM table_shows "
-                                             f"WHERE sonarrSeriesId in {convert_list_to_clause(list(series_id_list))}")
-
-        desired = dict()
-        for item in profile_id_result:
-            series_id = item['sonarrSeriesId']
-            profile_id = item['profileId']
-            desired_languages = str(get_desired_languages(profile_id))
-            desired_code = ast.literal_eval(desired_languages)
-            desired[series_id] = desired_code
-
         for item in result:
-            postprocessEpisode(item, desired)
+            postprocessEpisode(item)
 
         return jsonify(data=result)
 

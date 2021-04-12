@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useHistory } from "react-router";
 import { getBaseUrl } from ".";
+import { useSystemSettings } from "../@redux/hooks";
 
 export function useBaseUrl(slash: boolean = false) {
   return useMemo(() => getBaseUrl(slash), [slash]);
@@ -25,6 +26,11 @@ export function useHasUpdateInject() {
   } else {
     return window.Bazarr.hasUpdate;
   }
+}
+
+export function useShowOnlyDesired() {
+  const [settings] = useSystemSettings();
+  return settings.data?.general.embedded_subs_show_desired ?? false;
 }
 
 export function useSessionStorage(

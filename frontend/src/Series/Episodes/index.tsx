@@ -17,7 +17,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { RouterEmptyPath } from "../../404";
-import { useEpisodesBy, useSerieBy } from "../../@redux/hooks";
+import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
@@ -71,6 +71,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   }, [serie.data]);
 
   useWhenLoadingFinish(serie, validator);
+
+  const profile = useProfileBy(serie.data?.profileId);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
@@ -141,7 +143,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes}></Table>
+        <Table episodes={episodes} profile={profile}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
