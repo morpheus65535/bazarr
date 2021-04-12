@@ -12,6 +12,7 @@ import { Redirect } from "react-router-dom";
 import { bootstrap as ReduxBootstrap } from "../@redux/actions";
 import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
+import Socketio from "../@socketio";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import { Reload, useHasUpdateInject } from "../utilites";
@@ -30,6 +31,12 @@ const App: FunctionComponent<Props> = () => {
   const { initialized, auth } = useReduxStore((s) => s.site);
 
   const notify = useNotification("has-update", 10);
+
+  useEffect(() => {
+    if (initialized) {
+      Socketio.initialize();
+    }
+  }, [initialized]);
 
   // Has any update?
   const hasUpdate = useHasUpdateInject();
