@@ -36,6 +36,7 @@ Waitress=1.4.3
 ## indirect dependencies
 auditok=0.2.0  # Required-by: ffsubsync
 rich=10.1.0    # Required-by: ffsubsync
+srt=3.4.1      # Required-by: ffsubsync
 
 Pygments=2.8.1            # Required-by: rich
 commonmark=0.9.1          # Required-by: rich
