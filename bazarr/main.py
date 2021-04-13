@@ -1,6 +1,8 @@
 # coding=utf-8
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
+import gevent
+
 try:
     from gevent import monkey
 except ImportError:
@@ -48,6 +50,7 @@ from signalr_client import sonarr_signalr_client, radarr_signalr_client
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
+from gevent.threadpool import ThreadPool
 
 # Install downloaded update
 if bazarr_version != '':
@@ -165,10 +168,11 @@ def proxy(protocol, url):
             return dict(status=False, error=result.raise_for_status())
 
 
+pool = ThreadPool(5)
 if settings.general.getboolean('use_sonarr'):
-    sonarr_signalr_client.start()
-if settings.general.getboolean('use_radarr'):
-    radarr_signalr_client.start()
+    pool.spawn(sonarr_signalr_client.start)
+#if settings.general.getboolean('use_radarr'):
+#    pool.spawn(radarr_signalr_client.start)
 
 
 if __name__ == "__main__":

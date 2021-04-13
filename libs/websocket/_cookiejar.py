@@ -49,4 +49,4 @@ class SimpleCookieJar(object):
                 cookies.append(self.jar.get(domain))
 
         return "; ".join(filter(None, ["%s=%s" % (k, v.value) for cookie in filter(None, sorted(cookies)) for k, v in
-                                       sorted(cookie.items())]))
+                                       cookie.items()]))

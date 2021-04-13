@@ -42,25 +42,9 @@ def update_movies():
         tagsDict = get_tags()
         
         # Get movies data from radarr
-        if radarr_version.startswith('0'):
-            url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
-        else:
-            url_radarr_api_movies = url_radarr() + "/api/v3/movie?apikey=" + apikey_radarr
-
-        try:
-            r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as errh:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
-            return
-        except requests.exceptions.ConnectionError as errc:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
-            return
-        except requests.exceptions.Timeout as errt:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
-            return
-        except requests.exceptions.RequestException as err:
-            logging.exception("BAZARR Error trying to get movies from Radarr.")
+        movies = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
+                                            apikey_radarr=apikey_radarr)
+        if not movies:
             return
         else:
             # Get current movies in DB
@@ -73,8 +57,8 @@ def update_movies():
             movies_to_add = []
             altered_movies = []
 
-            moviesIdListLength = len(r.json())
-            for movie in r.json():
+            moviesIdListLength = len(movies)
+            for movie in movies:
                 # Skip movies that don't have
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
@@ -157,25 +141,12 @@ def update_movies():
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
 
-def update_one_movie(movie):
-    # Get some values before altering the movie dict
-    if 'body' not in movie:
-        return
-    if 'resource' not in movie['body']:
-        return
-    if 'id' not in movie['body']['resource']:
-        return
-
-    action = movie['body']['action']
-    movieId = movie['body']['resource']['id']
-    logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movieId))
-
-    hasFile = True if 'movieFile' in movie['body']['resource'] else False
+def update_one_movie(movie_id, action):
+    logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this series ID
-    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movieId,), only_one=True)
+    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
 
-    # Validate the provided movie
     radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
 
@@ -190,48 +161,55 @@ def update_one_movie(movie):
     tagsDict = get_tags()
 
     try:
-        if action == 'updated' and existing_movie:
-            movie = movieParser(movie['body']['resource'], action='update', radarr_version=radarr_version,
-                                tags_dict=tagsDict, movie_default_profile=movie_default_profile,
-                                audio_profiles=audio_profiles)
-        elif action == 'updated' and not existing_movie:
-            movie = movieParser(movie['body']['resource'], action='insert', radarr_version=radarr_version,
-                                tags_dict=tagsDict, movie_default_profile=movie_default_profile,
-                                audio_profiles=audio_profiles)
+        # Get movie data from radarr api
+        movie = None
+        movie_data = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
+                                                apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
+        if not movie_data:
+            return
+        else:
+            if action == 'updated' and existing_movie:
+                movie = movieParser(movie_data, action='update', radarr_version=radarr_version,
+                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
+                                    audio_profiles=audio_profiles)
+            elif action == 'updated' and not existing_movie:
+                movie = movieParser(movie_data, action='insert', radarr_version=radarr_version,
+                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
+                                    audio_profiles=audio_profiles)
     except Exception:
-        logging.debug('BAZARR cannot parse movie returned by SignalR feed.')
+        logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return
 
     # Check if there's a row in database for this movie ID
-    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movieId,), only_one=True)
+    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
 
     # Drop useless events
-    if not hasFile and not existing_movie:
+    if not movie and not existing_movie:
         return
 
     # Remove movie from DB
-    if not hasFile and existing_movie:
-        database.execute("DELETE FROM table_movies WHERE radarrId=?", (movieId,))
-        event_stream(type='movie', action='delete', id=movieId)
+    if not movie and existing_movie:
+        database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+        event_stream(type='movie', action='delete', id=movie_id)
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
             existing_movie['path'])))
         return
 
     # Update existing movie in DB
-    elif hasFile and existing_movie:
+    elif movie and existing_movie:
         query = dict_converter.convert(movie)
         database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
                          query.values + (movie['radarrId'],))
-        event_stream(type='movie', action='update', id=movieId)
+        event_stream(type='movie', action='update', id=movie_id)
         logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 
     # Insert new movie in DB
-    elif hasFile and not existing_movie:
+    elif movie and not existing_movie:
         query = dict_converter.convert(movie)
         database.execute('''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='movie', action='insert', id=movieId)
+        event_stream(type='movie', action='insert', id=movie_id)
         logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 
@@ -243,7 +221,7 @@ def update_one_movie(movie):
     # Downloading missing subtitles
     logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
         movie['path'])))
-    movies_download_subtitles(movieId)
+    movies_download_subtitles(movie_id)
 
 
 def get_profile_list():
@@ -501,3 +479,32 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
                     'movie_file_id': int(movie['movieFile']['id']),
                     'tags': str(tags),
                     'profileId': movie_default_profile}
+
+
+def get_movies_from_radarr_api(radarr_version, url, apikey_radarr, radarr_id=None):
+    if radarr_version.startswith('0'):
+        url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
+                                apikey_radarr
+    else:
+        url_radarr_api_movies = url + "/api/v3/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
+                                apikey_radarr
+
+    try:
+        r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        if r.status_code == 404:
+            return
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError as errc:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout as errt:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException as err:
+        logging.exception("BAZARR Error trying to get movies from Radarr.")
+        return
+    else:
+        return r.json()

@@ -74,13 +74,7 @@ class WebSocketBadStatusException(WebSocketException):
     WebSocketBadStatusException will be raised when we get bad handshake status code.
     """
 
-    def __init__(self, message, status_code, status_message=None):
-        msg = message % (status_code, status_message)
-        super(WebSocketBadStatusException, self).__init__(msg)
+    def __init__(self, message, status_code):
+        super(WebSocketBadStatusException, self).__init__(
+            message % status_code)
         self.status_code = status_code
-
-class WebSocketAddressException(WebSocketException):
-    """
-    If the websocket address info cannot be found, this exception will be raised.
-    """
-    pass
