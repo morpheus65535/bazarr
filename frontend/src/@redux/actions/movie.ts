@@ -3,7 +3,6 @@ import {
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_LIST,
-  MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { createAsyncAction } from "./factory";
@@ -29,7 +28,7 @@ export const movieUpdateHistoryList = createAsyncAction(
 );
 
 export const movieUpdateByRange = createAsyncAction(
-  MOVIES_UPDATE_RANGE,
+  MOVIES_UPDATE_LIST,
   (start: number, length: number) => MoviesApi.moviesBy(start, length)
 );
 

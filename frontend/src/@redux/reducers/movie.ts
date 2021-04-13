@@ -3,7 +3,6 @@ import {
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_LIST,
-  MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
@@ -34,15 +33,6 @@ const reducer = handleActions<ReduxStore.Movie, any>(
       };
     },
     [MOVIES_UPDATE_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Item.Movie>>
-    ) => {
-      return {
-        ...state,
-        movieList: updateOrderIdState(action, state.movieList, "radarrId"),
-      };
-    },
-    [MOVIES_UPDATE_RANGE]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Item.Movie>>
     ) => {

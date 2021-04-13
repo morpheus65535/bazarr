@@ -4,7 +4,6 @@ import {
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
   SERIES_UPDATE_LIST,
-  SERIES_UPDATE_RANGE,
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { createAsyncAction } from "./factory";
@@ -35,7 +34,7 @@ export const episodeUpdateById = createAsyncAction(
 );
 
 export const seriesUpdateByRange = createAsyncAction(
-  SERIES_UPDATE_RANGE,
+  SERIES_UPDATE_LIST,
   (start: number, length: number) => SeriesApi.seriesBy(start, length)
 );
 
