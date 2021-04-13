@@ -16,7 +16,9 @@ class SocketIOClient {
     const baseUrl = getBaseUrl();
     this.socket = io({
       path: `${baseUrl}/api/socket.io`,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      rememberUpgrade: true,
     });
 
     this.socket.on("connect", this.onConnect.bind(this));
