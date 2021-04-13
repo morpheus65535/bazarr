@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
 import { RouterEmptyPath } from "../404";
+import { useSetSidebar } from "../@redux/hooks/site";
 import Logs from "./Logs";
 import Providers from "./Providers";
 import Releases from "./Releases";
@@ -8,6 +9,7 @@ import Status from "./Status";
 import Tasks from "./Tasks";
 
 const Router: FunctionComponent = () => {
+  useSetSidebar("System");
   return (
     <Switch>
       <Route exact path="/system/tasks">

@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from "react-router-dom";
 import { RouterEmptyPath } from "../404";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
+import { useSetSidebar } from "../@redux/hooks/site";
 import General from "./General";
 import Languages from "./Languages";
 import Notifications from "./Notifications";
@@ -19,6 +20,7 @@ const Router: FunctionComponent<Props> = () => {
   const update = useReduxAction(systemUpdateSettings);
   useEffect(() => update, [update]);
 
+  useSetSidebar("Settings");
   return (
     <Switch>
       <Route exact path="/settings">
