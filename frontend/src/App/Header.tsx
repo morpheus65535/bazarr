@@ -5,14 +5,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useContext, useMemo } from "react";
 import {
   Button,
   Col,
@@ -28,7 +21,7 @@ import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
-import apis, { SystemApi } from "../apis";
+import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage } from "../utilites";
 import "./header.scss";
@@ -101,18 +94,6 @@ const Header: FunctionComponent<Props> = () => {
     [canLogout, setNeedAuth]
   );
 
-  const [reconnecting, setReconnect] = useState(false);
-  const reconnect = useCallback(() => {
-    setReconnect(true);
-    apis.socketIO.reconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!offline) {
-      setReconnect(false);
-    }
-  }, [offline]);
-
   const goHome = useGotoHomepage();
 
   return (
@@ -144,13 +125,13 @@ const Header: FunctionComponent<Props> = () => {
             </Button>
             {offline ? (
               <ActionButton
-                loading={reconnecting}
+                loading
+                alwaysShowText
                 className="ml-2"
                 variant="warning"
                 icon={faNetworkWired}
-                onClick={reconnect}
               >
-                Reconnect
+                Connecting...
               </ActionButton>
             ) : (
               dropdown

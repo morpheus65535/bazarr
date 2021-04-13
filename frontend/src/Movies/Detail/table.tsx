@@ -3,17 +3,22 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
+import { useProfileItems } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
+import { useShowOnlyDesired } from "../../utilites";
 
 const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
+  profile?: Profile.Languages;
 }
 
-const Table: FunctionComponent<Props> = (props) => {
-  const { movie } = props;
+const Table: FunctionComponent<Props> = ({ movie, profile }) => {
+  const onlyDesired = useShowOnlyDesired();
+
+  const profileItems = useProfileItems(profile);
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
@@ -101,8 +106,15 @@ const Table: FunctionComponent<Props> = (props) => {
       return item;
     });
 
-    return movie.subtitles.concat(missing);
-  }, [movie.missing_subtitles, movie.subtitles]);
+    let existing = movie.subtitles;
+    if (onlyDesired) {
+      existing.filter(
+        (v) => profileItems.findIndex((inn) => inn.code2 === v.code2) !== -1
+      );
+    }
+
+    return [...movie.subtitles, ...missing];
+  }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);
 
   return (
     <SimpleTable

@@ -152,10 +152,7 @@ def postprocessSeries(item):
         item['fanart'] = f"{base_url}/images/series{fanart}"
 
 
-def postprocessEpisode(item, desired=None):
-    if desired is None:
-        desired = dict()
-
+def postprocessEpisode(item):
     postprocess(item)
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
@@ -183,11 +180,6 @@ def postprocessEpisode(item, desired=None):
 
         item.update({"subtitles": subtitles})
 
-        if settings.general.getboolean('embedded_subs_show_desired') and 'profileId' in item and item['profileId'] in desired:
-            desired_code = desired[item['profileId']]
-            item['subtitles'] = [x for x in item['subtitles'] if
-                                 x['code2'] in desired_code or x['path']]
-
     # Parse missing subtitles
     if 'missing_subtitles' in item:
         if item['missing_subtitles'] is None:
@@ -211,11 +203,10 @@ def postprocessEpisode(item, desired=None):
         item["sceneName"] = item["scene_name"]
         del item["scene_name"]
 
-    if 'path' in item:
-        if item['path']:
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-            item['exist'] = os.path.isfile(item['path'])
+    if 'path' in item and item['path']:
+        # Provide mapped path
+        item['path'] = path_mappings.path_replace(item['path'])
+        item['exist'] = os.path.isfile(item['path'])
 
 
 # TODO: Move
@@ -679,26 +670,17 @@ class Episodes(Resource):
         seriesId = request.args.getlist('seriesid[]')
         episodeId = request.args.getlist('episodeid[]')
 
-        desired = dict()
         if len(episodeId) > 0:
             result = database.execute(f"SELECT * FROM table_episodes WHERE sonarrEpisodeId in {convert_list_to_clause(episodeId)}")
         elif len(seriesId) > 0:
-            clause = convert_list_to_clause(seriesId)
-            result = database.execute(f"SELECT * FROM table_episodes WHERE sonarrSeriesId in {clause} ORDER BY season DESC, "
+            result = database.execute("SELECT * FROM table_episodes "
+                                      f"WHERE sonarrSeriesId in {convert_list_to_clause(seriesId)} ORDER BY season DESC, "
                                       "episode DESC")
-            profileIdResult = database.execute(f"SELECT profileId FROM table_shows WHERE sonarrSeriesId in {clause}")
-
-            for profileId in profileIdResult:
-                profileId = profileId['profileId']
-                desired_languages = str(get_desired_languages(profileId))
-                desired_code = ast.literal_eval(desired_languages)
-                desired[profileId] = desired_code
-            
         else:
-            return "Series ID not provided", 400
+            return "Series or Episode ID not provided", 400
 
         for item in result:
-            postprocessEpisode(item, desired)
+            postprocessEpisode(item)
 
         return jsonify(data=result)
 

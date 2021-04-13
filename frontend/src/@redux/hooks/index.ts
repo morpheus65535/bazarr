@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
 import { buildOrderList } from "../../utilites";
 import {
   episodeUpdateBy,
+  episodeUpdateById,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
@@ -48,6 +50,7 @@ export function useSystemLogs() {
 export function useSystemTasks() {
   const items = useReduxStore((s) => s.system.tasks);
   const update = useReduxAction(systemUpdateTasks);
+  useSocketIOReducer("task", update);
 
   useEffect(() => {
     update();
@@ -225,6 +228,12 @@ export function useEpisodesBy(seriesId?: number) {
     [list, items]
   );
 
+  const actionById = useReduxAction(episodeUpdateById);
+  const wrapActionById = useWrapToOptionalId(actionById);
+  useSocketIOReducer("episode", undefined, wrapActionById);
+  const wrapAction = useWrapToOptionalId(action);
+  useSocketIOReducer("series", undefined, wrapAction);
+
   useEffect(() => {
     update();
   }, [update]);
@@ -287,6 +296,7 @@ export function useMovieBy(id?: number) {
 export function useWantedSeries() {
   const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
+
   return stateBuilder(items, update);
 }
 
@@ -300,6 +310,8 @@ export function useBlacklistMovies() {
   const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
 
+  useSocketIOReducer("movie-blacklist", update);
+
   useEffect(() => {
     update();
   }, [update]);
@@ -309,6 +321,8 @@ export function useBlacklistMovies() {
 export function useBlacklistSeries() {
   const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
+
+  useSocketIOReducer("episode-blacklist", update);
 
   useEffect(() => {
     update();
@@ -320,6 +334,8 @@ export function useMoviesHistory() {
   const update = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
 
+  useSocketIOReducer("movie-history", update);
+
   useEffect(() => {
     update();
   }, [update]);
@@ -329,6 +345,8 @@ export function useMoviesHistory() {
 export function useSeriesHistory() {
   const update = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
+
+  useSocketIOReducer("episode-history", update);
 
   useEffect(() => {
     update();

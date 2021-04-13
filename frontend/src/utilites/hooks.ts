@@ -1,16 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useHistory } from "react-router";
+import { getBaseUrl } from ".";
+import { useSystemSettings } from "../@redux/hooks";
 
 export function useBaseUrl(slash: boolean = false) {
-  if (process.env.NODE_ENV === "development") {
-    return "/";
-  } else {
-    let url = window.Bazarr.baseUrl ?? "/";
-    if (slash && !url.endsWith("/")) {
-      url += "/";
-    }
-    return url;
-  }
+  return useMemo(() => getBaseUrl(slash), [slash]);
 }
 
 export function useGotoHomepage() {
@@ -32,6 +26,11 @@ export function useHasUpdateInject() {
   } else {
     return window.Bazarr.hasUpdate;
   }
+}
+
+export function useShowOnlyDesired() {
+  const [settings] = useSystemSettings();
+  return settings.data?.general.embedded_subs_show_desired ?? false;
 }
 
 export function useSessionStorage(
