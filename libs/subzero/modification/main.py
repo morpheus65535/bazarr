@@ -275,8 +275,13 @@ class SubtitleModifications(object):
                     logger.debug(u"Skipping empty line: %s", index)
                 continue
 
+            line_split = t.split(r"\N")
+            if len(line_split) > 3: # Badly parsed subtitle
+                logger.error("Skipping %d lines for %s mod", len(line_split), mods)
+                continue
+
             skip_entry = False
-            for line in t.split(r"\N"):
+            for line in line_split:
                 # don't bother the mods with surrounding tags
                 old_line = line
                 line = line.strip()
