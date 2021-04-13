@@ -1,4 +1,5 @@
-import { uniqBy } from "lodash";
+import { difference, has, uniqBy } from "lodash";
+import { Action } from "redux-actions";
 import { AsyncAction } from "../types";
 
 export function updateAsyncState<Payload>(
@@ -81,6 +82,42 @@ export function updateOrderIdState<T extends LooseObject>(
       },
     };
   }
+}
+
+export function deleteOrderListItemBy<T extends LooseObject>(
+  action: Action<number[]>,
+  state: AsyncState<OrderIdState<T>>,
+  match: ItemIdType<T>
+): AsyncState<OrderIdState<T>> {
+  const ids = action.payload;
+  const { items, order } = state.data;
+  const newItems = { ...items };
+  ids.forEach((v) => {
+    if (has(newItems, v)) {
+      delete newItems[v];
+    }
+  });
+  const newOrder = difference(order, ids);
+  return {
+    ...state,
+    data: {
+      items: newItems,
+      order: newOrder,
+    },
+  };
+}
+
+export function deleteAsyncListItemBy<T extends LooseObject>(
+  action: Action<number[]>,
+  state: AsyncState<T[]>,
+  match: ItemIdType<T>
+): AsyncState<T[]> {
+  const ids = new Set(action.payload);
+  const data = [...state.data].filter((v) => !ids.has(v[match]));
+  return {
+    ...state,
+    data,
+  };
 }
 
 export function updateAsyncList<T, ID extends keyof T>(

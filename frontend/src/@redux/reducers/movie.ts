@@ -1,12 +1,18 @@
-import { handleActions } from "redux-actions";
+import { Action, handleActions } from "redux-actions";
 import {
+  MOVIES_DELETE_ITEMS,
+  MOVIES_DELETE_WANTED_ITEMS,
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { updateAsyncState, updateOrderIdState } from "./mapper";
+import {
+  deleteOrderListItemBy,
+  updateAsyncState,
+  updateOrderIdState,
+} from "./mapper";
 
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
@@ -17,6 +23,16 @@ const reducer = handleActions<ReduxStore.Movie, any>(
       return {
         ...state,
         wantedMovieList: updateOrderIdState(
+          action,
+          state.wantedMovieList,
+          "radarrId"
+        ),
+      };
+    },
+    [MOVIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        wantedMovieList: deleteOrderListItemBy(
           action,
           state.wantedMovieList,
           "radarrId"
@@ -39,6 +55,12 @@ const reducer = handleActions<ReduxStore.Movie, any>(
       return {
         ...state,
         movieList: updateOrderIdState(action, state.movieList, "radarrId"),
+      };
+    },
+    [MOVIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        movieList: deleteOrderListItemBy(action, state.movieList, "radarrId"),
       };
     },
     [MOVIES_UPDATE_BLACKLIST]: (

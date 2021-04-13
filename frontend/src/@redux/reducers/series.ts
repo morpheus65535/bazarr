@@ -1,5 +1,8 @@
-import { handleActions } from "redux-actions";
+import { Action, handleActions } from "redux-actions";
 import {
+  SERIES_DELETE_EPISODES,
+  SERIES_DELETE_ITEMS,
+  SERIES_DELETE_WANTED_ITEMS,
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
@@ -8,6 +11,8 @@ import {
 } from "../constants";
 import { AsyncAction } from "../types";
 import {
+  deleteAsyncListItemBy,
+  deleteOrderListItemBy,
   updateAsyncList,
   updateAsyncState,
   updateOrderIdState,
@@ -28,6 +33,16 @@ const reducer = handleActions<ReduxStore.Series, any>(
         ),
       };
     },
+    [SERIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        wantedEpisodesList: deleteOrderListItemBy(
+          action,
+          state.wantedEpisodesList,
+          "sonarrEpisodeId"
+        ),
+      };
+    },
     [SERIES_UPDATE_EPISODE_LIST]: (
       state,
       action: AsyncAction<Item.Episode[]>
@@ -35,6 +50,16 @@ const reducer = handleActions<ReduxStore.Series, any>(
       return {
         ...state,
         episodeList: updateAsyncList(
+          action,
+          state.episodeList,
+          "sonarrEpisodeId"
+        ),
+      };
+    },
+    [SERIES_DELETE_EPISODES]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        episodeList: deleteAsyncListItemBy(
           action,
           state.episodeList,
           "sonarrEpisodeId"
@@ -57,6 +82,16 @@ const reducer = handleActions<ReduxStore.Series, any>(
       return {
         ...state,
         seriesList: updateOrderIdState(
+          action,
+          state.seriesList,
+          "sonarrSeriesId"
+        ),
+      };
+    },
+    [SERIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        seriesList: deleteOrderListItemBy(
           action,
           state.seriesList,
           "sonarrSeriesId"

@@ -1,3 +1,4 @@
+import { createAction } from "redux-actions";
 import {
   ActionCallback,
   ActionDispatcher,
@@ -120,4 +121,9 @@ export function createCallbackAction<T extends AsyncActionCreator>(
 ) {
   return (...args: Parameters<T>) =>
     callbackActionFactory(fn(args), success, error);
+}
+
+// Helper
+export function createDeleteAction(type: string): SocketIO.ActionFn {
+  return createAction(type, (id?: number[]) => id ?? []);
 }

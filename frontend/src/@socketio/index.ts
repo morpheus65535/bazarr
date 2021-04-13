@@ -33,7 +33,7 @@ class SocketIOClient {
   }
 
   initialize() {
-    this.reducers = createDefaultReducer();
+    this.reducers.push(...createDefaultReducer());
     this.socket.connect();
   }
 
