@@ -24,6 +24,7 @@ class SocketIOClient {
 
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect.bind(this));
+    this.socket.on("connect_error", this.onDisconnect.bind(this));
     this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
