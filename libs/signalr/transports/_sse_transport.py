@@ -1,6 +1,7 @@
 import json
 import sseclient
 from ._transport import Transport
+from requests.exceptions import ConnectionError
 
 
 class ServerSentEventsTransport(Transport):
@@ -16,9 +17,12 @@ class ServerSentEventsTransport(Transport):
         self._session.get(self._get_url('start'))
 
         def _receive():
-            for notification in self.__response:
-                if notification.data != 'initialized':
-                    self._handle_notification(notification.data)
+            try:
+                for notification in self.__response:
+                    if notification.data != 'initialized':
+                        self._handle_notification(notification.data)
+            except ConnectionError:
+                raise ConnectionError
 
         return _receive
 

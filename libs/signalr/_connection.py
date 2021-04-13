@@ -50,8 +50,12 @@ class Connection:
         listener = self.__transport.start()
 
         def wrapped_listener():
-            listener()
-            gevent.sleep()
+            try:
+                listener()
+                gevent.sleep()
+            except Exception as e:
+                gevent.kill(self.__greenlet)
+                self.started = False
 
         self.__greenlet = gevent.spawn(wrapped_listener)
         self.started = True

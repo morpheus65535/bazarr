@@ -3,6 +3,7 @@
 import logging
 
 import gevent
+import threading
 from requests import Session
 from signalr import Connection
 from requests.exceptions import ConnectionError
@@ -15,13 +16,14 @@ from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
 
 
-class SonarrSignalrClient:
+class SonarrSignalrClient(threading.Thread):
     def __init__(self):
+        super().__init__()
         self.apikey_sonarr = settings.sonarr.apikey
         self.session = Session()
         self.connection = None
 
-    def start(self):
+    def run(self):
         self.connection = Connection(url_sonarr() + "/signalr", self.session)
         self.connection.qs = {'apikey': self.apikey_sonarr}
         sonarr_hub = self.connection.register_hub('')  # Sonarr doesn't use named hub
@@ -35,7 +37,7 @@ class SonarrSignalrClient:
                 gevent.sleep(5)
             else:
                 try:
-                    logging.info('BAZARR connecting to Sonarr SignalR feed...')
+                    logging.debug('BAZARR connecting to Sonarr SignalR feed...')
                     self.connection.start()
                 except:
                     logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
@@ -44,14 +46,16 @@ class SonarrSignalrClient:
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                     scheduler.execute_job_now('update_series')
                     scheduler.execute_job_now('sync_episodes')
+                    gevent.sleep()
 
 
-class RadarrSignalrClient:
+class RadarrSignalrClient(threading.Thread):
     def __init__(self):
+        super().__init__()
         self.apikey_radarr = settings.radarr.apikey
         self.connection = None
 
-    def start(self):
+    def run(self):
         self.connection = HubConnectionBuilder() \
             .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
                       options={
@@ -67,16 +71,16 @@ class RadarrSignalrClient:
             if self.connection.transport.state.value == 4:
                 # 0: 'connecting', 1: 'connected', 2: 'reconnecting', 4: 'disconnected'
                 try:
-                    logging.info('BAZARR connecting to Radarr SignalR feed...')
+                    logging.debug('BAZARR connecting to Radarr SignalR feed...')
                     self.connection.start()
                 except ConnectionError:
                     logging.error('BAZARR connection to Radarr SignalR feed has been lost. Reconnecting...')
-                    gevent.sleep(5)
+                    gevent.sleep(15)
                     pass
                 else:
-                    logging.debug('BAZARR SignalR client for Radarr is connected and waiting for events.')
+                    logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
                     scheduler.execute_job_now('update_movies')
-                    gevent.sleep(15)
+                    gevent.sleep()
             else:
                 gevent.sleep(5)
 

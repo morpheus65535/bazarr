@@ -53,14 +53,18 @@ class SSEClient(object):
 
         # Use session if set.  Otherwise fall back to requests module.
         requester = self.session or requests
-        self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
-        self.resp_iterator = self.iter_content()
-        encoding = self.resp.encoding or self.resp.apparent_encoding
-        self.decoder = codecs.getincrementaldecoder(encoding)(errors='replace')
-
-        # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
-        # attribute on Events like the Javascript spec requires.
-        self.resp.raise_for_status()
+        try:
+            self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
+        except requests.exceptions.ConnectionError:
+            raise requests.exceptions.ConnectionError
+        else:
+            self.resp_iterator = self.iter_content()
+            encoding = self.resp.encoding or self.resp.apparent_encoding
+            self.decoder = codecs.getincrementaldecoder(encoding)(errors='replace')
+        finally:
+            # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
+            # attribute on Events like the Javascript spec requires.
+            self.resp.raise_for_status()
 
     def iter_content(self):
         def generate():
@@ -95,7 +99,7 @@ class SSEClient(object):
                 self.buf += self.decoder.decode(next_chunk)
 
             except (StopIteration, requests.RequestException, EOFError, six.moves.http_client.IncompleteRead) as e:
-                print(e)
+                # print(e)
                 time.sleep(self.retry / 1000.0)
                 self._connect()
 
