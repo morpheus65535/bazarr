@@ -19,6 +19,7 @@ class SocketIOClient {
       transports: ["polling", "websocket"],
       upgrade: true,
       rememberUpgrade: true,
+      autoConnect: false,
     });
 
     this.socket.on("connect", this.onConnect.bind(this));
@@ -32,6 +33,7 @@ class SocketIOClient {
 
   initialize() {
     this.reducers = createDefaultReducer();
+    this.socket.connect();
   }
 
   addReducer(reducer: SocketIO.Reducer) {
