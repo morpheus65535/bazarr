@@ -34,3 +34,8 @@ export function useIsRadarrEnabled() {
   const [settings] = useSystemSettings();
   return settings.data?.general.use_radarr ?? true;
 }
+
+export function useShowOnlyDesired() {
+  const [settings] = useSystemSettings();
+  return settings.data?.general.embedded_subs_show_desired ?? false;
+}
