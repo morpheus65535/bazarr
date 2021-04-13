@@ -297,12 +297,19 @@ export function useWantedSeries() {
   const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
+  const updateAction = useWrapToOptionalId(update);
+  useSocketIOReducer("episode-wanted", undefined, updateAction);
+
   return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
   const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
+
+  const updateAction = useWrapToOptionalId(update);
+  useSocketIOReducer("movie-wanted", undefined, updateAction);
+
   return stateBuilder(items, update);
 }
 
