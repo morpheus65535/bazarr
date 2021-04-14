@@ -36,27 +36,14 @@ def sync_episodes():
     # Get sonarrId for each series from database
     seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
     
-    for i, seriesId in enumerate(seriesIdList):
+    for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + \
-                                 "&apikey=" + apikey_sonarr
-        try:
-            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False, headers=headers)
-            r.raise_for_status()
-        except requests.exceptions.HTTPError:
-            logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
-            return
-        except requests.exceptions.ConnectionError:
-            logging.exception("BAZARR Error trying to get episodes from Sonarr. Connection Error.")
-            return
-        except requests.exceptions.Timeout:
-            logging.exception("BAZARR Error trying to get episodes from Sonarr. Timeout Error.")
-            return
-        except requests.exceptions.RequestException:
-            logging.exception("BAZARR Error trying to get episodes from Sonarr.")
+        episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
+                                                series_id=seriesId['sonarrSeriesId'])
+        if not episodes:
             return
         else:
-            for episode in r.json():
+            for episode in episodes:
                 if 'hasFile' in episode:
                     if episode['hasFile'] is True:
                         if 'episodeFile' in episode:
@@ -120,60 +107,53 @@ def sync_episodes():
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 
 
-def sync_one_episode(episode):
-    # Get some values before altering the episode dict
-    hasFile = False
-    if 'body' not in episode:
-        return
-    if 'resource' not in episode['body']:
-        return
-    if 'id' not in episode['body']['resource']:
-        return
-
-    episodeId = episode['body']['resource']['id']
-    logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episodeId))
-
-    if 'hasFile' in episode['body']['resource']:
-        hasFile = episode['body']['resource']['hasFile']
-
-    # Validate the provided episode
-    try:
-        episode = episodeParser(episode['body']['resource'])
-    except Exception:
-        logging.debug('BAZARR cannot parse episode returned by SignalR feed.')
-        return
+def sync_one_episode(episode_id):
+    logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
 
     # Check if there's a row in database for this episode ID
-    existing_episode = database.execute('SELECT path FROM table_episodes WHERE sonarrEpisodeId = ?', (episodeId,),
+    existing_episode = database.execute('SELECT path FROM table_episodes WHERE sonarrEpisodeId = ?', (episode_id,),
                                         only_one=True)
 
+    try:
+        # Get episode data from sonarr api
+        episode = None
+        episode_data = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
+                                                    episode_id=episode_id)
+        if not episode_data:
+            return
+        else:
+            episode = episodeParser(episode_data)
+    except Exception:
+        logging.debug('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
+        return
+
     # Drop useless events
-    if not hasFile and not existing_episode:
+    if not episode and not existing_episode:
         return
 
     # Remove episode from DB
-    if not hasFile and existing_episode:
-        database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
-        event_stream(type='episode', action='delete', id=episodeId)
+    if not episode and existing_episode:
+        database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episode_id,))
+        event_stream(type='episode', action='delete', id=int(episode_id))
         logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
             existing_episode['path'])))
         return
 
     # Update existing episodes in DB
-    elif hasFile and existing_episode:
+    elif episode and existing_episode:
         query = dict_converter.convert(episode)
         database.execute('''UPDATE table_episodes SET ''' + query.keys_update + ''' WHERE sonarrEpisodeId = ?''',
                          query.values + (episode['sonarrEpisodeId'],))
-        event_stream(type='episode', action='update', id=episodeId)
+        event_stream(type='episode', action='update', id=int(episode_id))
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
     # Insert new episodes in DB
-    elif hasFile and not existing_episode:
+    elif episode and not existing_episode:
         query = dict_converter.convert(episode)
         database.execute('''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='episode', action='insert', id=episodeId)
+        event_stream(type='episode', action='update', id=int(episode_id))
         logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
@@ -185,7 +165,7 @@ def sync_one_episode(episode):
     # Downloading missing subtitles
     logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
         episode['path'])))
-    episode_download_subtitles(episodeId)
+    episode_download_subtitles(episode_id)
 
 
 def SonarrFormatAudioCodec(audio_codec):
@@ -288,3 +268,30 @@ def episodeParser(episode):
                             'audio_codec': audioCodec,
                             'episode_file_id': episode['episodeFile']['id'],
                             'audio_language': str(audio_language)}
+
+
+def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
+    if series_id:
+        url_sonarr_api_episode = url + "/api/episode?seriesId={}&apikey=".format(series_id) + apikey_sonarr
+    elif episode_id:
+        url_sonarr_api_episode = url + "/api/episode/{}?apikey=".format(episode_id) + apikey_sonarr
+    else:
+        return
+
+    try:
+        r = requests.get(url_sonarr_api_episode, timeout=60, verify=False, headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get episodes from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get episodes from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get episodes from Sonarr.")
+        return
+    else:
+        return r.json()

@@ -57,9 +57,8 @@ def update_movies():
             movies_to_add = []
             altered_movies = []
 
-            moviesIdListLength = len(movies)
+            # Build new and updated movies
             for movie in movies:
-                # Skip movies that don't have
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if movie['movieFile']['size'] > 20480:
@@ -144,8 +143,17 @@ def update_movies():
 def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
-    # Check if there's a row in database for this series ID
+    # Check if there's a row in database for this movie ID
     existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
+
+    # Remove movie from DB
+    if action == 'deleted':
+        if existing_movie:
+            database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+            event_stream(type='movie', action='delete', id=int(movie_id))
+            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
+                existing_movie['path'])))
+        return
 
     radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
@@ -180,9 +188,6 @@ def update_one_movie(movie_id, action):
         logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return
 
-    # Check if there's a row in database for this movie ID
-    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
-
     # Drop useless events
     if not movie and not existing_movie:
         return
@@ -190,7 +195,7 @@ def update_one_movie(movie_id, action):
     # Remove movie from DB
     if not movie and existing_movie:
         database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
-        event_stream(type='movie', action='delete', id=movie_id)
+        event_stream(type='movie', action='delete', id=int(movie_id))
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
             existing_movie['path'])))
         return
@@ -200,7 +205,7 @@ def update_one_movie(movie_id, action):
         query = dict_converter.convert(movie)
         database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
                          query.values + (movie['radarrId'],))
-        event_stream(type='movie', action='update', id=movie_id)
+        event_stream(type='movie', action='update', id=int(movie_id))
         logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 
@@ -209,7 +214,7 @@ def update_one_movie(movie_id, action):
         query = dict_converter.convert(movie)
         database.execute('''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='movie', action='insert', id=movie_id)
+        event_stream(type='movie', action='update', id=int(movie_id))
         logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 

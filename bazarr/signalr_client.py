@@ -19,11 +19,20 @@ from scheduler import scheduler
 class SonarrSignalrClient(threading.Thread):
     def __init__(self):
         super().__init__()
-        self.apikey_sonarr = settings.sonarr.apikey
+        self._stopevent = threading.Event()
+        self.apikey_sonarr = None
         self.session = Session()
         self.connection = None
 
+    def join(self, timeout=None):
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
+
+    def stopped(self):
+        return self._stopevent.isSet()
+
     def run(self):
+        self.apikey_sonarr = settings.sonarr.apikey
         self.connection = Connection(url_sonarr() + "/signalr", self.session)
         self.connection.qs = {'apikey': self.apikey_sonarr}
         sonarr_hub = self.connection.register_hub('')  # Sonarr doesn't use named hub
@@ -33,13 +42,15 @@ class SonarrSignalrClient(threading.Thread):
             sonarr_hub.client.on(item, dispatcher)
 
         while True:
+            if self.stopped():
+                return
             if self.connection.started:
                 gevent.sleep(5)
             else:
                 try:
                     logging.debug('BAZARR connecting to Sonarr SignalR feed...')
                     self.connection.start()
-                except:
+                except ConnectionError:
                     logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
                     gevent.sleep(15)
                 else:
@@ -52,10 +63,19 @@ class SonarrSignalrClient(threading.Thread):
 class RadarrSignalrClient(threading.Thread):
     def __init__(self):
         super().__init__()
-        self.apikey_radarr = settings.radarr.apikey
+        self._stopevent = threading.Event()
+        self.apikey_radarr = None
         self.connection = None
 
+    def join(self, timeout=None):
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
+
+    def stopped(self):
+        return self._stopevent.isSet()
+
     def run(self):
+        self.apikey_radarr = settings.radarr.apikey
         self.connection = HubConnectionBuilder() \
             .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
                       options={
@@ -68,6 +88,8 @@ class RadarrSignalrClient(threading.Thread):
         self.connection.on("receiveMessage", dispatcher)
 
         while True:
+            if self.stopped():
+                return
             if self.connection.transport.state.value == 4:
                 # 0: 'connecting', 1: 'connected', 2: 'reconnecting', 4: 'disconnected'
                 try:
@@ -92,20 +114,20 @@ def dispatcher(data):
         try:
             media_id = data['body']['resource']['id']
             action = data['body']['action']
-        except:
+        except KeyError:
             return
     elif isinstance(data, list):
         topic = data[0]['name']
         try:
             media_id = data[0]['body']['resource']['id']
             action = data[0]['body']['action']
-        except:
+        except KeyError:
             return
 
     if topic == 'series':
-        update_one_series(data)
+        update_one_series(series_id=media_id, action=action)
     elif topic == 'episode':
-        sync_one_episode(data)
+        sync_one_episode(episode_id=media_id)
     elif topic == 'movie':
         update_one_movie(movie_id=media_id, action=action)
     else:
