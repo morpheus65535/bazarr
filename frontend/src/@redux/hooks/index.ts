@@ -2,13 +2,18 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
 import { buildOrderList } from "../../utilites";
 import {
+  episodeDeleteItems,
   episodeUpdateBy,
   episodeUpdateById,
+  movieDeleteItems,
+  movieDeleteWantedItems,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
   movieUpdateWantedList,
   providerUpdateList,
+  seriesDeleteItems,
+  seriesDeleteWantedItems,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
   seriesUpdateList,
@@ -150,9 +155,13 @@ export function useProfileItems(profile?: Profile.Languages) {
 }
 
 export function useRawSeries() {
-  const action = useReduxAction(seriesUpdateList);
+  const update = useReduxAction(seriesUpdateList);
   const items = useReduxStore((d) => d.series.seriesList);
-  return stateBuilder(items, action);
+
+  const deleteAction = useReduxAction(seriesDeleteItems);
+
+  useSocketIOReducer("series", undefined, update, deleteAction);
+  return stateBuilder(items, update);
 }
 
 export function useSeries(order = true) {
@@ -230,7 +239,9 @@ export function useEpisodesBy(seriesId?: number) {
 
   const actionById = useReduxAction(episodeUpdateById);
   const wrapActionById = useWrapToOptionalId(actionById);
-  useSocketIOReducer("episode", undefined, wrapActionById);
+  const deleteAction = useReduxAction(episodeDeleteItems);
+  useSocketIOReducer("episode", undefined, wrapActionById, deleteAction);
+
   const wrapAction = useWrapToOptionalId(action);
   useSocketIOReducer("series", undefined, wrapAction);
 
@@ -241,9 +252,13 @@ export function useEpisodesBy(seriesId?: number) {
 }
 
 export function useRawMovies() {
-  const action = useReduxAction(movieUpdateList);
+  const update = useReduxAction(movieUpdateList);
   const items = useReduxStore((d) => d.movie.movieList);
-  return stateBuilder(items, action);
+
+  const deleteAction = useReduxAction(movieDeleteItems);
+
+  useSocketIOReducer("movie", undefined, update, deleteAction);
+  return stateBuilder(items, update);
 }
 
 export function useMovies(order = true) {
@@ -297,12 +312,21 @@ export function useWantedSeries() {
   const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(seriesDeleteWantedItems);
+  useSocketIOReducer("episode-wanted", undefined, updateAction, deleteAction);
+
   return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
   const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
+
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(movieDeleteWantedItems);
+  useSocketIOReducer("movie-wanted", undefined, updateAction, deleteAction);
+
   return stateBuilder(items, update);
 }
 

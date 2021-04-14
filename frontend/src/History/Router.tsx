@@ -1,7 +1,11 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
 import { RouterEmptyPath } from "../404";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
+import {
+  useIsRadarrEnabled,
+  useIsSonarrEnabled,
+  useSetSidebar,
+} from "../@redux/hooks/site";
 import MoviesHistory from "./Movies";
 import SeriesHistory from "./Series";
 import HistoryStats from "./Statistics";
@@ -9,6 +13,8 @@ import HistoryStats from "./Statistics";
 const Router: FunctionComponent = () => {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
+
+  useSetSidebar("History");
   return (
     <Switch>
       {sonarr && (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import Socketio from ".";
+import { log } from "../utilites/logger";
 
 export function useSocketIOReducer(
   key: SocketIO.EventType,
@@ -13,10 +14,11 @@ export function useSocketIOReducer(
   );
   useEffect(() => {
     Socketio.addReducer(reducer);
+    log("info", "listening to SocketIO event", key);
     return () => {
       Socketio.removeReducer(reducer);
     };
-  }, [reducer]);
+  }, [reducer, key]);
 }
 
 export function useWrapToOptionalId(

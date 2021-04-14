@@ -10,6 +10,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useProfileItems } from "../../@redux/hooks";
+import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
@@ -21,7 +22,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey, useShowOnlyDesired } from "../../utilites";
+import { BuildKey } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {

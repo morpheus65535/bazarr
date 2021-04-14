@@ -16,11 +16,15 @@ class SocketIOClient {
     const baseUrl = getBaseUrl();
     this.socket = io({
       path: `${baseUrl}/api/socket.io`,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      rememberUpgrade: true,
+      autoConnect: false,
     });
 
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect.bind(this));
+    this.socket.on("connect_error", this.onDisconnect.bind(this));
     this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
@@ -29,7 +33,8 @@ class SocketIOClient {
   }
 
   initialize() {
-    this.reducers = createDefaultReducer();
+    this.reducers.push(...createDefaultReducer());
+    this.socket.connect();
   }
 
   addReducer(reducer: SocketIO.Reducer) {

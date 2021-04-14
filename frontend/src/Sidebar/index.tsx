@@ -1,13 +1,6 @@
-import React, {
-  FunctionComponent,
-  useContext,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { FunctionComponent, useContext, useMemo } from "react";
 import { Container, Image, ListGroup } from "react-bootstrap";
-import { useHistory } from "react-router-dom";
-import { siteChangeSidebar } from "../@redux/actions";
-import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import { useReduxStore } from "../@redux/hooks/base";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
@@ -21,14 +14,6 @@ import {
 import { RadarrDisabledKey, SidebarList, SonarrDisabledKey } from "./list";
 import "./style.scss";
 import { BadgeProvider } from "./types";
-
-export function useSidebarKey() {
-  return useReduxStore((s) => s.site.sidebar);
-}
-
-export function useUpdateSidebar() {
-  return useReduxAction(siteChangeSidebar);
-}
 
 interface Props {
   open?: boolean;
@@ -65,20 +50,6 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
     }
     return list;
   }, [sonarrEnabled, radarrEnabled]);
-
-  const history = useHistory();
-
-  const updateSidebar = useUpdateSidebar();
-
-  useEffect(() => {
-    const path = history.location.pathname.split("/");
-    const len = path.length;
-    if (len >= 3) {
-      updateSidebar(path[len - 2]);
-    } else {
-      updateSidebar(path[len - 1]);
-    }
-  }, [history.location.pathname, updateSidebar]);
 
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];

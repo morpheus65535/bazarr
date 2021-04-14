@@ -52,12 +52,12 @@ def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, langua
 
 def blacklist_delete(provider, subs_id):
     database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='episode-blacklist')
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def blacklist_delete_all():
     database.execute("DELETE FROM table_blacklist")
-    event_stream(type='episode-blacklist')
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
@@ -76,12 +76,12 @@ def blacklist_log_movie(radarr_id, provider, subs_id, language):
 
 def blacklist_delete_movie(provider, subs_id):
     database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='movie-blacklist')
+    event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
     database.execute("DELETE FROM table_blacklist_movie")
-    event_stream(type='movie-blacklist')
+    event_stream(type='movie-blacklist', action='delete')
 
 
 @region.cache_on_arguments()

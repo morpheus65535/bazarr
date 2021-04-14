@@ -4,7 +4,7 @@ const target = "http://localhost:6767";
 
 module.exports = function (app) {
   app.use(
-    proxy("/api", {
+    proxy(["/api", "/images", "/test", "/bazarr.log"], {
       target,
     })
   );
@@ -12,21 +12,7 @@ module.exports = function (app) {
     proxy("/api/socket.io", {
       target,
       ws: true,
-    })
-  );
-  app.use(
-    proxy("/images", {
-      target,
-    })
-  );
-  app.use(
-    proxy("/test", {
-      target,
-    })
-  );
-  app.use(
-    proxy("/bazarr.log", {
-      target,
+      logLevel: "error",
     })
   );
 };
