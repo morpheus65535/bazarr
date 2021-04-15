@@ -121,7 +121,9 @@ def apply_update():
             logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
             try:
                 with ZipFile(bazarr_zip, 'r') as archive:
-                    zip_root_directory = archive.namelist()[0]
+                    zip_root_directory = ''
+                    if len({item.split('/')[0] for item in archive.namelist()}) == 1:
+                        zip_root_directory = archive.namelist()[0]
 
                     if os.path.isdir(build_dir):
                         try:
