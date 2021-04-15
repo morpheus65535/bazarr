@@ -17,7 +17,7 @@ At the request of some, here is a way to demonstrate your appreciation for the e
 [![Discord](https://img.shields.io/badge/discord-chat-MH2e2eb.svg?style=flat-square)](https://discord.gg/MH2e2eb)
 
 # Support
-For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
+For installation and configuration instructions, see [wiki](https://wiki.bazarr.media).
 
 You can reach us for support on [Discord](https://discord.gg/MH2e2eb).
 
