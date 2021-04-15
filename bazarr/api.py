@@ -377,14 +377,13 @@ class LanguagesProfiles(Resource):
 class Notifications(Resource):
     @authenticate
     def patch(self):
-        protocol = request.form.get("protocol")
-        path = request.form.get("path")
+        url = request.form.get("url")
 
         asset = apprise.AppriseAsset(async_mode=False)
 
         apobj = apprise.Apprise(asset=asset)
 
-        apobj.add(f"{protocol}://{path}")
+        apobj.add(url)
 
         apobj.notify(
             title='Bazarr test notification',
