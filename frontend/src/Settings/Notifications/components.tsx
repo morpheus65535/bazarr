@@ -84,7 +84,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           variant="outline-secondary"
           promise={() => {
             if (current && current.url) {
-              return SystemApi.testNotification(current.name, current.url);
+              return SystemApi.testNotification(current.url);
             } else {
               return null;
             }
