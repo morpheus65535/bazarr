@@ -87,8 +87,8 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-        'series_sync': '1',
-        'episodes_sync': '5',
+        'series_sync': '60',
+        'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]'
     },
@@ -102,7 +102,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '5',
         'only_monitored': 'False',
-        'movies_sync': '5',
+        'movies_sync': '60',
         'excluded_tags': '[]'
     },
     'proxy': {
@@ -206,6 +206,18 @@ array_keys = ['excluded_tags',
 str_keys = ['chmod']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
+
+# Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
+if int(settings.sonarr.series_sync) < 15:
+    settings.sonarr.series_sync = "60"
+if int(settings.sonarr.episodes_sync) < 15:
+    settings.sonarr.episodes_sync = "60"
+if int(settings.radarr.movies_sync) < 15:
+    settings.radarr.movies_sync = "60"
+
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+    settings.write(handle)
+
 
 def get_settings():
     result = dict()
