@@ -1,4 +1,4 @@
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
@@ -90,6 +90,27 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
             </OverlayTrigger>
           );
+        },
+      },
+      {
+        accessor: "upgradable",
+        Cell: (row) => {
+          const overlay = (
+            <Popover id={`description-${row.row.id}`}>
+              <Popover.Content>
+                This Subtitles File Is Eligible For An Upgrade.
+              </Popover.Content>
+            </Popover>
+          );
+          if (row.value) {
+            return (
+              <OverlayTrigger overlay={overlay}>
+                <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
+              </OverlayTrigger>
+            );
+          } else {
+            return null;
+          }
         },
       },
       {

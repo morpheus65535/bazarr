@@ -10,7 +10,7 @@ chardet=3.0.4
 dogpile.cache=0.6.5
 engineio=4.0.2dev
 enzyme=0.4.1
-ffsubsync=2020-08-04
+ffsubsync=0.4.11
 Flask=1.1.1
 flask-socketio=5.0.2dev
 gitpython=2.1.9
@@ -40,3 +40,13 @@ tzlocal=2.1b1
 twine=3.4.1
 urllib3=1.23
 websocket-client=0.54.0
+
+## indirect dependencies
+auditok=0.2.0  # Required-by: ffsubsync
+rich=10.1.0    # Required-by: ffsubsync
+srt=3.4.1      # Required-by: ffsubsync
+
+Pygments=2.8.1            # Required-by: rich
+commonmark=0.9.1          # Required-by: rich
+typing-extensions=3.7.4.3 # Required-by: rich
+colorama=0.4.4            # Required-by: rich

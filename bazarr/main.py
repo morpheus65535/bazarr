@@ -60,6 +60,9 @@ login_auth = settings.auth.type
 
 update_notifier()
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(base_url, code=302)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
