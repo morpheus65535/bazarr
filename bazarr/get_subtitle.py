@@ -1227,7 +1227,7 @@ def upgrade_subtitles():
                          datetime(1970, 1, 1)).total_seconds()
 
     if settings.general.getboolean('upgrade_manual'):
-        query_actions = [1, 2, 3, 6]
+        query_actions = [1, 2, 3, 4, 6]
     else:
         query_actions = [1, 3]
 
@@ -1235,7 +1235,7 @@ def upgrade_subtitles():
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
                                                "table_history.score, table_shows.tags, table_shows.profileId, "
                                                "table_episodes.audio_language, table_episodes.scene_name, "
-                                               "table_episodes.title, table_episodes.sonarrSeriesId, "
+                                               "table_episodes.title, table_episodes.sonarrSeriesId, table_history.action, "
                                                "table_history.subtitles_path, table_episodes.sonarrEpisodeId, "
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
                                                "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
@@ -1254,7 +1254,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_episode['score']) < 360:
+                    if int(upgradable_episode['score']) < 360 or (settings.general.getboolean('upgrade_manual') and
+                                                                  upgradable_episode['action'] in [2, 4, 6]):
                         upgradable_episodes_not_perfect.append(upgradable_episode)
 
         episodes_to_upgrade = []
@@ -1266,7 +1267,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.profileId, "
+                                             "table_history_movie.score, table_movies.profileId, table_history_movie.action, "
                                              "table_history_movie.subtitles_path, table_movies.audio_language, "
                                              "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
                                              "MAX(table_history_movie.timestamp) as timestamp, table_movies.tags, "
@@ -1284,7 +1285,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_movie['score']) < 120:
+                    if int(upgradable_movie['score']) < 120 or (settings.general.getboolean('upgrade_manual') and
+                                                                upgradable_movie['action'] in [2, 4, 6]):
                         upgradable_movies_not_perfect.append(upgradable_movie)
 
         movies_to_upgrade = []

@@ -22,7 +22,7 @@ RGX_TIMESTAMP = RGX_TIMESTAMP_MAGNITUDE_DELIM.join([RGX_TIMESTAMP_FIELD] * 4)
 RGX_TIMESTAMP_PARSEABLE = r"^{}$".format(
     RGX_TIMESTAMP_MAGNITUDE_DELIM.join(["(" + RGX_TIMESTAMP_FIELD + ")"] * 4)
 )
-RGX_INDEX = r"-?[0-9]+"
+RGX_INDEX = r"-?[0-9]+\.?[0-9]*"
 RGX_PROPRIETARY = r"[^\r\n]*"
 RGX_CONTENT = r".*?"
 RGX_POSSIBLE_CRLF = r"\r?\n"
@@ -30,7 +30,7 @@ RGX_POSSIBLE_CRLF = r"\r?\n"
 TS_REGEX = re.compile(RGX_TIMESTAMP_PARSEABLE)
 MULTI_WS_REGEX = re.compile(r"\n\n+")
 SRT_REGEX = re.compile(
-    r"\s*({idx})\s*{eof}({ts}) *-[ -]> *({ts}) ?({proprietary}){eof}({content})"
+    r"\s*({idx})\s*{eof}({ts}) *-[ -] *> *({ts}) ?({proprietary})(?:{eof}|\Z)({content})"
     # Many sub editors don't add a blank line to the end, and many editors and
     # players accept that. We allow it to be missing in input.
     #
@@ -90,9 +90,9 @@ class Subtitle(object):
     :type end: :py:class:`datetime.timedelta`
     :param str proprietary: Proprietary metadata for this subtitle
     :param str content: The subtitle content. Should not contain OS-specific
-                        line separators, only \n. This is taken care of already
-                        if you use :py:func:`srt.parse` to generate Subtitle
-                        objects.
+                        line separators, only \\n. This is taken care of
+                        already if you use :py:func:`srt.parse` to generate
+                        Subtitle objects.
     """
 
     # pylint: disable=R0913
@@ -300,7 +300,7 @@ def _should_skip_sub(subtitle):
             raise _ShouldSkipException(info_msg)
 
 
-def parse(srt):
+def parse(srt, ignore_errors=False):
     r'''
     Convert an SRT formatted string (in Python 2, a :class:`unicode` object) to
     a :term:`generator` of Subtitle objects.
@@ -326,9 +326,15 @@ def parse(srt):
 
     :param srt: Subtitles in SRT format
     :type srt: str or a file-like object
+    :param ignore_errors: If True, garbled SRT data will be ignored, and we'll
+                          continue trying to parse the rest of the file,
+                          instead of raising :py:class:`SRTParseError` and
+                          stopping execution.
     :returns: The subtitles contained in the SRT file as :py:class:`Subtitle`
               objects
     :rtype: :term:`generator` of :py:class:`Subtitle` objects
+    :raises SRTParseError: If the matches are not contiguous and
+                           ``ignore_errors`` is False.
     '''
 
     expected_start = 0
@@ -340,8 +346,7 @@ def parse(srt):
 
     for match in SRT_REGEX.finditer(srt):
         actual_start = match.start()
-        _raise_if_not_contiguous(srt, expected_start, actual_start)
-
+        _check_contiguity(srt, expected_start, actual_start, ignore_errors)
         raw_index, raw_start, raw_end, proprietary, content = match.groups()
 
         # pytype sees that this is Optional[str] and thus complains that they
@@ -349,8 +354,17 @@ def parse(srt):
         # finditer and all match groups are mandatory in the regex.
         content = content.replace("\r\n", "\n")  # pytype: disable=attribute-error
 
+        try:
+            raw_index = int(raw_index)
+        except ValueError:
+            # Index 123.4. Handled separately, since it's a rare case and we
+            # don't want to affect general performance.
+            #
+            # The pytype disable is for the same reason as content, above.
+            raw_index = int(raw_index.split(".")[0])  # pytype: disable=attribute-error
+
         yield Subtitle(
-            index=int(raw_index),
+            index=raw_index,
             start=srt_timestamp_to_timedelta(raw_start),
             end=srt_timestamp_to_timedelta(raw_end),
             content=content,
@@ -359,20 +373,22 @@ def parse(srt):
 
         expected_start = match.end()
 
-    _raise_if_not_contiguous(srt, expected_start, len(srt))
+    _check_contiguity(srt, expected_start, len(srt), ignore_errors)
 
 
-def _raise_if_not_contiguous(srt, expected_start, actual_start):
+def _check_contiguity(srt, expected_start, actual_start, warn_only):
     """
-    Raise :py:class:`SRTParseError` with diagnostic info if expected_start does
-    not equal actual_start.
+    If ``warn_only`` is False, raise :py:class:`SRTParseError` with diagnostic
+    info if expected_start does not equal actual_start. Otherwise, log a
+    warning.
 
     :param str srt: The data being matched
     :param int expected_start: The expected next start, as from the last
                                iteration's match.end()
     :param int actual_start: The actual start, as from this iteration's
                              match.start()
-    :raises SRTParseError: If the matches are not contiguous
+    :raises SRTParseError: If the matches are not contiguous and ``warn_only``
+                           is False
     """
     if expected_start != actual_start:
         unmatched_content = srt[expected_start:actual_start]
@@ -384,7 +400,10 @@ def _raise_if_not_contiguous(srt, expected_start, actual_start):
             # intermediate subtitle
             return
 
-        raise SRTParseError(expected_start, actual_start, unmatched_content)
+        if warn_only:
+            LOG.warning("Skipped unparseable SRT data: %r", unmatched_content)
+        else:
+            raise SRTParseError(expected_start, actual_start, unmatched_content)
 
 
 def compose(
