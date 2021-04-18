@@ -9,10 +9,20 @@ bazarr.pid
 /venv
 /data
 /bin
-static/scss/.sass-cache/*
-static/scss/.sass-cache
-*.scssc
 /.vscode
+
+# CI
+/__builds__
+/package.json
+/package-lock.json
 
 # Allow
 !*.dll
+
+# Frontend
+node_modules
+frontend/dist
+frontend/*.local
+frontend/.eslintcache
+frontend/.idea/*
+frontend/**/*.map

@@ -85,10 +85,39 @@ if not settings.general.flask_secret_key:
         settings.write(handle)
 
 # change default base_url to ''
-if settings.general.base_url == '/':
-    settings.general.base_url = ''
+settings.general.base_url = settings.general.base_url.rstrip('/')
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+    settings.write(handle)
+
+# migrate enabled_providers from comma separated string to list
+if isinstance(settings.general.enabled_providers, str) and not settings.general.enabled_providers.startswith('['):
+    settings.general.enabled_providers = str(settings.general.enabled_providers.split(","))
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
+
+# make sure settings.general.branch is properly set when running inside a docker container
+package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
+if os.path.isfile(package_info_file):
+    try:
+        splitted_lines = []
+        package_info = {}
+        with open(package_info_file) as file:
+            lines = file.readlines()
+            for line in lines:
+                splitted_lines += line.split(r'\n')
+            for line in splitted_lines:
+                splitted_line = line.split('=')
+                if len(splitted_line) == 2:
+                    package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
+                else:
+                    continue
+        if 'branch' in package_info:
+            settings.general.branch = package_info['branch']
+    except:
+        pass
+    else:
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
 
 # create database file
 if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):

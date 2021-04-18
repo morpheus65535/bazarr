@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import requests
 import logging
 from database import database, dict_converter, get_exclusion_clause
@@ -9,6 +10,8 @@ from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream
+
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 def update_all_episodes():
@@ -37,7 +40,7 @@ def sync_episodes():
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
+            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False, headers=headers)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")

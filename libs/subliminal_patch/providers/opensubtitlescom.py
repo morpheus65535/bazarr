@@ -24,6 +24,7 @@ from guessit import guessit
 logger = logging.getLogger(__name__)
 
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
+TOKEN_EXPIRATION_TIME = datetime.timedelta(hours=12).total_seconds()
 
 
 def fix_tv_naming(title):
@@ -143,22 +144,19 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.use_hash = use_hash
 
     def initialize(self):
+        self.login()
         self.token = region.get("oscom_token")
-        if self.token:
-            self.session.headers.update({'Authorization': 'Beaker ' + self.token})
-            return True
-        else:
-            self.login()
 
     def terminate(self):
         self.session.close()
 
+    @region.cache_on_arguments(expiration_time=TOKEN_EXPIRATION_TIME)
     def login(self):
         try:
             r = self.session.post(self.server_url + 'login',
                                   json={"username": self.username, "password": self.password},
                                   allow_redirects=False,
-                                  timeout=10)
+                                  timeout=30)
         except (ConnectionError, Timeout, ReadTimeout):
             raise ServiceUnavailable('Unknown Error, empty response: %s: %r' % (r.status_code, r))
         else:
@@ -168,7 +166,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 except ValueError:
                     raise ProviderError('Invalid JSON returned by provider')
                 else:
-                    self.session.headers.update({'Authorization': 'Beaker ' + self.token})
                     region.set("oscom_token", self.token)
                     return True
             elif r.status_code == 401:
@@ -197,16 +194,14 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             parameters = {'query': title}
             logging.debug('Searching using this title: {}'.format(title))
 
-        results = self.session.get(self.server_url + 'features', params=parameters, timeout=10)
-        results.raise_for_status()
+        results = self.session.get(self.server_url + 'features', params=parameters, timeout=30)
 
         if results.status_code == 401:
             logging.debug('Authentification failed: clearing cache and attempting to login.')
             region.delete("oscom_token")
             self.login()
 
-            results = self.session.get(self.server_url + 'features', params=parameters, timeout=10)
-            results.raise_for_status()
+            results = self.session.get(self.server_url + 'features', params=parameters, timeout=30)
 
             if results.status_code == 429:
                 raise TooManyRequests()
@@ -261,14 +256,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                            'episode_number': self.video.episode,
                                            'season_number': self.video.season,
                                            'moviehash': hash},
-                                   timeout=10)
+                                   timeout=30)
         else:
             res = self.session.get(self.server_url + 'subtitles',
                                    params={'id': title_id,
                                            'languages': langs,
                                            'moviehash': hash},
-                                   timeout=10)
-        res.raise_for_status()
+                                   timeout=30)
 
         if res.status_code == 429:
             raise TooManyRequests()
@@ -324,13 +318,12 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle)
 
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
+                   'Authorization': 'Beaker ' + self.token}
         res = self.session.post(self.server_url + 'download',
                                 json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
                                 headers=headers,
-                                timeout=10)
-        res.raise_for_status()
-
+                                timeout=30)
         if res.status_code == 429:
             raise TooManyRequests()
         elif res.status_code == 406:
@@ -341,8 +334,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             except ValueError:
                 raise ProviderError('Invalid JSON returned by provider')
             else:
-                r = self.session.get(subtitle.download_link, timeout=10)
-                r.raise_for_status()
+                r = self.session.get(subtitle.download_link, timeout=30)
 
                 if res.status_code == 429:
                     raise TooManyRequests()

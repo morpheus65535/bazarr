@@ -18,10 +18,9 @@ class SubtitulamosTVSubtitle(Subtitle):
     provider_name = 'subtitulamostv'
     hash_verifiable = False
 
-    def __init__(self, language, page_link, download_link, title, release_info):
+    def __init__(self, language, page_link, download_link, release_info):
         super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False, page_link=page_link)
         self.download_link = download_link
-        self.title = title
         self.release_info = release_info
 
     @property
@@ -29,13 +28,9 @@ class SubtitulamosTVSubtitle(Subtitle):
         return self.download_link
 
     def get_matches(self, video):
-        matches = {'series', 'season', 'episode', 'year'}
+        matches = {'series', 'season', 'episode', 'year', 'title'}
 
-        title_lower = self.title.lower()
         release_info_lower = self.release_info.lower()
-
-        if video.title and video.title.lower() in title_lower:
-            matches.add('title')
 
         if video.release_group and video.release_group.lower() in release_info_lower:
             matches.add('release_group')
@@ -75,7 +70,7 @@ class SubtitulamosTVProvider(Provider):
     languages = {Language.fromietf(lang) for lang in ['en', 'es']}
     video_types = (Episode,)
 
-    server_url = 'https://subtitulamos.tv'
+    server_url = 'https://www.subtitulamos.tv'
 
     def __init__(self):
         self.session = None
@@ -99,45 +94,67 @@ class SubtitulamosTVProvider(Provider):
         subtitles = []
         for serie in result:
             # skip non-matching series
-            if video.series.lower() != serie['name'].lower():
+            if video.series.lower() != serie['show_name'].lower():
                 continue
 
-            response = self.session.get(self.server_url + "/shows/%d/season/%d" % (serie['id'], video.season),
-                                        timeout=10)
+            # season page
+            response = self.session.get(self.server_url + "/shows/%d" % serie['show_id'], timeout=10)
             response.raise_for_status()
             soup = ParserBeautifulSoup(response.text, ['lxml', 'html.parser'])
+            season_found = False
+            for season in soup.select('#season-choices a'):
+                if season.text.strip() == str(video.season):
+                    season_found = True
+                    if "selected" not in season.attrs['class']:
+                        # go to the right season page
+                        response = self.session.get(self.server_url + season['href'], timeout=10)
+                        response.raise_for_status()
+                        soup = ParserBeautifulSoup(response.text, ['lxml', 'html.parser'])
+                        break
+            if not season_found:
+                continue
 
-            for episode in soup.select('div.episode'):
-                episode_soup = episode.find('a')
-                episode_name = episode_soup.text
-                episode_url = episode_soup['href']
+            # episode page
+            episode_found = False
+            for episode in soup.select('#episode-choices a'):
+                if episode.text.strip() == str(video.episode):
+                    episode_found = True
+                    if "selected" not in episode.attrs['class']:
+                        # go to the right episode page
+                        response = self.session.get(self.server_url + episode['href'], timeout=10)
+                        response.raise_for_status()
+                        soup = ParserBeautifulSoup(response.text, ['lxml', 'html.parser'])
+                        break
+            if not episode_found:
+                continue
+            episode_url = response.url
 
-                # skip non-matching episodes
-                if subtitle_name.lower() not in episode_name.lower():
-                    continue
+            # subtitles
+            for lang in soup.select("div.language-container"):
+                lang_name = lang.select("div.language-name")[0].text
+                if "English" in lang_name:
+                    language = "en"
+                elif "Español" in lang_name:
+                    language = "es"
+                else:
+                    continue  # not supported yet
+                logger.debug('Found subtitles in "%s" language.', language)
 
-                for lang in episode.select("div.subtitle-language"):
-                    if "English" in lang.text:
-                        language = "en"
-                    elif "Español" in lang.text:
-                        language = "es"
-                    else:
-                        continue  # not supported yet
-                    logger.debug('Found subtitles in "%s" language.', language)
+                for release in lang.select("div.version-container"):
+                    if len(release.select('a[href*="/download"]')) != 1:
+                        continue  # incomplete translation, download link is not available
 
-                    for release in lang.find_next_sibling("div").select("div.sub"):
-                        release_name = release.select('div.version-name')[0].text
-                        release_url = release.select('a[href*="/download"]')[0]['href']
+                    release_name = release.select('div.version-container p')[1].text
+                    release_url = self.server_url + release.select('a[href*="/download"]')[0]['href']
 
-                        subtitles.append(
-                            SubtitulamosTVSubtitle(
-                                Language.fromietf(language),
-                                self.server_url + episode_url,
-                                self.server_url + release_url,
-                                episode_name,
-                                release_name
-                            )
+                    subtitles.append(
+                        SubtitulamosTVSubtitle(
+                            Language.fromietf(language),
+                            episode_url,
+                            release_url,
+                            release_name
                         )
+                    )
 
         return subtitles
 

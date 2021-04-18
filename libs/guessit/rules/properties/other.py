@@ -86,7 +86,7 @@ def other(config):  # pylint:disable=unused-argument,too-many-statements
     rebulk.regex('(HD)(?P<another>Rip)', value={'other': 'HD', 'another': 'Rip'},
                  private_parent=True, children=True, validator={'__parent__': seps_surround}, validate_all=True)
 
-    for value in ('Screener', 'Remux', 'PAL', 'SECAM', 'NTSC', 'XXX'):
+    for value in ('Screener', 'Remux', 'Hybrid', 'PAL', 'SECAM', 'NTSC', 'XXX'):
         rebulk.string(value, value=value)
     rebulk.string('3D', value='3D', tags='has-neighbor')
 

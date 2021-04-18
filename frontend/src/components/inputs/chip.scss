@@ -1,0 +1,43 @@
+.custom-chip-input {
+  overflow: hidden;
+  &:focus-within {
+    border-color: var(--primary);
+  }
+  .main-input {
+    border: hidden;
+    outline: none;
+    width: 100%;
+    flex-grow: 2;
+  }
+
+  .chip-container {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-grow: 1;
+  }
+
+  .custom-chip {
+    padding: 0 0.5rem;
+    margin-right: 0.25rem;
+    background-color: var(--light);
+    border-radius: 0.25rem;
+
+    max-width: 10rem;
+
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+
+    transition: {
+      duration: 0.1s;
+      timing-function: ease-in-out;
+    }
+
+    &.active {
+      &:hover {
+        cursor: pointer;
+        background-color: var(--danger);
+        color: white;
+      }
+    }
+  }
+}

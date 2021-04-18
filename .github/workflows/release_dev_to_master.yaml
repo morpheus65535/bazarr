@@ -1,0 +1,62 @@
+name: release_dev_to_master
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: "Increment Type (major, minor, patch)"
+        required: true
+        default: "patch"
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      UI_DIRECTORY: ./frontend
+      ASSET_DIRECTORY: ./__builds__
+    steps:
+      - name: Validate branch
+        if: ${{ github.ref != 'refs/heads/development' }}
+        run: |
+          echo This action can only be run on development branch, not ${{ github.ref }}
+          exit 1
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Setup Git
+        run: git config --global user.name "github-actions"
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "15.x"
+
+      - name: Install Global Tools
+        run: npm install -g release-it @release-it/bumper auto-changelog
+
+      - name: Save UI to Asset
+        run: |
+          mkdir -p ../.${{ env.ASSET_DIRECTORY }} &&
+          zip -r ../.${{ env.ASSET_DIRECTORY }}/ui.zip ./ -x '*.map' -b $(mktemp -d)
+        working-directory: ${{ env.UI_DIRECTORY }}/build
+
+      - name: Create Release
+        run: release-it --ci --increment ${{ github.event.inputs.increment }}
+  Merge:
+    needs: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Merge development -> master
+        uses: devmasx/merge-branch@v1.3.1
+        with:
+          type: now
+          from_branch: development
+          target_branch: master
+          github_token: ${{ secrets.GITHUB_TOKEN }}

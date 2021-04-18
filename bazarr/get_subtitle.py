@@ -22,7 +22,7 @@ from subliminal_patch.score import compute_score
 from subliminal_patch.subtitle import Subtitle
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
     alpha2_from_language, alpha3_from_language
-from config import settings
+from config import settings, get_array_from
 from helper import path_mappings, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, get_binary, get_blacklist, notify_sonarr, notify_radarr
@@ -115,10 +115,6 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         hi = "force HI"
     else:
         hi = "force non-HI"
-    language_set = set()
-
-    if not isinstance(language, list):
-        language = [language]
 
     if forced == "True":
         providers_auth['podnapisi']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
@@ -129,7 +125,15 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         providers_auth['subscene']['only_foreign'] = False
         providers_auth['opensubtitles']['only_foreign'] = False
 
+    language_set = set()
+
+    if not isinstance(language, list):
+        language = [language]
+
     for l in language:
+        # Always use alpha2 in API Request
+        l = alpha3_from_alpha2(l)
+
         if l == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
@@ -190,7 +194,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.info("BAZARR All providers are throttled")
             return None
 
-        subz_mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.items():
@@ -323,12 +327,15 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_set = set()
 
     # where [3] is items list of dict(id, lang, forced, hi)
-    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
+    language_items = get_profiles_list(profile_id=int(profileId))['items']
 
     for language in language_items:
-        lang_id, lang, forced, hi, audio_exclude = language.values()
+        forced = language['forced']
+        hi = language['hi']
+        audio_exclude = language['audio_exclude']
+        language = language['language']
 
-        lang = alpha3_from_alpha2(lang)
+        lang = alpha3_from_alpha2(language)
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
@@ -433,9 +440,6 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 if not initial_hi_match:
                     initial_hi = None
 
-                if initial_hi_match:
-                    matches.add('hearing_impaired')
-
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 if 'hash' not in matches:
                     not_matched = scores - matches
@@ -455,23 +459,25 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                             if s_item.strip():
                                 releases.append(s_item)
 
-                if len(releases) == 0:
-                    releases = ['n/a']
-
                 if s.uploader and s.uploader.strip():
                     s_uploader = s.uploader.strip()
                 else:
-                    s_uploader = 'n/a'
+                    s_uploader = None
 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
-                         score_without_hash=score_without_hash, forced=str(s.language.forced),
-                         language=str(s.language.basename), hearing_impaired=str(s.hearing_impaired),
+                         score_without_hash=score_without_hash,
+                         forced=str(s.language.forced),
+                         language=str(s.language.basename),
+                         hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
-                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
-                         release_info=releases, uploader=s_uploader))
+                         url=s.page_link,
+                         matches=list(matches),
+                         dont_matches=list(not_matched),
+                         release_info=releases,
+                         uploader=s_uploader))
 
             final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
                                      reverse=True)
@@ -493,7 +499,15 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
-    subtitle.mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+    if hi == 'True':
+        subtitle.language.hi = True
+    else:
+        subtitle.language.hi = False
+    if forced == 'True':
+        subtitle.language.forced = True
+    else:
+        subtitle.language.forced = False
+    subtitle.mods = get_array_from(settings.general.subzero_mods)
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
@@ -654,7 +668,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     sub = Subtitle(
         lang_obj,
-        mods=settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+        mods = get_array_from(settings.general.subzero_mods)
     )
 
     sub.content = subtitle.read()
@@ -754,7 +768,7 @@ def series_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -811,7 +825,7 @@ def episode_download_subtitles(no):
                         audio_language = 'None'
 
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               language.split(':')[0],
                                                audio_language,
                                                "True" if language.endswith(':hi') else "False",
                                                "True" if language.endswith(':forced') else "False",
@@ -871,7 +885,7 @@ def movies_download_subtitles(no):
                     audio_language = 'None'
 
                 result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                           str(alpha3_from_alpha2(language.split(':')[0])),
+                                           language.split(':')[0],
                                            audio_language,
                                            "True" if language.endswith(':hi') else "False",
                                            "True" if language.endswith(':forced') else "False",
@@ -941,7 +955,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1009,7 +1023,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             audio_language = 'None'
 
                         result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   language.split(':')[0],
                                                    audio_language,
                                                    "True" if language.endswith(':hi') else "False",
                                                    "True" if language.endswith(':forced') else "False",
@@ -1210,7 +1224,7 @@ def upgrade_subtitles():
                          datetime(1970, 1, 1)).total_seconds()
 
     if settings.general.getboolean('upgrade_manual'):
-        query_actions = [1, 2, 3, 6]
+        query_actions = [1, 2, 3, 4, 6]
     else:
         query_actions = [1, 3]
 
@@ -1218,7 +1232,7 @@ def upgrade_subtitles():
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
                                                "table_history.score, table_shows.tags, table_shows.profileId, "
                                                "table_episodes.audio_language, table_episodes.scene_name, "
-                                               "table_episodes.title, table_episodes.sonarrSeriesId, "
+                                               "table_episodes.title, table_episodes.sonarrSeriesId, table_history.action, "
                                                "table_history.subtitles_path, table_episodes.sonarrEpisodeId, "
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
                                                "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
@@ -1237,7 +1251,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_episode['score']) < 360:
+                    if int(upgradable_episode['score']) < 360 or (settings.general.getboolean('upgrade_manual') and
+                                                                  upgradable_episode['action'] in [2, 4, 6]):
                         upgradable_episodes_not_perfect.append(upgradable_episode)
 
         episodes_to_upgrade = []
@@ -1249,7 +1264,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.profileId, "
+                                             "table_history_movie.score, table_movies.profileId, table_history_movie.action, "
                                              "table_history_movie.subtitles_path, table_movies.audio_language, "
                                              "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
                                              "MAX(table_history_movie.timestamp) as timestamp, table_movies.tags, "
@@ -1267,7 +1282,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_movie['score']) < 120:
+                    if int(upgradable_movie['score']) < 120 or (settings.general.getboolean('upgrade_manual') and
+                                                                upgradable_movie['action'] in [2, 4, 6]):
                         upgradable_movies_not_perfect.append(upgradable_movie)
 
         movies_to_upgrade = []
@@ -1306,7 +1322,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace(episode['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,
@@ -1365,7 +1381,7 @@ def upgrade_subtitles():
                 audio_language = 'None'
 
             result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
-                                       str(alpha3_from_alpha2(language)),
+                                       language,
                                        audio_language,
                                        is_hi,
                                        is_forced,
@@ -1416,6 +1432,9 @@ def postprocessing(command, path):
         if out == "":
             logging.info(
                 'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+        elif err:
+            logging.error(
+                'BAZARR Post-processing result for file ' + path + ' : ' + err.replace('\n', ' ').replace('\r', ' '))
         else:
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 

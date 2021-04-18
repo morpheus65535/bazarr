@@ -396,7 +396,7 @@ class SubtitlePrefixLanguageRule(Rule):
 
     def then(self, matches, when_response, context):
         to_rename, to_remove = when_response
-        super(SubtitlePrefixLanguageRule, self).then(matches, to_remove, context)
+        super().then(matches, to_remove, context)
         for prefix, match in to_rename:
             # Remove suffix equivalent of  prefix.
             suffix = copy.copy(prefix)
@@ -435,7 +435,7 @@ class SubtitleSuffixLanguageRule(Rule):
 
     def then(self, matches, when_response, context):
         to_rename, to_remove = when_response
-        super(SubtitleSuffixLanguageRule, self).then(matches, to_remove, context)
+        super().then(matches, to_remove, context)
         for match in to_rename:
             matches.remove(match)
             match.name = 'subtitle_language'
@@ -488,7 +488,7 @@ class RemoveInvalidLanguages(Rule):
 
     def __init__(self, common_words):
         """Constructor."""
-        super(RemoveInvalidLanguages, self).__init__()
+        super().__init__()
         self.common_words = common_words
 
     def when(self, matches, context):

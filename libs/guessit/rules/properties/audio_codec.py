@@ -130,7 +130,7 @@ class AudioProfileRule(Rule):
     consequence = RemoveMatch
 
     def __init__(self, codec):
-        super(AudioProfileRule, self).__init__()
+        super().__init__()
         self.codec = codec
 
     def enabled(self, context):
@@ -166,7 +166,7 @@ class DtsHDRule(AudioProfileRule):
     """
 
     def __init__(self):
-        super(DtsHDRule, self).__init__('DTS-HD')
+        super().__init__('DTS-HD')
 
 
 class DtsRule(AudioProfileRule):
@@ -175,7 +175,7 @@ class DtsRule(AudioProfileRule):
     """
 
     def __init__(self):
-        super(DtsRule, self).__init__('DTS')
+        super().__init__('DTS')
 
 
 class AacRule(AudioProfileRule):
@@ -184,7 +184,7 @@ class AacRule(AudioProfileRule):
     """
 
     def __init__(self):
-        super(AacRule, self).__init__('AAC')
+        super().__init__('AAC')
 
 
 class DolbyDigitalRule(AudioProfileRule):
@@ -193,7 +193,7 @@ class DolbyDigitalRule(AudioProfileRule):
     """
 
     def __init__(self):
-        super(DolbyDigitalRule, self).__init__('Dolby Digital')
+        super().__init__('Dolby Digital')
 
 
 class HqConflictRule(Rule):

@@ -10,7 +10,7 @@ from sqlite3worker import Sqlite3Worker
 
 from get_args import args
 from helper import path_mappings
-from config import settings
+from config import settings, get_array_from
 
 global profile_id_list
 profile_id_list = []
@@ -270,7 +270,7 @@ def get_exclusion_clause(type):
             where_clause += ' AND table_movies.monitored = "True"'
 
     if type == 'series':
-        typesList = ast.literal_eval(settings.sonarr.excluded_series_types)
+        typesList = get_array_from(settings.sonarr.excluded_series_types)
         for type in typesList:
             where_clause += ' AND table_shows.seriesType != "' + type + '"'
 
@@ -280,6 +280,9 @@ def get_exclusion_clause(type):
 def update_profile_id_list():
     global profile_id_list
     profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
+
+    for profile in profile_id_list:
+            profile['items'] = json.loads(profile['items'])
 
 
 def get_profiles_list(profile_id=None):
@@ -304,8 +307,7 @@ def get_desired_languages(profile_id):
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
             if profileId == int(profile_id):
-                items_list = ast.literal_eval(items)
-                languages = [x['language'] for x in items_list]
+                languages = [x['language'] for x in items]
                 break
 
     return languages
@@ -339,7 +341,7 @@ def get_profile_cutoff(profile_id):
             profileId, name, cutoff, items = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
-                    for item in ast.literal_eval(items):
+                    for item in items:
                         if item['id'] == cutoff:
                             return [item]
                         elif cutoff == 65535:
