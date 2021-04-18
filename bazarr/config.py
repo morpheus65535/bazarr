@@ -266,6 +266,8 @@ def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
     update_schedule = False
+    sonarr_changed = False
+    radarr_changed = False
     update_path_map = False
     configure_proxy = False
     exclusion_updated = False
@@ -319,6 +321,14 @@ def save_settings(settings_items):
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
                    'settings-general-upgrade_frequency']:
             update_schedule = True
+
+        if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
+                   'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
+            sonarr_changed = True
+
+        if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
+                   'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
+            radarr_changed = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
             update_path_map = True
@@ -398,6 +408,14 @@ def save_settings(settings_items):
     if update_schedule:
         from api import scheduler
         scheduler.update_configurable_tasks()
+
+    if sonarr_changed:
+        from signalr_client import sonarr_signalr_client
+        sonarr_signalr_client.restart()
+
+    if radarr_changed:
+        from signalr_client import radarr_signalr_client
+        radarr_signalr_client.restart()
 
     if update_path_map:
         from helper import path_mappings

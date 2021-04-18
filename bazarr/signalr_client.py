@@ -18,18 +18,22 @@ from scheduler import scheduler
 
 class SonarrSignalrClient(threading.Thread):
     def __init__(self):
-        super().__init__()
-        self._stopevent = threading.Event()
+        super(SonarrSignalrClient, self).__init__()
+        self.stopped = True
         self.apikey_sonarr = None
         self.session = Session()
         self.connection = None
 
-    def join(self, timeout=None):
-        self._stopevent.set()
-        threading.Thread.join(self, timeout)
+    def stop(self):
+        self.connection.close()
+        self.stopped = True
+        logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
 
-    def stopped(self):
-        return self._stopevent.isSet()
+    def restart(self):
+        if not self.stopped:
+            self.stop()
+        if settings.general.getboolean('use_sonarr'):
+            self.run()
 
     def run(self):
         self.apikey_sonarr = settings.sonarr.apikey
@@ -42,7 +46,7 @@ class SonarrSignalrClient(threading.Thread):
             sonarr_hub.client.on(item, dispatcher)
 
         while True:
-            if self.stopped():
+            if not self.stopped:
                 return
             if self.connection.started:
                 gevent.sleep(5)
@@ -54,6 +58,7 @@ class SonarrSignalrClient(threading.Thread):
                     logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
                     gevent.sleep(15)
                 else:
+                    self.stopped = False
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                     scheduler.execute_job_now('update_series')
                     scheduler.execute_job_now('sync_episodes')
@@ -62,17 +67,21 @@ class SonarrSignalrClient(threading.Thread):
 
 class RadarrSignalrClient(threading.Thread):
     def __init__(self):
-        super().__init__()
-        self._stopevent = threading.Event()
+        super(RadarrSignalrClient, self).__init__()
+        self.stopped = True
         self.apikey_radarr = None
         self.connection = None
 
-    def join(self, timeout=None):
-        self._stopevent.set()
-        threading.Thread.join(self, timeout)
+    def stop(self):
+        self.connection.stop()
+        self.stopped = True
+        logging.info('BAZARR SignalR client for Radarr is now disconnected.')
 
-    def stopped(self):
-        return self._stopevent.isSet()
+    def restart(self):
+        if not self.stopped:
+            self.stop()
+        if settings.general.getboolean('use_radarr'):
+            self.run()
 
     def run(self):
         self.apikey_radarr = settings.radarr.apikey
@@ -88,7 +97,7 @@ class RadarrSignalrClient(threading.Thread):
         self.connection.on("receiveMessage", dispatcher)
 
         while True:
-            if self.stopped():
+            if not self.stopped:
                 return
             if self.connection.transport.state.value == 4:
                 # 0: 'connecting', 1: 'connected', 2: 'reconnecting', 4: 'disconnected'
@@ -100,6 +109,7 @@ class RadarrSignalrClient(threading.Thread):
                     gevent.sleep(15)
                     pass
                 else:
+                    self.stopped = False
                     logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
                     scheduler.execute_job_now('update_movies')
                     gevent.sleep()
