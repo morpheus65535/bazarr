@@ -112,14 +112,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
               ></SubtitleAction>
             ));
 
-            const existing = episode.subtitles.filter(
-              (val) =>
-                episode.missing_subtitles.findIndex(
-                  (v) => v.code2 === val.code2
-                ) === -1
-            );
-
-            const subtitles = existing.map((val, idx) => (
+            const subtitles = episode.subtitles.map((val, idx) => (
               <SubtitleAction
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesid={seriesid}
