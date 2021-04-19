@@ -201,7 +201,7 @@ export function useSerieBy(id?: number) {
     if (serie.data === null) {
       update();
     }
-  }, [serie, update]);
+  }, [serie.data, update]);
   return stateBuilder(serie, update);
 }
 
@@ -294,7 +294,7 @@ export function useMovieBy(id?: number) {
     if (movie.data === null) {
       update();
     }
-  }, [movie, update]);
+  }, [movie.data, update]);
   return stateBuilder(movie, update);
 }
 
