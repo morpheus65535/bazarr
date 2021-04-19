@@ -56,7 +56,9 @@ jobs:
         # TODO: Remove Stage Step
 
       - name: Create Release
-        run: release-it --ci --increment ${{ github.event.inputs.increment }}
+        run: |
+          export RELEASE_MASTER=1
+          release-it --ci --increment ${{ github.event.inputs.increment }}
   Merge:
     needs: Release
     runs-on: ubuntu-latest
