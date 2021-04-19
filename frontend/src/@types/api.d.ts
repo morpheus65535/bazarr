@@ -109,6 +109,7 @@ namespace Item {
       alternativeTitles: string[];
       poster: string;
       year: string;
+      monitored: boolean;
     };
 
   type Series = Base &

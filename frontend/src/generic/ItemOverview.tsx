@@ -1,8 +1,10 @@
 import {
+  faBookmark as farBookmark,
   faClone as fasClone,
   faFolder,
 } from "@fortawesome/free-regular-svg-icons";
 import {
+  faBookmark,
   faLanguage,
   faMusic,
   faStream,
@@ -22,7 +24,7 @@ import {
 } from "react-bootstrap";
 import { useProfileBy, useProfileItems } from "../@redux/hooks";
 import { LanguageText } from "../components";
-import { BuildKey } from "../utilites";
+import { BuildKey, isMovie } from "../utilites";
 
 interface Props {
   item: Item.Base;
@@ -148,6 +150,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         <Col>
           <Container fluid className="text-white">
             <Row>
+              <span hidden={!isMovie(item)}>
+                <FontAwesomeIcon
+                  className="mx-2 mt-2"
+                  title={item.monitored ? "monitored" : "unmonitored"}
+                  icon={item.monitored ? faBookmark : farBookmark}
+                  size="2x"
+                ></FontAwesomeIcon>
+              </span>
               <h1>{item.title}</h1>
               <span hidden={item.alternativeTitles.length === 0}>
                 <OverlayTrigger overlay={alternativePopover}>
