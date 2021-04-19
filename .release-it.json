@@ -1,7 +1,7 @@
 {
   "git": {
     "requireCleanWorkingDir": false,
-    "changelog": "auto-changelog --stdout",
+    "changelog": ".github/scripts/create_changelog.sh",
     "tagName": "v${version}"
   },
   "github": {

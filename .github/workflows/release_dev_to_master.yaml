@@ -21,7 +21,7 @@ jobs:
           echo This action can only be run on development branch, not ${{ github.ref }}
           exit 1
 
-      - name: Checkout source code
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -29,6 +29,13 @@ jobs:
 
       - name: Setup Git
         run: git config --global user.name "github-actions"
+      
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
 
       - name: Setup NodeJS
         uses: actions/setup-node@v2
@@ -37,15 +44,21 @@ jobs:
 
       - name: Install Global Tools
         run: npm install -g release-it @release-it/bumper auto-changelog
+        # TODO: Remove @release-it/bumper
 
-      - name: Save UI to Asset
-        run: |
-          mkdir -p ../.${{ env.ASSET_DIRECTORY }} &&
-          zip -r ../.${{ env.ASSET_DIRECTORY }}/ui.zip ./ -x '*.map' -b $(mktemp -d)
-        working-directory: ${{ env.UI_DIRECTORY }}/build
+      - name: Install UI Dependencies
+        run: npm install
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Build & Stage UI
+        run: npm run build && git add .
+        working-directory: ${{ env.UI_DIRECTORY }}
+        # TODO: Remove Stage Step
 
       - name: Create Release
-        run: release-it --ci --increment ${{ github.event.inputs.increment }}
+        run: |
+          export RELEASE_MASTER=1
+          release-it --ci --increment ${{ github.event.inputs.increment }}
   Merge:
     needs: Release
     runs-on: ubuntu-latest
