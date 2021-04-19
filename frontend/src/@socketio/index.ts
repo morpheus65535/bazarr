@@ -35,6 +35,13 @@ class SocketIOClient {
   initialize() {
     this.reducers.push(...createDefaultReducer());
     this.socket.connect();
+
+    // Debug Command
+    window.DumpSocketIO = this.dump.bind(this);
+  }
+
+  private dump() {
+    console.log("SocketIO reducers", this.reducers);
   }
 
   addReducer(reducer: SocketIO.Reducer) {

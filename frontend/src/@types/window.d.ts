@@ -1,6 +1,7 @@
 declare global {
   interface Window {
     Bazarr: BazarrServer;
+    DumpSocketIO: () => void;
   }
 }
 
