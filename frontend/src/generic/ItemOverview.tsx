@@ -150,14 +150,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         <Col>
           <Container fluid className="text-white">
             <Row>
-              <span hidden={!isMovie(item)}>
+              {isMovie(item) ? (
                 <FontAwesomeIcon
                   className="mx-2 mt-2"
                   title={item.monitored ? "monitored" : "unmonitored"}
                   icon={item.monitored ? faBookmark : farBookmark}
                   size="2x"
                 ></FontAwesomeIcon>
-              </span>
+              ) : null}
               <h1>{item.title}</h1>
               <span hidden={item.alternativeTitles.length === 0}>
                 <OverlayTrigger overlay={alternativePopover}>
