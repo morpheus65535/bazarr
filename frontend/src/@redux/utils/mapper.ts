@@ -1,4 +1,4 @@
-import { difference, has, uniqBy } from "lodash";
+import { difference, has, isNumber, uniqBy } from "lodash";
 import { Action } from "redux-actions";
 import { AsyncAction } from "../types";
 
@@ -44,35 +44,42 @@ export function updateOrderIdState<T extends LooseObject>(
     };
   } else {
     const { data, total } = action.payload.item as AsyncDataWrapper<T>;
-    const [start, length] = action.payload.parameters;
+    const { parameters } = action.payload;
+    const [start, length] = parameters;
 
     // Convert item list to object
-    const idState: IdState<T> = data.reduce<IdState<T>>((prev, curr) => {
-      const tid = curr[id];
-      prev[tid] = curr;
-      return prev;
-    }, {});
+    const newItems = data.reduce<IdState<T>>(
+      (prev, curr) => {
+        const tid = curr[id];
+        prev[tid] = curr;
+        return prev;
+      },
+      { ...state.data.items }
+    );
 
-    const dataOrder: number[] = data.map((v) => v[id]);
-
-    let newItems = { ...state.data.items, ...idState };
     let newOrder = state.data.order;
 
     const countDist = total - newOrder.length;
     if (countDist > 0) {
-      newOrder.push(...Array(countDist).fill(null));
+      newOrder = Array(countDist).fill(null).concat(newOrder);
     } else if (countDist < 0) {
       // Completely drop old data if list has shrinked
       newOrder = Array(total).fill(null);
-      newItems = { ...idState };
     }
+
+    const dataOrder: number[] = data.map((v) => v[id]);
 
     if (typeof start === "number" && typeof length === "number") {
       newOrder.splice(start, length, ...dataOrder);
-    } else if (start === undefined) {
+    } else if (parameters.length === 0) {
       // Full Update
       newOrder = dataOrder;
     }
+
+    // Filter unused items and delete them
+    const newItemIds = Object.keys(newItems).map(Number);
+    const unusedIds = difference(newItemIds, newOrder.filter(isNumber));
+    unusedIds.forEach((id) => delete newItems[id]);
 
     return {
       updating: false,
@@ -86,8 +93,7 @@ export function updateOrderIdState<T extends LooseObject>(
 
 export function deleteOrderListItemBy<T extends LooseObject>(
   action: Action<number[]>,
-  state: AsyncState<OrderIdState<T>>,
-  match: ItemIdType<T>
+  state: AsyncState<OrderIdState<T>>
 ): AsyncState<OrderIdState<T>> {
   const ids = action.payload;
   const { items, order } = state.data;

@@ -16,7 +16,7 @@ import {
   updateAsyncList,
   updateAsyncState,
   updateOrderIdState,
-} from "./mapper";
+} from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.Series, any>(
   {
@@ -38,8 +38,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
         ...state,
         wantedEpisodesList: deleteOrderListItemBy(
           action,
-          state.wantedEpisodesList,
-          "sonarrEpisodeId"
+          state.wantedEpisodesList
         ),
       };
     },
@@ -91,11 +90,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
     [SERIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        seriesList: deleteOrderListItemBy(
-          action,
-          state.seriesList,
-          "sonarrSeriesId"
-        ),
+        seriesList: deleteOrderListItemBy(action, state.seriesList),
       };
     },
     [SERIES_UPDATE_BLACKLIST]: (

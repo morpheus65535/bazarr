@@ -12,7 +12,7 @@ import {
   deleteOrderListItemBy,
   updateAsyncState,
   updateOrderIdState,
-} from "./mapper";
+} from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
@@ -32,11 +32,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     [MOVIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        wantedMovieList: deleteOrderListItemBy(
-          action,
-          state.wantedMovieList,
-          "radarrId"
-        ),
+        wantedMovieList: deleteOrderListItemBy(action, state.wantedMovieList),
       };
     },
     [MOVIES_UPDATE_HISTORY_LIST]: (
@@ -60,7 +56,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     [MOVIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        movieList: deleteOrderListItemBy(action, state.movieList, "radarrId"),
+        movieList: deleteOrderListItemBy(action, state.movieList),
       };
     },
     [MOVIES_UPDATE_BLACKLIST]: (

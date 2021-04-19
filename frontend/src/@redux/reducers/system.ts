@@ -9,7 +9,7 @@ import {
   SYSTEM_UPDATE_STATUS,
   SYSTEM_UPDATE_TASKS,
 } from "../constants";
-import { updateAsyncState } from "./mapper";
+import { updateAsyncState } from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.System, any>(
   {
