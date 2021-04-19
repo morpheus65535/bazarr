@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 import logging
 import os
+import re
 import time
 import zipfile
 
@@ -21,6 +22,13 @@ from subliminal_patch.score import get_scores
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.providers import Provider
 from guessit import guessit
+
+
+CLEAN_TITLE_RES = [
+    (r"subt[ií]tulos de", ""),
+    (r"´|`", "'"),
+    (r" {2,}", " "),
+]
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +178,7 @@ class SubdivxSubtitlesProvider(Provider):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
 
             # title
-            title = title_soup.find("a").text.replace("Subtitulos de ", "")
+            title = self._clean_title(title_soup.find("a").text)
 
             # filter by year
             if video.year and str(video.year) not in title:
@@ -213,6 +221,17 @@ class SubdivxSubtitlesProvider(Provider):
             raise APIThrottled(f"Error parsing download link: {e}")
 
         raise APIThrottled("Download link not found")
+
+    @staticmethod
+    def _clean_title(title):
+        """
+        Normalize apostrophes and spaces to avoid matching problems
+        (e.g. Subtitulos de  Carlito´s  Way -> Carlito's Way)
+        """
+        for og, new in CLEAN_TITLE_RES:
+            title = re.sub(og, new, title, flags=re.IGNORECASE)
+
+        return title
 
     @staticmethod
     def _check_response(response):

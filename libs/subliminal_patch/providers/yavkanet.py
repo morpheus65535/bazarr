@@ -40,7 +40,7 @@ class YavkaNetSubtitle(Subtitle):
         self.release_info = filename
         if fps:
             if video.fps and float(video.fps) == fps:
-                self.release_info += " <b>[{:.3f}]</b>".format(fps)
+                self.release_info += " [{:.3f}]".format(fps)
             else:
                 self.release_info += " [{:.3f}]".format(fps)
 
@@ -128,8 +128,8 @@ class YavkaNetProvider(Provider):
             params['l'] = 'IT'
 
         logger.info('Searching subtitle %r', params)
-        response = self.session.get('http://yavka.net/subtitles.php', params=params, allow_redirects=False, timeout=10, headers={
-            'Referer': 'http://yavka.net/',
+        response = self.session.get('https://yavka.net/subtitles.php', params=params, allow_redirects=False, timeout=10, headers={
+            'Referer': 'https://yavka.net/',
             })
 
         response.raise_for_status()
@@ -162,7 +162,7 @@ class YavkaNetProvider(Provider):
                 element = row.find('a', {'class': 'click'})
                 uploader = element.get_text() if element else None
                 logger.info('Found subtitle link %r', link)
-                sub = self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video, fps)
+                sub = self.download_archive_and_add_subtitle_files('https://yavka.net' + link + '/', language, video, fps)
                 for s in sub:
                     s.title = title
                     s.notes = notes
@@ -202,8 +202,8 @@ class YavkaNetProvider(Provider):
         cache_key = sha1(link.encode("utf-8")).digest()
         request = region.get(cache_key)
         if request is NO_VALUE:
-            request = self.session.get(link, headers={
-                'Referer': 'http://yavka.net/subtitles.php'
+            request = self.session.post(link, headers={
+                'referer': link
                 })
             request.raise_for_status()
             region.set(cache_key, request)

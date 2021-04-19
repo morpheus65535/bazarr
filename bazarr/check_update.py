@@ -5,6 +5,7 @@ import logging
 import json
 import requests
 import semver
+from shutil import rmtree
 from zipfile import ZipFile
 
 from get_args import args
@@ -28,11 +29,17 @@ def check_releases():
         logging.exception("Error trying to get releases from Github.")
     else:
         for release in r.json():
+            download_link = None
+            for asset in release['assets']:
+                if asset['name'] == 'bazarr.zip':
+                    download_link = asset['browser_download_url']
+            if not download_link:
+                download_link = release['zipball_url']
             releases.append({'name': release['name'],
                              'body': release['body'],
                              'date': release['published_at'],
                              'prerelease': release['prerelease'],
-                             'download_link': release['zipball_url']})
+                             'download_link': download_link})
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
         logging.debug('BAZARR saved {} releases to releases.txt'.format(len(r.json())))
@@ -107,12 +114,24 @@ def apply_update():
     update_dir = os.path.join(args.config_dir, 'update')
     bazarr_zip = os.path.join(update_dir, 'bazarr.zip')
     bazarr_dir = os.path.dirname(os.path.dirname(__file__))
+    build_dir = os.path.join(os.path.dirname(__file__), 'frontend', 'build')
+
     if os.path.isdir(update_dir):
         if os.path.isfile(bazarr_zip):
             logging.debug('BAZARR is trying to unzip this release to {0}: {1}'.format(bazarr_dir, bazarr_zip))
             try:
                 with ZipFile(bazarr_zip, 'r') as archive:
-                    zip_root_directory = archive.namelist()[0]
+                    zip_root_directory = ''
+                    if len({item.split('/')[0] for item in archive.namelist()}) == 1:
+                        zip_root_directory = archive.namelist()[0]
+
+                    if os.path.isdir(build_dir):
+                        try:
+                            rmtree(build_dir, ignore_errors=True)
+                        except Exception as e:
+                            logging.exception(
+                                'BAZARR was unable to delete the previous build directory during upgrade process.')
+
                     for file in archive.namelist():
                         if file.startswith(zip_root_directory) and file != zip_root_directory and not \
                                 file.endswith('bazarr.py'):

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import random
 import re
 
 from urllib import parse
@@ -12,13 +11,12 @@ from subzero.language import Language
 from guessit import guessit
 
 from subliminal import Episode
+from subliminal.cache import SHOW_EXPIRATION_TIME, region, EPISODE_EXPIRATION_TIME
 from subliminal.exceptions import ServiceUnavailable
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending, guess_matches
-
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +64,14 @@ class TuSubtituloProvider(Provider):
     def initialize(self):
         self.session = Session()
         self.session.headers = {
-            "User-Agent": random.choice(AGENT_LIST),
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
             "referer": BASE_URL,
         }
 
     def terminate(self):
         self.session.close()
 
-    def index_titles(self):
+    def _index_titles(self):
         r = self.session.get(f"{BASE_URL}/series.php?/")
         r.raise_for_status()
         soup = bso(r.content, "html.parser")
@@ -83,7 +81,8 @@ class TuSubtituloProvider(Provider):
             if "show" in href_url:
                 yield {"title": a.text, "url": href_url}
 
-    def title_available(self, item):
+    @staticmethod
+    def _title_available(item):
         try:
             title = item[2].find_all("a")[0]
             episode_number = re.search(r".*\d+x(0+)?(\d+) - .*?", title.text).group(2)
@@ -92,7 +91,8 @@ class TuSubtituloProvider(Provider):
         except IndexError:
             return
 
-    def source_separator(self, item):
+    @staticmethod
+    def _source_separator(item):
         try:
             text = item[3].text.replace("\n", "")
             if "Vers" in text:
@@ -103,7 +103,8 @@ class TuSubtituloProvider(Provider):
         except IndexError:
             return
 
-    def get_episode_dicts(self, episodes, season_subs, season_number):
+    @staticmethod
+    def _get_episode_dicts(episodes, season_subs, season_number):
         for i in episodes:
             for t in season_subs:
                 if i["episode_id"] == t["episode_id"]:
@@ -115,7 +116,8 @@ class TuSubtituloProvider(Provider):
                         "language": t["language"],
                     }
 
-    def scrape_episode_info(self, source_var, tables, tr):
+    @staticmethod
+    def _scrape_episode_info(source_var, tables, tr):
         inc = 1
         while True:
             try:
@@ -146,7 +148,8 @@ class TuSubtituloProvider(Provider):
             except IndexError:
                 break
 
-    def get_episodes(self, show_id, season):
+    @region.cache_on_arguments(expiration_time=EPISODE_EXPIRATION_TIME)
+    def _get_episodes(self, show_id, season):
         r = self.session.get(f"{BASE_URL}/show/{show_id}/{season}")
         r.raise_for_status()
         sopa = bso(r.content, "lxml")
@@ -162,31 +165,33 @@ class TuSubtituloProvider(Provider):
         for tr in range(len(tables)):
             data = tables[tr].find_all("td")
 
-            title = self.title_available(data)
+            title = self._title_available(data)
             if title:
                 episodes.append(title)
 
-            source_var = self.source_separator(data)
+            source_var = self._source_separator(data)
             if not source_var:
                 continue
 
-            season_subs += list(self.scrape_episode_info(source_var, tables, tr))
+            season_subs += list(self._scrape_episode_info(source_var, tables, tr))
 
-        return list(self.get_episode_dicts(episodes, season_subs, season))
+        return list(self._get_episode_dicts(episodes, season_subs, season))
+
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    def _get_title(self, title):
+        titles = list(self._index_titles())
+        for item in titles:
+            if title.lower() == item["title"].lower():
+                return item
 
     def search(self, title, season, episode):
-        titles = list(self.index_titles())
-        found_tv_show = None
-        for i in titles:
-            if title.lower() == i["title"].lower():
-                found_tv_show = i
-                break
+        found_tv_show = self._get_title(title)
         if not found_tv_show:
-            logger.debug("Show not found")
+            logger.debug("Title not found: %s", title)
             return
 
         tv_show_id = found_tv_show["url"].split("/")[2].replace(" ", "")
-        results = self.get_episodes(tv_show_id, season)
+        results = self._get_episodes(tv_show_id, season)
         episode_list = []
         if results:
             for i in results:
@@ -194,8 +199,6 @@ class TuSubtituloProvider(Provider):
                     episode_list.append(i)
             if episode_list:
                 return episode_list
-            else:
-                logger.debug("No results")
 
         logger.debug("No results")
 
@@ -220,7 +223,7 @@ class TuSubtituloProvider(Provider):
 
                 return f"{BASE_URL}/updated/{lang_id}/{sub_id}/{version_}"
 
-    def query(self, languages, video):
+    def query(self, video):
         query = f"{video.series} {video.season} {video.episode}"
         logger.debug(f"Searching subtitles: {query}")
         results = self.search(video.series, str(video.season), str(video.episode))
@@ -230,8 +233,7 @@ class TuSubtituloProvider(Provider):
             for sub in results:
                 matches = set()
                 # self.search only returns results for the specific episode
-                matches_ = ("title", "series", "season", "episode", "year")
-                [matches.add(match) for match in matches_]
+                matches.update(["title", "series", "season", "episode", "year"])
                 subtitles.append(
                     TuSubtituloSubtitle(
                         Language.fromietf(sub["language"]),
@@ -245,9 +247,10 @@ class TuSubtituloProvider(Provider):
         return []
 
     def list_subtitles(self, video, languages):
-        return self.query(languages, video)
+        return self.query(video)
 
-    def _check_response(self, response):
+    @staticmethod
+    def _check_response(response):
         if response.status_code != 200:
             raise ServiceUnavailable(f"Bad status code: {response.status_code}")
 
@@ -259,6 +262,5 @@ class TuSubtituloProvider(Provider):
             raise APIThrottled("Can't scrape download url")
 
         response = self.session.get(download_url_, timeout=10, allow_redirects=True)
-        response.raise_for_status()
         self._check_response(response)
         subtitle.content = fix_line_ending(response.content)

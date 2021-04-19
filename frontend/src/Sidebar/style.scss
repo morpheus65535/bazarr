@@ -1,0 +1,114 @@
+@import "../@scss/variable.scss";
+
+@mixin sidebar-border($side) {
+  border: {
+    #{$side}: {
+      color: rgba(0, 0, 0, 0.125);
+      style: solid;
+      width: 1px;
+    }
+  }
+}
+
+$sidebar-bg-color: #3a3f51;
+$sidebar-active-color: #252833;
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: black;
+  opacity: 0;
+  z-index: 1000;
+}
+
+.sidebar-container {
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: $sidebar-bg-color;
+
+  z-index: 1001;
+
+  min-width: $sidebar-width;
+  max-width: $sidebar-width;
+
+  flex-grow: 2;
+
+  span {
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+  }
+
+  .sidebar-title {
+    height: $header-height;
+  }
+
+  @mixin active {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 3px;
+    z-index: 10;
+    background-color: var(--primary);
+  }
+
+  .sidebar-collapse-box {
+    position: relative;
+    &.active {
+      &::before {
+        @include active();
+      }
+    }
+  }
+
+  .sidebar-button {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+
+    border: none;
+    outline: none;
+
+    color: white !important;
+    background-color: $sidebar-bg-color;
+
+    &:hover {
+      background-color: $sidebar-active-color !important;
+    }
+
+    &:active,
+    &:focus {
+      color: white;
+      background-color: $sidebar-bg-color;
+    }
+
+    .icon {
+      margin-right: 1rem;
+      width: 1.5rem;
+    }
+
+    &.sb-active {
+      background-color: $sidebar-active-color;
+      &::before {
+        @include active();
+      }
+    }
+
+    &.sb-collapse {
+      padding-left: 3rem;
+    }
+  }
+}

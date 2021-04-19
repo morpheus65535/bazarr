@@ -1,12 +1,24 @@
 {
+  "git": {
+    "requireCleanWorkingDir": false,
+    "changelog": ".github/scripts/create_changelog.sh",
+    "tagName": "v${version}"
+  },
   "github": {
-  	"release": true,
+    "release": true,
     "releaseName": "v${version}",
-    "releaseNotes": "echo \"From newest to oldest:\" && git log --pretty=format:\"- %s [%h](${repo.protocol}://${repo.host}/${repo.owner}/${repo.project}/commit/%H)\" --no-merges --grep \"^Release\" --invert-grep $LAST_VERSION..HEAD"
+    "assets": ["__builds__/*.zip"]
   },
   "npm": {
     "publish": false,
     "ignoreVersion": true
+  },
+  "hooks": {
+    "before:init": [
+      "chmod +x .github/scripts/*",
+      ".github/scripts/pre_check.sh"
+    ],
+    "after:git:release": ".github/scripts/create_asset.sh"
   },
   "plugins": {
     "@release-it/bumper": {

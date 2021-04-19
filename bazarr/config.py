@@ -2,14 +2,25 @@
 
 import hashlib
 import os
+import ast
 
 from urllib.parse import quote_plus
 
 from subliminal.cache import region
 
-from simpleconfigparser import simpleconfigparser
+from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
 
 from get_args import args
+
+
+class SimpleConfigParser(simpleconfigparser):
+
+    def get(self, section, option, raw=False, vars=None):
+        try:
+            return configparser.get(self, section, option, raw=raw, vars=vars)
+        except NoOptionError:
+            return None
+
 
 defaults = {
     'general': {
@@ -45,7 +56,7 @@ defaults = {
         'ignore_pgs_subs': 'False',
         'ignore_vobsub_subs': 'False',
         'adaptive_searching': 'False',
-        'enabled_providers': '',
+        'enabled_providers': '[]',
         'multithreading': 'True',
         'chmod_enabled': 'False',
         'chmod': '0640',
@@ -58,7 +69,7 @@ defaults = {
         'anti_captcha_provider': 'None',
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
-        'subzero_mods': '',
+        'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False'
     },
     'auth': {
@@ -100,7 +111,7 @@ defaults = {
         'port': '',
         'username': '',
         'password': '',
-        'exclude': 'localhost,127.0.0.1'
+        'exclude': '["localhost","127.0.0.1"]'
     },
     'opensubtitles': {
         'username': '',
@@ -171,12 +182,71 @@ defaults = {
     }
 }
 
-settings = simpleconfigparser(defaults=defaults, interpolation=None)
+settings = SimpleConfigParser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
-base_url = settings.general.base_url
+base_url = settings.general.base_url.rstrip('/')
 
+ignore_keys = ['flask_secret_key',
+                'page_size',
+                'page_size_manual_search',
+                'throtteled_providers']
+
+raw_keys = ['movie_default_forced', 'serie_default_forced']
+
+array_keys = ['excluded_tags',
+                'exclude',
+                'subzero_mods',
+                'excluded_series_types',
+                'enabled_providers',
+                'path_mappings',
+                'path_mappings_movie']
+
+str_keys = ['chmod']
+
+empty_values = ['', 'None', 'null', 'undefined', None, []]
+
+def get_settings():
+    result = dict()
+    sections = settings.sections()
+
+    for sec in sections:
+        sec_values = settings.items(sec, False)
+        values_dict = dict()
+
+        for sec_val in sec_values:
+            key = sec_val[0]
+            value = sec_val[1]
+
+            if key in ignore_keys:
+                continue
+
+            if key not in raw_keys:
+                # Do some postprocessings
+                if value in empty_values:
+                    if key in array_keys:
+                        value = []
+                    else:
+                        continue
+                elif key in array_keys:
+                    value = get_array_from(value)
+                elif value == 'True':
+                    value = True
+                elif value == 'False':
+                    value = False
+                else:
+                    if key not in str_keys:
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            pass
+            
+            values_dict[key] = value
+        
+        result[sec] = values_dict
+
+    return result
 
 def save_settings(settings_items):
     from database import database
@@ -188,24 +258,30 @@ def save_settings(settings_items):
     configure_proxy = False
     exclusion_updated = False
 
+    # Subzero Mods
+    update_subzero = False
+    subzero_mods = get_array_from(settings.general.subzero_mods)
+
+    if len(subzero_mods) == 1 and subzero_mods[0] == '':
+        subzero_mods = []
+
     for key, value in settings_items:
-        # Intercept database stored settings
-        if key == 'enabled_languages':
-            database.execute("UPDATE table_settings_languages SET enabled=0")
-            for item in value:
-                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
-            continue
-
-        # Make sure that text based form values aren't pass as list unless they are language list
-        if isinstance(value, list) and len(value) == 1 and key not in ['settings-general-serie_default_language',
-                                                                       'settings-general-movie_default_language']:
-            value = value[0]
-
-        # Make sure empty language list are stored correctly due to bug in bootstrap-select
-        if key in ['settings-general-serie_default_language', 'settings-general-movie_default_language'] and value == ['null']:
-            value = []
 
         settings_keys = key.split('-')
+        
+        # Make sure that text based form values aren't pass as list
+        if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
+            value = value[0]
+            if value in empty_values:
+                value = None
+
+        # Make sure empty language list are stored correctly
+        if settings_keys[-1] in array_keys and value[0] in empty_values :
+            value = []
+
+        # Handle path mappings settings since they are array in array
+        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
+            value = [v.split(',') for v in value]
 
         if value == 'true':
             value = 'True'
@@ -213,7 +289,7 @@ def save_settings(settings_items):
             value = 'False'
 
         if key == 'settings-auth-password':
-            if value != settings.auth.password:
+            if value != settings.auth.password and value != None:
                 value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
@@ -224,7 +300,12 @@ def save_settings(settings_items):
             configure_captcha = True
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
-                   'settings-general-auto_update', 'settings-general-upgrade_subs']:
+                   'settings-general-auto_update', 'settings-general-upgrade_subs',
+                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
+                   'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
+                   'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
+                   'settings-general-upgrade_frequency']:
             update_schedule = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
@@ -265,6 +346,31 @@ def save_settings(settings_items):
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
+
+        if settings_keys[0] == 'subzero':
+            mod = settings_keys[1]
+            enabled = value == 'True'
+            if mod in subzero_mods and not enabled:
+                subzero_mods.remove(mod)
+            elif enabled:
+                subzero_mods.append(mod)
+
+            # Handle color
+            if mod == 'color':
+                previous = None
+                for exist_mod in subzero_mods:
+                    if exist_mod.startswith('color'):
+                        previous = exist_mod
+                        break
+                if previous is not None:
+                    subzero_mods.remove(previous)
+                if value not in empty_values:
+                    subzero_mods.append(value)
+
+            update_subzero = True
+
+    if update_subzero:
+        settings.set('general', 'subzero_mods', ','.join(subzero_mods))
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
@@ -307,8 +413,12 @@ def url_sonarr():
     if settings.sonarr.base_url.endswith("/"):
         settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 
-    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port + settings.sonarr.base_url
+    if settings.sonarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.sonarr.port}"
 
+    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
 
 def url_sonarr_short():
     if settings.sonarr.getboolean('ssl'):
@@ -316,14 +426,12 @@ def url_sonarr_short():
     else:
         protocol_sonarr = "http"
 
-    if settings.sonarr.base_url == '':
-        settings.sonarr.base_url = "/"
-    if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
-    if settings.sonarr.base_url.endswith("/"):
-        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
-    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port
+    if settings.sonarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.sonarr.port}"
 
+    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
 
 def url_radarr():
     if settings.radarr.getboolean('ssl'):
@@ -338,8 +446,12 @@ def url_radarr():
     if settings.radarr.base_url.endswith("/"):
         settings.radarr.base_url = settings.radarr.base_url[:-1]
 
-    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port + settings.radarr.base_url
+    if settings.radarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.radarr.port}"
 
+    return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
 
 def url_radarr_short():
     if settings.radarr.getboolean('ssl'):
@@ -347,15 +459,23 @@ def url_radarr_short():
     else:
         protocol_radarr = "http"
 
-    if settings.radarr.base_url == '':
-        settings.radarr.base_url = "/"
-    if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
-    if settings.radarr.base_url.endswith("/"):
-        settings.radarr.base_url = settings.radarr.base_url[:-1]
+    if settings.radarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.radarr.port}"
 
-    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
+    return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
+def get_array_from(property):
+    if property:
+        if '[' in property:
+            return ast.literal_eval(property)
+        elif ',' in property:
+            return property.split(',')
+        else:
+            return [property]
+    else:
+        return []
 
 def configure_captcha_func():
     # set anti-captcha provider and key
@@ -380,4 +500,5 @@ def configure_proxy_func():
             proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
         os.environ['HTTP_PROXY'] = str(proxy)
         os.environ['HTTPS_PROXY'] = str(proxy)
-        os.environ['NO_PROXY'] = str(settings.proxy.exclude)
+        exclude = ','.join(get_array_from(settings.proxy.exclude))
+        os.environ['NO_PROXY'] = exclude
