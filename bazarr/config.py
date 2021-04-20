@@ -215,8 +215,9 @@ if int(settings.sonarr.episodes_sync) < 15:
 if int(settings.radarr.movies_sync) < 15:
     settings.radarr.movies_sync = "60"
 
-with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-    settings.write(handle)
+if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
 
 
 def get_settings():

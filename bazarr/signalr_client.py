@@ -14,6 +14,7 @@ from get_episodes import sync_episodes, sync_one_episode
 from get_series import update_series, update_one_series
 from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
+from utils import get_sonarr_version
 
 
 class SonarrSignalrClient(threading.Thread):
@@ -36,6 +37,10 @@ class SonarrSignalrClient(threading.Thread):
             self.run()
 
     def run(self):
+        if get_sonarr_version().startswith('2.'):
+            logging.error('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
+                          'consider upgrading.')
+            return
         self.apikey_sonarr = settings.sonarr.apikey
         self.connection = Connection(url_sonarr() + "/signalr", self.session)
         self.connection.qs = {'apikey': self.apikey_sonarr}

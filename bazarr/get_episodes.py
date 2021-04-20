@@ -41,7 +41,7 @@ def sync_episodes():
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
                                                 series_id=seriesId['sonarrSeriesId'])
         if not episodes:
-            return
+            continue
         else:
             for episode in episodes:
                 if 'hasFile' in episode:
