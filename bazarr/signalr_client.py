@@ -38,8 +38,8 @@ class SonarrSignalrClient(threading.Thread):
 
     def run(self):
         if get_sonarr_version().startswith('2.'):
-            logging.error('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
-                          'consider upgrading.')
+            logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
+                            'consider upgrading.')
             return
         self.apikey_sonarr = settings.sonarr.apikey
         self.connection = Connection(url_sonarr() + "/signalr", self.session)
