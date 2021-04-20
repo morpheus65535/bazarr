@@ -135,7 +135,7 @@ const SeriesView: FunctionComponent<Props> = () => {
       name="Series"
       updateAction={seriesUpdateList}
       loader={load}
-      columns={columns as Column<Item.Base>[]}
+      columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>
   );

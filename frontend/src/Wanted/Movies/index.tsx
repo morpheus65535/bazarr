@@ -74,7 +74,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
   return (
     <GenericWantedView
       type="movies"
-      columns={columns as Column<Wanted.Base>[]}
+      columns={columns}
       state={movies}
       loader={loader}
       searchAll={searchAll}

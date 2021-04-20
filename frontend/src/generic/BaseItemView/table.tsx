@@ -1,18 +1,18 @@
 import { uniqBy } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { TableUpdater } from "react-table";
 import { SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { ItemEditorModal, PageTable, useShowModal } from "../../components";
 import { buildOrderList, GetItemId } from "../../utilites";
 
-interface Props extends SharedProps {
-  dirtyItems: readonly Item.Base[];
+interface Props<T extends Item.Base> extends SharedProps<T> {
+  dirtyItems: readonly T[];
   editMode: boolean;
-  select: React.Dispatch<Item.Base[]>;
+  select: React.Dispatch<T[]>;
 }
 
-const Table: FunctionComponent<Props> = ({
+function Table<T extends Item.Base>({
   state,
   dirtyItems,
   modify,
@@ -21,10 +21,10 @@ const Table: FunctionComponent<Props> = ({
   columns,
   loader,
   name,
-}) => {
+}: Props<T>) {
   const showModal = useShowModal();
 
-  const updateRow = useCallback<TableUpdater<Item.Base>>(
+  const updateRow = useCallback<TableUpdater<T>>(
     (row, modalKey: string) => {
       showModal(modalKey, row.original);
     },
@@ -62,6 +62,6 @@ const Table: FunctionComponent<Props> = ({
       <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );
-};
+}
 
 export default Table;
