@@ -1,6 +1,5 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
-import reduxStore from "../@redux/store";
 import { getBaseUrl } from "../utilites";
 import { conditionalLog, log } from "../utilites/logger";
 import { createDefaultReducer } from "./reducer";
@@ -35,6 +34,13 @@ class SocketIOClient {
   initialize() {
     this.reducers.push(...createDefaultReducer());
     this.socket.connect();
+
+    // Debug Command
+    window.DumpSocketIO = this.dump.bind(this);
+  }
+
+  private dump() {
+    console.log("SocketIO reducers", this.reducers);
   }
 
   addReducer(reducer: SocketIO.Reducer) {
@@ -49,8 +55,6 @@ class SocketIOClient {
   private reduce() {
     const events = [...this.events];
     this.events = [];
-
-    const store = reduxStore.getState();
 
     const records: SocketIO.ActionRecord = {};
 
@@ -77,10 +81,6 @@ class SocketIOClient {
 
         // eslint-disable-next-line no-loop-func
         handlers.forEach((handler) => {
-          if (handler.state && handler.state(store).updating) {
-            return;
-          }
-
           const anyAction = handler.any;
           if (anyAction) {
             anyAction();

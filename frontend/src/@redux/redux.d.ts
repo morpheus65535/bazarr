@@ -1,7 +1,3 @@
-interface IdState<T> {
-  [key: number]: Readonly<T>;
-}
-
 interface OrderIdState<T> {
   items: IdState<T>;
   order: (number | null)[];

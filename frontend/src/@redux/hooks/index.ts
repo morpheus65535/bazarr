@@ -5,14 +5,12 @@ import {
   episodeDeleteItems,
   episodeUpdateBy,
   episodeUpdateById,
-  movieDeleteItems,
   movieDeleteWantedItems,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
   movieUpdateWantedList,
   providerUpdateList,
-  seriesDeleteItems,
   seriesDeleteWantedItems,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
@@ -157,10 +155,6 @@ export function useProfileItems(profile?: Profile.Languages) {
 export function useRawSeries() {
   const update = useReduxAction(seriesUpdateList);
   const items = useReduxStore((d) => d.series.seriesList);
-
-  const deleteAction = useReduxAction(seriesDeleteItems);
-
-  useSocketIOReducer("series", undefined, update, deleteAction);
   return stateBuilder(items, update);
 }
 
@@ -207,7 +201,7 @@ export function useSerieBy(id?: number) {
     if (serie.data === null) {
       update();
     }
-  }, [serie, update]);
+  }, [serie.data, update]);
   return stateBuilder(serie, update);
 }
 
@@ -254,10 +248,6 @@ export function useEpisodesBy(seriesId?: number) {
 export function useRawMovies() {
   const update = useReduxAction(movieUpdateList);
   const items = useReduxStore((d) => d.movie.movieList);
-
-  const deleteAction = useReduxAction(movieDeleteItems);
-
-  useSocketIOReducer("movie", undefined, update, deleteAction);
   return stateBuilder(items, update);
 }
 
@@ -304,7 +294,7 @@ export function useMovieBy(id?: number) {
     if (movie.data === null) {
       update();
     }
-  }, [movie, update]);
+  }, [movie.data, update]);
   return stateBuilder(movie, update);
 }
 

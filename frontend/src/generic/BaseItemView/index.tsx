@@ -1,11 +1,6 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { uniqBy } from "lodash";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
@@ -16,26 +11,22 @@ import { ContentHeader } from "../../components";
 import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
-export interface SharedProps {
+export interface SharedProps<T extends Item.Base> {
   name: string;
   loader: (start: number, length: number) => void;
-  columns: Column<Item.Base>[];
+  columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: AsyncState<OrderIdState<Item.Base>>;
+  state: AsyncState<OrderIdState<T>>;
 }
 
-export function ExtendItemComparer(lhs: Item.Base, rhs: Item.Base): boolean {
-  return GetItemId(lhs) === GetItemId(rhs);
-}
-
-interface Props extends SharedProps {
+interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
   updateAction: (id?: number[]) => AsyncActionDispatcher<any>;
 }
 
-const BaseItemView: FunctionComponent<Props> = ({
+function BaseItemView<T extends Item.Base>({
   updateAction,
   ...shared
-}) => {
+}: Props<T>) {
   const state = shared.state;
 
   const [pendingEditMode, setPendingEdit] = useState(false);
@@ -52,8 +43,8 @@ const BaseItemView: FunctionComponent<Props> = ({
 
   const update = useReduxActionWith(updateAction, onUpdated);
 
-  const [selections, setSelections] = useState<Item.Base[]>([]);
-  const [dirtyItems, setDirty] = useState<Item.Base[]>([]);
+  const [selections, setSelections] = useState<T[]>([]);
+  const [dirtyItems, setDirty] = useState<T[]>([]);
 
   const [profiles] = useLanguageProfiles();
 
@@ -170,6 +161,6 @@ const BaseItemView: FunctionComponent<Props> = ({
       </Row>
     </Container>
   );
-};
+}
 
 export default BaseItemView;

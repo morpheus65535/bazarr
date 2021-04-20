@@ -125,7 +125,7 @@ const MovieView: FunctionComponent<Props> = () => {
       name="Movies"
       loader={load}
       updateAction={movieUpdateList}
-      columns={columns as Column<Item.Base>[]}
+      columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>
   );

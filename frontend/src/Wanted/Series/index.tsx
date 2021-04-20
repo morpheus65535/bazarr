@@ -82,7 +82,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
   return (
     <GenericWantedView
       type="series"
-      columns={columns as Column<Wanted.Base>[]}
+      columns={columns}
       state={series}
       loader={loader}
       searchAll={searchAll}

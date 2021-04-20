@@ -28,7 +28,6 @@ namespace SocketIO {
 
   type Reducer = {
     key: EventType;
-    state?: (store: ReduxStore) => AsyncState<any>;
     any?: () => any;
   } & Partial<Record<ActionType, ActionFn>>;
 

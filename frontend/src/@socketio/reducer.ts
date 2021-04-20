@@ -1,6 +1,8 @@
 import {
   badgeUpdateAll,
+  movieDeleteItems,
   movieUpdateList,
+  seriesDeleteItems,
   seriesUpdateList,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
@@ -24,22 +26,20 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      state: (s) => s.series.seriesList,
       update: bindToReduxStore(seriesUpdateList),
+      delete: bindToReduxStore(seriesDeleteItems),
     },
     {
       key: "movie",
-      state: (s) => s.movie.movieList,
       update: bindToReduxStore(movieUpdateList),
+      delete: bindToReduxStore(movieDeleteItems),
     },
     {
       key: "settings",
-      state: (s) => s.system.settings,
       any: bindToReduxStore(systemUpdateSettings),
     },
     {
       key: "languages",
-      state: (s) => s.system.languages,
       any: bindToReduxStore(systemUpdateLanguagesAll),
     },
     {

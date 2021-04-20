@@ -1,27 +1,27 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { capitalize } from "lodash";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { ContentHeader, PageTable } from "../../components";
 import { buildOrderList, GetItemId } from "../../utilites";
 
-interface Props {
+interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
-  columns: Column<Wanted.Base>[];
-  state: Readonly<AsyncState<OrderIdState<Wanted.Base>>>;
+  columns: Column<T>[];
+  state: Readonly<AsyncState<OrderIdState<T>>>;
   loader: (start: number, length: number) => void;
   searchAll: () => Promise<void>;
 }
 
-const GenericWantedView: FunctionComponent<Props> = ({
+function GenericWantedView<T extends Wanted.Base>({
   type,
   columns,
   state,
   loader,
   searchAll,
-}) => {
+}: Props<T>) {
   const typeName = capitalize(type);
 
   const data = useMemo(() => buildOrderList(state.data), [state.data]);
@@ -53,6 +53,6 @@ const GenericWantedView: FunctionComponent<Props> = ({
       </Row>
     </Container>
   );
-};
+}
 
 export default GenericWantedView;
