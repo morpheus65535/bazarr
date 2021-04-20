@@ -34,8 +34,8 @@ def sync_episodes():
     altered_episodes = []
     
     # Get sonarrId for each series from database
-    seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
-    
+    seriesIdList = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+
     for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
@@ -268,6 +268,32 @@ def episodeParser(episode):
                             'audio_codec': audioCodec,
                             'episode_file_id': episode['episodeFile']['id'],
                             'audio_language': str(audio_language)}
+
+
+def get_series_from_sonarr_api(url, apikey_sonarr):
+    url_sonarr_api_series = url + "/api/series?apikey=" + apikey_sonarr
+    try:
+        r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code:
+            raise requests.exceptions.HTTPError
+        logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get series from Sonarr.")
+        return
+    else:
+        series_list = []
+        for series in r.json():
+            series_list.append({'sonarrSeriesId': series['id'], 'title': series['title']})
+        return series_list
 
 
 def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
