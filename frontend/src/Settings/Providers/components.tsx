@@ -6,6 +6,8 @@ import React, {
   useState,
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
+import { components } from "react-select";
+import { SelectComponents } from "react-select/src/components";
 import {
   BaseModal,
   Selector,
@@ -215,6 +217,23 @@ export const ProviderModal: FunctionComponent = () => {
     );
   }, [info]);
 
+  const selectorComponents = useMemo<
+    Partial<SelectComponents<ProviderInfo, false>>
+  >(
+    () => ({
+      Option: ({ data, ...other }) => {
+        const { label, value } = data as SelectorOption<ProviderInfo>;
+        return (
+          <components.Option data={data} {...other}>
+            {label}
+            <p className="small m-0 text-muted">{value.description}</p>
+          </components.Option>
+        );
+      },
+    }),
+    []
+  );
+
   return (
     <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
       <StagedChangesContext.Provider value={[staged, setChange]}>
@@ -222,6 +241,7 @@ export const ProviderModal: FunctionComponent = () => {
           <Row>
             <Col>
               <Selector
+                components={selectorComponents}
                 disabled={payload !== null}
                 options={options}
                 value={info}
