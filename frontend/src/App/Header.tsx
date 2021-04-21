@@ -58,7 +58,7 @@ const Header: FunctionComponent<Props> = () => {
 
   const [settings] = useSystemSettings();
 
-  const canLogout = (settings.data?.auth.type ?? "none") !== "none";
+  const canLogout = (settings.data?.auth.type ?? "none") === "form";
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
