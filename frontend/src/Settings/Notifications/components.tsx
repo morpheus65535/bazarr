@@ -122,6 +122,8 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     [canSave, closeModal, current, update, payload]
   );
 
+  const getLabel = useCallback((v: Settings.NotificationInfo) => v.name, []);
+
   return (
     <BaseModal title="Notification" footer={footer} {...modal}>
       <Container fluid>
@@ -132,7 +134,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
               options={options}
               value={current}
               onChange={setCurrent}
-              label={(v) => v.name}
+              label={getLabel}
             ></Selector>
           </Col>
           <Col hidden={current === null}>

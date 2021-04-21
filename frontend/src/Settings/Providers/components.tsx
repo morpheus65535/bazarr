@@ -234,6 +234,11 @@ export const ProviderModal: FunctionComponent = () => {
     []
   );
 
+  const getLabel = useCallback(
+    (v: ProviderInfo) => v.name ?? capitalize(v.key),
+    []
+  );
+
   return (
     <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
       <StagedChangesContext.Provider value={[staged, setChange]}>
@@ -245,7 +250,7 @@ export const ProviderModal: FunctionComponent = () => {
                 disabled={payload !== null}
                 options={options}
                 value={info}
-                label={(v) => v?.name ?? capitalize(v?.key ?? "")}
+                label={getLabel}
                 onChange={onSelect}
               ></Selector>
             </Col>
