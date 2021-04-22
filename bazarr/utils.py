@@ -398,3 +398,8 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     subs.save(dest_srt_file)
 
     return dest_srt_file
+
+def check_credentials(user, pw):
+    username = settings.auth.username
+    password = settings.auth.password
+    return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username

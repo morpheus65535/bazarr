@@ -1,7 +1,6 @@
 import { createAction } from "redux-actions";
 import { BadgesApi } from "../../apis";
 import {
-  SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
   SITE_INITIALIZED,
   SITE_INITIALIZE_FAILED,
@@ -27,8 +26,6 @@ const siteInitializeFailed = createAction(SITE_INITIALIZE_FAILED);
 const siteInitialized = createAction(SITE_INITIALIZED);
 
 export const siteRedirectToAuth = createAction(SITE_NEED_AUTH);
-
-export const siteAuthSuccess = createAction(SITE_AUTH_SUCCESS);
 
 export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
   BadgesApi.all()

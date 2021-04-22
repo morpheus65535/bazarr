@@ -15,6 +15,10 @@ export type LanguageSelectorProps<M extends boolean> = Override<
   RemovedSelectorProps<M>
 >;
 
+function getLabel(lang: Language) {
+  return lang.name;
+}
+
 export function LanguageSelector<M extends boolean = false>(
   props: LanguageSelectorProps<M>
 ) {
@@ -33,7 +37,7 @@ export function LanguageSelector<M extends boolean = false>(
     <Selector
       placeholder="Language..."
       options={items}
-      label={(l) => l.name}
+      label={getLabel}
       {...selector}
     ></Selector>
   );

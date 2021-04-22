@@ -1,6 +1,7 @@
 import { isArray } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import ReactSelect from "react-select";
+import { SelectComponents } from "react-select/src/components";
 import "./selector.scss";
 
 export interface SelectorProps<T, M extends boolean> {
@@ -15,6 +16,7 @@ export interface SelectorProps<T, M extends boolean> {
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;
+  components?: Partial<SelectComponents<T, M>>;
 }
 
 export function Selector<T = string, M extends boolean = false>(
@@ -31,6 +33,7 @@ export function Selector<T = string, M extends boolean = false>(
     multiple,
     onChange,
     defaultValue,
+    components,
     value,
   } = props;
 
@@ -83,6 +86,7 @@ export function Selector<T = string, M extends boolean = false>(
       isClearable={clearable}
       isDisabled={disabled}
       options={options}
+      components={components}
       className={`custom-selector w-100 ${className ?? ""}`}
       classNamePrefix="selector"
       onChange={(v) => {
