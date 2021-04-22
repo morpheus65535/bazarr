@@ -105,9 +105,6 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
           const seriesid = episode.sonarrSeriesId;
 
-          const desired = loose![0] as boolean;
-          const items = loose![1] as Language[];
-
           const elements = useMemo(() => {
             const episodeid = episode.sonarrEpisodeId;
 
@@ -131,7 +128,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, seriesid, desired, items]);
+          }, [episode, seriesid]);
 
           return elements;
         },

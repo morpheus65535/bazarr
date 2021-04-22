@@ -1,5 +1,5 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth } from "../@redux/actions";
+import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 import { getBaseUrl } from "../utilites";
 class Api {
