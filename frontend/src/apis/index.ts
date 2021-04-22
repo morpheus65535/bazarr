@@ -15,13 +15,13 @@ class Api {
     }
   }
 
-  initialize(url: string, apikey: string) {
+  initialize(url: string, apikey?: string) {
     this.axios = Axios.create({
       baseURL: url,
     });
 
     this.axios.defaults.headers.post["Content-Type"] = "application/json";
-    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
+    this.axios.defaults.headers.common["X-API-KEY"] = apikey ?? "AUTH_NEEDED";
 
     this.source = Axios.CancelToken.source();
 
@@ -49,6 +49,21 @@ class Api {
         return Promise.reject(error);
       }
     );
+  }
+
+  danger_resetApi(apikey: string) {
+    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
+  }
+
+  onOnline() {
+    const offline = reduxStore.getState().site.offline;
+    if (offline) {
+      reduxStore.dispatch(siteUpdateOffline(false));
+    }
+  }
+
+  onOffline() {
+    reduxStore.dispatch(siteUpdateOffline(true));
   }
 
   handleError(code: number) {

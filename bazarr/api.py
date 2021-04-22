@@ -31,7 +31,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles, subtitles_apply_mods, translate_subtitles_file
+    delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
@@ -52,27 +52,9 @@ api = Api(api_bp)
 None_Keys = ['null', 'undefined', '']
 
 
-def check_credentials(user, pw):
-    username = settings.auth.username
-    password = settings.auth.password
-    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
-        return True
-    return False
-
-
 def authenticate(actual_method):
     @wraps(actual_method)
     def wrapper(*args, **kwargs):
-        if settings.auth.type == 'basic':
-            auth = request.authorization
-            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
-                return ('Unauthorized', 401, {
-                    'WWW-Authenticate': 'Basic realm="Login Required"'
-                })
-        elif settings.auth.type == 'form':
-            if 'logged_in' not in session:
-                return abort(401, message="Unauthorized")
-
         apikey_settings = settings.auth.apikey
         apikey_get = request.args.get('apikey')
         apikey_post = request.form.get('apikey')
@@ -307,12 +289,9 @@ class SystemAccount(Resource):
                 session['logged_in'] = True
                 return '', 204
         elif action == 'logout':
-            if settings.auth.type == 'basic':
-                return abort(401)
-            elif settings.auth.type == 'form':
-                session.clear()
-                gc.collect()
-                return '', 204
+            session.clear()
+            gc.collect()
+            return '', 204
 
         return '', 401
 

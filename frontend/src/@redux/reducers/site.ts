@@ -1,7 +1,7 @@
 import { Action, handleActions } from "redux-actions";
 import { storage } from "../../@storage/local";
+import apis from "../../apis";
 import {
-  SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
   SITE_INITIALIZED,
   SITE_INITIALIZE_FAILED,
@@ -23,14 +23,15 @@ function updateLocalStorage(): Partial<ReduxStore.Site> {
 
 const reducer = handleActions<ReduxStore.Site, any>(
   {
-    [SITE_NEED_AUTH]: (state) => ({
-      ...state,
-      auth: false,
-    }),
-    [SITE_AUTH_SUCCESS]: (state) => ({
-      ...state,
-      auth: true,
-    }),
+    [SITE_NEED_AUTH]: (state) => {
+      if (process.env.NODE_ENV !== "development") {
+        apis.danger_resetApi("NEED_AUTH");
+      }
+      return {
+        ...state,
+        auth: false,
+      };
+    },
     [SITE_INITIALIZED]: (state) => ({
       ...state,
       initialized: true,

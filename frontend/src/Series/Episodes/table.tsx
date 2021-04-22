@@ -121,14 +121,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
               ></SubtitleAction>
             ));
 
-            let existing = episode.subtitles;
-            if (desired) {
-              existing = existing.filter(
-                (v) => items.findIndex((inn) => inn.code2 === v.code2) !== -1
-              );
-            }
-
-            const subtitles = existing.map((val, idx) => (
+            const subtitles = episode.subtitles.map((val, idx) => (
               <SubtitleAction
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesid={seriesid}

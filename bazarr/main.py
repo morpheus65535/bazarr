@@ -42,6 +42,8 @@ from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
+from functools import wraps
+from utils import check_credentials
 
 # Install downloaded update
 if bazarr_version != '':
@@ -60,44 +62,68 @@ login_auth = settings.auth.type
 
 update_notifier()
 
+
+def check_login(actual_method):
+    @wraps(actual_method)
+    def wrapper(*args, **kwargs):
+        if settings.auth.type == 'basic':
+            auth = request.authorization
+            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+                return ('Unauthorized', 401, {
+                    'WWW-Authenticate': 'Basic realm="Login Required"'
+                })
+        elif settings.auth.type == 'form':
+            if 'logged_in' not in session:
+                return abort(401, message="Unauthorized")
+        actual_method(*args, **kwargs)
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return redirect(base_url, code=302)
 
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    return render_template("index.html")
+    auth = True
+    if settings.auth.type == 'basic':
+        auth = request.authorization
+        if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+            return ('Unauthorized', 401, {
+                'WWW-Authenticate': 'Basic realm="Login Required"'
+            })
+    elif settings.auth.type == 'form':
+        if 'logged_in' not in session:
+            auth = False
 
-
-@app.context_processor
-def template_variable_processor():
-    updated = False
     try:
         updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
     except:
-        pass
+        updated = False
 
     inject = dict()
-    inject["apiKey"] = settings.auth.apikey
     inject["baseUrl"] = base_url
     inject["canUpdate"] = not args.no_update
     inject["hasUpdate"] = updated != '0'
+
+    if auth:
+        inject["apiKey"] = settings.auth.apikey
 
     template_url = base_url
     if not template_url.endswith("/"):
         template_url += "/"
 
-    return dict(BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
 
-
+@check_login
 @app.route('/bazarr.log')
 def download_log():
-
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
 
 
+@check_login
 @app.route('/images/series/<path:url>', methods=['GET'])
 def series_images(url):
     url = url.strip("/")
@@ -112,6 +138,7 @@ def series_images(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
+@check_login
 @app.route('/images/movies/<path:url>', methods=['GET'])
 def movies_images(url):
     apikey = settings.radarr.apikey
@@ -138,6 +165,7 @@ def configured():
     database.execute("UPDATE system SET configured = 1")
 
 
+@check_login
 @app.route('/test', methods=['GET'])
 @app.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):

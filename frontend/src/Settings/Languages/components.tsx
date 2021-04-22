@@ -16,7 +16,7 @@ export const LanguageSelector: FunctionComponent<
   return (
     <CLanguageSelector
       multiple
-      defaultValue={enabled}
+      value={enabled}
       options={options}
       onChange={(val) => {
         update(val, settingKey);

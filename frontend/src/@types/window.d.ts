@@ -7,7 +7,7 @@ declare global {
 
 export interface BazarrServer {
   baseUrl: string;
-  apiKey: string;
+  apiKey?: string;
   canUpdate: boolean;
   hasUpdate: boolean;
 }
