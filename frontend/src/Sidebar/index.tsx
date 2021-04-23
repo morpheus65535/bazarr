@@ -42,21 +42,21 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
 
   const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
 
+  const sonarrEnabled = useIsSonarrEnabled();
+  const radarrEnabled = useIsRadarrEnabled();
+
   const badges = useMemo<BadgeProvider>(
     () => ({
       Wanted: {
-        Series: episodes,
-        Movies: movies,
+        Series: sonarrEnabled ? episodes : 0,
+        Movies: radarrEnabled ? movies : 0,
       },
       System: {
         Providers: providers,
       },
     }),
-    [movies, episodes, providers]
+    [movies, episodes, providers, sonarrEnabled, radarrEnabled]
   );
-
-  const sonarrEnabled = useIsSonarrEnabled();
-  const radarrEnabled = useIsRadarrEnabled();
 
   const hiddenKeys = useMemo<string[]>(() => {
     const list = [];
