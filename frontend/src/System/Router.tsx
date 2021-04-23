@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { RouterEmptyPath } from "../404";
+import { RouterEmptyPath } from "../special-pages/404";
 import Logs from "./Logs";
 import Providers from "./Providers";
 import Releases from "./Releases";
