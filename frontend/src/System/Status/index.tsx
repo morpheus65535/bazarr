@@ -112,7 +112,7 @@ const SystemStatusView: FunctionComponent<Props> = () => {
             </Label>
           </CRow>
           <CRow title="Wiki">
-            <Label icon={faWikipediaW} link={`${GithubRepoRoot}/wiki`}>
+            <Label icon={faWikipediaW} link="https://wiki.bazarr.media">
               Bazarr Wiki
             </Label>
           </CRow>
