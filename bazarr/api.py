@@ -31,7 +31,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials
+    delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials, get_health_issues
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
@@ -308,7 +308,7 @@ class System(Resource):
         return '', 204
 
 
-class BadgesSeries(Resource):
+class Badges(Resource):
     @authenticate
     def get(self):
         missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored, table_shows.seriesType "
@@ -323,10 +323,13 @@ class BadgesSeries(Resource):
 
         throttled_providers = len(eval(str(get_throttled_providers())))
 
+        health_issues = len(get_health_issues())
+
         result = {
             "episodes": missing_episodes,
             "movies": missing_movies,
-            "providers": throttled_providers
+            "providers": throttled_providers,
+            "health": health_issues
         }
         return jsonify(result)
 
@@ -411,7 +414,7 @@ class SystemSettings(Resource):
             database.execute("UPDATE table_settings_languages SET enabled=0")
             for code in enabled_languages:
                 database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?",(code,))
-            event_stream("languages");
+            event_stream("languages")
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
@@ -441,7 +444,7 @@ class SystemSettings(Resource):
                 database.execute('DELETE FROM table_languages_profiles WHERE profileId = ?', (profileId,))
 
             update_profile_id_list()
-            event_stream("languages");
+            event_stream("languages")
 
             if settings.general.getboolean('use_sonarr'):
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
@@ -456,7 +459,7 @@ class SystemSettings(Resource):
                              (item['enabled'], item['url'], item['name']))
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
-        event_stream("settings");
+        event_stream("settings")
         return '', 204
 
 
@@ -523,6 +526,12 @@ class SystemStatus(Resource):
         system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         return jsonify(data=system_status)
+
+
+class SystemHealth(Resource):
+    @authenticate
+    def get(self):
+        return jsonify(get_health_issues())
 
 
 class SystemReleases(Resource):
@@ -1755,7 +1764,7 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
-api.add_resource(BadgesSeries, '/badges')
+api.add_resource(Badges, '/badges')
 
 api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
@@ -1767,6 +1776,7 @@ api.add_resource(SystemAccount, '/system/account')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
 api.add_resource(SystemStatus, '/system/status')
+api.add_resource(SystemHealth, '/system/health')
 api.add_resource(SystemReleases, '/system/releases')
 api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')
