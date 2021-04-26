@@ -6,7 +6,7 @@ from get_series import update_series
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     upgrade_subtitles
-from utils import cache_maintenance
+from utils import cache_maintenance, check_health
 from get_args import args
 if not args.no_update:
     from check_update import check_if_new_update, check_releases
@@ -48,6 +48,7 @@ class Scheduler:
 
         # configure all tasks
         self.__cache_cleanup_task()
+        self.__check_health_task()
         self.update_configurable_tasks()
 
         self.aps_scheduler.start()
@@ -160,6 +161,10 @@ class Scheduler:
     def __cache_cleanup_task(self):
         self.aps_scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
                                    misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
+
+    def __check_health_task(self):
+        self.aps_scheduler.add_job(check_health, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                                   misfire_grace_time=15, id='check_health', name='Check health')
 
     def __sonarr_full_update_task(self):
         if settings.general.getboolean('use_sonarr'):

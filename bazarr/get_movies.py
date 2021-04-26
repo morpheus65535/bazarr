@@ -8,6 +8,7 @@ from config import settings, url_radarr
 from helper import path_mappings
 from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
+from get_rootfolder import check_radarr_rootfolder
 
 from get_subtitle import movies_download_subtitles
 from database import database, dict_converter, get_exclusion_clause
@@ -22,6 +23,7 @@ def update_all_movies():
 
 
 def update_movies():
+    check_radarr_rootfolder()
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
 

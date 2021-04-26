@@ -399,7 +399,38 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     return dest_srt_file
 
+
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+
+
+def check_health():
+    from get_rootfolder import check_sonarr_rootfolder, check_radarr_rootfolder
+    if settings.general.getboolean('use_sonarr'):
+        check_sonarr_rootfolder()
+    if settings.general.getboolean('use_radarr'):
+        check_radarr_rootfolder()
+
+
+def get_health_issues():
+    # this function must return a list of dictionaries consisting of to keys: object and issue
+    health_issues = []
+
+    # get Sonarr rootfolder issues
+    if settings.general.getboolean('use_sonarr'):
+        rootfolder = database.execute('SELECT path, accessible, error FROM table_shows_rootfolder WHERE accessible = 0')
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace(item['path']),
+                                  'issue': item['error']})
+
+    # get Radarr rootfolder issues
+    if settings.general.getboolean('use_radarr'):
+        rootfolder = database.execute('SELECT path, accessible, error FROM table_movies_rootfolder '
+                                      'WHERE accessible = 0')
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
+                                  'issue': item['error']})
+
+    return health_issues

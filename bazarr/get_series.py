@@ -6,6 +6,7 @@ import logging
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
+from get_rootfolder import check_sonarr_rootfolder
 from database import database, dict_converter
 from utils import get_sonarr_version
 from helper import path_mappings
@@ -15,6 +16,7 @@ headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 def update_series():
+    check_sonarr_rootfolder()
     apikey_sonarr = settings.sonarr.apikey
     if apikey_sonarr is None:
         return
