@@ -1304,16 +1304,16 @@ def upgrade_subtitles():
                 return
             if episode['language'].endswith('forced'):
                 language = episode['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif episode['language'].endswith('hi'):
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
             if len(audio_language_list) > 0:
@@ -1363,16 +1363,16 @@ def upgrade_subtitles():
                 return
             if movie['language'].endswith('forced'):
                 language = movie['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif movie['language'].endswith('hi'):
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
             if len(audio_language_list) > 0:
@@ -1396,7 +1396,12 @@ def upgrade_subtitles():
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
