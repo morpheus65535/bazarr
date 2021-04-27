@@ -31,7 +31,7 @@ def store_subtitles(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path, original_path)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -132,7 +132,7 @@ def store_subtitles(original_path, reversed_path):
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
-    
+
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
 
     return actual_subtitles
@@ -145,7 +145,7 @@ def store_subtitles_movie(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path, original_path)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -224,7 +224,7 @@ def store_subtitles_movie(original_path, reversed_path):
                         language_str = str(language)
                     logging.debug("BAZARR external subtitles detected: " + language_str)
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
-        
+
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
         matching_movies = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
@@ -469,40 +469,40 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
 
 def series_full_scan_subtitles():
     episodes = database.execute("SELECT path FROM table_episodes")
-    
+
     for i, episode in enumerate(episodes, 1):
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-    
+
     gc.collect()
 
 
 def movies_full_scan_subtitles():
     movies = database.execute("SELECT path FROM table_movies")
-    
+
     for i, movie in enumerate(movies, 1):
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-    
+
     gc.collect()
 
 
 def series_scan_subtitles(no):
     episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=? ORDER BY sonarrEpisodeId",
                                 (no,))
-    
+
     for episode in episodes:
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
 
 def movies_scan_subtitles(no):
     movies = database.execute("SELECT path FROM table_movies WHERE radarrId=? ORDER BY radarrId", (no,))
-    
+
     for movie in movies:
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
 
 def get_external_subtitles_path(file, subtitle):
     fld = os.path.dirname(file)
-    
+
     if settings.general.subfolder == "current":
         path = os.path.join(fld, subtitle)
     elif settings.general.subfolder == "absolute":
@@ -523,7 +523,7 @@ def get_external_subtitles_path(file, subtitle):
             path = None
     else:
         path = None
-    
+
     return path
 
 

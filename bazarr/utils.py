@@ -291,7 +291,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-        
+
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -399,7 +399,53 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     return dest_srt_file
 
+
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+
+
+def cache_get_ffprobe(file):
+    record = {}
+
+    item = database.execute("SELECT sonarrEpisodeId, file_ffprobe FROM table_episodes WHERE path = ?",
+                            (file,), only_one=True)
+
+    if item is not None:
+        record['id'] = item['sonarrEpisodeId']
+        record['type'] = 'episode'
+
+        if item['file_ffprobe']:
+            record['ffprobe'] = json.JSONDecoder().decode(item['file_ffprobe'])
+        else:
+            record['ffprobe'] = None
+
+        return record
+
+    item = database.execute("SELECT tmdbId, file_ffprobe FROM table_movies WHERE path = ?",
+                            (file,), only_one=True)
+    if item is not None:
+        record['id'] = item['tmdbId']
+        record['type'] = 'movie'
+
+        if item['file_ffprobe']:
+            record['ffprobe'] = json.JSONDecoder().decode(item['file_ffprobe'])
+        else:
+            record['ffprobe'] = None
+
+        return record
+
+    return {'type': None, 'id': None, 'ffprobe': None}
+
+
+def cache_save_ffprobe(file, record_id, record_type, ffprobe):
+    logging.debug(('Saving ffprobe records for', file, record_id, record_type, ffprobe))
+
+    if record_type == 'movie':
+        database.execute("UPDATE table_movies SET file_ffprobe = ? WHERE path = ? AND tmdbId = ?",
+                         (json.JSONEncoder().encode(ffprobe), file, record_id))
+
+    if record_type == 'episode':
+        database.execute("UPDATE table_episodes SET file_ffprobe = ? WHERE path = ? AND sonarrEpisodeId = ?",
+                         (json.JSONEncoder().encode(ffprobe), file, record_id))
