@@ -440,7 +440,7 @@ def cache_get_ffprobe(file):
 
 
 def cache_save_ffprobe(file, record_id, record_type, ffprobe):
-    logging.debug(('Saving ffprobe records for', file, record_id, record_type, ffprobe))
+    logging.debug('Saving ffprobe records [%s, %s, %s] data: %s', record_type, record_id, file, ffprobe)
 
     if record_type == 'movie':
         database.execute("UPDATE table_movies SET file_ffprobe = ? WHERE path = ? AND tmdbId = ?",

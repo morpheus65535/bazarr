@@ -17,7 +17,7 @@ class EmbeddedSubsReader:
         from utils import get_binary, cache_get_ffprobe, cache_save_ffprobe
         self.cache = cache_get_ffprobe(original_path)
         if self.cache['ffprobe'] is not None:
-            logging.debug(('returning cached results for', original_path))
+            logging.debug('returning cached results for: %s', original_path)
             return self.cache['ffprobe']
 
         self.ffprobe = get_binary("ffprobe")
