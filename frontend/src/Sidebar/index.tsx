@@ -22,7 +22,9 @@ interface Props {
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const toggle = useContext(SidebarToggleContext);
 
-  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
+  const { movies, episodes, providers, status } = useReduxStore(
+    (s) => s.site.badges
+  );
 
   const badges = useMemo<BadgeProvider>(
     () => ({
@@ -32,9 +34,10 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
       },
       System: {
         Providers: providers,
+        Status: status,
       },
     }),
-    [movies, episodes, providers]
+    [movies, episodes, providers, status]
   );
 
   const sonarrEnabled = useIsSonarrEnabled();

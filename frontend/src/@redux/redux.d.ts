@@ -34,6 +34,7 @@ namespace ReduxStore {
     enabledLanguage: AsyncState<Array<Language>>;
     languagesProfiles: AsyncState<Array<Profile.Languages>>;
     status: AsyncState<System.Status | undefined>;
+    health: AsyncState<Array<System.Health>>;
     tasks: AsyncState<Array<System.Task>>;
     providers: AsyncState<Array<System.Provider>>;
     logs: AsyncState<Array<System.Log>>;

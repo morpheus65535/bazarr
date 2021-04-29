@@ -53,11 +53,12 @@ def check_sonarr_rootfolder():
     rootfolder = database.execute('SELECT id, path FROM table_shows_rootfolder')
     for item in rootfolder:
         if not os.path.isdir(path_mappings.path_replace(item['path'])):
-            database.execute("UPDATE table_shows_rootfolder SET accessible = 0, error = 'Directory does not exist' "
-                             "WHERE id = ?", (item['id'],))
+            database.execute("UPDATE table_shows_rootfolder SET accessible = 0, error = 'This Sonarr root directory "
+                             "does not seems to be accessible by Bazarr. Please check path mapping.' WHERE id = ?",
+                             (item['id'],))
         elif not os.access(path_mappings.path_replace(item['path']), os.W_OK):
-            database.execute("UPDATE table_shows_rootfolder SET accessible = 0, error = 'Cannot write to directory' "
-                             "WHERE id = ?", (item['id'],))
+            database.execute("UPDATE table_shows_rootfolder SET accessible = 0, error = 'Bazarr cannot write to "
+                             "this directory' WHERE id = ?", (item['id'],))
         else:
             database.execute("UPDATE table_shows_rootfolder SET accessible = 1, error = '' WHERE id = ?", (item['id'],))
 
@@ -104,11 +105,12 @@ def check_radarr_rootfolder():
     rootfolder = database.execute('SELECT id, path FROM table_movies_rootfolder')
     for item in rootfolder:
         if not os.path.isdir(path_mappings.path_replace_movie(item['path'])):
-            database.execute("UPDATE table_movies_rootfolder SET accessible = 0, error = 'Directory does not exist' "
-                             "WHERE id = ?", (item['id'],))
+            database.execute("UPDATE table_movies_rootfolder SET accessible = 0, error = 'This Radarr root directory "
+                             "does not seems to be accessible by Bazarr. Please check path mapping.' WHERE id = ?",
+                             (item['id'],))
         elif not os.access(path_mappings.path_replace_movie(item['path']), os.W_OK):
-            database.execute("UPDATE table_movies_rootfolder SET accessible = 0, error = 'Cannot write to directory' "
-                             "WHERE id = ?", (item['id'],))
+            database.execute("UPDATE table_movies_rootfolder SET accessible = 0, error = 'Bazarr cannot write to "
+                             "this directory' WHERE id = ?", (item['id'],))
         else:
             database.execute("UPDATE table_movies_rootfolder SET accessible = 1, error = '' WHERE id = ?",
                              (item['id'],))

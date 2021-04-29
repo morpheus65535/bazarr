@@ -89,6 +89,18 @@ class SystemApi extends BaseApi {
     });
   }
 
+  async health() {
+    return new Promise<System.Health>((resolve, reject) => {
+      this.get<DataWrapper<System.Health>>("/health")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async logs() {
     return new Promise<Array<System.Log>>((resolve, reject) => {
       this.get<DataWrapper<Array<System.Log>>>("/logs")

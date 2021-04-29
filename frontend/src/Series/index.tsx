@@ -1,9 +1,4 @@
-import {
-  faCheck,
-  faExclamationTriangle,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -38,21 +33,6 @@ const SeriesView: FunctionComponent<Props> = () => {
               </Link>
             );
           }
-        },
-      },
-      {
-        Header: "Exist",
-        accessor: "exist",
-        selectHide: true,
-        Cell: (row) => {
-          const exist = row.value;
-          const { path } = row.row.original;
-          return (
-            <FontAwesomeIcon
-              title={path}
-              icon={exist ? faCheck : faExclamationTriangle}
-            ></FontAwesomeIcon>
-          );
         },
       },
       {

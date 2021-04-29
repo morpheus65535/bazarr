@@ -16,6 +16,7 @@ import {
   seriesUpdateHistoryList,
   seriesUpdateList,
   seriesUpdateWantedList,
+  systemUpdateHealth,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
   systemUpdateLogs,
@@ -64,6 +65,16 @@ export function useSystemTasks() {
 export function useSystemStatus() {
   const items = useReduxStore((s) => s.system.status.data);
   const update = useReduxAction(systemUpdateStatus);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemHealth() {
+  const update = useReduxAction(systemUpdateHealth);
+  const items = useReduxStore((s) => s.system.health);
 
   useEffect(() => {
     update();

@@ -9,7 +9,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useSystemStatus } from "../../@redux/hooks";
+import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
+import { AsyncStateOverlay } from "../../components";
+import Table from "./table";
 
 interface InfoProps {
   title: string;
@@ -62,13 +64,28 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
+  const [health] = useSystemHealth();
   const [status] = useSystemStatus();
+
+  let health_table;
+  if (health.data.length) {
+    health_table = (
+      <AsyncStateOverlay state={health}>
+        {(data) => <Table health={data}></Table>}
+      </AsyncStateOverlay>
+    );
+  } else {
+    health_table = "No issues with your configuration";
+  }
 
   return (
     <Container className="p-5">
       <Helmet>
         <title>Status - Bazarr (System)</title>
       </Helmet>
+      <Row>
+        <InfoContainer title="Health">{health_table}</InfoContainer>
+      </Row>
       <Row>
         <InfoContainer title="About">
           <CRow title="Bazarr Version">
