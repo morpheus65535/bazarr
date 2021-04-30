@@ -291,7 +291,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-        
+
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -399,7 +399,63 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     return dest_srt_file
 
+
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+
+
+def cache_get_ffprobe(path):
+    record = {
+        'id': None,
+        'type': None,
+        'ffprobe': None
+    }
+
+    item = database.execute("SELECT sonarrEpisodeId, file_ffprobe FROM table_episodes WHERE path = ?", (path,), only_one=True)
+    if item:
+        record.update({'id': item['sonarrEpisodeId'], 'type': 'episode'})
+
+        if item['file_ffprobe']:
+            record.update({'ffprobe': json.loads(item['file_ffprobe'])})
+            logging.debug('Returning cached results for: [%s:%s, %s]. (%s)', record['type'], record['id'], path, record['ffprobe'])
+
+        return record
+
+    # No record for episode with the same path. try movies.
+    item = database.execute("SELECT tmdbId, file_ffprobe FROM table_movies WHERE path = ?", (path,), only_one=True)
+    if item:
+        record.update({'id': item['tmdbId'], 'type': 'movie'})
+
+        if item['file_ffprobe']:
+            record.update({'ffprobe': json.loads(item['file_ffprobe'])})
+            logging.debug('Returning cached results for: [%s:%s, %s]. (%s)', record['type'], record['id'], path, record['ffprobe'])
+
+    return record
+
+
+def cache_save_ffprobe(path, record_id, record_type, ffprobe):
+    logging.debug('Saving ffprobe records [%s:%s, %s]. (%s)', record_type, record_id, path, ffprobe)
+
+    if record_type == 'movie':
+        database.execute("UPDATE table_movies SET file_ffprobe = ? WHERE path = ? AND tmdbId = ?",
+                         (json.dumps(ffprobe), path, record_id))
+
+    if record_type == 'episode':
+        database.execute("UPDATE table_episodes SET file_ffprobe = ? WHERE path = ? AND sonarrEpisodeId = ?",
+                         (json.dumps(ffprobe), path, record_id))
+
+
+def cache_is_valid(path, file_size, record_type, record_id):
+    if record_type == 'movie':
+        item = database.execute("SELECT tmdbId, path, file_size FROM table_movies WHERE tmdbId = ?",
+                                (record_id,), only_one=True)
+    else:
+        item = database.execute("SELECT sonarrEpisodeId, path, file_size FROM table_episodes WHERE sonarrEpisodeId = ?",
+                                (record_id,), only_one=True)
+
+    if item:
+        return str(item['path']) == str(path) and int(item['file_size']) == int(file_size)
+
+    return False

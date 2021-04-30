@@ -6,7 +6,7 @@ import logging
 
 from config import settings, url_radarr
 from helper import path_mappings
-from utils import get_radarr_version
+from utils import get_radarr_version, cache_is_valid
 from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 
 from get_subtitle import movies_download_subtitles
@@ -39,7 +39,7 @@ def update_movies():
     else:
         audio_profiles = get_profile_list()
         tagsDict = get_tags()
-        
+
         # Get movies data from radarr
         if radarr_version.startswith('0'):
             url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
@@ -63,8 +63,8 @@ def update_movies():
             return
         else:
             # Get current movies in DB
-            current_movies_db = database.execute("SELECT tmdbId, path, radarrId FROM table_movies")
-            
+            current_movies_db = database.execute("SELECT tmdbId FROM table_movies")
+
             current_movies_db_list = [x['tmdbId'] for x in current_movies_db]
 
             current_movies_radarr = []
@@ -96,11 +96,16 @@ def update_movies():
                                 fanart = movie['images'][1]['url']
                             except:
                                 fanart = ""
-                            
+
                             if 'sceneName' in movie['movieFile']:
                                 sceneName = movie['movieFile']['sceneName']
                             else:
                                 sceneName = None
+
+                            if 'size' in movie['movieFile']:
+                                fileSize = movie['movieFile']['size']
+                            else:
+                                fileSize = 0
 
                             alternativeTitles = None
                             if radarr_version.startswith('0'):
@@ -167,55 +172,43 @@ def update_movies():
 
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(str(movie['tmdbId']))
-                            
+
+                            info = {
+                                'radarrId': int(movie['id']),
+                                'title': movie['title'],
+                                'path': movie['path'] + separator + movie['movieFile']['relativePath'],
+                                'tmdbId': str(movie['tmdbId']),
+                                'poster': poster,
+                                'fanart': fanart,
+                                'audio_language': str(audio_language),
+                                'sceneName': sceneName,
+                                'monitored': str(bool(movie['monitored'])),
+                                'year': str(movie['year']),
+                                'sortTitle': movie['sortTitle'],
+                                'alternativeTitles': alternativeTitles,
+                                'format': format,
+                                'resolution': resolution,
+                                'video_codec': videoCodec,
+                                'audio_codec': audioCodec,
+                                'overview': overview,
+                                'imdbId': imdbId,
+                                'movie_file_id': int(movie['movieFile']['id']),
+                                'tags': str(tags),
+                                'file_size': fileSize,
+                            }
+
                             if str(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append({'radarrId': int(movie["id"]),
-                                                         'title': movie["title"],
-                                                         'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                         'tmdbId': str(movie["tmdbId"]),
-                                                         'poster': poster,
-                                                         'fanart': fanart,
-                                                         'audio_language': str(audio_language),
-                                                         'sceneName': sceneName,
-                                                         'monitored': str(bool(movie['monitored'])),
-                                                         'year': str(movie['year']),
-                                                         'sortTitle': movie['sortTitle'],
-                                                         'alternativeTitles': alternativeTitles,
-                                                         'format': format,
-                                                         'resolution': resolution,
-                                                         'video_codec': videoCodec,
-                                                         'audio_codec': audioCodec,
-                                                         'overview': overview,
-                                                         'imdbId': imdbId,
-                                                         'movie_file_id': int(movie['movieFile']['id']),
-                                                         'tags': str(tags)})
+                                if not cache_is_valid(info['path'], info['file_size'], 'movie', str(info['tmdbId'])):
+                                    logging.debug('Path and/or Size is not the same. Invalidating ffprobe cache data for: [%s:%s, %s].',
+                                                  'movie', str(info['tmdbId']), info['path'])
+                                    info.update({'file_ffprobe': None})
+
+                                movies_to_update.append(info)
                             else:
-                                movies_to_add.append({'radarrId': int(movie["id"]),
-                                                      'title': movie["title"],
-                                                      'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                      'tmdbId': str(movie["tmdbId"]),
-                                                      'subtitles': '[]',
-                                                      'overview': overview,
-                                                      'poster': poster,
-                                                      'fanart': fanart,
-                                                      'audio_language': str(audio_language),
-                                                      'sceneName': sceneName,
-                                                      'monitored': str(bool(movie['monitored'])),
-                                                      'sortTitle': movie['sortTitle'],
-                                                      'year': str(movie['year']),
-                                                      'alternativeTitles': alternativeTitles,
-                                                      'format': format,
-                                                      'resolution': resolution,
-                                                      'video_codec': videoCodec,
-                                                      'audio_codec': audioCodec,
-                                                      'imdbId': imdbId,
-                                                      'movie_file_id': int(movie['movieFile']['id']),
-                                                      'tags': str(tags),
-                                                      'profileId': movie_default_profile})
+                                info.update({'file_ffprobe': None, 'profileId': movie_default_profile})
+                                movies_to_add.append(info)
                         else:
-                            logging.error(
-                                'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
-                                movie['movieFile']['relativePath'])
+                            logging.error('BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator + movie['movieFile']['relativePath'])
 
             # Remove old movies from DB
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
