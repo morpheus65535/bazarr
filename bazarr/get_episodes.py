@@ -129,9 +129,9 @@ def sync_episodes():
                                 }
 
                                 if episode['id'] in current_episodes_db_list:
-                                    if not cache_is_valid(info['path'], info['file_size'], 'episode', episode['sonarrEpisodeId']):
+                                    if not cache_is_valid(info['path'], info['file_size'], 'episode', info['sonarrEpisodeId']):
                                         logging.debug('Path and/or Size is not the same. Invalidating ffprobe cache data for: [%s:%s, %s].',
-                                                      'episode', episode['sonarrEpisodeId'], info['path'])
+                                                      'episode', info['sonarrEpisodeId'], info['path'])
                                         info.update({'file_ffprobe': None})
 
                                     episodes_to_update.append(info)
