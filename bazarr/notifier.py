@@ -56,10 +56,10 @@ def get_episode_name(sonarr_episode_id):
     return data['title'], data['season'], data['episode']
 
 
-def get_movies_name(radarr_id):
-    data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
+def get_movie(radarr_id):
+    data = database.execute("SELECT title, year FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
 
-    return data['title']
+    return {'title': data['title'], 'year': data['year']}
 
 
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):
@@ -83,7 +83,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
 def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
-    movie = get_movies_name(radarr_id)
+    movie = get_movie(radarr_id)
 
     asset = apprise.AppriseAsset(async_mode=False)
 
@@ -95,5 +95,5 @@ def send_notifications_movie(radarr_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body="{} : {}".format(movie, message),
+        body="{} ({}) : {}".format(movie['title'], movie['year'], message),
     )
