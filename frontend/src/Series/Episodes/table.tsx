@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableOptions, TableUpdater } from "react-table";
+import { useSerieBy } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
@@ -131,10 +132,13 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: ({ row, externalUpdate }) => {
+          const [serie] = useSerieBy(row.original.sonarrSeriesId);
+
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
+                disabled={serie.data?.profileId === null}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "manual-search");
                 }}
