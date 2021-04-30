@@ -185,7 +185,8 @@ def sync_episodes():
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
-        store_subtitles(altered_episode[1], path_mappings.path_replace(altered_episode[1]))
+        store_subtitles(altered_episode[1], path_mappings.path_replace(altered_episode[1]),
+                        'episode', altered_episode[0])
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 

@@ -115,8 +115,10 @@ def update_movies():
                                 if 'alternateTitles' in movie:
                                     alternativeTitles = str([item['title'] for item in movie['alternateTitles']])
 
-                            if 'imdbId' in movie: imdbId = movie['imdbId']
-                            else: imdbId = None
+                            if 'imdbId' in movie:
+                                imdbId = movie['imdbId']
+                            else:
+                                imdbId = None
 
                             try:
                                 format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
@@ -198,9 +200,9 @@ def update_movies():
                             }
 
                             if str(movie['tmdbId']) in current_movies_db_list:
-                                if not cache_is_valid(info['path'], info['file_size'], 'movie', str(info['tmdbId'])):
+                                if not cache_is_valid(info['path'], info['file_size'], 'movie', info['radarrId']):
                                     logging.debug('Path and/or Size is not the same. Invalidating ffprobe cache data for: [%s:%s, %s].',
-                                                  'movie', str(info['tmdbId']), info['path'])
+                                                  'movie', info['radarrId'], info['path'])
                                     info.update({'file_ffprobe': None})
 
                                 movies_to_update.append(info)
@@ -254,7 +256,8 @@ def update_movies():
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
-                store_subtitles_movie(altered_movie[1], path_mappings.path_replace_movie(altered_movie[1]))
+                store_subtitles_movie(altered_movie[1], path_mappings.path_replace_movie(altered_movie[1]),
+                                      'movie', altered_movie[2])
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 
@@ -348,7 +351,7 @@ def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
     if videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
         if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"): return "XviD"
         if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
-            "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
+                "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
     if videoFormat == "VC-1": return "VC1"
     if videoFormat == "WMV2":
         return "WMV"

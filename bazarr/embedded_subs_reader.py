@@ -13,10 +13,10 @@ class EmbeddedSubsReader:
         self.cache = None
         self.data = None
 
-    def list_languages(self, file, original_path):
+    def list_languages(self, file, original_path, record_type=None, record_id=None):
         from utils import get_binary, cache_get_ffprobe, cache_save_ffprobe
 
-        self.cache = cache_get_ffprobe(original_path)
+        self.cache = cache_get_ffprobe(original_path, record_type, record_id)
         if self.cache['ffprobe'] is not None:
             return self.cache['ffprobe']
 
@@ -63,7 +63,8 @@ class EmbeddedSubsReader:
                             subtitles_list.append([subtitle_track.language, subtitle_track.forced, hearing_impaired,
                                                    subtitle_track.codec_id])
 
-        cache_save_ffprobe(original_path, self.cache['id'], self.cache['type'], subtitles_list)
+        if self.cache['type'] and self.cache['id']:
+            cache_save_ffprobe(original_path, self.cache['type'], self.cache['id'], subtitles_list)
 
         return subtitles_list
 

@@ -248,7 +248,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             action = "downloaded"
                         percent_score = round(subtitle.score * 100 / max_score, 2)
                         message = downloaded_language + modifier_string + " subtitles " + action + " from " + \
-                            downloaded_provider + " with a score of " + str(percent_score) + "%."
+                                  downloaded_provider + " with a score of " + str(percent_score) + "%."
 
                         if media_type == 'series':
                             episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM "
@@ -668,7 +668,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     sub = Subtitle(
         lang_obj,
-        mods = get_array_from(settings.general.subzero_mods)
+        mods=get_array_from(settings.general.subzero_mods)
     )
 
     sub.content = subtitle.read()
@@ -723,7 +723,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
-    if use_postprocessing :
+    if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
                              audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id, episode_id)
@@ -791,7 +791,8 @@ def series_download_subtitles(no):
                         score = result[4]
                         subs_id = result[6]
                         subs_path = result[7]
-                        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+                        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']),
+                                        'episode', episode['sonarrEpisodeId'])
                         history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score,
                                     subs_id, subs_path)
                         send_notifications(no, episode['sonarrEpisodeId'], message)
@@ -848,7 +849,8 @@ def episode_download_subtitles(no):
                         score = result[4]
                         subs_id = result[6]
                         subs_path = result[7]
-                        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+                        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']),
+                                        'episode', episode['sonarrEpisodeId'])
                         history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                     language_code, provider, score, subs_id, subs_path)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
@@ -908,7 +910,8 @@ def movies_download_subtitles(no):
                     score = result[4]
                     subs_id = result[6]
                     subs_path = result[7]
-                    store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+                    store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']),
+                                          'movie', movie['radarrId'])
                     history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
                     send_notifications_movie(no, message)
         else:
@@ -978,7 +981,8 @@ def wanted_download_subtitles(path, l, count_episodes):
                             score = result[4]
                             subs_id = result[6]
                             subs_path = result[7]
-                            store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+                            store_subtitles(episode['path'], path_mappings.path_replace(episode['path']),
+                                            'episode', episode['sonarrEpisodeId'])
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                         language_code, provider, score, subs_id, subs_path)
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
@@ -1046,7 +1050,8 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             score = result[4]
                             subs_id = result[6]
                             subs_path = result[7]
-                            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+                            store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']),
+                                                  'movie', movie['radarrId'])
                             history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
                                               subs_id, subs_path)
                             send_notifications_movie(movie['radarrId'], message)
@@ -1240,8 +1245,8 @@ def upgrade_subtitles():
                                                "table_episodes on table_episodes.sonarrEpisodeId = "
                                                "table_history.sonarrEpisodeId WHERE action IN "
                                                "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
-                                               "score is not null" + get_exclusion_clause('series') + " GROUP BY "
-                                               "table_history.video_path, table_history.language",
+                                                                                         "score is not null" + get_exclusion_clause('series') + " GROUP BY "
+                                                                                                                                                "table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
@@ -1271,8 +1276,8 @@ def upgrade_subtitles():
                                              "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
                                              "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
                                              "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
-                                             "is not null" + get_exclusion_clause('movie') + " GROUP BY "
-                                             "table_history_movie.video_path, table_history_movie.language",
+                                                                                       "is not null" + get_exclusion_clause('movie') + " GROUP BY "
+                                                                                                                                       "table_history_movie.video_path, table_history_movie.language",
                                              (minimum_timestamp,))
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
@@ -1347,7 +1352,8 @@ def upgrade_subtitles():
                 score = result[4]
                 subs_id = result[6]
                 subs_path = result[7]
-                store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
+                store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']),
+                                'episode', episode['sonarrEpisodeId'])
                 history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                             language_code, provider, score, subs_id, subs_path)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
@@ -1406,8 +1412,8 @@ def upgrade_subtitles():
                 score = result[4]
                 subs_id = result[6]
                 subs_path = result[7]
-                store_subtitles_movie(movie['video_path'],
-                                      path_mappings.path_replace_movie(movie['video_path']))
+                store_subtitles_movie(movie['video_path'], path_mappings.path_replace_movie(movie['video_path']),
+                                      'movie', movie['radarrId'])
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
 
