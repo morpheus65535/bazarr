@@ -258,7 +258,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -269,7 +269,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            radarr_id=movie_metadata['radarrId'])
 
@@ -583,7 +583,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -594,7 +594,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score, radarr_id=movie_metadata['radarrId'])
 
                         if use_postprocessing:
@@ -711,7 +711,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                             only_one=True)
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
     else:
@@ -720,7 +720,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                           only_one=True)
         series_id = ""
         episode_id = movie_metadata['radarrId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing:
