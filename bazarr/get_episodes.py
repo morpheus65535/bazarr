@@ -4,7 +4,7 @@ import os
 import requests
 import logging
 from database import database, dict_converter, get_exclusion_clause
-from utils import cache_is_valid
+
 from config import settings, url_sonarr
 from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
@@ -22,9 +22,9 @@ def update_all_episodes():
 def sync_episodes():
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
-
+    
     # Get current episodes id in DB
-    current_episodes_db = database.execute("SELECT sonarrEpisodeId FROM table_episodes")
+    current_episodes_db = database.execute("SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes")
 
     current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
 
@@ -32,10 +32,10 @@ def sync_episodes():
     episodes_to_update = []
     episodes_to_add = []
     altered_episodes = []
-
+    
     # Get sonarrId for each series from database
     seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
-
+    
     for i, seriesId in enumerate(seriesIdList):
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
@@ -66,11 +66,6 @@ def sync_episodes():
                                 else:
                                     sceneName = None
 
-                                if 'size' in episode['episodeFile']:
-                                    fileSize = int(episode['episodeFile']['size'])
-                                else:
-                                    fileSize = 0
-
                                 try:
                                     format, resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
                                 except:
@@ -84,14 +79,12 @@ def sync_episodes():
                                     if 'videoCodec' in episode['episodeFile']['mediaInfo']:
                                         videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
                                         videoCodec = SonarrFormatVideoCodec(videoCodec)
-                                    else:
-                                        videoCodec = None
+                                    else: videoCodec = None
 
                                     if 'audioCodec' in episode['episodeFile']['mediaInfo']:
                                         audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
                                         audioCodec = SonarrFormatAudioCodec(audioCodec)
-                                    else:
-                                        audioCodec = None
+                                    else: audioCodec = None
                                 else:
                                     videoCodec = None
                                     audioCodec = None
@@ -109,35 +102,37 @@ def sync_episodes():
 
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
-
-                                info = {
-                                    'sonarrSeriesId': episode['seriesId'],
-                                    'sonarrEpisodeId': episode['id'],
-                                    'title': episode['title'],
-                                    'path': episode['episodeFile']['path'],
-                                    'season': episode['seasonNumber'],
-                                    'episode': episode['episodeNumber'],
-                                    'scene_name': sceneName,
-                                    'monitored': str(bool(episode['monitored'])),
-                                    'format': format,
-                                    'resolution': resolution,
-                                    'video_codec': videoCodec,
-                                    'audio_codec': audioCodec,
-                                    'episode_file_id': episode['episodeFile']['id'],
-                                    'audio_language': str(audio_language),
-                                    'file_size': fileSize,
-                                }
-
+                                
                                 if episode['id'] in current_episodes_db_list:
-                                    if not cache_is_valid(info['path'], info['file_size'], 'episode', info['sonarrEpisodeId']):
-                                        logging.debug('Path and/or Size is not the same. Invalidating ffprobe cache data for: [%s:%s, %s].',
-                                                      'episode', info['sonarrEpisodeId'], info['path'])
-                                        info.update({'file_ffprobe': None})
-
-                                    episodes_to_update.append(info)
+                                    episodes_to_update.append({'sonarrSeriesId': episode['seriesId'],
+                                                               'sonarrEpisodeId': episode['id'],
+                                                               'title': episode['title'],
+                                                               'path': episode['episodeFile']['path'],
+                                                               'season': episode['seasonNumber'],
+                                                               'episode': episode['episodeNumber'],
+                                                               'scene_name': sceneName,
+                                                               'monitored': str(bool(episode['monitored'])),
+                                                               'format': format,
+                                                               'resolution': resolution,
+                                                               'video_codec': videoCodec,
+                                                               'audio_codec': audioCodec,
+                                                               'episode_file_id': episode['episodeFile']['id'],
+                                                               'audio_language': str(audio_language)})
                                 else:
-                                    info.update({'file_ffprobe': None})
-                                    episodes_to_add.append(info)
+                                    episodes_to_add.append({'sonarrSeriesId': episode['seriesId'],
+                                                            'sonarrEpisodeId': episode['id'],
+                                                            'title': episode['title'],
+                                                            'path': episode['episodeFile']['path'],
+                                                            'season': episode['seasonNumber'],
+                                                            'episode': episode['episodeNumber'],
+                                                            'scene_name': sceneName,
+                                                            'monitored': str(bool(episode['monitored'])),
+                                                            'format': format,
+                                                            'resolution': resolution,
+                                                            'video_codec': videoCodec,
+                                                            'audio_codec': audioCodec,
+                                                            'episode_file_id': episode['episodeFile']['id'],
+                                                            'audio_language': str(audio_language)})
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
@@ -153,7 +148,7 @@ def sync_episodes():
     episode_in_db_list = []
     episodes_in_db = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, "
                                       "scene_name, monitored, format, resolution, video_codec, audio_codec, "
-                                      "episode_file_id, audio_language, file_ffprobe FROM table_episodes")
+                                      "episode_file_id, audio_language FROM table_episodes")
 
     for item in episodes_in_db:
         episode_in_db_list.append(item)
@@ -185,8 +180,7 @@ def sync_episodes():
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
-        store_subtitles(altered_episode[1], path_mappings.path_replace(altered_episode[1]),
-                        'episode', altered_episode[0])
+        store_subtitles(altered_episode[1], path_mappings.path_replace(altered_episode[1]))
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 

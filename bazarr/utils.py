@@ -291,7 +291,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-
+        
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -299,30 +299,26 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             os.remove(path_mappings.path_replace(subtitles_path))
         except OSError:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path,
-                            'episode', sonarr_episode_id)
+            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             return False
         else:
             history_log(0, sonarr_series_id, sonarr_episode_id, result, language=language_log,
                         video_path=path_mappings.path_replace_reverse(media_path),
                         subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path,
-                            'episode', sonarr_episode_id)
+            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             notify_sonarr(sonarr_series_id)
     else:
         try:
             os.remove(path_mappings.path_replace_movie(subtitles_path))
         except OSError:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path,
-                                  'movie', radarr_id)
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             return False
         else:
             history_log_movie(0, radarr_id, result, language=language_log,
                               video_path=path_mappings.path_replace_reverse_movie(media_path),
                               subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path,
-                                  'movie', radarr_id)
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             notify_radarr(radarr_id)
             return True
 
@@ -403,66 +399,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     return dest_srt_file
 
-
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
-
-
-def cache_get_ffprobe(path, record_type=None, record_id=None):
-    record = {
-        'id': record_id,
-        'type': record_type,
-        'ffprobe': None
-    }
-
-    if record_type == 'episode':
-        item = database.execute("SELECT sonarrEpisodeId, file_ffprobe FROM table_episodes WHERE sonarrEpisodeId = ? AND path = ?",
-                                (record_id, path,), only_one=True)
-        if item:
-            record.update({'id': item['sonarrEpisodeId'], 'type': 'episode'})
-
-            if item['file_ffprobe'] is not None:
-                record.update({'ffprobe': json.loads(item['file_ffprobe'])})
-                logging.debug('Returning cached results for: [%s:%s, %s]. (%s)', record['type'], record['id'], path, record['ffprobe'])
-
-            return record
-
-    if record_type == 'movie':
-        item = database.execute("SELECT radarrId, file_ffprobe FROM table_movies WHERE radarrId = ? AND path = ?",
-                                (record_id, path,), only_one=True)
-        if item:
-            record.update({'id': item['radarrId'], 'type': 'movie'})
-
-            if item['file_ffprobe'] is not None:
-                record.update({'ffprobe': json.loads(item['file_ffprobe'])})
-                logging.debug('Returning cached results for: [%s:%s, %s]. (%s)', record['type'], record['id'], path, record['ffprobe'])
-
-    return record
-
-
-def cache_save_ffprobe(path, record_type, record_id, ffprobe):
-    if record_type == 'movie':
-        database.execute("UPDATE table_movies SET file_ffprobe = ? WHERE path = ? AND radarrId = ?",
-                         (json.dumps(ffprobe), path, record_id))
-
-    if record_type == 'episode':
-        database.execute("UPDATE table_episodes SET file_ffprobe = ? WHERE path = ? AND sonarrEpisodeId = ?",
-                         (json.dumps(ffprobe), path, record_id))
-
-    logging.debug('Saving ffprobe records [%s:%s, %s]. (%s)', record_type, record_id, path, ffprobe)
-
-
-def cache_is_valid(path, file_size, record_type, record_id):
-    if record_type == 'movie':
-        item = database.execute("SELECT path, file_size FROM table_movies WHERE radarrId = ?",
-                                (record_id,), only_one=True)
-    else:
-        item = database.execute("SELECT path, file_size FROM table_episodes WHERE sonarrEpisodeId = ?",
-                                (record_id,), only_one=True)
-
-    if item:
-        return str(item['path']) == str(path) and int(item['file_size']) == int(file_size)
-
-    return False

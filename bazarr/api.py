@@ -721,7 +721,7 @@ class EpisodesSubtitles(Resource):
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id,
                             subs_path)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath, 'episode', sonarrEpisodeId)
+                store_subtitles(path, episodePath)
             else:
                 event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
 
@@ -777,7 +777,7 @@ class EpisodesSubtitles(Resource):
                             subtitles_path=subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath, 'episode', sonarrEpisodeId)
+                store_subtitles(path, episodePath)
 
         except OSError:
             pass
@@ -927,7 +927,7 @@ class MoviesSubtitles(Resource):
                 subs_path = result[7]
                 history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath, 'movie', radarrId)
+                store_subtitles_movie(path, moviePath)
             else:
                 event_stream(type='movie', action='update', movie=int(radarrId))
         except OSError:
@@ -982,7 +982,7 @@ class MoviesSubtitles(Resource):
                 history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath, 'movie', radarrId)
+                store_subtitles_movie(path, moviePath)
         except OSError:
             pass
 
@@ -1109,7 +1109,7 @@ class ProviderMovies(Resource):
                 history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath, 'movie', radarrId)
+                store_subtitles_movie(path, moviePath)
         except OSError:
             pass
 
@@ -1192,7 +1192,7 @@ class ProviderEpisodes(Resource):
                             subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath, 'episode', sonarrEpisodeId)
+                store_subtitles(path, episodePath)
             return result, 201
         except OSError:
             pass
@@ -1654,9 +1654,9 @@ class Subtitles(Resource):
                                               forced=forced, hi=hi)
             if result:
                 if media_type == 'episode':
-                    store_subtitles(path_mappings.path_replace_reverse(video_path), video_path, 'episode', id)
+                    store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
                 else:
-                    store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path, 'movie', id)
+                    store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
                 return '', 200
             else:
                 return '', 404
