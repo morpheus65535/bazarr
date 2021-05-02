@@ -4,14 +4,20 @@ import enzyme
 from enzyme.exceptions import MalformedMKVError
 import logging
 import os
+import datetime
 from knowit import api
+from subliminal.cache import region
+
+FFPROBE_CACHE_EXPIRATION_TIME = datetime.timedelta(weeks=2).total_seconds()
 
 
 class EmbeddedSubsReader:
     def __init__(self):
         self.ffprobe = None
-    
-    def list_languages(self, file):
+
+    @region.cache_on_arguments(expiration_time=FFPROBE_CACHE_EXPIRATION_TIME)
+    # file_size, episode_file_id and movie_file_id are used for cache identification. DO NOT REMOVE!
+    def list_languages(self, file, file_size, episode_file_id=None, movie_file_id=None):
         from utils import get_binary
         self.ffprobe = get_binary("ffprobe")
 

@@ -5,6 +5,7 @@ import os
 import logging
 import ast
 import re
+import subliminal
 from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
@@ -31,7 +32,13 @@ def store_subtitles(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, episode_file_id FROM table_episodes '
+                                                            'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path,
+                                                                         file_size=item['file_size'],
+                                                                         episode_file_id=item['episode_file_id'])
+                subliminal.region.backend.sync()
+
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -145,7 +152,13 @@ def store_subtitles_movie(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, movie_file_id FROM table_movies '
+                                        'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path,
+                                                                         file_size=item['file_size'],
+                                                                         movie_file_id=item['movie_file_id'])
+                subliminal.region.backend.sync()
+
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \

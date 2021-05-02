@@ -188,7 +188,8 @@ def update_movies():
                                                          'overview': overview,
                                                          'imdbId': imdbId,
                                                          'movie_file_id': int(movie['movieFile']['id']),
-                                                         'tags': str(tags)})
+                                                         'tags': str(tags),
+                                                         'file_size': movie['movieFile']['size']})
                             else:
                                 movies_to_add.append({'radarrId': int(movie["id"]),
                                                       'title': movie["title"],
@@ -211,7 +212,8 @@ def update_movies():
                                                       'imdbId': imdbId,
                                                       'movie_file_id': int(movie['movieFile']['id']),
                                                       'tags': str(tags),
-                                                      'profileId': movie_default_profile})
+                                                      'profileId': movie_default_profile,
+                                                      'file_size': movie['movieFile']['size']})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -228,7 +230,7 @@ def update_movies():
             movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
                                             "audio_language, sceneName, monitored, sortTitle, year, "
                                             "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
-                                            "movie_file_id, tags FROM table_movies")
+                                            "movie_file_id, tags, file_size FROM table_movies")
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
