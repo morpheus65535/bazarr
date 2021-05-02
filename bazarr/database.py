@@ -293,7 +293,7 @@ def get_profiles_list(profile_id=None):
     if not len(profile_id_list):
         update_profile_id_list()
 
-    if profile_id:
+    if profile_id and profile_id != 'null':
         for profile in profile_id_list:
             if profile['profileId'] == profile_id:
                 return profile
@@ -307,7 +307,7 @@ def get_desired_languages(profile_id):
     if not len(profile_id_list):
         update_profile_id_list()
 
-    if profile_id:
+    if profile_id and profile_id != 'null':
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
             if profileId == int(profile_id):
@@ -323,7 +323,7 @@ def get_profile_id_name(profile_id):
     if not len(profile_id_list):
         update_profile_id_list()
 
-    if profile_id:
+    if profile_id and profile_id != 'null':
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
             if profileId == int(profile_id):
@@ -339,7 +339,7 @@ def get_profile_cutoff(profile_id):
     if not len(profile_id_list):
         update_profile_id_list()
 
-    if profile_id:
+    if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
