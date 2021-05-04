@@ -5,6 +5,7 @@ import ast
 import sqlite3
 import logging
 import json
+import re
 
 from sqlite3worker import Sqlite3Worker
 
@@ -94,10 +95,87 @@ dict_mapper = SqliteDictPathMapper()
 
 
 def db_upgrade():
+    columnToRemove = [
+        ['table_shows', 'languages'],
+        ['table_shows', 'hearing_impaired'],
+        ['table_shows', 'forced'],
+        ['table_shows', 'sizeOnDisk'],
+        ['table_episodes', 'file_ffprobe'],
+        ['table_movies', 'languages'],
+        ['table_movies', 'hearing_impaired'],
+        ['table_movies', 'forced'],
+        ['table_movies', 'file_ffprobe'],
+    ]
+
+    for column in columnToRemove:
+        try:
+            table_name = column[0]
+            column_name = column[1]
+            tables_query = database.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+            tables = [table['name'] for table in tables_query]
+            if table_name not in tables:
+                # Table doesn't exist in database. Skipping.
+                continue
+
+            columns_dict = database.execute('''PRAGMA table_info('{0}')'''.format(column[0]))
+            columns_names_list = [x['name'] for x in columns_dict]
+            if column_name in columns_names_list:
+                columns_names_list.remove(column_name)
+                columns_names_string = ', '.join(columns_names_list)
+                if not columns_names_list:
+                    logging.debug("BAZARR No more columns in {}. We won't create an empty table. "
+                                  "Exiting.".format(table_name))
+                    continue
+            else:
+                logging.debug("BAZARR Column {} doesn't exist in {}".format(column_name, table_name))
+                continue
+
+            # get original sql statement used to create the table
+            original_sql_statement = database.execute("SELECT sql FROM sqlite_master WHERE type='table' AND "
+                                                      "name='{}'".format(table_name))[0]['sql']
+            # pretty format sql statement
+            original_sql_statement = original_sql_statement.replace('\n, ', ',\n\t')
+            original_sql_statement = original_sql_statement.replace('", "', '",\n\t"')
+            original_sql_statement = original_sql_statement.rstrip(')') + '\n'
+
+            # generate sql statement for temp table
+            table_regex = re.compile(r"CREATE TABLE \"{}\"".format(table_name))
+            column_regex = re.compile(r".+\"{}\".+\n".format(column_name))
+            new_sql_statement = table_regex.sub("CREATE TABLE \"{}_temp\"".format(table_name), original_sql_statement)
+            new_sql_statement = column_regex.sub("", new_sql_statement).rstrip('\n').rstrip(',') + '\n)'
+
+            # remove leftover temp table from previous execution
+            database.execute('DROP TABLE IF EXISTS {}_temp'.format(table_name))
+
+            # create new temp table
+            create_error = database.execute(new_sql_statement)
+            if create_error:
+                logging.debug('BAZARR cannot create temp table.')
+                continue
+
+            # validate if row insertion worked as expected
+            new_table_rows = database.execute('INSERT INTO {0}_temp({1}) SELECT {1} FROM {0}'.format(table_name,
+                                                                                                     columns_names_string))
+            previous_table_rows = database.execute('SELECT COUNT(*) as count FROM {}'.format(table_name),
+                                                   only_one=True)['count']
+            if new_table_rows == previous_table_rows:
+                drop_error = database.execute('DROP TABLE {}'.format(table_name))
+                if drop_error:
+                    logging.debug('BAZARR cannot drop {} table before renaming the temp table'.format(table_name))
+                    continue
+                else:
+                    rename_error = database.execute('ALTER TABLE {0}_temp RENAME TO {0}'.format(table_name))
+                    if rename_error:
+                        logging.debug('BAZARR cannot rename {}_temp table'.format(table_name))
+            else:
+                logging.debug('BAZARR cannot insert existing rows to {} table.'.format(table_name))
+                continue
+        except:
+            pass
+
     columnToAdd = [
         ['table_shows', 'year', 'text'],
         ['table_shows', 'alternateTitles', 'text'],
-        ['table_shows', 'forced', 'text', 'False'],
         ['table_shows', 'tags', 'text', '[]'],
         ['table_shows', 'seriesType', 'text', ''],
         ['table_shows', 'imdbId', 'text', ''],
@@ -117,7 +195,6 @@ def db_upgrade():
         ['table_movies', 'video_codec', 'text'],
         ['table_movies', 'audio_codec', 'text'],
         ['table_movies', 'imdbId', 'text'],
-        ['table_movies', 'forced', 'text', 'False'],
         ['table_movies', 'movie_file_id', 'integer'],
         ['table_movies', 'tags', 'text', '[]'],
         ['table_movies', 'profileId', 'integer'],
