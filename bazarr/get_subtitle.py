@@ -33,6 +33,7 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
+from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -1177,41 +1178,52 @@ def refine_from_db(path, video):
 
 
 def refine_from_ffprobe(path, video):
-    exe = get_binary('ffprobe')
-    if not exe:
-        logging.debug('BAZARR FFprobe not found!')
-        return
+    if isinstance(video, Movie):
+        file_id = database.execute("SELECT movie_file_id FROM table_shows WHERE path = ?",
+                                   (path_mappings.path_replace_movie_reverse(path),), only_one=True)
     else:
-        logging.debug('BAZARR FFprobe used is %s', exe)
+        file_id = database.execute("SELECT episode_file_id, file_size FROM table_episodes WHERE path = ?",
+                                   (path_mappings.path_replace_reverse(path),), only_one=True)
 
-    api.initialize({'provider': 'ffmpeg', 'ffmpeg': exe})
-    data = api.know(path)
+    if not isinstance(file_id, dict):
+        return video
 
-    logging.debug('FFprobe found: %s', data)
+    if isinstance(video, Movie):
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    movie_file_id=file_id['movie_file_id'])
+    else:
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    episode_file_id=file_id['episode_file_id'])
 
-    if 'video' not in data:
+    if not data['ffprobe']:
+        logging.debug("No FFprobe available in cache for this file: {}".format(path))
+        return video
+
+    logging.debug('FFprobe found: %s', data['ffprobe'])
+
+    if 'video' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
     else:
-        if 'resolution' in data['video'][0]:
+        if 'resolution' in data['ffprobe']['video'][0]:
             if not video.resolution:
-                video.resolution = data['video'][0]['resolution']
-        if 'codec' in data['video'][0]:
+                video.resolution = data['ffprobe']['video'][0]['resolution']
+        if 'codec' in data['ffprobe']['video'][0]:
             if not video.video_codec:
-                video.video_codec = data['video'][0]['codec']
-        if 'frame_rate' in data['video'][0]:
+                video.video_codec = data['ffprobe']['video'][0]['codec']
+        if 'frame_rate' in data['ffprobe']['video'][0]:
             if not video.fps:
-                if isinstance(data['video'][0]['frame_rate'], float):
-                    video.fps = data['video'][0]['frame_rate']
+                if isinstance(data['ffprobe']['video'][0]['frame_rate'], float):
+                    video.fps = data['ffprobe']['video'][0]['frame_rate']
                 else:
-                    video.fps = data['video'][0]['frame_rate'].magnitude
+                    video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
 
-    if 'audio' not in data:
+    if 'audio' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
     else:
-        if 'codec' in data['audio'][0]:
+        if 'codec' in data['ffprobe']['audio'][0]:
             if not video.audio_codec:
-                video.audio_codec = data['audio'][0]['codec']
-        for track in data['audio']:
+                video.audio_codec = data['ffprobe']['audio'][0]['codec']
+        for track in data['ffprobe']['audio']:
             if 'language' in track:
                 video.audio_languages.add(track['language'].alpha3)
 
