@@ -10,7 +10,7 @@ import { buildOrderList, GetItemId } from "../../utilites";
 interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
   columns: Column<T>[];
-  state: Readonly<AsyncState<OrderIdState<T>>>;
+  state: Readonly<AsyncOrderState<T>>;
   loader: (start: number, length: number) => void;
   searchAll: () => Promise<void>;
 }

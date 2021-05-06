@@ -1,8 +1,3 @@
-interface OrderIdState<T> {
-  items: IdState<T>;
-  order: (number | null)[];
-}
-
 interface ReduxStore {
   system: ReduxStore.System;
   series: ReduxStore.Series;
@@ -43,16 +38,16 @@ namespace ReduxStore {
   }
 
   interface Series {
-    seriesList: AsyncState<OrderIdState<Item.Series>>;
-    wantedEpisodesList: AsyncState<OrderIdState<Wanted.Episode>>;
+    seriesList: AsyncOrderState<Item.Series>;
+    wantedEpisodesList: AsyncOrderState<Wanted.Episode>;
     episodeList: AsyncState<Item.Episode[]>;
     historyList: AsyncState<Array<History.Episode>>;
     blacklist: AsyncState<Array<Blacklist.Episode>>;
   }
 
   interface Movie {
-    movieList: AsyncState<OrderIdState<Item.Movie>>;
-    wantedMovieList: AsyncState<OrderIdState<Wanted.Movie>>;
+    movieList: AsyncOrderState<Item.Movie>;
+    wantedMovieList: AsyncOrderState<Wanted.Movie>;
     historyList: AsyncState<Array<History.Movie>>;
     blacklist: AsyncState<Array<Blacklist.Movie>>;
   }

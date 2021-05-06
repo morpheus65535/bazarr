@@ -42,7 +42,7 @@ declare module "react-table" {
 
   interface useAsyncPaginationProps<D extends Record<string, unknown>> {
     asyncLoader?: (start: number, length: number) => void;
-    asyncState?: AsyncState<OrderIdState<D>>;
+    asyncState?: AsyncOrderState<D>;
     asyncId?: (item: D) => number;
   }
 

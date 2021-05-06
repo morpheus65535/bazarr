@@ -28,9 +28,9 @@ export function updateAsyncState<Payload>(
 
 export function updateOrderIdState<T extends LooseObject>(
   action: AsyncAction<AsyncDataWrapper<T>>,
-  state: AsyncState<OrderIdState<T>>,
+  state: AsyncOrderState<T>,
   id: ItemIdType<T>
-): AsyncState<OrderIdState<T>> {
+): AsyncOrderState<T> {
   if (action.payload.loading) {
     return {
       ...state,
@@ -93,8 +93,8 @@ export function updateOrderIdState<T extends LooseObject>(
 
 export function deleteOrderListItemBy<T extends LooseObject>(
   action: Action<number[]>,
-  state: AsyncState<OrderIdState<T>>
-): AsyncState<OrderIdState<T>> {
+  state: AsyncOrderState<T>
+): AsyncOrderState<T> {
   const ids = action.payload;
   const { items, order } = state.data;
   const newItems = { ...items };

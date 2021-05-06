@@ -11,11 +11,18 @@ type FileTree = {
 
 type StorageType = string | null;
 
+interface OrderIdState<T> {
+  items: IdState<T>;
+  order: (number | null)[];
+}
+
 interface AsyncState<T> {
   updating: boolean;
   error?: Error;
   data: Readonly<T>;
 }
+
+type AsyncOrderState<T> = AsyncState<OrderIdState<T>>;
 
 type AsyncPayload<T> = T extends AsyncState<infer D> ? D : never;
 
