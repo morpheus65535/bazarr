@@ -1,5 +1,6 @@
 import {
   badgeUpdateAll,
+  bootstrap,
   movieDeleteItems,
   movieUpdateList,
   seriesDeleteItems,
@@ -19,6 +20,10 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "connect",
       any: () => reduxStore.dispatch(siteUpdateOffline(false)),
+    },
+    {
+      key: "connect",
+      any: () => reduxStore.dispatch<any>(bootstrap()),
     },
     {
       key: "disconnect",
