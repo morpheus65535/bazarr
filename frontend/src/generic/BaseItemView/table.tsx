@@ -1,9 +1,16 @@
 import { uniqBy } from "lodash";
 import React, { useCallback, useMemo } from "react";
-import { TableUpdater } from "react-table";
+import { TableOptions, TableUpdater, useRowSelect } from "react-table";
 import { SharedProps } from ".";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { ItemEditorModal, PageTable, useShowModal } from "../../components";
+import {
+  AsyncPageTable,
+  ItemEditorModal,
+  SimpleTable,
+  useShowModal,
+} from "../../components";
+import { TableStyleProps } from "../../components/tables/BaseTable";
+import { useCustomSelection } from "../../components/tables/plugins";
 import { buildOrderList, GetItemId } from "../../utilites";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
@@ -42,23 +49,33 @@ function Table<T extends Item.Base>({
 
   const [profiles] = useLanguageProfiles();
 
+  const options: Partial<TableOptions<T> & TableStyleProps<T>> = {
+    loose: [profiles],
+    emptyText: `No ${name} Found`,
+    externalUpdate: updateRow,
+  };
+
   return (
     <React.Fragment>
-      <PageTable
-        async
-        autoScroll
-        canSelect
-        columns={columns}
-        data={data}
-        asyncState={state}
-        asyncId={GetItemId}
-        asyncLoader={loader}
-        loose={[profiles]}
-        isSelecting={editMode}
-        onSelect={select}
-        emptyText={`No ${name} Found`}
-        externalUpdate={updateRow}
-      ></PageTable>
+      {editMode ? (
+        // TODO: Use PageTable
+        <SimpleTable
+          {...options}
+          columns={columns}
+          data={data}
+          onSelect={select}
+          isSelecting={true}
+          plugins={[useRowSelect, useCustomSelection]}
+        ></SimpleTable>
+      ) : (
+        <AsyncPageTable
+          {...options}
+          columns={columns}
+          aos={state}
+          loader={loader}
+          data={[]}
+        ></AsyncPageTable>
+      )}
       <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );

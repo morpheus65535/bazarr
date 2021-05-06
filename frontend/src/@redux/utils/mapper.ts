@@ -33,12 +33,18 @@ export function updateOrderIdState<T extends LooseObject>(
 ): AsyncOrderState<T> {
   if (action.payload.loading) {
     return {
-      ...state,
+      data: {
+        ...state.data,
+        fetched: true,
+      },
       updating: true,
     };
   } else if (action.error !== undefined) {
     return {
-      ...state,
+      data: {
+        ...state.data,
+        fetched: true,
+      },
       updating: false,
       error: action.payload.item as Error,
     };
@@ -57,7 +63,7 @@ export function updateOrderIdState<T extends LooseObject>(
       { ...state.data.items }
     );
 
-    let newOrder = state.data.order;
+    let newOrder = [...state.data.order];
 
     const countDist = total - newOrder.length;
     if (countDist > 0) {
@@ -84,6 +90,7 @@ export function updateOrderIdState<T extends LooseObject>(
     return {
       updating: false,
       data: {
+        fetched: true,
         items: newItems,
         order: newOrder,
       },
@@ -107,6 +114,7 @@ export function deleteOrderListItemBy<T extends LooseObject>(
   return {
     ...state,
     data: {
+      fetched: true,
       items: newItems,
       order: newOrder,
     },

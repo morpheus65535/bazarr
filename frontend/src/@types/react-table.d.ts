@@ -32,24 +32,12 @@ import {
   UseSortByState,
 } from "react-table";
 import {} from "../components/tables/plugins";
-import { PageControlAction } from "../components/tables/types";
 
 declare module "react-table" {
   // take this file as-is, or comment out the sections that don't apply to your plugin configuration
 
   // Customize of React Table
   type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
-
-  interface useAsyncPaginationProps<D extends Record<string, unknown>> {
-    asyncLoader?: (start: number, length: number) => void;
-    asyncState?: AsyncOrderState<D>;
-    asyncId?: (item: D) => number;
-  }
-
-  interface useAsyncPaginationState<D extends Record<string, unknown>> {
-    pageToLoad?: PageControlAction;
-    needLoadingScreen?: boolean;
-  }
 
   interface useSelectionProps<D extends Record<string, unknown>> {
     isSelecting?: boolean;
@@ -59,15 +47,13 @@ declare module "react-table" {
   interface useSelectionState<D extends Record<string, unknown>> {}
 
   interface CustomTableProps<D extends Record<string, unknown>>
-    extends useSelectionProps<D>,
-      useAsyncPaginationProps<D> {
+    extends useSelectionProps<D> {
     externalUpdate?: TableUpdater<D>;
     loose?: any[];
   }
 
   interface CustomTableState<D extends Record<string, unknown>>
-    extends useSelectionState<D>,
-      useAsyncPaginationState<D> {}
+    extends useSelectionState<D> {}
 
   export interface TableOptions<
     D extends Record<string, unknown>

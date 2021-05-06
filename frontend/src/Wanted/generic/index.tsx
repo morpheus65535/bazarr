@@ -1,11 +1,10 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { capitalize } from "lodash";
-import React, { useMemo } from "react";
+import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { ContentHeader, PageTable } from "../../components";
-import { buildOrderList, GetItemId } from "../../utilites";
+import { AsyncPageTable, ContentHeader } from "../../components";
 
 interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
@@ -24,7 +23,7 @@ function GenericWantedView<T extends Wanted.Base>({
 }: Props<T>) {
   const typeName = capitalize(type);
 
-  const data = useMemo(() => buildOrderList(state.data), [state.data]);
+  const dataCount = Object.keys(state.data.items).length;
 
   return (
     <Container fluid>
@@ -33,7 +32,7 @@ function GenericWantedView<T extends Wanted.Base>({
       </Helmet>
       <ContentHeader>
         <ContentHeader.AsyncButton
-          disabled={data.length === 0}
+          disabled={dataCount === 0}
           promise={searchAll}
           icon={faSearch}
         >
@@ -41,15 +40,13 @@ function GenericWantedView<T extends Wanted.Base>({
         </ContentHeader.AsyncButton>
       </ContentHeader>
       <Row>
-        <PageTable
-          async
-          asyncState={state}
-          asyncId={GetItemId}
-          asyncLoader={loader}
+        <AsyncPageTable
+          aos={state}
+          loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}
-          data={data}
-        ></PageTable>
+          data={[]}
+        ></AsyncPageTable>
       </Row>
     </Container>
   );

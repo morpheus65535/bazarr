@@ -8,6 +8,7 @@ import {
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
+import { defaultAOS } from "../utils";
 import {
   deleteOrderListItemBy,
   updateAsyncState,
@@ -70,8 +71,8 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     },
   },
   {
-    movieList: { updating: true, data: { items: {}, order: [] } },
-    wantedMovieList: { updating: true, data: { items: {}, order: [] } },
+    movieList: defaultAOS(),
+    wantedMovieList: defaultAOS(),
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },
   }

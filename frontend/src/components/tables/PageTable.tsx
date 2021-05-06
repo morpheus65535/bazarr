@@ -1,5 +1,5 @@
-import { isNull, isUndefined } from "lodash";
-import React, { useCallback, useEffect } from "react";
+import { isUndefined } from "lodash";
+import React, { useEffect } from "react";
 import {
   PluginHook,
   TableOptions,
@@ -9,32 +9,22 @@ import {
 } from "react-table";
 import { useReduxStore } from "../../@redux/hooks/base";
 import { ScrollToTop } from "../../utilites";
-import { AsyncStateOverlay } from "../async";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
-import {
-  useAsyncPagination,
-  useCustomSelection,
-  useDefaultSettings,
-} from "./plugins";
+import { useCustomSelection, useDefaultSettings } from "./plugins";
 
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
-    async?: boolean;
     canSelect?: boolean;
     autoScroll?: boolean;
     plugins?: PluginHook<T>[];
   };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { async, autoScroll, canSelect, plugins, ...remain } = props;
+  const { autoScroll, canSelect, plugins, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
   const allPlugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
-
-  if (async) {
-    allPlugins.push(useAsyncPagination);
-  }
 
   if (canSelect) {
     allPlugins.push(useRowSelect, useCustomSelection);
@@ -62,7 +52,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
     nextPage,
     previousPage,
     setPageSize,
-    state: { pageIndex, pageSize, pageToLoad, needLoadingScreen },
+    state: { pageIndex, pageSize },
   } = instance;
 
   const globalPageSize = useReduxStore((s) => s.site.pageSize);
@@ -91,28 +81,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
     setPageSize,
   ]);
 
-  const total = options.asyncState
-    ? options.asyncState.data.order.length
-    : rows.length;
-
-  const orderIdStateValidater = useCallback(
-    (state: OrderIdState<any>) => {
-      const start = pageIndex * pageSize;
-      const end = start + pageSize;
-      return state.order.slice(start, end).every(isNull) === false;
-    },
-    [pageIndex, pageSize]
-  );
-
-  if (needLoadingScreen && options.asyncState) {
-    return (
-      <AsyncStateOverlay
-        state={options.asyncState}
-        exist={orderIdStateValidater}
-      ></AsyncStateOverlay>
-    );
-  }
-
   return (
     <React.Fragment>
       <BaseTable
@@ -124,11 +92,10 @@ export default function PageTable<T extends object>(props: Props<T>) {
         tableBodyProps={getTableBodyProps()}
       ></BaseTable>
       <PageControl
-        loadState={pageToLoad}
         count={pageCount}
         index={pageIndex}
         size={pageSize}
-        total={total}
+        total={rows.length}
         canPrevious={canPreviousPage}
         canNext={canNextPage}
         previous={previousPage}
