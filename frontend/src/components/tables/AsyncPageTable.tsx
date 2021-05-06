@@ -90,7 +90,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     if (needInit || needRefresh) {
       loader(pageStart, pageSize);
     }
-  }, [visibleItemIds, pageStart, loader, fetched]);
+  }, [visibleItemIds, pageStart, pageSize, loader, fetched]);
 
   const showLoading = useMemo(
     () =>
