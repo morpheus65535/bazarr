@@ -40,7 +40,9 @@ def store_subtitles(original_path, reversed_path):
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -158,7 +160,9 @@ def store_subtitles_movie(original_path, reversed_path):
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
