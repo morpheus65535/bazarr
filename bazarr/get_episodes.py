@@ -70,7 +70,7 @@ def sync_episodes():
     episode_in_db_list = []
     episodes_in_db = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, "
                                       "scene_name, monitored, format, resolution, video_codec, audio_codec, "
-                                      "episode_file_id, audio_language FROM table_episodes")
+                                      "episode_file_id, audio_language, file_size FROM table_episodes")
 
     for item in episodes_in_db:
         episode_in_db_list.append(item)
@@ -267,7 +267,8 @@ def episodeParser(episode):
                             'video_codec': videoCodec,
                             'audio_codec': audioCodec,
                             'episode_file_id': episode['episodeFile']['id'],
-                            'audio_language': str(audio_language)}
+                            'audio_language': str(audio_language),
+                            'file_size': episode['episodeFile']['size']}
 
 
 def get_series_from_sonarr_api(url, apikey_sonarr):

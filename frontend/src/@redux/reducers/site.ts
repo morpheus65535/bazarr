@@ -101,6 +101,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
       movies: 0,
       episodes: 0,
       providers: 0,
+      status: 0,
     },
     offline: false,
     ...updateLocalStorage(),

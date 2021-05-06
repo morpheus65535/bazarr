@@ -1,5 +1,6 @@
 import { ProvidersApi, SystemApi } from "../../apis";
 import {
+  SYSTEM_UPDATE_HEALTH,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
@@ -28,6 +29,10 @@ export const systemUpdateLanguagesProfiles = createAsyncAction(
 
 export const systemUpdateStatus = createAsyncAction(SYSTEM_UPDATE_STATUS, () =>
   SystemApi.status()
+);
+
+export const systemUpdateHealth = createAsyncAction(SYSTEM_UPDATE_HEALTH, () =>
+  SystemApi.health()
 );
 
 export const systemUpdateTasks = createAsyncAction(SYSTEM_UPDATE_TASKS, () =>

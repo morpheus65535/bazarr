@@ -1,5 +1,6 @@
 import { handleActions } from "redux-actions";
 import {
+  SYSTEM_UPDATE_HEALTH,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
@@ -45,6 +46,12 @@ const reducer = handleActions<ReduxStore.System, any>(
         ),
       };
     },
+    [SYSTEM_UPDATE_HEALTH]: (state, action) => {
+      return {
+        ...state,
+        health: updateAsyncState(action, state.health.data),
+      };
+    },
     [SYSTEM_UPDATE_TASKS]: (state, action) => {
       return {
         ...state,
@@ -83,6 +90,10 @@ const reducer = handleActions<ReduxStore.System, any>(
     status: {
       updating: true,
       data: undefined,
+    },
+    health: {
+      updating: true,
+      data: [],
     },
     tasks: {
       updating: true,

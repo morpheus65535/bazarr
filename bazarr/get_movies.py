@@ -91,7 +91,7 @@ def update_movies():
             movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
                                             "audio_language, sceneName, monitored, sortTitle, year, "
                                             "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
-                                            "movie_file_id, tags FROM table_movies")
+                                            "movie_file_id, tags, file_size FROM table_movies")
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
@@ -485,7 +485,8 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
                     'imdbId': imdbId,
                     'movie_file_id': int(movie['movieFile']['id']),
                     'tags': str(tags),
-                    'profileId': movie_default_profile}
+                    'profileId': movie_default_profile,
+                    'file_size': movie['movieFile']['size']}
 
 
 def get_movies_from_radarr_api(radarr_version, url, apikey_radarr, radarr_id=None):

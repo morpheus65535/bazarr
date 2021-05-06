@@ -3,7 +3,7 @@ import os
 from ffsubsync.ffsubsync import run, make_parser
 from utils import get_binary
 from utils import history_log, history_log_movie
-from get_languages import alpha2_from_alpha3, language_from_alpha3
+from get_languages import language_from_alpha2
 from helper import path_mappings
 from config import settings
 from get_args import args
@@ -66,17 +66,17 @@ class SubSyncer:
                     offset_seconds = result['offset_seconds'] or 0
                     framerate_scale_factor = result['framerate_scale_factor'] or 0
                     message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate " \
-                              "scale factor of {2}.".format(language_from_alpha3(srt_lang), offset_seconds,
+                              "scale factor of {2}.".format(language_from_alpha2(srt_lang), offset_seconds,
                                                             "{:.2f}".format(framerate_scale_factor))
 
                     if media_type == 'series':
                         history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
                                     description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                                    language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+                                    language=srt_lang, subtitles_path=srt_path)
                     else:
                         history_log_movie(action=5, radarr_id=radarr_id, description=message,
                                           video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                          language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+                                          language=srt_lang, subtitles_path=srt_path)
             else:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
 

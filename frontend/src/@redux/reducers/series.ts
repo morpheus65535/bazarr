@@ -10,6 +10,7 @@ import {
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
 import { AsyncAction } from "../types";
+import { defaultAOS } from "../utils";
 import {
   deleteAsyncListItemBy,
   deleteOrderListItemBy,
@@ -104,8 +105,8 @@ const reducer = handleActions<ReduxStore.Series, any>(
     },
   },
   {
-    seriesList: { updating: true, data: { items: {}, order: [] } },
-    wantedEpisodesList: { updating: true, data: { items: {}, order: [] } },
+    seriesList: defaultAOS(),
+    wantedEpisodesList: defaultAOS(),
     episodeList: { updating: true, data: [] },
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },

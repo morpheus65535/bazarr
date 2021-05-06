@@ -18,6 +18,11 @@ namespace System {
     sonarr_version: string;
   }
 
+  interface Health {
+    object: string;
+    issue: string;
+  }
+
   interface Provider {
     name: string;
     status: string;

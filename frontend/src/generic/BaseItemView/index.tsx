@@ -16,7 +16,7 @@ export interface SharedProps<T extends Item.Base> {
   loader: (start: number, length: number) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: AsyncState<OrderIdState<T>>;
+  state: AsyncOrderState<T>;
 }
 
 interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {

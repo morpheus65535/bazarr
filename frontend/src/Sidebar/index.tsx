@@ -22,23 +22,26 @@ interface Props {
 const Sidebar: FunctionComponent<Props> = ({ open }) => {
   const toggle = useContext(SidebarToggleContext);
 
-  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
-
-  const badges = useMemo<BadgeProvider>(
-    () => ({
-      Wanted: {
-        Series: episodes,
-        Movies: movies,
-      },
-      System: {
-        Providers: providers,
-      },
-    }),
-    [movies, episodes, providers]
+  const { movies, episodes, providers, status } = useReduxStore(
+    (s) => s.site.badges
   );
 
   const sonarrEnabled = useIsSonarrEnabled();
   const radarrEnabled = useIsRadarrEnabled();
+
+  const badges = useMemo<BadgeProvider>(
+    () => ({
+      Wanted: {
+        Series: sonarrEnabled ? episodes : 0,
+        Movies: radarrEnabled ? movies : 0,
+      },
+      System: {
+        Providers: providers,
+        Status: status,
+      },
+    }),
+    [movies, episodes, providers, sonarrEnabled, radarrEnabled, status]
+  );
 
   const hiddenKeys = useMemo<string[]>(() => {
     const list = [];

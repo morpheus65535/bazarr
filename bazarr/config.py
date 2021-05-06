@@ -55,6 +55,7 @@ defaults = {
         'utf8_encode': 'True',
         'ignore_pgs_subs': 'False',
         'ignore_vobsub_subs': 'False',
+        'ignore_ass_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '[]',
         'multithreading': 'True',

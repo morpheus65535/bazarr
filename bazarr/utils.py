@@ -412,6 +412,7 @@ def check_health():
         check_sonarr_rootfolder()
     if settings.general.getboolean('use_radarr'):
         check_radarr_rootfolder()
+    event_stream(type='badges')
 
 
 def get_health_issues():

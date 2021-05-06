@@ -71,6 +71,10 @@ def authenticate(actual_method):
 
 
 def postprocess(item: dict):
+    # Remove ffprobe_cache
+    if 'ffprobe_cache' in item:
+        del (item['ffprobe_cache'])
+
     # Parse tags
     if 'tags' in item:
         if item['tags'] is None:
@@ -121,8 +125,6 @@ def postprocessSeries(item):
 
     if 'path' in item:
         item['path'] = path_mappings.path_replace(item['path'])
-        # Confirm if path exist
-        item['exist'] = os.path.isdir(item['path'])
 
     # map poster and fanart to server proxy
     if 'poster' in item:
@@ -188,7 +190,6 @@ def postprocessEpisode(item):
     if 'path' in item and item['path']:
         # Provide mapped path
         item['path'] = path_mappings.path_replace(item['path'])
-        item['exist'] = os.path.isfile(item['path'])
 
 
 # TODO: Move
@@ -259,8 +260,6 @@ def postprocessMovie(item):
     if 'path' in item:
         if item['path']:
             item['path'] = path_mappings.path_replace_movie(item['path'])
-            # Confirm if path exist
-            item['exist'] = os.path.isfile(item['path'])
 
     if 'subtitles_path' in item:
         # Provide mapped subtitles path
@@ -329,7 +328,7 @@ class Badges(Resource):
             "episodes": missing_episodes,
             "movies": missing_movies,
             "providers": throttled_providers,
-            "health": health_issues
+            "status": health_issues
         }
         return jsonify(result)
 
@@ -531,7 +530,7 @@ class SystemStatus(Resource):
 class SystemHealth(Resource):
     @authenticate
     def get(self):
-        return jsonify(get_health_issues())
+        return jsonify(data=get_health_issues())
 
 
 class SystemReleases(Resource):

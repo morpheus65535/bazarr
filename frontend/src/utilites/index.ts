@@ -77,7 +77,14 @@ export function GetItemId(item: any): number {
 }
 
 export function buildOrderList<T>(state: OrderIdState<T>): T[] {
-  const { items, order } = state;
+  const { order, items } = state;
+  return buildOrderListFrom(items, order);
+}
+
+export function buildOrderListFrom<T>(
+  items: IdState<T>,
+  order: (number | null)[]
+): T[] {
   return order.flatMap((v) => {
     if (v !== null && v in items) {
       const item = items[v];

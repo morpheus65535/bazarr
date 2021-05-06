@@ -1,10 +1,5 @@
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faCheck,
-  faExclamationTriangle,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
@@ -52,21 +47,6 @@ const MovieView: FunctionComponent<Props> = () => {
               </TextPopover>
             );
           }
-        },
-      },
-      {
-        Header: "Exist",
-        accessor: "exist",
-        selectHide: true,
-        Cell: ({ row, value }) => {
-          const exist = value;
-          const { path } = row.original;
-          return (
-            <FontAwesomeIcon
-              title={path}
-              icon={exist ? faCheck : faExclamationTriangle}
-            ></FontAwesomeIcon>
-          );
         },
       },
       {

@@ -36,7 +36,10 @@ class SocketIOClient {
     this.socket.connect();
 
     // Debug Command
-    window.DumpSocketIO = this.dump.bind(this);
+    window._socketio = {
+      dump: this.dump.bind(this),
+      emit: this.onEvent.bind(this),
+    };
   }
 
   private dump() {
