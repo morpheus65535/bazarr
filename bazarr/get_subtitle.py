@@ -1180,7 +1180,7 @@ def refine_from_db(path, video):
 def refine_from_ffprobe(path, video):
     if isinstance(video, Movie):
         file_id = database.execute("SELECT movie_file_id FROM table_shows WHERE path = ?",
-                                   (path_mappings.path_replace_movie_reverse(path),), only_one=True)
+                                   (path_mappings.path_replace_reverse_movie(path),), only_one=True)
     else:
         file_id = database.execute("SELECT episode_file_id, file_size FROM table_episodes WHERE path = ?",
                                    (path_mappings.path_replace_reverse(path),), only_one=True)
