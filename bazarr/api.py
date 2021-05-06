@@ -71,6 +71,10 @@ def authenticate(actual_method):
 
 
 def postprocess(item: dict):
+    # Remove ffprobe_cache
+    if 'ffprobe_cache' in item:
+        del (item['ffprobe_cache'])
+
     # Parse tags
     if 'tags' in item:
         if item['tags'] is None:

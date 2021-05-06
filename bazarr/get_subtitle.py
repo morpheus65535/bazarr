@@ -34,6 +34,7 @@ from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
 from event_handler import event_stream
+from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -259,7 +260,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -270,7 +271,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            radarr_id=movie_metadata['radarrId'])
 
@@ -584,7 +585,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -595,7 +596,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score, radarr_id=movie_metadata['radarrId'])
 
                         if use_postprocessing:
@@ -712,7 +713,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                             only_one=True)
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
     else:
@@ -721,7 +722,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                           only_one=True)
         series_id = ""
         episode_id = movie_metadata['radarrId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing :
@@ -1180,41 +1181,52 @@ def refine_from_db(path, video):
 
 
 def refine_from_ffprobe(path, video):
-    exe = get_binary('ffprobe')
-    if not exe:
-        logging.debug('BAZARR FFprobe not found!')
-        return
+    if isinstance(video, Movie):
+        file_id = database.execute("SELECT movie_file_id FROM table_shows WHERE path = ?",
+                                   (path_mappings.path_replace_movie_reverse(path),), only_one=True)
     else:
-        logging.debug('BAZARR FFprobe used is %s', exe)
+        file_id = database.execute("SELECT episode_file_id, file_size FROM table_episodes WHERE path = ?",
+                                   (path_mappings.path_replace_reverse(path),), only_one=True)
 
-    api.initialize({'provider': 'ffmpeg', 'ffmpeg': exe})
-    data = api.know(path)
+    if not isinstance(file_id, dict):
+        return video
 
-    logging.debug('FFprobe found: %s', data)
+    if isinstance(video, Movie):
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    movie_file_id=file_id['movie_file_id'])
+    else:
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    episode_file_id=file_id['episode_file_id'])
 
-    if 'video' not in data:
+    if not data['ffprobe']:
+        logging.debug("No FFprobe available in cache for this file: {}".format(path))
+        return video
+
+    logging.debug('FFprobe found: %s', data['ffprobe'])
+
+    if 'video' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
     else:
-        if 'resolution' in data['video'][0]:
+        if 'resolution' in data['ffprobe']['video'][0]:
             if not video.resolution:
-                video.resolution = data['video'][0]['resolution']
-        if 'codec' in data['video'][0]:
+                video.resolution = data['ffprobe']['video'][0]['resolution']
+        if 'codec' in data['ffprobe']['video'][0]:
             if not video.video_codec:
-                video.video_codec = data['video'][0]['codec']
-        if 'frame_rate' in data['video'][0]:
+                video.video_codec = data['ffprobe']['video'][0]['codec']
+        if 'frame_rate' in data['ffprobe']['video'][0]:
             if not video.fps:
-                if isinstance(data['video'][0]['frame_rate'], float):
-                    video.fps = data['video'][0]['frame_rate']
+                if isinstance(data['ffprobe']['video'][0]['frame_rate'], float):
+                    video.fps = data['ffprobe']['video'][0]['frame_rate']
                 else:
-                    video.fps = data['video'][0]['frame_rate'].magnitude
+                    video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
 
-    if 'audio' not in data:
+    if 'audio' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
     else:
-        if 'codec' in data['audio'][0]:
+        if 'codec' in data['ffprobe']['audio'][0]:
             if not video.audio_codec:
-                video.audio_codec = data['audio'][0]['codec']
-        for track in data['audio']:
+                video.audio_codec = data['ffprobe']['audio'][0]['codec']
+        for track in data['ffprobe']['audio']:
             if 'language' in track:
                 video.audio_languages.add(track['language'].alpha3)
 
@@ -1307,16 +1319,16 @@ def upgrade_subtitles():
                 return
             if episode['language'].endswith('forced'):
                 language = episode['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif episode['language'].endswith('hi'):
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
             if len(audio_language_list) > 0:
@@ -1366,16 +1378,16 @@ def upgrade_subtitles():
                 return
             if movie['language'].endswith('forced'):
                 language = movie['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif movie['language'].endswith('hi'):
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
             if len(audio_language_list) > 0:
@@ -1399,7 +1411,12 @@ def upgrade_subtitles():
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]

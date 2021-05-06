@@ -1,12 +1,12 @@
 import React, { FunctionComponent, useEffect, useMemo } from "react";
 import { Redirect, Route, Switch, useHistory } from "react-router-dom";
-import EmptyPage, { RouterEmptyPath } from "../404";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import BlacklistRouter from "../Blacklist/Router";
 import HistoryRouter from "../History/Router";
 import MovieRouter from "../Movies/Router";
 import SeriesRouter from "../Series/Router";
 import SettingRouter from "../Settings/Router";
+import EmptyPage, { RouterEmptyPath } from "../special-pages/404";
 import SystemRouter from "../System/Router";
 import { ScrollToTop } from "../utilites";
 import WantedRouter from "../Wanted/Router";

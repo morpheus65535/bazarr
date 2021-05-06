@@ -11,6 +11,7 @@ import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
 import { AsyncStateOverlay } from "../../components";
+import { GithubRepoRoot } from "../../constants";
 import Table from "./table";
 
 interface InfoProps {
@@ -119,18 +120,12 @@ const SystemStatusView: FunctionComponent<Props> = () => {
             </Label>
           </CRow>
           <CRow title="Source">
-            <Label
-              icon={faGithub}
-              link="https://github.com/morpheus65535/bazarr"
-            >
+            <Label icon={faGithub} link={GithubRepoRoot}>
               Bazarr on Github
             </Label>
           </CRow>
           <CRow title="Wiki">
-            <Label
-              icon={faWikipediaW}
-              link="https://github.com/morpheus65535/bazarr/wiki"
-            >
+            <Label icon={faWikipediaW} link="https://wiki.bazarr.media">
               Bazarr Wiki
             </Label>
           </CRow>

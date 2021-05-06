@@ -36,7 +36,7 @@ tzlocal=2.1b1
 urllib3=1.23
 
 ## indirect dependencies
-auditok=0.2.0  # Required-by: ffsubsync
+auditok=0.1.5  # Required-by: ffsubsync
 rich=10.1.0    # Required-by: ffsubsync
 srt=3.4.1      # Required-by: ffsubsync
 

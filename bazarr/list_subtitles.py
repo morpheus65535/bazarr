@@ -31,12 +31,18 @@ def store_subtitles(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, episode_file_id FROM table_episodes '
+                                                            'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader(reversed_path,
+                                                          file_size=item['file_size'],
+                                                          episode_file_id=item['episode_file_id'])
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -145,12 +151,18 @@ def store_subtitles_movie(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, movie_file_id FROM table_movies '
+                                        'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader(reversed_path,
+                                                          file_size=item['file_size'],
+                                                          movie_file_id=item['movie_file_id'])
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 

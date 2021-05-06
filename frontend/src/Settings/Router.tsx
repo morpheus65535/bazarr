@@ -1,9 +1,9 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { RouterEmptyPath } from "../404";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useSetSidebar } from "../@redux/hooks/site";
+import { RouterEmptyPath } from "../special-pages/404";
 import General from "./General";
 import Languages from "./Languages";
 import Notifications from "./Notifications";

@@ -178,6 +178,15 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </Input>
             <Input>
               <Check
+                label="Ignore Embedded ASS Subtitles"
+                settingKey="settings-general-ignore_ass_subs"
+              ></Check>
+              <Message>
+                Ignores ASS Subtitles in Embedded Subtitles detection.
+              </Message>
+            </Input>
+            <Input>
+              <Check
                 label="Show Only Desired Languages"
                 settingKey="settings-general-embedded_subs_show_desired"
               ></Check>

@@ -11,7 +11,6 @@ import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { RouterEmptyPath } from "../../404";
 import { useMovieBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -25,6 +24,7 @@ import {
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
+import { RouterEmptyPath } from "../../special-pages/404";
 import { useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 

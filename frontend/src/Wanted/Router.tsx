@@ -1,11 +1,11 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { RouterEmptyPath } from "../404";
 import {
   useIsRadarrEnabled,
   useIsSonarrEnabled,
   useSetSidebar,
 } from "../@redux/hooks/site";
+import { RouterEmptyPath } from "../special-pages/404";
 import Movies from "./Movies";
 import Series from "./Series";
 
