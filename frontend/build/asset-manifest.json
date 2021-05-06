@@ -1,24 +1,24 @@
 {
   "files": {
     "main.css": "./static/css/main.2f23c279.chunk.css",
-    "main.js": "./static/js/main.e2f02423.chunk.js",
-    "main.js.map": "./static/js/main.e2f02423.chunk.js.map",
+    "main.js": "./static/js/main.d35bcb24.chunk.js",
+    "main.js.map": "./static/js/main.d35bcb24.chunk.js.map",
     "runtime-main.js": "./static/js/runtime-main.28e08986.js",
     "runtime-main.js.map": "./static/js/runtime-main.28e08986.js.map",
     "static/css/2.ac9f8359.chunk.css": "./static/css/2.ac9f8359.chunk.css",
-    "static/js/2.9209745f.chunk.js": "./static/js/2.9209745f.chunk.js",
-    "static/js/2.9209745f.chunk.js.map": "./static/js/2.9209745f.chunk.js.map",
+    "static/js/2.5a10db6f.chunk.js": "./static/js/2.5a10db6f.chunk.js",
+    "static/js/2.5a10db6f.chunk.js.map": "./static/js/2.5a10db6f.chunk.js.map",
     "index.html": "./index.html",
     "static/css/2.ac9f8359.chunk.css.map": "./static/css/2.ac9f8359.chunk.css.map",
     "static/css/main.2f23c279.chunk.css.map": "./static/css/main.2f23c279.chunk.css.map",
-    "static/js/2.9209745f.chunk.js.LICENSE.txt": "./static/js/2.9209745f.chunk.js.LICENSE.txt",
+    "static/js/2.5a10db6f.chunk.js.LICENSE.txt": "./static/js/2.5a10db6f.chunk.js.LICENSE.txt",
     "static/media/300.css": "./static/media/roboto-vietnamese-300-normal.af9afdc1.woff2"
   },
   "entrypoints": [
     "static/js/runtime-main.28e08986.js",
     "static/css/2.ac9f8359.chunk.css",
-    "static/js/2.9209745f.chunk.js",
+    "static/js/2.5a10db6f.chunk.js",
     "static/css/main.2f23c279.chunk.css",
-    "static/js/main.e2f02423.chunk.js"
+    "static/js/main.d35bcb24.chunk.js"
   ]
 }
