@@ -1,5 +1,6 @@
-import { difference, has, isNumber, uniqBy } from "lodash";
+import { difference, has, isArray, isNull, isNumber, uniqBy } from "lodash";
 import { Action } from "redux-actions";
+import { conditionalLog } from "../../utilites/logger";
 import { AsyncAction } from "../types";
 
 export function updateAsyncState<Payload>(
@@ -73,19 +74,35 @@ export function updateOrderIdState<T extends LooseObject>(
       newOrder = Array(total).fill(null);
     }
 
+    const idList = newOrder.filter(isNumber);
+
     const dataOrder: number[] = data.map((v) => v[id]);
 
     if (typeof start === "number" && typeof length === "number") {
       newOrder.splice(start, length, ...dataOrder);
+    } else if (isArray(start)) {
+      // Find the null values and delete them, insert new values to the front of array
+      const addition = difference(dataOrder, idList);
+      let addCount = addition.length;
+      newOrder.unshift(...addition);
+
+      newOrder = newOrder.flatMap((v) => {
+        if (isNull(v) && addCount > 0) {
+          --addCount;
+          return [];
+        } else {
+          return [v];
+        }
+      }, []);
+
+      conditionalLog(
+        addCount !== 0,
+        "Error when replacing item in OrderIdState"
+      );
     } else if (parameters.length === 0) {
-      // Full Update
+      // TODO: Delete me -> Full Update
       newOrder = dataOrder;
     }
-
-    // Filter unused items and delete them
-    const newItemIds = Object.keys(newItems).map(Number);
-    const unusedIds = difference(newItemIds, newOrder.filter(isNumber));
-    unusedIds.forEach((id) => delete newItems[id]);
 
     return {
       updating: false,
