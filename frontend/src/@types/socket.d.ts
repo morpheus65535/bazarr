@@ -14,7 +14,8 @@ namespace SocketIO {
     | "badges"
     | "task"
     | "settings"
-    | "languages";
+    | "languages"
+    | "message";
 
   type ActionType = "update" | "delete";
 

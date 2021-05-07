@@ -14,7 +14,7 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
 
   return (
     <AsyncStateOverlay state={providers}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Providers - Bazarr (System)</title>
