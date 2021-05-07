@@ -267,7 +267,7 @@ class BSPlayerProvider(Provider):
             TEST_URL = "http://{}.api.bsplayer-subtitles.com".format(domain)
             try:
                 logging.debug("Testing BSplayer sub-domain {}".format(TEST_URL))
-                res = self.session.get(TEST_URL, timeout=10)
+                res = self.session.get(TEST_URL, timeout=3)
             except:
                 continue
             else:
@@ -280,7 +280,7 @@ class BSPlayerProvider(Provider):
                     )
                     break
                 else:
-                    sleep(5)
+                    sleep(1)
                     continue
 
         if self.API_URL_TEMPLATE:
