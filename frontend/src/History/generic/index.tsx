@@ -24,7 +24,7 @@ const HistoryGenericView: FunctionComponent<Props> = ({
       </Helmet>
       <Row>
         <AsyncStateOverlay state={state}>
-          {(data) => (
+          {({ data }) => (
             <PageTable
               emptyText={`Nothing Found in ${typeName} History`}
               columns={columns}

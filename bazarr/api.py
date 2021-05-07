@@ -628,7 +628,7 @@ class Series(Resource):
 
             list_missing_subtitles(no=seriesId, send_event=False)
 
-            event_stream(type='series', id=seriesId)
+            event_stream(type='series', payload=seriesId)
         event_stream(type='badges')
 
         return '', 204
@@ -724,7 +724,7 @@ class EpisodesSubtitles(Resource):
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
-                event_stream(type='episode', id=sonarrEpisodeId)
+                event_stream(type='episode', payload=sonarrEpisodeId)
 
         except OSError:
             pass
@@ -852,7 +852,7 @@ class Movies(Resource):
 
             list_missing_subtitles_movies(no=radarrId)
 
-            event_stream(type='movies', id=radarrId)
+            event_stream(type='movies', payload=radarrId)
         event_stream(type='badges')
 
         return '', 204
@@ -929,7 +929,7 @@ class MoviesSubtitles(Resource):
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
-                event_stream(type='movie', id=radarrId)
+                event_stream(type='movie', payload=radarrId)
         except OSError:
             pass
 

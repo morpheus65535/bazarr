@@ -72,7 +72,7 @@ const SystemStatusView: FunctionComponent<Props> = () => {
   if (health.data.length) {
     health_table = (
       <AsyncStateOverlay state={health}>
-        {(data) => <Table health={data}></Table>}
+        {({ data }) => <Table health={data}></Table>}
       </AsyncStateOverlay>
     );
   } else {

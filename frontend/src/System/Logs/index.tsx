@@ -23,7 +23,7 @@ const SystemLogsView: FunctionComponent<Props> = () => {
 
   return (
     <AsyncStateOverlay state={logs}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Logs - Bazarr (System)</title>

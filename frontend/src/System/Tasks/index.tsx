@@ -13,7 +13,7 @@ const SystemTasksView: FunctionComponent<Props> = () => {
 
   return (
     <AsyncStateOverlay state={tasks}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Tasks - Bazarr (System)</title>

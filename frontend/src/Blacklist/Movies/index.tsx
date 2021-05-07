@@ -13,7 +13,7 @@ const BlacklistMoviesView: FunctionComponent<Props> = () => {
   const [blacklist] = useBlacklistMovies();
   return (
     <AsyncStateOverlay state={blacklist}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Movies Blacklist - Bazarr</title>

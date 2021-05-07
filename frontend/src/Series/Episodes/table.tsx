@@ -191,7 +191,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
   return (
     <React.Fragment>
       <AsyncStateOverlay state={episodes}>
-        {(data) => (
+        {({ data }) => (
           <GroupTable
             columns={columns}
             data={data}

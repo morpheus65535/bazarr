@@ -69,8 +69,8 @@ class SocketIOClient {
       if (!(e.action in record)) {
         record[e.action] = [];
       }
-      if (e.id) {
-        record[e.action]?.push(e.id);
+      if (e.payload) {
+        record[e.action]?.push(e.payload);
       }
     });
 
@@ -105,12 +105,12 @@ class SocketIOClient {
 
   private onConnect() {
     log("info", "Socket.IO has connected");
-    this.onEvent({ type: "connect", action: "update", id: null });
+    this.onEvent({ type: "connect", action: "update", payload: null });
   }
 
   private onDisconnect() {
     log("warning", "Socket.IO has disconnected");
-    this.onEvent({ type: "disconnect", action: "update", id: null });
+    this.onEvent({ type: "disconnect", action: "update", payload: null });
   }
 
   private onEvent(event: SocketIO.Event) {

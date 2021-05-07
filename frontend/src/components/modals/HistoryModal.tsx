@@ -105,7 +105,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
       <AsyncStateOverlay state={history}>
-        {(data) => (
+        {({ data }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
@@ -208,7 +208,7 @@ export const EpisodeHistoryModal: FunctionComponent<
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
       <AsyncStateOverlay state={history}>
-        {(data) => (
+        {({ data }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}

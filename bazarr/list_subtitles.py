@@ -365,7 +365,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                          (missing_subtitles_text, episode_subtitles['sonarrEpisodeId']))
 
         if send_event:
-            event_stream(type='episode', id=episode_subtitles['sonarrEpisodeId'])
+            event_stream(type='episode', payload=episode_subtitles['sonarrEpisodeId'])
             event_stream(type='badges')
 
 
@@ -474,7 +474,7 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
                          (missing_subtitles_text, movie_subtitles['radarrId']))
 
         if send_event:
-            event_stream(type='movie', id=movie_subtitles['radarrId'])
+            event_stream(type='movie', payload=movie_subtitles['radarrId'])
             event_stream(type='badges')
 
 

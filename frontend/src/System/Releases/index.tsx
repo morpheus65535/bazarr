@@ -12,13 +12,13 @@ const ReleasesView: FunctionComponent<Props> = () => {
 
   return (
     <AsyncStateOverlay state={releases}>
-      {(item) => (
+      {({ data }) => (
         <Container fluid className="px-5 py-4 bg-light">
           <Helmet>
             <title>Releases - Bazarr (System)</title>
           </Helmet>
           <Row>
-            {item.map((v, idx) => (
+            {data.map((v, idx) => (
               <Col xs={12} key={BuildKey(idx, v.date)}>
                 <InfoElement {...v}></InfoElement>
               </Col>
