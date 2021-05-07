@@ -14,6 +14,6 @@ def event_stream(type, action="update", payload=None):
 
     try:
         payload = int(payload)
-    except ValueError:
+    except (ValueError, TypeError):
         pass
     socketio.emit("data", {"type": type, "action": action, "payload": payload})
