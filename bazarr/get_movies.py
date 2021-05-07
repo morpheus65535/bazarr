@@ -152,7 +152,7 @@ def update_one_movie(movie_id, action):
     if action == 'deleted':
         if existing_movie:
             database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
-            event_stream(type='movie', action='delete', id=int(movie_id))
+            event_stream(type='movie', action='delete', payload=int(movie_id))
             logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
                 existing_movie['path'])))
         return
@@ -197,7 +197,7 @@ def update_one_movie(movie_id, action):
     # Remove movie from DB
     if not movie and existing_movie:
         database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
-        event_stream(type='movie', action='delete', id=int(movie_id))
+        event_stream(type='movie', action='delete', payload=int(movie_id))
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
             existing_movie['path'])))
         return
@@ -207,7 +207,7 @@ def update_one_movie(movie_id, action):
         query = dict_converter.convert(movie)
         database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
                          query.values + (movie['radarrId'],))
-        event_stream(type='movie', action='update', id=int(movie_id))
+        event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 
@@ -216,7 +216,7 @@ def update_one_movie(movie_id, action):
         query = dict_converter.convert(movie)
         database.execute('''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='movie', action='update', id=int(movie_id))
+        event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 

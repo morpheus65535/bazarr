@@ -96,7 +96,7 @@ def update_series():
                 logging.debug('BAZARR unable to insert this series into the database:',
                               path_mappings.path_replace(added_series['path']))
 
-                event_stream(type='series', action='update', id=added_series['sonarrSeriesId'])
+                event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
 
                 logging.debug('BAZARR All series synced from Sonarr into database.')
 
@@ -130,7 +130,7 @@ def update_one_series(series_id, action):
                                                      sonarr_series_id=series_id)
         except requests.exceptions.HTTPError:
             database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series_id,))
-            event_stream(type='series', action='delete', id=int(series_id))
+            event_stream(type='series', action='delete', payload=int(series_id))
             return
 
         if not series_data:
@@ -151,7 +151,7 @@ def update_one_series(series_id, action):
     # Remove series from DB
     if action == 'deleted':
         database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series_id,))
-        event_stream(type='series', action='delete', id=int(series_id))
+        event_stream(type='series', action='delete', payload=int(series_id))
         logging.debug('BAZARR deleted this series from the database:{}'.format(path_mappings.path_replace(
             existing_series['path'])))
         return
@@ -161,7 +161,7 @@ def update_one_series(series_id, action):
         query = dict_converter.convert(series)
         database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                          query.values + (series['sonarrSeriesId'],))
-        event_stream(type='series', action='update', id=int(series_id))
+        event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))
 
@@ -170,7 +170,7 @@ def update_one_series(series_id, action):
         query = dict_converter.convert(series)
         database.execute('''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='series', action='update', id=int(series_id))
+        event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))
 

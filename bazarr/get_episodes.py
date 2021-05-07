@@ -134,7 +134,7 @@ def sync_one_episode(episode_id):
     # Remove episode from DB
     if not episode and existing_episode:
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (episode_id,))
-        event_stream(type='episode', action='delete', id=int(episode_id))
+        event_stream(type='episode', action='delete', payload=int(episode_id))
         logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
             existing_episode['path'])))
         return
@@ -144,7 +144,7 @@ def sync_one_episode(episode_id):
         query = dict_converter.convert(episode)
         database.execute('''UPDATE table_episodes SET ''' + query.keys_update + ''' WHERE sonarrEpisodeId = ?''',
                          query.values + (episode['sonarrEpisodeId'],))
-        event_stream(type='episode', action='update', id=int(episode_id))
+        event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
@@ -153,7 +153,7 @@ def sync_one_episode(episode_id):
         query = dict_converter.convert(episode)
         database.execute('''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' +
                          query.question_marks + ''')''', query.values)
-        event_stream(type='episode', action='update', id=int(episode_id))
+        event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
             episode['path'])))
 
