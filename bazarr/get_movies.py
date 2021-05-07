@@ -462,7 +462,8 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
                      'overview': overview,
                      'imdbId': imdbId,
                      'movie_file_id': int(movie['movieFile']['id']),
-                     'tags': str(tags)}
+                     'tags': str(tags),
+                     'file_size': movie['movieFile']['size']}
         else:
             return {'radarrId': int(movie["id"]),
                     'title': movie["title"],
