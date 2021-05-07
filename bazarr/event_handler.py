@@ -1,22 +1,19 @@
 # coding=utf-8
 
-import json
 from app import socketio
 
 
-def event_stream(type, action = "update", id=None):
+def event_stream(type, action="update", payload=None):
     """
         :param type: The type of element.
         :type type: str
-        :param action: The action type of element from insert, update, delete.
+        :param action: The action type of element from update and delete.
         :type action: str
-        :param id: The id of element, None means all.
+        :param payload: The payload to send, can be anything
     """
 
     try:
-        if id is not None:
-            id = int(id)
-        socketio.emit("data", {"type": type, "action": action, "id": id})
-    except:
-        # TODO
+        payload = int(payload)
+    except ValueError:
         pass
+    socketio.emit("data", {"type": type, "action": action, "payload": payload})

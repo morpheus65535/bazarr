@@ -143,7 +143,7 @@ def sync_episodes():
         episode_to_delete = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE "
                                              "sonarrEpisodeId=?", (removed_episode,), only_one=True)
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (removed_episode,))
-        event_stream(type='episode', action='delete', id=episode_to_delete['sonarrEpisodeId'])
+        event_stream(type='episode', action='delete', payload=episode_to_delete['sonarrEpisodeId'])
 
     # Update existing episodes in DB
     episode_in_db_list = []
@@ -174,7 +174,7 @@ def sync_episodes():
             altered_episodes.append([added_episode['sonarrEpisodeId'],
                                      added_episode['path'],
                                      added_episode['monitored']])
-            event_stream(type='episode', id=added_episode['sonarrEpisodeId'])
+            event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:{}'.format(path_mappings.path_replace(added_episode['path'])))
 
