@@ -1,5 +1,5 @@
 import { Hooks, TableOptions } from "react-table";
-import { useReduxStore } from "../../../@redux/hooks/base";
+import { usePageSize } from "../../../@storage/local";
 
 const pluginName = "useLocalSettings";
 
@@ -9,7 +9,7 @@ function useDefaultSettings<T extends object>(hooks: Hooks<T>) {
 useDefaultSettings.pluginName = pluginName;
 
 function useOptions<T extends object>(options: TableOptions<T>) {
-  const { pageSize } = useReduxStore((s) => s.site);
+  const [pageSize] = usePageSize();
 
   if (options.autoResetPage === undefined) {
     options.autoResetPage = false;

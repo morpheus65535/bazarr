@@ -1,4 +1,3 @@
-import { isUndefined } from "lodash";
 import React, { useEffect } from "react";
 import {
   PluginHook,
@@ -7,7 +6,6 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
-import { useReduxStore } from "../../@redux/hooks/base";
 import { ScrollToTop } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -51,11 +49,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
     gotoPage,
     nextPage,
     previousPage,
-    setPageSize,
     state: { pageIndex, pageSize },
   } = instance;
-
-  const globalPageSize = useReduxStore((s) => s.site.pageSize);
 
   // Scroll to top when page is changed
   useEffect(() => {
@@ -63,23 +58,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
       ScrollToTop();
     }
   }, [pageIndex, autoScroll]);
-
-  useEffect(() => {
-    const selecting = options.isSelecting;
-    if (canSelect && !isUndefined(selecting)) {
-      if (selecting) {
-        setPageSize(rows.length);
-      } else {
-        setPageSize(globalPageSize);
-      }
-    }
-  }, [
-    canSelect,
-    globalPageSize,
-    options.isSelecting,
-    rows.length,
-    setPageSize,
-  ]);
 
   return (
     <React.Fragment>

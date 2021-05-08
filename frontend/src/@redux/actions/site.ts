@@ -9,7 +9,6 @@ import {
   SITE_NOTIFICATIONS_REMOVE,
   SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_OFFLINE_UPDATE,
-  SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { createAsyncAction, createCallbackAction } from "./factory";
@@ -29,11 +28,6 @@ export const siteRedirectToAuth = createAction(SITE_NEED_AUTH);
 
 export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
   BadgesApi.all()
-);
-
-export const siteSaveLocalstorage = createAction(
-  SITE_SAVE_LOCALSTORAGE,
-  (settings: LooseObject) => settings
 );
 
 export const siteAddNotification = createAction(

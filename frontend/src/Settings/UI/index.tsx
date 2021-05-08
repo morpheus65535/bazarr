@@ -1,9 +1,10 @@
 import React, { FunctionComponent } from "react";
-import { uiPageSizeKey } from "../../@storage/local";
+import { uiPageSizeKey, usePageSize } from "../../@storage/local";
 import { Group, Input, Selector, SettingsProvider } from "../components";
 import { pageSizeOptions } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {
+  const [pageSize] = usePageSize();
   return (
     <SettingsProvider title="Interface - Bazarr (Settings)">
       <Group header="UI">
@@ -11,7 +12,7 @@ const SettingsUIView: FunctionComponent = () => {
           <Selector
             options={pageSizeOptions}
             settingKey={uiPageSizeKey}
-            override={(_, s) => s.site.pageSize}
+            override={(_) => pageSize}
           ></Selector>
         </Input>
       </Group>

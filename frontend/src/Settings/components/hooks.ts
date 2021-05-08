@@ -1,6 +1,5 @@
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
-import { useStore } from "react-redux";
 import { useSystemSettings } from "../../@redux/hooks";
 import { log } from "../../utilites/logger";
 import { StagedChangesContext } from "./provider";
@@ -45,7 +44,7 @@ export function useMultiUpdate() {
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
-export type OverrideFuncType<T> = (settings: Settings, store: ReduxStore) => T;
+export type OverrideFuncType<T> = (settings: Settings) => T;
 
 export function useExtract<T>(
   key: string,
@@ -54,8 +53,6 @@ export function useExtract<T>(
 ): Readonly<Nullable<T>> {
   const [systemSettings] = useSystemSettings();
   const settings = systemSettings.data;
-
-  const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;
@@ -89,7 +86,7 @@ export function useExtract<T>(
 
   if (override && settings !== undefined) {
     // TODO: Temporarily override
-    return override(settings, store.getState());
+    return override(settings);
   } else {
     return extractValue;
   }

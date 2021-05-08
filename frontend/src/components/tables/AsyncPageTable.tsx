@@ -2,7 +2,7 @@ import { isNull } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
-import { useReduxStore } from "../../@redux/hooks/base";
+import { usePageSize } from "../../@storage/local";
 import { buildOrderListFrom, isNonNullable, ScrollToTop } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -32,7 +32,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
 
   // Impl a new pagination system instead of hooking into the existing one
   const [pageIndex, setIndex] = useState(0);
-  const pageSize = useReduxStore((s) => s.site.pageSize);
+  const [pageSize] = usePageSize();
   const totalRows = order.length;
   const pageCount = Math.ceil(totalRows / pageSize);
 

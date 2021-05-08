@@ -1,5 +1,4 @@
 import { Action, handleActions } from "redux-actions";
-import { storage } from "../../@storage/local";
 import apis from "../../apis";
 import {
   SITE_BADGE_UPDATE,
@@ -10,16 +9,9 @@ import {
   SITE_NOTIFICATIONS_REMOVE,
   SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_OFFLINE_UPDATE,
-  SITE_SAVE_LOCALSTORAGE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { AsyncAction } from "../types";
-
-function updateLocalStorage(): Partial<ReduxStore.Site> {
-  return {
-    pageSize: storage.pageSize,
-  };
-}
 
 const reducer = handleActions<ReduxStore.Site, any>(
   {
@@ -40,17 +32,6 @@ const reducer = handleActions<ReduxStore.Site, any>(
       ...state,
       initialized: "An Error Occurred When Initializing Bazarr UI",
     }),
-    [SITE_SAVE_LOCALSTORAGE]: (state, action: Action<LooseObject>) => {
-      const settings = action.payload;
-      for (const key in settings) {
-        const value = settings[key];
-        localStorage.setItem(key, value);
-      }
-      return {
-        ...state,
-        ...updateLocalStorage(),
-      };
-    },
     [SITE_NOTIFICATIONS_ADD]: (
       state,
       action: Action<ReduxStore.Notification>
@@ -94,7 +75,6 @@ const reducer = handleActions<ReduxStore.Site, any>(
   {
     initialized: false,
     auth: true,
-    pageSize: 50,
     notifications: [],
     sidebar: "",
     badges: {
@@ -104,7 +84,6 @@ const reducer = handleActions<ReduxStore.Site, any>(
       status: 0,
     },
     offline: false,
-    ...updateLocalStorage(),
   }
 );
 

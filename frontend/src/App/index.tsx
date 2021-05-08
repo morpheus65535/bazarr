@@ -42,7 +42,7 @@ const App: FunctionComponent<Props> = () => {
   }, [initialized, hasUpdate, notify]);
 
   const [sidebar, setSidebar] = useState(false);
-  const toggleSidebar = useCallback(() => setSidebar(!sidebar), [sidebar]);
+  const toggleSidebar = useCallback(() => setSidebar((s) => !s), []);
 
   if (!auth) {
     return <Redirect to="/login"></Redirect>;

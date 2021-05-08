@@ -17,7 +17,6 @@ namespace ReduxStore {
     // Initialization state or error message
     initialized: boolean | string;
     auth: boolean;
-    pageSize: number;
     notifications: Notification[];
     sidebar: string;
     badges: Badge;

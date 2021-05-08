@@ -10,9 +10,8 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { siteSaveLocalstorage } from "../../@redux/actions";
 import { useSystemSettings } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
+import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
 import { useWhenLoadingFinish } from "../../utilites";
@@ -54,7 +53,7 @@ interface Props {
 const SettingsProvider: FunctionComponent<Props> = (props) => {
   const { children, title } = props;
 
-  const updateStorage = useReduxAction(siteSaveLocalstorage);
+  const updateStorage = useUpdateLocalStorage();
 
   const [stagedChange, setChange] = useState<LooseObject>({});
   const [updating, setUpdating] = useState(false);
