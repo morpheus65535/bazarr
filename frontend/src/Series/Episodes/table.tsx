@@ -6,6 +6,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { intersectionWith } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
@@ -118,7 +119,16 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
               ></SubtitleAction>
             ));
 
-            const subtitles = episode.subtitles.map((val, idx) => (
+            let raw_subtitles = episode.subtitles;
+            if (onlyDesired) {
+              raw_subtitles = intersectionWith(
+                raw_subtitles,
+                profileItems,
+                (l, r) => l.code2 === r.code2
+              );
+            }
+
+            const subtitles = raw_subtitles.map((val, idx) => (
               <SubtitleAction
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesid={seriesid}
@@ -165,7 +175,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
         },
       },
     ],
-    []
+    [onlyDesired, profileItems]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
@@ -196,7 +206,6 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             columns={columns}
             data={data}
             externalUpdate={updateRow}
-            loose={[onlyDesired, profileItems]}
             initialState={{
               sortBy: [
                 { id: "season", desc: true },

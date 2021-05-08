@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import io
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import dateutil.parser
 
 import rarfile
@@ -30,6 +30,8 @@ from subzero.language import Language
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
 from six.moves import map
+
+SHOW_EXPIRATION_TIME = timedelta(hours=3).total_seconds()
 
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
@@ -191,8 +193,13 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
         except RequestException as e:
             logger.error(e)
+
     def terminate(self):
         self.session.close()
+
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    def get_result(self, search_url, search_params):
+        return self.session.get(search_url, params=search_params)
 
     def query(self, languages, title, season=None, episode=None, year=None, imdb_id=None, video=None):
         search_params = dict()
@@ -215,8 +222,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         is_episode = False
         if season and episode:
             is_episode = True
-            search_params['season'] = season
-            search_params['episode'] = episode
+            #search_params['season'] = season
+            #search_params['episode'] = episode
         #if year:
         #    search_params['year'] = year
         if imdb_id:
@@ -232,11 +239,11 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
             search_params['userid'] = self.user_id
             search_params['json'] = True
 
-            response = self.session.get(self.api_search_url, params=search_params)
+            #response = self.get_result(search_url=self.api_search_url, search_params=search_params)
+            response = self.get_result(self.api_search_url, search_params)
             resp_json = response.json()
             if resp_json['SubtitleResults']:
                 query_results.extend(resp_json['SubtitleResults'])
-
 
         except Exception as e:
             logger.error(e)
@@ -253,6 +260,12 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
             # handle movies and series separately
             if is_episode:
+                # skip if season and episode number does not match
+                if season and season != sub.get('Season'):
+                    continue
+                elif episode and episode != sub.get('Episode'):
+                    continue
+
                 subtitle = self.subtitle_class(Language.fromtitlovi(sub.get('Lang')), sub.get('Link'), sub.get('Id'), sub.get('Release'), _title,
                                                alt_title=alt_title, season=sub.get('Season'), episode=sub.get('Episode'),
                                                year=sub.get('Year'), rating=sub.get('Rating'),
