@@ -11,6 +11,9 @@ bazarr.pid
 /bin
 /.vscode
 
+# Middleware
+VERSION
+
 # CI
 /__builds__
 /package.json
@@ -26,3 +29,4 @@ frontend/*.local
 frontend/.eslintcache
 frontend/.idea/*
 frontend/**/*.map
+frontend/build
