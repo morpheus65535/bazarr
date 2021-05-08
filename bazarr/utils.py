@@ -209,6 +209,7 @@ def get_sonarr_version():
             sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
+            sonarr_version = 'unknown'
     return sonarr_version
 
 
@@ -247,6 +248,7 @@ def get_radarr_version():
             radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Radarr version')
+            radarr_version = 'unknown'
     return radarr_version
 
 
@@ -398,3 +400,8 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     subs.save(dest_srt_file)
 
     return dest_srt_file
+
+def check_credentials(user, pw):
+    username = settings.auth.username
+    password = settings.auth.password
+    return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username

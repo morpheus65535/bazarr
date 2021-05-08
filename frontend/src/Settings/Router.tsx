@@ -1,8 +1,8 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { RouterEmptyPath } from "../404";
 import { systemUpdateSettings } from "../@redux/actions";
 import { useReduxAction } from "../@redux/hooks/base";
+import { RouterEmptyPath } from "../special-pages/404";
 import { useAutoUpdate } from "../utilites/hooks";
 import General from "./General";
 import Languages from "./Languages";

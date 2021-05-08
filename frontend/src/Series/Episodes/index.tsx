@@ -16,7 +16,6 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { RouterEmptyPath } from "../../404";
 import { useEpisodesBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
@@ -27,6 +26,7 @@ import {
   useShowModal,
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
+import { RouterEmptyPath } from "../../special-pages/404";
 import { useAutoUpdate, useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 

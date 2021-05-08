@@ -43,10 +43,11 @@ def get_notifier_providers():
     return providers
 
 
-def get_series_name(sonarr_series_id):
-    data = database.execute("SELECT title FROM table_shows WHERE sonarrSeriesId=?", (sonarr_series_id,), only_one=True)
+def get_series(sonarr_series_id):
+    data = database.execute("SELECT title, year FROM table_shows WHERE sonarrSeriesId=?", (sonarr_series_id,),
+                            only_one=True)
 
-    return data['title'] or None
+    return {'title': data['title'], 'year': data['year']}
 
 
 def get_episode_name(sonarr_episode_id):
@@ -56,15 +57,21 @@ def get_episode_name(sonarr_episode_id):
     return data['title'], data['season'], data['episode']
 
 
-def get_movies_name(radarr_id):
-    data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
+def get_movie(radarr_id):
+    data = database.execute("SELECT title, year FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
 
-    return data['title']
+    return {'title': data['title'], 'year': data['year']}
 
 
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
-    series = get_series_name(sonarr_series_id)
+    series = get_series(sonarr_series_id)
+    series_title = series['title']
+    series_year = series['year']
+    if series_year not in [None, '', '0']:
+        series_year = ' ({})'.format(series_year)
+    else:
+        series_year = ''
     episode = get_episode_name(sonarr_episode_id)
 
     asset = apprise.AppriseAsset(async_mode=False)
@@ -77,13 +84,20 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body="{} - S{:02d}E{:02d} - {} : {}".format(series, episode[1], episode[2], episode[0], message),
+        body="{}{} - S{:02d}E{:02d} - {} : {}".format(series_title, series_year, episode[1], episode[2], episode[0],
+                                                      message),
     )
 
 
 def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
-    movie = get_movies_name(radarr_id)
+    movie = get_movie(radarr_id)
+    movie_title = movie['title']
+    movie_year = movie['year']
+    if movie_year not in [None, '', '0']:
+        movie_year = ' ({})'.format(movie_year)
+    else:
+        movie_year = ''
 
     asset = apprise.AppriseAsset(async_mode=False)
 
@@ -95,5 +109,5 @@ def send_notifications_movie(radarr_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body="{} : {}".format(movie, message),
+        body="{}{} : {}".format(movie_title, movie_year, message),
     )

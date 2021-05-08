@@ -14,6 +14,7 @@ import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
 import { ActionBadge } from "../components";
 import BaseItemView from "../generic/BaseItemView";
+import { BuildKey } from "../utilites";
 
 interface Props {}
 
@@ -59,7 +60,11 @@ const SeriesView: FunctionComponent<Props> = () => {
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" className="mr-2" key={v.code2}>
+            <Badge
+              variant="secondary"
+              className="mr-2"
+              key={BuildKey(v.code2, v.forced, v.hi)}
+            >
               {v.name}
             </Badge>
           ));

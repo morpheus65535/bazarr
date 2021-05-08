@@ -16,6 +16,7 @@ from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResp
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
+from subliminal_patch.extensions import provider_registry
 
 
 def time_until_end_of_day(dt=None):
@@ -91,7 +92,8 @@ def provider_pool():
 
 def get_providers():
     providers_list = []
-    providers = get_array_from(settings.general.enabled_providers)
+    existing_providers = provider_registry.names()
+    providers = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
     for provider in providers:
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
         providers_list.append(provider)
@@ -247,7 +249,8 @@ def throttled_count(name):
 
 def update_throttled_provider():
     changed = False
-    providers_list = get_array_from(settings.general.enabled_providers)
+    existing_providers = provider_registry.names()
+    providers_list = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
 
     for provider in list(tp):
         if provider not in providers_list:
@@ -281,7 +284,8 @@ def update_throttled_provider():
 def list_throttled_providers():
     update_throttled_provider()
     throttled_providers = []
-    providers = get_array_from(settings.general.enabled_providers)
+    existing_providers = provider_registry.names()
+    providers = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
     for provider in providers:
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
         throttled_providers.append([provider, reason, pretty.date(until)])
