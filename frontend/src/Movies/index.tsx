@@ -1,16 +1,11 @@
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faCheck,
-  faExclamationTriangle,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateByRange, movieUpdateInfoAll } from "../@redux/actions";
+import { movieUpdateByRange, movieUpdateList } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
@@ -52,21 +47,6 @@ const MovieView: FunctionComponent<Props> = () => {
               </TextPopover>
             );
           }
-        },
-      },
-      {
-        Header: "Exist",
-        accessor: "exist",
-        selectHide: true,
-        Cell: ({ row, value }) => {
-          const exist = value;
-          const { path } = row.original;
-          return (
-            <FontAwesomeIcon
-              title={path}
-              icon={exist ? faCheck : faExclamationTriangle}
-            ></FontAwesomeIcon>
-          );
         },
       },
       {
@@ -133,8 +113,8 @@ const MovieView: FunctionComponent<Props> = () => {
       state={movies}
       name="Movies"
       loader={load}
-      updateAction={movieUpdateInfoAll}
-      columns={columns as Column<Item.Base>[]}
+      updateAction={movieUpdateList}
+      columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>
   );

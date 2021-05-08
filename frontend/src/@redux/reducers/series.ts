@@ -1,15 +1,23 @@
-import { handleActions } from "redux-actions";
+import { Action, handleActions } from "redux-actions";
 import {
+  SERIES_DELETE_EPISODES,
+  SERIES_DELETE_ITEMS,
+  SERIES_DELETE_WANTED_ITEMS,
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
-  SERIES_UPDATE_INFO,
-  SERIES_UPDATE_RANGE,
+  SERIES_UPDATE_LIST,
   SERIES_UPDATE_WANTED_LIST,
-  SERIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { updateAsyncState, updateOrderIdState } from "./mapper";
+import { defaultAOS } from "../utils";
+import {
+  deleteAsyncListItemBy,
+  deleteOrderListItemBy,
+  updateAsyncList,
+  updateAsyncState,
+  updateOrderIdState,
+} from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.Series, any>(
   {
@@ -26,16 +34,12 @@ const reducer = handleActions<ReduxStore.Series, any>(
         ),
       };
     },
-    [SERIES_UPDATE_WANTED_RANGE]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
-    ) => {
+    [SERIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        wantedEpisodesList: updateOrderIdState(
+        wantedEpisodesList: deleteOrderListItemBy(
           action,
-          state.wantedEpisodesList,
-          "sonarrEpisodeId"
+          state.wantedEpisodesList
         ),
       };
     },
@@ -43,22 +47,23 @@ const reducer = handleActions<ReduxStore.Series, any>(
       state,
       action: AsyncAction<Item.Episode[]>
     ) => {
-      const { updating, error, data: items } = updateAsyncState(action, []);
-
-      const stateItems = { ...state.episodeList.data };
-
-      if (items.length > 0) {
-        const id = items[0].sonarrSeriesId;
-        stateItems[id] = items;
-      }
-
       return {
         ...state,
-        episodeList: {
-          updating,
-          error,
-          data: stateItems,
-        },
+        episodeList: updateAsyncList(
+          action,
+          state.episodeList,
+          "sonarrEpisodeId"
+        ),
+      };
+    },
+    [SERIES_DELETE_EPISODES]: (state, action: Action<number[]>) => {
+      return {
+        ...state,
+        episodeList: deleteAsyncListItemBy(
+          action,
+          state.episodeList,
+          "sonarrEpisodeId"
+        ),
       };
     },
     [SERIES_UPDATE_HISTORY_LIST]: (
@@ -70,7 +75,7 @@ const reducer = handleActions<ReduxStore.Series, any>(
         historyList: updateAsyncState(action, state.historyList.data),
       };
     },
-    [SERIES_UPDATE_INFO]: (
+    [SERIES_UPDATE_LIST]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Item.Series>>
     ) => {
@@ -83,17 +88,10 @@ const reducer = handleActions<ReduxStore.Series, any>(
         ),
       };
     },
-    [SERIES_UPDATE_RANGE]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Item.Series>>
-    ) => {
+    [SERIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        seriesList: updateOrderIdState(
-          action,
-          state.seriesList,
-          "sonarrSeriesId"
-        ),
+        seriesList: deleteOrderListItemBy(action, state.seriesList),
       };
     },
     [SERIES_UPDATE_BLACKLIST]: (
@@ -107,9 +105,9 @@ const reducer = handleActions<ReduxStore.Series, any>(
     },
   },
   {
-    seriesList: { updating: true, data: { items: {}, order: [] } },
-    wantedEpisodesList: { updating: true, data: { items: {}, order: [] } },
-    episodeList: { updating: true, data: {} },
+    seriesList: defaultAOS(),
+    wantedEpisodesList: defaultAOS(),
+    episodeList: { updating: true, data: [] },
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },
   }

@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 
 from engineio.static_files import get_static_file
 
@@ -19,6 +20,10 @@ class ASGIApp:
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
                           most cases.
+    :param on_startup: function to be called on application startup; can be
+                       coroutine
+    :param on_shutdown: function to be called on application shutdown; can be
+                        coroutine
 
     Example usage::
 
@@ -34,11 +39,14 @@ class ASGIApp:
         uvicorn.run(app, '127.0.0.1', 5000)
     """
     def __init__(self, engineio_server, other_asgi_app=None,
-                 static_files=None, engineio_path='engine.io'):
+                 static_files=None, engineio_path='engine.io',
+                 on_startup=None, on_shutdown=None):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path.strip('/')
         self.static_files = static_files or {}
+        self.on_startup = on_startup
+        self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
@@ -73,11 +81,29 @@ class ASGIApp:
                 await self.not_found(receive, send)
 
     async def lifespan(self, receive, send):
-        event = await receive()
-        if event['type'] == 'lifespan.startup':
-            await send({'type': 'lifespan.startup.complete'})
-        elif event['type'] == 'lifespan.shutdown':
-            await send({'type': 'lifespan.shutdown.complete'})
+        while True:
+            event = await receive()
+            if event['type'] == 'lifespan.startup':
+                if self.on_startup:
+                    try:
+                        await self.on_startup() \
+                            if asyncio.iscoroutinefunction(self.on_startup) \
+                            else self.on_startup()
+                    except:
+                        await send({'type': 'lifespan.startup.failed'})
+                        return
+                await send({'type': 'lifespan.startup.complete'})
+            elif event['type'] == 'lifespan.shutdown':
+                if self.on_shutdown:
+                    try:
+                        await self.on_shutdown() \
+                            if asyncio.iscoroutinefunction(self.on_shutdown) \
+                            else self.on_shutdown()
+                    except:
+                        await send({'type': 'lifespan.shutdown.failed'})
+                        return
+                await send({'type': 'lifespan.shutdown.complete'})
+                return
 
     async def not_found(self, receive, send):
         """Return a 404 Not Found error to the client."""
@@ -111,7 +137,7 @@ async def translate_request(scope, receive, send):
             if event['type'] == 'http.request':
                 payload += event.get('body') or b''
     elif event['type'] == 'websocket.connect':
-        await send({'type': 'websocket.accept'})
+        pass
     else:
         return {}
 
@@ -139,6 +165,7 @@ async def translate_request(scope, receive, send):
         'SERVER_PORT': '0',
         'asgi.receive': receive,
         'asgi.send': send,
+        'asgi.scope': scope,
     }
 
     for hdr_name, hdr_value in scope['headers']:
@@ -163,6 +190,14 @@ async def translate_request(scope, receive, send):
 
 async def make_response(status, headers, payload, environ):
     headers = [(h[0].encode('utf-8'), h[1].encode('utf-8')) for h in headers]
+    if environ['asgi.scope']['type'] == 'websocket':
+        if status.startswith('200 '):
+            await environ['asgi.send']({'type': 'websocket.accept',
+                                        'headers': headers})
+        else:
+            await environ['asgi.send']({'type': 'websocket.close'})
+        return
+
     await environ['asgi.send']({'type': 'http.response.start',
                                 'status': int(status.split(' ')[0]),
                                 'headers': headers})
@@ -183,6 +218,7 @@ class WebSocket(object):  # pragma: no cover
     async def __call__(self, environ):
         self.asgi_receive = environ['asgi.receive']
         self.asgi_send = environ['asgi.send']
+        await self.asgi_send({'type': 'websocket.accept'})
         await self.handler(self)
 
     async def close(self):

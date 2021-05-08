@@ -1,28 +1,24 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { systemUpdateReleases } from "../../@redux/actions";
-import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
+import { useSystemReleases } from "../../@redux/hooks";
 import { AsyncStateOverlay } from "../../components";
 import { BuildKey } from "../../utilites";
-import { useAutoUpdate } from "../../utilites/hooks";
 
 interface Props {}
 
 const ReleasesView: FunctionComponent<Props> = () => {
-  const releases = useReduxStore(({ system }) => system.releases);
-  const update = useReduxAction(systemUpdateReleases);
-  useAutoUpdate(update);
+  const [releases] = useSystemReleases();
 
   return (
     <AsyncStateOverlay state={releases}>
-      {(item) => (
+      {({ data }) => (
         <Container fluid className="px-5 py-4 bg-light">
           <Helmet>
             <title>Releases - Bazarr (System)</title>
           </Helmet>
           <Row>
-            {item.map((v, idx) => (
+            {data.map((v, idx) => (
               <Col xs={12} key={BuildKey(idx, v.date)}>
                 <InfoElement {...v}></InfoElement>
               </Col>

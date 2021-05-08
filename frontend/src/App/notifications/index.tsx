@@ -3,22 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Toast } from "react-bootstrap";
-import { siteRemoveError } from "../../@redux/actions";
+import { siteRemoveNotification } from "../../@redux/actions";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import "./style.scss";
-
-function useNotificationList() {
-  return useReduxStore((s) => s.site.notifications);
-}
-
-function useRemoveNotification() {
-  return useReduxAction(siteRemoveError);
-}
 
 export interface NotificationContainerProps {}
 
 const NotificationContainer: FunctionComponent<NotificationContainerProps> = () => {
-  const list = useNotificationList();
+  const list = useReduxStore((s) => s.site.notifications);
 
   const items = useMemo(
     () =>
@@ -38,7 +30,7 @@ type MessageHolderProps = ReduxStore.Notification & {};
 
 const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   const { message, id, type } = props;
-  const removeNotification = useRemoveNotification();
+  const removeNotification = useReduxAction(siteRemoveNotification);
 
   const remove = useCallback(() => removeNotification(id), [
     removeNotification,

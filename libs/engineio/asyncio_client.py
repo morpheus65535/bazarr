@@ -1,16 +1,35 @@
 import asyncio
+import signal
 import ssl
+import threading
 
 try:
     import aiohttp
 except ImportError:  # pragma: no cover
     aiohttp = None
-import six
 
 from . import client
 from . import exceptions
 from . import packet
 from . import payload
+
+async_signal_handler_set = False
+
+
+def async_signal_handler():
+    """SIGINT handler.
+
+    Disconnect all active async clients.
+    """
+    async def _handler():
+        asyncio.get_event_loop().stop()
+        for c in client.connected_clients[:]:
+            if c.is_asyncio_based():
+                await c.disconnect()
+        else:  # pragma: no cover
+            pass
+
+    asyncio.ensure_future(_handler())
 
 
 class AsyncClient(client.Client):
@@ -22,13 +41,18 @@ class AsyncClient(client.Client):
 
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``. The default is
-                   ``False``.
+                   ``False``. Note that fatal errors are logged even when
+                   ``logger`` is ``False``.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param http_session: an initialized ``aiohttp.ClientSession`` object to be
+                         used when sending requests to the server. Use it if
+                         you need to add special client options such as proxy
+                         servers, SSL certificates, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -37,7 +61,7 @@ class AsyncClient(client.Client):
     def is_asyncio_based(self):
         return True
 
-    async def connect(self, url, headers={}, transports=None,
+    async def connect(self, url, headers=None, transports=None,
                       engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
@@ -60,11 +84,22 @@ class AsyncClient(client.Client):
             eio = engineio.Client()
             await eio.connect('http://localhost:5000')
         """
+        global async_signal_handler_set
+        if not async_signal_handler_set and \
+                threading.current_thread() == threading.main_thread():
+
+            try:
+                asyncio.get_event_loop().add_signal_handler(
+                    signal.SIGINT, async_signal_handler)
+                async_signal_handler_set = True
+            except NotImplementedError:  # pragma: no cover
+                self.logger.warning('Signal handler is unsupported')
+
         if self.state != 'disconnected':
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
         if transports is not None:
-            if isinstance(transports, six.text_type):
+            if isinstance(transports, str):
                 transports = [transports]
             transports = [transport for transport in transports
                           if transport in valid_transports]
@@ -73,7 +108,7 @@ class AsyncClient(client.Client):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers or {}, engineio_path)
 
     async def wait(self):
         """Wait until the connection with the server ends.
@@ -86,21 +121,16 @@ class AsyncClient(client.Client):
         if self.read_loop_task:
             await self.read_loop_task
 
-    async def send(self, data, binary=None):
+    async def send(self, data):
         """Send a message to a client.
 
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
 
         Note: this method is a coroutine.
         """
-        await self._send_packet(packet.Packet(packet.MESSAGE, data=data,
-                                              binary=binary))
+        await self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
     async def disconnect(self, abort=False):
         """Disconnect from the server.
@@ -182,14 +212,20 @@ class AsyncClient(client.Client):
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
+            self._reset()
+            try:
+                arg = await r.json()
+            except aiohttp.ClientError:
+                arg = None
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status))
+                    r.status), arg)
         try:
-            p = payload.Payload(encoded_payload=await r.read())
+            p = payload.Payload(encoded_payload=(await r.read()).decode(
+                'utf-8'))
         except ValueError:
-            six.raise_from(exceptions.ConnectionError(
-                'Unexpected response from server'), None)
+            raise exceptions.ConnectionError(
+                'Unexpected response from server') from None
         open_packet = p.packets[0]
         if open_packet.packet_type != packet.OPEN:
             raise exceptions.ConnectionError(
@@ -198,8 +234,8 @@ class AsyncClient(client.Client):
             'Polling connection accepted with ' + str(open_packet.data))
         self.sid = open_packet.data['sid']
         self.upgrades = open_packet.data['upgrades']
-        self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-        self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+        self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+        self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
         self.current_transport = 'polling'
         self.base_url += '&sid=' + self.sid
 
@@ -216,7 +252,6 @@ class AsyncClient(client.Client):
                 # upgrade to websocket succeeded, we're done here
                 return
 
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -242,6 +277,17 @@ class AsyncClient(client.Client):
         if self.http is None or self.http.closed:  # pragma: no cover
             self.http = aiohttp.ClientSession()
 
+        # extract any new cookies passed in a header so that they can also be
+        # sent the the WebSocket route
+        cookies = {}
+        for header, value in headers.items():
+            if header.lower() == 'cookie':
+                cookies = dict(
+                    [cookie.split('=', 1) for cookie in value.split('; ')])
+                del headers[header]
+                break
+        self.http.cookie_jar.update_cookies(cookies)
+
         try:
             if not self.ssl_verify:
                 ssl_context = ssl.create_default_context()
@@ -255,7 +301,8 @@ class AsyncClient(client.Client):
                     websocket_url + self._get_url_timestamp(),
                     headers=headers)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
-                aiohttp.client_exceptions.ServerConnectionError):
+                aiohttp.client_exceptions.ServerConnectionError,
+                aiohttp.client_exceptions.ClientConnectionError):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')
@@ -263,8 +310,7 @@ class AsyncClient(client.Client):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            p = packet.Packet(packet.PING, data='probe').encode(
-                always_bytes=False)
+            p = packet.Packet(packet.PING, data='probe').encode()
             try:
                 await ws.send_str(p)
             except Exception as e:  # pragma: no cover
@@ -284,7 +330,7 @@ class AsyncClient(client.Client):
                 self.logger.warning(
                     'WebSocket upgrade failed: no PONG packet')
                 return False
-            p = packet.Packet(packet.UPGRADE).encode(always_bytes=False)
+            p = packet.Packet(packet.UPGRADE).encode()
             try:
                 await ws.send_str(p)
             except Exception as e:  # pragma: no cover
@@ -307,8 +353,8 @@ class AsyncClient(client.Client):
                 'WebSocket connection accepted with ' + str(open_packet.data))
             self.sid = open_packet.data['sid']
             self.upgrades = open_packet.data['upgrades']
-            self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-            self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+            self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+            self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
             self.current_transport = 'websocket'
 
             self.state = 'connected'
@@ -316,7 +362,6 @@ class AsyncClient(client.Client):
             await self._trigger_event('connect', run_async=False)
 
         self.ws = ws
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -331,8 +376,8 @@ class AsyncClient(client.Client):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
             await self._trigger_event('message', pkt.data, run_async=True)
-        elif pkt.packet_type == packet.PONG:
-            self.pong_received = True
+        elif pkt.packet_type == packet.PING:
+            await self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
             await self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
@@ -409,33 +454,6 @@ class AsyncClient(client.Client):
                             return False
         return ret
 
-    async def _ping_loop(self):
-        """This background task sends a PING to the server at the requested
-        interval.
-        """
-        self.pong_received = True
-        if self.ping_loop_event is None:
-            self.ping_loop_event = self.create_event()
-        else:
-            self.ping_loop_event.clear()
-        while self.state == 'connected':
-            if not self.pong_received:
-                self.logger.info(
-                    'PONG response has not been received, aborting')
-                if self.ws:
-                    await self.ws.close()
-                await self.queue.put(None)
-                break
-            self.pong_received = False
-            await self._send_packet(packet.Packet(packet.PING))
-            try:
-                await asyncio.wait_for(self.ping_loop_event.wait(),
-                                       self.ping_interval)
-            except (asyncio.TimeoutError,
-                    asyncio.CancelledError):  # pragma: no cover
-                pass
-        self.logger.info('Exiting ping task')
-
     async def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
         while self.state == 'connected':
@@ -455,7 +473,8 @@ class AsyncClient(client.Client):
                 await self.queue.put(None)
                 break
             try:
-                p = payload.Payload(encoded_payload=await r.read())
+                p = payload.Payload(encoded_payload=(await r.read()).decode(
+                    'utf-8'))
             except ValueError:
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
@@ -466,10 +485,6 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -484,9 +499,18 @@ class AsyncClient(client.Client):
         while self.state == 'connected':
             p = None
             try:
-                p = (await self.ws.receive()).data
+                p = await asyncio.wait_for(
+                    self.ws.receive(),
+                    timeout=self.ping_interval + self.ping_timeout)
+                p = p.data
                 if p is None:  # pragma: no cover
-                    raise RuntimeError('WebSocket read returned None')
+                    await self.queue.put(None)
+                    break  # the connection is broken
+            except asyncio.TimeoutError:
+                self.logger.warning(
+                    'Server has stopped communicating, aborting')
+                await self.queue.put(None)
+                break
             except aiohttp.client_exceptions.ServerDisconnectedError:
                 self.logger.info(
                     'Read loop: WebSocket connection was closed, aborting')
@@ -494,20 +518,21 @@ class AsyncClient(client.Client):
                 break
             except Exception as e:
                 self.logger.info(
-                    'Unexpected error "%s", aborting', str(e))
+                    'Unexpected error receiving packet: "%s", aborting',
+                    str(e))
                 await self.queue.put(None)
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
-            pkt = packet.Packet(encoded_packet=p)
+            try:
+                pkt = packet.Packet(encoded_packet=p)
+            except Exception as e:  # pragma: no cover
+                self.logger.info(
+                    'Unexpected error decoding packet: "%s", aborting', str(e))
+                await self.queue.put(None)
+                break
             await self._receive_packet(pkt)
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -571,13 +596,12 @@ class AsyncClient(client.Client):
                 try:
                     for pkt in packets:
                         if pkt.binary:
-                            await self.ws.send_bytes(pkt.encode(
-                                always_bytes=False))
+                            await self.ws.send_bytes(pkt.encode())
                         else:
-                            await self.ws.send_str(pkt.encode(
-                                always_bytes=False))
+                            await self.ws.send_str(pkt.encode())
                         self.queue.task_done()
-                except aiohttp.client_exceptions.ServerDisconnectedError:
+                except (aiohttp.client_exceptions.ServerDisconnectedError,
+                        BrokenPipeError, OSError):
                     self.logger.info(
                         'Write loop: WebSocket connection was closed, '
                         'aborting')

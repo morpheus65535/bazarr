@@ -1,17 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useHistory } from "react-router";
-import { mergeArray } from ".";
+import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
-  if (process.env.NODE_ENV === "development") {
-    return "/";
-  } else {
-    let url = window.Bazarr.baseUrl ?? "/";
-    if (slash && !url.endsWith("/")) {
-      url += "/";
-    }
-    return url;
-  }
+  return useMemo(() => getBaseUrl(slash), [slash]);
 }
 
 export function useGotoHomepage() {
@@ -49,34 +41,6 @@ export function useSessionStorage(
     [key]
   );
   return [sessionStorage.getItem(key), dispatch];
-}
-
-export function useMergeArray<T>(
-  olds: readonly T[],
-  news: readonly T[],
-  comparer: Comparer<NonNullable<T>>
-) {
-  return useMemo(() => mergeArray(olds, news, comparer), [
-    olds,
-    news,
-    comparer,
-  ]);
-}
-
-export function useAutoUpdate(action: () => void, interval?: number) {
-  useEffect(() => {
-    action();
-
-    let hd: NodeJS.Timeout | null = null;
-    if (interval !== undefined) {
-      hd = setInterval(action, interval);
-    }
-    return () => {
-      if (hd !== null) {
-        clearInterval(hd);
-      }
-    };
-  }, [action, interval]);
 }
 
 export function useWatcher<T>(

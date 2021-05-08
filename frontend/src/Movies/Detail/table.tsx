@@ -1,8 +1,11 @@
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { intersectionWith } from "lodash";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
+import { useProfileItems } from "../../@redux/hooks";
+import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
 
@@ -10,11 +13,13 @@ const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
-  update: (id: number) => void;
+  profile?: Profile.Languages;
 }
 
-const Table: FunctionComponent<Props> = (props) => {
-  const { movie, update } = props;
+const Table: FunctionComponent<Props> = ({ movie, profile }) => {
+  const onlyDesired = useShowOnlyDesired();
+
+  const profileItems = useProfileItems(profile);
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
@@ -66,7 +71,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     forced: original.forced,
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
                 variant="light"
                 size="sm"
               >
@@ -86,7 +90,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     path: original.path ?? "",
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
               >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
               </AsyncButton>
@@ -95,7 +98,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    [movie, update]
+    [movie]
   );
 
   const data: Subtitle[] = useMemo(() => {
@@ -104,8 +107,17 @@ const Table: FunctionComponent<Props> = (props) => {
       return item;
     });
 
-    return movie.subtitles.concat(missing);
-  }, [movie.missing_subtitles, movie.subtitles]);
+    let raw_subtitles = movie.subtitles;
+    if (onlyDesired) {
+      raw_subtitles = intersectionWith(
+        raw_subtitles,
+        profileItems,
+        (l, r) => l.code2 === r.code2
+      );
+    }
+
+    return [...raw_subtitles, ...missing];
+  }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);
 
   return (
     <SimpleTable

@@ -6,8 +6,7 @@ import React, {
 } from "react";
 import { Row } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
-import { bootstrap as ReduxBootstrap } from "../@redux/actions";
-import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
@@ -24,8 +23,6 @@ export const SidebarToggleContext = React.createContext<() => void>(() => {});
 interface Props {}
 
 const App: FunctionComponent<Props> = () => {
-  const bootstrap = useReduxAction(ReduxBootstrap);
-
   const { initialized, auth } = useReduxStore((s) => s.site);
 
   const notify = useNotification("has-update", 10);
@@ -43,10 +40,6 @@ const App: FunctionComponent<Props> = () => {
       }
     }
   }, [initialized, hasUpdate, notify]);
-
-  useEffect(() => {
-    bootstrap();
-  }, [bootstrap]);
 
   const [sidebar, setSidebar] = useState(false);
   const toggleSidebar = useCallback(() => setSidebar(!sidebar), [sidebar]);

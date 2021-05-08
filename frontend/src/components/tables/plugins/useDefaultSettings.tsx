@@ -23,14 +23,8 @@ function useOptions<T extends object>(options: TableOptions<T>) {
     options.initialState = {};
   }
 
-  options.initialState.needLoadingScreen = false;
-
   if (options.initialState.pageSize === undefined) {
     options.initialState.pageSize = pageSize;
-  }
-
-  if (options.asyncLoader === undefined) {
-    options.initialState.pageToLoad = undefined;
   }
 
   return options;

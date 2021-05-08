@@ -33,6 +33,7 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
+from event_handler import event_stream
 from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
@@ -982,6 +983,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                         language_code, provider, score, subs_id, subs_path)
+                            event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
                         logging.debug(
@@ -1050,6 +1052,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
                             history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
                                               subs_id, subs_path)
+                            event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
                             send_notifications_movie(movie['radarrId'], message)
                     else:
                         logging.info(

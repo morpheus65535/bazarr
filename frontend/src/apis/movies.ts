@@ -37,9 +37,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async movies(id?: number[]) {
+  async movies(radarrid?: number[]) {
     return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Movie>>("", { radarrid: id })
+      this.get<AsyncDataWrapper<Item.Movie>>("", { radarrid })
         .then((result) => {
           resolve(result.data);
         })
@@ -81,8 +81,7 @@ class MovieApi extends BaseApi {
     });
   }
 
-  // TODO: Implement this on backend
-  async wantedBy(radarrid?: number) {
+  async wantedBy(radarrid: number[]) {
     return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { radarrid })
         .then((result) => {

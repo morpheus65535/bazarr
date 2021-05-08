@@ -1,23 +1,19 @@
 # coding=utf-8
 
-import json
 from app import socketio
 
 
-def event_stream(type=None, action=None, series=None, episode=None, movie=None, task=None):
+def event_stream(type, action="update", payload=None):
     """
         :param type: The type of element.
         :type type: str
-        :param action: The action type of element from insert, update, delete.
+        :param action: The action type of element from update and delete.
         :type action: str
-        :param series: The series id.
-        :type series: str
-        :param episode: The episode id.
-        :type episode: str
-        :param movie: The movie id.
-        :type movie: str
-        :param task: The task id.
-        :type task: str
+        :param payload: The payload to send, can be anything
     """
-    socketio.emit('event', json.dumps({"type": type, "action": action, "series": series, "episode": episode,
-                                       "movie": movie, "task": task}))
+
+    try:
+        payload = int(payload)
+    except (ValueError, TypeError):
+        pass
+    socketio.emit("data", {"type": type, "action": action, "payload": payload})

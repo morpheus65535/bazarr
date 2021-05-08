@@ -160,6 +160,12 @@ def db_upgrade():
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist_movie (radarr_id integer, timestamp integer, "
                      "provider text, subs_id text, language text)")
 
+    # Create rootfolder tables
+    database.execute("CREATE TABLE IF NOT EXISTS table_shows_rootfolder (id integer, path text, accessible integer, "
+                     "error text)")
+    database.execute("CREATE TABLE IF NOT EXISTS table_movies_rootfolder (id integer, path text, accessible integer, "
+                     "error text)")
+
     # Create languages profiles table and populate it
     lang_table_content = database.execute("SELECT * FROM table_languages_profiles")
     if isinstance(lang_table_content, list):
@@ -483,3 +489,9 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
                 )
 
     return audio_languages
+
+def convert_list_to_clause(arr: list):
+    if isinstance(arr, list):
+        return f"({','.join(str(x) for x in arr)})"
+    else:
+        return ""

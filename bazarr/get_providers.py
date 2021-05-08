@@ -278,7 +278,7 @@ def update_throttled_provider():
                     del tp[provider]
                     set_throttled_providers(str(tp))
 
-        event_stream(type='badges_providers')
+        event_stream(type='badges')
 
 
 def list_throttled_providers():

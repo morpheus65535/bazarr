@@ -5,13 +5,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useContext, useMemo } from "react";
 import {
   Button,
   Col,
@@ -100,12 +94,6 @@ const Header: FunctionComponent<Props> = () => {
     [canLogout, setNeedAuth]
   );
 
-  const [reconnecting, setReconnect] = useState(false);
-  const reconnect = useCallback(() => {
-    setReconnect(true);
-    SystemApi.status().finally(() => setReconnect(false));
-  }, []);
-
   const goHome = useGotoHomepage();
 
   return (
@@ -137,13 +125,13 @@ const Header: FunctionComponent<Props> = () => {
             </Button>
             {offline ? (
               <ActionButton
-                loading={reconnecting}
+                loading
+                alwaysShowText
                 className="ml-2"
                 variant="warning"
                 icon={faNetworkWired}
-                onClick={reconnect}
               >
-                Reconnect
+                Connecting...
               </ActionButton>
             ) : (
               dropdown

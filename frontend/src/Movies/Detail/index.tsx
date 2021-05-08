@@ -25,7 +25,7 @@ import {
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useAutoUpdate, useWhenLoadingFinish } from "../../utilites";
+import { useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 const download = (item: any, result: SearchResultType) => {
@@ -48,8 +48,7 @@ interface Props extends RouteComponentProps<Params> {}
 
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
-  const [movie, update] = useMovieBy(id);
-  useAutoUpdate(update);
+  const [movie] = useMovieBy(id);
   const item = movie.data;
 
   const showModal = useShowModal();
@@ -86,7 +85,6 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             promise={() =>
               MoviesApi.action({ action: "scan-disk", radarrid: item.radarrId })
             }
-            onSuccess={update}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
@@ -99,7 +97,6 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 radarrid: item.radarrId,
               })
             }
-            onSuccess={update}
           >
             Search
           </ContentHeader.AsyncButton>
@@ -144,23 +141,17 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         <ItemOverview item={item} details={[]}></ItemOverview>
       </Row>
       <Row>
-        <Table movie={item} update={update}></Table>
+        <Table movie={item}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => MoviesApi.modify(form)}
-        onSuccess={update}
       ></ItemEditorModal>
-      <SubtitleToolModal
-        modalKey="tools"
-        size="lg"
-        update={update}
-      ></SubtitleToolModal>
+      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onDownload={update}
         onSelect={download}
       ></ManualSearchModal>
     </Container>

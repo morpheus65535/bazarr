@@ -1,19 +1,29 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
 import { buildOrderList } from "../../utilites";
 import {
-  episodeUpdateBySeriesId,
+  episodeDeleteItems,
+  episodeUpdateBy,
+  episodeUpdateById,
+  movieDeleteWantedItems,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
-  movieUpdateInfoAll,
-  movieUpdateWantedBy,
-  providerUpdateAll,
+  movieUpdateList,
+  movieUpdateWantedList,
+  providerUpdateList,
+  seriesDeleteWantedItems,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
-  seriesUpdateInfoAll,
-  seriesUpdateWantedBy,
+  seriesUpdateList,
+  seriesUpdateWantedList,
+  systemUpdateHealth,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
+  systemUpdateLogs,
+  systemUpdateReleases,
   systemUpdateSettingsAll,
+  systemUpdateStatus,
+  systemUpdateTasks,
 } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
@@ -25,9 +35,71 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
 }
 
 export function useSystemSettings() {
-  const action = useReduxAction(systemUpdateSettingsAll);
+  const update = useReduxAction(systemUpdateSettingsAll);
   const items = useReduxStore((s) => s.system.settings);
-  return stateBuilder(items, action);
+
+  return stateBuilder(items, update);
+}
+
+export function useSystemLogs() {
+  const items = useReduxStore(({ system }) => system.logs);
+  const update = useReduxAction(systemUpdateLogs);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemTasks() {
+  const items = useReduxStore((s) => s.system.tasks);
+  const update = useReduxAction(systemUpdateTasks);
+  useSocketIOReducer("task", update);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemStatus() {
+  const items = useReduxStore((s) => s.system.status.data);
+  const update = useReduxAction(systemUpdateStatus);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemHealth() {
+  const update = useReduxAction(systemUpdateHealth);
+  const items = useReduxStore((s) => s.system.health);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemProviders() {
+  const update = useReduxAction(providerUpdateList);
+  const items = useReduxStore((d) => d.system.providers);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
+}
+
+export function useSystemReleases() {
+  const items = useReduxStore(({ system }) => system.releases);
+  const update = useReduxAction(systemUpdateReleases);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useLanguageProfiles() {
@@ -92,9 +164,9 @@ export function useProfileItems(profile?: Profile.Languages) {
 }
 
 export function useRawSeries() {
-  const action = useReduxAction(seriesUpdateInfoAll);
+  const update = useReduxAction(seriesUpdateList);
   const items = useReduxStore((d) => d.series.seriesList);
-  return stateBuilder(items, action);
+  return stateBuilder(items, update);
 }
 
 export function useSeries(order = true) {
@@ -118,7 +190,6 @@ export function useSeries(order = true) {
 
 export function useSerieBy(id?: number) {
   const [series, updateSerie] = useRawSeries();
-  const updateEpisodes = useReduxAction(episodeUpdateBySeriesId);
   const serie = useMemo<AsyncState<Item.Series | null>>(() => {
     const items = series.data.items;
     let item: Item.Series | null = null;
@@ -134,18 +205,22 @@ export function useSerieBy(id?: number) {
   const update = useCallback(() => {
     if (id && !isNaN(id)) {
       updateSerie([id]);
-      updateEpisodes(id);
     }
-  }, [id, updateSerie, updateEpisodes]);
+  }, [id, updateSerie]);
 
+  useEffect(() => {
+    if (serie.data === null) {
+      update();
+    }
+  }, [serie.data, update]);
   return stateBuilder(serie, update);
 }
 
 export function useEpisodesBy(seriesId?: number) {
-  const action = useReduxAction(episodeUpdateBySeriesId);
-  const callback = useCallback(() => {
+  const action = useReduxAction(episodeUpdateBy);
+  const update = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
-      action(seriesId);
+      action([seriesId]);
     }
   }, [action, seriesId]);
 
@@ -153,24 +228,38 @@ export function useEpisodesBy(seriesId?: number) {
 
   const items = useMemo(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
-      return list.data[seriesId] ?? [];
+      return list.data.filter((v) => v.sonarrSeriesId === seriesId);
     } else {
       return [];
     }
   }, [seriesId, list.data]);
 
-  const state: AsyncState<Item.Episode[]> = {
-    ...list,
-    data: items,
-  };
+  const state: AsyncState<Item.Episode[]> = useMemo(
+    () => ({
+      ...list,
+      data: items,
+    }),
+    [list, items]
+  );
 
-  return stateBuilder(state, callback);
+  const actionById = useReduxAction(episodeUpdateById);
+  const wrapActionById = useWrapToOptionalId(actionById);
+  const deleteAction = useReduxAction(episodeDeleteItems);
+  useSocketIOReducer("episode", undefined, wrapActionById, deleteAction);
+
+  const wrapAction = useWrapToOptionalId(action);
+  useSocketIOReducer("series", undefined, wrapAction);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(state, update);
 }
 
 export function useRawMovies() {
-  const action = useReduxAction(movieUpdateInfoAll);
+  const update = useReduxAction(movieUpdateList);
   const items = useReduxStore((d) => d.movie.movieList);
-  return stateBuilder(items, action);
+  return stateBuilder(items, update);
 }
 
 export function useMovies(order = true) {
@@ -212,54 +301,80 @@ export function useMovieBy(id?: number) {
     }
   }, [id, updateMovies]);
 
+  useEffect(() => {
+    if (movie.data === null) {
+      update();
+    }
+  }, [movie.data, update]);
   return stateBuilder(movie, update);
 }
 
 export function useWantedSeries() {
-  const action = useReduxAction(seriesUpdateWantedBy);
+  const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
-  return stateBuilder(items, action);
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(seriesDeleteWantedItems);
+  useSocketIOReducer("episode-wanted", undefined, updateAction, deleteAction);
+
+  return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
-  const action = useReduxAction(movieUpdateWantedBy);
+  const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
 
-  return stateBuilder(items, action);
-}
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(movieDeleteWantedItems);
+  useSocketIOReducer("movie-wanted", undefined, updateAction, deleteAction);
 
-export function useProviders() {
-  const action = useReduxAction(providerUpdateAll);
-  const items = useReduxStore((d) => d.system.providers);
-
-  return stateBuilder(items, action);
+  return stateBuilder(items, update);
 }
 
 export function useBlacklistMovies() {
-  const action = useReduxAction(movieUpdateBlacklist);
+  const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
 
-  return stateBuilder(items, action);
+  useSocketIOReducer("movie-blacklist", update);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useBlacklistSeries() {
-  const action = useReduxAction(seriesUpdateBlacklist);
+  const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
 
-  return stateBuilder(items, action);
+  useSocketIOReducer("episode-blacklist", update);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useMoviesHistory() {
-  const action = useReduxAction(movieUpdateHistoryList);
+  const update = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
 
-  return stateBuilder(items, action);
+  useSocketIOReducer("movie-history", update);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }
 
 export function useSeriesHistory() {
-  const action = useReduxAction(seriesUpdateHistoryList);
+  const update = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
 
-  return stateBuilder(items, action);
+  useSocketIOReducer("episode-history", update);
+
+  useEffect(() => {
+    update();
+  }, [update]);
+  return stateBuilder(items, update);
 }

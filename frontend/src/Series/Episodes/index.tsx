@@ -16,7 +16,7 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useEpisodesBy, useSerieBy } from "../../@redux/hooks";
+import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
@@ -27,7 +27,7 @@ import {
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useAutoUpdate, useWhenLoadingFinish } from "../../utilites";
+import { useWhenLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -39,12 +39,10 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [serie, update] = useSerieBy(id);
+  const [serie] = useSerieBy(id);
   const item = serie.data;
 
   const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
-
-  useAutoUpdate(update);
 
   const available = episodes.data.length !== 0;
 
@@ -74,6 +72,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   useWhenLoadingFinish(serie, validator);
 
+  const profile = useProfileBy(serie.data?.profileId);
+
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
@@ -95,7 +95,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "scan-disk", seriesid: id })
             }
-            onSuccess={update}
           >
             Scan Disk
           </ContentHeader.AsyncButton>
@@ -104,7 +103,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             promise={() =>
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
-            onSuccess={update}
             disabled={
               item.episodeFileCount === 0 ||
               item.profileId === null ||
@@ -145,14 +143,16 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={item} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes} update={update}></Table>
+        <Table episodes={episodes} profile={profile}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
-        onSuccess={update}
       ></ItemEditorModal>
-      <SeriesUploadModal modalKey="upload"></SeriesUploadModal>
+      <SeriesUploadModal
+        modalKey="upload"
+        episodes={episodes.data}
+      ></SeriesUploadModal>
     </Container>
   );
 };

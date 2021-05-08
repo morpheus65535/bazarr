@@ -1,6 +1,10 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
+import {
+  useIsRadarrEnabled,
+  useIsSonarrEnabled,
+  useSetSidebar,
+} from "../@redux/hooks/site";
 import { RouterEmptyPath } from "../special-pages/404";
 import Movies from "./Movies";
 import Series from "./Series";
@@ -8,6 +12,8 @@ import Series from "./Series";
 const Router: FunctionComponent = () => {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
+
+  useSetSidebar("Wanted");
   return (
     <Switch>
       {sonarr && (

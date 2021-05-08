@@ -1,5 +1,4 @@
-import { isEqual } from "lodash";
-import { log } from "../../utilites/logger";
+import { createAction } from "redux-actions";
 import {
   ActionCallback,
   ActionDispatcher,
@@ -10,42 +9,12 @@ import {
   PromiseCreator,
 } from "../types";
 
-// Limiter the call to API
-const gLimiter: Map<PromiseCreator, Date> = new Map();
-const gArgs: Map<PromiseCreator, any[]> = new Map();
-
-const LIMIT_CALL_MS = 200;
-
 function asyncActionFactory<T extends PromiseCreator>(
   type: string,
   promise: T,
   args: Parameters<T>
 ): AsyncActionDispatcher<PromiseType<ReturnType<T>>> {
   return (dispatch) => {
-    const previousArgs = gArgs.get(promise);
-    const date = new Date();
-
-    if (isEqual(previousArgs, args)) {
-      // Get last execute date
-      const previousExec = gLimiter.get(promise);
-      if (previousExec) {
-        const distInMs = date.getTime() - previousExec.getTime();
-        if (distInMs < LIMIT_CALL_MS) {
-          log(
-            "warning",
-            "Multiple calls to API within the range",
-            promise,
-            args
-          );
-          return Promise.resolve();
-        }
-      }
-    } else {
-      gArgs.set(promise, args);
-    }
-
-    gLimiter.set(promise, date);
-
     dispatch({
       type,
       payload: {
@@ -152,4 +121,9 @@ export function createCallbackAction<T extends AsyncActionCreator>(
 ) {
   return (...args: Parameters<T>) =>
     callbackActionFactory(fn(args), success, error);
+}
+
+// Helper
+export function createDeleteAction(type: string): SocketIO.ActionFn {
+  return createAction(type, (id?: number[]) => id ?? []);
 }

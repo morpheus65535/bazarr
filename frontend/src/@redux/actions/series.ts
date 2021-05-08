@@ -1,59 +1,57 @@
 import { EpisodesApi, SeriesApi } from "../../apis";
 import {
+  SERIES_DELETE_EPISODES,
+  SERIES_DELETE_ITEMS,
+  SERIES_DELETE_WANTED_ITEMS,
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
-  SERIES_UPDATE_INFO,
-  SERIES_UPDATE_RANGE,
+  SERIES_UPDATE_LIST,
   SERIES_UPDATE_WANTED_LIST,
-  SERIES_UPDATE_WANTED_RANGE,
 } from "../constants";
-import {
-  createAsyncAction,
-  createAsyncCombineAction,
-  createCombineAction,
-} from "./factory";
-import { badgeUpdateAll } from "./site";
+import { createAsyncAction, createDeleteAction } from "./factory";
 
-const seriesUpdateWantedList = createAsyncAction(
+export const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,
-  (episodeid?: number) => EpisodesApi.wantedBy(episodeid)
+  (episodeid: number[]) => EpisodesApi.wantedBy(episodeid)
 );
 
-const seriesUpdateBy = createAsyncAction(SERIES_UPDATE_INFO, (id?: number[]) =>
-  SeriesApi.series(id)
-);
-
-const episodeUpdateBy = createAsyncAction(
-  SERIES_UPDATE_EPISODE_LIST,
-  (seriesid: number) => EpisodesApi.bySeriesId(seriesid)
-);
-
-export const seriesUpdateByRange = createAsyncAction(
-  SERIES_UPDATE_RANGE,
-  (start: number, length: number) => SeriesApi.seriesBy(start, length)
+export const seriesDeleteWantedItems = createDeleteAction(
+  SERIES_DELETE_WANTED_ITEMS
 );
 
 export const seriesUpdateWantedByRange = createAsyncAction(
-  SERIES_UPDATE_WANTED_RANGE,
+  SERIES_UPDATE_WANTED_LIST,
   (start: number, length: number) => EpisodesApi.wanted(start, length)
 );
 
-export const seriesUpdateWantedBy = createCombineAction(
-  (episodeid?: number) => [seriesUpdateWantedList(episodeid), badgeUpdateAll()]
+export const seriesUpdateList = createAsyncAction(
+  SERIES_UPDATE_LIST,
+  (id?: number[]) => SeriesApi.series(id)
 );
 
-export const episodeUpdateBySeriesId = createCombineAction(
-  (seriesid: number) => [episodeUpdateBy(seriesid), badgeUpdateAll()]
+export const seriesDeleteItems = createDeleteAction(SERIES_DELETE_ITEMS);
+
+export const episodeUpdateBy = createAsyncAction(
+  SERIES_UPDATE_EPISODE_LIST,
+  (seriesid: number[]) => EpisodesApi.bySeriesId(seriesid)
+);
+
+export const episodeDeleteItems = createDeleteAction(SERIES_DELETE_EPISODES);
+
+export const episodeUpdateById = createAsyncAction(
+  SERIES_UPDATE_EPISODE_LIST,
+  (episodeid: number[]) => EpisodesApi.byEpisodeId(episodeid)
+);
+
+export const seriesUpdateByRange = createAsyncAction(
+  SERIES_UPDATE_LIST,
+  (start: number, length: number) => SeriesApi.seriesBy(start, length)
 );
 
 export const seriesUpdateHistoryList = createAsyncAction(
   SERIES_UPDATE_HISTORY_LIST,
   () => EpisodesApi.history()
-);
-
-export const seriesUpdateInfoAll = createAsyncCombineAction(
-  (seriesid?: number[]) => [seriesUpdateBy(seriesid), badgeUpdateAll()]
 );
 
 export const seriesUpdateBlacklist = createAsyncAction(
