@@ -1,5 +1,6 @@
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { intersectionWith } from "lodash";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
@@ -106,14 +107,16 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
       return item;
     });
 
-    let existing = movie.subtitles;
+    let raw_subtitles = movie.subtitles;
     if (onlyDesired) {
-      existing.filter(
-        (v) => profileItems.findIndex((inn) => inn.code2 === v.code2) !== -1
+      raw_subtitles = intersectionWith(
+        raw_subtitles,
+        profileItems,
+        (l, r) => l.code2 === r.code2
       );
     }
 
-    return [...movie.subtitles, ...missing];
+    return [...raw_subtitles, ...missing];
   }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);
 
   return (
