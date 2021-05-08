@@ -22,6 +22,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 import socket
 
 import six
+import sys
 
 from ._exceptions import *
 from ._ssl_compat import *
@@ -83,7 +84,7 @@ def recv(sock, bufsize):
         raise WebSocketTimeoutException(message)
     except SSLError as e:
         message = extract_err_message(e)
-        if message == "The read operation timed out":
+        if isinstance(message, str) and 'timed out' in message:
             raise WebSocketTimeoutException(message)
         else:
             raise

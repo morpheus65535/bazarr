@@ -101,7 +101,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
       {
         Header: "Subtitles",
         accessor: "missing_subtitles",
-        Cell: ({ row }) => {
+        Cell: ({ row, loose }) => {
           const episode = row.original;
 
           const seriesid = episode.sonarrSeriesId;

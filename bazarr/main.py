@@ -1,5 +1,13 @@
 # coding=utf-8
 
+# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
+try:
+    from gevent import monkey
+except ImportError:
+    pass
+else:
+    monkey.patch_all()
+
 import os
 
 bazarr_version = 'unknown'
@@ -12,14 +20,9 @@ if os.path.isfile(version_file):
 
 os.environ["BAZARR_VERSION"] = bazarr_version
 
-import gc
 import libs
 
-import hashlib
-import calendar
-
 from get_args import args
-from logger import empty_log
 from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
@@ -28,13 +31,14 @@ from database import database
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha2, alpha3_from_alpha2
+from get_languages import load_language_in_db
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
 from get_series import *
 from get_episodes import *
 from get_movies import *
+from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
@@ -184,6 +188,12 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
+
+
+if settings.general.getboolean('use_sonarr'):
+    sonarr_signalr_client.start()
+if settings.general.getboolean('use_radarr'):
+    radarr_signalr_client.start()
 
 
 if __name__ == "__main__":
