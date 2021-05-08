@@ -138,7 +138,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, seriesid, onlyDesired, profileItems]);
+          }, [episode, seriesid]);
 
           return elements;
         },
