@@ -36,17 +36,17 @@ export const siteSaveLocalstorage = createAction(
   (settings: LooseObject) => settings
 );
 
-export const siteAddError = createAction(
+export const siteAddNotification = createAction(
   SITE_NOTIFICATIONS_ADD,
   (err: ReduxStore.Notification) => err
 );
 
-export const siteRemoveError = createAction(
+export const siteRemoveNotification = createAction(
   SITE_NOTIFICATIONS_REMOVE,
   (id: string) => id
 );
 
-export const siteRemoveErrorByTimestamp = createAction(
+export const siteRemoveNotificationByTime = createAction(
   SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   (date: Date) => date
 );
