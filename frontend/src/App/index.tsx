@@ -25,7 +25,7 @@ interface Props {}
 const App: FunctionComponent<Props> = () => {
   const { initialized, auth } = useReduxStore((s) => s.site);
 
-  const notify = useNotification("has-update", 10);
+  const notify = useNotification(10 * 1000);
 
   // Has any update?
   const hasUpdate = useHasUpdateInject();

@@ -1,3 +1,4 @@
+import { differenceWith } from "lodash";
 import { Action, handleActions } from "redux-actions";
 import apis from "../../apis";
 import {
@@ -7,7 +8,6 @@ import {
   SITE_NEED_AUTH,
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
-  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_OFFLINE_UPDATE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -34,21 +34,16 @@ const reducer = handleActions<ReduxStore.Site, any>(
     }),
     [SITE_NOTIFICATIONS_ADD]: (
       state,
-      action: Action<ReduxStore.Notification>
+      action: Action<ReduxStore.Notification[]>
     ) => {
-      const alerts = [
-        ...state.notifications.filter((v) => v.id !== action.payload.id),
+      const alerts = [...state.notifications, ...action.payload];
+      return { ...state, notifications: alerts };
+    },
+    [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<Date[]>) => {
+      const alerts = differenceWith(
+        state.notifications,
         action.payload,
-      ];
-      return { ...state, notifications: alerts };
-    },
-    [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<string>) => {
-      const alerts = state.notifications.filter((v) => v.id !== action.payload);
-      return { ...state, notifications: alerts };
-    },
-    [SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP]: (state, action: Action<Date>) => {
-      const alerts = state.notifications.filter(
-        (v) => v.timestamp !== action.payload
+        (n, t) => n.timestamp === t
       );
       return { ...state, notifications: alerts };
     },

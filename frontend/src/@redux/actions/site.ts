@@ -7,7 +7,6 @@ import {
   SITE_NEED_AUTH,
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
-  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_OFFLINE_UPDATE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
@@ -30,19 +29,14 @@ export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
   BadgesApi.all()
 );
 
-export const siteAddNotification = createAction(
+export const siteAddNotifications = createAction(
   SITE_NOTIFICATIONS_ADD,
-  (err: ReduxStore.Notification) => err
+  (err: ReduxStore.Notification[]) => err
 );
 
-export const siteRemoveNotification = createAction(
+export const siteRemoveNotifications = createAction(
   SITE_NOTIFICATIONS_REMOVE,
-  (id: string) => id
-);
-
-export const siteRemoveNotificationByTime = createAction(
-  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
-  (date: Date) => date
+  (date: Date[]) => date
 );
 
 export const siteChangeSidebar = createAction(

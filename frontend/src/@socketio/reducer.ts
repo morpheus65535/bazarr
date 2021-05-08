@@ -5,6 +5,8 @@ import {
   movieUpdateList,
   seriesDeleteItems,
   seriesUpdateList,
+  siteAddNotifications,
+  siteRemoveNotifications,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
   systemUpdateSettings,
@@ -28,6 +30,26 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "disconnect",
       any: () => reduxStore.dispatch(siteUpdateOffline(true)),
+    },
+    {
+      key: "message",
+      update: (msg?: string[]) => {
+        if (msg) {
+          const notifications = msg.map<ReduxStore.Notification>((message) => ({
+            message,
+            type: "info",
+            timestamp: new Date(),
+          }));
+
+          reduxStore.dispatch(siteAddNotifications(notifications));
+
+          const ts = notifications.map((n) => n.timestamp);
+          setTimeout(
+            () => reduxStore.dispatch(siteRemoveNotifications(ts)),
+            5000
+          );
+        }
+      },
     },
     {
       key: "series",

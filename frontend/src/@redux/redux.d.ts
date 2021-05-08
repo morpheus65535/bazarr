@@ -10,7 +10,6 @@ namespace ReduxStore {
     type: "error" | "warning" | "info";
     message: string;
     timestamp: Date;
-    id: string;
   }
 
   interface Site {
