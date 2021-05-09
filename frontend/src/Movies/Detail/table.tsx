@@ -107,6 +107,9 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
       return item;
     });
 
+    console.log(movie.subtitles);
+    console.log(profileItems);
+
     let raw_subtitles = movie.subtitles;
     if (onlyDesired) {
       raw_subtitles = intersectionWith(
@@ -115,6 +118,8 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
         (l, r) => l.code2 === r.code2
       );
     }
+
+    console.log(raw_subtitles);
 
     return [...raw_subtitles, ...missing];
   }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);

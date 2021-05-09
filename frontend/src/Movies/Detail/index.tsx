@@ -11,7 +11,7 @@ import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useMovieBy } from "../../@redux/hooks";
+import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
@@ -50,6 +50,8 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
   const [movie] = useMovieBy(id);
   const item = movie.data;
+
+  const profile = useProfileBy(movie.data?.profileId);
 
   const showModal = useShowModal();
 
@@ -141,7 +143,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         <ItemOverview item={item} details={[]}></ItemOverview>
       </Row>
       <Row>
-        <Table movie={item}></Table>
+        <Table movie={item} profile={profile}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
