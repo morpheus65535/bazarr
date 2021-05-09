@@ -9,7 +9,7 @@ from config import settings, url_sonarr
 from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
-from event_handler import event_stream
+from event_handler import event_stream, show_progress, hide_progress
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -36,7 +36,13 @@ def sync_episodes():
     # Get sonarrId for each series from database
     seriesIdList = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
 
-    for seriesId in seriesIdList:
+    series_count = len(seriesIdList)
+    for i, seriesId in enumerate(seriesIdList, 1):
+        show_progress(id='episodes_progress',
+                      name='Syncing episodes of {}...'.format(seriesId['title']),
+                      value=i,
+                      count=series_count)
+
         # Get episodes data for a series from Sonarr
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
                                                 series_id=seriesId['sonarrSeriesId'])
@@ -56,6 +62,8 @@ def sync_episodes():
                                     episodes_to_update.append(episodeParser(episode))
                                 else:
                                     episodes_to_add.append(episodeParser(episode))
+
+    hide_progress(id='episodes_progress')
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))

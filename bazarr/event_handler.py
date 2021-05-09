@@ -23,9 +23,9 @@ def show_message(msg):
     event_stream(type="message", payload=msg)
 
 
-def show_progress(name, percent):
-    event_stream(type="progress", payload={"name": name, "percent": percent})
+def show_progress(id, name, value, count):
+    event_stream(type="progress", payload={"id": id, "name": name, "value": value, "count": count})
 
 
-def hide_progress(name):
-    event_stream(type="progress", action="delete", payload={"name": name, "percent": 0})
+def hide_progress(id, delay=3):
+    event_stream(type="progress", action="delete", payload={"id": id, "delay": delay})

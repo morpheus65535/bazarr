@@ -10,7 +10,7 @@ from get_rootfolder import check_sonarr_rootfolder
 from database import database, dict_converter
 from utils import get_sonarr_version
 from helper import path_mappings
-from event_handler import event_stream
+from event_handler import event_stream, show_progress, hide_progress
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -47,7 +47,13 @@ def update_series():
         series_to_update = []
         series_to_add = []
 
-        for show in series:
+        series_count = len(series)
+        for i, show in enumerate(series, 1):
+            show_progress(id='series_progress',
+                          name='Syncing series...',
+                          value=i,
+                          count=series_count)
+
             # Add shows in Sonarr to current shows list
             current_shows_sonarr.append(show['id'])
 
@@ -59,6 +65,8 @@ def update_series():
                 series_to_add.append(seriesParser(show, action='insert', sonarr_version=sonarr_version,
                                                   tags_dict=tagsDict, serie_default_profile=serie_default_profile,
                                                   audio_profiles=audio_profiles))
+
+        hide_progress(id='series_progress')
 
         # Remove old series from DB
         removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))

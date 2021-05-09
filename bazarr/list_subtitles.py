@@ -15,7 +15,7 @@ from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
-from event_handler import event_stream
+from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
 
 gc.enable()
@@ -481,8 +481,15 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
 def series_full_scan_subtitles():
     episodes = database.execute("SELECT path FROM table_episodes")
     
+    count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        show_progress(id='episodes_disk_scan',
+                      name='Performing a full disk scan for episodes subtitles...',
+                      value=i,
+                      count=count_episodes)
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+
+    hide_progress(id='episodes_disk_scan')
     
     gc.collect()
 
@@ -490,9 +497,16 @@ def series_full_scan_subtitles():
 def movies_full_scan_subtitles():
     movies = database.execute("SELECT path FROM table_movies")
     
+    count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        show_progress(id='movies_disk_scan',
+                      name='Performing a full disk scan for movies subtitles...',
+                      value=i,
+                      count=count_movies)
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-    
+
+    hide_progress(id='movies_disk_scan')
+
     gc.collect()
 
 

@@ -33,7 +33,7 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
-from event_handler import event_stream
+from event_handler import event_stream, show_progress, hide_progress
 from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
@@ -761,6 +761,11 @@ def series_download_subtitles(no):
 
     for i, episode in enumerate(episodes_details, 1):
         if providers_list:
+            show_progress(id='series_search_progress_{}'.format(no),
+                          name='Searching missing subtitles for {}...'.format(episode['title']),
+                          value=i,
+                          count=count_episodes_details)
+
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
@@ -800,6 +805,8 @@ def series_download_subtitles(no):
         else:
             logging.info("BAZARR All providers are throttled")
             break
+
+    hide_progress(id='series_search_progress_{}'.format(no))
 
 
 def episode_download_subtitles(no):
@@ -879,6 +886,11 @@ def movies_download_subtitles(no):
 
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
         if providers_list:
+            show_progress(id='movie_search_progress_{}'.format(no),
+                          name='Searching missing subtitles for {}...'.format(movie['title']),
+                          value=i,
+                          count=count_movie)
+
             if language is not None:
                 audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
                 if len(audio_language_list) > 0:
@@ -917,8 +929,10 @@ def movies_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
+    hide_progress(id='movie_search_progress_{}'.format(no))
 
-def wanted_download_subtitles(path, l, count_episodes):
+
+def wanted_download_subtitles(path):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, "
                                         "table_episodes.audio_language, table_episodes.scene_name,"
@@ -991,7 +1005,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                                 0])
 
 
-def wanted_download_subtitles_movie(path, l, count_movies):
+def wanted_download_subtitles_movie(path):
     movies_details = database.execute(
         "SELECT path, missing_subtitles, radarrId, audio_language, sceneName, "
         "failedAttempts, title FROM table_movies WHERE path = ? "
@@ -1062,39 +1076,55 @@ def wanted_download_subtitles_movie(path, l, count_movies):
 
 def wanted_search_missing_subtitles_series():
     episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored, "
-                                "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
-                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles != "
-                                "'[]'" + get_exclusion_clause('series'))
+                                "table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title"
+                                " as episodeTitle, table_shows.seriesType FROM table_episodes INNER JOIN table_shows on"
+                                " table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles !="
+                                " '[]'" + get_exclusion_clause('series'))
     # path_replace
     dict_mapper.path_replace(episodes)
 
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        show_progress(id='wanted_episodes_progress',
+                      name='Searching subtitles for {0} - S{1:02d}E{2:02d} - {3}...'.format(episode['title'],
+                                                                                            episode['season'],
+                                                                                            episode['episode'],
+                                                                                            episode['episodeTitle']),
+                      value=i,
+                      count=count_episodes)
+
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode['path'], i, count_episodes)
+            wanted_download_subtitles(episode['path'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
 
+    hide_progress(id='wanted_episodes_progress')
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
 
 
 def wanted_search_missing_subtitles_movies():
-    movies = database.execute("SELECT path, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+    movies = database.execute("SELECT path, tags, monitored, title FROM table_movies WHERE missing_subtitles != '[]'" +
                               get_exclusion_clause('movie'))
     # path_replace
     dict_mapper.path_replace_movie(movies)
 
     count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        show_progress(id='wanted_movies_progress',
+                      name='Searching subtitles for {0}...'.format(movie['title']),
+                      value=i,
+                      count=count_movies)
+
         providers = get_providers()
         if providers:
-            wanted_download_subtitles_movie(movie['path'], i, count_movies)
+            wanted_download_subtitles_movie(movie['path'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
 
+    hide_progress(id='wanted_movies_progress')
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
@@ -1313,6 +1343,11 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
+            show_progress(id='upgrade_episodes_progress',
+                          name='Upgrading subtitles for {0}...'.format(episode['title']),
+                          value=i,
+                          count=count_episode_to_upgrade)
+
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
@@ -1367,8 +1402,15 @@ def upgrade_subtitles():
                             language_code, provider, score, subs_id, subs_path)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
+        hide_progress('upgrade_episodes_progress')
+
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
+            show_progress(id='upgrade_movies_progress',
+                          name='Upgrading subtitles for {0}...'.format(movie['title']),
+                          value=i,
+                          count=count_movie_to_upgrade)
+
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
@@ -1425,6 +1467,8 @@ def upgrade_subtitles():
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
+
+        hide_progress(id='upgrade_movies_progress')
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
