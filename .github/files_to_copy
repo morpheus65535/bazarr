@@ -3,3 +3,4 @@ frontend/build
 libs
 bazarr.py
 requirements.txt
+VERSION
