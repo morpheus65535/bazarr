@@ -99,7 +99,7 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
         <span className="mr-auto">Background Task</span>
       </Toast.Header>
       <Toast.Body>
-        <div className="mb-2 mt-1 text-nowrap text-truncate">
+        <div className="mb-2 mt-1">
           <FontAwesomeIcon
             className="mr-2"
             icon={faPaperPlane}
