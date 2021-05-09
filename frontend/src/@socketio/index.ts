@@ -27,7 +27,7 @@ class SocketIOClient {
     this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
-    this.debounceReduce = debounce(this.reduce, 200);
+    this.debounceReduce = debounce(this.reduce, 20);
     this.reducers = [];
   }
 
@@ -91,7 +91,7 @@ class SocketIOClient {
 
           forIn(element, (ids, key) => {
             ids = uniq(ids);
-            const action = handler[key as SocketIO.ActionType];
+            const action = handler[key as SocketIO.Action];
             if (action) {
               action(ids);
             } else if (anyAction === undefined) {

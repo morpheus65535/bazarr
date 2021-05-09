@@ -1,3 +1,4 @@
+import { createDeleteAction } from "../../@socketio/reducer";
 import { MoviesApi } from "../../apis";
 import {
   MOVIES_DELETE_ITEMS,
@@ -7,7 +8,7 @@ import {
   MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_WANTED_LIST,
 } from "../constants";
-import { createAsyncAction, createDeleteAction } from "./factory";
+import { createAsyncAction } from "./factory";
 
 export const movieUpdateList = createAsyncAction(
   MOVIES_UPDATE_LIST,

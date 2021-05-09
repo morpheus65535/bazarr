@@ -39,7 +39,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
       action: Action<ReduxStore.Notification[]>
     ) => {
       const notifications = uniqBy(
-        [...action.payload, ...state.notifications],
+        [...action.payload.reverse(), ...state.notifications],
         (n) => n.id
       );
       return { ...state, notifications };
@@ -51,7 +51,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
     },
     [SITE_PROGRESS_ADD]: (state, action: Action<ReduxStore.Progress[]>) => {
       const progress = uniqBy(
-        [...action.payload, ...state.progress],
+        [...action.payload.reverse(), ...state.progress],
         (n) => n.id
       );
       return { ...state, progress };

@@ -1,3 +1,4 @@
+import { createDeleteAction } from "../../@socketio/reducer";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import {
   SERIES_DELETE_EPISODES,
@@ -9,7 +10,7 @@ import {
   SERIES_UPDATE_LIST,
   SERIES_UPDATE_WANTED_LIST,
 } from "../constants";
-import { createAsyncAction, createDeleteAction } from "./factory";
+import { createAsyncAction } from "./factory";
 
 export const seriesUpdateWantedList = createAsyncAction(
   SERIES_UPDATE_WANTED_LIST,

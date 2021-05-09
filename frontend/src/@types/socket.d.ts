@@ -1,42 +1,54 @@
 namespace SocketIO {
-  type EventType =
-    | "connect"
-    | "connect_error"
-    | "disconnect"
+  type Action = "update" | "delete";
+
+  type EventType = NumEventType | NullEventType | SpecialEventType;
+
+  type NumEventType =
     | "movie"
     | "series"
     | "episode"
-    | "episode-history"
-    | "episode-blacklist"
     | "episode-wanted"
-    | "movie-history"
+    | "movie-wanted";
+
+  type NullEventType =
+    | "connect"
+    | "connect_error"
+    | "disconnect"
+    | "episode-blacklist"
+    | "episode-history"
     | "movie-blacklist"
-    | "movie-wanted"
+    | "movie-history"
     | "badges"
     | "task"
     | "settings"
-    | "languages"
-    | "message";
+    | "languages";
 
-  type ActionType = "update" | "delete";
+  type SpecialEventType = "message" | "progress";
 
-  interface Event {
-    type: EventType;
-    action: ActionType;
-    payload: any; // TODO: Use specific types
-  }
-
-  type ActionFn = (payload?: any[]) => void;
-
-  type Reducer = {
-    key: EventType;
-    any?: () => any;
-  } & Partial<Record<ActionType, ActionFn>>;
-
-  type ActionRecord = OptionalRecord<
-    EventType,
-    OptionalRecord<ActionType, any[]>
+  type ReducerCreator<E extends EventType, T> = ValueOf<
+    {
+      [P in E]: {
+        key: P;
+        any?: () => void;
+      } & Partial<Record<Action, ActionFn<T>>>;
+    }
   >;
+
+  type Event = {
+    type: EventType;
+    action: Action;
+    payload: any;
+  };
+
+  type ActionFn<T> = (payload?: T[]) => void;
+
+  type Reducer =
+    | ReducerCreator<NumEventType, number>
+    | ReducerCreator<NullEventType, null>
+    | ReducerCreator<"message", string>
+    | ReducerCreator<"progress", CustomEvent.Progress>;
+
+  type ActionRecord = OptionalRecord<EventType, OptionalRecord<Action, any[]>>;
 
   namespace CustomEvent {
     type Progress = ReduxStore.Progress;

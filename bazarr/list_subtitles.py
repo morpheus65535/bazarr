@@ -15,7 +15,7 @@ from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
-from event_handler import event_stream, show_progress, hide_progress
+from event_handler import event_stream, show_progress
 from charamel import Detector
 
 gc.enable()
@@ -488,8 +488,6 @@ def series_full_scan_subtitles():
                       value=i,
                       count=count_episodes)
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-
-    hide_progress(id='episodes_disk_scan')
     
     gc.collect()
 
@@ -504,8 +502,6 @@ def movies_full_scan_subtitles():
                       value=i,
                       count=count_movies)
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-
-    hide_progress(id='movies_disk_scan')
 
     gc.collect()
 
