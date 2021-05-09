@@ -33,7 +33,7 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
-from event_handler import event_stream, show_progress, 
+from event_handler import event_stream, show_progress
 from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
