@@ -9,7 +9,7 @@ from config import settings, url_sonarr
 from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
-from event_handler import event_stream, show_progress, hide_progress
+from event_handler import event_stream, show_progress
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -62,8 +62,6 @@ def sync_episodes():
                                     episodes_to_update.append(episodeParser(episode))
                                 else:
                                     episodes_to_add.append(episodeParser(episode))
-
-    hide_progress(id='episodes_progress')
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))

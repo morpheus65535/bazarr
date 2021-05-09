@@ -4,9 +4,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { ProgressBar, Toast } from "react-bootstrap";
-import { useTimeoutWhen } from "rooks";
 import {
   siteRemoveNotifications,
   siteRemoveProgress,
@@ -48,7 +52,12 @@ const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
     id,
   ]);
 
-  useTimeoutWhen(remove, timeout);
+  useEffect(() => {
+    const handle = setTimeout(remove, timeout);
+    return () => {
+      clearTimeout(handle);
+    };
+  }, [props, remove, timeout]);
 
   return (
     <Toast onClose={remove} animation={false}>
@@ -75,12 +84,22 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
   const removeProgress = useReduxAction(siteRemoveProgress);
   const remove = useCallback(() => removeProgress(id), [removeProgress, id]);
 
-  // TODO: Auto remove
+  useEffect(() => {
+    const handle = setTimeout(remove, 5 * 1000);
+    return () => {
+      clearTimeout(handle);
+    };
+  }, [value, remove]);
+
+  const incomplete = value / count < 1;
 
   return (
     <Toast onClose={remove}>
+      <Toast.Header hidden={incomplete}>
+        <span className="mr-auto">Background Task</span>
+      </Toast.Header>
       <Toast.Body>
-        <div className="mb-2 mt-1">
+        <div className="mb-2 mt-1 text-nowrap text-truncate">
           <FontAwesomeIcon
             className="mr-2"
             icon={faPaperPlane}
@@ -89,7 +108,7 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
         </div>
         <ProgressBar
           className="my-1"
-          animated
+          animated={incomplete}
           now={value / count}
           max={1}
           label={`${value}/${count}`}

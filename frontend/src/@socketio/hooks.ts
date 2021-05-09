@@ -1,29 +1,20 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import Socketio from ".";
 import { log } from "../utilites/logger";
 
-export function useSocketIOReducer(
-  key: SocketIO.EventType,
-  any?: () => void,
-  update?: SocketIO.ActionFn,
-  remove?: SocketIO.ActionFn
-) {
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key, any, update, delete: remove }),
-    [key, any, update, remove]
-  );
+export function useSocketIOReducer(reducer: SocketIO.Reducer) {
   useEffect(() => {
     Socketio.addReducer(reducer);
-    log("info", "listening to SocketIO event", key);
+    log("info", "listening to SocketIO event", reducer.key);
     return () => {
       Socketio.removeReducer(reducer);
     };
-  }, [reducer, key]);
+  }, [reducer]);
 }
 
 export function useWrapToOptionalId(
   fn: (id: number[]) => void
-): SocketIO.ActionFn {
+): SocketIO.ActionFn<number> {
   return useCallback(
     (id?: number[]) => {
       if (id) {

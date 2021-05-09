@@ -12,7 +12,7 @@ from get_rootfolder import check_radarr_rootfolder
 
 from get_subtitle import movies_download_subtitles
 from database import database, dict_converter, get_exclusion_clause
-from event_handler import event_stream, show_progress, hide_progress
+from event_handler import event_stream, show_progress
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -86,8 +86,6 @@ def update_movies():
                                                                  tags_dict=tagsDict,
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
-
-            hide_progress(id='movies_progress')
 
             # Remove old movies from DB
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))

@@ -33,7 +33,7 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
-from event_handler import event_stream, show_progress, hide_progress
+from event_handler import event_stream, show_progress, 
 from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
@@ -806,7 +806,7 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    hide_progress(id='series_search_progress_{}'.format(no))
+    
 
 
 def episode_download_subtitles(no):
@@ -928,8 +928,6 @@ def movies_download_subtitles(no):
         else:
             logging.info("BAZARR All providers are throttled")
             break
-
-    hide_progress(id='movie_search_progress_{}'.format(no))
 
 
 def wanted_download_subtitles(path):
@@ -1100,7 +1098,7 @@ def wanted_search_missing_subtitles_series():
             logging.info("BAZARR All providers are throttled")
             return
 
-    hide_progress(id='wanted_episodes_progress')
+    
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
 
 
@@ -1124,7 +1122,7 @@ def wanted_search_missing_subtitles_movies():
             logging.info("BAZARR All providers are throttled")
             return
 
-    hide_progress(id='wanted_movies_progress')
+    
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
@@ -1402,7 +1400,7 @@ def upgrade_subtitles():
                             language_code, provider, score, subs_id, subs_path)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
-        hide_progress('upgrade_episodes_progress')
+        
 
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
@@ -1468,7 +1466,7 @@ def upgrade_subtitles():
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
 
-        hide_progress(id='upgrade_movies_progress')
+        
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 

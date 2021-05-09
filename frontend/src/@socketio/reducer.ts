@@ -1,3 +1,4 @@
+import { createAction } from "redux-actions";
 import {
   badgeUpdateAll,
   bootstrap,
@@ -6,6 +7,7 @@ import {
   seriesDeleteItems,
   seriesUpdateList,
   siteAddNotifications,
+  siteAddProgress,
   siteInitializationFailed,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
@@ -13,8 +15,14 @@ import {
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 
-function bindToReduxStore(fn: (ids?: number[]) => any): SocketIO.ActionFn {
+function bindToReduxStore(
+  fn: (ids?: number[]) => any
+): SocketIO.ActionFn<number> {
   return (ids?: number[]) => reduxStore.dispatch(fn(ids));
+}
+
+export function createDeleteAction(type: string): SocketIO.ActionFn<number> {
+  return createAction(type, (id?: number[]) => id ?? []);
 }
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
@@ -44,7 +52,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "message",
-      update: (msg?: string[]) => {
+      update: (msg) => {
         if (msg) {
           const notifications = msg.map<ReduxStore.Notification>((message) => ({
             message,
@@ -54,6 +62,14 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           }));
 
           reduxStore.dispatch(siteAddNotifications(notifications));
+        }
+      },
+    },
+    {
+      key: "progress",
+      update: (progress) => {
+        if (progress) {
+          reduxStore.dispatch(siteAddProgress(progress));
         }
       },
     },

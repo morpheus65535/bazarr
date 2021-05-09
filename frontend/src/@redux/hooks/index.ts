@@ -54,7 +54,10 @@ export function useSystemLogs() {
 export function useSystemTasks() {
   const items = useReduxStore((s) => s.system.tasks);
   const update = useReduxAction(systemUpdateTasks);
-  useSocketIOReducer("task", update);
+  const reducer = useMemo<SocketIO.Reducer>(() => ({ key: "task", update }), [
+    update,
+  ]);
+  useSocketIOReducer(reducer);
 
   useEffect(() => {
     update();
@@ -245,10 +248,18 @@ export function useEpisodesBy(seriesId?: number) {
   const actionById = useReduxAction(episodeUpdateById);
   const wrapActionById = useWrapToOptionalId(actionById);
   const deleteAction = useReduxAction(episodeDeleteItems);
-  useSocketIOReducer("episode", undefined, wrapActionById, deleteAction);
+  const episodeReducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "episode", update: wrapActionById, delete: deleteAction }),
+    [wrapActionById, deleteAction]
+  );
+  useSocketIOReducer(episodeReducer);
 
   const wrapAction = useWrapToOptionalId(action);
-  useSocketIOReducer("series", undefined, wrapAction);
+  const seriesReducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "series", update: wrapAction }),
+    [wrapAction]
+  );
+  useSocketIOReducer(seriesReducer);
 
   useEffect(() => {
     update();
@@ -315,7 +326,15 @@ export function useWantedSeries() {
 
   const updateAction = useWrapToOptionalId(update);
   const deleteAction = useReduxAction(seriesDeleteWantedItems);
-  useSocketIOReducer("episode-wanted", undefined, updateAction, deleteAction);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({
+      key: "episode-wanted",
+      update: updateAction,
+      delete: deleteAction,
+    }),
+    [updateAction, deleteAction]
+  );
+  useSocketIOReducer(reducer);
 
   return stateBuilder(items, update);
 }
@@ -326,7 +345,15 @@ export function useWantedMovies() {
 
   const updateAction = useWrapToOptionalId(update);
   const deleteAction = useReduxAction(movieDeleteWantedItems);
-  useSocketIOReducer("movie-wanted", undefined, updateAction, deleteAction);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({
+      key: "movie-wanted",
+      update: updateAction,
+      delete: deleteAction,
+    }),
+    [updateAction, deleteAction]
+  );
+  useSocketIOReducer(reducer);
 
   return stateBuilder(items, update);
 }
@@ -334,8 +361,11 @@ export function useWantedMovies() {
 export function useBlacklistMovies() {
   const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
-
-  useSocketIOReducer("movie-blacklist", update);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "movie-blacklist", update }),
+    [update]
+  );
+  useSocketIOReducer(reducer);
 
   useEffect(() => {
     update();
@@ -346,8 +376,11 @@ export function useBlacklistMovies() {
 export function useBlacklistSeries() {
   const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
-
-  useSocketIOReducer("episode-blacklist", update);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "episode-blacklist", update }),
+    [update]
+  );
+  useSocketIOReducer(reducer);
 
   useEffect(() => {
     update();
@@ -358,8 +391,11 @@ export function useBlacklistSeries() {
 export function useMoviesHistory() {
   const update = useReduxAction(movieUpdateHistoryList);
   const items = useReduxStore((s) => s.movie.historyList);
-
-  useSocketIOReducer("movie-history", update);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "movie-history", update }),
+    [update]
+  );
+  useSocketIOReducer(reducer);
 
   useEffect(() => {
     update();
@@ -370,8 +406,11 @@ export function useMoviesHistory() {
 export function useSeriesHistory() {
   const update = useReduxAction(seriesUpdateHistoryList);
   const items = useReduxStore((s) => s.series.historyList);
-
-  useSocketIOReducer("episode-history", update);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({ key: "episode-history", update }),
+    [update]
+  );
+  useSocketIOReducer(reducer);
 
   useEffect(() => {
     update();
