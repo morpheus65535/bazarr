@@ -1,7 +1,7 @@
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
+import { Column, useSortBy } from "react-table";
 import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
@@ -48,7 +48,14 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
     []
   );
 
-  return <SimpleTable columns={columns} data={tasks}></SimpleTable>;
+  return (
+    <SimpleTable
+      initialState={{ sortBy: [{ id: "name", desc: false }] }}
+      columns={columns}
+      data={tasks}
+      plugins={[useSortBy]}
+    ></SimpleTable>
+  );
 };
 
 export default Table;

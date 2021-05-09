@@ -95,9 +95,6 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
 
   return (
     <Toast onClose={remove}>
-      <Toast.Header hidden={incomplete}>
-        <span className="mr-auto">Background Task</span>
-      </Toast.Header>
       <Toast.Body>
         <div className="mb-2 mt-1">
           <FontAwesomeIcon
