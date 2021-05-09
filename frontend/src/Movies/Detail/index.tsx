@@ -25,7 +25,7 @@ import {
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useWhenLoadingFinish } from "../../utilites";
+import { useOnLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 const download = (item: any, result: SearchResultType) => {
@@ -63,7 +63,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
     }
   }, [movie.data]);
 
-  useWhenLoadingFinish(movie, validator);
+  useOnLoadingFinish(movie, validator);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;

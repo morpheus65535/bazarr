@@ -14,7 +14,7 @@ import { useSystemSettings } from "../../@redux/hooks";
 import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
-import { useWhenLoadingFinish } from "../../utilites";
+import { useOnLoadingFinish } from "../../utilites";
 import { log } from "../../utilites/logger";
 import {
   enabledLanguageKey,
@@ -65,7 +65,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   }, []);
 
   const [settings] = useSystemSettings();
-  useWhenLoadingFinish(settings, cleanup);
+  useOnLoadingFinish(settings, cleanup);
 
   const saveSettings = useCallback((settings: LooseObject) => {
     submitHooks(settings);

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useHistory } from "react-router";
+import { useDidUpdate } from "rooks";
 import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -43,31 +44,13 @@ export function useSessionStorage(
   return [sessionStorage.getItem(key), dispatch];
 }
 
-export function useWatcher<T>(
-  curr: T,
-  expected: T,
-  onSame?: () => void,
-  onDiff?: () => void
-) {
-  const [, setPrevious] = useState(curr);
-
-  useEffect(() => {
-    setPrevious((prev) => {
-      if (prev !== curr) {
-        if (curr !== expected) {
-          onDiff && onDiff();
-        } else {
-          onSame && onSame();
-        }
-      }
-      return curr;
-    });
-  }, [curr, expected, onDiff, onSame]);
-}
-
-export function useWhenLoadingFinish(
+export function useOnLoadingFinish(
   state: Readonly<AsyncState<any>>,
   callback: () => void
 ) {
-  return useWatcher(state.updating, true, undefined, callback);
+  return useDidUpdate(() => {
+    if (!state.updating) {
+      callback();
+    }
+  }, [state.updating]);
 }

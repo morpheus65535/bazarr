@@ -27,7 +27,7 @@ import {
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useWhenLoadingFinish } from "../../utilites";
+import { useOnLoadingFinish } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -70,7 +70,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     }
   }, [serie.data]);
 
-  useWhenLoadingFinish(serie, validator);
+  useOnLoadingFinish(serie, validator);
 
   const profile = useProfileBy(serie.data?.profileId);
 
