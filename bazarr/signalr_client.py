@@ -15,6 +15,7 @@ from get_series import update_series, update_one_series
 from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
 from utils import get_sonarr_version
+from get_args import args
 
 
 class SonarrSignalrClient(threading.Thread):
@@ -65,8 +66,9 @@ class SonarrSignalrClient(threading.Thread):
                 else:
                     self.stopped = False
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-                    scheduler.execute_job_now('update_series')
-                    scheduler.execute_job_now('sync_episodes')
+                    if not args.dev:
+                        scheduler.execute_job_now('update_series')
+                        scheduler.execute_job_now('sync_episodes')
                     gevent.sleep()
 
 
@@ -116,7 +118,8 @@ class RadarrSignalrClient(threading.Thread):
                 else:
                     self.stopped = False
                     logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
-                    scheduler.execute_job_now('update_movies')
+                    if not args.dev:
+                        scheduler.execute_job_now('update_movies')
                     gevent.sleep()
             else:
                 gevent.sleep(5)
