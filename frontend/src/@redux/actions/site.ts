@@ -19,7 +19,7 @@ export const bootstrap = createCallbackAction(
   () => siteInitializationFailed()
 );
 
-// TODO: Override error message
+// TODO: Override error messages
 export const siteInitializationFailed = createAction(SITE_INITIALIZE_FAILED);
 
 const siteInitialized = createAction(SITE_INITIALIZED);
@@ -37,7 +37,7 @@ export const siteAddNotifications = createAction(
 
 export const siteRemoveNotifications = createAction(
   SITE_NOTIFICATIONS_REMOVE,
-  (date: Date[]) => date
+  (id: string) => id
 );
 
 export const siteChangeSidebar = createAction(

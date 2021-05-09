@@ -1,26 +1,21 @@
 import { useCallback, useEffect } from "react";
 import { useSystemSettings } from ".";
-import {
-  siteAddNotifications,
-  siteChangeSidebar,
-  siteRemoveNotifications,
-} from "../actions";
+import { siteAddNotifications, siteChangeSidebar } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
-export function useNotification(timeout: number = 5000) {
+export function useNotification(id: string, timeout: number = 5000) {
   const add = useReduxAction(siteAddNotifications);
-  const remove = useReduxAction(siteRemoveNotifications);
 
   return useCallback(
-    (msg: Omit<ReduxStore.Notification, "timestamp">) => {
-      const error: ReduxStore.Notification = {
+    (msg: Omit<ReduxStore.Notification, "id" | "timeout">) => {
+      const notification: ReduxStore.Notification = {
         ...msg,
-        timestamp: new Date(),
+        id,
+        timeout,
       };
-      add([error]);
-      setTimeout(() => remove([error.timestamp]), timeout);
+      add([notification]);
     },
-    [add, remove, timeout]
+    [add, timeout, id]
   );
 }
 

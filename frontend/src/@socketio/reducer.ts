@@ -7,7 +7,6 @@ import {
   seriesUpdateList,
   siteAddNotifications,
   siteInitializationFailed,
-  siteRemoveNotifications,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
   systemUpdateSettings,
@@ -50,16 +49,11 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           const notifications = msg.map<ReduxStore.Notification>((message) => ({
             message,
             type: "info",
-            timestamp: new Date(),
+            id: "backend-message",
+            timeout: 5 * 1000,
           }));
 
           reduxStore.dispatch(siteAddNotifications(notifications));
-
-          const ts = notifications.map((n) => n.timestamp);
-          setTimeout(
-            () => reduxStore.dispatch(siteRemoveNotifications(ts)),
-            5000
-          );
         }
       },
     },

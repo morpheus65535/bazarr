@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Toast } from "react-bootstrap";
+import { useTimeoutWhen } from "rooks";
 import { siteRemoveNotifications } from "../../@redux/actions";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import "./style.scss";
@@ -15,10 +16,7 @@ const NotificationContainer: FunctionComponent<NotificationContainerProps> = () 
   const items = useMemo(
     () =>
       list.map((v) => (
-        <NotificationToast
-          key={v.timestamp.getTime()}
-          {...v}
-        ></NotificationToast>
+        <NotificationToast key={v.id} {...v}></NotificationToast>
       )),
     [list]
   );
@@ -32,13 +30,15 @@ const NotificationContainer: FunctionComponent<NotificationContainerProps> = () 
 type MessageHolderProps = ReduxStore.Notification & {};
 
 const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
-  const { message, type, timestamp } = props;
+  const { message, type, id, timeout } = props;
   const removeNotification = useReduxAction(siteRemoveNotifications);
 
-  const remove = useCallback(() => removeNotification([timestamp]), [
+  const remove = useCallback(() => removeNotification(id), [
     removeNotification,
-    timestamp,
+    id,
   ]);
+
+  useTimeoutWhen(remove, timeout);
 
   return (
     <Toast onClose={remove} animation={false}>

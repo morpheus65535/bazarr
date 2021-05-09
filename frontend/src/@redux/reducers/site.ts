@@ -1,4 +1,4 @@
-import { differenceWith } from "lodash";
+import { remove, uniqBy } from "lodash";
 import { Action, handleActions } from "redux-actions";
 import apis from "../../apis";
 import {
@@ -36,16 +36,16 @@ const reducer = handleActions<ReduxStore.Site, any>(
       state,
       action: Action<ReduxStore.Notification[]>
     ) => {
-      const alerts = [...state.notifications, ...action.payload];
-      return { ...state, notifications: alerts };
-    },
-    [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<Date[]>) => {
-      const alerts = differenceWith(
-        state.notifications,
-        action.payload,
-        (n, t) => n.timestamp === t
+      const notifications = uniqBy(
+        [...action.payload, ...state.notifications],
+        (n) => n.id
       );
-      return { ...state, notifications: alerts };
+      return { ...state, notifications };
+    },
+    [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<string>) => {
+      const notifications = [...state.notifications];
+      remove(notifications, (n) => n.id === action.payload);
+      return { ...state, notifications };
     },
     [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
       return {

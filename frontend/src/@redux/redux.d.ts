@@ -8,8 +8,9 @@ interface ReduxStore {
 namespace ReduxStore {
   interface Notification {
     type: "error" | "warning" | "info";
+    id: string;
     message: string;
-    timestamp: Date;
+    timeout: number;
   }
 
   interface Site {

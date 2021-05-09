@@ -48,7 +48,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const { exist, state, children } = props;
   const missing = exist ? !exist(state.data) : !defaultExist(state.data);
 
-  const onError = useNotification();
+  const onError = useNotification("async-loading");
 
   useEffect(() => {
     if (!state.updating && state.error !== undefined && !missing) {
