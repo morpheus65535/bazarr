@@ -8,6 +8,8 @@ import {
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
   SITE_OFFLINE_UPDATE,
+  SITE_PROGRESS_ADD,
+  SITE_PROGRESS_REMOVE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { createAsyncAction, createCallbackAction } from "./factory";
@@ -32,11 +34,21 @@ export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
 
 export const siteAddNotifications = createAction(
   SITE_NOTIFICATIONS_ADD,
-  (err: ReduxStore.Notification[]) => err
+  (notification: ReduxStore.Notification[]) => notification
 );
 
 export const siteRemoveNotifications = createAction(
   SITE_NOTIFICATIONS_REMOVE,
+  (id: string) => id
+);
+
+export const siteAddProgress = createAction(
+  SITE_PROGRESS_ADD,
+  (progress: ReduxStore.Progress[]) => progress
+);
+
+export const siteRemoveProgress = createAction(
+  SITE_PROGRESS_REMOVE,
   (id: string) => id
 );
 

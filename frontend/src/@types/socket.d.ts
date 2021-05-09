@@ -37,4 +37,8 @@ namespace SocketIO {
     EventType,
     OptionalRecord<ActionType, any[]>
   >;
+
+  namespace CustomEvent {
+    type Progress = ReduxStore.Progress;
+  }
 }

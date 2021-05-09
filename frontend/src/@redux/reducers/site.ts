@@ -9,6 +9,8 @@ import {
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
   SITE_OFFLINE_UPDATE,
+  SITE_PROGRESS_ADD,
+  SITE_PROGRESS_REMOVE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { AsyncAction } from "../types";
@@ -47,6 +49,18 @@ const reducer = handleActions<ReduxStore.Site, any>(
       remove(notifications, (n) => n.id === action.payload);
       return { ...state, notifications };
     },
+    [SITE_PROGRESS_ADD]: (state, action: Action<ReduxStore.Progress[]>) => {
+      const progress = uniqBy(
+        [...action.payload, ...state.progress],
+        (n) => n.id
+      );
+      return { ...state, progress };
+    },
+    [SITE_PROGRESS_REMOVE]: (state, action: Action<string>) => {
+      const progress = [...state.progress];
+      remove(progress, (n) => n.id === action.payload);
+      return { ...state, progress };
+    },
     [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
       return {
         ...state,
@@ -70,6 +84,7 @@ const reducer = handleActions<ReduxStore.Site, any>(
   {
     initialized: false,
     auth: true,
+    progress: [],
     notifications: [],
     sidebar: "",
     badges: {

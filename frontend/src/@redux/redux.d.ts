@@ -13,10 +13,18 @@ namespace ReduxStore {
     timeout: number;
   }
 
+  interface Progress {
+    id: string;
+    name: string;
+    value: number;
+    count: number;
+  }
+
   interface Site {
     // Initialization state or error message
     initialized: boolean | string;
     auth: boolean;
+    progress: Progress[];
     notifications: Notification[];
     sidebar: string;
     badges: Badge;
