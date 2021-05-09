@@ -6,6 +6,7 @@ import {
   seriesDeleteItems,
   seriesUpdateList,
   siteAddNotifications,
+  siteInitializationFailed,
   siteRemoveNotifications,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
@@ -26,6 +27,17 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "connect",
       any: () => reduxStore.dispatch<any>(bootstrap()),
+    },
+    {
+      key: "connect_error",
+      any: () => {
+        const initialized = reduxStore.getState().site.initialized;
+        if (initialized === true) {
+          reduxStore.dispatch(siteUpdateOffline(true));
+        } else {
+          reduxStore.dispatch(siteInitializationFailed());
+        }
+      },
     },
     {
       key: "disconnect",

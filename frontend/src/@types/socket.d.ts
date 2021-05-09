@@ -1,6 +1,7 @@
 namespace SocketIO {
   type EventType =
     | "connect"
+    | "connect_error"
     | "disconnect"
     | "movie"
     | "series"

@@ -16,10 +16,11 @@ import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 export const bootstrap = createCallbackAction(
   () => [systemUpdateLanguagesAll(), systemUpdateSettings(), badgeUpdateAll()],
   () => siteInitialized(),
-  () => siteInitializeFailed()
+  () => siteInitializationFailed()
 );
 
-const siteInitializeFailed = createAction(SITE_INITIALIZE_FAILED);
+// TODO: Override error message
+export const siteInitializationFailed = createAction(SITE_INITIALIZE_FAILED);
 
 const siteInitialized = createAction(SITE_INITIALIZED);
 

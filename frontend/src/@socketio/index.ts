@@ -23,7 +23,7 @@ class SocketIOClient {
 
     this.socket.on("connect", this.onConnect.bind(this));
     this.socket.on("disconnect", this.onDisconnect.bind(this));
-    this.socket.on("connect_error", this.onDisconnect.bind(this));
+    this.socket.on("connect_error", this.onConnectError.bind(this));
     this.socket.on("data", this.onEvent.bind(this));
 
     this.events = [];
@@ -106,6 +106,11 @@ class SocketIOClient {
   private onConnect() {
     log("info", "Socket.IO has connected");
     this.onEvent({ type: "connect", action: "update", payload: null });
+  }
+
+  private onConnectError() {
+    log("warning", "Socket.IO has error connecting backend");
+    this.onEvent({ type: "connect_error", action: "update", payload: null });
   }
 
   private onDisconnect() {
