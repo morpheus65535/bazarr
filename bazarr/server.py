@@ -27,22 +27,17 @@ class Server:
         # Mute Python3 BrokenPipeError
         warnings.simplefilter("ignore", BrokenPipeError)
 
-        if args.dev:
-            self.server = app.run(host=str(settings.general.ip),
-                                  port=(int(args.port) if args.port else int(settings.general.port)))
-        else:
-            self.server = pywsgi.WSGIServer((str(settings.general.ip),
-                                             int(args.port) if args.port else int(settings.general.port)),
-                                            app,
-                                            handler_class=WebSocketHandler)
+        self.server = pywsgi.WSGIServer((str(settings.general.ip),
+                                         int(args.port) if args.port else int(settings.general.port)),
+                                        app,
+                                        handler_class=WebSocketHandler)
 
     def start(self):
         try:
             logging.info(
                 'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
                     args.port) if args.port else str(settings.general.port)) + str(base_url))
-            if not args.dev:
-                self.server.serve_forever()
+            self.server.serve_forever()
         except KeyboardInterrupt:
             self.shutdown()
 

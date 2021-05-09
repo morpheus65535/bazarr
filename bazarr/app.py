@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from flask import Flask, redirect, render_template, request, url_for
-from flask_debugtoolbar import DebugToolbarExtension
 from flask_socketio import SocketIO
 import os
 
@@ -26,17 +25,8 @@ def create_app():
 
     if args.dev:
         app.config["DEBUG"] = True
-        # Flask-Debuger
-        app.config["DEBUG_TB_ENABLED"] = True
-        app.config["DEBUG_TB_PROFILER_ENABLED"] = True
-        app.config["DEBUG_TB_TEMPLATE_EDITOR_ENABLED"] = True
-        app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
     else:
         app.config["DEBUG"] = False
-        # Flask-Debuger
-        app.config["DEBUG_TB_ENABLED"] = False
-
-    toolbar = DebugToolbarExtension(app)
 
     socketio.init_app(app, path=base_url.rstrip('/')+'/api/socket.io', cors_allowed_origins='*', async_mode='gevent')
     return app
