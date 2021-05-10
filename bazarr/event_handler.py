@@ -23,5 +23,9 @@ def show_message(msg):
     event_stream(type="message", payload=msg)
 
 
-def show_progress(id, name, value, count):
-    event_stream(type="progress", payload={"id": id, "name": name, "value": value, "count": count})
+def show_progress(id, header, name, value, count):
+    event_stream(type="progress", payload={"id": id, "header": header, "name": name, "value": value, "count": count})
+
+
+def hide_progress(id):
+    event_stream(type="progress", action="delete", payload={"id": id})

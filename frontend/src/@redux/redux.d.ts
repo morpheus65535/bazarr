@@ -15,6 +15,7 @@ namespace ReduxStore {
 
   interface Progress {
     id: string;
+    header: string;
     name: string;
     value: number;
     count: number;

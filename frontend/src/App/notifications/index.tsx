@@ -77,6 +77,7 @@ type ProgressHolderProps = ReduxStore.Progress & {};
 
 const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
   id,
+  header,
   name,
   value,
   count,
@@ -95,14 +96,12 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
 
   return (
     <Toast onClose={remove}>
+      <Toast.Header closeButton={!incomplete}>
+        <FontAwesomeIcon className="mr-2" icon={faPaperPlane}></FontAwesomeIcon>
+        <span className="mr-auto">{header}</span>
+      </Toast.Header>
       <Toast.Body>
-        <div className="mb-2 mt-1">
-          <FontAwesomeIcon
-            className="mr-2"
-            icon={faPaperPlane}
-          ></FontAwesomeIcon>
-          <span>{name}</span>
-        </div>
+        <span>{name}</span>
         <ProgressBar
           className="my-1"
           animated={incomplete}
