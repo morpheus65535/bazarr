@@ -1,24 +1,28 @@
 # coding=utf-8
 
+# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
+try:
+    from gevent import monkey
+except ImportError:
+    pass
+else:
+    monkey.patch_all()
+
 import os
 
-bazarr_version = ''
+bazarr_version = 'unknown'
 
 version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
 if os.path.isfile(version_file):
     with open(version_file, 'r') as f:
-        bazarr_version = f.read()
+        bazarr_version = f.readline()
+        bazarr_version = bazarr_version.rstrip('\n')
 
 os.environ["BAZARR_VERSION"] = bazarr_version
 
-import gc
 import libs
 
-import hashlib
-import calendar
-
 from get_args import args
-from logger import empty_log
 from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
@@ -27,17 +31,19 @@ from database import database
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha2, alpha3_from_alpha2
+from get_languages import load_language_in_db
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
 from get_series import *
 from get_episodes import *
 from get_movies import *
+from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
+from utils import check_credentials
 
 # Install downloaded update
 if bazarr_version != '':
@@ -57,40 +63,67 @@ login_auth = settings.auth.type
 update_notifier()
 
 
+def check_login(actual_method):
+    @wraps(actual_method)
+    def wrapper(*args, **kwargs):
+        if settings.auth.type == 'basic':
+            auth = request.authorization
+            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+                return ('Unauthorized', 401, {
+                    'WWW-Authenticate': 'Basic realm="Login Required"'
+                })
+        elif settings.auth.type == 'form':
+            if 'logged_in' not in session:
+                return abort(401, message="Unauthorized")
+        actual_method(*args, **kwargs)
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(base_url, code=302)
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    return render_template("index.html")
+    auth = True
+    if settings.auth.type == 'basic':
+        auth = request.authorization
+        if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+            return ('Unauthorized', 401, {
+                'WWW-Authenticate': 'Basic realm="Login Required"'
+            })
+    elif settings.auth.type == 'form':
+        if 'logged_in' not in session:
+            auth = False
 
-
-@app.context_processor
-def template_variable_processor():
-    updated = False
     try:
         updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
     except:
-        pass
+        updated = False
 
     inject = dict()
-    inject["apiKey"] = settings.auth.apikey
     inject["baseUrl"] = base_url
     inject["canUpdate"] = not args.no_update
     inject["hasUpdate"] = updated != '0'
+
+    if auth:
+        inject["apiKey"] = settings.auth.apikey
 
     template_url = base_url
     if not template_url.endswith("/"):
         template_url += "/"
 
-    return dict(BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
 
-
+@check_login
 @app.route('/bazarr.log')
 def download_log():
-
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
 
 
+@check_login
 @app.route('/images/series/<path:url>', methods=['GET'])
 def series_images(url):
     url = url.strip("/")
@@ -105,6 +138,7 @@ def series_images(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
+@check_login
 @app.route('/images/movies/<path:url>', methods=['GET'])
 def movies_images(url):
     apikey = settings.radarr.apikey
@@ -131,6 +165,7 @@ def configured():
     database.execute("UPDATE system SET configured = 1")
 
 
+@check_login
 @app.route('/test', methods=['GET'])
 @app.route('/test/<protocol>/<path:url>', methods=['GET'])
 def proxy(protocol, url):
@@ -153,6 +188,12 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
+
+
+if settings.general.getboolean('use_sonarr'):
+    sonarr_signalr_client.start()
+if settings.general.getboolean('use_radarr'):
+    radarr_signalr_client.start()
 
 
 if __name__ == "__main__":

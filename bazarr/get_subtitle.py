@@ -33,6 +33,8 @@ from subsyncer import subsync
 from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages
+from event_handler import event_stream, show_progress
+from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -258,7 +260,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -269,7 +271,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            radarr_id=movie_metadata['radarrId'])
 
@@ -583,7 +585,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score,
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -594,7 +596,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score, radarr_id=movie_metadata['radarrId'])
 
                         if use_postprocessing:
@@ -711,7 +713,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                             only_one=True)
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
     else:
@@ -720,7 +722,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                           only_one=True)
         series_id = ""
         episode_id = movie_metadata['radarrId']
-        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing :
@@ -759,6 +761,11 @@ def series_download_subtitles(no):
 
     for i, episode in enumerate(episodes_details, 1):
         if providers_list:
+            show_progress(id='series_search_progress_{}'.format(no),
+                          name='Searching missing subtitles for {}...'.format(episode['title']),
+                          value=i,
+                          count=count_episodes_details)
+
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
@@ -798,6 +805,8 @@ def series_download_subtitles(no):
         else:
             logging.info("BAZARR All providers are throttled")
             break
+
+    
 
 
 def episode_download_subtitles(no):
@@ -877,6 +886,11 @@ def movies_download_subtitles(no):
 
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
         if providers_list:
+            show_progress(id='movie_search_progress_{}'.format(no),
+                          name='Searching missing subtitles for {}...'.format(movie['title']),
+                          value=i,
+                          count=count_movie)
+
             if language is not None:
                 audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
                 if len(audio_language_list) > 0:
@@ -916,7 +930,7 @@ def movies_download_subtitles(no):
             break
 
 
-def wanted_download_subtitles(path, l, count_episodes):
+def wanted_download_subtitles(path):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, "
                                         "table_episodes.audio_language, table_episodes.scene_name,"
@@ -981,6 +995,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                         language_code, provider, score, subs_id, subs_path)
+                            event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
                         logging.debug(
@@ -988,7 +1003,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                                 0])
 
 
-def wanted_download_subtitles_movie(path, l, count_movies):
+def wanted_download_subtitles_movie(path):
     movies_details = database.execute(
         "SELECT path, missing_subtitles, radarrId, audio_language, sceneName, "
         "failedAttempts, title FROM table_movies WHERE path = ? "
@@ -1049,6 +1064,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
                             history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
                                               subs_id, subs_path)
+                            event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
                             send_notifications_movie(movie['radarrId'], message)
                     else:
                         logging.info(
@@ -1058,39 +1074,55 @@ def wanted_download_subtitles_movie(path, l, count_movies):
 
 def wanted_search_missing_subtitles_series():
     episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored, "
-                                "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
-                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles != "
-                                "'[]'" + get_exclusion_clause('series'))
+                                "table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title"
+                                " as episodeTitle, table_shows.seriesType FROM table_episodes INNER JOIN table_shows on"
+                                " table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles !="
+                                " '[]'" + get_exclusion_clause('series'))
     # path_replace
     dict_mapper.path_replace(episodes)
 
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        show_progress(id='wanted_episodes_progress',
+                      name='Searching subtitles for {0} - S{1:02d}E{2:02d} - {3}...'.format(episode['title'],
+                                                                                            episode['season'],
+                                                                                            episode['episode'],
+                                                                                            episode['episodeTitle']),
+                      value=i,
+                      count=count_episodes)
+
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode['path'], i, count_episodes)
+            wanted_download_subtitles(episode['path'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
 
+    
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
 
 
 def wanted_search_missing_subtitles_movies():
-    movies = database.execute("SELECT path, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+    movies = database.execute("SELECT path, tags, monitored, title FROM table_movies WHERE missing_subtitles != '[]'" +
                               get_exclusion_clause('movie'))
     # path_replace
     dict_mapper.path_replace_movie(movies)
 
     count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        show_progress(id='wanted_movies_progress',
+                      name='Searching subtitles for {0}...'.format(movie['title']),
+                      value=i,
+                      count=count_movies)
+
         providers = get_providers()
         if providers:
-            wanted_download_subtitles_movie(movie['path'], i, count_movies)
+            wanted_download_subtitles_movie(movie['path'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
 
+    
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
@@ -1177,41 +1209,52 @@ def refine_from_db(path, video):
 
 
 def refine_from_ffprobe(path, video):
-    exe = get_binary('ffprobe')
-    if not exe:
-        logging.debug('BAZARR FFprobe not found!')
-        return
+    if isinstance(video, Movie):
+        file_id = database.execute("SELECT movie_file_id FROM table_shows WHERE path = ?",
+                                   (path_mappings.path_replace_reverse_movie(path),), only_one=True)
     else:
-        logging.debug('BAZARR FFprobe used is %s', exe)
+        file_id = database.execute("SELECT episode_file_id, file_size FROM table_episodes WHERE path = ?",
+                                   (path_mappings.path_replace_reverse(path),), only_one=True)
 
-    api.initialize({'provider': 'ffmpeg', 'ffmpeg': exe})
-    data = api.know(path)
+    if not isinstance(file_id, dict):
+        return video
 
-    logging.debug('FFprobe found: %s', data)
+    if isinstance(video, Movie):
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    movie_file_id=file_id['movie_file_id'])
+    else:
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
+                                    episode_file_id=file_id['episode_file_id'])
 
-    if 'video' not in data:
+    if not data['ffprobe']:
+        logging.debug("No FFprobe available in cache for this file: {}".format(path))
+        return video
+
+    logging.debug('FFprobe found: %s', data['ffprobe'])
+
+    if 'video' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
     else:
-        if 'resolution' in data['video'][0]:
+        if 'resolution' in data['ffprobe']['video'][0]:
             if not video.resolution:
-                video.resolution = data['video'][0]['resolution']
-        if 'codec' in data['video'][0]:
+                video.resolution = data['ffprobe']['video'][0]['resolution']
+        if 'codec' in data['ffprobe']['video'][0]:
             if not video.video_codec:
-                video.video_codec = data['video'][0]['codec']
-        if 'frame_rate' in data['video'][0]:
+                video.video_codec = data['ffprobe']['video'][0]['codec']
+        if 'frame_rate' in data['ffprobe']['video'][0]:
             if not video.fps:
-                if isinstance(data['video'][0]['frame_rate'], float):
-                    video.fps = data['video'][0]['frame_rate']
+                if isinstance(data['ffprobe']['video'][0]['frame_rate'], float):
+                    video.fps = data['ffprobe']['video'][0]['frame_rate']
                 else:
-                    video.fps = data['video'][0]['frame_rate'].magnitude
+                    video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
 
-    if 'audio' not in data:
+    if 'audio' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
     else:
-        if 'codec' in data['audio'][0]:
+        if 'codec' in data['ffprobe']['audio'][0]:
             if not video.audio_codec:
-                video.audio_codec = data['audio'][0]['codec']
-        for track in data['audio']:
+                video.audio_codec = data['ffprobe']['audio'][0]['codec']
+        for track in data['ffprobe']['audio']:
             if 'language' in track:
                 video.audio_languages.add(track['language'].alpha3)
 
@@ -1224,7 +1267,7 @@ def upgrade_subtitles():
                          datetime(1970, 1, 1)).total_seconds()
 
     if settings.general.getboolean('upgrade_manual'):
-        query_actions = [1, 2, 3, 6]
+        query_actions = [1, 2, 3, 4, 6]
     else:
         query_actions = [1, 3]
 
@@ -1232,7 +1275,7 @@ def upgrade_subtitles():
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
                                                "table_history.score, table_shows.tags, table_shows.profileId, "
                                                "table_episodes.audio_language, table_episodes.scene_name, "
-                                               "table_episodes.title, table_episodes.sonarrSeriesId, "
+                                               "table_episodes.title, table_episodes.sonarrSeriesId, table_history.action, "
                                                "table_history.subtitles_path, table_episodes.sonarrEpisodeId, "
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
                                                "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
@@ -1251,7 +1294,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_episode['score']) < 360:
+                    if int(upgradable_episode['score']) < 360 or (settings.general.getboolean('upgrade_manual') and
+                                                                  upgradable_episode['action'] in [2, 4, 6]):
                         upgradable_episodes_not_perfect.append(upgradable_episode)
 
         episodes_to_upgrade = []
@@ -1263,7 +1307,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.profileId, "
+                                             "table_history_movie.score, table_movies.profileId, table_history_movie.action, "
                                              "table_history_movie.subtitles_path, table_movies.audio_language, "
                                              "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
                                              "MAX(table_history_movie.timestamp) as timestamp, table_movies.tags, "
@@ -1281,7 +1325,8 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_movie['score']) < 120:
+                    if int(upgradable_movie['score']) < 120 or (settings.general.getboolean('upgrade_manual') and
+                                                                upgradable_movie['action'] in [2, 4, 6]):
                         upgradable_movies_not_perfect.append(upgradable_movie)
 
         movies_to_upgrade = []
@@ -1296,22 +1341,27 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
+            show_progress(id='upgrade_episodes_progress',
+                          name='Upgrading subtitles for {0}...'.format(episode['title']),
+                          value=i,
+                          count=count_episode_to_upgrade)
+
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
                 return
             if episode['language'].endswith('forced'):
                 language = episode['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif episode['language'].endswith('hi'):
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = episode['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
             if len(audio_language_list) > 0:
@@ -1350,8 +1400,15 @@ def upgrade_subtitles():
                             language_code, provider, score, subs_id, subs_path)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
+        
+
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
+            show_progress(id='upgrade_movies_progress',
+                          name='Upgrading subtitles for {0}...'.format(movie['title']),
+                          value=i,
+                          count=count_movie_to_upgrade)
+
             providers = get_providers()
             if not providers:
                 logging.info("BAZARR All providers are throttled")
@@ -1361,16 +1418,16 @@ def upgrade_subtitles():
                 return
             if movie['language'].endswith('forced'):
                 language = movie['language'].split(':')[0]
-                is_forced = True
-                is_hi = False
+                is_forced = "True"
+                is_hi = "False"
             elif movie['language'].endswith('hi'):
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = True
+                is_forced = "False"
+                is_hi = "True"
             else:
                 language = movie['language'].split(':')[0]
-                is_forced = False
-                is_hi = False
+                is_forced = "False"
+                is_hi = "False"
 
             audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
             if len(audio_language_list) > 0:
@@ -1394,7 +1451,12 @@ def upgrade_subtitles():
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
@@ -1403,6 +1465,8 @@ def upgrade_subtitles():
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
+
+        
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
@@ -1430,6 +1494,9 @@ def postprocessing(command, path):
         if out == "":
             logging.info(
                 'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+        elif err:
+            logging.error(
+                'BAZARR Post-processing result for file ' + path + ' : ' + err.replace('\n', ' ').replace('\r', ' '))
         else:
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 

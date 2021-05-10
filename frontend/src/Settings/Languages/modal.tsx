@@ -19,6 +19,7 @@ import {
   useCloseModal,
   usePayload,
 } from "../../components";
+import { BuildKey } from "../../utilites";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 interface Props {
@@ -170,7 +171,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           return (
             <Form.Check
               custom
-              id={`${item.language}-forced`}
+              id={BuildKey(item.id, item.language, "forced")}
               checked={value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
@@ -188,7 +189,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           return (
             <Form.Check
               custom
-              id={`${item.language}-hi`}
+              id={BuildKey(item.id, item.language, "hi")}
               checked={value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
@@ -206,7 +207,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           return (
             <Form.Check
               custom
-              id={`${item.language}-audio`}
+              id={BuildKey(item.id, item.language, "audio")}
               checked={value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";

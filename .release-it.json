@@ -1,7 +1,7 @@
 {
   "git": {
     "requireCleanWorkingDir": false,
-    "changelog": "auto-changelog --stdout",
+    "changelog": ".github/scripts/create_changelog.sh",
     "tagName": "v${version}"
   },
   "github": {
@@ -14,19 +14,10 @@
     "ignoreVersion": true
   },
   "hooks": {
-    "after:git:release": [
+    "before:init": [
       "chmod +x .github/scripts/*",
-      ".github/scripts/create_asset.sh"
-    ]
-  },
-  "plugins": {
-    "@release-it/bumper": {
-      "in": {
-        "file": "VERSION"
-      },
-      "out": {
-        "file": "VERSION"
-      }
-    }
+      ".github/scripts/pre_check.sh"
+    ],
+    "after:git:release": ".github/scripts/create_asset.sh"
   }
 }

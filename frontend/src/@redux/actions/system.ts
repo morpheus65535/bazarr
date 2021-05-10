@@ -1,10 +1,10 @@
-import { Action } from "redux-actions";
-import { SystemApi } from "../../apis";
+import { ProvidersApi, SystemApi } from "../../apis";
 import {
-  SYSTEM_RUN_TASK,
+  SYSTEM_UPDATE_HEALTH,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
+  SYSTEM_UPDATE_PROVIDERS,
   SYSTEM_UPDATE_RELEASES,
   SYSTEM_UPDATE_SETTINGS,
   SYSTEM_UPDATE_STATUS,
@@ -31,16 +31,13 @@ export const systemUpdateStatus = createAsyncAction(SYSTEM_UPDATE_STATUS, () =>
   SystemApi.status()
 );
 
+export const systemUpdateHealth = createAsyncAction(SYSTEM_UPDATE_HEALTH, () =>
+  SystemApi.health()
+);
+
 export const systemUpdateTasks = createAsyncAction(SYSTEM_UPDATE_TASKS, () =>
   SystemApi.getTasks()
 );
-
-export function systemRunTasks(id: string): Action<string> {
-  return {
-    type: SYSTEM_RUN_TASK,
-    payload: id,
-  };
-}
 
 export const systemUpdateLogs = createAsyncAction(SYSTEM_UPDATE_LOGS, () =>
   SystemApi.logs()
@@ -54,6 +51,11 @@ export const systemUpdateReleases = createAsyncAction(
 export const systemUpdateSettings = createAsyncAction(
   SYSTEM_UPDATE_SETTINGS,
   () => SystemApi.settings()
+);
+
+export const providerUpdateList = createAsyncAction(
+  SYSTEM_UPDATE_PROVIDERS,
+  () => ProvidersApi.providers()
 );
 
 export const systemUpdateSettingsAll = createAsyncCombineAction(() => [

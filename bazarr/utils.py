@@ -40,24 +40,24 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_
                      "video_path, language, provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                      (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
                       provider, score, subs_id, subtitles_path))
-    event_stream(type='episodeHistory')
+    event_stream(type='episode-history')
 
 
 def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
     database.execute("INSERT INTO table_blacklist (sonarr_series_id, sonarr_episode_id, timestamp, provider, "
                      "subs_id, language) VALUES (?,?,?,?,?,?)",
                      (sonarr_series_id, sonarr_episode_id, time.time(), provider, subs_id, language))
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist')
 
 
 def blacklist_delete(provider, subs_id):
     database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def blacklist_delete_all():
     database.execute("DELETE FROM table_blacklist")
-    event_stream(type='episodeBlacklist')
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
@@ -65,23 +65,23 @@ def history_log_movie(action, radarr_id, description, video_path=None, language=
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
                      "provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
                      (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id, subtitles_path))
-    event_stream(type='movieHistory')
+    event_stream(type='movie-history')
 
 
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
     database.execute("INSERT INTO table_blacklist_movie (radarr_id, timestamp, provider, subs_id, language) "
                      "VALUES (?,?,?,?,?)", (radarr_id, time.time(), provider, subs_id, language))
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_movie(provider, subs_id):
     database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
     database.execute("DELETE FROM table_blacklist_movie")
-    event_stream(type='movieBlacklist')
+    event_stream(type='movie-blacklist', action='delete')
 
 
 @region.cache_on_arguments()
@@ -209,6 +209,7 @@ def get_sonarr_version():
             sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
+            sonarr_version = 'unknown'
     return sonarr_version
 
 
@@ -247,6 +248,7 @@ def get_radarr_version():
             radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Radarr version')
+            radarr_version = 'unknown'
     return radarr_version
 
 
@@ -398,3 +400,40 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     subs.save(dest_srt_file)
 
     return dest_srt_file
+
+
+def check_credentials(user, pw):
+    username = settings.auth.username
+    password = settings.auth.password
+    return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+
+
+def check_health():
+    from get_rootfolder import check_sonarr_rootfolder, check_radarr_rootfolder
+    if settings.general.getboolean('use_sonarr'):
+        check_sonarr_rootfolder()
+    if settings.general.getboolean('use_radarr'):
+        check_radarr_rootfolder()
+    event_stream(type='badges')
+
+
+def get_health_issues():
+    # this function must return a list of dictionaries consisting of to keys: object and issue
+    health_issues = []
+
+    # get Sonarr rootfolder issues
+    if settings.general.getboolean('use_sonarr'):
+        rootfolder = database.execute('SELECT path, accessible, error FROM table_shows_rootfolder WHERE accessible = 0')
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace(item['path']),
+                                  'issue': item['error']})
+
+    # get Radarr rootfolder issues
+    if settings.general.getboolean('use_radarr'):
+        rootfolder = database.execute('SELECT path, accessible, error FROM table_movies_rootfolder '
+                                      'WHERE accessible = 0')
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
+                                  'issue': item['error']})
+
+    return health_issues

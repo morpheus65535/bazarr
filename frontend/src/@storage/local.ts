@@ -1,10 +1,17 @@
+import { useCallback } from "react";
+import { useLocalstorage } from "rooks";
+
 export const uiPageSizeKey = "storage-ui-pageSize";
 
-export const storage: LocalStorageType = {
-  get pageSize(): number {
-    return parseInt(localStorage.getItem(uiPageSizeKey) ?? "50");
-  },
-  set pageSize(v: number) {
-    localStorage.setItem(uiPageSizeKey, v.toString());
-  },
-};
+export function useUpdateLocalStorage() {
+  return useCallback((newVals: LooseObject) => {
+    for (const key in newVals) {
+      const value = newVals[key];
+      localStorage.setItem(key, value);
+    }
+  }, []);
+}
+
+export function usePageSize() {
+  return useLocalstorage(uiPageSizeKey, 50);
+}

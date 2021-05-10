@@ -89,6 +89,18 @@ class SystemApi extends BaseApi {
     });
   }
 
+  async health() {
+    return new Promise<System.Health>((resolve, reject) => {
+      this.get<DataWrapper<System.Health>>("/health")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async logs() {
     return new Promise<Array<System.Log>>((resolve, reject) => {
       this.get<DataWrapper<Array<System.Log>>>("/logs")
@@ -137,9 +149,9 @@ class SystemApi extends BaseApi {
     });
   }
 
-  async testNotification(protocol: string, path: string) {
+  async testNotification(url: string) {
     return new Promise<void>((resolve, reject) => {
-      this.patch<void>("/notifications", { protocol, path })
+      this.patch<void>("/notifications", { url })
         .then(() => resolve())
         .catch(reject);
     });

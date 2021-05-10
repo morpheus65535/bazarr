@@ -15,7 +15,7 @@ from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
-from event_handler import event_stream
+from event_handler import event_stream, show_progress
 from charamel import Detector
 
 gc.enable()
@@ -31,12 +31,18 @@ def store_subtitles(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, episode_file_id FROM table_episodes '
+                                                            'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader(reversed_path,
+                                                          file_size=item['file_size'],
+                                                          episode_file_id=item['episode_file_id'])
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -145,12 +151,18 @@ def store_subtitles_movie(original_path, reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
+                item = database.execute('SELECT file_size, movie_file_id FROM table_movies '
+                                        'WHERE path = ?', (original_path,), only_one=True)
+                subtitle_languages = embedded_subs_reader(reversed_path,
+                                                          file_size=item['file_size'],
+                                                          movie_file_id=item['movie_file_id'])
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub"):
+                                 "vobsub") or \
+                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                 "ass"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -353,9 +365,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                          (missing_subtitles_text, episode_subtitles['sonarrEpisodeId']))
 
         if send_event:
-            event_stream(type='episode', action='update', series=episode_subtitles['sonarrSeriesId'],
-                         episode=episode_subtitles['sonarrEpisodeId'])
-            event_stream(type='badges_series')
+            event_stream(type='episode', payload=episode_subtitles['sonarrEpisodeId'])
+            event_stream(type='badges')
 
 
 def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
@@ -463,14 +474,19 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
                          (missing_subtitles_text, movie_subtitles['radarrId']))
 
         if send_event:
-            event_stream(type='movie', action='update', movie=movie_subtitles['radarrId'])
-            event_stream(type='badges_movies')
+            event_stream(type='movie', payload=movie_subtitles['radarrId'])
+            event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
     episodes = database.execute("SELECT path FROM table_episodes")
     
+    count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        show_progress(id='episodes_disk_scan',
+                      name='Performing a full disk scan for episodes subtitles...',
+                      value=i,
+                      count=count_episodes)
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
     
     gc.collect()
@@ -479,9 +495,14 @@ def series_full_scan_subtitles():
 def movies_full_scan_subtitles():
     movies = database.execute("SELECT path FROM table_movies")
     
+    count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        show_progress(id='movies_disk_scan',
+                      name='Performing a full disk scan for movies subtitles...',
+                      value=i,
+                      count=count_movies)
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-    
+
     gc.collect()
 
 

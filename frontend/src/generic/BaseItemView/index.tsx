@@ -1,10 +1,6 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { uniqBy } from "lodash";
+import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
@@ -12,29 +8,25 @@ import { useLanguageProfiles } from "../../@redux/hooks";
 import { useReduxActionWith } from "../../@redux/hooks/base";
 import { AsyncActionDispatcher } from "../../@redux/types";
 import { ContentHeader } from "../../components";
-import { GetItemId, isNonNullable, mergeArray } from "../../utilites";
+import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
-export interface SharedProps {
+export interface SharedProps<T extends Item.Base> {
   name: string;
   loader: (start: number, length: number) => void;
-  columns: Column<Item.Base>[];
+  columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: AsyncState<OrderIdState<Item.Base>>;
+  state: AsyncOrderState<T>;
 }
 
-export function ExtendItemComparer(lhs: Item.Base, rhs: Item.Base): boolean {
-  return GetItemId(lhs) === GetItemId(rhs);
-}
-
-interface Props extends SharedProps {
+interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
   updateAction: (id?: number[]) => AsyncActionDispatcher<any>;
 }
 
-const BaseItemView: FunctionComponent<Props> = ({
+function BaseItemView<T extends Item.Base>({
   updateAction,
   ...shared
-}) => {
+}: Props<T>) {
   const state = shared.state;
 
   const [pendingEditMode, setPendingEdit] = useState(false);
@@ -51,8 +43,8 @@ const BaseItemView: FunctionComponent<Props> = ({
 
   const update = useReduxActionWith(updateAction, onUpdated);
 
-  const [selections, setSelections] = useState<Item.Base[]>([]);
-  const [dirtyItems, setDirty] = useState<Item.Base[]>([]);
+  const [selections, setSelections] = useState<T[]>([]);
+  const [dirtyItems, setDirty] = useState<T[]>([]);
 
   const [profiles] = useLanguageProfiles();
 
@@ -80,7 +72,7 @@ const BaseItemView: FunctionComponent<Props> = ({
         item.profileId = id;
         return item;
       });
-      const newDirty = mergeArray(dirtyItems, newItems, ExtendItemComparer);
+      const newDirty = uniqBy([...newItems, ...dirtyItems], GetItemId);
       setDirty(newDirty);
     },
     [selections, dirtyItems]
@@ -95,20 +87,12 @@ const BaseItemView: FunctionComponent<Props> = ({
     setPendingEdit(true);
   }, [shared.state.data.order, update]);
 
-  const endEdit = useCallback(
-    (cancel: boolean = false) => {
-      if (!cancel && dirtyItems.length > 0) {
-        const ids = dirtyItems.map(GetItemId);
-        update(ids);
-      } else {
-        setEdit(false);
-        setDirty([]);
-      }
-      setPendingEdit(false);
-      setSelections([]);
-    },
-    [dirtyItems, update]
-  );
+  const endEdit = useCallback(() => {
+    setEdit(false);
+    setDirty([]);
+    setPendingEdit(false);
+    setSelections([]);
+  }, []);
 
   const saveItems = useCallback(() => {
     const form: FormType.ModifyItem = {
@@ -143,14 +127,14 @@ const BaseItemView: FunctionComponent<Props> = ({
               </Dropdown>
             </ContentHeader.Group>
             <ContentHeader.Group pos="end">
-              <ContentHeader.Button icon={faUndo} onClick={() => endEdit(true)}>
+              <ContentHeader.Button icon={faUndo} onClick={endEdit}>
                 Cancel
               </ContentHeader.Button>
               <ContentHeader.AsyncButton
                 icon={faCheck}
                 disabled={dirtyItems.length === 0}
                 promise={saveItems}
-                onSuccess={() => endEdit()}
+                onSuccess={endEdit}
               >
                 Save
               </ContentHeader.AsyncButton>
@@ -170,7 +154,6 @@ const BaseItemView: FunctionComponent<Props> = ({
       <Row>
         <Table
           {...shared}
-          update={update}
           dirtyItems={dirtyItems}
           editMode={editMode}
           select={setSelections}
@@ -178,6 +161,6 @@ const BaseItemView: FunctionComponent<Props> = ({
       </Row>
     </Container>
   );
-};
+}
 
 export default BaseItemView;

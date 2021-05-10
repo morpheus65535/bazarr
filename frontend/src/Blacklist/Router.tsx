@@ -1,13 +1,19 @@
 import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { RouterEmptyPath } from "../404";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
+import {
+  useIsRadarrEnabled,
+  useIsSonarrEnabled,
+  useSetSidebar,
+} from "../@redux/hooks/site";
+import { RouterEmptyPath } from "../special-pages/404";
 import BlacklistMovies from "./Movies";
 import BlacklistSeries from "./Series";
 
 const Router: FunctionComponent = () => {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
+
+  useSetSidebar("Blacklist");
   return (
     <Switch>
       {sonarr && (

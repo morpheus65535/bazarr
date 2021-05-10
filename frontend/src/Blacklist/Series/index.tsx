@@ -5,17 +5,15 @@ import { Helmet } from "react-helmet";
 import { useBlacklistSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 interface Props {}
 
 const BlacklistSeriesView: FunctionComponent<Props> = () => {
-  const [blacklist, update] = useBlacklistSeries();
-  useAutoUpdate(update);
+  const [blacklist] = useBlacklistSeries();
   return (
     <AsyncStateOverlay state={blacklist}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Series Blacklist - Bazarr</title>
@@ -25,13 +23,12 @@ const BlacklistSeriesView: FunctionComponent<Props> = () => {
               icon={faTrash}
               disabled={data.length === 0}
               promise={() => EpisodesApi.deleteBlacklist(true)}
-              onSuccess={update}
             >
               Remove All
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={data} update={update}></Table>
+            <Table blacklist={data}></Table>
           </Row>
         </Container>
       )}

@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useContext, useMemo } from "react";
 import { Badge, Collapse, ListGroupItem } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
-import { useSidebarKey, useUpdateSidebar } from ".";
+import { siteChangeSidebar } from "../@redux/actions";
+import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
 import { SidebarToggleContext } from "../App";
 import {
   BadgeProvider,
@@ -15,6 +16,14 @@ import {
 export const HiddenKeysContext = React.createContext<string[]>([]);
 
 export const BadgesContext = React.createContext<BadgeProvider>({});
+
+function useToggleSidebar() {
+  return useReduxAction(siteChangeSidebar);
+}
+
+function useSidebarKey() {
+  return useReduxStore((s) => s.site.sidebar);
+}
 
 export const LinkItem: FunctionComponent<LinkItemType> = ({
   link,
@@ -60,10 +69,8 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
   const hiddenKeys = useContext(HiddenKeysContext);
   const toggleSidebar = useContext(SidebarToggleContext);
 
-  const itemKey = name.toLowerCase();
-
   const sidebarKey = useSidebarKey();
-  const updateSidebar = useUpdateSidebar();
+  const updateSidebar = useToggleSidebar();
 
   const [badgeValue, childValue] = useMemo<
     [Nullable<number>, Nullable<ChildBadgeProvider>]
@@ -86,7 +93,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
     return [badge, child];
   }, [badges, name]);
 
-  const active = useMemo(() => sidebarKey === itemKey, [sidebarKey, itemKey]);
+  const active = useMemo(() => sidebarKey === name, [sidebarKey, name]);
 
   const collapseBoxClass = useMemo(
     () => `sidebar-collapse-box ${active ? "active" : ""}`,
@@ -133,7 +140,7 @@ export const CollapseItem: FunctionComponent<CollapseItemType> = ({
           if (active) {
             updateSidebar("");
           } else {
-            updateSidebar(itemKey);
+            updateSidebar(name);
           }
         }}
       >

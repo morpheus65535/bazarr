@@ -1,36 +1,31 @@
+import { remove, uniqBy } from "lodash";
 import { Action, handleActions } from "redux-actions";
-import { storage } from "../../@storage/local";
+import apis from "../../apis";
 import {
-  SITE_AUTH_SUCCESS,
   SITE_BADGE_UPDATE,
   SITE_INITIALIZED,
   SITE_INITIALIZE_FAILED,
   SITE_NEED_AUTH,
   SITE_NOTIFICATIONS_ADD,
   SITE_NOTIFICATIONS_REMOVE,
-  SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP,
   SITE_OFFLINE_UPDATE,
-  SITE_SAVE_LOCALSTORAGE,
+  SITE_PROGRESS_ADD,
+  SITE_PROGRESS_REMOVE,
   SITE_SIDEBAR_UPDATE,
 } from "../constants";
 import { AsyncAction } from "../types";
 
-function updateLocalStorage(): Partial<ReduxStore.Site> {
-  return {
-    pageSize: storage.pageSize,
-  };
-}
-
 const reducer = handleActions<ReduxStore.Site, any>(
   {
-    [SITE_NEED_AUTH]: (state) => ({
-      ...state,
-      auth: false,
-    }),
-    [SITE_AUTH_SUCCESS]: (state) => ({
-      ...state,
-      auth: true,
-    }),
+    [SITE_NEED_AUTH]: (state) => {
+      if (process.env.NODE_ENV !== "development") {
+        apis.danger_resetApi("NEED_AUTH");
+      }
+      return {
+        ...state,
+        auth: false,
+      };
+    },
     [SITE_INITIALIZED]: (state) => ({
       ...state,
       initialized: true,
@@ -39,36 +34,32 @@ const reducer = handleActions<ReduxStore.Site, any>(
       ...state,
       initialized: "An Error Occurred When Initializing Bazarr UI",
     }),
-    [SITE_SAVE_LOCALSTORAGE]: (state, action: Action<LooseObject>) => {
-      const settings = action.payload;
-      for (const key in settings) {
-        const value = settings[key];
-        localStorage.setItem(key, value);
-      }
-      return {
-        ...state,
-        ...updateLocalStorage(),
-      };
-    },
     [SITE_NOTIFICATIONS_ADD]: (
       state,
-      action: Action<ReduxStore.Notification>
+      action: Action<ReduxStore.Notification[]>
     ) => {
-      const alerts = [
-        ...state.notifications.filter((v) => v.id !== action.payload.id),
-        action.payload,
-      ];
-      return { ...state, notifications: alerts };
+      const notifications = uniqBy(
+        [...action.payload.reverse(), ...state.notifications],
+        (n) => n.id
+      );
+      return { ...state, notifications };
     },
     [SITE_NOTIFICATIONS_REMOVE]: (state, action: Action<string>) => {
-      const alerts = state.notifications.filter((v) => v.id !== action.payload);
-      return { ...state, notifications: alerts };
+      const notifications = [...state.notifications];
+      remove(notifications, (n) => n.id === action.payload);
+      return { ...state, notifications };
     },
-    [SITE_NOTIFICATIONS_REMOVE_BY_TIMESTAMP]: (state, action: Action<Date>) => {
-      const alerts = state.notifications.filter(
-        (v) => v.timestamp !== action.payload
+    [SITE_PROGRESS_ADD]: (state, action: Action<ReduxStore.Progress[]>) => {
+      const progress = uniqBy(
+        [...action.payload.reverse(), ...state.progress],
+        (n) => n.id
       );
-      return { ...state, notifications: alerts };
+      return { ...state, progress };
+    },
+    [SITE_PROGRESS_REMOVE]: (state, action: Action<string>) => {
+      const progress = [...state.progress];
+      remove(progress, (n) => n.id === action.payload);
+      return { ...state, progress };
     },
     [SITE_SIDEBAR_UPDATE]: (state, action: Action<string>) => {
       return {
@@ -93,16 +84,16 @@ const reducer = handleActions<ReduxStore.Site, any>(
   {
     initialized: false,
     auth: true,
-    pageSize: 50,
+    progress: [],
     notifications: [],
     sidebar: "",
     badges: {
       movies: 0,
       episodes: 0,
       providers: 0,
+      status: 0,
     },
     offline: false,
-    ...updateLocalStorage(),
   }
 );
 

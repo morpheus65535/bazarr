@@ -1,29 +1,27 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
 import reduxStore from "../@redux/store";
+import { getBaseUrl } from "../utilites";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
 
   constructor() {
+    const baseUrl = `${getBaseUrl()}/api/`;
     if (process.env.NODE_ENV === "development") {
-      this.initialize("/api/", process.env["REACT_APP_APIKEY"]!);
+      this.initialize(baseUrl, process.env["REACT_APP_APIKEY"]!);
     } else {
-      const baseUrl =
-        window.Bazarr.baseUrl === "/"
-          ? "/api/"
-          : `${window.Bazarr.baseUrl}/api/`;
       this.initialize(baseUrl, window.Bazarr.apiKey);
     }
   }
 
-  initialize(url: string, apikey: string) {
+  initialize(url: string, apikey?: string) {
     this.axios = Axios.create({
       baseURL: url,
     });
 
     this.axios.defaults.headers.post["Content-Type"] = "application/json";
-    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
+    this.axios.defaults.headers.common["X-API-KEY"] = apikey ?? "AUTH_NEEDED";
 
     this.source = Axios.CancelToken.source();
 
@@ -34,7 +32,6 @@ class Api {
 
     this.axios.interceptors.response.use(
       (resp) => {
-        this.onOnline();
         if (resp.status >= 200 && resp.status < 300) {
           return Promise.resolve(resp);
         } else {
@@ -46,14 +43,16 @@ class Api {
         if (error.response) {
           const response = error.response;
           this.handleError(response.status);
-          this.onOnline();
         } else {
-          this.onOffline();
           error.message = "You have disconnected to Bazarr backend";
         }
         return Promise.reject(error);
       }
     );
+  }
+
+  danger_resetApi(apikey: string) {
+    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
   }
 
   onOnline() {

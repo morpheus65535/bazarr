@@ -1,21 +1,17 @@
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBookmark,
-  faCheck,
-  faExclamationTriangle,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateByRange, movieUpdateInfoAll } from "../@redux/actions";
+import { movieUpdateByRange, movieUpdateList } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
 import { ActionBadge, TextPopover } from "../components";
 import BaseItemView from "../generic/BaseItemView";
+import { BuildKey } from "../utilites";
 
 interface Props {}
 
@@ -54,26 +50,15 @@ const MovieView: FunctionComponent<Props> = () => {
         },
       },
       {
-        Header: "Exist",
-        accessor: "exist",
-        selectHide: true,
-        Cell: ({ row, value }) => {
-          const exist = value;
-          const { path } = row.original;
-          return (
-            <FontAwesomeIcon
-              title={path}
-              icon={exist ? faCheck : faExclamationTriangle}
-            ></FontAwesomeIcon>
-          );
-        },
-      },
-      {
         Header: "Audio",
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" className="mr-2" key={v.code2}>
+            <Badge
+              variant="secondary"
+              className="mr-2"
+              key={BuildKey(v.code2, v.code2, v.hi)}
+            >
               {v.name}
             </Badge>
           ));
@@ -99,7 +84,11 @@ const MovieView: FunctionComponent<Props> = () => {
         Cell: (row) => {
           const missing = row.value;
           return missing.map((v) => (
-            <Badge className="mx-2" variant="warning" key={v.code2}>
+            <Badge
+              className="mx-2"
+              variant="warning"
+              key={BuildKey(v.code2, v.hi, v.forced)}
+            >
               {v.code2}
             </Badge>
           ));
@@ -124,8 +113,8 @@ const MovieView: FunctionComponent<Props> = () => {
       state={movies}
       name="Movies"
       loader={load}
-      updateAction={movieUpdateInfoAll}
-      columns={columns as Column<Item.Base>[]}
+      updateAction={movieUpdateList}
+      columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>
   );

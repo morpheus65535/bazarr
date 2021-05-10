@@ -26,4 +26,4 @@ from ._exceptions import *
 from ._logging import *
 from ._socket import *
 
-__version__ = "0.44.0"
+__version__ = "0.54.0"

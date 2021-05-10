@@ -2,24 +2,18 @@ import { faSync } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { systemUpdateTasks } from "../../@redux/actions";
-import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
+import { useSystemTasks } from "../../@redux/hooks";
 import { AsyncStateOverlay, ContentHeader } from "../../components";
-import { useAutoUpdate } from "../../utilites";
 import Table from "./table";
 
 interface Props {}
 
 const SystemTasksView: FunctionComponent<Props> = () => {
-  const tasks = useReduxStore((s) => s.system.tasks);
-  const update = useReduxAction(systemUpdateTasks);
-
-  // TODO: Use Websocket
-  useAutoUpdate(update, 10 * 1000);
+  const [tasks, update] = useSystemTasks();
 
   return (
     <AsyncStateOverlay state={tasks}>
-      {(data) => (
+      {({ data }) => (
         <Container fluid>
           <Helmet>
             <title>Tasks - Bazarr (System)</title>

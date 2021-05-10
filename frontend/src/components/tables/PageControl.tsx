@@ -79,12 +79,12 @@ const PageControl: FunctionComponent<Props> = ({
           <Pagination className="m-0" hidden={count <= 1}>
             <Pagination.Prev
               onClick={previous}
-              disabled={!canPrevious && loading}
+              disabled={!canPrevious || loading}
             ></Pagination.Prev>
             {pageButtons}
             <Pagination.Next
               onClick={next}
-              disabled={!canNext && loading}
+              disabled={!canNext || loading}
             ></Pagination.Next>
           </Pagination>
         </Col>

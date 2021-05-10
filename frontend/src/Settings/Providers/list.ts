@@ -167,7 +167,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Latvian Subtitles Provider",
   },
   {
-    key: "subtitulamos",
+    key: "subtitulamostv",
     name: "Subtitulamos.tv",
     description: "Spanish Subtitles Provider",
   },

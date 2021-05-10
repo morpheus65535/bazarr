@@ -40,17 +40,22 @@ jobs:
           node-version: "15.x"
 
       - name: Install Global Tools
-        run: npm install -g release-it @release-it/bumper auto-changelog
-        # TODO: Remove @release-it/bumper
+        run: npm install -g release-it auto-changelog
 
       - name: Install UI Dependencies
         run: npm install
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Build & Stage UI
-        run: npm run build && git add .
+      - name: Build UI
+        run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
-        # TODO: Remove Stage Step
 
-      - name: Create Release
-        run: release-it --ci --increment prerelease --preRelease=beta
+      - name: Create Release (Conditional)
+        run: |
+          revision_count=$(git rev-list $(git describe --tags --abbrev=0)..HEAD --count)
+          if [[ $revision_count != 0 ]]; then
+            echo "**** Found $revision_count changes! Releasing... ****"
+            release-it --ci --increment prerelease --preRelease=beta
+          else
+            echo "**** Cannot find changes! Skipping... ****"
+          fi

@@ -1,32 +1,39 @@
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faExclamationTriangle,
+  faPaperPlane,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Toast } from "react-bootstrap";
-import { siteRemoveError } from "../../@redux/actions";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
+import { ProgressBar, Toast } from "react-bootstrap";
+import {
+  siteRemoveNotifications,
+  siteRemoveProgress,
+} from "../../@redux/actions";
 import { useReduxAction, useReduxStore } from "../../@redux/hooks/base";
 import "./style.scss";
-
-function useNotificationList() {
-  return useReduxStore((s) => s.site.notifications);
-}
-
-function useRemoveNotification() {
-  return useReduxAction(siteRemoveError);
-}
 
 export interface NotificationContainerProps {}
 
 const NotificationContainer: FunctionComponent<NotificationContainerProps> = () => {
-  const list = useNotificationList();
+  const { progress, notifications } = useReduxStore((s) => s.site);
 
-  const items = useMemo(
-    () =>
-      list.map((v, idx) => (
-        <NotificationToast key={v.id} {...v}></NotificationToast>
-      )),
-    [list]
-  );
+  const items = useMemo(() => {
+    const progressItems = progress.map((v) => (
+      <ProgressToast key={v.id} {...v}></ProgressToast>
+    ));
+
+    const notificationItems = notifications.map((v) => (
+      <NotificationToast key={v.id} {...v}></NotificationToast>
+    ));
+
+    return [...progressItems, ...notificationItems];
+  }, [notifications, progress]);
   return (
     <div className="alert-container">
       <div className="toast-container">{items}</div>
@@ -37,13 +44,20 @@ const NotificationContainer: FunctionComponent<NotificationContainerProps> = () 
 type MessageHolderProps = ReduxStore.Notification & {};
 
 const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
-  const { message, id, type } = props;
-  const removeNotification = useRemoveNotification();
+  const { message, type, id, timeout } = props;
+  const removeNotification = useReduxAction(siteRemoveNotifications);
 
   const remove = useCallback(() => removeNotification(id), [
     removeNotification,
     id,
   ]);
+
+  useEffect(() => {
+    const handle = setTimeout(remove, timeout);
+    return () => {
+      clearTimeout(handle);
+    };
+  }, [props, remove, timeout]);
 
   return (
     <Toast onClose={remove} animation={false}>
@@ -55,6 +69,48 @@ const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
         <strong className="mr-auto">{capitalize(type)}</strong>
       </Toast.Header>
       <Toast.Body>{message}</Toast.Body>
+    </Toast>
+  );
+};
+
+type ProgressHolderProps = ReduxStore.Progress & {};
+
+const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
+  id,
+  name,
+  value,
+  count,
+}) => {
+  const removeProgress = useReduxAction(siteRemoveProgress);
+  const remove = useCallback(() => removeProgress(id), [removeProgress, id]);
+
+  useEffect(() => {
+    const handle = setTimeout(remove, 5 * 1000);
+    return () => {
+      clearTimeout(handle);
+    };
+  }, [value, remove]);
+
+  const incomplete = value / count < 1;
+
+  return (
+    <Toast onClose={remove}>
+      <Toast.Body>
+        <div className="mb-2 mt-1">
+          <FontAwesomeIcon
+            className="mr-2"
+            icon={faPaperPlane}
+          ></FontAwesomeIcon>
+          <span>{name}</span>
+        </div>
+        <ProgressBar
+          className="my-1"
+          animated={incomplete}
+          now={value / count}
+          max={1}
+          label={`${value}/${count}`}
+        ></ProgressBar>
+      </Toast.Body>
     </Toast>
   );
 };

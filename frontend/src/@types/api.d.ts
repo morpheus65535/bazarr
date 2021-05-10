@@ -4,6 +4,7 @@ interface Badge {
   episodes: number;
   movies: number;
   providers: number;
+  status: number;
 }
 
 interface ApiLanguage {
@@ -40,7 +41,6 @@ interface Subtitle extends Language {
 
 interface PathType {
   path: string;
-  exist: boolean;
 }
 
 interface SubtitlePathType {

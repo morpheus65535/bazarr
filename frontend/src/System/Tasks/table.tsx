@@ -1,9 +1,7 @@
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
-import { systemRunTasks } from "../../@redux/actions";
-import { useReduxAction } from "../../@redux/hooks/base";
+import { Column, useSortBy } from "react-table";
 import { SystemApi } from "../../apis";
 import { AsyncButton, SimpleTable } from "../../components";
 
@@ -12,7 +10,6 @@ interface Props {
 }
 
 const Table: FunctionComponent<Props> = ({ tasks }) => {
-  const run = useReduxAction(systemRunTasks);
   const columns: Column<System.Task>[] = useMemo<Column<System.Task>[]>(
     () => [
       {
@@ -37,10 +34,10 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
           return (
             <AsyncButton
               promise={() => SystemApi.runTask(job_id)}
-              onSuccess={() => run(job_id)}
               variant="light"
               size="sm"
               disabled={row.value}
+              animation={false}
             >
               <FontAwesomeIcon icon={faSync} spin={row.value}></FontAwesomeIcon>
             </AsyncButton>
@@ -48,10 +45,17 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
         },
       },
     ],
-    [run]
+    []
   );
 
-  return <SimpleTable columns={columns} data={tasks}></SimpleTable>;
+  return (
+    <SimpleTable
+      initialState={{ sortBy: [{ id: "name", desc: false }] }}
+      columns={columns}
+      data={tasks}
+      plugins={[useSortBy]}
+    ></SimpleTable>
+  );
 };
 
 export default Table;

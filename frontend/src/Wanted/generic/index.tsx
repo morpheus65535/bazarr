@@ -1,39 +1,29 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { capitalize } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Column, TableUpdater } from "react-table";
-import { ContentHeader, PageTable } from "../../components";
-import { buildOrderList, GetItemId } from "../../utilites";
+import { Column } from "react-table";
+import { AsyncPageTable, ContentHeader } from "../../components";
 
-interface Props {
+interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
-  columns: Column<Wanted.Base>[];
-  state: Readonly<AsyncState<OrderIdState<Wanted.Base>>>;
+  columns: Column<T>[];
+  state: Readonly<AsyncOrderState<T>>;
   loader: (start: number, length: number) => void;
-  update: (id?: number) => void;
   searchAll: () => Promise<void>;
 }
 
-const GenericWantedView: FunctionComponent<Props> = ({
+function GenericWantedView<T extends Wanted.Base>({
   type,
   columns,
   state,
-  update,
   loader,
   searchAll,
-}) => {
+}: Props<T>) {
   const typeName = capitalize(type);
 
-  const data = useMemo(() => buildOrderList(state.data), [state.data]);
-
-  const updater = useCallback<TableUpdater<Wanted.Base>>(
-    (row, id: number) => {
-      update(id);
-    },
-    [update]
-  );
+  const dataCount = Object.keys(state.data.items).length;
 
   return (
     <Container fluid>
@@ -42,28 +32,24 @@ const GenericWantedView: FunctionComponent<Props> = ({
       </Helmet>
       <ContentHeader>
         <ContentHeader.AsyncButton
-          disabled={data.length === 0}
+          disabled={dataCount === 0}
           promise={searchAll}
-          onSuccess={update as () => void}
           icon={faSearch}
         >
           Search All
         </ContentHeader.AsyncButton>
       </ContentHeader>
       <Row>
-        <PageTable
-          async
-          asyncState={state}
-          asyncId={GetItemId}
-          asyncLoader={loader}
+        <AsyncPageTable
+          aos={state}
+          loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}
-          externalUpdate={updater}
-          data={data}
-        ></PageTable>
+          data={[]}
+        ></AsyncPageTable>
       </Row>
     </Container>
   );
-};
+}
 
 export default GenericWantedView;

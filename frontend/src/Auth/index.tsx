@@ -9,8 +9,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
-import { siteAuthSuccess } from "../@redux/actions";
-import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
 import "./style.scss";
@@ -29,7 +28,7 @@ const AuthPage: FunctionComponent<Props> = () => {
     setTimeout(() => setError(""), 2000);
   }, []);
 
-  const onSuccess = useReduxAction(siteAuthSuccess);
+  const onSuccess = useCallback(() => window.location.reload(), []);
 
   const authState = useReduxStore((s) => s.site.auth);
 

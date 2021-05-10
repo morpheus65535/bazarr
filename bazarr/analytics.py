@@ -46,7 +46,8 @@ def track_event(category=None, action=None, label=None):
     session = Session()
     event = Event(category=category, action=action, label=label, value=1)
 
-    tracker.add_custom_variable(CustomVariable(index=1, name='BazarrVersion', value=os.environ["BAZARR_VERSION"], scope=1))
+    tracker.add_custom_variable(CustomVariable(index=1, name='BazarrVersion',
+                                               value=os.environ["BAZARR_VERSION"].lstrip('v'), scope=1))
     tracker.add_custom_variable(CustomVariable(index=2, name='PythonVersion', value=platform.python_version(), scope=1))
     if settings.general.getboolean('use_sonarr'):
         tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value=sonarr_version, scope=1))

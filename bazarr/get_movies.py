@@ -8,9 +8,13 @@ from config import settings, url_radarr
 from helper import path_mappings
 from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
+from get_rootfolder import check_radarr_rootfolder
 
 from get_subtitle import movies_download_subtitles
 from database import database, dict_converter, get_exclusion_clause
+from event_handler import event_stream, show_progress
+
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 def update_all_movies():
@@ -19,6 +23,7 @@ def update_all_movies():
 
 
 def update_movies():
+    check_radarr_rootfolder()
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
 
@@ -39,25 +44,9 @@ def update_movies():
         tagsDict = get_tags()
         
         # Get movies data from radarr
-        if radarr_version.startswith('0'):
-            url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
-        else:
-            url_radarr_api_movies = url_radarr() + "/api/v3/movie?apikey=" + apikey_radarr
-
-        try:
-            r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as errh:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
-            return
-        except requests.exceptions.ConnectionError as errc:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
-            return
-        except requests.exceptions.Timeout as errt:
-            logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
-            return
-        except requests.exceptions.RequestException as err:
-            logging.exception("BAZARR Error trying to get movies from Radarr.")
+        movies = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
+                                            apikey_radarr=apikey_radarr)
+        if not movies:
             return
         else:
             # Get current movies in DB
@@ -70,150 +59,33 @@ def update_movies():
             movies_to_add = []
             altered_movies = []
 
-            moviesIdListLength = len(r.json())
-            for i, movie in enumerate(r.json(), 1):
+            # Build new and updated movies
+            movies_count = len(movies)
+            for i, movie in enumerate(movies, 1):
+                show_progress(id='movies_progress',
+                              name='Syncing movies...',
+                              value = i,
+                              count = movies_count)
+
+
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        # Detect file separator
-                        if movie['path'][0] == "/":
-                            separator = "/"
-                        else:
-                            separator = "\\"
-
-                        if movie["path"] != None and movie['movieFile']['relativePath'] != None:
-                            try:
-                                overview = str(movie['overview'])
-                            except:
-                                overview = ""
-                            try:
-                                poster_big = movie['images'][0]['url']
-                                poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
-                            except:
-                                poster = ""
-                            try:
-                                fanart = movie['images'][1]['url']
-                            except:
-                                fanart = ""
-                            
-                            if 'sceneName' in movie['movieFile']:
-                                sceneName = movie['movieFile']['sceneName']
-                            else:
-                                sceneName = None
-
-                            alternativeTitles = None
-                            if radarr_version.startswith('0'):
-                                if 'alternativeTitles' in movie:
-                                    alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
-                            else:
-                                if 'alternateTitles' in movie:
-                                    alternativeTitles = str([item['title'] for item in movie['alternateTitles']])
-
-                            if 'imdbId' in movie: imdbId = movie['imdbId']
-                            else: imdbId = None
-
-                            try:
-                                format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
-                            except:
-                                format = movie['movieFile']['quality']['quality']['name']
-                                try:
-                                    resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
-                                except:
-                                    resolution = None
-
-                            if 'mediaInfo' in movie['movieFile']:
-                                videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
-                                if radarr_version.startswith('0'):
-                                    if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
-                                else:
-                                    if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoCodec']
-                                if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
-                                if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
-                                if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
-                                videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
-
-                                audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
-                                if radarr_version.startswith('0'):
-                                    if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
-                                else:
-                                    if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioCodec']
-                                if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
-                                if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
-                                if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
-                                audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures)
-                            else:
-                                videoCodec = None
-                                audioCodec = None
-
-                            audio_language = []
-                            if radarr_version.startswith('0'):
-                                if 'mediaInfo' in movie['movieFile']:
-                                    if 'audioLanguages' in movie['movieFile']['mediaInfo']:
-                                        audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
-                                        if len(audio_languages_list):
-                                            for audio_language_list in audio_languages_list:
-                                                audio_language.append(audio_language_list.strip())
-                                if not audio_language:
-                                    audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
-                            else:
-                                if 'languages' in movie['movieFile'] and len(movie['movieFile']['languages']):
-                                    for item in movie['movieFile']['languages']:
-                                        if isinstance(item, dict):
-                                            if 'name' in item:
-                                                audio_language.append(item['name'])
-
-                            tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
-
+                        if movie['movieFile']['size'] > 20480:
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(str(movie['tmdbId']))
-                            
+
                             if str(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append({'radarrId': int(movie["id"]),
-                                                         'title': movie["title"],
-                                                         'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                         'tmdbId': str(movie["tmdbId"]),
-                                                         'poster': poster,
-                                                         'fanart': fanart,
-                                                         'audio_language': str(audio_language),
-                                                         'sceneName': sceneName,
-                                                         'monitored': str(bool(movie['monitored'])),
-                                                         'year': str(movie['year']),
-                                                         'sortTitle': movie['sortTitle'],
-                                                         'alternativeTitles': alternativeTitles,
-                                                         'format': format,
-                                                         'resolution': resolution,
-                                                         'video_codec': videoCodec,
-                                                         'audio_codec': audioCodec,
-                                                         'overview': overview,
-                                                         'imdbId': imdbId,
-                                                         'movie_file_id': int(movie['movieFile']['id']),
-                                                         'tags': str(tags)})
+                                movies_to_update.append(movieParser(movie, action='update',
+                                                                    radarr_version=radarr_version,
+                                                                    tags_dict=tagsDict,
+                                                                    movie_default_profile=movie_default_profile,
+                                                                    audio_profiles=audio_profiles))
                             else:
-                                movies_to_add.append({'radarrId': int(movie["id"]),
-                                                      'title': movie["title"],
-                                                      'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                      'tmdbId': str(movie["tmdbId"]),
-                                                      'subtitles': '[]',
-                                                      'overview': overview,
-                                                      'poster': poster,
-                                                      'fanart': fanart,
-                                                      'audio_language': str(audio_language),
-                                                      'sceneName': sceneName,
-                                                      'monitored': str(bool(movie['monitored'])),
-                                                      'sortTitle': movie['sortTitle'],
-                                                      'year': str(movie['year']),
-                                                      'alternativeTitles': alternativeTitles,
-                                                      'format': format,
-                                                      'resolution': resolution,
-                                                      'video_codec': videoCodec,
-                                                      'audio_codec': audioCodec,
-                                                      'imdbId': imdbId,
-                                                      'movie_file_id': int(movie['movieFile']['id']),
-                                                      'tags': str(tags),
-                                                      'profileId': movie_default_profile})
-                        else:
-                            logging.error(
-                                'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
-                                movie['movieFile']['relativePath'])
+                                movies_to_add.append(movieParser(movie, action='insert',
+                                                                 radarr_version=radarr_version,
+                                                                 tags_dict=tagsDict,
+                                                                 movie_default_profile=movie_default_profile,
+                                                                 audio_profiles=audio_profiles))
 
             # Remove old movies from DB
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
@@ -226,7 +98,7 @@ def update_movies():
             movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
                                             "audio_language, sceneName, monitored, sortTitle, year, "
                                             "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
-                                            "movie_file_id, tags FROM table_movies")
+                                            "movie_file_id, tags, file_size FROM table_movies")
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
@@ -277,6 +149,95 @@ def update_movies():
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
 
+def update_one_movie(movie_id, action):
+    logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
+
+    # Check if there's a row in database for this movie ID
+    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
+
+    # Remove movie from DB
+    if action == 'deleted':
+        if existing_movie:
+            database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+            event_stream(type='movie', action='delete', payload=int(movie_id))
+            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
+                existing_movie['path'])))
+        return
+
+    radarr_version = get_radarr_version()
+    movie_default_enabled = settings.general.getboolean('movie_default_enabled')
+
+    if movie_default_enabled is True:
+        movie_default_profile = settings.general.movie_default_profile
+        if movie_default_profile == '':
+            movie_default_profile = None
+    else:
+        movie_default_profile = None
+
+    audio_profiles = get_profile_list()
+    tagsDict = get_tags()
+
+    try:
+        # Get movie data from radarr api
+        movie = None
+        movie_data = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
+                                                apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
+        if not movie_data:
+            return
+        else:
+            if action == 'updated' and existing_movie:
+                movie = movieParser(movie_data, action='update', radarr_version=radarr_version,
+                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
+                                    audio_profiles=audio_profiles)
+            elif action == 'updated' and not existing_movie:
+                movie = movieParser(movie_data, action='insert', radarr_version=radarr_version,
+                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
+                                    audio_profiles=audio_profiles)
+    except Exception:
+        logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
+        return
+
+    # Drop useless events
+    if not movie and not existing_movie:
+        return
+
+    # Remove movie from DB
+    if not movie and existing_movie:
+        database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+        event_stream(type='movie', action='delete', payload=int(movie_id))
+        logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
+            existing_movie['path'])))
+        return
+
+    # Update existing movie in DB
+    elif movie and existing_movie:
+        query = dict_converter.convert(movie)
+        database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
+                         query.values + (movie['radarrId'],))
+        event_stream(type='movie', action='update', payload=int(movie_id))
+        logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
+            movie['path'])))
+
+    # Insert new movie in DB
+    elif movie and not existing_movie:
+        query = dict_converter.convert(movie)
+        database.execute('''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
+                         query.question_marks + ''')''', query.values)
+        event_stream(type='movie', action='update', payload=int(movie_id))
+        logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
+            movie['path'])))
+
+    # Storing existing subtitles
+    logging.debug('BAZARR storing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
+            movie['path'])))
+    store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+
+    # Downloading missing subtitles
+    logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
+        movie['path'])))
+    movies_download_subtitles(movie_id)
+
+
 def get_profile_list():
     apikey_radarr = settings.radarr.apikey
     radarr_version = get_radarr_version()
@@ -288,7 +249,7 @@ def get_profile_list():
         url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
 
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError as errc:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
@@ -367,11 +328,11 @@ def get_tags():
     apikey_radarr = settings.radarr.apikey
     tagsDict = []
 
-    # Get tags data from Sonarr
-    url_sonarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+    # Get tags data from Radarr
+    url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
 
     try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+        tagsDict = requests.get(url_radarr_api_series, timeout=60, verify=False, headers=headers)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
         return []
@@ -383,3 +344,183 @@ def get_tags():
         return []
     else:
         return tagsDict.json()
+
+
+def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile, audio_profiles):
+    if 'movieFile' in movie:
+        # Detect file separator
+        if movie['path'][0] == "/":
+            separator = "/"
+        else:
+            separator = "\\"
+
+        try:
+            overview = str(movie['overview'])
+        except:
+            overview = ""
+        try:
+            poster_big = movie['images'][0]['url']
+            poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
+        except:
+            poster = ""
+        try:
+            fanart = movie['images'][1]['url']
+        except:
+            fanart = ""
+
+        if 'sceneName' in movie['movieFile']:
+            sceneName = movie['movieFile']['sceneName']
+        else:
+            sceneName = None
+
+        alternativeTitles = None
+        if radarr_version.startswith('0'):
+            if 'alternativeTitles' in movie:
+                alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
+        else:
+            if 'alternateTitles' in movie:
+                alternativeTitles = str([item['title'] for item in movie['alternateTitles']])
+
+        if 'imdbId' in movie:
+            imdbId = movie['imdbId']
+        else:
+            imdbId = None
+
+        try:
+            format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
+        except:
+            format = movie['movieFile']['quality']['quality']['name']
+            try:
+                resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
+            except:
+                resolution = None
+
+        if 'mediaInfo' in movie['movieFile']:
+            videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
+            if radarr_version.startswith('0'):
+                if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = \
+                movie['movieFile']['mediaInfo']['videoFormat']
+            else:
+                if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = \
+                movie['movieFile']['mediaInfo']['videoCodec']
+            if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = \
+            movie['movieFile']['mediaInfo']['videoCodecID']
+            if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = \
+            movie['movieFile']['mediaInfo']['videoProfile']
+            if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = \
+            movie['movieFile']['mediaInfo']['videoCodecLibrary']
+            videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
+
+            audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
+            if radarr_version.startswith('0'):
+                if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = \
+                movie['movieFile']['mediaInfo']['audioFormat']
+            else:
+                if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = \
+                movie['movieFile']['mediaInfo']['audioCodec']
+            if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = \
+            movie['movieFile']['mediaInfo']['audioCodecID']
+            if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = \
+            movie['movieFile']['mediaInfo']['audioProfile']
+            if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = \
+            movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+            audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile,
+                                                audioAdditionalFeatures)
+        else:
+            videoCodec = None
+            audioCodec = None
+
+        audio_language = []
+        if radarr_version.startswith('0'):
+            if 'mediaInfo' in movie['movieFile']:
+                if 'audioLanguages' in movie['movieFile']['mediaInfo']:
+                    audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
+                    if len(audio_languages_list):
+                        for audio_language_list in audio_languages_list:
+                            audio_language.append(audio_language_list.strip())
+            if not audio_language:
+                audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
+        else:
+            if 'languages' in movie['movieFile'] and len(movie['movieFile']['languages']):
+                for item in movie['movieFile']['languages']:
+                    if isinstance(item, dict):
+                        if 'name' in item:
+                            audio_language.append(item['name'])
+
+        tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
+
+        if action == 'update':
+             return {'radarrId': int(movie["id"]),
+                     'title': movie["title"],
+                     'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                     'tmdbId': str(movie["tmdbId"]),
+                     'poster': poster,
+                     'fanart': fanart,
+                     'audio_language': str(audio_language),
+                     'sceneName': sceneName,
+                     'monitored': str(bool(movie['monitored'])),
+                     'year': str(movie['year']),
+                     'sortTitle': movie['sortTitle'],
+                     'alternativeTitles': alternativeTitles,
+                     'format': format,
+                     'resolution': resolution,
+                     'video_codec': videoCodec,
+                     'audio_codec': audioCodec,
+                     'overview': overview,
+                     'imdbId': imdbId,
+                     'movie_file_id': int(movie['movieFile']['id']),
+                     'tags': str(tags),
+                     'file_size': movie['movieFile']['size']}
+        else:
+            return {'radarrId': int(movie["id"]),
+                    'title': movie["title"],
+                    'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                    'tmdbId': str(movie["tmdbId"]),
+                    'subtitles': '[]',
+                    'overview': overview,
+                    'poster': poster,
+                    'fanart': fanart,
+                    'audio_language': str(audio_language),
+                    'sceneName': sceneName,
+                    'monitored': str(bool(movie['monitored'])),
+                    'sortTitle': movie['sortTitle'],
+                    'year': str(movie['year']),
+                    'alternativeTitles': alternativeTitles,
+                    'format': format,
+                    'resolution': resolution,
+                    'video_codec': videoCodec,
+                    'audio_codec': audioCodec,
+                    'imdbId': imdbId,
+                    'movie_file_id': int(movie['movieFile']['id']),
+                    'tags': str(tags),
+                    'profileId': movie_default_profile,
+                    'file_size': movie['movieFile']['size']}
+
+
+def get_movies_from_radarr_api(radarr_version, url, apikey_radarr, radarr_id=None):
+    if radarr_version.startswith('0'):
+        url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
+                                apikey_radarr
+    else:
+        url_radarr_api_movies = url + "/api/v3/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
+                                apikey_radarr
+
+    try:
+        r = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
+        if r.status_code == 404:
+            return
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError as errc:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout as errt:
+        logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException as err:
+        logging.exception("BAZARR Error trying to get movies from Radarr.")
+        return
+    else:
+        return r.json()
