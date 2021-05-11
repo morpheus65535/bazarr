@@ -18,7 +18,7 @@ if os.path.isfile(version_file):
         bazarr_version = f.readline()
         bazarr_version = bazarr_version.rstrip('\n')
 
-os.environ["BAZARR_VERSION"] = bazarr_version
+os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
 import libs
 
