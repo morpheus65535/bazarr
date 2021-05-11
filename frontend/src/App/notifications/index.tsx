@@ -86,7 +86,7 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
   const remove = useCallback(() => removeProgress(id), [removeProgress, id]);
 
   useEffect(() => {
-    const handle = setTimeout(remove, 5 * 1000);
+    const handle = setTimeout(remove, 10 * 1000);
     return () => {
       clearTimeout(handle);
     };

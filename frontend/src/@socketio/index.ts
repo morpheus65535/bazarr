@@ -91,8 +91,8 @@ class SocketIOClient {
 
           forIn(element, (ids, key) => {
             ids = uniq(ids);
-            const action = handler[key as SocketIO.Action];
-            if (action) {
+            const action = handler[key];
+            if (typeof action == "function") {
               action(ids);
             } else if (anyAction === undefined) {
               log("warning", "Unhandle action of SocketIO event", key, type);
