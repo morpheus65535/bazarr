@@ -75,54 +75,49 @@ class SonarrSignalrClient(threading.Thread):
 class RadarrSignalrClient(threading.Thread):
     def __init__(self):
         super(RadarrSignalrClient, self).__init__()
-        self.stopped = True
         self.apikey_radarr = None
         self.connection = None
 
+        self.configure()
+        self.start()
+
+    def start(self):
+        logging.debug('BAZARR connecting to Radarr SignalR feed...')
+        self.connection.start()
+        gevent.sleep()
+
     def stop(self):
-        self.connection.stop()
-        self.stopped = True
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')
+        self.connection.stop()
 
     def restart(self):
-        if not self.stopped:
+        if self.connection.transport.state.value in [0, 1, 2]:
             self.stop()
         if settings.general.getboolean('use_radarr'):
-            self.run()
+            self.configure()
+            self.start()
 
-    def run(self):
+    def configure(self):
         self.apikey_radarr = settings.radarr.apikey
         self.connection = HubConnectionBuilder() \
             .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
                       options={
                           "verify_ssl": False
-                      }).build()
-        self.connection.on_open(lambda: logging.debug("BAZARR SignalR client for Radarr is connected."))
-        self.connection.on_close(lambda: logging.debug("BAZARR SignalR client for Radarr is disconnected."))
+                      }) \
+            .with_automatic_reconnect({
+                "type": "raw",
+                "keep_alive_interval": 5,
+                "reconnect_interval": 5,
+                "max_attempts": None
+            }).build()
+        self.connection.on_open(lambda: logging.info('BAZARR SignalR client for Radarr is connected and waiting for '
+                                                     'events.'))
+        self.connection.on_reconnect(lambda: logging.info('BAZARR SignalR client for Radarr connection as been lost. '
+                                                          'Trying to reconnect...'))
+        self.connection.on_close(lambda: logging.debug('BAZARR SignalR client for Radarr is disconnected.'))
         self.connection.on_error(lambda data: logging.debug(f"BAZARR SignalR client for Radarr: An exception was thrown"
                                                             f" closed{data.error}"))
         self.connection.on("receiveMessage", dispatcher)
-
-        while True:
-            if not self.stopped:
-                return
-            if self.connection.transport.state.value == 4:
-                # 0: 'connecting', 1: 'connected', 2: 'reconnecting', 4: 'disconnected'
-                try:
-                    logging.debug('BAZARR connecting to Radarr SignalR feed...')
-                    self.connection.start()
-                except ConnectionError:
-                    logging.error('BAZARR connection to Radarr SignalR feed has been lost. Reconnecting...')
-                    gevent.sleep(15)
-                    pass
-                else:
-                    self.stopped = False
-                    logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
-                    if not args.dev:
-                        scheduler.execute_job_now('update_movies')
-                    gevent.sleep()
-            else:
-                gevent.sleep(5)
 
 
 def dispatcher(data):

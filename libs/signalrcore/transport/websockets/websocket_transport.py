@@ -144,6 +144,12 @@ class WebsocketTransport(BaseTransport):
         if self._on_close is not None and callable(self._on_close):
             self._on_close()
 
+    def on_reconnect(self):
+        self.logger.debug("-- web socket reconnecting --")
+        self.state = ConnectionState.disconnected
+        if self._on_close is not None and callable(self._on_close):
+            self._on_close()
+
     def on_socket_error(self, error):
         """
         Throws error related on
@@ -217,6 +223,9 @@ class WebsocketTransport(BaseTransport):
             raise ex
 
     def handle_reconnect(self):
+        if not self.reconnection_handler.reconnecting and self._on_reconnect is not None and \
+                callable(self._on_reconnect):
+            self._on_reconnect()
         self.reconnection_handler.reconnecting = True
         try:
             self.stop()

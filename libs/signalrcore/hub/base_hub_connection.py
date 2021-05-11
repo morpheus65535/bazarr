@@ -77,6 +77,16 @@ class BaseHubConnection(object):
         """
         self._on_error = callback
 
+    def on_reconnect(self, callback):
+        """Configures on_reconnect reconnection callback.
+            It will be raised on reconnection event
+        connection.on_reconnect(lambda: print(
+            "connection lost, reconnection in progress "))
+        Args:
+            callback (function): function without params
+        """
+        self.transport.on_reconnect_callback(callback)
+
     def on(self, event, callback_function: Callable):
         """Register a callback on the specified event
         Args:
