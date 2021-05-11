@@ -28,4 +28,4 @@ def show_progress(id, header, name, value, count):
 
 
 def hide_progress(id):
-    event_stream(type="progress", action="delete", payload={"id": id})
+    event_stream(type="progress", action="delete", payload=id)

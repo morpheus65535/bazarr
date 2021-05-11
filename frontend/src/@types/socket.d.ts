@@ -1,6 +1,4 @@
 namespace SocketIO {
-  type Action = "update" | "delete";
-
   type EventType = NumEventType | NullEventType | SpecialEventType;
 
   type NumEventType =
@@ -25,18 +23,21 @@ namespace SocketIO {
 
   type SpecialEventType = "message" | "progress";
 
-  type ReducerCreator<E extends EventType, T> = ValueOf<
+  type ReducerCreator<E extends EventType, U, D = never> = ValueOf<
     {
       [P in E]: {
         key: P;
         any?: () => void;
-      } & Partial<Record<Action, ActionFn<T>>>;
+        update?: ActionFn<T>;
+        delete?: ActionFn<D extends never ? T : D>;
+      } & LooseObject;
+      // TODO: Typing
     }
   >;
 
   type Event = {
     type: EventType;
-    action: Action;
+    action: string;
     payload: any;
   };
 
@@ -46,9 +47,9 @@ namespace SocketIO {
     | ReducerCreator<NumEventType, number>
     | ReducerCreator<NullEventType, null>
     | ReducerCreator<"message", string>
-    | ReducerCreator<"progress", CustomEvent.Progress>;
+    | ReducerCreator<"progress", CustomEvent.Progress, string>;
 
-  type ActionRecord = OptionalRecord<EventType, OptionalRecord<Action, any[]>>;
+  type ActionRecord = OptionalRecord<EventType, StrictObject<any[]>>;
 
   namespace CustomEvent {
     type Progress = ReduxStore.Progress;

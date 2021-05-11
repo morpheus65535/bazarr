@@ -9,6 +9,7 @@ import {
   siteAddNotifications,
   siteAddProgress,
   siteInitializationFailed,
+  siteRemoveProgress,
   siteUpdateOffline,
   systemUpdateLanguagesAll,
   systemUpdateSettings,
@@ -71,6 +72,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
         if (progress) {
           reduxStore.dispatch(siteAddProgress(progress));
         }
+      },
+      delete: (ids) => {
+        setTimeout(() => {
+          ids?.forEach((id) => {
+            reduxStore.dispatch(siteRemoveProgress(id));
+          });
+        }, 3 * 1000);
       },
     },
     {
