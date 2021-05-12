@@ -78,10 +78,8 @@ class RadarrSignalrClient(threading.Thread):
         self.apikey_radarr = None
         self.connection = None
 
-        self.configure()
-        self.start()
-
     def start(self):
+        self.configure()
         logging.debug('BAZARR connecting to Radarr SignalR feed...')
         self.connection.start()
         gevent.sleep()
