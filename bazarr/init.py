@@ -56,10 +56,17 @@ if not args.no_update:
                 logging.info('BAZARR unable to install requirements (user without home directory).')
             else:
                 logging.info('BAZARR installing requirements...')
-                subprocess.call([sys.executable, '-m', 'pip', 'install', '--user', '-r',
-                                 os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                logging.info('BAZARR requirements installed.')
+                try:
+                    subprocess.check_output([sys.executable, '-m', 'pip', 'install', '--user', '-qq',
+                                             '--disable-pip-version-check', '--no-color', '-r',
+                                             os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
+                                            stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as e:
+                    logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
+                    os._exit(1)
+                else:
+                    logging.info('BAZARR requirements installed.')
+
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
