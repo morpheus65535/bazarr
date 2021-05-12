@@ -67,6 +67,12 @@ def update_series():
                                                   tags_dict=tagsDict, serie_default_profile=serie_default_profile,
                                                   audio_profiles=audio_profiles))
 
+        show_progress(id='series_progress',
+                      header='Syncing series...',
+                      name='Completed successfully',
+                      value=series_count,
+                      count=series_count)
+
         hide_progress(id='series_progress')
 
         # Remove old series from DB

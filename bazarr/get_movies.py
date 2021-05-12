@@ -87,6 +87,12 @@ def update_movies():
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
 
+            show_progress(id='movies_progress',
+                          header='Syncing movies...',
+                          name='Completed successfully',
+                          value=movies_count,
+                          count=movies_count)
+
             hide_progress(id='movies_progress')
 
             # Remove old movies from DB
