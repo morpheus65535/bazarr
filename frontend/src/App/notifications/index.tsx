@@ -96,7 +96,7 @@ const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
 
   return (
     <Toast onClose={remove}>
-      <Toast.Header closeButton={!incomplete}>
+      <Toast.Header closeButton={false}>
         <FontAwesomeIcon className="mr-2" icon={faPaperPlane}></FontAwesomeIcon>
         <span className="mr-auto">{header}</span>
       </Toast.Header>
