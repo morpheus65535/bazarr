@@ -747,7 +747,7 @@ def series_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                         "table_shows.seriesType, table_episodes.audio_language, table_shows.title, "
-                                        "table_episodes.season, table_episodes.episode, table_episodes.title as episodesTitle "
+                                        "table_episodes.season, table_episodes.episode, table_episodes.title as episodeTitle "
                                         "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
                                         "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=? and "
                                         "missing_subtitles!='[]'" + get_exclusion_clause('series'), (no,))
