@@ -62,6 +62,8 @@ login_auth = settings.auth.type
 
 update_notifier()
 
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+
 
 def check_login(actual_method):
     @wraps(actual_method)
@@ -131,7 +133,7 @@ def series_images(url):
     baseUrl = settings.sonarr.base_url
     url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:
         return '', 404
     else:
@@ -145,7 +147,7 @@ def movies_images(url):
     baseUrl = settings.radarr.base_url
     url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:
         return '', 404
     else:
@@ -172,7 +174,7 @@ def proxy(protocol, url):
     url = protocol + '://' + unquote(url)
     params = request.args
     try:
-        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5)
+        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=headers)
     except Exception as e:
         return dict(status=False, error=repr(e))
     else:

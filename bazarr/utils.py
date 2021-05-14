@@ -28,6 +28,7 @@ import datetime
 import glob
 
 region = make_region().configure('dogpile.cache.memory')
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):
@@ -206,7 +207,7 @@ def get_sonarr_version():
     if settings.general.getboolean('use_sonarr'):
         try:
             sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
+            sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
             sonarr_version = 'unknown'
@@ -218,7 +219,7 @@ def get_sonarr_platform():
     if settings.general.getboolean('use_sonarr'):
         try:
             sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            response = requests.get(sv, timeout=60, verify=False).json()
+            response = requests.get(sv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 sonarr_platform = 'posix'
             elif response['isWindows']:
@@ -235,7 +236,7 @@ def notify_sonarr(sonarr_series_id):
             'name': 'RescanSeries',
             'seriesId': int(sonarr_series_id)
         }
-        requests.post(url, json=data, timeout=60, verify=False)
+        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
         logging.debug('BAZARR notify Sonarr')
 
@@ -245,7 +246,7 @@ def get_radarr_version():
     if settings.general.getboolean('use_radarr'):
         try:
             rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
+            radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Radarr version')
             radarr_version = 'unknown'
@@ -257,7 +258,7 @@ def get_radarr_platform():
     if settings.general.getboolean('use_radarr'):
         try:
             rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            response = requests.get(rv, timeout=60, verify=False).json()
+            response = requests.get(rv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 radarr_platform = 'posix'
             elif response['isWindows']:
@@ -274,7 +275,7 @@ def notify_radarr(radarr_id):
             'name': 'RescanMovie',
             'movieId': int(radarr_id)
         }
-        requests.post(url, json=data, timeout=60, verify=False)
+        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
         logging.debug('BAZARR notify Radarr')
 

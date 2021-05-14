@@ -7,6 +7,8 @@ import string
 
 from config import settings, url_sonarr, url_radarr
 
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+
 
 def browse_bazarr_filesystem(path='#'):
     if path == '#' or path == '/' or path == '':
@@ -49,7 +51,7 @@ def browse_sonarr_filesystem(path='#'):
                                 "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                 settings.sonarr.apikey
     try:
-        r = requests.get(url_sonarr_api_filesystem, timeout=60, verify=False)
+        r = requests.get(url_sonarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
@@ -75,7 +77,7 @@ def browse_radarr_filesystem(path='#'):
                                 "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                 settings.radarr.apikey
     try:
-        r = requests.get(url_radarr_api_filesystem, timeout=60, verify=False)
+        r = requests.get(url_radarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get series from Radarr. Http error.")
