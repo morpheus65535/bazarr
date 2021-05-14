@@ -410,6 +410,17 @@ MERGED_FORMATS = {
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
 
+def _has_match(video, guess, key) -> bool:
+    value = getattr(video, key)
+    if value is None:
+        return False
+
+    guess_value = guess.get(key)
+    if isinstance(guess_value, list):
+        return any(value == item for item in guess_value)
+
+    return value == guess_value
+
 
 def guess_matches(video, guess, partial=False):
     """Get matches between a `video` and a `guess`.
@@ -514,12 +525,11 @@ def guess_matches(video, guess, partial=False):
             logger.info("Release group matched but source didn't. Remnoving release group match.")
             matches.remove("release_group")
 
-    # video_codec
-    if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
-        matches.add('video_codec')
 
-    # audio_codec
-    if video.audio_codec and 'audio_codec' in guess and guess['audio_codec'] == video.audio_codec:
-        matches.add('audio_codec')
+    if _has_match(video, guess, "video_codec"):
+        matches.add("video_codec")
+
+    if _has_match(video, guess, "audio_codec"):
+        matches.add("audio_codec")
 
     return matches
