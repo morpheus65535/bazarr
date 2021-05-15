@@ -21,27 +21,47 @@ from get_args import args
 class SonarrSignalrClient(threading.Thread):
     def __init__(self):
         super(SonarrSignalrClient, self).__init__()
-        self.stopped = True
         self.apikey_sonarr = None
         self.session = Session()
         self.connection = None
 
-    def stop(self):
-        self.connection.close()
-        self.stopped = True
-        logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
-
-    def restart(self):
-        if not self.stopped:
-            self.stop()
-        if settings.general.getboolean('use_sonarr'):
-            self.run()
-
-    def run(self):
+    def start(self):
         if get_sonarr_version().startswith('2.'):
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
                             'consider upgrading.')
             return
+
+        logging.debug('BAZARR connecting to Sonarr SignalR feed...')
+        self.configure()
+        while not self.connection.is_open:
+            try:
+                self.connection.start()
+            except ConnectionError:
+                gevent.sleep(5)
+        logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
+        if not args.dev:
+            scheduler.execute_job_now('update_series')
+            scheduler.execute_job_now('sync_episodes')
+
+    def stop(self, log=True):
+        try:
+            self.connection.close()
+        except Exception as e:
+            pass
+        if log:
+            logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
+
+    def restart(self):
+        if self.connection.is_open:
+            self.stop(log=False)
+        if settings.general.getboolean('use_sonarr'):
+            self.start()
+
+    def exception_handler(self, type, exception, traceback):
+        logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
+        self.restart()
+
+    def configure(self):
         self.apikey_sonarr = settings.sonarr.apikey
         self.connection = Connection(url_sonarr() + "/signalr", self.session)
         self.connection.qs = {'apikey': self.apikey_sonarr}
@@ -51,25 +71,7 @@ class SonarrSignalrClient(threading.Thread):
         for item in sonarr_method:
             sonarr_hub.client.on(item, dispatcher)
 
-        while True:
-            if not self.stopped:
-                return
-            if self.connection.started:
-                gevent.sleep(5)
-            else:
-                try:
-                    logging.debug('BAZARR connecting to Sonarr SignalR feed...')
-                    self.connection.start()
-                except ConnectionError:
-                    logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
-                    gevent.sleep(15)
-                else:
-                    self.stopped = False
-                    logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-                    if not args.dev:
-                        scheduler.execute_job_now('update_series')
-                        scheduler.execute_job_now('sync_episodes')
-                    gevent.sleep()
+        self.connection.exception += self.exception_handler
 
 
 class RadarrSignalrClient(threading.Thread):
@@ -82,7 +84,8 @@ class RadarrSignalrClient(threading.Thread):
         self.configure()
         logging.debug('BAZARR connecting to Radarr SignalR feed...')
         self.connection.start()
-        gevent.sleep()
+        if not args.dev:
+            scheduler.execute_job_now('update_movies')
 
     def stop(self):
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')
@@ -92,7 +95,6 @@ class RadarrSignalrClient(threading.Thread):
         if self.connection.transport.state.value in [0, 1, 2]:
             self.stop()
         if settings.general.getboolean('use_radarr'):
-            self.configure()
             self.start()
 
     def configure(self):
