@@ -9,38 +9,57 @@ from enzyme.exceptions import MalformedMKVError
 from enzyme.exceptions import MalformedMKVError
 from database import database
 
+_FFPROBE_SPECIAL_LANGS = {
+    "zho": {
+        "list": ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"],
+        "alpha3": "zht",
+    },
+    "por": {
+        "list": ["pt-br", "pob", "pb", "brazilian", "brasil", "brazil"],
+        "alpha3": "pob",
+    },
+}
+
+def _handle_alpha3(detected_language: dict):
+    alpha3 = detected_language["language"].alpha3
+
+    name = detected_language.get("name", "").lower()
+    special_lang = _FFPROBE_SPECIAL_LANGS.get(alpha3)
+
+    if special_lang is None or not name:
+        return alpha3  # The original alpha3
+
+    if any(ext in name for ext in special_lang["list"]):
+        return special_lang["alpha3"]  # Guessed alpha from _FFPROBE_OTHER_LANGS
+
+    return alpha3  # In any case
 
 def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None):
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id)
 
     subtitles_list = []
-    if data['ffprobe']:
-        traditional_chinese = ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"]
-        brazilian_portuguese = ["pt-br", "pob", "pb", "brazilian", "brasil", "brazil"]
+    if data['ffprobe'] and 'subtitle' in data['ffprobe']:
+        for detected_language in data['ffprobe']['subtitle']:
+            if not "language" in detected_language:
+                continue
 
-        if 'subtitle' in data['ffprobe']:
-            for detected_language in data['ffprobe']['subtitle']:
-                if 'language' in detected_language:
-                    language = detected_language['language'].alpha3
-                    if language == 'zho' and 'name' in detected_language:
-                        if any (ext in (detected_language['name'].lower()) for ext in traditional_chinese):
-                            language = 'zht'
-                    if language == 'por' and 'name' in detected_language:
-                        if any (ext in (detected_language['name'].lower()) for ext in brazilian_portuguese):
-                            language = 'pob'
-                    forced = detected_language['forced'] if 'forced' in detected_language else False
-                    hearing_impaired = detected_language['hearing_impaired'] if 'hearing_impaired' in \
-                                                                                detected_language else False
-                    codec = detected_language['format'] if 'format' in detected_language else None
-                    subtitles_list.append([language, forced, hearing_impaired, codec])
-                else:
-                    continue
+            # Avoid commentary subtitles
+            name = detected_language.get("name", "").lower()
+            if "commentary" in name:
+                logging.debug("Ignoring commentary subtitle: %s", name)
+                continue
+
+            language = _handle_alpha3(detected_language)
+
+            forced = detected_language.get("forced", False)
+            hearing_impaired = detected_language.get("hearing_impaired", False)
+            codec = detected_language.get("format") # or None
+            subtitles_list.append([language, forced, hearing_impaired, codec])
+
     elif data['enzyme']:
         for subtitle_track in data['enzyme'].subtitle_tracks:
-            hearing_impaired = False
-            if subtitle_track.name:
-                if 'sdh' in subtitle_track.name.lower():
-                    hearing_impaired = True
+            hearing_impaired = subtitle_track.name and "sdh" in subtitle_track.name.lower()
+
             subtitles_list.append([subtitle_track.language, subtitle_track.forced, hearing_impaired,
                                    subtitle_track.codec_id])
 
@@ -52,7 +71,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     data = {
         'ffprobe': {},
         'enzyme': {},
-        'file_id': episode_file_id if episode_file_id else movie_file_id,
+        'file_id': episode_file_id or movie_file_id,
         'file_size': file_size
     }
 
