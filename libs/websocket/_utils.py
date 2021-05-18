@@ -15,13 +15,12 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA 02110-1335  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
 import six
 
-__all__ = ["NoLock", "validate_utf8", "extract_err_message"]
+__all__ = ["NoLock", "validate_utf8", "extract_err_message", "extract_error_code"]
 
 
 class NoLock(object):
@@ -31,6 +30,7 @@ class NoLock(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
+
 
 try:
     # If wsaccel is available we use compiled routines to validate UTF-8
@@ -103,3 +103,8 @@ def extract_err_message(exception):
         return exception.args[0]
     else:
         return None
+
+
+def extract_error_code(exception):
+    if exception.args and len(exception.args) > 1:
+        return exception.args[0] if isinstance(exception.args[0], int) else None

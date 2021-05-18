@@ -19,7 +19,7 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
-def sync_episodes():
+def sync_episodes(send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
@@ -110,7 +110,8 @@ def sync_episodes():
             altered_episodes.append([added_episode['sonarrEpisodeId'],
                                      added_episode['path'],
                                      added_episode['monitored']])
-            event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
+            if send_event:
+                event_stream(type='episode', payload=added_episode['sonarrEpisodeId'])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:{}'.format(
                 path_mappings.path_replace(added_episode['path'])))
