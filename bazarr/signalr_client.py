@@ -83,8 +83,6 @@ class RadarrSignalrClient:
         self.configure()
         logging.debug('BAZARR connecting to Radarr SignalR feed...')
         self.connection.start()
-        if not args.dev:
-            scheduler.execute_job_now('update_movies')
 
     def stop(self):
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')
@@ -100,6 +98,12 @@ class RadarrSignalrClient:
         logging.error("BAZARR connection to Radarr SignalR feed has failed. We'll try to reconnect.")
         self.restart()
 
+    @staticmethod
+    def on_connect_handler():
+        logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
+        if not args.dev:
+            scheduler.execute_job_now('update_movies')
+
     def configure(self):
         self.apikey_radarr = settings.radarr.apikey
         self.connection = HubConnectionBuilder() \
@@ -113,8 +117,7 @@ class RadarrSignalrClient:
                 "reconnect_interval": 5,
                 "max_attempts": None
             }).build()
-        self.connection.on_open(lambda: logging.info('BAZARR SignalR client for Radarr is connected and waiting for '
-                                                     'events.'))
+        self.connection.on_open(self.on_connect_handler)
         self.connection.on_reconnect(lambda: logging.info('BAZARR SignalR client for Radarr connection as been lost. '
                                                           'Trying to reconnect...'))
         self.connection.on_close(lambda: logging.debug('BAZARR SignalR client for Radarr is disconnected.'))
