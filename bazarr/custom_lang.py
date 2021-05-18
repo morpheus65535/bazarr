@@ -39,17 +39,17 @@ class CustomLanguage:
 
         return None
 
-    def get_subzero_ietf(self, language_code):  # Consistency
-        assert language_code
-        return None
+    @classmethod
+    def register(cls, database):
+        " Register the custom language subclasses in the database. "
 
-    def register(self, database):
-        params = (self.alpha3, self.alpha2, self.name)
-        database.execute(
-            "INSERT OR IGNORE INTO table_settings_languages "
-            "(code3, code2, name) VALUES (?,?,?)",
-            params,
-        )
+        for sub in cls.__subclasses__():
+            params = (sub.alpha3, sub.alpha2, sub.name)
+            database.execute(
+                "INSERT OR IGNORE INTO table_settings_languages "
+                "(code3, code2, name) VALUES (?,?,?)",
+                params,
+            )
 
     def get_alpha_type(self, subtitle: str, subtitle_path=None):
         assert subtitle_path is not None
@@ -68,19 +68,12 @@ class CustomLanguage:
 
         return to_return
 
-    def get_alpha3_from_ffprobe(self, detected_language: dict) -> str:
-        alpha3 = str(detected_language["language"].alpha3)
-        if alpha3 != self.alpha3:
-            return alpha3
-
+    def ffprobe_found(self, detected_language: dict) -> bool:
         name = detected_language.get("name", "").lower()
         if not name:
-            return alpha3
+            return False
 
-        if any(ext in name for ext in self._possible_matches):
-            return self.alpha3
-
-        return alpha3
+        return any(ext in name for ext in self._possible_matches)
 
 
 class BrazilianPortuguese(CustomLanguage):
@@ -95,8 +88,6 @@ class ChineseTraditional(CustomLanguage):
     official_alpha3 = "zho"
     name = "Chinese Traditional"
     iso = "TW"
-    _babelfish = ("cht", "tc", "zht", "hant", "big5", "繁", "雙語")
-    _babelfish_disamb = ("chs", "sc", "zhs", "hans", "gb", "简", "双语")
     _extensions = (
         ".cht",
         ".tc",
@@ -172,15 +163,6 @@ class ChineseTraditional(CustomLanguage):
             logging.debug("BAZARR external subtitles detected: %s", to_return)
 
         return to_return
-
-    def get_subzero_ietf(self, language_code):
-        simpl = any(ext in str(language_code) for ext in self._babelfish_disamb)
-        trad = any(ext in str(language_code) for ext in self._babelfish)
-
-        if simpl or trad:
-            return "zh"
-
-        return None
 
 
 class LatinAmericanSpanish(CustomLanguage):
