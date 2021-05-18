@@ -49,11 +49,12 @@ def update_series(send_event=True):
 
         series_count = len(series)
         for i, show in enumerate(series, 1):
-            show_progress(id='series_progress',
-                          header='Syncing series...',
-                          name=show['title'],
-                          value=i,
-                          count=series_count)
+            if send_event:
+                show_progress(id='series_progress',
+                              header='Syncing series...',
+                              name=show['title'],
+                              value=i,
+                              count=series_count)
 
             # Add shows in Sonarr to current shows list
             current_shows_sonarr.append(show['id'])
@@ -67,13 +68,14 @@ def update_series(send_event=True):
                                                   tags_dict=tagsDict, serie_default_profile=serie_default_profile,
                                                   audio_profiles=audio_profiles))
 
-        show_progress(id='series_progress',
-                      header='Syncing series...',
-                      name='Completed successfully',
-                      value=series_count,
-                      count=series_count)
+        if send_event:
+            show_progress(id='series_progress',
+                          header='Syncing series...',
+                          name='Completed successfully',
+                          value=series_count,
+                          count=series_count)
 
-        hide_progress(id='series_progress')
+            hide_progress(id='series_progress')
 
         # Remove old series from DB
         removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))

@@ -43,8 +43,8 @@ class SonarrSignalrClient:
                 self.stop()
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
-            scheduler.execute_job_now('update_series')
-            scheduler.execute_job_now('sync_episodes')
+            scheduler.add_job(update_series, kwargs={'send_event': False}, max_instances=1)
+            scheduler.add_job(sync_episodes, kwargs={'send_event': False}, max_instances=1)
 
     def stop(self, log=True):
         try:
@@ -106,7 +106,7 @@ class RadarrSignalrClient:
     def on_connect_handler():
         logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
         if not args.dev:
-            scheduler.execute_job_now('update_movies')
+            scheduler.add_job(update_movies, kwargs={'send_event': False}, max_instances=1)
 
     def configure(self):
         self.apikey_radarr = settings.radarr.apikey
