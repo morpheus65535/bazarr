@@ -40,7 +40,7 @@ subliminal=2.1.0dev
 tzlocal=2.1b1
 twine=3.4.1
 urllib3=1.23
-websocket-client=0.54.0
+websocket-client=0.59.0 <-- Modified to work with SignalRCore: https://github.com/websocket-client/websocket-client/commit/3112b7d75b1e5d65cb8fdfca7801606649044ed1#commitcomment-50947250
 
 ## indirect dependencies
 auditok=0.1.5  # Required-by: ffsubsync

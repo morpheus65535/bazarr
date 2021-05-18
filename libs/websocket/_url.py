@@ -1,4 +1,7 @@
 """
+
+"""
+"""
 websocket - WebSocket client library for Python
 
 Copyright (C) 2010 Hiroki Ohtani(liris)
@@ -15,8 +18,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA  02110-1335  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
 
@@ -35,14 +37,17 @@ def parse_url(url):
     parse url and the result is tuple of
     (hostname, port, resource path and the flag of secure mode)
 
-    url: url string.
+    Parameters
+    ----------
+    url: str
+        url string.
     """
     if ":" not in url:
         raise ValueError("url is invalid")
 
     scheme, url = url.split(":", 1)
 
-    parsed = urlparse(url, scheme="ws")
+    parsed = urlparse(url, scheme="http")
     if parsed.hostname:
         hostname = parsed.hostname
     else:
@@ -94,24 +99,31 @@ def _is_subnet_address(hostname):
 
 
 def _is_address_in_network(ip, net):
-    ipaddr = struct.unpack('I', socket.inet_aton(ip))[0]
-    netaddr, bits = net.split('/')
-    netmask = struct.unpack('I', socket.inet_aton(netaddr))[0] & ((2 << int(bits) - 1) - 1)
-    return ipaddr & netmask == netmask
+    ipaddr = struct.unpack('!I', socket.inet_aton(ip))[0]
+    netaddr, netmask = net.split('/')
+    netaddr = struct.unpack('!I', socket.inet_aton(netaddr))[0]
+
+    netmask = (0xFFFFFFFF << (32 - int(netmask))) & 0xFFFFFFFF
+    return ipaddr & netmask == netaddr
 
 
 def _is_no_proxy_host(hostname, no_proxy):
     if not no_proxy:
         v = os.environ.get("no_proxy", "").replace(" ", "")
-        no_proxy = v.split(",")
+        if v:
+            no_proxy = v.split(",")
     if not no_proxy:
         no_proxy = DEFAULT_NO_PROXY_HOST
 
+    if '*' in no_proxy:
+        return True
     if hostname in no_proxy:
         return True
-    elif _is_ip_address(hostname):
+    if _is_ip_address(hostname):
         return any([_is_address_in_network(hostname, subnet) for subnet in no_proxy if _is_subnet_address(subnet)])
-
+    for domain in [domain for domain in no_proxy if domain.startswith('.')]:
+        if hostname.endswith(domain):
+            return True
     return False
 
 
@@ -119,27 +131,30 @@ def get_proxy_info(
         hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None,
         no_proxy=None, proxy_type='http'):
     """
-    try to retrieve proxy host and port from environment
+    Try to retrieve proxy host and port from environment
     if not provided in options.
-    result is (proxy_host, proxy_port, proxy_auth).
+    Result is (proxy_host, proxy_port, proxy_auth).
     proxy_auth is tuple of username and password
-     of proxy authentication information.
+    of proxy authentication information.
 
-    hostname: websocket server name.
-
-    is_secure:  is the connection secure? (wss)
-                looks for "https_proxy" in env
-                before falling back to "http_proxy"
-
-    options:    "http_proxy_host" - http proxy host name.
-                "http_proxy_port" - http proxy port.
-                "http_no_proxy"   - host names, which doesn't use proxy.
-                "http_proxy_auth" - http proxy auth information.
-                                    tuple of username and password.
-                                    default is None
-                "proxy_type"      - if set to "socks5" PySocks wrapper
-                                    will be used in place of a http proxy.
-                                    default is "http"
+    Parameters
+    ----------
+    hostname: <type>
+        websocket server name.
+    is_secure: <type>
+        is the connection secure? (wss) looks for "https_proxy" in env
+        before falling back to "http_proxy"
+    options: <type>
+        - http_proxy_host: <type>
+            http proxy host name.
+        - http_proxy_port: <type>
+            http proxy port.
+        - http_no_proxy: <type>
+            host names, which doesn't use proxy.
+        - http_proxy_auth: <type>
+            http proxy auth information. tuple of username and password. default is None
+        - proxy_type: <type>
+            if set to "socks5" PySocks wrapper will be used in place of a http proxy. default is "http"
     """
     if _is_no_proxy_host(hostname, no_proxy):
         return None, 0, None
