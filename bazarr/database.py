@@ -272,6 +272,12 @@ def db_upgrade():
 
     for column in columnToRemove:
         try:
+            # Check if column still exist in table
+            columns_dict = database.execute('''PRAGMA table_info('{0}')'''.format(column[0]))
+            columns_names_list = [x['name'] for x in columns_dict]
+            if column[1] not in columns_names_list:
+                continue
+
             table_name = column[0]
             column_name = column[1]
             tables_query = database.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
