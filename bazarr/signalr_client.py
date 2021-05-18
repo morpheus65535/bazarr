@@ -3,6 +3,7 @@
 import logging
 
 import gevent
+import json
 from requests import Session
 from signalr import Connection
 from requests.exceptions import ConnectionError
@@ -37,6 +38,9 @@ class SonarrSignalrClient:
                 self.connection.start()
             except ConnectionError:
                 gevent.sleep(5)
+            except json.decoder.JSONDecodeError:
+                logging.error('BAZARR cannot parse JSON returned by SignalR feed.')
+                self.stop()
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
             scheduler.execute_job_now('update_series')
