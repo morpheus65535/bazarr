@@ -18,8 +18,6 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
-import six
-
 __all__ = ["NoLock", "validate_utf8", "extract_err_message", "extract_error_code"]
 
 
@@ -80,8 +78,6 @@ except ImportError:
         state = _UTF8_ACCEPT
         codep = 0
         for i in utfbytes:
-            if six.PY2:
-                i = ord(i)
             state, codep = _decode(state, codep, i)
             if state == _UTF8_REJECT:
                 return False

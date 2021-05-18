@@ -23,10 +23,8 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
 """
 import errno
-import select
+import selectors
 import socket
-
-import six
 
 from ._exceptions import *
 from ._ssl_compat import *
@@ -101,7 +99,12 @@ def recv(sock, bufsize):
             if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
                 raise
 
-        r, w, e = select.select((sock, ), (), (), sock.gettimeout())
+        sel = selectors.DefaultSelector()
+        sel.register(sock, selectors.EVENT_READ)
+
+        r = sel.select(sock.gettimeout())
+        sel.close()
+
         if r:
             return sock.recv(bufsize)
 
@@ -132,13 +135,13 @@ def recv_line(sock):
     while True:
         c = recv(sock, 1)
         line.append(c)
-        if c == six.b("\n"):
+        if c == b'\n':
             break
-    return six.b("").join(line)
+    return b''.join(line)
 
 
 def send(sock, data):
-    if isinstance(data, six.text_type):
+    if isinstance(data, str):
         data = data.encode('utf-8')
 
     if not sock:
@@ -156,7 +159,12 @@ def send(sock, data):
             if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
                 raise
 
-        r, w, e = select.select((), (sock, ), (), sock.gettimeout())
+        sel = selectors.DefaultSelector()
+        sel.register(sock, selectors.EVENT_WRITE)
+
+        w = sel.select(sock.gettimeout())
+        sel.close()
+
         if w:
             return sock.send(data)
 

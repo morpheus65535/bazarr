@@ -22,10 +22,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
-try:
-    import Cookie
-except:
-    import http.cookies as Cookie
+import http.cookies
 
 
 class SimpleCookieJar(object):
@@ -34,26 +31,20 @@ class SimpleCookieJar(object):
 
     def add(self, set_cookie):
         if set_cookie:
-            try:
-                simpleCookie = Cookie.SimpleCookie(set_cookie)
-            except:
-                simpleCookie = Cookie.SimpleCookie(set_cookie.encode('ascii', 'ignore'))
+            simpleCookie = http.cookies.SimpleCookie(set_cookie)
 
             for k, v in simpleCookie.items():
                 domain = v.get("domain")
                 if domain:
                     if not domain.startswith("."):
                         domain = "." + domain
-                    cookie = self.jar.get(domain) if self.jar.get(domain) else Cookie.SimpleCookie()
+                    cookie = self.jar.get(domain) if self.jar.get(domain) else http.cookies.SimpleCookie()
                     cookie.update(simpleCookie)
                     self.jar[domain.lower()] = cookie
 
     def set(self, set_cookie):
         if set_cookie:
-            try:
-                simpleCookie = Cookie.SimpleCookie(set_cookie)
-            except:
-                simpleCookie = Cookie.SimpleCookie(set_cookie.encode('ascii', 'ignore'))
+            simpleCookie = http.cookies.SimpleCookie(set_cookie)
 
             for k, v in simpleCookie.items():
                 domain = v.get("domain")

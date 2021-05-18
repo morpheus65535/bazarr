@@ -26,7 +26,7 @@ import os
 import socket
 import struct
 
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 
 __all__ = ["parse_url", "get_proxy_info"]

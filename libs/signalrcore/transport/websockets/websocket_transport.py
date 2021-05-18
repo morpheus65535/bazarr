@@ -133,12 +133,12 @@ class WebsocketTransport(BaseTransport):
             raise ValueError("Handshake error {0}".format(msg.error))
         return messages
 
-    def on_open(self):
+    def on_open(self, _):
         self.logger.debug("-- web socket open --")
         msg = self.protocol.handshake_message()
         self.send(msg)
 
-    def on_close(self):
+    def on_close(self, _):
         self.logger.debug("-- web socket close --")
         self.state = ConnectionState.disconnected
         if self._on_close is not None and callable(self._on_close):
@@ -150,35 +150,23 @@ class WebsocketTransport(BaseTransport):
         if self._on_close is not None and callable(self._on_close):
             self._on_close()
 
-    def on_socket_error(self, error):
+    def on_socket_error(self, _, error):
         """
-        Throws error related on
-        https://github.com/websocket-client/websocket-client/issues/449
-
         Args:
+            _: Required to support websocket-client version equal or greater than 0.58.0
             error ([type]): [description]
 
         Raises:
             HubError: [description]
         """
         self.logger.debug("-- web socket error --")
-        if (type(error) is AttributeError and
-                "'NoneType' object has no attribute 'connected'"
-                in str(error)):
-            url = "https://github.com/websocket-client" +\
-                "/websocket-client/issues/449"
-            self.logger.warning(
-                "Websocket closing error: issue" +
-                url)
-            self._on_close()
-        else:
-            self.logger.error(traceback.format_exc(5, True))
-            self.logger.error("{0} {1}".format(self, error))
-            self.logger.error("{0} {1}".format(error, type(error)))
-            self._on_close()
-            raise HubError(error)
+        self.logger.error(traceback.format_exc(5, True))
+        self.logger.error("{0} {1}".format(self, error))
+        self.logger.error("{0} {1}".format(error, type(error)))
+        self._on_close()
+        raise HubError(error)
 
-    def on_message(self, raw_message):
+    def on_message(self, _, raw_message):
         self.logger.debug("Message received{0}".format(raw_message))
         self.connection_checker.last_message = time.time()
         if not self.handshake_received:

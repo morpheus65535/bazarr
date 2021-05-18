@@ -21,35 +21,15 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 import hashlib
 import hmac
 import os
-
-import six
-
+from base64 import encodebytes as base64encode
+from http import client as HTTPStatus
 from ._cookiejar import SimpleCookieJar
 from ._exceptions import *
 from ._http import *
 from ._logging import *
 from ._socket import *
 
-if hasattr(six, 'PY3') and six.PY3:
-    from base64 import encodebytes as base64encode
-else:
-    from base64 import encodestring as base64encode
-
-if hasattr(six, 'PY3') and six.PY3:
-    if hasattr(six, 'PY34') and six.PY34:
-        from http import client as HTTPStatus
-    else:
-        from http import HTTPStatus
-else:
-    import httplib as HTTPStatus
-
 __all__ = ["handshake_response", "handshake", "SUPPORTED_REDIRECT_STATUSES"]
-
-if hasattr(hmac, "compare_digest"):
-    compare_digest = hmac.compare_digest
-else:
-    def compare_digest(s1, s2):
-        return s1 == s2
 
 # websocket supported version.
 VERSION = 13
@@ -194,12 +174,12 @@ def _validate(headers, key, subprotocols):
         return False, None
     result = result.lower()
 
-    if isinstance(result, six.text_type):
+    if isinstance(result, str):
         result = result.encode('utf-8')
 
     value = (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode('utf-8')
     hashed = base64encode(hashlib.sha1(value).digest()).strip().lower()
-    success = compare_digest(hashed, result)
+    success = hmac.compare_digest(hashed, result)
 
     if success:
         return True, subproto
