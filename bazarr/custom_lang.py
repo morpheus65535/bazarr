@@ -3,6 +3,8 @@
 import logging
 import os
 
+from subzero.language import Language
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,8 +22,8 @@ class CustomLanguage:
     _extensions = (".pt-br", ".pob", "pb")
     _extensions_forced = (".pt-br.forced", ".pob.forced", "pb.forced")
 
-    def get_subzero_language_params(self) -> tuple:
-        return self.official_alpha2, self.iso
+    def subzero_language(self):
+        return Language(self.official_alpha2, self.iso)
 
     @classmethod
     def from_value(cls, value, attr="alpha3"):
@@ -51,17 +53,27 @@ class CustomLanguage:
                 params,
             )
 
-    def get_alpha_type(self, subtitle: str, subtitle_path=None):
+    @classmethod
+    def found_external(cls, subtitle, subtitle_path):
+        for sub in cls.__subclasses__():
+            code = sub.get_alpha_type(subtitle, subtitle_path)
+            if code:
+                return code
+
+        return None
+
+    @classmethod
+    def get_alpha_type(cls, subtitle: str, subtitle_path=None):
         assert subtitle_path is not None
 
         extension = str(os.path.splitext(subtitle)[0]).lower()
         to_return = None
 
-        if extension.endswith(self._extensions):
-            to_return = self.alpha2
+        if extension.endswith(cls._extensions):
+            to_return = cls.alpha2
 
-        if extension.endswith(self._extensions_forced):
-            to_return = f"{self.alpha2}:forced"
+        if extension.endswith(cls._extensions_forced):
+            to_return = f"{cls.alpha2}:forced"
 
         if to_return is not None:
             logging.debug("BAZARR external subtitles detected: %s", to_return)
@@ -133,7 +145,8 @@ class ChineseTraditional(CustomLanguage):
         "双语.forced",
     )
 
-    def get_alpha_type(self, subtitle, subtitle_path=None):
+    @classmethod
+    def get_alpha_type(cls, subtitle, subtitle_path=None):
         subtitle_path = str(subtitle_path).lower()
         extension = str(os.path.splitext(subtitle)[0]).lower()
 
@@ -141,22 +154,22 @@ class ChineseTraditional(CustomLanguage):
 
         # Simplified chinese
         if (
-            extension.endswith(self._extensions_disamb)
-            or subtitle_path in self._extensions_disamb_fuzzy
+            extension.endswith(cls._extensions_disamb)
+            or subtitle_path in cls._extensions_disamb_fuzzy
         ):
             to_return = "zh"
 
-        elif any(ext in extension[-12:] for ext in self._extensions_disamb_forced):
+        elif any(ext in extension[-12:] for ext in cls._extensions_disamb_forced):
             to_return = "zh:forced"
 
         # Traditional chinese
         elif (
-            extension.endswith(self._extensions)
-            or subtitle_path[:-5] in self._extensions_fuzzy
+            extension.endswith(cls._extensions)
+            or subtitle_path[:-5] in cls._extensions_fuzzy
         ):
             to_return = "zt"
 
-        elif any(ext in extension[-12:] for ext in self._extensions_forced):
+        elif any(ext in extension[-12:] for ext in cls._extensions_forced):
             to_return = "zt:forced"
 
         if to_return is not None:

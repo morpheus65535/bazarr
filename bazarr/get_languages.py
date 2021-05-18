@@ -4,7 +4,7 @@ import pycountry
 
 from subzero.language import Language
 from database import database
-
+from custom_lang import CustomLanguage
 
 def load_language_in_db():
     # Get languages list in langs tuple
@@ -15,12 +15,8 @@ def load_language_in_db():
     # Insert languages in database table
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)",
                      langs, execute_many=True)
-
-    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
-
-    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('zht', 'zt', 'Chinese Traditional')")
+    
+    CustomLanguage.register(database)
 
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
@@ -71,15 +67,14 @@ def get_language_set():
     languages = database.execute("SELECT code3 FROM table_settings_languages WHERE enabled=1")
 
     language_set = set()
-    
+
     for lang in languages:
-        if lang['code3'] == 'pob':
-            language_set.add(Language('por', 'BR'))
-        elif lang['code3'] == 'zht':
-            language_set.add(Language('zho', 'TW'))
+        custom = CustomLanguage.from_value(lang["code3"], "alpha3")
+        if custom is None:
+            language_set.add(Language(lang["code3"]))
         else:
-            language_set.add(Language(lang['code3']))
-    
+            language_set.add(custom.subzero_language())
+
     return language_set
 
 
