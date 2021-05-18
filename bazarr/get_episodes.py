@@ -38,11 +38,12 @@ def sync_episodes(send_event=True):
 
     series_count = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
-        show_progress(id='episodes_progress',
-                      header='Syncing episodes...',
-                      name=seriesId['title'],
-                      value=i,
-                      count=series_count)
+        if send_event:
+            show_progress(id='episodes_progress',
+                          header='Syncing episodes...',
+                          name=seriesId['title'],
+                          value=i,
+                          count=series_count)
 
         # Get episodes data for a series from Sonarr
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
@@ -64,13 +65,14 @@ def sync_episodes(send_event=True):
                                 else:
                                     episodes_to_add.append(episodeParser(episode))
 
-    show_progress(id='episodes_progress',
-                  header='Syncing episodes...',
-                  name='Completed successfully',
-                  value=series_count,
-                  count=series_count)
+    if send_event:
+        show_progress(id='episodes_progress',
+                      header='Syncing episodes...',
+                      name='Completed successfully',
+                      value=series_count,
+                      count=series_count)
 
-    hide_progress(id='episodes_progress')
+        hide_progress(id='episodes_progress')
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
@@ -79,7 +81,8 @@ def sync_episodes(send_event=True):
         episode_to_delete = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE "
                                              "sonarrEpisodeId=?", (removed_episode,), only_one=True)
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (removed_episode,))
-        event_stream(type='episode', action='delete', payload=episode_to_delete['sonarrEpisodeId'])
+        if send_event:
+            event_stream(type='episode', action='delete', payload=episode_to_delete['sonarrEpisodeId'])
 
     # Update existing episodes in DB
     episode_in_db_list = []

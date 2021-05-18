@@ -62,11 +62,12 @@ def update_movies(send_event=True):
             # Build new and updated movies
             movies_count = len(movies)
             for i, movie in enumerate(movies, 1):
-                show_progress(id='movies_progress',
-                              header='Syncing movies...',
-                              name=movie['title'],
-                              value=i,
-                              count=movies_count)
+                if send_event:
+                    show_progress(id='movies_progress',
+                                  header='Syncing movies...',
+                                  name=movie['title'],
+                                  value=i,
+                                  count=movies_count)
 
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
@@ -87,13 +88,14 @@ def update_movies(send_event=True):
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
 
-            show_progress(id='movies_progress',
-                          header='Syncing movies...',
-                          name='Completed successfully',
-                          value=movies_count,
-                          count=movies_count)
+            if send_event:
+                show_progress(id='movies_progress',
+                              header='Syncing movies...',
+                              name='Completed successfully',
+                              value=movies_count,
+                              count=movies_count)
 
-            hide_progress(id='movies_progress')
+                hide_progress(id='movies_progress')
 
             # Remove old movies from DB
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))

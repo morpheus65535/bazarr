@@ -23,18 +23,13 @@ import os
 import socket
 import sys
 
-import six
-
 from ._exceptions import *
 from ._logging import *
 from ._socket import*
 from ._ssl_compat import *
 from ._url import *
 
-if six.PY3:
-    from base64 import encodebytes as base64encode
-else:
-    from base64 import encodestring as base64encode
+from base64 import encodebytes as base64encode
 
 __all__ = ["proxy_info", "connect", "read_headers"]
 
@@ -92,11 +87,10 @@ def _open_proxied_socket(url, options, proxy):
         socket_options=DEFAULT_SOCKET_OPTION + options.sockopt
     )
 
-    if is_secure:
-        if HAVE_SSL:
-            sock = _ssl_socket(sock, options.sslopt, hostname)
-        else:
-            raise WebSocketException("SSL not available.")
+    if is_secure and HAVE_SSL:
+        sock = _ssl_socket(sock, options.sslopt, hostname)
+    elif is_secure:
+        raise WebSocketException("SSL not available.")
 
     return sock, (hostname, port, resource)
 
@@ -190,6 +184,8 @@ def _open_socket(addrinfo_list, sockopt, timeout):
                     err = error
                     continue
                 else:
+                    if sock:
+                        sock.close()
                     raise error
             else:
                 break
@@ -201,10 +197,6 @@ def _open_socket(addrinfo_list, sockopt, timeout):
             raise err
 
     return sock
-
-
-def _can_use_sni():
-    return six.PY2 and sys.version_info >= (2, 7, 9) or sys.version_info >= (3, 2)
 
 
 def _wrap_sni_socket(sock, sslopt, hostname, check_hostname):
@@ -250,8 +242,7 @@ def _ssl_socket(sock, user_sslopt, hostname):
 
     certPath = os.environ.get('WEBSOCKET_CLIENT_CA_BUNDLE')
     if certPath and os.path.isfile(certPath) \
-            and user_sslopt.get('ca_certs', None) is None \
-            and user_sslopt.get('ca_cert', None) is None:
+            and user_sslopt.get('ca_certs', None) is None:
         sslopt['ca_certs'] = certPath
     elif certPath and os.path.isdir(certPath) \
             and user_sslopt.get('ca_cert_path', None) is None:
@@ -259,12 +250,7 @@ def _ssl_socket(sock, user_sslopt, hostname):
 
     check_hostname = sslopt["cert_reqs"] != ssl.CERT_NONE and sslopt.pop(
         'check_hostname', True)
-
-    if _can_use_sni():
-        sock = _wrap_sni_socket(sock, sslopt, hostname, check_hostname)
-    else:
-        sslopt.pop('check_hostname', True)
-        sock = ssl.wrap_socket(sock, **sslopt)
+    sock = _wrap_sni_socket(sock, sslopt, hostname, check_hostname)
 
     if not HAVE_CONTEXT_CHECK_HOSTNAME and check_hostname:
         match_hostname(sock.getpeercert(), hostname)

@@ -24,14 +24,17 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 import os
 import os.path
 import websocket as ws
-from websocket._http import proxy_info, read_headers, _open_proxied_socket, _tunnel
+from websocket._http import proxy_info, read_headers, _open_proxied_socket, _tunnel, _get_addrinfo_list, connect
 import sys
+import unittest
+import ssl
+import websocket
+import socks
+import socket
 sys.path[0:0] = [""]
 
-if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-    import unittest2 as unittest
-else:
-    import unittest
+# Skip test to access the internet.
+TEST_WITH_INTERNET = os.environ.get('TEST_WITH_INTERNET', '0') == '1'
 
 
 class SockMock(object):
@@ -74,7 +77,7 @@ class HeaderSockMock(SockMock):
 class OptsList():
 
     def __init__(self):
-        self.timeout = 0
+        self.timeout = 1
         self.sockopt = []
 
 
@@ -91,11 +94,49 @@ class HttpTest(unittest.TestCase):
         self.assertRaises(ws.WebSocketProxyException, _tunnel, HeaderSockMock("data/header01.txt"), "example.com", 80, ("username", "password"))
         self.assertRaises(ws.WebSocketProxyException, _tunnel, HeaderSockMock("data/header02.txt"), "example.com", 80, ("username", "password"))
 
+    @unittest.skipUnless(TEST_WITH_INTERNET, "Internet-requiring tests are disabled")
     def testConnect(self):
-        # Not currently testing an actual proxy connection, so just check whether TypeError is raised
+        # Not currently testing an actual proxy connection, so just check whether TypeError is raised. This requires internet for a DNS lookup
+        self.assertRaises(TypeError, _open_proxied_socket, "wss://example.com", OptsList(), proxy_info(http_proxy_host=None, http_proxy_port=None, proxy_type=None))
         self.assertRaises(TypeError, _open_proxied_socket, "wss://example.com", OptsList(), proxy_info(http_proxy_host="example.com", http_proxy_port="8080", proxy_type="http"))
         self.assertRaises(TypeError, _open_proxied_socket, "wss://example.com", OptsList(), proxy_info(http_proxy_host="example.com", http_proxy_port="8080", proxy_type="socks4"))
         self.assertRaises(TypeError, _open_proxied_socket, "wss://example.com", OptsList(), proxy_info(http_proxy_host="example.com", http_proxy_port="8080", proxy_type="socks5h"))
+        self.assertRaises(TypeError, _get_addrinfo_list, None, 80, True, proxy_info(http_proxy_host="127.0.0.1", http_proxy_port="8080", proxy_type="http"))
+        self.assertRaises(TypeError, _get_addrinfo_list, None, 80, True, proxy_info(http_proxy_host="127.0.0.1", http_proxy_port="8080", proxy_type="http"))
+        self.assertRaises(socks.ProxyConnectionError, connect, "wss://example.com", OptsList(), proxy_info(http_proxy_host="127.0.0.1", http_proxy_port=8080, proxy_type="socks4"), None)
+        self.assertRaises(socket.timeout, connect, "wss://google.com", OptsList(), proxy_info(http_proxy_host="8.8.8.8", http_proxy_port=8080, proxy_type="http"), None)
+        self.assertEqual(
+            connect("wss://google.com", OptsList(), proxy_info(http_proxy_host="8.8.8.8", http_proxy_port=8080, proxy_type="http"), True),
+            (True, ("google.com", 443, "/")))
+        # The following test fails on Mac OS with a gaierror, not an OverflowError
+        # self.assertRaises(OverflowError, connect, "wss://example.com", OptsList(), proxy_info(http_proxy_host="127.0.0.1", http_proxy_port=99999, proxy_type="socks4", timeout=2), False)
+
+    @unittest.skipUnless(TEST_WITH_INTERNET, "Internet-requiring tests are disabled")
+    def testSSLopt(self):
+        ssloptions = {
+            "cert_reqs": ssl.CERT_NONE,
+            "check_hostname": False,
+            "ssl_version": ssl.PROTOCOL_SSLv23,
+            "ciphers": "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:\
+                        TLS_AES_128_GCM_SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:\
+                        ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:\
+                        ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:\
+                        DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:\
+                        ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:\
+                        ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:\
+                        DHE-RSA-AES256-SHA256:ECDHE-ECDSA-AES128-SHA256:\
+                        ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:\
+                        ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA",
+            "ecdh_curve": "prime256v1"
+        }
+        ws_ssl1 = websocket.WebSocket(sslopt=ssloptions)
+        ws_ssl1.connect("wss://api.bitfinex.com/ws/2")
+        ws_ssl1.send("Hello")
+        ws_ssl1.close()
+
+        ws_ssl2 = websocket.WebSocket(sslopt={"check_hostname": True})
+        ws_ssl2.connect("wss://api.bitfinex.com/ws/2")
+        ws_ssl2.close
 
     def testProxyInfo(self):
         self.assertEqual(proxy_info(http_proxy_host="127.0.0.1", http_proxy_port="8080", proxy_type="http").type, "http")

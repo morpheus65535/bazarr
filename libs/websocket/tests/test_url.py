@@ -23,14 +23,9 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
 import sys
 import os
-
-from websocket._url import get_proxy_info, parse_url, _is_address_in_network, _is_no_proxy_host
-
-if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 sys.path[0:0] = [""]
+from websocket._url import get_proxy_info, parse_url, _is_address_in_network, _is_no_proxy_host
 
 
 class UrlTest(unittest.TestCase):
@@ -96,9 +91,6 @@ class UrlTest(unittest.TestCase):
         self.assertEqual(p[3], True)
 
         self.assertRaises(ValueError, parse_url, "http://www.example.com/r")
-
-        if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-            return
 
         p = parse_url("ws://[2a03:4000:123:83::3]/r")
         self.assertEqual(p[0], "2a03:4000:123:83::3")

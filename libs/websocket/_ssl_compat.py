@@ -25,20 +25,14 @@ try:
     from ssl import SSLError
     from ssl import SSLWantReadError
     from ssl import SSLWantWriteError
+    HAVE_CONTEXT_CHECK_HOSTNAME = False
     if hasattr(ssl, 'SSLContext') and hasattr(ssl.SSLContext, 'check_hostname'):
         HAVE_CONTEXT_CHECK_HOSTNAME = True
-    else:
-        HAVE_CONTEXT_CHECK_HOSTNAME = False
-        if hasattr(ssl, "match_hostname"):
-            from ssl import match_hostname
-        else:
-            from backports.ssl_match_hostname import match_hostname
-        __all__.append("match_hostname")
-    __all__.append("HAVE_CONTEXT_CHECK_HOSTNAME")
 
+    __all__.append("HAVE_CONTEXT_CHECK_HOSTNAME")
     HAVE_SSL = True
 except ImportError:
-    # dummy class of SSLError for ssl none-support environment.
+    # dummy class of SSLError for environment without ssl support
     class SSLError(Exception):
         pass
 
@@ -49,5 +43,4 @@ except ImportError:
         pass
 
     ssl = None
-
     HAVE_SSL = False
