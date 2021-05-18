@@ -22,7 +22,7 @@ def update_all_movies():
     logging.info('BAZARR All existing movie subtitles indexed from disk.')
 
 
-def update_movies():
+def update_movies(send_event=True):
     check_radarr_rootfolder()
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
@@ -133,6 +133,8 @@ def update_movies():
                                            added_movie['path'],
                                            added_movie['radarrId'],
                                            added_movie['monitored']])
+                    if send_event:
+                        event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
                 else:
                     logging.debug('BAZARR unable to insert this movie into the database:',
                                   path_mappings.path_replace_movie(added_movie['path']))

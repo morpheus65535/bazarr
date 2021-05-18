@@ -15,7 +15,7 @@ from event_handler import event_stream, show_progress, hide_progress
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
-def update_series():
+def update_series(send_event=True):
     check_sonarr_rootfolder()
     apikey_sonarr = settings.sonarr.apikey
     if apikey_sonarr is None:
@@ -80,7 +80,8 @@ def update_series():
 
         for series in removed_series:
             database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
-            event_stream(type='series', action='delete', payload=series)
+            if send_event:
+                event_stream(type='series', action='delete', payload=series)
 
         # Update existing series in DB
         series_in_db_list = []
@@ -97,7 +98,8 @@ def update_series():
             query = dict_converter.convert(updated_series)
             database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                              query.values + (updated_series['sonarrSeriesId'],))
-            event_stream(type='series', payload=updated_series['sonarrSeriesId'])
+            if send_event:
+                event_stream(type='series', payload=updated_series['sonarrSeriesId'])
 
         # Insert new series in DB
         for added_series in series_to_add:
@@ -111,7 +113,8 @@ def update_series():
                 logging.debug('BAZARR unable to insert this series into the database:',
                               path_mappings.path_replace(added_series['path']))
 
-                event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
+                if send_event:
+                    event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
 
                 logging.debug('BAZARR All series synced from Sonarr into database.')
 
