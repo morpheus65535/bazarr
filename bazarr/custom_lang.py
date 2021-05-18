@@ -19,8 +19,8 @@ class CustomLanguage:
     name = "Brazilian Portuguese"
     iso = "BR"
     _possible_matches = ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil")
-    _extensions = (".pt-br", ".pob", "pb")
-    _extensions_forced = (".pt-br.forced", ".pob.forced", "pb.forced")
+    _extensions = (".pt-br", ".pob", ".pb")
+    _extensions_forced = (".pt-br.forced", ".pob.forced", ".pb.forced")
 
     def subzero_language(self):
         return Language(self.official_alpha3, self.iso)
@@ -33,11 +33,9 @@ class CustomLanguage:
         :param value:
         :param attr:
         """
-        logger.debug("Looking for custom language: %s: %s", attr, value)
         for sub in cls.__subclasses__():
             if getattr(sub, attr) == str(value):
-                logger.debug("%s found", sub.name)
-                return cls()
+                return sub()
 
         return None
 
@@ -120,7 +118,7 @@ class ChineseTraditional(CustomLanguage):
         ".big5.forced",
         "繁體中文.forced",
         "雙語.forced",
-        "zh-tw.forced",
+        ".zh-tw.forced",
     )
     _extensions_fuzzy = ("繁", "雙語")
     _extensions_disamb_fuzzy = ("简", "双语")
@@ -196,5 +194,13 @@ class LatinAmericanSpanish(CustomLanguage):
         "argent",
         "latam",
     )
-    _extensions = (".es-la", ".spl", "spa-la", "ea")
-    _extensions_forced = (".es-la.forced", ".spl.forced", "spa-la.forced")
+    _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".lat", ".es.ar")
+    _extensions_forced = (
+        ".es-la.forced",
+        ".spl.forced",
+        ".spa-la.forced",
+        ".ea.forced",
+        ".es-mx.forced",
+        ".lat.forced",
+        ".es.ar.forced",
+    )

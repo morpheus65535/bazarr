@@ -10,12 +10,15 @@ from enzyme.exceptions import MalformedMKVError
 from database import database
 from custom_lang import CustomLanguage
 
+logger = logging.getLogger(__name__)
+
 
 def _handle_alpha3(detected_language: dict):
     alpha3 = detected_language["language"].alpha3
-    custom = CustomLanguage.from_value(alpha3, "alpha3")
+    custom = CustomLanguage.from_value(alpha3, "official_alpha3")
 
     if custom and custom.ffprobe_found(detected_language):
+        logger.debug("Custom embedded language found: %s", custom.name)
         return custom.alpha3
 
     return alpha3
@@ -119,7 +122,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
                 try:
                     mkv = enzyme.MKV(f)
                 except MalformedMKVError:
-                    logging.error(
+                    logger.error(
                         "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
                         "ffmpeg/ffprobe: " + file
                     )
