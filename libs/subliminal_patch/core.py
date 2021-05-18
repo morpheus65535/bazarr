@@ -674,7 +674,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
                     language.forced = forced
                     language.hi = hi
                 elif any(ext in str(language_code) for ext in traditional_chinese):
-                    language = Language.fromietf('zh') 
+                    language = Language.fromietf('zh')
                     language.forced = forced
                     language.hi = hi
                 else:
