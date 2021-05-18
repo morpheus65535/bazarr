@@ -23,7 +23,7 @@ class CustomLanguage:
     _extensions_forced = (".pt-br.forced", ".pob.forced", "pb.forced")
 
     def subzero_language(self):
-        return Language(self.official_alpha2, self.iso)
+        return Language(self.official_alpha3, self.iso)
 
     @classmethod
     def from_value(cls, value, attr="alpha3"):
