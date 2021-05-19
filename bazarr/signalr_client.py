@@ -39,7 +39,8 @@ class SonarrSignalrClient:
             except ConnectionError:
                 gevent.sleep(5)
             except json.decoder.JSONDecodeError:
-                logging.error('BAZARR cannot parse JSON returned by SignalR feed.')
+                logging.error('BAZARR cannot parse JSON returned by SignalR feed. Take a look at: '
+                              'https://forums.sonarr.tv/t/signalr-problem/5785/3')
                 self.stop()
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
@@ -117,8 +118,8 @@ class RadarrSignalrClient:
                       }) \
             .with_automatic_reconnect({
                 "type": "raw",
-                "keep_alive_interval": 5,
-                "reconnect_interval": 5,
+                "keep_alive_interval": 15,
+                "reconnect_interval": 180,
                 "max_attempts": None
             }).build()
         self.connection.on_open(self.on_connect_handler)
