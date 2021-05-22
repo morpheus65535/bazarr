@@ -205,18 +205,33 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
     setProcessState(uploadStates);
 
+    let exception = false;
+
     for (const info of pending) {
       if (info.instance) {
         const { sonarrEpisodeId: episodeid } = info.instance;
-        await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
 
-        uploadStates = {
-          ...uploadStates,
-          [info.form.file.name]: { state: State.Valid, infos: [] },
-        };
+        try {
+          await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
+
+          uploadStates = {
+            ...uploadStates,
+            [info.form.file.name]: { state: State.Valid, infos: [] },
+          };
+        } catch (error) {
+          uploadStates = {
+            ...uploadStates,
+            [info.form.file.name]: { state: State.Error, infos: [] },
+          };
+          exception = true;
+        }
 
         setProcessState(uploadStates);
       }
+    }
+
+    if (exception) {
+      throw new Error("Error when uploading subtitles");
     }
   }, [series, pending]);
 
@@ -289,6 +304,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         accessor: "instance",
         className: "vw-1",
         Cell: ({ value, loose, row, externalUpdate }) => {
+          const uploading = loose![0] as boolean;
           const availables = loose![2] as Item.Episode[];
 
           const options = availables.map<SelectorOption<Item.Episode>>(
@@ -311,6 +327,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
           return (
             <Selector
+              disabled={uploading}
               options={options}
               value={value ?? null}
               onChange={change}
@@ -376,7 +393,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
           Clean
         </Button>
         <AsyncButton
-          noReset
           disabled={!canUpload}
           onChange={setUpload}
           promise={uploadSubtitles}
