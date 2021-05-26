@@ -133,35 +133,38 @@ class RadarrSignalrClient:
 
 
 def dispatcher(data):
-    topic = media_id = action = None
-    episodesChanged = None
-    if isinstance(data, dict):
-        topic = data['name']
-        try:
-            media_id = data['body']['resource']['id']
-            action = data['body']['action']
-            if 'episodesChanged' in data['body']['resource']:
-                episodesChanged = data['body']['resource']['episodesChanged']
-        except KeyError:
-            return
-    elif isinstance(data, list):
-        topic = data[0]['name']
-        try:
-            media_id = data[0]['body']['resource']['id']
-            action = data[0]['body']['action']
-        except KeyError:
-            return
+    try:
+        topic = media_id = action = None
+        episodesChanged = None
+        if isinstance(data, dict):
+            topic = data['name']
+            try:
+                media_id = data['body']['resource']['id']
+                action = data['body']['action']
+                if 'episodesChanged' in data['body']['resource']:
+                    episodesChanged = data['body']['resource']['episodesChanged']
+            except KeyError:
+                return
+        elif isinstance(data, list):
+            topic = data[0]['name']
+            try:
+                media_id = data[0]['body']['resource']['id']
+                action = data[0]['body']['action']
+            except KeyError:
+                return
 
-    if topic == 'series':
-        update_one_series(series_id=media_id, action=action)
-        if episodesChanged:
-            # this will happen if an episode monitored status is changed.
-            sync_episodes(series_id=media_id, send_event=True)
-    elif topic == 'episode':
-        sync_one_episode(episode_id=media_id)
-    elif topic == 'movie':
-        update_one_movie(movie_id=media_id, action=action)
-    else:
+        if topic == 'series':
+            update_one_series(series_id=media_id, action=action)
+            if episodesChanged:
+                # this will happen if an episode monitored status is changed.
+                sync_episodes(series_id=media_id, send_event=True)
+        elif topic == 'episode':
+            sync_one_episode(episode_id=media_id)
+        elif topic == 'movie':
+            update_one_movie(movie_id=media_id, action=action)
+    except Exception as e:
+        logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
+    finally:
         return
 
 
