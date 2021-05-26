@@ -19,14 +19,16 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
 
 
-def sync_episodes(send_event=True):
+def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
     # Get current episodes id in DB
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
                                                TableEpisodes.path,
-                                               TableEpisodes.sonarrSeriesId).dicts()
+                                               TableEpisodes.sonarrSeriesId)\
+        .where((TableEpisodes.sonarrSeriesId == series_id) id series_id else ())\
+        .dicts()
 
     current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
 
@@ -36,7 +38,7 @@ def sync_episodes(send_event=True):
     altered_episodes = []
     
     # Get sonarrId for each series from database
-    seriesIdList = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+    seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr)
 
     series_count = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
@@ -298,8 +300,11 @@ def episodeParser(episode):
                             'file_size': episode['episodeFile']['size']}
 
 
-def get_series_from_sonarr_api(url, apikey_sonarr):
-    url_sonarr_api_series = url + "/api/series?apikey=" + apikey_sonarr
+def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
+    if series_id:
+        url_sonarr_api_series = url + "/api/series/{0}?apikey={1}".format(series_id, apikey_sonarr)
+    else:
+        url_sonarr_api_series = url + "/api/series?apikey={}".format(apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
@@ -318,8 +323,12 @@ def get_series_from_sonarr_api(url, apikey_sonarr):
         logging.exception("BAZARR Error trying to get series from Sonarr.")
         return
     else:
+        if series_id:
+            series_json = list(r.json())
+        else:
+            series_json = r.json()
         series_list = []
-        for series in r.json():
+        for series in series_json:
             series_list.append({'sonarrSeriesId': series['id'], 'title': series['title']})
         return series_list
 

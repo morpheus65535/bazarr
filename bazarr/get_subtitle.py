@@ -305,11 +305,13 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             reversed_path = path_mappings.path_replace_reverse(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
                             notify_sonarr(episode_metadata['sonarrSeriesId'])
+                            event_stream(type='episode-wanted', action='delete', payload=episode_metadata['sonarrEpisodeId'])
 
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
                             notify_radarr(movie_metadata['radarrId'])
+                            event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 

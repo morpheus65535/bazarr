@@ -134,11 +134,14 @@ class RadarrSignalrClient:
 
 def dispatcher(data):
     topic = media_id = action = None
+    episodesChanged = None
     if isinstance(data, dict):
         topic = data['name']
         try:
             media_id = data['body']['resource']['id']
             action = data['body']['action']
+            if 'episodesChanged' in data['body']['resource']:
+                episodesChanged = data['body']['resource']['episodesChanged']
         except KeyError:
             return
     elif isinstance(data, list):
@@ -151,6 +154,9 @@ def dispatcher(data):
 
     if topic == 'series':
         update_one_series(series_id=media_id, action=action)
+        if episodesChanged:
+            # this will happen if an episode monitored status is changed.
+            sync_episodes(series_id=media_id, send_event=True)
     elif topic == 'episode':
         sync_one_episode(episode_id=media_id)
     elif topic == 'movie':

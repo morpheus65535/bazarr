@@ -343,6 +343,8 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                         subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
             store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             notify_sonarr(sonarr_series_id)
+            event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+            return True
     else:
         try:
             os.remove(path_mappings.path_replace_movie(subtitles_path))
@@ -356,6 +358,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                               subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             notify_radarr(radarr_id)
+            event_stream(type='movie-wanted', action='update', payload=radarr_id)
             return True
 
 
