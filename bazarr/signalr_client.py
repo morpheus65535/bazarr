@@ -56,8 +56,9 @@ class SonarrSignalrClient:
             logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
 
     def restart(self):
-        if self.connection.is_open:
-            self.stop(log=False)
+        if self.connection:
+            if self.connection.is_open:
+                self.stop(log=False)
         if settings.general.getboolean('use_sonarr'):
             self.start()
 
@@ -94,8 +95,9 @@ class RadarrSignalrClient:
         self.connection.stop()
 
     def restart(self):
-        if self.connection.transport.state.value in [0, 1, 2]:
-            self.stop()
+        if self.connection:
+            if self.connection.transport.state.value in [0, 1, 2]:
+                self.stop()
         if settings.general.getboolean('use_radarr'):
             self.start()
 

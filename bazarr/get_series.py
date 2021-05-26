@@ -7,7 +7,7 @@ import logging
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from get_rootfolder import check_sonarr_rootfolder
-from database import database, dict_converter
+from database import TableShows
 from utils import get_sonarr_version
 from helper import path_mappings
 from event_handler import event_stream, show_progress, hide_progress
@@ -40,7 +40,7 @@ def update_series(send_event=True):
         return
     else:
         # Get current shows in DB
-        current_shows_db = database.execute("SELECT sonarrSeriesId FROM table_shows")
+        current_shows_db = TableShows.select(TableShows.sonarrSeriesId).dicts()
 
         current_shows_db_list = [x['sonarrSeriesId'] for x in current_shows_db]
         current_shows_sonarr = []
@@ -81,15 +81,26 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
         for series in removed_series:
-            database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
+            TableShows.delete().where(TableShows.sonarrSeriesId == series).execute()
             if send_event:
                 event_stream(type='series', action='delete', payload=series)
 
         # Update existing series in DB
         series_in_db_list = []
-        series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
-                                        "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId "
-                                        "FROM table_shows")
+        series_in_db = TableShows.select(TableShows.title,
+                                         TableShows.path,
+                                         TableShows.tvdbId,
+                                         TableShows.sonarrSeriesId,
+                                         TableShows.overview,
+                                         TableShows.poster,
+                                         TableShows.fanart,
+                                         TableShows.audio_language,
+                                         TableShows.sortTitle,
+                                         TableShows.year,
+                                         TableShows.alternateTitles,
+                                         TableShows.tags,
+                                         TableShows.seriesType,
+                                         TableShows.imdbId).dicts()
 
         for item in series_in_db:
             series_in_db_list.append(item)
@@ -97,18 +108,14 @@ def update_series(send_event=True):
         series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
         for updated_series in series_to_update_list:
-            query = dict_converter.convert(updated_series)
-            database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
-                             query.values + (updated_series['sonarrSeriesId'],))
+            TableShows.update(updated_series).where(TableShows.sonarrSeriesId ==
+                                                    updated_series['sonarrSeriesId']).execute()
             if send_event:
                 event_stream(type='series', payload=updated_series['sonarrSeriesId'])
 
         # Insert new series in DB
         for added_series in series_to_add:
-            query = dict_converter.convert(added_series)
-            result = database.execute(
-                '''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
-                query.question_marks + ''')''', query.values)
+            result = TableShows.insert(added_series).on_conflict(action='IGNORE').execute()
             if result:
                 list_missing_subtitles(no=added_series['sonarrSeriesId'])
             else:
@@ -125,8 +132,7 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from RSonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    existing_series = database.execute('SELECT path FROM table_shows WHERE sonarrSeriesId = ?', (series_id,),
-                                       only_one=True)
+    existing_series = TableShows.get_or_none(TableShows.sonarrSeriesId == series_id)
 
     sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
@@ -149,7 +155,7 @@ def update_one_series(series_id, action):
             series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
                                                      sonarr_series_id=series_id)
         except requests.exceptions.HTTPError:
-            database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series_id,))
+            TableShows.delete().where(TableShows.sonarrSeriesId == series_id).execute()
             event_stream(type='series', action='delete', payload=int(series_id))
             return
 
@@ -170,26 +176,22 @@ def update_one_series(series_id, action):
 
     # Remove series from DB
     if action == 'deleted':
-        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?", (series_id,))
+        TableShows.delete().where(TableShows.sonarrSeriesId == series_id).execute()
         event_stream(type='series', action='delete', payload=int(series_id))
         logging.debug('BAZARR deleted this series from the database:{}'.format(path_mappings.path_replace(
-            existing_series['path'])))
+            existing_series.path)))
         return
 
     # Update existing series in DB
     elif action == 'updated' and existing_series:
-        query = dict_converter.convert(series)
-        database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
-                         query.values + (series['sonarrSeriesId'],))
+        TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
-        query = dict_converter.convert(series)
-        database.execute('''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
-                         query.question_marks + ''')''', query.values)
+        TableShows.insert(series).on_conflict(action='IGNORE').execute()
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))

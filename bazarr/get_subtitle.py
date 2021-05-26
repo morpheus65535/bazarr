@@ -11,6 +11,9 @@ import codecs
 import re
 import subliminal
 import copy
+import operator
+from functools import reduce
+from peewee import fn
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -31,8 +34,8 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from knowit import api
 from subsyncer import subsync
 from guessit import guessit
-from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
-    get_desired_languages
+from database import dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
+    get_desired_languages, TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from event_handler import event_stream, show_progress, hide_progress
 from embedded_subs_reader import parse_video_metadata
 
@@ -253,10 +256,11 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             downloaded_provider + " with a score of " + str(percent_score) + "%."
 
                         if media_type == 'series':
-                            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM "
-                                                                "table_episodes WHERE path = ?",
-                                                                (path_mappings.path_replace_reverse(path),),
-                                                                only_one=True)
+                            episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
+                                                                    TableEpisodes.sonarrEpisodeId)\
+                                .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+                                .dicts()\
+                                .get()
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
@@ -265,9 +269,10 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
                         else:
-                            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
-                                                              (path_mappings.path_replace_reverse_movie(path),),
-                                                              only_one=True)
+                            movie_metadata = TableMovies.select(TableMovies.radarrId)\
+                                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+                                .dicts()\
+                                .get()
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
@@ -578,10 +583,11 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                   downloaded_provider + " with a score of " + str(score) + "% using manual search."
 
                         if media_type == 'series':
-                            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM "
-                                                                "table_episodes WHERE path = ?",
-                                                                (path_mappings.path_replace_reverse(path),),
-                                                                only_one=True)
+                            episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
+                                                                    TableEpisodes.sonarrEpisodeId)\
+                                .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+                                .dicts()\
+                                .get()
                             series_id = episode_metadata['sonarrSeriesId']
                             episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
@@ -590,9 +596,10 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                            sonarr_series_id=episode_metadata['sonarrSeriesId'],
                                            sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
                         else:
-                            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
-                                                              (path_mappings.path_replace_reverse_movie(path),),
-                                                              only_one=True)
+                            movie_metadata = TableMovies.select(TableMovies.radarrId)\
+                                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+                                .dicts()\
+                                .get()
                             series_id = ""
                             episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
@@ -708,18 +715,20 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     audio_language_code3 = alpha3_from_language(audio_language)
 
     if media_type == 'series':
-        episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE path = ?",
-                                            (path_mappings.path_replace_reverse(path),),
-                                            only_one=True)
+        episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)\
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+            .dicts()\
+            .get()
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
     else:
-        movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
-                                          (path_mappings.path_replace_reverse_movie(path),),
-                                          only_one=True)
+        movie_metadata = TableMovies.select(TableMovies.radarrId)\
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+            .dicts()\
+            .get()
         series_id = ""
         episode_id = movie_metadata['radarrId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
@@ -744,13 +753,24 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
 
 def series_download_subtitles(no):
-    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
-                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                        "table_shows.seriesType, table_episodes.audio_language, table_shows.title, "
-                                        "table_episodes.season, table_episodes.episode, table_episodes.title as episodeTitle "
-                                        "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                        "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=? and "
-                                        "missing_subtitles!='[]'" + get_exclusion_clause('series'), (no,))
+    conditions = [(TableEpisodes.sonarrSeriesId == no),
+                  (TableEpisodes.missing_subtitles != '[]')]
+    conditions += get_exclusion_clause('series')
+    episodes_details = TableEpisodes.select(TableEpisodes.path,
+                                            TableEpisodes.missing_subtitles,
+                                            TableEpisodes.monitored,
+                                            TableEpisodes.sonarrEpisodeId,
+                                            TableEpisodes.scene_name,
+                                            TableShows.tags,
+                                            TableShows.seriesType,
+                                            TableEpisodes.audio_language,
+                                            TableShows.title,
+                                            TableEpisodes.season,
+                                            TableEpisodes.episode,
+                                            TableEpisodes.title.alias('episodeTitle'))\
+        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .where(reduce(operator.and_, conditions))\
+        .dicts()
     if not episodes_details:
         logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
         return
@@ -819,16 +839,23 @@ def series_download_subtitles(no):
 
     hide_progress(id='series_search_progress_{}'.format(no))
 
-    
-
 
 def episode_download_subtitles(no):
-    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
-                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                        "table_shows.title, table_shows.sonarrSeriesId, table_episodes.audio_language, "
-                                        "table_shows.seriesType FROM table_episodes LEFT JOIN table_shows on "
-                                        "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId WHERE sonarrEpisodeId=?" +
-                                        get_exclusion_clause('series'), (no,))
+    conditions = [(TableEpisodes.sonarrEpisodeId == no)]
+    conditions += get_exclusion_clause('series')
+    episodes_details = TableEpisodes.select(TableEpisodes.path,
+                                            TableEpisodes.missing_subtitles,
+                                            TableEpisodes.monitored,
+                                            TableEpisodes.sonarrEpisodeId,
+                                            TableEpisodes.scene_name,
+                                            TableShows.tags,
+                                            TableShows.title,
+                                            TableShows.sonarrSeriesId,
+                                            TableEpisodes.audio_language,
+                                            TableShows.seriesType)\
+        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .where(reduce(operator.and_, conditions))\
+        .dicts()
     if not episodes_details:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
         return
@@ -880,9 +907,18 @@ def episode_download_subtitles(no):
 
 
 def movies_download_subtitles(no):
-    movies = database.execute(
-        "SELECT path, missing_subtitles, audio_language, radarrId, sceneName, title, tags, "
-        "monitored FROM table_movies WHERE radarrId=?" + get_exclusion_clause('movie'), (no,))
+    conditions = [(TableMovies.radarrId == no)]
+    conditions += get_exclusion_clause('movie')
+    movies = TableMovies.select(TableMovies.path,
+                                TableMovies.missing_subtitles,
+                                TableMovies.audio_language,
+                                TableMovies.radarrId,
+                                TableMovies.sceneName,
+                                TableMovies.title,
+                                TableMovies.tags,
+                                TableMovies.monitored)\
+        .where(reduce(operator.and_, conditions))\
+        .dicts()
     if not len(movies):
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
         return
@@ -953,14 +989,19 @@ def movies_download_subtitles(no):
 
 
 def wanted_download_subtitles(path):
-    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
-                                        "table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, "
-                                        "table_episodes.audio_language, table_episodes.scene_name,"
-                                        "table_episodes.failedAttempts, table_shows.title "
-                                        "FROM table_episodes LEFT JOIN table_shows on "
-                                        "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
-                                        "WHERE table_episodes.path=? and table_episodes.missing_subtitles!='[]'",
-                                        (path_mappings.path_replace_reverse(path),))
+    episodes_details = TableEpisodes.select(TableEpisodes.path,
+                                            TableEpisodes.missing_subtitles,
+                                            TableEpisodes.sonarrEpisodeId,
+                                            TableEpisodes.sonarrSeriesId,
+                                            TableEpisodes.audio_language,
+                                            TableEpisodes.scene_name,
+                                            TableEpisodes.failedAttempts,
+                                            TableShows.title)\
+        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)) and
+               TableEpisodes.missing_subtitles != '[]')\
+        .dicts()
+    episodes_details = list(episodes_details)
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -978,8 +1019,9 @@ def wanted_download_subtitles(path):
                 if language not in att:
                     attempt.append([language, time.time()])
 
-            database.execute("UPDATE table_episodes SET failedAttempts=? WHERE sonarrEpisodeId=?",
-                             (str(attempt), episode['sonarrEpisodeId']))
+            TableEpisodes.update({TableEpisodes.failedAttempts: str(attempt)})\
+                .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId'])\
+                .execute()
 
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -1026,10 +1068,17 @@ def wanted_download_subtitles(path):
 
 
 def wanted_download_subtitles_movie(path):
-    movies_details = database.execute(
-        "SELECT path, missing_subtitles, radarrId, audio_language, sceneName, "
-        "failedAttempts, title FROM table_movies WHERE path = ? "
-        "AND missing_subtitles != '[]'", (path_mappings.path_replace_reverse_movie(path),))
+    movies_details = TableMovies.select(TableMovies.path,
+                                        TableMovies.missing_subtitles,
+                                        TableMovies.radarrId,
+                                        TableMovies.audio_language,
+                                        TableMovies.sceneName,
+                                        TableMovies.failedAttempts,
+                                        TableMovies.title)\
+        .where((TableMovies.path == path_mappings.path_replace_reverse_movie(path)) and
+               (TableMovies.missing_subtitles != '[]'))\
+        .dicts()
+    movies_details = list(movies_details)
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1047,8 +1096,9 @@ def wanted_download_subtitles_movie(path):
                 if language not in att:
                     attempt.append([language, time.time()])
 
-            database.execute("UPDATE table_movies SET failedAttempts=? WHERE radarrId=?",
-                             (str(attempt), movie['radarrId']))
+            TableMovies.update({TableMovies.failedAttempts: str(attempt)})\
+                .where(TableMovies.radarrId == movie['radarrId'])\
+                .execute()
 
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -1095,11 +1145,20 @@ def wanted_download_subtitles_movie(path):
 
 
 def wanted_search_missing_subtitles_series():
-    episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored, "
-                                "table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title"
-                                " as episodeTitle, table_shows.seriesType FROM table_episodes INNER JOIN table_shows on"
-                                " table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles !="
-                                " '[]'" + get_exclusion_clause('series'))
+    conditions = [(TableEpisodes.missing_subtitles != '[]')]
+    conditions += get_exclusion_clause('series')
+    episodes = TableEpisodes.select(TableEpisodes.path,
+                                    TableShows.tags,
+                                    TableEpisodes.monitored,
+                                    TableShows.title,
+                                    TableEpisodes.season,
+                                    TableEpisodes.episode,
+                                    TableEpisodes.title.alias('episodeTitle'),
+                                    TableShows.seriesType)\
+        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .where(reduce(operator.and_, conditions))\
+        .dicts()
+    episodes = list(episodes)
     # path_replace
     dict_mapper.path_replace(episodes)
 
@@ -1133,8 +1192,15 @@ def wanted_search_missing_subtitles_series():
 
 
 def wanted_search_missing_subtitles_movies():
-    movies = database.execute("SELECT path, tags, monitored, title FROM table_movies WHERE missing_subtitles != '[]'" +
-                              get_exclusion_clause('movie'))
+    conditions = [(TableMovies.missing_subtitles != '[]')]
+    conditions + get_exclusion_clause('movie')
+    movies = TableMovies.select(TableMovies.path,
+                                TableMovies.tags,
+                                TableMovies.monitored,
+                                TableMovies.title)\
+        .where(reduce(operator.and_, conditions))\
+        .dicts()
+    movies = list(movies)
     # path_replace
     dict_mapper.path_replace_movie(movies)
 
@@ -1192,16 +1258,25 @@ def convert_to_guessit(guessit_key, attr_from_db):
 
 def refine_from_db(path, video):
     if isinstance(video, Episode):
-        data = database.execute(
-            "SELECT table_shows.title as seriesTitle, table_episodes.season, table_episodes.episode, "
-            "table_episodes.title as episodeTitle, table_shows.year, table_shows.tvdbId, "
-            "table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, "
-            "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path, table_shows.imdbId "
-            "FROM table_episodes INNER JOIN table_shows on "
-            "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-            "WHERE table_episodes.path = ?", (path_mappings.path_replace_reverse(path),), only_one=True)
+        data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
+                                    TableEpisodes.season,
+                                    TableEpisodes.episode,
+                                    TableEpisodes.title.alias('episodeTitle'),
+                                    TableShows.year,
+                                    TableShows.tvdbId,
+                                    TableShows.alternateTitles,
+                                    TableEpisodes.format,
+                                    TableEpisodes.resolution,
+                                    TableEpisodes.video_codec,
+                                    TableEpisodes.audio_codec,
+                                    TableEpisodes.path,
+                                    TableShows.imdbId)\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            .dicts()
 
-        if data:
+        if len(data):
+            data = data[0]
             video.series = re.sub(r'\s(\(\d\d\d\d\))', '', data['seriesTitle'])
             video.season = int(data['season'])
             video.episode = int(data['episode'])
@@ -1222,11 +1297,19 @@ def refine_from_db(path, video):
             if not video.audio_codec:
                 if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
     elif isinstance(video, Movie):
-        data = database.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, "
-                                "imdbId FROM table_movies WHERE path = ?",
-                                (path_mappings.path_replace_reverse_movie(path),), only_one=True)
+        data = TableMovies.select(TableMovies.title,
+                                  TableMovies.year,
+                                  TableMovies.alternativeTitles,
+                                  TableMovies.format,
+                                  TableMovies.resolution,
+                                  TableMovies.video_codec,
+                                  TableMovies.audio_codec,
+                                  TableMovies.imdbId)\
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+            .dicts()
 
-        if data:
+        if len(data):
+            data = data[0]
             video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
             # Commented out because Radarr provided so much bad year
             # if data['year']:
@@ -1248,11 +1331,15 @@ def refine_from_db(path, video):
 
 def refine_from_ffprobe(path, video):
     if isinstance(video, Movie):
-        file_id = database.execute("SELECT movie_file_id FROM table_shows WHERE path = ?",
-                                   (path_mappings.path_replace_reverse_movie(path),), only_one=True)
+        file_id = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
+            .dicts()\
+            .get()
     else:
-        file_id = database.execute("SELECT episode_file_id, file_size FROM table_episodes WHERE path = ?",
-                                   (path_mappings.path_replace_reverse(path),), only_one=True)
+        file_id = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
+            .dicts()\
+            .get()
 
     if not isinstance(file_id, dict):
         return video
@@ -1310,21 +1397,33 @@ def upgrade_subtitles():
         query_actions = [1, 3]
 
     if settings.general.getboolean('use_sonarr'):
-        upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
-                                               "table_history.score, table_shows.tags, table_shows.profileId, "
-                                               "table_episodes.audio_language, table_episodes.scene_name, "
-                                               "table_episodes.title, table_episodes.sonarrSeriesId, table_history.action, "
-                                               "table_history.subtitles_path, table_episodes.sonarrEpisodeId, "
-                                               "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
-                                               "table_episodes.season, table_episodes.episode, table_shows.title as seriesTitle, "
-                                               "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
-                                               "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
-                                               "table_episodes on table_episodes.sonarrEpisodeId = "
-                                               "table_history.sonarrEpisodeId WHERE action IN "
-                                               "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
-                                               "score is not null" + get_exclusion_clause('series') + " GROUP BY "
-                                               "table_history.video_path, table_history.language",
-                                               (minimum_timestamp,))
+        upgradable_episodes_conditions = [(TableHistory.action << query_actions),
+                                          (TableHistory.timestamp > minimum_timestamp),
+                                          (TableHistory.score is not None)]
+        upgradable_episodes_conditions += get_exclusion_clause('series')
+        upgradable_episodes = TableHistory.select(TableHistory.video_path,
+                                                  TableHistory.language,
+                                                  TableHistory.score,
+                                                  TableShows.tags,
+                                                  TableShows.profileId,
+                                                  TableEpisodes.audio_language,
+                                                  TableEpisodes.scene_name,
+                                                  TableEpisodes.title,
+                                                  TableEpisodes.sonarrSeriesId,
+                                                  TableHistory.action,
+                                                  TableHistory.subtitles_path,
+                                                  TableEpisodes.sonarrEpisodeId,
+                                                  fn.MAX(TableHistory.timestamp).alias('timestamp'),
+                                                  TableEpisodes.monitored,
+                                                  TableEpisodes.season,
+                                                  TableEpisodes.episode,
+                                                  TableShows.title.alias('seriesTitle'),
+                                                  TableShows.seriesType)\
+            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+            .where(reduce(operator.and_, upgradable_episodes_conditions))\
+            .group_by(TableHistory.video_path, TableHistory.language)\
+            .dicts()
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
             if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1345,17 +1444,25 @@ def upgrade_subtitles():
         count_episode_to_upgrade = len(episodes_to_upgrade)
 
     if settings.general.getboolean('use_radarr'):
-        upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.profileId, table_history_movie.action, "
-                                             "table_history_movie.subtitles_path, table_movies.audio_language, "
-                                             "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
-                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.tags, "
-                                             "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
-                                             "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
-                                             "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
-                                             "is not null" + get_exclusion_clause('movie') + " GROUP BY "
-                                             "table_history_movie.video_path, table_history_movie.language",
-                                             (minimum_timestamp,))
+        upgradable_movies_conditions = [(TableHistoryMovie.action << query_actions),
+                                        (TableHistoryMovie.timestamp > minimum_timestamp),
+                                        (TableHistoryMovie.score is not None)]
+        upgradable_movies_conditions += get_exclusion_clause('movie')
+        upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
+                                                     TableHistoryMovie.language,
+                                                     TableHistoryMovie.score,
+                                                     TableMovies.profileId,
+                                                     TableHistoryMovie.action,
+                                                     TableHistoryMovie.subtitles_path,
+                                                     TableMovies.audio_language,
+                                                     TableMovies.sceneName,
+                                                     fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+                                                     TableMovies.tags,
+                                                     TableMovies.radarrId)\
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
+            .where(reduce(operator.and_, upgradable_movies_conditions))\
+            .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language)\
+            .dicts()
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
             if upgradable_movie['timestamp'] > minimum_timestamp:

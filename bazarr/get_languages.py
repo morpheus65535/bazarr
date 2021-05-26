@@ -3,7 +3,7 @@
 import pycountry
 
 from subzero.language import Language
-from database import database
+from database import database, TableSettingsLanguages
 
 
 def load_language_in_db():
@@ -13,21 +13,35 @@ def load_language_in_db():
              if hasattr(lang, 'alpha_2')]
     
     # Insert languages in database table
-    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)",
-                     langs, execute_many=True)
+    TableSettingsLanguages.insert_many(langs,
+                                       fields=[TableSettingsLanguages.code3, TableSettingsLanguages.code2,
+                                               TableSettingsLanguages.name]) \
+        .on_conflict(action='IGNORE') \
+        .execute()
 
-    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
+    TableSettingsLanguages.insert({TableSettingsLanguages.code3: 'pob', TableSettingsLanguages.code2: 'pb',
+                                   TableSettingsLanguages.name: 'Brazilian Portuguese'}) \
+        .on_conflict(action='IGNORE') \
+        .execute()
 
-    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('zht', 'zt', 'Chinese Traditional')")
+    # update/insert chinese languages
+    TableSettingsLanguages.update({TableSettingsLanguages.name: 'Chinese Simplified'}) \
+        .where(TableSettingsLanguages.code2 == 'zt')\
+        .execute()
+    TableSettingsLanguages.insert({TableSettingsLanguages.code3: 'zht', TableSettingsLanguages.code2: 'zt',
+                                   TableSettingsLanguages.name: 'Chinese Traditional'}) \
+        .on_conflict(action='IGNORE')\
+        .execute()
 
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
     
     # Update languages in database table
-    database.execute("UPDATE table_settings_languages SET code3b=? WHERE code3=?", langs, execute_many=True)
+    for lang in langs:
+        TableSettingsLanguages.update({TableSettingsLanguages.code3b: lang[0]}) \
+            .where(TableSettingsLanguages.code3 == lang[1]) \
+            .execute()
 
     # Create languages dictionary for faster conversion than calling database
     create_languages_dict()
@@ -35,10 +49,10 @@ def load_language_in_db():
 
 def create_languages_dict():
     global languages_dict
-    #replace chinese by chinese simplified
-    database.execute("UPDATE table_settings_languages SET name = 'Chinese Simplified' WHERE code3 = 'zho'")
-    
-    languages_dict = database.execute("SELECT name, code2, code3, code3b FROM table_settings_languages")
+    languages_dict = TableSettingsLanguages.select(TableSettingsLanguages.name,
+                                                   TableSettingsLanguages.code2,
+                                                   TableSettingsLanguages.code3,
+                                                   TableSettingsLanguages.code3b).dicts()
 
 
 def language_from_alpha2(lang):
@@ -68,7 +82,8 @@ def alpha3_from_language(lang):
 
 
 def get_language_set():
-    languages = database.execute("SELECT code3 FROM table_settings_languages WHERE enabled=1")
+    languages = TableSettingsLanguages.select(TableSettingsLanguages.code3) \
+        .where(TableSettingsLanguages.enabled == 1).dicts()
 
     language_set = set()
     

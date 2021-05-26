@@ -20,6 +20,7 @@ guess_language-spirit=0.5.3
 Js2Py=0.63 <-- modified: manually merged from upstream: https://github.com/PiotrDabkowski/Js2Py/pull/192/files
 knowit=0.3.0-dev
 msgpack=1.0.2
+peewee=3.14.4
 py-pretty=1
 pycountry=18.2.23
 pyga=2.6.1

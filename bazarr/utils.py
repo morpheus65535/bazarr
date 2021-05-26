@@ -13,7 +13,8 @@ import stat
 from whichcraft import which
 from get_args import args
 from config import settings, url_sonarr, url_radarr
-from database import database
+from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
+    TableMoviesRootfolder
 from event_handler import event_stream
 from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
 from helper import path_mappings
@@ -37,51 +38,83 @@ class BinaryNotFound(Exception):
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
                 score=None, subs_id=None, subtitles_path=None):
-    database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
-                     "video_path, language, provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                     (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
-                      provider, score, subs_id, subtitles_path))
+    TableHistory.insert({
+        TableHistory.action: action,
+        TableHistory.sonarrSeriesId: sonarr_series_id,
+        TableHistory.sonarrEpisodeId: sonarr_episode_id,
+        TableHistory.timestamp: time.time(),
+        TableHistory.description: description,
+        TableHistory.video_path: video_path,
+        TableHistory.language: language,
+        TableHistory.provider: provider,
+        TableHistory.score: score,
+        TableHistory.subs_id: subs_id,
+        TableHistory.subtitles_path: subtitles_path
+    }).execute()
     event_stream(type='episode-history')
 
 
 def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
-    database.execute("INSERT INTO table_blacklist (sonarr_series_id, sonarr_episode_id, timestamp, provider, "
-                     "subs_id, language) VALUES (?,?,?,?,?,?)",
-                     (sonarr_series_id, sonarr_episode_id, time.time(), provider, subs_id, language))
+    TableBlacklist.insert({
+        TableBlacklist.sonarr_series_id: sonarr_series_id,
+        TableBlacklist.sonarr_episode_id: sonarr_episode_id,
+        TableBlacklist.timestamp: time.time(),
+        TableBlacklist.provider: provider,
+        TableBlacklist.subs_id: subs_id,
+        TableBlacklist.language: language
+    }).execute()
     event_stream(type='episode-blacklist')
 
 
 def blacklist_delete(provider, subs_id):
-    database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
+    TableBlacklist.delete().where((TableBlacklist.provider == provider) and
+                                  (TableBlacklist.subs_id == subs_id))\
+        .execute()
     event_stream(type='episode-blacklist', action='delete')
 
 
 def blacklist_delete_all():
-    database.execute("DELETE FROM table_blacklist")
+    TableBlacklist.delete().execute()
     event_stream(type='episode-blacklist', action='delete')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
                       subs_id=None, subtitles_path=None):
-    database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
-                     "provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                     (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id, subtitles_path))
+    TableHistoryMovie.insert({
+        TableHistoryMovie.action: action,
+        TableHistoryMovie.radarrId: radarr_id,
+        TableHistoryMovie.timestamp: time.time(),
+        TableHistoryMovie.description: description,
+        TableHistoryMovie.video_path: video_path,
+        TableHistoryMovie.language: language,
+        TableHistoryMovie.provider: provider,
+        TableHistoryMovie.score: score,
+        TableHistoryMovie.subs_id: subs_id,
+        TableHistoryMovie.subtitles_path: subtitles_path
+    }).execute()
     event_stream(type='movie-history')
 
 
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
-    database.execute("INSERT INTO table_blacklist_movie (radarr_id, timestamp, provider, subs_id, language) "
-                     "VALUES (?,?,?,?,?)", (radarr_id, time.time(), provider, subs_id, language))
+    TableBlacklistMovie.insert({
+        TableBlacklistMovie.radarr_id: radarr_id,
+        TableBlacklistMovie.timestamp: time.time(),
+        TableBlacklistMovie.provider: provider,
+        TableBlacklistMovie.subs_id: subs_id,
+        TableBlacklistMovie.language: language
+    }).execute()
     event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_movie(provider, subs_id):
-    database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
+    TableBlacklistMovie.delete().where((TableBlacklistMovie.provider == provider) and
+                                       (TableBlacklistMovie.subs_id == subs_id))\
+        .execute()
     event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
-    database.execute("DELETE FROM table_blacklist_movie")
+    TableBlacklistMovie.delete().execute()
     event_stream(type='movie-blacklist', action='delete')
 
 
@@ -167,9 +200,9 @@ def get_binary(name):
 
 def get_blacklist(media_type):
     if media_type == 'series':
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist")
+        blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
     else:
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie")
+        blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
 
     blacklist_list = []
     for item in blacklist_db:
@@ -424,15 +457,22 @@ def get_health_issues():
 
     # get Sonarr rootfolder issues
     if settings.general.getboolean('use_sonarr'):
-        rootfolder = database.execute('SELECT path, accessible, error FROM table_shows_rootfolder WHERE accessible = 0')
+        rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.path,
+                                                 TableShowsRootfolder.accessible,
+                                                 TableShowsRootfolder.error)\
+            .where(TableShowsRootfolder.accessible == 0)\
+            .dicts()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace(item['path']),
                                   'issue': item['error']})
 
     # get Radarr rootfolder issues
     if settings.general.getboolean('use_radarr'):
-        rootfolder = database.execute('SELECT path, accessible, error FROM table_movies_rootfolder '
-                                      'WHERE accessible = 0')
+        rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.path,
+                                                  TableMoviesRootfolder.accessible,
+                                                  TableMoviesRootfolder.error)\
+            .where(TableMoviesRootfolder.accessible == 0)\
+            .dicts()
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
                                   'issue': item['error']})
