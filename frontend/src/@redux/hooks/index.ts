@@ -362,7 +362,7 @@ export function useBlacklistMovies() {
   const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movie.blacklist);
   const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "movie-blacklist", update }),
+    () => ({ key: "movie-blacklist", any: update }),
     [update]
   );
   useSocketIOReducer(reducer);
@@ -377,7 +377,7 @@ export function useBlacklistSeries() {
   const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
   const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "episode-blacklist", update }),
+    () => ({ key: "episode-blacklist", any: update }),
     [update]
   );
   useSocketIOReducer(reducer);
