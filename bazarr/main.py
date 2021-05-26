@@ -26,7 +26,7 @@ from get_args import args
 from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
-from database import database
+from database import System
 
 from notifier import update_notifier
 
@@ -53,7 +53,7 @@ check_releases()
 configure_proxy_func()
 
 # Reset the updated once Bazarr have been restarted after an update
-database.execute("UPDATE system SET updated='0'")
+System.update({System.updated: '0'}).execute()
 
 # Load languages in database
 load_language_in_db()
@@ -100,14 +100,14 @@ def catch_all(path):
             auth = False
 
     try:
-        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
+        updated = System.select().where(updated='1')
     except:
         updated = False
 
     inject = dict()
     inject["baseUrl"] = base_url
     inject["canUpdate"] = not args.no_update
-    inject["hasUpdate"] = updated != '0'
+    inject["hasUpdate"] = len(updated)
 
     if auth:
         inject["apiKey"] = settings.auth.apikey
@@ -164,7 +164,7 @@ def movies_images(url):
 
 
 def configured():
-    database.execute("UPDATE system SET configured = 1")
+    System.update({System.configured: '1'}).execute()
 
 
 @check_login

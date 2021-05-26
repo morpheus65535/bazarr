@@ -3,7 +3,7 @@
 import apprise
 import logging
 
-from database import database
+from database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies
 
 
 def update_notifier():
@@ -16,7 +16,7 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
 
-    notifiers_current_db = database.execute("SELECT name FROM table_settings_notifier")
+    notifiers_current_db = TableSettingsNotifier.select(TableSettingsNotifier.name).dicts()
 
     notifiers_current = []
     for notifier in notifiers_current_db:
@@ -24,41 +24,51 @@ def update_notifier():
 
     for x in results['schemas']:
         if [x['service_name']] not in notifiers_current:
-            notifiers_new.append([x['service_name'], 0])
+            notifiers_new.append({'name': x['service_name'], 'enabled': 0})
             logging.debug('Adding new notifier agent: ' + x['service_name'])
         else:
             notifiers_old.append([x['service_name']])
 
     notifiers_to_delete = [item for item in notifiers_current if item not in notifiers_old]
 
-    database.execute("INSERT INTO table_settings_notifier (name, enabled) VALUES (?, ?)", notifiers_new,
-                     execute_many=True)
+    TableSettingsNotifier.insert_many(notifiers_new).execute()
 
-    database.execute("DELETE FROM table_settings_notifier WHERE name=?", notifiers_to_delete, execute_many=True)
+    for item in notifiers_to_delete:
+        TableSettingsNotifier.delete().where(TableSettingsNotifier.name == item).execute()
 
 
 def get_notifier_providers():
-    providers = database.execute("SELECT name, url FROM table_settings_notifier WHERE enabled=1")
+    providers = TableSettingsNotifier.select(TableSettingsNotifier.name,
+                                             TableSettingsNotifier.enabled)\
+        .where(TableSettingsNotifier.enabled == 1)\
+        .dicts()
 
     return providers
 
 
 def get_series(sonarr_series_id):
-    data = database.execute("SELECT title, year FROM table_shows WHERE sonarrSeriesId=?", (sonarr_series_id,),
-                            only_one=True)
+    data = TableShows.select(TableShows.title, TableShows.year)\
+        .where(TableShows.sonarrSeriesId == sonarr_series_id)\
+        .dicts()\
+        .get()
 
     return {'title': data['title'], 'year': data['year']}
 
 
 def get_episode_name(sonarr_episode_id):
-    data = database.execute("SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId=?",
-                            (sonarr_episode_id,), only_one=True)
+    data = TableEpisodes.select(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)\
+        .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
+        .dicts()\
+        .get()
 
     return data['title'], data['season'], data['episode']
 
 
 def get_movie(radarr_id):
-    data = database.execute("SELECT title, year FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
+    data = TableMovies.select(TableMovies.title, TableMovies.year)\
+        .where(TableMovies.radarrId == radarr_id)\
+        .dicts()\
+        .get()
 
     return {'title': data['title'], 'year': data['year']}
 
