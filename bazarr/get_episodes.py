@@ -27,7 +27,7 @@ def sync_episodes(series_id=None, send_event=True):
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
                                                TableEpisodes.path,
                                                TableEpisodes.sonarrSeriesId)\
-        .where((TableEpisodes.sonarrSeriesId == series_id) id series_id else ())\
+        .where((TableEpisodes.sonarrSeriesId == series_id) if series_id else None)\
         .dicts()
 
     current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
@@ -323,8 +323,9 @@ def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
         logging.exception("BAZARR Error trying to get series from Sonarr.")
         return
     else:
+        series_json = []
         if series_id:
-            series_json = list(r.json())
+            series_json.append(r.json())
         else:
             series_json = r.json()
         series_list = []
