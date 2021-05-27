@@ -24,10 +24,7 @@ def load_language_in_db():
         .on_conflict(action='IGNORE') \
         .execute()
 
-    # update/insert chinese languages
-    TableSettingsLanguages.update({TableSettingsLanguages.name: 'Chinese Simplified'}) \
-        .where(TableSettingsLanguages.code2 == 'zt')\
-        .execute()
+    # insert chinese languages
     TableSettingsLanguages.insert({TableSettingsLanguages.code3: 'zht', TableSettingsLanguages.code2: 'zt',
                                    TableSettingsLanguages.name: 'Chinese Traditional'}) \
         .on_conflict(action='IGNORE')\
@@ -49,6 +46,11 @@ def load_language_in_db():
 
 def create_languages_dict():
     global languages_dict
+    # replace chinese by chinese simplified
+    TableSettingsLanguages.update({TableSettingsLanguages.name: 'Chinese Simplified'}) \
+        .where(TableSettingsLanguages.code3 == 'zho') \
+        .execute()
+
     languages_dict = TableSettingsLanguages.select(TableSettingsLanguages.name,
                                                    TableSettingsLanguages.code2,
                                                    TableSettingsLanguages.code3,

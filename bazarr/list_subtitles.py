@@ -268,7 +268,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
     elif no is not None:
         episodes_subtitles_clause = (TableEpisodes.sonarrSeriesId == no)
     else:
-        episodes_subtitles_clause = ()
+        episodes_subtitles_clause = None
     episodes_subtitles = TableEpisodes.select(TableShows.sonarrSeriesId,
                                               TableEpisodes.sonarrEpisodeId,
                                               TableEpisodes.subtitles,
