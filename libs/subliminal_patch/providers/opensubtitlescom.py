@@ -145,14 +145,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.use_hash = use_hash
 
     def initialize(self):
-        self.token = region.get("oscom_token")
+        self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
         if self.token is NO_VALUE:
             self.login()
 
     def terminate(self):
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=TOKEN_EXPIRATION_TIME)
     def login(self):
         try:
             r = self.session.post(self.server_url + 'login',
