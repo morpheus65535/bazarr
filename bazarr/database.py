@@ -246,6 +246,9 @@ database.create_tables([System,
                         TableShows,
                         TableShowsRootfolder])
 
+# add the system table single row if it's not existing
+if not System.select().count():
+    System.insert({System.configured: '0', System.updated: '0'}).execute()
 
 class SqliteDictPathMapper:
     def __init__(self):

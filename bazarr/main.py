@@ -100,14 +100,14 @@ def catch_all(path):
             auth = False
 
     try:
-        updated = System.select().where(updated='1')
+        updated = System.get().updated
     except:
-        updated = False
+        updated = '0'
 
     inject = dict()
     inject["baseUrl"] = base_url
     inject["canUpdate"] = not args.no_update
-    inject["hasUpdate"] = len(updated)
+    inject["hasUpdate"] = updated != '0'
 
     if auth:
         inject["apiKey"] = settings.auth.apikey
