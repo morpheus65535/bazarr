@@ -3,6 +3,7 @@ import atexit
 import json
 import ast
 import logging
+import gevent
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.shortcuts import model_to_dict
@@ -231,24 +232,34 @@ class TableShowsRootfolder(BaseModel):
         primary_key = False
 
 
-# Create tables if they don't exists.
-database.create_tables([System,
-                        TableBlacklist,
-                        TableBlacklistMovie,
-                        TableEpisodes,
-                        TableHistory,
-                        TableHistoryMovie,
-                        TableLanguagesProfiles,
-                        TableMovies,
-                        TableMoviesRootfolder,
-                        TableSettingsLanguages,
-                        TableSettingsNotifier,
-                        TableShows,
-                        TableShowsRootfolder])
+def init_db():
+    # Create tables if they don't exists.
+    database.create_tables([System,
+                            TableBlacklist,
+                            TableBlacklistMovie,
+                            TableEpisodes,
+                            TableHistory,
+                            TableHistoryMovie,
+                            TableLanguagesProfiles,
+                            TableMovies,
+                            TableMoviesRootfolder,
+                            TableSettingsLanguages,
+                            TableSettingsNotifier,
+                            TableShows,
+                            TableShowsRootfolder])
 
-# add the system table single row if it's not existing
-if not System.select().count():
-    System.insert({System.configured: '0', System.updated: '0'}).execute()
+    # add the system table single row if it's not existing
+    # we must retry until the tables are created
+    tables_created = False
+    while not tables_created:
+        try:
+            if not System.select().count():
+                System.insert({System.configured: '0', System.updated: '0'}).execute()
+        except:
+            gevent.sleep(0.1)
+        else:
+            tables_created = True
+
 
 class SqliteDictPathMapper:
     def __init__(self):
