@@ -1,6 +1,5 @@
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { intersectionWith } from "lodash";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
@@ -8,6 +7,7 @@ import { useProfileItems } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
+import { filterSubtitleBy } from "../../utilites";
 
 const missingText = "Missing Subtitles";
 
@@ -109,11 +109,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
 
     let raw_subtitles = movie.subtitles;
     if (onlyDesired) {
-      raw_subtitles = intersectionWith(
-        raw_subtitles,
-        profileItems,
-        (l, r) => l.code2 === r.code2
-      );
+      raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
     }
 
     return [...raw_subtitles, ...missing];

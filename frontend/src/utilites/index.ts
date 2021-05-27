@@ -1,3 +1,4 @@
+import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
@@ -105,6 +106,18 @@ export function Reload() {
 
 export function ScrollToTop() {
   window.scrollTo(0, 0);
+}
+
+export function filterSubtitleBy(
+  subtitles: Subtitle[],
+  languages: Language[]
+): Subtitle[] {
+  const result = differenceWith(
+    subtitles,
+    languages,
+    (a, b) => a.code2 === b.code2
+  );
+  return difference(subtitles, result);
 }
 
 export * from "./hooks";
