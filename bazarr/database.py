@@ -294,11 +294,11 @@ def get_exclusion_clause(exclusion_type):
     if exclusion_type == 'series':
         tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
         for tag in tagsList:
-            where_clause.append(~(TableShows.tags ** tag))
+            where_clause.append(~(TableShows.tags.contains("\'"+tag+"\'")))
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
         for tag in tagsList:
-            where_clause.append(~(TableMovies.tags ** tag))
+            where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
 
     if exclusion_type == 'series':
         monitoredOnly = settings.sonarr.getboolean('only_monitored')

@@ -318,7 +318,10 @@ class Badges(Resource):
         episodes_conditions = [(TableEpisodes.missing_subtitles is not None),
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
-        missing_episodes = TableEpisodes.select().where(reduce(operator.and_, episodes_conditions)).count()
+        missing_episodes = TableEpisodes.select(TableShows.tags, TableShows.seriesType)\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .where(reduce(operator.and_, episodes_conditions))\
+            .count()
 
         movies_conditions = [(TableMovies.missing_subtitles is not None),
                              (TableMovies.missing_subtitles != '[]')]
@@ -636,14 +639,11 @@ class Series(Resource):
             item.update({"episodeMissingCount": episodeMissingCount})
 
             # Add episode count
-            episodes_count_conditions = [(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])]
-            episodes_count_conditions += get_exclusion_clause('series')
-
             episodeFileCount = TableEpisodes.select(TableShows.tags,
                                                     TableEpisodes.monitored,
                                                     TableShows.seriesType)\
                 .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-                .where(reduce(operator.and_, episodes_count_conditions))\
+                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])\
                 .count()
             item.update({"episodeFileCount": episodeFileCount})
 

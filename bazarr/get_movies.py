@@ -161,20 +161,6 @@ def update_movies(send_event=True):
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 
-            # Search for desired subtitles if no more than 5 movies have been added.
-            if len(altered_movies) <= 5:
-                logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
-                for altered_movie in altered_movies:
-                    conditions = [(TableMovies.radarrId == altered_movie[2])]
-                    conditions += get_exclusion_clause('movie')
-                    data = TableMovies.get(reduce(operator.and_, conditions))
-                    if data:
-                        movies_download_subtitles(data['radarrId'])
-                    else:
-                        logging.debug("BAZARR skipping download for this movie as it is excluded.")
-            else:
-                logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
-
 
 def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
