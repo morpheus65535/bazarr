@@ -6,7 +6,6 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { intersectionWith } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
@@ -23,7 +22,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey } from "../../utilites";
+import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
@@ -121,11 +120,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
             let raw_subtitles = episode.subtitles;
             if (onlyDesired) {
-              raw_subtitles = intersectionWith(
-                raw_subtitles,
-                profileItems,
-                (l, r) => l.code2 === r.code2
-              );
+              raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
             }
 
             const subtitles = raw_subtitles.map((val, idx) => (
