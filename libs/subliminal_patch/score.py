@@ -9,9 +9,7 @@ from subliminal.score import get_scores
 logger = logging.getLogger(__name__)
 
 
-FPS_EQUALITY = (
-    (23.976, 23.98, 24.0),
-)
+FPS_EQUALITY = ((23.976, 23.98, 24.0),)
 
 
 def framerate_equal(source, check):
@@ -30,7 +28,7 @@ def framerate_equal(source, check):
     return False
 
 
-def compute_score(matches, subtitle, video, hearing_impaired=None):
+def compute_score(matches, subtitle, video, hearing_impaired=None, score_obj=None):
     """Compute the score of the `subtitle` against the `video` with `hearing_impaired` preference.
     
     patch: 
@@ -51,9 +49,8 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     """
     logger.info('%r: Computing score for video %r with %r', subtitle, video, dict(hearing_impaired=hearing_impaired))
 
-    # get the scores dict
-    scores = get_scores(video)
-    # logger.debug('Using scores %r', scores)
+    scores = score_obj.scores or get_scores(video)
+    _score_obj_checks(subtitle, matches, score_obj)
 
     is_episode = isinstance(video, Episode)
     is_movie = isinstance(video, Movie)
@@ -64,23 +61,22 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     orig_matches = matches.copy()
 
     # on hash match, discard everything else
-    if subtitle.hash_verifiable:
-        if 'hash' in matches:
-            # hash is error-prone, try to fix that
-            hash_valid_if = episode_hash_valid_if if is_episode else movie_hash_valid_if
+    if subtitle.hash_verifiable and 'hash' in matches:
+        # hash is error-prone, try to fix that
+        hash_valid_if = episode_hash_valid_if if is_episode else movie_hash_valid_if
 
-            # don't validate hashes of specials, as season and episode tend to be wrong
-            if is_movie or not video.is_special:
-                if hash_valid_if <= set(matches):
-                    # series, season and episode matched, hash is valid
-                    logger.debug('%r: Using valid hash, as %s are correct (%r) and (%r)', subtitle, hash_valid_if, matches,
-                                 video)
-                    matches &= {'hash'}
-                else:
-                    # no match, invalidate hash
-                    logger.debug('%r: Ignoring hash as other matches are wrong (missing: %r) and (%r)', subtitle,
-                                 hash_valid_if - matches, video)
-                    matches -= {"hash"}
+        # don't validate hashes of specials, as season and episode tend to be wrong
+        if is_movie or not video.is_special:
+            if hash_valid_if <= set(matches):
+                # series, season and episode matched, hash is valid
+                logger.debug('%r: Using valid hash, as %s are correct (%r) and (%r)', subtitle, hash_valid_if, matches,
+                             video)
+                matches &= {'hash'}
+            else:
+                # no match, invalidate hash
+                logger.debug('%r: Ignoring hash as other matches are wrong (missing: %r) and (%r)', subtitle,
+                             hash_valid_if - matches, video)
+                matches -= {"hash"}
     elif 'hash' in matches:
         logger.debug('%r: Hash not verifiable for this provider. Keeping it', subtitle)
         matches &= {'hash'}
@@ -88,32 +84,10 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     # handle equivalent matches
     eq_matches = set()
     if is_episode:
-        if 'title' in matches:
-            logger.debug('Adding title match equivalent')
-            eq_matches.add('episode')
-        if 'series_imdb_id' in matches:
-            logger.debug('Adding series_imdb_id match equivalent')
-            eq_matches |= {'series', 'year'}
-        if 'imdb_id' in matches:
-            logger.debug('Adding imdb_id match equivalents')
-            eq_matches |= {'series', 'year', 'season', 'episode'}
-        if 'tvdb_id' in matches:
-            logger.debug('Adding tvdb_id match equivalents')
-            eq_matches |= {'series', 'year', 'season', 'episode', 'title'}
-        if 'series_tvdb_id' in matches:
-            logger.debug('Adding series_tvdb_id match equivalents')
-            eq_matches |= {'series', 'year'}
-
-        # specials
-        if video.is_special and 'title' in matches and 'series' in matches \
-                and 'year' in matches:
-            logger.debug('Adding special title match equivalent')
-            eq_matches |= {'season', 'episode'}
-
-    elif is_movie:
-        if 'imdb_id' in matches:
-            logger.debug('Adding imdb_id match equivalents')
-            eq_matches |= {'title', 'year'}
+        _episode_checks(video, eq_matches, matches)
+    elif is_movie and 'imdb_id' in matches:
+        logger.debug('Adding imdb_id match equivalents')
+        eq_matches |= {'title', 'year'}
 
     matches |= eq_matches
 
@@ -130,3 +104,34 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     score_without_hash = sum((scores.get(match, 0) for match in orig_matches | eq_matches if match != "hash"))
 
     return score, score_without_hash
+
+
+def _episode_checks(video, eq_matches, matches):
+    if "title" in matches:
+        logger.debug("Adding title match equivalent")
+        eq_matches.add("episode")
+    if "series_imdb_id" in matches:
+        logger.debug("Adding series_imdb_id match equivalent")
+        eq_matches |= {"series", "year"}
+    if "imdb_id" in matches:
+        logger.debug("Adding imdb_id match equivalents")
+        eq_matches |= {"series", "year", "season", "episode"}
+    if "tvdb_id" in matches:
+        logger.debug("Adding tvdb_id match equivalents")
+        eq_matches |= {"series", "year", "season", "episode", "title"}
+    if "series_tvdb_id" in matches:
+        logger.debug("Adding series_tvdb_id match equivalents")
+        eq_matches |= {"series", "year"}
+
+    # specials
+    if video.is_special and "title" in matches and "series" in matches and "year" in matches:
+        logger.debug("Adding special title match equivalent")
+        eq_matches |= {"season", "episode"}
+
+
+def _score_obj_checks(sub, matches, obj):
+    if sub.provider_name and any(sub.provider_name == item for item in obj.providers):
+        matches.add("provider")
+
+    if sub.uploader and any(sub.uploader == item for item in obj.uploaders):
+        matches.add("uploader")

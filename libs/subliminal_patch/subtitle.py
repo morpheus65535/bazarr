@@ -406,20 +406,28 @@ MERGED_FORMATS = {
     "Air": ("SATRip", "DVB", "PPV"),
     "Disk-HD": ("HD-DVD", "Blu-ray"),
     "Disk-SD": ("DVD", "VHS"),
+    "Web": ("Web",),
 }
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
 
 def _has_match(video, guess, key) -> bool:
     value = getattr(video, key)
-    if value is None:
+    guess_value = guess.get(key)
+
+    # To avoid extra debug calls
+    if guess_value is None or value is None:
         return False
 
-    guess_value = guess.get(key)
     if isinstance(guess_value, list):
-        return any(value == item for item in guess_value)
+        matched = any(value == item for item in guess_value)
+    else:
+        matched = value == guess_value
 
-    return value == guess_value
+    logger.debug("%s matched? %s (%s -> %s)", key, matched, value, guess_value)
+
+    return matched
+
 
 
 def guess_matches(video, guess, partial=False):
@@ -438,7 +446,6 @@ def guess_matches(video, guess, partial=False):
     :rtype: set
 
     """
-
     matches = set()
     if isinstance(video, Episode):
         # series
@@ -498,11 +505,6 @@ def guess_matches(video, guess, partial=False):
                         get_equivalent_release_groups(sanitize_release_group(video.release_group))):
                     matches.add('release_group')
                     break
-
-    # resolution
-    if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
-        matches.add('resolution')
-
     # source
     if 'source' in guess:
         formats = guess["source"]
@@ -512,24 +514,37 @@ def guess_matches(video, guess, partial=False):
         if video.source:
             video_format = video.source.lower()
             _video_gen_format = MERGED_FORMATS_REV.get(video_format)
-            if _video_gen_format:
-                logger.debug("Treating %s as %s the same", video_format, _video_gen_format)
-
+            matched = False
             for frmt in formats:
                 _guess_gen_frmt = MERGED_FORMATS_REV.get(frmt.lower())
+                # We don't want to match a singleton
+                if _guess_gen_frmt is None: # If the source is not in MERGED_FORMATS
+                    _guess_gen_frmt = guess["source"]
 
                 if _guess_gen_frmt == _video_gen_format:
+                    matched = True
                     matches.add('source')
                     break
+
+            logger.debug("Source match found? %s: %s -> %s", matched, video.source, formats)
+
         if "release_group" in matches and "source" not in matches:
-            logger.info("Release group matched but source didn't. Remnoving release group match.")
+            logger.info("Release group matched but source didn't. Removing release group match.")
             matches.remove("release_group")
 
+    guess.update({"resolution": guess.get("screen_size")})
 
-    if _has_match(video, guess, "video_codec"):
-        matches.add("video_codec")
+    # Solve match keys for potential lists
+    for key in ("video_codec", "audio_codec", "edition", "streaming_service", "resolution"):
+        if _has_match(video, guess, key):
+            matches.add(key)
 
-    if _has_match(video, guess, "audio_codec"):
-        matches.add("audio_codec")
+    # Add streaming service match for non-web sources
+    if video.source and video.source != "Web":
+        matches.add("streaming_service")
+
+    # As edition tags are rare, add edition match if the video doesn't have an edition
+    if not video.edition:
+        matches.add("edition")
 
     return matches
