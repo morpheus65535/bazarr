@@ -74,7 +74,7 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
     def get_matches(self, video, hearing_impaired=False):
         matches = super(OpenSubtitlesSubtitle, self).get_matches(video)
 
-        type_ = "episode" if isinstance(video, Episode) else "movie")
+        type_ = "episode" if isinstance(video, Episode) else "movie"
         matches |= guess_matches(video, guessit(self.movie_release_name, {'type': type_}))
         matches |= guess_matches(video, guessit(self.filename, {'type': type_}))
 
