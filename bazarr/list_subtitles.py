@@ -8,6 +8,7 @@ import re
 from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
+from gevent import sleep
 
 from database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
 from get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
@@ -284,6 +285,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
 
     for episode_subtitles in episodes_subtitles:
+        sleep()
         missing_subtitles_text = '[]'
         if episode_subtitles['profileId']:
             # get desired subtitles
@@ -394,6 +396,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
 
     for movie_subtitles in movies_subtitles:
+        sleep()
         missing_subtitles_text = '[]'
         if movie_subtitles['profileId']:
             # get desired subtitles
@@ -493,6 +496,7 @@ def series_full_scan_subtitles():
     
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        sleep()
         show_progress(id='episodes_disk_scan',
                       header='Full disk scan...',
                       name='Episodes subtitles',
@@ -516,6 +520,7 @@ def movies_full_scan_subtitles():
     
     count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        sleep()
         show_progress(id='movies_disk_scan',
                       header='Full disk scan...',
                       name='Movies subtitles',
@@ -541,6 +546,7 @@ def series_scan_subtitles(no):
         .dicts()
     
     for episode in episodes:
+        sleep()
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
 
@@ -551,6 +557,7 @@ def movies_scan_subtitles(no):
         .dicts()
     
     for movie in movies:
+        sleep()
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
 
