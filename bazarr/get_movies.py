@@ -3,6 +3,9 @@
 import os
 import requests
 import logging
+import operator
+from functools import reduce
+from gevent import sleep
 
 from config import settings, url_radarr
 from helper import path_mappings
@@ -11,7 +14,7 @@ from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 from get_rootfolder import check_radarr_rootfolder
 
 from get_subtitle import movies_download_subtitles
-from database import database, dict_converter, get_exclusion_clause
+from database import get_exclusion_clause, TableMovies
 from event_handler import event_stream, show_progress, hide_progress
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
@@ -50,7 +53,7 @@ def update_movies(send_event=True):
             return
         else:
             # Get current movies in DB
-            current_movies_db = database.execute("SELECT tmdbId, path, radarrId FROM table_movies")
+            current_movies_db = TableMovies.select(TableMovies.tmdbId, TableMovies.path, TableMovies.radarrId).dicts()
             
             current_movies_db_list = [x['tmdbId'] for x in current_movies_db]
 
@@ -62,6 +65,7 @@ def update_movies(send_event=True):
             # Build new and updated movies
             movies_count = len(movies)
             for i, movie in enumerate(movies, 1):
+                sleep()
                 if send_event:
                     show_progress(id='movies_progress',
                                   header='Syncing movies...',
@@ -101,14 +105,32 @@ def update_movies(send_event=True):
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                database.execute("DELETE FROM table_movies WHERE tmdbId=?", (removed_movie,))
+                sleep()
+                TableMovies.delete().where(TableMovies.tmdbId == removed_movie).execute()
 
             # Update movies in DB
             movies_in_db_list = []
-            movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
-                                            "audio_language, sceneName, monitored, sortTitle, year, "
-                                            "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
-                                            "movie_file_id, tags, file_size FROM table_movies")
+            movies_in_db = TableMovies.select(TableMovies.radarrId,
+                                              TableMovies.title,
+                                              TableMovies.path,
+                                              TableMovies.tmdbId,
+                                              TableMovies.overview,
+                                              TableMovies.poster,
+                                              TableMovies.fanart,
+                                              TableMovies.audio_language,
+                                              TableMovies.sceneName,
+                                              TableMovies.monitored,
+                                              TableMovies.sortTitle,
+                                              TableMovies.year,
+                                              TableMovies.alternativeTitles,
+                                              TableMovies.format,
+                                              TableMovies.resolution,
+                                              TableMovies.video_codec,
+                                              TableMovies.audio_codec,
+                                              TableMovies.imdbId,
+                                              TableMovies.movie_file_id,
+                                              TableMovies.tags,
+                                              TableMovies.file_size).dicts()
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
@@ -116,9 +138,8 @@ def update_movies(send_event=True):
             movies_to_update_list = [i for i in movies_to_update if i not in movies_in_db_list]
 
             for updated_movie in movies_to_update_list:
-                query = dict_converter.convert(updated_movie)
-                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE tmdbId = ?''',
-                                 query.values + (updated_movie['tmdbId'],))
+                sleep()
+                TableMovies.update(updated_movie).where(TableMovies.tmdbId == updated_movie['tmdbId']).execute()
                 altered_movies.append([updated_movie['tmdbId'],
                                        updated_movie['path'],
                                        updated_movie['radarrId'],
@@ -126,10 +147,8 @@ def update_movies(send_event=True):
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                query = dict_converter.convert(added_movie)
-                result = database.execute(
-                    '''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
-                    query.question_marks + ''')''', query.values)
+                sleep()
+                result = TableMovies.insert(added_movie).on_conflict(action='IGNORE').execute()
                 if result > 0:
                     altered_movies.append([added_movie['tmdbId'],
                                            added_movie['path'],
@@ -143,37 +162,25 @@ def update_movies(send_event=True):
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
+                sleep()
                 store_subtitles_movie(altered_movie[1], path_mappings.path_replace_movie(altered_movie[1]))
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
-
-            # Search for desired subtitles if no more than 5 movies have been added.
-            if len(altered_movies) <= 5:
-                logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
-                for altered_movie in altered_movies:
-                    data = database.execute("SELECT * FROM table_movies WHERE radarrId = ?" +
-                                            get_exclusion_clause('movie'), (altered_movie[2],), only_one=True)
-                    if data:
-                        movies_download_subtitles(data['radarrId'])
-                    else:
-                        logging.debug("BAZARR skipping download for this movie as it is excluded.")
-            else:
-                logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
 
 def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
-    existing_movie = database.execute('SELECT path FROM table_movies WHERE radarrId = ?', (movie_id,), only_one=True)
+    existing_movie = TableMovies.get_or_none(TableMovies.radarrId == movie_id)
 
     # Remove movie from DB
     if action == 'deleted':
         if existing_movie:
-            database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+            TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
             event_stream(type='movie', action='delete', payload=int(movie_id))
             logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                existing_movie['path'])))
+                existing_movie.path)))
         return
 
     radarr_version = get_radarr_version()
@@ -215,26 +222,22 @@ def update_one_movie(movie_id, action):
 
     # Remove movie from DB
     if not movie and existing_movie:
-        database.execute("DELETE FROM table_movies WHERE radarrId=?", (movie_id,))
+        TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
         event_stream(type='movie', action='delete', payload=int(movie_id))
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-            existing_movie['path'])))
+            existing_movie.path)))
         return
 
     # Update existing movie in DB
     elif movie and existing_movie:
-        query = dict_converter.convert(movie)
-        database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
-                         query.values + (movie['radarrId'],))
+        TableMovies.update(movie).where(TableMovies.radarrId == movie['radarrId']).execute()
         event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))
 
     # Insert new movie in DB
     elif movie and not existing_movie:
-        query = dict_converter.convert(movie)
-        database.execute('''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
-                         query.question_marks + ''')''', query.values)
+        TableMovies.insert(movie).on_conflict(action='IGNORE').execute()
         event_stream(type='movie', action='update', payload=int(movie_id))
         logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
             movie['path'])))

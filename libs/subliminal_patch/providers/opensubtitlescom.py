@@ -19,6 +19,7 @@ from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
 from subliminal_patch.utils import fix_inconsistent_naming
 from subliminal.cache import region
+from dogpile.cache.api import NO_VALUE
 from guessit import guessit
 
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
 class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     """OpenSubtitlesCom Provider"""
-    server_url = 'https://www.opensubtitles.com/api/v1/'
+    server_url = 'https://api.opensubtitles.com/api/v1/'
 
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
@@ -144,13 +145,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.use_hash = use_hash
 
     def initialize(self):
-        self.login()
-        self.token = region.get("oscom_token")
+        self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
+        if self.token is NO_VALUE:
+            self.login()
 
     def terminate(self):
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=TOKEN_EXPIRATION_TIME)
     def login(self):
         try:
             r = self.session.post(self.server_url + 'login',
@@ -172,6 +173,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
             elif r.status_code == 429:
                 raise TooManyRequests()
+            elif r.status_code == 503:
+                raise ProviderError(r.reason)
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
         finally:
@@ -205,8 +208,12 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             if results.status_code == 429:
                 raise TooManyRequests()
+            elif results.status_code == 503:
+                raise ProviderError(results.reason)
         elif results.status_code == 429:
             raise TooManyRequests()
+        elif results.status_code == 503:
+            raise ProviderError(results.reason)
 
         # deserialize results
         try:
@@ -266,6 +273,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         if res.status_code == 429:
             raise TooManyRequests()
+
+        elif res.status_code == 503:
+            raise ProviderError(res.reason)
 
         subtitles = []
 
@@ -328,6 +338,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             raise TooManyRequests()
         elif res.status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
+        elif res.status_code == 503:
+            raise ProviderError(res.reason)
         else:
             try:
                 subtitle.download_link = res.json()['link']
@@ -340,6 +352,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     raise TooManyRequests()
                 elif res.status_code == 406:
                     raise DownloadLimitExceeded("Daily download limit reached")
+                elif res.status_code == 503:
+                    raise ProviderError(res.reason)
 
                 subtitle_content = r.content
 

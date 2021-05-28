@@ -39,7 +39,8 @@ class SonarrSignalrClient:
             except ConnectionError:
                 gevent.sleep(5)
             except json.decoder.JSONDecodeError:
-                logging.error('BAZARR cannot parse JSON returned by SignalR feed.')
+                logging.error('BAZARR cannot parse JSON returned by SignalR feed. Take a look at: '
+                              'https://forums.sonarr.tv/t/signalr-problem/5785/3')
                 self.stop()
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
@@ -55,8 +56,9 @@ class SonarrSignalrClient:
             logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
 
     def restart(self):
-        if self.connection.is_open:
-            self.stop(log=False)
+        if self.connection:
+            if self.connection.is_open:
+                self.stop(log=False)
         if settings.general.getboolean('use_sonarr'):
             self.start()
 
@@ -93,8 +95,9 @@ class RadarrSignalrClient:
         self.connection.stop()
 
     def restart(self):
-        if self.connection.transport.state.value in [0, 1, 2]:
-            self.stop()
+        if self.connection:
+            if self.connection.transport.state.value in [0, 1, 2]:
+                self.stop()
         if settings.general.getboolean('use_radarr'):
             self.start()
 
@@ -118,7 +121,7 @@ class RadarrSignalrClient:
             .with_automatic_reconnect({
                 "type": "raw",
                 "keep_alive_interval": 5,
-                "reconnect_interval": 5,
+                "reconnect_interval": 180,
                 "max_attempts": None
             }).build()
         self.connection.on_open(self.on_connect_handler)
@@ -130,29 +133,38 @@ class RadarrSignalrClient:
 
 
 def dispatcher(data):
-    topic = media_id = action = None
-    if isinstance(data, dict):
-        topic = data['name']
-        try:
-            media_id = data['body']['resource']['id']
-            action = data['body']['action']
-        except KeyError:
-            return
-    elif isinstance(data, list):
-        topic = data[0]['name']
-        try:
-            media_id = data[0]['body']['resource']['id']
-            action = data[0]['body']['action']
-        except KeyError:
-            return
+    try:
+        topic = media_id = action = None
+        episodesChanged = None
+        if isinstance(data, dict):
+            topic = data['name']
+            try:
+                media_id = data['body']['resource']['id']
+                action = data['body']['action']
+                if 'episodesChanged' in data['body']['resource']:
+                    episodesChanged = data['body']['resource']['episodesChanged']
+            except KeyError:
+                return
+        elif isinstance(data, list):
+            topic = data[0]['name']
+            try:
+                media_id = data[0]['body']['resource']['id']
+                action = data[0]['body']['action']
+            except KeyError:
+                return
 
-    if topic == 'series':
-        update_one_series(series_id=media_id, action=action)
-    elif topic == 'episode':
-        sync_one_episode(episode_id=media_id)
-    elif topic == 'movie':
-        update_one_movie(movie_id=media_id, action=action)
-    else:
+        if topic == 'series':
+            update_one_series(series_id=media_id, action=action)
+            if episodesChanged:
+                # this will happen if a season monitored status is changed.
+                sync_episodes(series_id=media_id, send_event=True)
+        elif topic == 'episode':
+            sync_one_episode(episode_id=media_id)
+        elif topic == 'movie':
+            update_one_movie(movie_id=media_id, action=action)
+    except Exception as e:
+        logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
+    finally:
         return
 
 

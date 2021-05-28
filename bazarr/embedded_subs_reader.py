@@ -7,8 +7,8 @@ from knowit import api
 import enzyme
 from enzyme.exceptions import MalformedMKVError
 from enzyme.exceptions import MalformedMKVError
-from database import database
 from custom_lang import CustomLanguage
+from database import TableEpisodes, TableMovies
 
 logger = logging.getLogger(__name__)
 
@@ -75,36 +75,30 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # Get the actual cache value form database
     if episode_file_id:
-        cache_key = database.execute(
-            "SELECT ffprobe_cache FROM table_episodes WHERE episode_file_id=? AND file_size=?",
-            (episode_file_id, file_size),
-            only_one=True,
-        )
+        cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
+            .where((TableEpisodes.episode_file_id == episode_file_id) and
+                   (TableEpisodes.file_size == file_size))\
+            .dicts()\
+            .get()
     elif movie_file_id:
-        cache_key = database.execute(
-            "SELECT ffprobe_cache FROM table_movies WHERE movie_file_id=? AND file_size=?",
-            (movie_file_id, file_size),
-            only_one=True,
-        )
+        cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
+            .where(TableMovies.movie_file_id == movie_file_id and
+                   TableMovies.file_size == file_size)\
+            .dicts()\
+            .get()
     else:
         cache_key = None
 
     # check if we have a value for that cache key
-    if not isinstance(cache_key, dict):
-        return data
+    try:
+        # Unpickle ffprobe cache
+        cached_value = pickle.loads(cache_key['ffprobe_cache'])
+    except:
+        pass
     else:
-        try:
-            # Unpickle ffprobe cache
-            cached_value = pickle.loads(cache_key["ffprobe_cache"])
-        except:
-            pass
-        else:
-            # Check if file size and file id matches and if so, we return the cached value
-            if cached_value["file_size"] == file_size and cached_value["file_id"] in [
-                episode_file_id,
-                movie_file_id,
-            ]:
-                return cached_value
+        # Check if file size and file id matches and if so, we return the cached value
+        if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
+            return cached_value
 
     # if not, we retrieve the metadata from the file
     from utils import get_binary
@@ -131,13 +125,11 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
-        database.execute(
-            "UPDATE table_episodes SET ffprobe_cache=? WHERE episode_file_id=?",
-            (pickle.dumps(data, pickle.HIGHEST_PROTOCOL), episode_file_id),
-        )
+        TableEpisodes.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
+            .where(TableEpisodes.episode_file_id == episode_file_id)\
+            .execute()
     elif movie_file_id:
-        database.execute(
-            "UPDATE table_movies SET ffprobe_cache=? WHERE movie_file_id=?",
-            (pickle.dumps(data, pickle.HIGHEST_PROTOCOL), movie_file_id),
-        )
+        TableMovies.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
+            .where(TableMovies.movie_file_id == movie_file_id)\
+            .execute()
     return data

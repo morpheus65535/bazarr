@@ -40,16 +40,13 @@ class CustomLanguage:
         return None
 
     @classmethod
-    def register(cls, database):
+    def register(cls, table):
         " Register the custom language subclasses in the database. "
 
         for sub in cls.__subclasses__():
-            params = (sub.alpha3, sub.alpha2, sub.name)
-            database.execute(
-                "INSERT OR IGNORE INTO table_settings_languages "
-                "(code3, code2, name) VALUES (?,?,?)",
-                params,
-            )
+            table.insert(
+                {table.code3: sub.alpha3, table.code2: sub.alpha2, table.name: sub.name}
+            ).on_conflict(action="IGNORE").execute()
 
     @classmethod
     def found_external(cls, subtitle, subtitle_path):
