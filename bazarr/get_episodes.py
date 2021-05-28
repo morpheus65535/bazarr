@@ -178,12 +178,12 @@ def sync_one_episode(episode_id):
         TableEpisodes.delete().where(TableEpisodes.sonarrEpisodeId == episode_id).execute()
         event_stream(type='episode', action='delete', payload=int(episode_id))
         logging.debug('BAZARR deleted this episode from the database:{}'.format(path_mappings.path_replace(
-            existing_episode['path)'])))
+            existing_episode['path'])))
         return
 
     # Update existing episodes in DB
     elif episode and existing_episode:
-        TableEpisodes.update(episode).where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId).execute()
+        TableEpisodes.update(episode).where(TableEpisodes.sonarrEpisodeId == episode_id).execute()
         event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
             episode.path)))
