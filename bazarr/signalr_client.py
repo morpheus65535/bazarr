@@ -156,7 +156,7 @@ def dispatcher(data):
         if topic == 'series':
             update_one_series(series_id=media_id, action=action)
             if episodesChanged:
-                # this will happen if an episode monitored status is changed.
+                # this will happen if a season monitored status is changed.
                 sync_episodes(series_id=media_id, send_event=True)
         elif topic == 'episode':
             sync_one_episode(episode_id=media_id)
