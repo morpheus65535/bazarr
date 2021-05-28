@@ -39,7 +39,7 @@ def update_notifier():
 
 def get_notifier_providers():
     providers = TableSettingsNotifier.select(TableSettingsNotifier.name,
-                                             TableSettingsNotifier.enabled)\
+                                             TableSettingsNotifier.url)\
         .where(TableSettingsNotifier.enabled == 1)\
         .dicts()
 
