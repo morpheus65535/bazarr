@@ -120,7 +120,7 @@ class RadarrSignalrClient:
                       }) \
             .with_automatic_reconnect({
                 "type": "raw",
-                "keep_alive_interval": 15,
+                "keep_alive_interval": 5,
                 "reconnect_interval": 180,
                 "max_attempts": None
             }).build()
