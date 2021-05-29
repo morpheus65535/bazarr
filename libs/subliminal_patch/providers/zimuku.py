@@ -87,9 +87,9 @@ class ZimukuProvider(Provider):
     languages = {Language(*l) for l in supported_languages}
     logger.info(str(supported_languages))
 
-    server_url = "http://www.zmk.pw"
+    server_url = "http://zimuku.org"
     search_url = "/search?q={}"
-    download_url = "http://www.zmk.pw/"
+    download_url = "http://zimuku.org/"
 
     UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
 
