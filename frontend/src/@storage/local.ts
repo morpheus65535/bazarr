@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocalstorage } from "rooks";
+import { useLocalstorageState } from "rooks";
 
 export const uiPageSizeKey = "storage-ui-pageSize";
 
@@ -13,5 +13,5 @@ export function useUpdateLocalStorage() {
 }
 
 export function usePageSize() {
-  return useLocalstorage(uiPageSizeKey, 50);
+  return useLocalstorageState(uiPageSizeKey, 50);
 }
