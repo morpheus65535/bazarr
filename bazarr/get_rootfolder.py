@@ -6,7 +6,7 @@ import logging
 
 from config import settings, url_sonarr, url_radarr
 from helper import path_mappings
-from database import TableShowsRootfolder, TableMoviesRootfolder
+from database import TableShowsRootfolder, TableMoviesRootfolder, TableShows, TableMovies
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -30,8 +30,10 @@ def get_sonarr_rootfolder():
         logging.exception("BAZARR Error trying to get rootfolder from Sonarr.")
         return []
     else:
+        sonarr_movies_paths = list(TableShows.select(TableShows.path).dicts())
         for folder in rootfolder.json():
-            sonarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
+            if any(item['path'].startswith(folder['path']) for item in sonarr_movies_paths):
+                sonarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
         db_rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
         rootfolder_to_remove = [x for x in db_rootfolder if not
                                 next((item for item in sonarr_rootfolder if item['id'] == x['id']), False)]
@@ -93,8 +95,10 @@ def get_radarr_rootfolder():
         logging.exception("BAZARR Error trying to get rootfolder from Radarr.")
         return []
     else:
+        radarr_movies_paths = list(TableMovies.select(TableMovies.path).dicts())
         for folder in rootfolder.json():
-            radarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
+            if any(item['path'].startswith(folder['path']) for item in radarr_movies_paths):
+                radarr_rootfolder.append({'id': folder['id'], 'path': folder['path']})
         db_rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.id, TableMoviesRootfolder.path).dicts()
         rootfolder_to_remove = [x for x in db_rootfolder if not
                                 next((item for item in radarr_rootfolder if item['id'] == x['id']), False)]
