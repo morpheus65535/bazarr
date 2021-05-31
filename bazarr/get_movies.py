@@ -44,7 +44,7 @@ def update_movies(send_event=True):
         pass
     else:
         audio_profiles = get_profile_list()
-        tagsDict = get_tags()
+        tagsDict = get_tags(radarr_version=radarr_version)
         
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
@@ -194,7 +194,7 @@ def update_one_movie(movie_id, action):
         movie_default_profile = None
 
     audio_profiles = get_profile_list()
-    tagsDict = get_tags()
+    tagsDict = get_tags(radarr_version=radarr_version)
 
     try:
         # Get movie data from radarr api
@@ -339,12 +339,15 @@ def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
     return videoFormat
 
 
-def get_tags():
+def get_tags(radarr_version):
     apikey_radarr = settings.radarr.apikey
     tagsDict = []
 
     # Get tags data from Radarr
-    url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+    if radarr_version.startswith('0'):
+        url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+    else:
+        url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
 
     try:
         tagsDict = requests.get(url_radarr_api_series, timeout=60, verify=False, headers=headers)

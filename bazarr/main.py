@@ -43,7 +43,7 @@ from signalr_client import sonarr_signalr_client, radarr_signalr_client
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
-from utils import check_credentials
+from utils import check_credentials, get_radarr_version
 
 # Install downloaded update
 if bazarr_version != '':
@@ -145,7 +145,11 @@ def series_images(url):
 def movies_images(url):
     apikey = settings.radarr.apikey
     baseUrl = settings.radarr.base_url
-    url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+    radarr_version = get_radarr_version()
+    if radarr_version.startswith('0'):
+        url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+    else:
+        url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:

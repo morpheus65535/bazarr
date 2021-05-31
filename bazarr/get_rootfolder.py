@@ -7,6 +7,7 @@ import logging
 from config import settings, url_sonarr, url_radarr
 from helper import path_mappings
 from database import TableShowsRootfolder, TableMoviesRootfolder, TableShows, TableMovies
+from utils import get_radarr_version
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -79,9 +80,13 @@ def check_sonarr_rootfolder():
 def get_radarr_rootfolder():
     apikey_radarr = settings.radarr.apikey
     radarr_rootfolder = []
+    radarr_version = get_radarr_version()
 
     # Get root folder data from Radarr
-    url_radarr_api_rootfolder = url_radarr() + "/api/rootfolder?apikey=" + apikey_radarr
+    if radarr_version.startswith('0'):
+        url_radarr_api_rootfolder = url_radarr() + "/api/rootfolder?apikey=" + apikey_radarr
+    else:
+        url_radarr_api_rootfolder = url_radarr() + "/api/v3/rootfolder?apikey=" + apikey_radarr
 
     try:
         rootfolder = requests.get(url_radarr_api_rootfolder, timeout=60, verify=False, headers=headers)
@@ -121,14 +126,17 @@ def check_radarr_rootfolder():
     get_radarr_rootfolder()
     rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.id, TableMoviesRootfolder.path).dicts()
     for item in rootfolder:
-        if not os.path.isdir(path_mappings.path_replace_movie(item['path'])):
+        root_path = item['path']
+        if not root_path.endswith(os.path.sep):
+            root_path += os.path.sep
+        if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
             TableMoviesRootfolder.update({TableMoviesRootfolder.accessible: 0,
                                          TableMoviesRootfolder.error: 'This Radarr root directory does not seems to '
                                                                       'be accessible by Bazarr. Please check path '
                                                                       'mapping.'}) \
                 .where(TableMoviesRootfolder.id == item['id']) \
                 .execute()
-        elif not os.access(path_mappings.path_replace_movie(item['path']), os.W_OK):
+        elif not os.access(path_mappings.path_replace_movie(root_path), os.W_OK):
             TableMoviesRootfolder.update({TableMoviesRootfolder.accessible: 0,
                                           TableMoviesRootfolder.error: 'Bazarr cannot write to this directory'}) \
                 .where(TableMoviesRootfolder.id == item['id']) \
