@@ -180,7 +180,8 @@ class Episode(Video):
                    year=guess.get('year'), source=guess.get('source'), original_series='year' not in guess,
                    release_group=guess.get('release_group'), resolution=guess.get('screen_size'),
                    video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'),
-                   streaming_service=guess.get("streaming_service"), edition=guess.get("edition"))
+                   streaming_service=guess.get("streaming_service"),
+                   edition=guess.get("edition", guess.get("alternative_title")))
 
     @classmethod
     def fromname(cls, name):

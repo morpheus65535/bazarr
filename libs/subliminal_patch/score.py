@@ -50,7 +50,7 @@ def compute_score(matches, subtitle, video, hearing_impaired=None, score_obj=Non
     logger.info('%r: Computing score for video %r with %r', subtitle, video, dict(hearing_impaired=hearing_impaired))
 
     scores = score_obj.scores or get_scores(video)
-    _score_obj_checks(subtitle, matches, score_obj)
+    score_obj.check_custom_profiles(subtitle, matches)
 
     is_episode = isinstance(video, Episode)
     is_movie = isinstance(video, Movie)
@@ -127,11 +127,3 @@ def _episode_checks(video, eq_matches, matches):
     if video.is_special and "title" in matches and "series" in matches and "year" in matches:
         logger.debug("Adding special title match equivalent")
         eq_matches |= {"season", "episode"}
-
-
-def _score_obj_checks(sub, matches, obj):
-    if sub.provider_name and any(sub.provider_name == item for item in obj.providers):
-        matches.add("provider")
-
-    if sub.uploader and any(sub.uploader == item for item in obj.uploaders):
-        matches.add("uploader")

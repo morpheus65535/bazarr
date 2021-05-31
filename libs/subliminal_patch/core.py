@@ -319,7 +319,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                compute_score=None):
+                                compute_score=None, score_obj=None):
         """Download the best matching subtitles.
         
         patch: 
@@ -365,7 +365,8 @@ class SZProviderPool(ProviderPool):
             orig_matches = matches.copy()
 
             logger.debug('%r: Found matches %r', s, matches)
-            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired)
+            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired,
+                                                      score_obj=score_obj)
             unsorted_subtitles.append(
                 (s, score, score_without_hash, matches, orig_matches))
 
@@ -774,7 +775,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
 
 
 def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
-                            pool_class=ProviderPool, throttle_time=0, **kwargs):
+                            pool_class=ProviderPool, throttle_time=0, score_obj=None, **kwargs):
     """List and download the best matching subtitles.
 
     The `videos` must pass the `languages` and `undefined` (`only_one`) checks of :func:`check_video`.
@@ -818,7 +819,7 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
             subtitles = pool.download_best_subtitles(pool.list_subtitles(video, languages - video.subtitle_languages),
                                                      video, languages, min_score=min_score,
                                                      hearing_impaired=hearing_impaired, only_one=only_one,
-                                                     compute_score=compute_score)
+                                                     compute_score=compute_score, score_obj=score_obj)
             logger.info('Downloaded %d subtitle(s)', len(subtitles))
             downloaded_subtitles[video].extend(subtitles)
 
