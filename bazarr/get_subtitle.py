@@ -1459,6 +1459,7 @@ def upgrade_subtitles():
                                                      TableMovies.audio_language,
                                                      TableMovies.sceneName,
                                                      fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+                                                     TableMovies.monitored,
                                                      TableMovies.tags,
                                                      TableMovies.radarrId)\
             .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
