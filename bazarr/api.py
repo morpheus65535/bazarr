@@ -318,7 +318,9 @@ class Badges(Resource):
         episodes_conditions = [(TableEpisodes.missing_subtitles is not None),
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
-        missing_episodes = TableEpisodes.select(TableShows.tags, TableShows.seriesType)\
+        missing_episodes = TableEpisodes.select(TableShows.tags,
+                                                TableShows.seriesType,
+                                                TableEpisodes.monitored)\
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
             .where(reduce(operator.and_, episodes_conditions))\
             .count()
@@ -326,7 +328,10 @@ class Badges(Resource):
         movies_conditions = [(TableMovies.missing_subtitles is not None),
                              (TableMovies.missing_subtitles != '[]')]
         movies_conditions += get_exclusion_clause('movie')
-        missing_movies = TableMovies.select().where(reduce(operator.and_, movies_conditions)).count()
+        missing_movies = TableMovies.select(TableMovies.tags,
+                                            TableMovies.monitored)\
+            .where(reduce(operator.and_, movies_conditions))\
+            .count()
 
         throttled_providers = len(eval(str(get_throttled_providers())))
 
@@ -1644,7 +1649,8 @@ class EpisodesWanted(Resource):
         count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         count_conditions += get_exclusion_clause('series')
         count = TableEpisodes.select(TableShows.tags,
-                                     TableShows.seriesType)\
+                                     TableShows.seriesType,
+                                     TableEpisodes.monitored)\
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
             .where(reduce(operator.and_, count_conditions))\
             .count()
@@ -1696,7 +1702,8 @@ class MoviesWanted(Resource):
 
         count_conditions = [(TableMovies.missing_subtitles != '[]')]
         count_conditions += get_exclusion_clause('movie')
-        count = TableMovies.select()\
+        count = TableMovies.select(TableMovies.monitored,
+                                   TableMovies.tags)\
             .where(reduce(operator.and_, count_conditions))\
             .count()
 
