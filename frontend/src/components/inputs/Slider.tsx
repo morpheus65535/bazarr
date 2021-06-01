@@ -1,6 +1,6 @@
 import RcSlider from "rc-slider";
 import "rc-slider/assets/index.css";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import "./slider.scss";
 
 type TooltipsOptions = boolean | "Always";
@@ -9,6 +9,7 @@ export interface SliderProps {
   tooltips?: TooltipsOptions;
   min?: number;
   max?: number;
+  step?: number;
   start?: number;
   defaultValue?: number;
   onAfterChange?: (value: number) => void;
@@ -18,21 +19,31 @@ export interface SliderProps {
 export const Slider: FunctionComponent<SliderProps> = ({
   min,
   max,
+  step,
   tooltips,
   defaultValue,
   onChange,
   onAfterChange,
 }) => {
+  max = max ?? 100;
+  min = min ?? 0;
+  step = step ?? 1;
+
+  const [curr, setValue] = useState(defaultValue);
+
   return (
     <div className="d-flex flex-row align-items-center py-2">
-      <span className="text-muted pr-3">{min ?? 0}</span>
+      <span className="text-muted text-nowrap pr-3">{`${min} / ${curr}`}</span>
       <RcSlider
-        min={min ?? 0}
-        max={max ?? 100}
+        min={min}
+        max={max}
         className="custom-rc-slider"
-        step={1}
+        step={step}
         defaultValue={defaultValue}
-        onChange={onChange}
+        onChange={(v) => {
+          setValue(v);
+          onChange && onChange(v);
+        }}
         onAfterChange={onAfterChange}
         handle={(props) => (
           <div
@@ -48,7 +59,7 @@ export const Slider: FunctionComponent<SliderProps> = ({
           </div>
         )}
       ></RcSlider>
-      <span className="text-muted pl-3">{max ?? 100}</span>
+      <span className="text-muted pl-3">{max}</span>
     </div>
   );
 };
