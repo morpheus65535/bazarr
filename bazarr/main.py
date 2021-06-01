@@ -2,7 +2,7 @@
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:
-    from gevent import monkey
+    from gevent import monkey, Greenlet
 except ImportError:
     pass
 else:
@@ -197,9 +197,9 @@ def proxy(protocol, url):
 
 
 if settings.general.getboolean('use_sonarr'):
-    gevent.Greenlet.spawn(sonarr_signalr_client.start)
+    Greenlet.spawn(sonarr_signalr_client.start)
 if settings.general.getboolean('use_radarr'):
-    gevent.Greenlet.spawn(radarr_signalr_client.start)
+    Greenlet.spawn(radarr_signalr_client.start)
 
 
 if __name__ == "__main__":
