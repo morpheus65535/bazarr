@@ -1,6 +1,6 @@
 import json
+import gevent
 import sys
-from threading import Thread
 from signalr.events import EventHook
 from signalr.hubs import Hub
 from signalr.transports import AutoTransport
@@ -15,16 +15,14 @@ class Connection:
         self.qs = {}
         self.__send_counter = -1
         self.token = None
-        self.id = None
         self.data = None
         self.received = EventHook()
         self.error = EventHook()
         self.starting = EventHook()
         self.stopping = EventHook()
         self.exception = EventHook()
-        self.is_open = False
         self.__transport = AutoTransport(session, self)
-        self.__listener_thread = None
+        self.__greenlet = None
         self.started = False
 
         def handle_error(**kwargs):
@@ -50,32 +48,27 @@ class Connection:
 
         negotiate_data = self.__transport.negotiate()
         self.token = negotiate_data['ConnectionToken']
-        self.id = negotiate_data['ConnectionId']
 
         listener = self.__transport.start()
 
         def wrapped_listener():
-            while self.is_open:
-                try:
-                    listener()
-                except:
-                    self.exception.fire(*sys.exc_info())
-                    self.is_open = False
+            try:
+                listener()
+                gevent.sleep()
+            except:
+                self.exception.fire(*sys.exc_info())
 
-        self.is_open = True
-        self.__listener_thread = Thread(target=wrapped_listener)
-        self.__listener_thread.start()
+        self.__greenlet = gevent.spawn(wrapped_listener)
         self.started = True
 
     def wait(self, timeout=30):
-        Thread.join(self.__listener_thread, timeout)
+        gevent.joinall([self.__greenlet], timeout)
 
     def send(self, data):
         self.__transport.send(data)
 
     def close(self):
-        self.is_open = False
-        self.__listener_thread.join()
+        gevent.kill(self.__greenlet)
         self.__transport.close()
 
     def register_hub(self, name):

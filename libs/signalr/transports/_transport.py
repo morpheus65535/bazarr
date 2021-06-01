@@ -1,12 +1,13 @@
 from abc import abstractmethod
 import json
 import sys
-import threading
+
 if sys.version_info[0] < 3:
     from urllib import quote_plus
 else:
     from urllib.parse import quote_plus
 
+import gevent
 
 
 class Transport:
@@ -47,7 +48,7 @@ class Transport:
         if len(message) > 0:
             data = json.loads(message)
             self._connection.received.fire(**data)
-        #thread.sleep() #TODO: investigate if we should sleep here
+        gevent.sleep()
 
     def _get_url(self, action, **kwargs):
         args = kwargs.copy()

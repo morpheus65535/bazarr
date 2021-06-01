@@ -38,16 +38,16 @@ class SonarrSignalrClient:
                             'consider upgrading.')
             return
 
-        logging.debug('BAZARR connecting to Sonarr SignalR feed...')
+        logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
         self.configure()
-        while not self.connection.is_open:
+        while not self.connection.started:
             try:
                 self.connection.start()
             except ConnectionError:
                 gevent.sleep(5)
             except json.decoder.JSONDecodeError:
-                logging.error('BAZARR cannot parse JSON returned by SignalR feed. Take a look at: '
-                              'https://forums.sonarr.tv/t/signalr-problem/5785/3')
+                logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is a known issue when Sonarr "
+                              "doesn't have write permission to it's /config/xdg directory.")
                 self.stop()
         logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
         if not args.dev:
@@ -64,13 +64,16 @@ class SonarrSignalrClient:
 
     def restart(self):
         if self.connection:
-            if self.connection.is_open:
-                self.stop(log=False)
+            if self.connection.started:
+                try:
+                    self.stop(log=False)
+                except:
+                    self.connection.started = False
         if settings.general.getboolean('use_sonarr'):
             self.start()
 
     def exception_handler(self, type, exception, traceback):
-        logging.error('BAZARR connection to Sonarr SignalR feed has been lost. Reconnecting...')
+        logging.error('BAZARR connection to Sonarr SignalR feed has been lost.')
         self.restart()
 
     def configure(self):
@@ -94,8 +97,12 @@ class RadarrSignalrClient:
 
     def start(self):
         self.configure()
-        logging.debug('BAZARR connecting to Radarr SignalR feed...')
-        self.connection.start()
+        logging.info('BAZARR trying to connect to Radarr SignalR feed...')
+        while self.connection.transport.state.value not in [0, 1, 2]:
+            try:
+                self.connection.start()
+            except ConnectionError:
+                gevent.sleep(5)
 
     def stop(self):
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')
@@ -133,8 +140,8 @@ class RadarrSignalrClient:
                 "max_attempts": None
             }).build()
         self.connection.on_open(self.on_connect_handler)
-        self.connection.on_reconnect(lambda: logging.info('BAZARR SignalR client for Radarr connection as been lost. '
-                                                          'Trying to reconnect...'))
+        self.connection.on_reconnect(lambda: logging.error('BAZARR SignalR client for Radarr connection as been lost. '
+                                                           'Trying to reconnect...'))
         self.connection.on_close(lambda: logging.debug('BAZARR SignalR client for Radarr is disconnected.'))
         self.connection.on_error(self.exception_handler)
         self.connection.on("receiveMessage", dispatcher)

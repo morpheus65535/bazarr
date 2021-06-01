@@ -197,9 +197,9 @@ def proxy(protocol, url):
 
 
 if settings.general.getboolean('use_sonarr'):
-    sonarr_signalr_client.start()
+    gevent.Greenlet.spawn(sonarr_signalr_client.start)
 if settings.general.getboolean('use_radarr'):
-    radarr_signalr_client.start()
+    gevent.Greenlet.spawn(radarr_signalr_client.start)
 
 
 if __name__ == "__main__":
