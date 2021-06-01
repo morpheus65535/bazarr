@@ -4,6 +4,7 @@ import logging
 
 import gevent
 import json
+import os
 from requests import Session
 from signalr import Connection
 from requests.exceptions import ConnectionError
@@ -18,11 +19,17 @@ from utils import get_sonarr_version
 from get_args import args
 
 
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+
+
 class SonarrSignalrClient:
     def __init__(self):
         super(SonarrSignalrClient, self).__init__()
         self.apikey_sonarr = None
         self.session = Session()
+        self.session.timeout = 60
+        self.session.verify = False
+        self.session.headers = headers
         self.connection = None
 
     def start(self):
@@ -116,7 +123,8 @@ class RadarrSignalrClient:
         self.connection = HubConnectionBuilder() \
             .with_url(url_radarr() + "/signalr/messages?access_token={}".format(self.apikey_radarr),
                       options={
-                          "verify_ssl": False
+                          "verify_ssl": False,
+                          "headers": headers
                       }) \
             .with_automatic_reconnect({
                 "type": "raw",
