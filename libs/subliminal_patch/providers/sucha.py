@@ -76,7 +76,9 @@ class SuchaProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers.update({"User-Agent": "Bazarr"})
+        self.session.headers.update(
+            {"User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        )
 
     def terminate(self):
         self.session.close()
