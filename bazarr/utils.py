@@ -281,7 +281,7 @@ def get_radarr_version():
             rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
             radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
             if 'version' in radarr_json:
-                radarr_version = 'unknown'
+                radarr_version = radarr_json['version']
             else:
                 rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
                 radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
