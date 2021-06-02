@@ -279,8 +279,13 @@ def get_radarr_version():
     if settings.general.getboolean('use_radarr'):
         try:
             rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-        except Exception:
+            radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
+            if 'version' in radarr_json:
+                radarr_version = 'unknown'
+            else:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+        except Exception as e:
             logging.debug('BAZARR cannot get Radarr version')
             radarr_version = 'unknown'
     return radarr_version
@@ -290,7 +295,10 @@ def get_radarr_platform():
     radarr_platform = ''
     if settings.general.getboolean('use_radarr'):
         try:
-            rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
+            if get_radarr_version().startswith('0'):
+                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
+            else:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
             response = requests.get(rv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 radarr_platform = 'posix'
@@ -303,7 +311,10 @@ def get_radarr_platform():
 
 def notify_radarr(radarr_id):
     try:
-        url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        if get_radarr_version().startswith('0'):
+            url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        else:
+            url = url_radarr() + "/api/v3/command?apikey=" + settings.radarr.apikey
         data = {
             'name': 'RescanMovie',
             'movieId': int(radarr_id)
