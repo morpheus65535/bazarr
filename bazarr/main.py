@@ -187,9 +187,11 @@ def proxy(protocol, url):
                 version = result.json()['version']
                 return dict(status=True, version=version)
             except Exception:
-                return dict(status=False, error='Error Occured. Check your settings.')
+                return dict(status=False, error='Error Occurred. Check your settings.')
         elif result.status_code == 401:
             return dict(status=False, error='Access Denied. Check API key.')
+        elif result.status_code == 404:
+            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?')
         elif 300 <= result.status_code <= 399:
             return dict(status=False, error='Wrong URL Base.')
         else:
