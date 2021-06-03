@@ -9,7 +9,8 @@ from peewee import DoesNotExist
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from get_rootfolder import check_sonarr_rootfolder
-from database import TableShows
+from database import TableShows, TableEpisodes
+from get_episodes import sync_episodes
 from utils import get_sonarr_version
 from helper import path_mappings
 from event_handler import event_stream, show_progress, hide_progress
@@ -165,9 +166,11 @@ def update_one_series(series_id, action):
 
         try:
             series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                     sonarr_series_id=series_id)
+                                                     sonarr_series_id=int(series_id))
         except requests.exceptions.HTTPError:
-            TableShows.delete().where(TableShows.sonarrSeriesId == series_id).execute()
+            # Series has been deleted
+            TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
+            TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
             event_stream(type='series', action='delete', payload=int(series_id))
             return
 
@@ -186,17 +189,10 @@ def update_one_series(series_id, action):
         logging.debug('BAZARR cannot parse series returned by SignalR feed.')
         return
 
-    # Remove series from DB
-    if action == 'deleted':
-        TableShows.delete().where(TableShows.sonarrSeriesId == series_id).execute()
-        event_stream(type='series', action='delete', payload=int(series_id))
-        logging.debug('BAZARR deleted this series from the database:{}'.format(path_mappings.path_replace(
-            existing_series['path'])))
-        return
-
     # Update existing series in DB
-    elif action == 'updated' and existing_series:
+    if action == 'updated' and existing_series:
         TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
+        sync_episodes(series_id=int(series_id), send_event=False)
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))
