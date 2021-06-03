@@ -147,6 +147,13 @@ def update_one_series(series_id, action):
     except DoesNotExist:
         existing_series = None
 
+    # Delete series from DB
+    if action == 'deleted' and existing_series:
+        TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
+        TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
+        event_stream(type='series', action='delete', payload=int(series_id))
+        return
+
     sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
 
@@ -164,15 +171,8 @@ def update_one_series(series_id, action):
         # Get series data from sonarr api
         series = None
 
-        try:
-            series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                     sonarr_series_id=int(series_id))
-        except requests.exceptions.HTTPError:
-            # Series has been deleted
-            TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
-            TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
-            event_stream(type='series', action='delete', payload=int(series_id))
-            return
+        series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
+                                                 sonarr_series_id=int(series_id))
 
         if not series_data:
             return
