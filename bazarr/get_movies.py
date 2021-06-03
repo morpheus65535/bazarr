@@ -6,6 +6,7 @@ import logging
 import operator
 from functools import reduce
 from gevent import sleep
+from peewee import DoesNotExist
 
 from config import settings, url_radarr
 from helper import path_mappings
@@ -172,7 +173,13 @@ def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
-    existing_movie = TableMovies.get_or_none(TableMovies.radarrId == movie_id)
+    try:
+        existing_movie = TableMovies.select(TableMovies.path)\
+            .where(TableMovies.radarrId == movie_id)\
+            .dicts()\
+            .get()
+    except DoesNotExist:
+        existing_movie = None
 
     # Remove movie from DB
     if action == 'deleted':
@@ -180,7 +187,7 @@ def update_one_movie(movie_id, action):
             TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
             event_stream(type='movie', action='delete', payload=int(movie_id))
             logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                existing_movie.path)))
+                existing_movie['path'])))
         return
 
     radarr_version = get_radarr_version()
@@ -225,7 +232,7 @@ def update_one_movie(movie_id, action):
         TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
         event_stream(type='movie', action='delete', payload=int(movie_id))
         logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-            existing_movie.path)))
+            existing_movie['path'])))
         return
 
     # Update existing movie in DB

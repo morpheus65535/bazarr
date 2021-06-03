@@ -4,6 +4,7 @@ import os
 import requests
 import logging
 from gevent import sleep
+from peewee import DoesNotExist
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -137,7 +138,13 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from RSonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    existing_series = TableShows.get_or_none(TableShows.sonarrSeriesId == series_id)
+    try:
+        existing_series = TableShows.select(TableShows.path)\
+            .where(TableShows.sonarrSeriesId == series_id)\
+            .dicts()\
+            .get()
+    except DoesNotExist:
+        existing_series = None
 
     sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
@@ -184,7 +191,7 @@ def update_one_series(series_id, action):
         TableShows.delete().where(TableShows.sonarrSeriesId == series_id).execute()
         event_stream(type='series', action='delete', payload=int(series_id))
         logging.debug('BAZARR deleted this series from the database:{}'.format(path_mappings.path_replace(
-            existing_series.path)))
+            existing_series['path'])))
         return
 
     # Update existing series in DB

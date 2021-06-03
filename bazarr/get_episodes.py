@@ -4,6 +4,7 @@ import os
 import requests
 import logging
 from gevent import sleep
+from peewee import DoesNotExist
 
 from database import get_exclusion_clause, TableEpisodes, TableShows
 from config import settings, url_sonarr
@@ -151,10 +152,13 @@ def sync_one_episode(episode_id):
     logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
 
     # Check if there's a row in database for this episode ID
-    existing_episode = TableEpisodes.select(TableEpisodes.path)\
-        .where(TableEpisodes.sonarrEpisodeId == episode_id)\
-        .dicts()\
-        .get()
+    try:
+        existing_episode = TableEpisodes.select(TableEpisodes.path)\
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+            .dicts()\
+            .get()
+    except DoesNotExist:
+        existing_episode = None
 
     try:
         # Get episode data from sonarr api
@@ -186,23 +190,23 @@ def sync_one_episode(episode_id):
         TableEpisodes.update(episode).where(TableEpisodes.sonarrEpisodeId == episode_id).execute()
         event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR updated this episode into the database:{}'.format(path_mappings.path_replace(
-            episode.path)))
+            episode['path'])))
 
     # Insert new episodes in DB
     elif episode and not existing_episode:
         TableEpisodes.insert(episode).on_conflict(action='IGNORE').execute()
         event_stream(type='episode', action='update', payload=int(episode_id))
         logging.debug('BAZARR inserted this episode into the database:{}'.format(path_mappings.path_replace(
-            episode.path)))
+            episode['path'])))
 
     # Storing existing subtitles
     logging.debug('BAZARR storing subtitles for this episode: {}'.format(path_mappings.path_replace(
-            episode.path)))
-    store_subtitles(episode.path, path_mappings.path_replace(episode.path))
+            episode['path'])))
+    store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
     # Downloading missing subtitles
     logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
-        episode.path)))
+        episode['path'])))
     episode_download_subtitles(episode_id)
 
 
