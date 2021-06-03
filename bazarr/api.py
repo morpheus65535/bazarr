@@ -536,6 +536,8 @@ class SystemLogs(Resource):
             raw_lines = file.read()
             lines = raw_lines.split('|\n')
             for line in lines:
+                if line == '':
+                    continue
                 raw_message = line.split('|')
                 raw_message_len = len(raw_message)
                 if raw_message_len > 3:
