@@ -158,8 +158,7 @@ def postprocessEpisode(item):
             sub = {"name": language_from_alpha2(subtitle[0]),
                    "code2": subtitle[0],
                    "code3": alpha3_from_alpha2(subtitle[0]),
-                   "path": subs[1],
-                   "mapped_path": path_mappings.path_replace(subs[1]),
+                   "path": path_mappings.path_replace(subs[1]),
                    "forced": False,
                    "hi": False}
             if len(subtitle) > 1:
@@ -225,8 +224,7 @@ def postprocessMovie(item):
             item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item['subtitles'][i] = {"path": subs[1],
-                                    "mapped_path": path_mappings.path_replace_movie(subs[1]),
+            item['subtitles'][i] = {"path": path_mappings.path_replace_movie(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
@@ -869,6 +867,8 @@ class EpisodesSubtitles(Resource):
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
 
+        subtitlesPath = path_mappings.path_replace_reverse(subtitlesPath)
+
         result = delete_subtitles(media_type='series',
                                   language=language,
                                   forced=forced,
@@ -1089,6 +1089,8 @@ class MoviesSubtitles(Resource):
         forced = request.form.get('forced')
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
+
+        subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
         result = delete_subtitles(media_type='movie',
                                   language=language,

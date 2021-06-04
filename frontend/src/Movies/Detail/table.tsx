@@ -26,13 +26,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
       {
         Header: "Subtitle Path",
         accessor: "path",
-        Cell: (row) => {
-          if (row.value === null || row.value.length === 0) {
+        Cell: ({ value }) => {
+          if (value === null || value.length === 0) {
             return "Video File Subtitle Track";
-          } else if (row.value === missingText) {
-            return <span className="text-muted">{row.value}</span>;
+          } else if (value === missingText) {
+            return <span className="text-muted">{value}</span>;
           } else {
-            return row.row.original.mapped_path;
+            return value;
           }
         },
       },
