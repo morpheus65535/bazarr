@@ -115,7 +115,7 @@ export function filterSubtitleBy(
   const result = differenceWith(
     subtitles,
     languages,
-    (a, b) => a.code2 === b.code2
+    (a, b) => a.code2 === b.code2 || a.path !== null
   );
   return difference(subtitles, result);
 }
