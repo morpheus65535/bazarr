@@ -32,7 +32,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
           } else if (row.value === missingText) {
             return <span className="text-muted">{row.value}</span>;
           } else {
-            return row.value;
+            return row.row.original.mapped_path;
           }
         },
       },

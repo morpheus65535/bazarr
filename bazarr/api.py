@@ -159,6 +159,7 @@ def postprocessEpisode(item):
                    "code2": subtitle[0],
                    "code3": alpha3_from_alpha2(subtitle[0]),
                    "path": subs[1],
+                   "mapped_path": path_mappings.path_replace(subs[1]),
                    "forced": False,
                    "hi": False}
             if len(subtitle) > 1:
@@ -225,6 +226,7 @@ def postprocessMovie(item):
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
             item['subtitles'][i] = {"path": subs[1],
+                                    "mapped_path": path_mappings.path_replace_movie(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),

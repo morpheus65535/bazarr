@@ -37,6 +37,7 @@ interface Subtitle extends Language {
   forced: boolean;
   hi: boolean;
   path: string | null;
+  mapped_path: string | null;
 }
 
 interface PathType {
