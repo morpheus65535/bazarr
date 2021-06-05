@@ -41,7 +41,7 @@ class CustomLanguage:
 
     @classmethod
     def register(cls, table):
-        " Register the custom language subclasses in the database. "
+        "Register the custom language subclasses in the database."
 
         for sub in cls.__subclasses__():
             table.insert(
@@ -84,6 +84,7 @@ class CustomLanguage:
 
 
 class BrazilianPortuguese(CustomLanguage):
+    # Same attributes as base class
     pass
 
 

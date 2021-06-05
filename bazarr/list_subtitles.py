@@ -184,7 +184,7 @@ def store_subtitles_movie(original_path, reversed_path):
                 custom = CustomLanguage.found_external(subtitle, subtitle_path)
 
                 if custom is not None:
-                    actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path)])
+                    actual_subtitles.append([custom, path_mappings.path_replace_reverse_movie(subtitle_path)])
 
                 elif str(language.basename) != 'und':
                     if language.forced:
