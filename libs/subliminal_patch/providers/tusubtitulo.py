@@ -57,7 +57,9 @@ class TuSubtituloSubtitle(Subtitle):
 class TuSubtituloProvider(Provider):
     """TuSubtitulo.com Provider"""
 
-    languages = {Language.fromietf(lang) for lang in ["en", "es"]}
+    languages = {Language.fromietf(lang) for lang in ["en", "es"]} | {
+        Language("spa", "MX")
+    }
     logger.debug(languages)
     video_types = (Episode,)
 
@@ -123,11 +125,13 @@ class TuSubtituloProvider(Provider):
             try:
                 content = tables[tr + inc].find_all("td")
 
-                language = content[4].text
-                if "eng" in language.lower():
-                    language = "en"
-                elif "esp" in language.lower():
-                    language = "es"
+                language = content[4].text.lower()
+                if "eng" in language:
+                    language = Language.fromietf("en")
+                elif "lat" in language:
+                    language = Language("spa", "MX")
+                elif "esp" in language:
+                    language = Language.fromietf("es")
                 else:
                     language = None
 
@@ -236,7 +240,7 @@ class TuSubtituloProvider(Provider):
                 matches.update(["title", "series", "season", "episode", "year"])
                 subtitles.append(
                     TuSubtituloSubtitle(
-                        Language.fromietf(sub["language"]),
+                        sub["language"],
                         sub,
                         matches,
                     )

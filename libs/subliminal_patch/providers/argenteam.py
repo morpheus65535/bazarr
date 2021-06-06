@@ -46,7 +46,8 @@ class ArgenteamSubtitle(Subtitle):
 
 class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = "argenteam"
-    languages = {Language.fromalpha2(l) for l in ["es"]}
+    # Safe to assume every subtitle from Argenteam is Latam Spanish
+    languages = {Language("spa", "MX")}
     video_types = (Episode, Movie)
     subtitle_class = ArgenteamSubtitle
     hearing_impaired_verifiable = False
@@ -59,9 +60,9 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {
-            "User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
-        }
+        self.session.headers.update(
+            {"User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        )
 
     def terminate(self):
         self.session.close()
@@ -75,48 +76,38 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
             is_episode = True
             query = f"{title} S{kwargs['season']:02}E{kwargs['episode']:02}"
 
-        logger.info(f"Searching ID (episode: {is_episode}) for {query}")
+        logger.debug(f"Searching ID (episode: {is_episode}) for {query}")
 
         r = self.session.get(API_URL + "search", params={"q": query}, timeout=10)
         r.raise_for_status()
 
         results = r.json()
         match_ids = []
-        if results["total"] >= 1:
-            for result in results["results"]:
-                if (result["type"] == "episode" and not is_episode) or (
-                    result["type"] == "movie" and is_episode
-                ):
+        for result in results["results"]:
+            if result["type"] == "movie" and is_episode:
+                continue
+
+            imdb = f"tt{result.get('imdb', 'n/a')}"
+            if not is_episode and imdb == kwargs.get("imdb_id"):
+                logger.debug("Movie matched by IMDB ID, taking shortcut")
+                match_ids = [result["id"]]
+                break
+
+            # advanced title check in case of multiple movie results
+            title_year = kwargs.get("year") and kwargs.get("title")
+            if results["total"] > 1 and not is_episode and title_year:
+                sanitized = sanitize(result["title"])
+                titles = [f"{sanitize(name)} {kwargs['year']}" for name in titles]
+                if sanitized not in titles:
                     continue
 
-                # shortcut in case of matching imdb id (don't match NoneType)
-                if not is_episode and f"tt{result.get('imdb', 'n/a')}" == kwargs.get(
-                    "imdb_id"
-                ):
-                    logger.debug(f"Movie matched by IMDB ID, taking shortcut")
-                    match_ids = [result["id"]]
-                    break
-
-                # advanced title check in case of multiple movie results
-                if results["total"] > 1:
-                    if not is_episode and kwargs.get("year"):
-                        if result["title"] and not (
-                            sanitize(result["title"])
-                            in (
-                                "%s %s" % (sanitize(name), kwargs.get("year"))
-                                for name in titles
-                            )
-                        ):
-                            continue
-
-                match_ids.append(result["id"])
-        else:
-            logger.error(f"No episode ID found for {query}")
+            match_ids.append(result["id"])
 
         if match_ids:
-            logger.debug(
-                f"Found matching IDs: {', '.join(str(id) for id in match_ids)}"
-            )
+            ids = ", ".join(str(id) for id in match_ids)
+            logger.debug("Found matching IDs: %s", ids)
+        else:
+            logger.debug("Nothing found from %s query", query)
 
         return match_ids
 

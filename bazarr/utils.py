@@ -13,6 +13,7 @@ import stat
 from whichcraft import which
 from get_args import args
 from config import settings, url_sonarr, url_radarr
+from custom_lang import CustomLanguage
 from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
     TableMoviesRootfolder
 from event_handler import event_stream
@@ -375,12 +376,11 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
 
 def subtitles_apply_mods(language, subtitle_path, mods):
     language = alpha3_from_alpha2(language)
-    if language == 'pob':
-        lang_obj = Language('por', 'BR')
-    elif language == 'zht':
-        lang_obj = Language('zho', 'TW')
-    else:
+    custom = CustomLanguage.from_value(language, "alpha3")
+    if custom is None:
         lang_obj = Language(language)
+    else:
+        lang_obj = custom.subzero_language()
 
     sub = Subtitle(lang_obj, mods=mods)
     with open(subtitle_path, 'rb') as f:

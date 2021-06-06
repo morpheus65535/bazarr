@@ -3,7 +3,8 @@
 import pycountry
 
 from subzero.language import Language
-from database import database, TableSettingsLanguages
+from custom_lang import CustomLanguage
+from database import TableSettingsLanguages
 
 
 def load_language_in_db():
@@ -13,22 +14,7 @@ def load_language_in_db():
              if hasattr(lang, 'alpha_2')]
     
     # Insert languages in database table
-    TableSettingsLanguages.insert_many(langs,
-                                       fields=[TableSettingsLanguages.code3, TableSettingsLanguages.code2,
-                                               TableSettingsLanguages.name]) \
-        .on_conflict(action='IGNORE') \
-        .execute()
-
-    TableSettingsLanguages.insert({TableSettingsLanguages.code3: 'pob', TableSettingsLanguages.code2: 'pb',
-                                   TableSettingsLanguages.name: 'Brazilian Portuguese'}) \
-        .on_conflict(action='IGNORE') \
-        .execute()
-
-    # insert chinese languages
-    TableSettingsLanguages.insert({TableSettingsLanguages.code3: 'zht', TableSettingsLanguages.code2: 'zt',
-                                   TableSettingsLanguages.name: 'Chinese Traditional'}) \
-        .on_conflict(action='IGNORE')\
-        .execute()
+    CustomLanguage.register(TableSettingsLanguages)
 
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
@@ -88,15 +74,14 @@ def get_language_set():
         .where(TableSettingsLanguages.enabled == 1).dicts()
 
     language_set = set()
-    
+
     for lang in languages:
-        if lang['code3'] == 'pob':
-            language_set.add(Language('por', 'BR'))
-        elif lang['code3'] == 'zht':
-            language_set.add(Language('zho', 'TW'))
+        custom = CustomLanguage.from_value(lang["code3"], "alpha3")
+        if custom is None:
+            language_set.add(Language(lang["code3"]))
         else:
-            language_set.add(Language(lang['code3']))
-    
+            language_set.add(custom.subzero_language())
+
     return language_set
 
 

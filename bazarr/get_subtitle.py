@@ -34,6 +34,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from knowit import api
 from subsyncer import subsync
 from guessit import guessit
+from custom_lang import CustomLanguage
 from database import dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
     get_desired_languages, TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from event_handler import event_stream, show_progress, hide_progress
@@ -139,24 +140,13 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         # Always use alpha2 in API Request
         l = alpha3_from_alpha2(l)
 
-        if l == 'pob':
-            lang_obj = Language('por', 'BR')
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
-            if hi == "force HI":
-                lang_obj = Language.rebuild(lang_obj, hi=True)
-        elif l == 'zht':
-            lang_obj = Language('zho', 'TW')
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
-            if hi == "force HI":
-                lang_obj = Language.rebuild(lang_obj, hi=True)
-        else:
-            lang_obj = Language(l)
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
-            if hi == "force HI":
-                lang_obj = Language.rebuild(lang_obj, hi=True)
+        lang_obj = _get_lang_obj(l)
+
+        if forced == "True":
+            lang_obj = Language.rebuild(lang_obj, forced=True)
+        if hi == "force HI":
+            lang_obj = Language.rebuild(lang_obj, hi=True)
+
         language_set.add(lang_obj)
 
     minimum_score = settings.general.minimum_score
@@ -164,6 +154,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
+
 
     # todo:
     """
@@ -228,12 +219,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                     saved_any = True
                     for subtitle in saved_subtitles:
                         downloaded_provider = subtitle.provider_name
-                        if subtitle.language == 'pt-BR':
-                            downloaded_language_code3 = 'pob'
-                        elif subtitle.language == 'zh-TW':
-                            downloaded_language_code3 = 'zht'
-                        else:
-                            downloaded_language_code3 = subtitle.language.alpha3
+                        downloaded_language_code3 = _get_download_code3(subtitle)
+
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         audio_language_code2 = alpha2_from_language(audio_language)
@@ -346,12 +333,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
 
         lang = alpha3_from_alpha2(language)
 
-        if lang == 'pob':
-            lang_obj = Language('por', 'BR')
-        elif lang == 'zht':
-            lang_obj = Language('zho', 'TW')
-        else:
-            lang_obj = Language(lang)
+        lang_obj = _get_lang_obj(lang)
 
         if forced == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
@@ -562,12 +544,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                 if saved_subtitles:
                     for saved_subtitle in saved_subtitles:
                         downloaded_provider = saved_subtitle.provider_name
-                        if saved_subtitle.language == 'pt-BR':
-                            downloaded_language_code3 = 'pob'
-                        elif saved_subtitle.language == 'zh-TW':
-                            downloaded_language_code3 = 'zht'
-                        else:
-                            downloaded_language_code3 = subtitle.language.alpha3
+                        downloaded_language_code3 = _get_download_code3(subtitle)
+
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         audio_language_code2 = alpha2_from_language(audio_language)
@@ -666,13 +644,12 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
         'win') and settings.general.getboolean('chmod_enabled') else None
 
     language = alpha3_from_alpha2(language)
-
-    if language == 'pob':
-        lang_obj = Language('por', 'BR')
-    elif language == 'zht':
-        lang_obj = Language('zho', 'TW')
-    else:
+    
+    custom = Language.from_value(language)
+    if custom is None:
         lang_obj = Language(language)
+    else:
+        lang_obj = custom.subzero_language()
 
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
@@ -1685,3 +1662,18 @@ def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score, so
             logging.debug("BAZARR subsync skipped because subtitles score isn't below this "
                           "threshold value: " + subsync_threshold + "%")
     return False
+
+
+def _get_download_code3(subtitle):
+    custom = CustomLanguage.from_value(subtitle.language, "language")
+    if custom is None:
+        return subtitle.language.alpha3
+    return custom.alpha3
+
+
+def _get_lang_obj(alpha3):
+    sub = CustomLanguage.from_value(alpha3, "alpha3")
+    if sub is None:
+        return Language(alpha3)
+
+    return sub.subzero_language()
