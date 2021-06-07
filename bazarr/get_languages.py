@@ -12,19 +12,27 @@ def load_language_in_db():
     langs = [[lang.alpha_3, lang.alpha_2, lang.name]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2')]
-    
-    # Insert languages in database table
-    CustomLanguage.register(TableSettingsLanguages)
 
+    # Insert standard languages in database table
+    TableSettingsLanguages.insert_many(langs,
+                                       fields=[TableSettingsLanguages.code3, TableSettingsLanguages.code2,
+                                               TableSettingsLanguages.name]) \
+        .on_conflict(action='IGNORE') \
+        .execute()
+
+    # Update standard languages with code3b if available
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
-    
+
     # Update languages in database table
     for lang in langs:
         TableSettingsLanguages.update({TableSettingsLanguages.code3b: lang[0]}) \
             .where(TableSettingsLanguages.code3 == lang[1]) \
             .execute()
+
+    # Insert custom languages in database table
+    CustomLanguage.register(TableSettingsLanguages)
 
     # Create languages dictionary for faster conversion than calling database
     create_languages_dict()
