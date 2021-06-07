@@ -56,6 +56,9 @@ class MessagePackHubProtocol(BaseHubProtocol):
             data = json.loads(handshake_data)
             return HandshakeResponseMessage(data.get("error", None)), messages
         except Exception as ex:
+            if type(raw_message) is str:
+                data = json.loads(raw_message[0: raw_message.index("}") + 1])
+                return HandshakeResponseMessage(data.get("error", None)), []
             Helpers.get_logger().error(raw_message)
             Helpers.get_logger().error(ex)
             raise ex
