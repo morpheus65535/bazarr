@@ -645,7 +645,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     language = alpha3_from_alpha2(language)
     
-    custom = Language.from_value(language)
+    custom = CustomLanguage.from_value(language, "alpha3")
     if custom is None:
         lang_obj = Language(language)
     else:
