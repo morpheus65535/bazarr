@@ -9,9 +9,8 @@ from requests.packages.urllib3.util.retry import Retry
 
 from guessit import guessit
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.exceptions import TooManyRequests
-from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subzero.language import Language
 from subliminal.exceptions import ServiceUnavailable

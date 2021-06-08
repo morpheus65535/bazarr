@@ -8,8 +8,8 @@ import io
 from zipfile import ZipFile
 
 from guessit import guessit
-from subliminal.subtitle import guess_matches
 from subliminal.utils import sanitize
+from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 
 try:
@@ -84,7 +84,7 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
                 matches.add('episode')
             # guess
             for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'episode', "single_value": True}))
+                matches |= guess_matches(video, guessit(release, {'type': 'episode'}))
         # movie
         elif isinstance(video, Movie):
             # title
@@ -96,7 +96,7 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
                 matches.add('year')
             # guess
             for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'movie', "single_value": True}))
+                matches |= guess_matches(video, guessit(release, {'type': 'movie'}))
 
         self.matches = matches
 
