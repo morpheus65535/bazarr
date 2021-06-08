@@ -232,6 +232,27 @@ class TableShowsRootfolder(BaseModel):
         primary_key = False
 
 
+class TableCustomScoreProfiles(BaseModel):
+    id = AutoField()
+    name = TextField(null=True)
+    media = TextField(null=True)
+    score = IntegerField(null=True)
+
+    class Meta:
+        table_name = 'table_custom_score_profiles'
+
+
+class TableCustomScoreProfileConditions(BaseModel):
+    profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
+    type = TextField(null=True) # provider, uploader, regex, etc
+    value = TextField(null=True) # opensubtitles, jane_doe, [a-z], etc
+    required = BooleanField(default=False)
+    negate = BooleanField(default=False)
+
+    class Meta:
+        table_name = 'table_custom_score_profile_conditions'
+
+
 def init_db():
     # Create tables if they don't exists.
     database.create_tables([System,
@@ -246,7 +267,9 @@ def init_db():
                             TableSettingsLanguages,
                             TableSettingsNotifier,
                             TableShows,
-                            TableShowsRootfolder])
+                            TableShowsRootfolder,
+                            TableCustomScoreProfiles,
+                            TableCustomScoreProfileConditions])
 
     # add the system table single row if it's not existing
     # we must retry until the tables are created

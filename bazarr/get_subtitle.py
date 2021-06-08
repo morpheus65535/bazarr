@@ -42,6 +42,7 @@ from embedded_subs_reader import parse_video_metadata
 
 from analytics import track_event
 from locale import getpreferredencoding
+from score import movie_score, series_score
 
 
 def get_video(path, title, sceneName, providers=None, media_type="movie"):
@@ -80,30 +81,6 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
 
     except Exception as e:
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
-
-
-def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
-               min_score_special_ep=180 * 100 / 360.0):
-    """
-    Get score range for a video.
-    :param video: `Video` instance
-    :param media_type: movie/series
-    :param min_score_movie_perc: Percentage of max score for min score of movies
-    :param min_score_series_perc: Percentage of max score for min score of series
-    :param min_score_special_ep: Percentage of max score for min score of series special episode
-    :return: tuple(min_score, max_score, set(scores))
-    """
-    max_score = 120.0
-    min_score = max_score * min_score_movie_perc / 100.0
-    scores = list(subliminal_scores.movie_scores.keys())
-    if media_type == "series":
-        max_score = 360.0
-        min_score = max_score * min_score_series_perc / 100.0
-        scores = list(subliminal_scores.episode_scores.keys())
-        if video.is_special:
-            min_score = max_score * min_score_special_ep / 100.0
-
-    return min_score, max_score, set(scores)
 
 
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, sceneName, title,
@@ -168,8 +145,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     video = get_video(force_unicode(path), title, sceneName, providers=providers,
                       media_type=media_type)
     if video:
-        min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
-                                                  min_score_series_perc=int(minimum_score))
+        handler = series_score if media_type == "series" else movie_score
+        min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
 
         if providers:
             if forced_minimum_score:
@@ -182,6 +159,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            throttle_time=None,  # fixme
                                                            blacklist=get_blacklist(media_type=media_type),
                                                            throttle_callback=provider_throttle,
+                                                           score_obj=handler,
                                                            pre_download_hook=None,  # fixme
                                                            post_download_hook=None,  # fixme
                                                            language_hook=None)  # fixme
@@ -368,8 +346,8 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
         logging.info("BAZARR All providers are throttled")
         return None
     if video:
-        min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
-                                                  min_score_series_perc=int(minimum_score))
+        handler = series_score if media_type == "series" else movie_score
+        min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
 
         try:
             if providers:
@@ -431,12 +409,12 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 if not initial_hi_match:
                     initial_hi = None
 
-                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi, score_obj=handler)
                 if 'hash' not in matches:
                     not_matched = scores - matches
                 else:
                     not_matched = set()
-                s.score = score
+                s.score = score_without_hash
 
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')
@@ -505,7 +483,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
     video = get_video(force_unicode(path), title, sceneName, providers={provider},
                       media_type=media_type)
     if video:
-        min_score, max_score, scores = get_scores(video, media_type)
+        min_score, max_score, scores = _get_scores(media_type)
         try:
             if provider:
                 download_subtitles([subtitle],
@@ -1677,3 +1655,11 @@ def _get_lang_obj(alpha3):
         return Language(alpha3)
 
     return sub.subzero_language()
+
+def _get_scores(media_type, min_movie=None, min_ep=None):
+    series = "series" == media_type
+    handler = series_score if series else movie_score
+    min_movie = min_movie or (60 * 100 / handler.max_score)
+    min_ep = min_ep or (240 * 100 / handler.max_score)
+    min_score_ = int(min_ep if series else min_movie)
+    return handler.get_scores(min_score_)

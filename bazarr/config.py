@@ -180,6 +180,34 @@ defaults = {
         'use_subsync_movie_threshold': 'False',
         'subsync_movie_threshold': '70',
         'debug': 'False'
+    },
+    'series_scores': {
+        "hash": 359,
+        "series": 180,
+        "year": 90,
+        "season": 30,
+        "episode": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
+    },
+    'movie_scores': {
+        "hash": 119,
+        "title": 60,
+        "year": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
     }
 }
 

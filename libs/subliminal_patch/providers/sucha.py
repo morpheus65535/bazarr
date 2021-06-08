@@ -99,14 +99,15 @@ class SuchaProvider(Provider):
         result.raise_for_status()
 
         results = result.json()
+        if isinstance(results, dict):
+            logger.debug("No subtitles found")
+            return []
+
         subtitles = []
         for item in results:
             matches = set()
             title = item.get("title", "").lower()
             alt_title = item.get("alt_title", title).lower()
-            if not title:
-                logger.debug("No subtitles found")
-                return []
 
             if any(video.title.lower() in item for item in (title, alt_title)):
                 matches.add("title")
