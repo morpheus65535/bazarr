@@ -349,6 +349,25 @@ class Badges(Resource):
 class Languages(Resource):
     @authenticate
     def get(self):
+        history = request.args.get('history')
+        if history and history not in ['False', 'false', '0']:
+            languages = list(TableHistory.select(TableHistory.language).dicts())
+            languages += list(TableHistoryMovie.select(TableHistoryMovie.language).dicts())
+            languages_list = list(set([x['language'].split(':')[0] for x in languages]))
+            languages_dicts = []
+            for language in languages_list:
+                code2 = None
+                if len(language) == 2:
+                    code2 = language
+                elif len(language) == 3:
+                    code2 = alpha2_from_alpha3(language)
+
+                if not any(x['code2'] == code2 for x in languages_dicts):
+                    languages_dicts.append({
+                        'code2': code2,
+                        'name': language_from_alpha2(language)
+                    })
+            return jsonify(sorted(languages_dicts, key=itemgetter('name')))
         result = TableSettingsLanguages.select(TableSettingsLanguages.name,
                                                TableSettingsLanguages.code2,
                                                TableSettingsLanguages.enabled)\
@@ -1108,6 +1127,22 @@ class MoviesSubtitles(Resource):
 class Providers(Resource):
     @authenticate
     def get(self):
+        history = request.args.get('history')
+        if history and history not in ['False', 'false', '0']:
+            providers = list(TableHistory.select(TableHistory.provider)
+                             .where(TableHistory.provider != None)
+                             .dicts())
+            providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
+                              .where(TableHistoryMovie.provider != None)
+                              .dicts())
+            providers_list = list(set([x['provider'] for x in providers]))
+            providers_dicts = []
+            for provider in providers_list:
+               providers_dicts.append({
+                    'name': provider
+                })
+            return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
+
         throttled_providers = list_throttled_providers()
 
         providers = list()
