@@ -11,6 +11,7 @@ import requests
 
 from babelfish import language_converters
 from dogpile.cache.api import NO_VALUE
+from guessit import guessit
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
@@ -21,6 +22,7 @@ from subliminal_patch.http import SubZeroRequestsTransport
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.cache import region
 from subliminal_patch.score import framerate_equal
+from subliminal_patch.subtitle import guess_matches
 from subzero.language import Language
 
 from ..exceptions import TooManyRequests, APIThrottled
@@ -72,14 +74,18 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
     def get_matches(self, video, hearing_impaired=False):
         matches = super(OpenSubtitlesSubtitle, self).get_matches(video)
 
+        type_ = "episode" if isinstance(video, Episode) else "movie"
+        matches |= guess_matches(video, guessit(self.movie_release_name, {'type': type_}))
+        matches |= guess_matches(video, guessit(self.filename, {'type': type_}))
+
         # episode
-        if isinstance(video, Episode) and self.movie_kind == 'episode':
+        if type_ == "episode" and self.movie_kind == "episode":
             # series
             if fix_tv_naming(video.series) and (sanitize(self.series_name) in (
                     sanitize(name) for name in [fix_tv_naming(video.series)] + video.alternative_series)):
                 matches.add('series')
         # movie
-        elif isinstance(video, Movie) and self.movie_kind == 'movie':
+        elif type_ == "movie" and self.movie_kind == "movie":
             # title
             if fix_movie_naming(video.title) and (sanitize(self.movie_name) in (
                     sanitize(name) for name in [fix_movie_naming(video.title)] + video.alternative_titles)):

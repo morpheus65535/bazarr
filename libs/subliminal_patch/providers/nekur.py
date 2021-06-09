@@ -15,11 +15,11 @@ from subzero.language import Language
 
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.score import framerate_equal
 from subliminal.exceptions import ProviderError
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.subtitle import sanitize, guess_matches
+from subliminal.subtitle import sanitize
 from subliminal.video import Movie
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
