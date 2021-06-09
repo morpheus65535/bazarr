@@ -10,7 +10,6 @@ from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
 from helper import path_mappings
-from database import init_db
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -175,6 +174,7 @@ def init_binaries():
     return unrar
 
 
+from database import init_db
 init_db()
 init_binaries()
 path_mappings.update()
