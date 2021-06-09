@@ -220,7 +220,7 @@ namespace History {
   };
 
   type TimeframeOptions = "week" | "month" | "trimester" | "year";
-  type ActionOptions = 0 | 1 | 2;
+  type ActionOptions = 1 | 2 | 3;
 }
 
 interface SearchResultType {
