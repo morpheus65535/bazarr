@@ -1817,7 +1817,7 @@ class EpisodesBlacklist(Resource):
                       subs_id=subs_id,
                       language=language)
         delete_subtitles(media_type='series',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=False,
                          hi=False,
                          media_path=path_mappings.path_replace(media_path),
@@ -1890,7 +1890,7 @@ class MoviesBlacklist(Resource):
                             subs_id=subs_id,
                             language=language)
         delete_subtitles(media_type='movie',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=forced,
                          hi=hi,
                          media_path=path_mappings.path_replace_movie(media_path),
