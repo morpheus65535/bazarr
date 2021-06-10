@@ -54,7 +54,9 @@ from functools import wraps
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/') + '/api')
 api = Api(api_bp)
 
-None_Keys = ['null', 'undefined', '']
+None_Keys = ['null', 'undefined', '', None]
+
+False_Keys = ['False', 'false', '0']
 
 
 def authenticate(actual_method):
@@ -350,10 +352,14 @@ class Languages(Resource):
     @authenticate
     def get(self):
         history = request.args.get('history')
-        if history and history not in ['False', 'false', '0']:
+        if history and history not in False_Keys:
             languages = list(TableHistory.select(TableHistory.language).dicts())
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language).dicts())
-            languages_list = list(set([x['language'].split(':')[0] for x in languages]))
+            languages_set = set()
+            for l in languages:
+                if l not in None_Keys and l['language'] not in None_Keys:
+                    languages_set.add(l['language'].split(':')[0])
+            languages_list = list(languages_set)
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -365,7 +371,9 @@ class Languages(Resource):
                 if not any(x['code2'] == code2 for x in languages_dicts):
                     languages_dicts.append({
                         'code2': code2,
-                        'name': language_from_alpha2(language)
+                        'name': language_from_alpha2(language),
+                        # Compatibility: Use false temporarily
+                        'enabled': False
                     })
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
         result = TableSettingsLanguages.select(TableSettingsLanguages.name,
@@ -1128,7 +1136,7 @@ class Providers(Resource):
     @authenticate
     def get(self):
         history = request.args.get('history')
-        if history and history not in ['False', 'false', '0']:
+        if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
                              .where(TableHistory.provider != None)
                              .dicts())
@@ -1139,7 +1147,9 @@ class Providers(Resource):
             providers_dicts = []
             for provider in providers_list:
                providers_dicts.append({
-                    'name': provider
+                    'name': provider,
+                    'status': 'History',
+                    'retry': '-'
                 })
             return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
 
