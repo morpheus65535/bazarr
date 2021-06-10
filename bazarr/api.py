@@ -353,8 +353,12 @@ class Languages(Resource):
     def get(self):
         history = request.args.get('history')
         if history and history not in False_Keys:
-            languages = list(TableHistory.select(TableHistory.language).dicts())
-            languages += list(TableHistoryMovie.select(TableHistoryMovie.language).dicts())
+            languages = list(TableHistory.select(TableHistory.language)
+                             .where(TableHistory.language != None)
+                             .dicts())
+            languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
+                             .where(TableHistoryMovie.language != None)
+                              .dicts())
             languages_set = set()
             for l in languages:
                 if l not in None_Keys and l['language'] not in None_Keys:
