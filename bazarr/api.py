@@ -359,11 +359,7 @@ class Languages(Resource):
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
                              .where(TableHistoryMovie.language != None)
                               .dicts())
-            languages_set = set()
-            for l in languages:
-                if l not in None_Keys and l['language'] not in None_Keys:
-                    languages_set.add(l['language'].split(':')[0])
-            languages_list = list(languages_set)
+            languages_list = list(set([l['language'].split(':')[0] for l in languages]))
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -1142,15 +1138,15 @@ class Providers(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
-                             .where(TableHistory.provider != None)
+                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
                              .dicts())
             providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
-                              .where(TableHistoryMovie.provider != None)
+                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
                               .dicts())
             providers_list = list(set([x['provider'] for x in providers]))
             providers_dicts = []
             for provider in providers_list:
-               providers_dicts.append({
+                providers_dicts.append({
                     'name': provider,
                     'status': 'History',
                     'retry': '-'
