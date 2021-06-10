@@ -771,6 +771,14 @@ def series_download_subtitles(no):
                           count=count_episodes_details)
 
             for language in ast.literal_eval(episode['missing_subtitles']):
+                # confirm if language is still missing or if cutoff have been reached
+                confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
+                    .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
+                    .dicts() \
+                    .get()
+                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                    continue
+
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                     if len(audio_language_list) > 0:
@@ -845,6 +853,14 @@ def episode_download_subtitles(no):
     for episode in episodes_details:
         if providers_list:
             for language in ast.literal_eval(episode['missing_subtitles']):
+                # confirm if language is still missing or if cutoff have been reached
+                confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
+                    .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
+                    .dicts() \
+                    .get()
+                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                    continue
+
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                     if len(audio_language_list) > 0:
@@ -913,6 +929,14 @@ def movies_download_subtitles(no):
         count_movie = 0
 
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
+        # confirm if language is still missing or if cutoff have been reached
+        confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles)\
+            .where(TableMovies.radarrId == movie['radarrId'])\
+            .dicts()\
+            .get()
+        if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+            continue
+
         if providers_list:
             show_progress(id='movie_search_progress_{}'.format(no),
                           header='Searching missing subtitles...',
@@ -990,6 +1014,14 @@ def wanted_download_subtitles(path):
         if type(attempt) == str:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode['missing_subtitles']):
+            # confirm if language is still missing or if cutoff have been reached
+            confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
+                .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
+                .dicts() \
+                .get()
+            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                continue
+
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
@@ -1067,6 +1099,14 @@ def wanted_download_subtitles_movie(path):
         if type(attempt) == str:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie['missing_subtitles']):
+            # confirm if language is still missing or if cutoff have been reached
+            confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
+                .where(TableMovies.radarrId == movie['radarrId']) \
+                .dicts() \
+                .get()
+            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                continue
+
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
