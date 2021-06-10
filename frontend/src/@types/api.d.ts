@@ -10,12 +10,14 @@ interface Badge {
 interface ApiLanguage {
   code2: LanguageCodeType;
   name: string;
-  hi?: boolean;
-  forced?: boolean;
   enabled: boolean;
 }
 
-type Language = Omit<ApiLanguage, "enabled">;
+type Language = Omit<ApiLanguage, "enabled"> & {
+  // TODO: Make things unify
+  hi?: boolean;
+  forced?: boolean;
+};
 
 namespace Profile {
   interface Item {
