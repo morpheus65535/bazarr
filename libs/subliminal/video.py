@@ -179,7 +179,9 @@ class Episode(Video):
         return cls(name, guess['title'], guess.get('season', 1), episode, title=guess.get('episode_title'),
                    year=guess.get('year'), source=guess.get('source'), original_series='year' not in guess,
                    release_group=guess.get('release_group'), resolution=guess.get('screen_size'),
-                   video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'))
+                   video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'),
+                   streaming_service=guess.get("streaming_service"),
+                   edition=guess.get("edition", guess.get("alternative_title")))
 
     @classmethod
     def fromname(cls, name):
@@ -227,7 +229,8 @@ class Movie(Video):
 
         return cls(name, guess['title'], source=guess.get('source'), release_group=guess.get('release_group'),
                    resolution=guess.get('screen_size'), video_codec=guess.get('video_codec'),
-                   audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles)
+                   audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles,
+                   streaming_service=guess.get("streaming_service"), edition=guess.get("edition"))
 
     @classmethod
     def fromname(cls, name):

@@ -99,7 +99,7 @@ class SuchaProvider(Provider):
         result.raise_for_status()
 
         results = result.json()
-        if isinstance(result, dict):
+        if isinstance(results, dict):
             logger.debug("No subtitles found")
             return []
 

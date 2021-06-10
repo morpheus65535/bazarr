@@ -7,7 +7,6 @@ import re
 import zlib
 
 from babelfish import Language, language_converters
-from guessit import guessit
 from six.moves.xmlrpc_client import ServerProxy
 
 from . import Provider, TimeoutSafeTransport
