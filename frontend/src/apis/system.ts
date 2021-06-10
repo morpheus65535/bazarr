@@ -57,9 +57,9 @@ class SystemApi extends BaseApi {
     });
   }
 
-  async languages() {
+  async languages(history: boolean = false) {
     return new Promise<Array<ApiLanguage>>((resolve, reject) => {
-      this.get<Array<ApiLanguage>>("/languages")
+      this.get<Array<ApiLanguage>>("/languages", { history })
         .then((result) => {
           resolve(result.data);
         })

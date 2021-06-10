@@ -10,12 +10,14 @@ interface Badge {
 interface ApiLanguage {
   code2: LanguageCodeType;
   name: string;
-  hi?: boolean;
-  forced?: boolean;
   enabled: boolean;
 }
 
-type Language = Omit<ApiLanguage, "enabled">;
+type Language = Omit<ApiLanguage, "enabled"> & {
+  // TODO: Make things unify
+  hi?: boolean;
+  forced?: boolean;
+};
 
 namespace Profile {
   interface Item {
@@ -220,7 +222,7 @@ namespace History {
   };
 
   type TimeframeOptions = "week" | "month" | "trimester" | "year";
-  type ActionOptions = 0 | 1 | 2;
+  type ActionOptions = 1 | 2 | 3;
 }
 
 interface SearchResultType {

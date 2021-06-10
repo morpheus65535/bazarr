@@ -14,9 +14,10 @@ from subliminal_patch.exceptions import TooManyRequests
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
 from .mixins import ProviderRetryMixin
-from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
+from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.utils import fix_inconsistent_naming
 from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
@@ -74,9 +75,10 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
+        type_ = "movie" if isinstance(video, Movie) else "episode"
 
         # handle movies and series separately
-        if isinstance(video, Episode):
+        if type_ == "episode":
             # series
             matches.add('series')
             # year
@@ -88,8 +90,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
             # episode
             if video.episode == self.episode:
                 matches.add('episode')
-        # movie
-        elif isinstance(video, Movie):
+        else:
             # title
             matches.add('title')
             # year
@@ -103,17 +104,12 @@ class OpenSubtitlesComSubtitle(Subtitle):
                 any(r in sanitize_release_group(self.releases)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.releases and video.resolution in self.releases.lower():
-            matches.add('resolution')
-        # source
-        if video.source and self.releases and video.source.lower() in self.releases.lower():
-            matches.add('source')
-        # hash
+
         if self.hash_matched:
             matches.add('hash')
+
         # other properties
-        matches |= guess_matches(video, guessit(self.releases))
+        matches |= guess_matches(video, guessit(self.releases, {"type": type_}))
 
         self.matches = matches
 

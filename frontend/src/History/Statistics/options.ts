@@ -1,15 +1,15 @@
 export const actionOptions: SelectorOption<History.ActionOptions>[] = [
   {
     label: "Automatically Downloaded",
-    value: 0,
-  },
-  {
-    label: "Manually Downloaded",
     value: 1,
   },
   {
-    label: "Upgraded",
+    label: "Manually Downloaded",
     value: 2,
+  },
+  {
+    label: "Upgraded",
+    value: 3,
   },
 ];
 

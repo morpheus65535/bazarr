@@ -54,7 +54,9 @@ from functools import wraps
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/') + '/api')
 api = Api(api_bp)
 
-None_Keys = ['null', 'undefined', '']
+None_Keys = ['null', 'undefined', '', None]
+
+False_Keys = ['False', 'false', '0']
 
 
 def authenticate(actual_method):
@@ -349,6 +351,31 @@ class Badges(Resource):
 class Languages(Resource):
     @authenticate
     def get(self):
+        history = request.args.get('history')
+        if history and history not in False_Keys:
+            languages = list(TableHistory.select(TableHistory.language)
+                             .where(TableHistory.language != None)
+                             .dicts())
+            languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
+                             .where(TableHistoryMovie.language != None)
+                              .dicts())
+            languages_list = list(set([l['language'].split(':')[0] for l in languages]))
+            languages_dicts = []
+            for language in languages_list:
+                code2 = None
+                if len(language) == 2:
+                    code2 = language
+                elif len(language) == 3:
+                    code2 = alpha2_from_alpha3(language)
+
+                if not any(x['code2'] == code2 for x in languages_dicts):
+                    languages_dicts.append({
+                        'code2': code2,
+                        'name': language_from_alpha2(language),
+                        # Compatibility: Use false temporarily
+                        'enabled': False
+                    })
+            return jsonify(sorted(languages_dicts, key=itemgetter('name')))
         result = TableSettingsLanguages.select(TableSettingsLanguages.name,
                                                TableSettingsLanguages.code2,
                                                TableSettingsLanguages.enabled)\
@@ -1108,6 +1135,24 @@ class MoviesSubtitles(Resource):
 class Providers(Resource):
     @authenticate
     def get(self):
+        history = request.args.get('history')
+        if history and history not in False_Keys:
+            providers = list(TableHistory.select(TableHistory.provider)
+                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
+                             .dicts())
+            providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
+                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
+                              .dicts())
+            providers_list = list(set([x['provider'] for x in providers]))
+            providers_dicts = []
+            for provider in providers_list:
+                providers_dicts.append({
+                    'name': provider,
+                    'status': 'History',
+                    'retry': '-'
+                })
+            return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
+
         throttled_providers = list_throttled_providers()
 
         providers = list()
@@ -1772,7 +1817,7 @@ class EpisodesBlacklist(Resource):
                       subs_id=subs_id,
                       language=language)
         delete_subtitles(media_type='series',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=False,
                          hi=False,
                          media_path=path_mappings.path_replace(media_path),
@@ -1845,7 +1890,7 @@ class MoviesBlacklist(Resource):
                             subs_id=subs_id,
                             language=language)
         delete_subtitles(media_type='movie',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=forced,
                          hi=hi,
                          media_path=path_mappings.path_replace_movie(media_path),

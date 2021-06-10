@@ -38,6 +38,7 @@ class GreekSubtitlesSubtitle(Subtitle):
 
         # episode
         if isinstance(video, Episode):
+            matches.add("year")
             # other properties
             matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}), partial=True)
         # movie

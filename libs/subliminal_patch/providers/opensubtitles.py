@@ -23,6 +23,7 @@ from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal_patch.subtitle import guess_matches
 from subliminal.cache import region
 from subliminal_patch.score import framerate_equal
+from subliminal_patch.subtitle import guess_matches
 from subzero.language import Language
 
 from ..exceptions import TooManyRequests, APIThrottled

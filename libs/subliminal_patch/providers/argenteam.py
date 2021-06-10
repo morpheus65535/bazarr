@@ -4,6 +4,7 @@ import logging
 import os
 import io
 import time
+import urllib.parse
 
 from zipfile import ZipFile
 from guessit import guessit
@@ -30,17 +31,26 @@ class ArgenteamSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = download_link
         self.found_matches = matches
-        self.release_info = release_info
+        self._release_info = release_info
+        # Original subtitle filename guessed from the URL
+        self.release_info = urllib.parse.unquote(self.download_link.split("/")[-1])
 
     @property
     def id(self):
         return self.download_link
 
     def get_matches(self, video):
-        # Download links always have the srt filename with the release info.
-        # We combine it with the release info as guessit will return the first key match.
-        new_file = self.download_link.split("/")[-1] + self.release_info
-        self.found_matches |= guess_matches(video, guessit(new_file))
+        type_ = "episode" if isinstance(video, Episode) else "movie"
+
+        self.found_matches |= guess_matches(
+            video,
+            guessit(self.release_info, {"type": type_}),
+        )
+        self.found_matches |= guess_matches(
+            video,
+            guessit(self._release_info, {"type": type_}),
+        )
+
         return self.found_matches
 
 

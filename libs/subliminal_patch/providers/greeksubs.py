@@ -6,10 +6,11 @@ from random import randint
 from subzero.language import Language
 from guessit import guessit
 from subliminal_patch.http import RetryingCFSession
+from subliminal_patch.subtitle import guess_matches
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 from subliminal.providers import ParserBeautifulSoup, Provider
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
 from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,8 @@ class GreekSubsSubtitle(Subtitle):
 
         # episode
         if isinstance(video, Episode):
+            # Blatanly match the year
+            matches.add("year")
             # other properties
             matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}), partial=True)
         # movie

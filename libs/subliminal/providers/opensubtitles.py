@@ -55,7 +55,6 @@ class OpenSubtitlesSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-
         # episode
         if isinstance(video, Episode) and self.movie_kind == 'episode':
             # tag match, assume series, year, season and episode matches

@@ -5,9 +5,9 @@ class ProviderApi extends BaseApi {
     super("/providers");
   }
 
-  async providers() {
+  async providers(history: boolean = false) {
     return new Promise<Array<System.Provider>>((resolve, reject) => {
-      this.get<DataWrapper<Array<System.Provider>>>("")
+      this.get<DataWrapper<Array<System.Provider>>>("", { history })
         .then((result) => {
           resolve(result.data.data);
         })

@@ -118,7 +118,7 @@ class SuchaProvider(Provider):
             if is_episode and any(
                 q["query"].lower() in item for item in (title, alt_title)
             ):
-                matches.update("title", "series", "season", "episode", "year")
+                matches.update(("title", "series", "season", "episode", "year"))
 
             subtitles.append(
                 SuchaSubtitle(
