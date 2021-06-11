@@ -102,7 +102,7 @@ class TitulkySubtitle(Subtitle):
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
             # guess
-            matches |= guess_matches(video, guessit(self.version, {'type': 'episode', "single_value": True}))
+            matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}))
             pass
         # movie
         elif isinstance(video, Movie):
@@ -114,7 +114,7 @@ class TitulkySubtitle(Subtitle):
             if video.year and self.year == video.year:
                 matches.add('year')
             # guess
-            matches |= guess_matches(video, guessit(self.version, {'type': 'movie', "single_value": True}))
+            matches |= guess_matches(video, guessit(self.version, {'type': 'movie'}))
 
         self.matches = matches
 

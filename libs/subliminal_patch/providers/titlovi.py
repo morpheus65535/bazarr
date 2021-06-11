@@ -17,12 +17,11 @@ from guessit import guessit
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
 from subliminal.exceptions import ProviderError, AuthenticationError, ConfigurationError
 from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group
-from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 
@@ -92,9 +91,9 @@ class TitloviSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-
+        type_ = "movie" if isinstance(video, Movie) else "episode"
         # handle movies and series separately
-        if isinstance(video, Episode):
+        if type_ == "episode":
             # series
             if video.series and sanitize(self.title) == fix_inconsistent_naming(video.series) or sanitize(
                     self.alt_title) == fix_inconsistent_naming(video.series):
@@ -109,7 +108,7 @@ class TitloviSubtitle(Subtitle):
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
         # movie
-        elif isinstance(video, Movie):
+        else:
             # title
             if video.title and sanitize(self.title) == fix_inconsistent_naming(video.title) or sanitize(
                     self.alt_title) == fix_inconsistent_naming(video.title):
@@ -125,14 +124,8 @@ class TitloviSubtitle(Subtitle):
                 any(r in sanitize_release_group(self.releases)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.releases and video.resolution in self.releases.lower():
-            matches.add('resolution')
-        # source
-        if video.source and self.releases and video.source.lower() in self.releases.lower():
-            matches.add('source')
-        # other properties
-        matches |= guess_matches(video, guessit(self.releases))
+
+        matches |= guess_matches(video, guessit(self.releases, {"type": type_}))
 
         self.matches = matches
 

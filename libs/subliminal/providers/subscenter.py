@@ -57,14 +57,6 @@ class SubsCenterSubtitle(Subtitle):
             # episode
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
-            # guess
-            for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'episode'}))
-        # movie
-        elif isinstance(video, Movie):
-            # guess
-            for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'movie'}))
 
         # title
         if video.title and sanitize(self.title) == sanitize(video.title):

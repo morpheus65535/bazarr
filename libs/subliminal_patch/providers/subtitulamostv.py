@@ -5,10 +5,11 @@ import os
 from requests import Session
 from subzero.language import Language
 
-from subliminal import Movie, Episode, ProviderError, __short_version__
+from guessit import guessit
+from subliminal import Episode, __short_version__
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
+from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
 
 logger = logging.getLogger(__name__)
@@ -30,37 +31,10 @@ class SubtitulamosTVSubtitle(Subtitle):
     def get_matches(self, video):
         matches = {'series', 'season', 'episode', 'year', 'title'}
 
-        release_info_lower = self.release_info.lower()
-
-        if video.release_group and video.release_group.lower() in release_info_lower:
+        if video.release_group and video.release_group.lower() in self.release_info.lower():
             matches.add('release_group')
 
-        if video.resolution and video.resolution.lower() in release_info_lower:
-            matches.add('resolution')
-
-        if video.source:
-            formats = [video.source.lower()]
-            if formats[0] == "web":
-                formats.append("webdl")
-                formats.append("web-dl")
-                formats.append("webrip")
-            for frmt in formats:
-                if frmt in release_info_lower:
-                    matches.add('source')
-                    break
-
-        if video.video_codec:
-            video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "h.264":
-                video_codecs.append("h264")
-                video_codecs.append("x264")
-            elif video_codecs[0] == "h.265":
-                video_codecs.append("h265")
-                video_codecs.append("x265")
-            for vc in video_codecs:
-                if vc in release_info_lower:
-                    matches.add('video_codec')
-                    break
+        matches = guess_matches(video, guessit(self.release_info, {"type": "episode"}))
 
         return matches
 

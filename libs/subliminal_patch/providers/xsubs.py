@@ -12,9 +12,10 @@ from subliminal import __short_version__
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
 from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal.score import get_equivalent_release_groups
-from subliminal.subtitle import Subtitle, fix_line_ending, guess_matches
+from subliminal.subtitle import Subtitle, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode
+from subliminal_patch.subtitle import guess_matches
 
 logger = logging.getLogger(__name__)
 article_re = re.compile(r'^([A-Za-z]{1,3}) (.*)$')
@@ -69,7 +70,7 @@ class XSubsSubtitle(Subtitle):
                         for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
                 matches.add('release_group')
             # other properties
-            matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}), partial=True)
+            matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}))
 
         return matches
 

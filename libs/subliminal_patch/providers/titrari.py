@@ -9,9 +9,10 @@ from random import randint
 
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
+from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal.exceptions import ProviderError
@@ -82,8 +83,7 @@ class TitrariSubtitle(Subtitle):
             if video.release_group and video.release_group in self.comments:
                 matches.add('release_group')
 
-            if video.resolution and video.resolution.lower() in self.comments:
-                matches.add('resolution')
+            matches |= guess_matches(video, guessit(self.comments, {"type": "movie"}))
 
         self.matches = matches
 

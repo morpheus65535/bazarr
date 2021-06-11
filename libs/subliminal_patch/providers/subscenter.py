@@ -1,9 +1,13 @@
 # coding=utf-8
 
 from __future__ import absolute_import
+
+from guessit import guessit
+from subliminal.video import Episode
 from subliminal.providers.subscenter import SubsCenterProvider as _SubsCenterProvider, \
     SubsCenterSubtitle as _SubsCenterSubtitle
 from subzero.language import Language
+from subliminal_patch.subtitle import guess_matches
 
 
 class SubsCenterSubtitle(_SubsCenterSubtitle):
@@ -16,6 +20,15 @@ class SubsCenterSubtitle(_SubsCenterSubtitle):
                                                  subtitle_version, downloaded, releases)
         self.release_info = u", ".join(releases)
         self.page_link = page_link
+
+    def get_matches(self, video):
+        matches = super().get_matches(video)
+        type_ = "episode" if isinstance(video, Episode) else "movie"
+
+        for release in self.releases:
+            matches |= guess_matches(video, guessit(release, {'type': type_}))
+
+        return matches
 
     def __repr__(self):
         return '<%s %r %s [%s]>' % (
