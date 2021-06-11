@@ -26,7 +26,7 @@ global hi_regex
 hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
 
-def store_subtitles(original_path, reversed_path):
+def store_subtitles(original_path, reversed_path, use_cache=True):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
     if os.path.exists(reversed_path):
@@ -39,7 +39,8 @@ def store_subtitles(original_path, reversed_path):
                     .get()
                 subtitle_languages = embedded_subs_reader(reversed_path,
                                                           file_size=item['file_size'],
-                                                          episode_file_id=item['episode_file_id'])
+                                                          episode_file_id=item['episode_file_id'],
+                                                          use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -121,7 +122,7 @@ def store_subtitles(original_path, reversed_path):
     return actual_subtitles
 
 
-def store_subtitles_movie(original_path, reversed_path):
+def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
     if os.path.exists(reversed_path):
@@ -134,7 +135,8 @@ def store_subtitles_movie(original_path, reversed_path):
                     .get()
                 subtitle_languages = embedded_subs_reader(reversed_path,
                                                           file_size=item['file_size'],
-                                                          movie_file_id=item['movie_file_id'])
+                                                          movie_file_id=item['movie_file_id'],
+                                                          use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -499,7 +501,7 @@ def series_scan_subtitles(no):
     
     for episode in episodes:
         sleep()
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=False)
 
 
 def movies_scan_subtitles(no):
@@ -510,7 +512,7 @@ def movies_scan_subtitles(no):
     
     for movie in movies:
         sleep()
-        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']), use_cache=False)
 
 
 def get_external_subtitles_path(file, subtitle):
