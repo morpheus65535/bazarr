@@ -367,14 +367,19 @@ class Languages(Resource):
                     code2 = language
                 elif len(language) == 3:
                     code2 = alpha2_from_alpha3(language)
+                else:
+                    continue
 
                 if not any(x['code2'] == code2 for x in languages_dicts):
-                    languages_dicts.append({
-                        'code2': code2,
-                        'name': language_from_alpha2(code2),
-                        # Compatibility: Use false temporarily
-                        'enabled': False
-                    })
+                    try:
+                        languages_dicts.append({
+                            'code2': code2,
+                            'name': language_from_alpha2(code2),
+                            # Compatibility: Use false temporarily
+                            'enabled': False
+                        })
+                    except:
+                        continue
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
 
         result = TableSettingsLanguages.select(TableSettingsLanguages.name,
