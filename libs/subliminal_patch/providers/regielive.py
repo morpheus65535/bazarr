@@ -91,7 +91,7 @@ class RegieLiveProvider(Provider):
         response = self.session.post(self.url, data=payload, headers=self.headers)
         logger.info(response.json())
         subtitles = []
-        if response.json()['cod'] == '200':
+        if response.json()['cod'] == 200:
             results_subs = response.json()['rezultate']
             for film in results_subs:
                 for sub in results_subs[film]['subtitrari']:
