@@ -796,11 +796,12 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    show_progress(id='series_search_progress_{}'.format(no),
-                  header='Searching missing subtitles...',
-                  name='Completed successfully',
-                  value=count_episodes_details,
-                  count=count_episodes_details)
+    if count_episodes_details:
+        show_progress(id='series_search_progress_{}'.format(no),
+                      header='Searching missing subtitles...',
+                      name='Completed successfully',
+                      value=count_episodes_details,
+                      count=count_episodes_details)
 
     hide_progress(id='series_search_progress_{}'.format(no))
 
@@ -960,11 +961,12 @@ def movies_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    show_progress(id='movie_search_progress_{}'.format(no),
-                  header='Searching missing subtitles...',
-                  name='Completed successfully',
-                  value=count_movie,
-                  count=count_movie)
+    if count_movie:
+        show_progress(id='movie_search_progress_{}'.format(no),
+                      header='Searching missing subtitles...',
+                      name='Completed successfully',
+                      value=count_movie,
+                      count=count_movie)
 
     hide_progress(id='movie_search_progress_{}'.format(no))
 

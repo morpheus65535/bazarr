@@ -193,7 +193,7 @@ def update_one_series(series_id, action):
     # Update existing series in DB
     if action == 'updated' and existing_series:
         TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
-        sync_episodes(series_id=int(series_id), send_event=False)
+        sync_episodes(series_id=int(series_id), send_event=True)
         event_stream(type='series', action='update', payload=int(series_id))
         logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
             series['path'])))

@@ -959,7 +959,7 @@ class Movies(Resource):
                 .where(TableMovies.radarrId == radarrId)\
                 .execute()
 
-            list_missing_subtitles_movies(no=radarrId)
+            list_missing_subtitles_movies(no=radarrId, send_event=False)
 
             event_stream(type='movies', payload=radarrId)
         event_stream(type='badges')
