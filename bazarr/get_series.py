@@ -38,7 +38,8 @@ def update_series(send_event=True):
     tagsDict = get_tags()
 
     # Get shows data from Sonarr
-    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr, 
+                                        sonarr_version=sonarr_version)
     if not series:
         return
     else:
@@ -172,7 +173,7 @@ def update_one_series(series_id, action):
         series = None
 
         series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                 sonarr_series_id=int(series_id))
+                                                 sonarr_series_id=int(series_id), sonarr_version=get_sonarr_version())
 
         if not series_data:
             return
@@ -252,7 +253,10 @@ def get_tags():
     tagsDict = []
 
     # Get tags data from Sonarr
-    url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+    if get_sonarr_version().startswith('2'):
+        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+    else:
+        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
 
     try:
         tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
@@ -328,9 +332,9 @@ def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile,
                 'profileId': serie_default_profile}
 
 
-def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
-    url_sonarr_api_series = url + "/api/series" + ("/{}".format(sonarr_series_id) if sonarr_series_id else "") + \
-                            "?apikey=" + apikey_sonarr
+def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_version, sonarr_series_id=None):
+    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
+        '' if sonarr_version.startswith('2') else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()

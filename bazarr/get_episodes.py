@@ -12,6 +12,7 @@ from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream, show_progress, hide_progress
+from utils import get_sonarr_version
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -24,6 +25,7 @@ def update_all_episodes():
 def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
+    sonarr_version = get_sonarr_version()
     
     # Get current episodes id in DB
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
@@ -40,7 +42,8 @@ def sync_episodes(series_id=None, send_event=True):
     altered_episodes = []
     
     # Get sonarrId for each series from database
-    seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+    seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr, 
+                                              sonarr_version=sonarr_version)
 
     series_count = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
@@ -54,10 +57,21 @@ def sync_episodes(series_id=None, send_event=True):
 
         # Get episodes data for a series from Sonarr
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                series_id=seriesId['sonarrSeriesId'])
+                                                series_id=seriesId['sonarrSeriesId'],
+                                                sonarr_version=sonarr_version)
         if not episodes:
             continue
         else:
+            # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
+            if sonarr_version.startswith('3'):
+                episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
+                                                                 series_id=seriesId['sonarrSeriesId'])
+                for episode in episodes:
+                    if episode['hasFile']:
+                        item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
+                        if item:
+                            episode['episodeFile'] = item[0]
+
             for episode in episodes:
                 sleep()
                 if 'hasFile' in episode:
@@ -67,7 +81,7 @@ def sync_episodes(series_id=None, send_event=True):
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
 
-                                # Parse episdoe data
+                                # Parse episode data
                                 if episode['id'] in current_episodes_db_list:
                                     episodes_to_update.append(episodeParser(episode))
                                 else:
@@ -150,10 +164,13 @@ def sync_episodes(series_id=None, send_event=True):
 
 def sync_one_episode(episode_id):
     logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
+    url = url_sonarr()
+    apikey_sonarr = settings.sonarr.apikey
+    sonarr_version = get_sonarr_version()
 
     # Check if there's a row in database for this episode ID
     try:
-        existing_episode = TableEpisodes.select(TableEpisodes.path)\
+        existing_episode = TableEpisodes.select(TableEpisodes.path, TableEpisodes.episode_file_id)\
             .where(TableEpisodes.sonarrEpisodeId == episode_id)\
             .dicts()\
             .get()
@@ -163,11 +180,19 @@ def sync_one_episode(episode_id):
     try:
         # Get episode data from sonarr api
         episode = None
-        episode_data = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                    episode_id=episode_id)
+        episode_data = get_episodes_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
+                                                    episode_id=episode_id, sonarr_version=sonarr_version)
         if not episode_data:
             return
+
         else:
+            # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
+            if sonarr_version.startswith('3'):
+                episodeFile = get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
+                                                                episode_file_id=existing_episode['episode_file_id'])
+                if episode_data['hasFile']:
+                    episode_data['episodeFile'] = episodeFile
+
             episode = episodeParser(episode_data)
     except Exception:
         logging.debug('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
@@ -311,11 +336,13 @@ def episodeParser(episode):
                             'file_size': episode['episodeFile']['size']}
 
 
-def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
+def get_series_from_sonarr_api(series_id, url, apikey_sonarr, sonarr_version):
     if series_id:
-        url_sonarr_api_series = url + "/api/series/{0}?apikey={1}".format(series_id, apikey_sonarr)
+        url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
+            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
     else:
-        url_sonarr_api_series = url + "/api/series?apikey={}".format(apikey_sonarr)
+        url_sonarr_api_series = url + "/api/{0}series?apikey={1}".format(
+            '' if sonarr_version.startswith('2') else 'v3/', apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
@@ -345,11 +372,13 @@ def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
         return series_list
 
 
-def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
+def get_episodes_from_sonarr_api(url, apikey_sonarr, sonarr_version, series_id=None, episode_id=None):
     if series_id:
-        url_sonarr_api_episode = url + "/api/episode?seriesId={}&apikey=".format(series_id) + apikey_sonarr
+        url_sonarr_api_episode = url + "/api/{0}episode?seriesId={1}&apikey={2}".format(
+            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
     elif episode_id:
-        url_sonarr_api_episode = url + "/api/episode/{}?apikey=".format(episode_id) + apikey_sonarr
+        url_sonarr_api_episode = url + "/api/{0}episode/{1}?apikey={2}".format(
+            '' if sonarr_version.startswith('2') else 'v3/', episode_id, apikey_sonarr)
     else:
         return
 
@@ -367,6 +396,34 @@ def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=
         return
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get episodes from Sonarr.")
+        return
+    else:
+        return r.json()
+
+
+def get_episodesFiles_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_file_id=None):
+    if series_id:
+        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile?seriesId={0}&apikey={1}".format(series_id,
+                                                                                                 apikey_sonarr)
+    elif episode_file_id:
+        url_sonarr_api_episodeFiles = url + "/api/v3/episodeFile/{0}?apikey={1}".format(episode_file_id, apikey_sonarr)
+    else:
+        return
+
+    try:
+        r = requests.get(url_sonarr_api_episodeFiles, timeout=60, verify=False, headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get episodeFiles from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get episodeFiles from Sonarr.")
         return
     else:
         return r.json()

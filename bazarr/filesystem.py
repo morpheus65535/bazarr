@@ -6,6 +6,7 @@ import logging
 import string
 
 from config import settings, url_sonarr, url_radarr
+from utils import get_sonarr_version, get_radarr_version
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -45,11 +46,17 @@ def browse_bazarr_filesystem(path='#'):
 
 
 def browse_sonarr_filesystem(path='#'):
+    sonarr_version = get_sonarr_version()
     if path == '#':
         path = ''
-    url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
-                                "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                settings.sonarr.apikey
+    if sonarr_version.startswith('2'):
+        url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
+                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
+                                    settings.sonarr.apikey
+    else:
+        url_sonarr_api_filesystem = url_sonarr() + "/api/v3/filesystem?path=" + path + \
+                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
+                                    settings.sonarr.apikey
     try:
         r = requests.get(url_sonarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
@@ -70,12 +77,18 @@ def browse_sonarr_filesystem(path='#'):
 
 
 def browse_radarr_filesystem(path='#'):
+    radarr_version = get_radarr_version()
     if path == '#':
         path = ''
 
-    url_radarr_api_filesystem = url_radarr() + "/api/filesystem?path=" + path + \
-                                "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
-                                settings.radarr.apikey
+    if radarr_version.startswith('0'):
+        url_radarr_api_filesystem = url_radarr() + "/api/filesystem?path=" + path + \
+                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
+                                    settings.radarr.apikey
+    else:
+        url_radarr_api_filesystem = url_radarr() + "/api/v3/filesystem?path=" + path + \
+                                    "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
+                                    settings.radarr.apikey
     try:
         r = requests.get(url_radarr_api_filesystem, timeout=60, verify=False, headers=headers)
         r.raise_for_status()

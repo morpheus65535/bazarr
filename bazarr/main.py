@@ -43,7 +43,7 @@ from signalr_client import sonarr_signalr_client, radarr_signalr_client
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
-from utils import check_credentials, get_radarr_version
+from utils import check_credentials, get_sonarr_version, get_radarr_version
 
 # Install downloaded update
 if bazarr_version != '':
@@ -131,7 +131,13 @@ def series_images(url):
     url = url.strip("/")
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
-    url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    sonarr_version = get_sonarr_version()
+    if sonarr_version.startswith('2'):
+        url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
+                     apikey).replace('poster-250', 'poster-500')
+    else:
+        url_image = (url_sonarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' +
+                     apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:

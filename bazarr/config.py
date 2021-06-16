@@ -290,6 +290,7 @@ def get_settings():
 
     return result
 
+
 def save_settings(settings_items):
     from database import database
 
@@ -479,6 +480,7 @@ def url_sonarr():
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
 
+
 def url_sonarr_short():
     if settings.sonarr.getboolean('ssl'):
         protocol_sonarr = "https"
@@ -491,6 +493,7 @@ def url_sonarr_short():
         port = f":{settings.sonarr.port}"
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
+
 
 def url_radarr():
     if settings.radarr.getboolean('ssl'):
@@ -512,6 +515,7 @@ def url_radarr():
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
 
+
 def url_radarr_short():
     if settings.radarr.getboolean('ssl'):
         protocol_radarr = "https"
@@ -525,6 +529,7 @@ def url_radarr_short():
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
+
 def get_array_from(property):
     if property:
         if '[' in property:
@@ -535,6 +540,7 @@ def get_array_from(property):
             return [property]
     else:
         return []
+
 
 def configure_captcha_func():
     # set anti-captcha provider and key

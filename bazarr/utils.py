@@ -241,7 +241,12 @@ def get_sonarr_version():
     if settings.general.getboolean('use_sonarr'):
         try:
             sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
+            sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
+            if 'version' in sonarr_json:
+                sonarr_version = sonarr_json['version']
+            else:
+                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
             sonarr_version = 'unknown'
@@ -252,7 +257,10 @@ def get_sonarr_platform():
     sonarr_platform = ''
     if settings.general.getboolean('use_sonarr'):
         try:
-            sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
+            if get_sonarr_version().startswith('2'):
+                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
+            else:
+                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
             response = requests.get(sv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 sonarr_platform = 'posix'
@@ -265,7 +273,10 @@ def get_sonarr_platform():
 
 def notify_sonarr(sonarr_series_id):
     try:
-        url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        if get_sonarr_version().startswith('2'):
+            url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        else:
+            url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
         data = {
             'name': 'RescanSeries',
             'seriesId': int(sonarr_series_id)
