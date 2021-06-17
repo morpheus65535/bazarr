@@ -112,12 +112,18 @@ export function filterSubtitleBy(
   subtitles: Subtitle[],
   languages: Language[]
 ): Subtitle[] {
-  const result = differenceWith(
-    subtitles,
-    languages,
-    (a, b) => a.code2 === b.code2 || a.path !== null
-  );
-  return difference(subtitles, result);
+  if (languages.length === 0) {
+    return subtitles.filter((subtitle) => {
+      return subtitle.path !== null;
+    });
+  } else {
+    const result = differenceWith(
+      subtitles,
+      languages,
+      (a, b) => a.code2 === b.code2 || a.path !== null || a.code2 === undefined
+    );
+    return difference(subtitles, result);
+  }
 }
 
 export * from "./hooks";
