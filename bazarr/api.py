@@ -961,7 +961,7 @@ class Movies(Resource):
 
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 
-            event_stream(type='movies', payload=radarrId)
+            event_stream(type='movie', payload=radarrId)
         event_stream(type='badges')
 
         return '', 204
