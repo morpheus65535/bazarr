@@ -1,5 +1,6 @@
-import React, { FunctionComponent, useEffect, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Redirect, Route, Switch, useHistory } from "react-router-dom";
+import { useDidMount } from "rooks";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import BlacklistRouter from "../Blacklist/Router";
 import HistoryRouter from "../History/Router";
@@ -26,9 +27,12 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
 
   const history = useHistory();
 
-  useEffect(() => {
-    ScrollToTop();
-  }, [history.location]);
+  useDidMount(() => {
+    history.listen(() => {
+      // This is a hack to make sure ScrollToTop will be triggered in the next frame (When everything are loaded)
+      setTimeout(ScrollToTop);
+    });
+  });
 
   return (
     <div className={className}>
