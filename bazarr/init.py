@@ -174,7 +174,8 @@ def init_binaries():
     return unrar
 
 
-from database import init_db
+from database import init_db, migrate_db
 init_db()
+migrate_db()
 init_binaries()
 path_mappings.update()

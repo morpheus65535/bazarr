@@ -7,6 +7,7 @@ import gevent
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.shortcuts import model_to_dict
+from playhouse.migrate import *
 
 from helper import path_mappings
 from config import settings, get_array_from
@@ -16,6 +17,7 @@ database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
                                use_gevent=True,
                                autostart=True,
                                queue_max_size=256)
+migrator = SqliteMigrator(database)
 
 
 @atexit.register
@@ -282,6 +284,50 @@ def init_db():
             gevent.sleep(0.1)
         else:
             tables_created = True
+
+
+def migrate_db():
+    migrate(
+        migrator.add_column('table_shows', 'year', TextField(null=True)),
+        migrator.add_column('table_shows', 'alternateTitles', TextField(null=True)),
+        migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)),
+        migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)),
+        migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)),
+        migrator.add_column('table_shows', 'profileId', IntegerField(null=True)),
+        migrator.add_column('table_episodes', 'format', TextField(null=True)),
+        migrator.add_column('table_episodes', 'resolution', TextField(null=True)),
+        migrator.add_column('table_episodes', 'video_codec', TextField(null=True)),
+        migrator.add_column('table_episodes', 'audio_codec', TextField(null=True)),
+        migrator.add_column('table_episodes', 'episode_file_id', IntegerField(null=True)),
+        migrator.add_column('table_episodes', 'audio_language', TextField(null=True)),
+        migrator.add_column('table_episodes', 'file_size', IntegerField(default=0, null=True)),
+        migrator.add_column('table_episodes', 'ffprobe_cache', BlobField(null=True)),
+        migrator.add_column('table_movies', 'sortTitle', TextField(null=True)),
+        migrator.add_column('table_movies', 'year', TextField(null=True)),
+        migrator.add_column('table_movies', 'alternativeTitles', TextField(null=True)),
+        migrator.add_column('table_movies', 'format', TextField(null=True)),
+        migrator.add_column('table_movies', 'resolution', TextField(null=True)),
+        migrator.add_column('table_movies', 'video_codec', TextField(null=True)),
+        migrator.add_column('table_movies', 'audio_codec', TextField(null=True)),
+        migrator.add_column('table_movies', 'imdbId', TextField(null=True)),
+        migrator.add_column('table_movies', 'movie_file_id', IntegerField(null=True)),
+        migrator.add_column('table_movies', 'tags', TextField(default='[]', null=True)),
+        migrator.add_column('table_movies', 'profileId', IntegerField(null=True)),
+        migrator.add_column('table_movies', 'file_size', IntegerField(default=0, null=True)),
+        migrator.add_column('table_movies', 'ffprobe_cache', BlobField(null=True)),
+        migrator.add_column('table_history', 'video_path', TextField(null=True)),
+        migrator.add_column('table_history', 'language', TextField(null=True)),
+        migrator.add_column('table_history', 'provider', TextField(null=True)),
+        migrator.add_column('table_history', 'score', TextField(null=True)),
+        migrator.add_column('table_history', 'subs_id', TextField(null=True)),
+        migrator.add_column('table_history', 'subtitles_path', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'video_path', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'language', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'provider', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'score', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)),
+        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True))
+    )
 
 
 class SqliteDictPathMapper:
