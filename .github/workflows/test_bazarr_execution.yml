@@ -2,13 +2,11 @@ name: test_bazarr_execution
 on: workflow_dispatch
 
 jobs:
-  Release:
+  Test:
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       ROOT_DIRECTORY: .
-      UI_DIRECTORY: ./frontend
-      ASSET_DIRECTORY: ./__builds__
+      SCRIPTS_DIRECTORY: .github/scripts
       FETCH_DEPTH: 15 # Should be enough
     steps:
       - name: Validate branch
@@ -23,25 +21,10 @@ jobs:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           ref: development
 
-      - name: Setup Git
-        run: |
-          git config --global user.name "github-actions" &&
-          git fetch --depth ${{ env.FETCH_DEPTH }} --tags
-
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: '${{ env.UI_DIRECTORY }}/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-modules-
-
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
           node-version: "15.x"
-
-      - name: Install Global Tools
-        run: npm install -g release-it auto-changelog
 
       - name: Install UI Dependencies
         run: npm install
@@ -56,11 +39,11 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r '${{ env.ROOT_DIRECTORY }}/requirements.txt'
 
       - name: Test Bazarr execution
         run: |
-          bash '${{ env.ROOT_DIRECTORY }}/scripts/build_test.sh'
+          bash '${{ env.SCRIPTS_DIRECTORY }}/build_test.sh'
