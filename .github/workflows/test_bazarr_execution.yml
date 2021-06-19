@@ -7,6 +7,7 @@ jobs:
     env:
       ROOT_DIRECTORY: .
       SCRIPTS_DIRECTORY: .github/scripts
+      UI_DIRECTORY: ./frontend
       FETCH_DEPTH: 15 # Should be enough
     steps:
       - name: Validate branch
