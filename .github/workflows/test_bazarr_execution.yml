@@ -7,6 +7,7 @@ jobs:
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       ROOT_DIRECTORY: .
+      SCRIPTS_DIRECTORY: .github/scripts
       UI_DIRECTORY: ./frontend
       ASSET_DIRECTORY: ./__builds__
       FETCH_DEPTH: 15 # Should be enough
@@ -63,4 +64,4 @@ jobs:
 
       - name: Test Bazarr execution
         run: |
-          bash '${{ env.ROOT_DIRECTORY }}/scripts/build_test.sh'
+          bash '${{ env.SCRIPTS_DIRECTORY }}/build_test.sh'
