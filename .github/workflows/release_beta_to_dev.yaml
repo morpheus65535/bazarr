@@ -52,7 +52,7 @@ jobs:
 
       - name: Create Release (Conditional)
         run: |
-          revision_count=$(git rev-list $(git describe --tags --abbrev=0)..HEAD --count)
+          revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:).*" $(git describe --tags --abbrev=0)..HEAD --count)
           if [[ $revision_count != 0 ]]; then
             echo "**** Found $revision_count changes! Releasing... ****"
             release-it --ci --increment prerelease --preRelease=beta
