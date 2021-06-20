@@ -16,6 +16,7 @@ on:
 
 env:
     UI_DIRECTORY: ./frontend
+    UI_ARTIFACT_NAME: ui
 
 jobs:
   Frontend:
@@ -48,7 +49,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: "ui"
+          name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"
 
   Backend:
@@ -69,7 +70,7 @@ jobs:
       - name: Install UI
         uses: actions/download-artifact@v2
         with:
-          name: "ui"
+          name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"
 
       - name: Install Python dependencies
