@@ -322,6 +322,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
+        if self.token is NO_VALUE:
+            logger.debug("No cached token, we'll try to login again.")
+            self.login()
+
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
