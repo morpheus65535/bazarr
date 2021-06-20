@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      STATUS_WORKFLOW_NAME: "ci.yml"
       UI_DIRECTORY: ./frontend
       ASSET_DIRECTORY: ./__builds__
       FETCH_DEPTH: 15 # Should be enough
