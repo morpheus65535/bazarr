@@ -50,7 +50,27 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
+      # TODO: Wrap this to a standalone plugin
+      - name: Check CI Status
+        id: check_ci
+        shell: bash
+        run: |
+          echo "**** Checking latest status from ${{ env.STATUS_WORKFLOW_NAME }} ****"
+          Raw_Result=$(curl -sSL "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.STATUS_WORKFLOW_NAME }}/runs?per_page=1&event=push")
+          Result="failed"
+          if [[ $? -eq 0 ]]; then
+            echo $Raw_Result | grep conclusion | grep success > /dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+              Result="success"
+            fi
+          else
+              echo "**** Error occurred ****"
+          fi
+          echo "**** Status: $Result ****"
+          echo "::set-output name=result::$Result"
+
       - name: Create Release (Conditional)
+        if: ${{ steps.check_ci.outputs.result == 'success' }}
         run: |
           revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:).*" $(git describe --tags --abbrev=0)..HEAD --count)
           if [[ $revision_count != 0 ]]; then
