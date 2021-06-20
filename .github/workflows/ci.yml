@@ -14,6 +14,7 @@ jobs:
   Frontend:
     runs-on: ubuntu-latest
     env:
+      ROOT_DIRECTORY: .
       UI_DIRECTORY: ./frontend
 
     steps:
@@ -53,7 +54,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r './requirements.txt'
+          pip install -r '${{ env.ROOT_DIRECTORY }}/requirements.txt'
 
       - name: Test Bazarr execution
         run: |
