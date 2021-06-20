@@ -44,3 +44,17 @@ jobs:
         with:
           name: "ui"
           path: "${{ env.UI_DIRECTORY }}/build"
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r './requirements.txt'
+
+      - name: Test Bazarr execution
+        run: |
+          bash '.github/scripts/build_test.sh'
