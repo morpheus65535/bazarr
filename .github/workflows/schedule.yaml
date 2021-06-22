@@ -8,20 +8,10 @@ on:
 jobs:
   Release-Nightly:
     runs-on: ubuntu-latest
-    env:
-      GIT_BRANCH: "development"
-      WORKFLOW_TO_TRIGGER: "release_beta_to_dev.yaml"
     steps:
       - name: Execute
-        run: |
-          echo "**** Trigging ${{ env.WORKFLOW_TO_TRIGGER }} of branch ${{ env.GIT_BRANCH }} ****"
-          if curl -sfX GET https://raw.githubusercontent.com/${{ github.repository }}/${{ env.GIT_BRANCH }}/.github/workflows/${{ env.WORKFLOW_TO_TRIGGER }} > /dev/null 2>&1; then
-            echo "**** Workflow exists. Triggering workflow for branch ${{ env.GIT_BRANCH }} ****"
-            curl -ifX POST \
-                -H "Authorization: token ${{ secrets.WF_GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -d "{\"ref\":\"refs/heads/${{ env.GIT_BRANCH }}\"}" \
-                https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ env.WORKFLOW_TO_TRIGGER }}/dispatches
-          else
-            echo "**** Workflow doesn't exist! Skipping... ****"
-          fi
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: "release_beta_to_dev"
+          token: ${{ secrets.WF_GITHUB_TOKEN }}
+          ref: "refs/heads/development"
