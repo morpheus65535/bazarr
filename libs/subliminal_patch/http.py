@@ -92,7 +92,7 @@ class CFSession(CloudScraper):
 
         # Check if Cloudflare anti-bot is on
         try:
-            if self.isChallengeRequest(resp):
+            if self.is_Challenge_Request(resp):
                 if resp.request.method != 'GET':
                     # Work around if the initial request is not a GET,
                     # Supersede with a GET then re-request the original METHOD.

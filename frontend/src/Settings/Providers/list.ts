@@ -148,7 +148,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   {
     key: "subscene",
-    description: "Requires Anti-Captcha Provider",
     defaultKey: {
       username: "",
       password: "",
@@ -184,7 +183,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
-    description: "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
+    description:
+      "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },
