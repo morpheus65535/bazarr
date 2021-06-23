@@ -17,14 +17,6 @@ jobs:
           echo This action can only be run on development branch, not ${{ github.ref }}
           exit 1
 
-      # TODO: Replace me
-      - name: Validate CI
-        uses: xembly/validate-workflow-status@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: CI
-          branch: development
-
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -59,7 +51,17 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
+      - name: Validate CI
+        id: check-ci
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ci.yml
+          event: push
+          branch: development
+
       - name: Create Release (Conditional)
+        if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
         run: |
           revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:).*" $(git describe --tags --abbrev=0)..HEAD --count)
           if [[ $revision_count != 0 ]]; then
