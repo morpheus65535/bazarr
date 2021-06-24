@@ -325,6 +325,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if self.token is NO_VALUE:
             logger.debug("No cached token, we'll try to login again.")
             self.login()
+        if self.token is NO_VALUE:
+            logger.debug("Unable to obtain an authentication token right now, we'll try again later.")
+            raise ProviderError("Unable to obtain an authentication token")
 
         logger.info('Downloading subtitle %r', subtitle)
 
