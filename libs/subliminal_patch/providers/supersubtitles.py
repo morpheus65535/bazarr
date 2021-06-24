@@ -47,6 +47,7 @@ def fix_tv_naming(title):
                                            "Marvel's Jessica Jones": "Jessica Jones",
                                            "DC's Legends of Tomorrow": "Legends of Tomorrow",
                                            "Star Trek: The Next Generation": "Star Trek TNG",
+                                           "Loki (aka. Marvel\'s Loki)": "Loki",
                                            }, True)
 
 
