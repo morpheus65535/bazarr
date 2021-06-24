@@ -1,11 +1,38 @@
 # Bazarr Frontend
 
-## How to Run
+## Dependencies
+* [Node.js](https://nodejs.org/)
+* npm (included in Node.js)
 
-1. Duplicate `.env` file and rename to `.env.local`
-2. Fill any variable that defined in `.env.local`
-3. Run Bazarr backend (Backend must listening on `http://localhost:6767`)
-4. Start frontend by running `npm start`
+## Getting Started
+1. Clone or download this repository
+
+   ```
+   $ git clone https://github.com/morpheus65535/bazarr.git
+   $ cd bazarr/frontend
+   ```
+
+2. Install build dependencies in the project directory
+
+   ```
+   $ npm install
+   ```
+4. Duplicate `.env` file and rename to `.env.local`
+
+   ```
+   $ cp .env .env.local
+   ```
+6. Fill any variable that defined in `.env.local`
+7. Run Bazarr backend (Backend must listening on `http://localhost:6767`)
+
+   ```
+   $ python3 ../bazarr.py
+   ```
+9. Run the web client for local development
+
+   ```
+   $ npm start
+   ```
 
 ## Available Scripts
 
@@ -27,4 +54,4 @@ Builds the app for production to the `build` folder.
 
 Format code for all files in `frontend` folder
 
-This command will automatic trigger when you commit codes to git. Run manually if you modify `.prettierignore` or `.prettierrc`
+This command will be automatic triggered before any commits to git. Run manually if you modify `.prettierignore` or `.prettierrc`
