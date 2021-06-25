@@ -2,12 +2,19 @@
 
 from __future__ import absolute_import
 import logging
-import re
 import io
+import re
+import ssl
+
+from urllib3 import poolmanager
 
 from zipfile import ZipFile
 
 from guessit import guessit
+
+from requests import Session
+from requests.adapters import HTTPAdapter
+
 from subliminal.utils import sanitize
 from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
@@ -102,6 +109,17 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
 
         return matches
 
+class PodnapisiAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+        self.poolmanager = poolmanager.PoolManager(
+                num_pools=connections,
+                maxsize=maxsize,
+                block=block,
+                ssl_version=ssl.PROTOCOL_TLS,
+                ssl_context=ctx
+        )
 
 class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     languages = ({Language('por', 'BR'), Language('srp', script='Latn'), Language('srp', script='Cyrl')} |
@@ -123,6 +141,10 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
             logger.info("Only searching for foreign/forced subtitles")
 
         super(PodnapisiProvider, self).__init__()
+
+    def initialize(self):
+        super().initialize()
+        self.session.mount('https://', PodnapisiAdapter())
 
     def list_subtitles(self, video, languages):
         if video.is_special:

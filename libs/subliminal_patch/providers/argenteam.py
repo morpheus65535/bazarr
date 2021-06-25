@@ -1,10 +1,13 @@
 # coding=utf-8
 from __future__ import absolute_import
+
 import logging
 import os
 import io
 import time
 import urllib.parse
+
+from json.decoder import JSONDecodeError
 
 from zipfile import ZipFile
 from guessit import guessit
@@ -91,7 +94,14 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(API_URL + "search", params={"q": query}, timeout=10)
         r.raise_for_status()
 
-        results = r.json()
+        try:
+            results = r.json()
+        except JSONDecodeError:
+            return []
+
+        if not results.get("results"):
+            return []
+
         match_ids = []
         for result in results["results"]:
             if result["type"] == "movie" and is_episode:
@@ -194,11 +204,13 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
         for aid in argenteam_ids:
             response = self.session.get(url, params={"id": aid}, timeout=10)
             response.raise_for_status()
-            content = response.json()
-            if not content:
+
+            try:
+                content = response.json()
+            except JSONDecodeError:
                 continue
 
-            if not content.get("releases"):
+            if not content or not content.get("releases"):
                 continue
 
             imdb_id = year = None
