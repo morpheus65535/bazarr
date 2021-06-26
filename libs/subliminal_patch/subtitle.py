@@ -178,7 +178,7 @@ class Subtitle(Subtitle_):
 
         # arabian/farsi
         elif self.language.alpha3 in ('ara', 'fas', 'per'):
-            encodings.extend(['windows-1256', 'utf-16'])
+            encodings.extend(['windows-1256', 'utf-16', 'utf-16le', 'ascii', 'iso-8859-6' ])
         elif self.language.alpha3 == 'heb':
             encodings.extend(['windows-1255', 'iso-8859-8'])
         elif self.language.alpha3 == 'tur':
