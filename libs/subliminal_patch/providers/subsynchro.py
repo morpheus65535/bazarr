@@ -3,7 +3,7 @@ import io
 import logging
 import os
 
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 from requests import Session
 from guessit import guessit
 
@@ -144,15 +144,10 @@ class SubsynchroProvider(Provider):
         )
         response.raise_for_status()
 
-        if subtitle.file_type.endswith(".zip"):
+        stream = io.BytesIO(response.content)
+        if is_zipfile(stream):
             logger.debug("Zip file found")
-            subtitle_ = self.get_file(ZipFile(io.BytesIO(response.content)))
-
-        elif subtitle.file_type.endswith(".srt"):
-            logger.debug("Srt file found")
-            subtitle_ = response.content
-
+            subtitle_ = self.get_file(ZipFile(stream))
+            subtitle.content = fix_line_ending(subtitle_)
         else:
-            raise APIThrottled(f"Unknown file type: {subtitle.file_type}")
-
-        subtitle.content = fix_line_ending(subtitle_)
+            raise APIThrottled(f"Unknown file type: {subtitle.download_url}")
