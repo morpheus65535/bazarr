@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import "./chip.scss";
 
-const SplitKeys = ["Tab", "Enter", " ", ",", ";", "."];
+const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 
 export interface ChipsProps {
   disabled?: boolean;
