@@ -178,9 +178,11 @@ class SubdivxSubtitlesProvider(Provider):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
             # title
             title = self._clean_title(title_soup.find("a").text)
-            # filter by year
-            if video.year and str(video.year) not in title:
-                continue
+            # discard subtitles if a year between parenthesis is present in title and doesn't match the one provided
+            # in video object
+            if re.match(r'(\(\d{4}\))', title):
+                if video.year and str(video.year) not in title:
+                    continue
 
             # Data
             datos = body_soup.find("div", {"id": "buscador_detalle_sub_datos"}).text
