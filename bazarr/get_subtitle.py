@@ -1192,7 +1192,7 @@ def wanted_search_missing_subtitles_series():
 
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles != '[]')]
-    conditions + get_exclusion_clause('movie')
+    conditions += get_exclusion_clause('movie')
     movies = TableMovies.select(TableMovies.path,
                                 TableMovies.tags,
                                 TableMovies.monitored,
