@@ -120,7 +120,11 @@ class WizdomProvider(Provider):
                 r = self.session.get('http://api.tmdb.org/3/{}/{}{}?api_key={}&language=en'.format(
                     category, tmdb_id, '' if is_movie else '/external_ids', self._tmdb_api_key))
                 r.raise_for_status()
-                return str(r.json().get('imdb_id', '')) or None
+                imdb_id = r.json().get('imdb_id')
+                if imdb_id:
+                    return str(imdb_id)
+                else:
+                    return None
         return None
 
     def query(self, title, season=None, episode=None, year=None, filename=None, imdb_id=None):
@@ -185,6 +189,7 @@ class WizdomProvider(Provider):
             imdb_id = video.series_imdb_id
         else:
             titles = [video.title] + video.alternative_titles
+            imdb_id = video.imdb_id
 
         for title in titles:
             subtitles = [s for s in
