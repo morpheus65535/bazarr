@@ -41,6 +41,7 @@ def fix_tv_naming(title):
                                            "Doctor Who (2005)": "Doctor Who",
                                            "Star Trek: Deep Space Nine": "Star Trek DS9",
                                            "Star Trek: The Next Generation": "Star Trek TNG",
+                                           "Superman & Lois": "Superman and Lois",
                                            }, True)
 
 
