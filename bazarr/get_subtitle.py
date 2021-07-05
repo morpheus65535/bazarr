@@ -971,7 +971,7 @@ def movies_download_subtitles(no):
     hide_progress(id='movie_search_progress_{}'.format(no))
 
 
-def wanted_download_subtitles(path):
+def wanted_download_subtitles(sonarr_series_id):
     episodes_details = TableEpisodes.select(TableEpisodes.path,
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.sonarrEpisodeId,
@@ -981,8 +981,7 @@ def wanted_download_subtitles(path):
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
         .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-        .where((TableEpisodes.path == path_mappings.path_replace_reverse(path)) and
-               TableEpisodes.missing_subtitles != '[]')\
+        .where((TableEpisodes.sonarrSeriesId == sonarr_series_id))\
         .dicts()
     episodes_details = list(episodes_details)
 
@@ -1058,7 +1057,7 @@ def wanted_download_subtitles(path):
                                 0])
 
 
-def wanted_download_subtitles_movie(path):
+def wanted_download_subtitles_movie(radarr_id):
     movies_details = TableMovies.select(TableMovies.path,
                                         TableMovies.missing_subtitles,
                                         TableMovies.radarrId,
@@ -1066,8 +1065,7 @@ def wanted_download_subtitles_movie(path):
                                         TableMovies.sceneName,
                                         TableMovies.failedAttempts,
                                         TableMovies.title)\
-        .where((TableMovies.path == path_mappings.path_replace_reverse_movie(path)) and
-               (TableMovies.missing_subtitles != '[]'))\
+        .where((TableMovies.radarrId == radarr_id))\
         .dicts()
     movies_details = list(movies_details)
 
@@ -1146,7 +1144,7 @@ def wanted_download_subtitles_movie(path):
 def wanted_search_missing_subtitles_series():
     conditions = [(TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
-    episodes = TableEpisodes.select(TableEpisodes.path,
+    episodes = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
                                     TableShows.tags,
                                     TableEpisodes.monitored,
                                     TableShows.title,
@@ -1158,8 +1156,6 @@ def wanted_search_missing_subtitles_series():
         .where(reduce(operator.and_, conditions))\
         .dicts()
     episodes = list(episodes)
-    # path_replace
-    dict_mapper.path_replace(episodes)
 
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
@@ -1174,7 +1170,7 @@ def wanted_search_missing_subtitles_series():
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode['path'])
+            wanted_download_subtitles(episode['sonarrSeriesId'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
@@ -1193,15 +1189,13 @@ def wanted_search_missing_subtitles_series():
 def wanted_search_missing_subtitles_movies():
     conditions = [(TableMovies.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('movie')
-    movies = TableMovies.select(TableMovies.path,
+    movies = TableMovies.select(TableMovies.radarrId,
                                 TableMovies.tags,
                                 TableMovies.monitored,
                                 TableMovies.title)\
         .where(reduce(operator.and_, conditions))\
         .dicts()
     movies = list(movies)
-    # path_replace
-    dict_mapper.path_replace_movie(movies)
 
     count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
@@ -1213,7 +1207,7 @@ def wanted_search_missing_subtitles_movies():
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles_movie(movie['path'])
+            wanted_download_subtitles_movie(movie['radarrId'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
