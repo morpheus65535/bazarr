@@ -1,3 +1,4 @@
+setuptools
 gevent>=21
 gevent-websocket>=0.10.1
 lxml>=4.3.0
