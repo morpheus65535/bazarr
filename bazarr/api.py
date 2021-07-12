@@ -592,6 +592,7 @@ class SystemLogs(Resource):
 
 
 class SystemStatus(Resource):
+    @authenticate
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
