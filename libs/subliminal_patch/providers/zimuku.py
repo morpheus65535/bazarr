@@ -18,8 +18,8 @@ from subzero.language import Language
 from guessit import guessit
 from requests import Session
 from six import text_type
+from random import randint
 
-from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
@@ -30,6 +30,7 @@ from subliminal_patch.subtitle import (
     Subtitle,
     guess_matches
 )
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
@@ -89,8 +90,6 @@ class ZimukuProvider(Provider):
     search_url = "/search?q={}"
     download_url = "http://zimuku.org/"
 
-    UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
-
     subtitle_class = ZimukuSubtitle
 
     def __init__(self):
@@ -98,7 +97,7 @@ class ZimukuProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers["User-Agent"] = "Subliminal/{}".format(__short_version__)
+        self.session.headers["User-Agent"] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
@@ -258,9 +257,13 @@ class ZimukuProvider(Provider):
         logger.info("Downloading subtitle %r", subtitle)
         self.session = subtitle.session
         download_link = _get_archive_dowload_link(self.session, subtitle.page_link)
-        r = self.session.get(download_link, timeout=30)
+        r = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
         r.raise_for_status()
-        filename = r.headers["Content-Disposition"]
+        try:
+            filename = r.headers["Content-Disposition"]
+        except KeyError:
+            logger.debug("Unable to parse subtitles filename. Dropping this subtitles.")
+            return
 
         if not r.content:
             logger.debug("Unable to download subtitle. No data returned from provider")
