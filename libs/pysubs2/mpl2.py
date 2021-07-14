@@ -1,6 +1,3 @@
-# coding=utf-8
-
-from __future__ import print_function, division, unicode_literals
 import re
 
 from .time import times_to_ms
@@ -13,13 +10,16 @@ MPL2_FORMAT = re.compile(r"^(?um)\[(-?\d+)\]\[(-?\d+)\](.*)")
 
 
 class MPL2Format(FormatBase):
+    """MPL2 subtitle format implementation"""
     @classmethod
     def guess_format(cls, text):
+        """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
         if MPL2_FORMAT.search(text):
             return "mpl2"
 
     @classmethod
     def from_file(cls, subs, fp, format_, **kwargs):
+        """See :meth:`pysubs2.formats.FormatBase.from_file()`"""
         def prepare_text(lines):
             out = []
             for s in lines.split("|"):
@@ -37,7 +37,12 @@ class MPL2Format(FormatBase):
 
     @classmethod
     def to_file(cls, subs, fp, format_, **kwargs):
+        """
+        See :meth:`pysubs2.formats.FormatBase.to_file()`
 
+        No styling is supported at the moment.
+
+        """
         # TODO handle italics
         for line in subs:
             if line.is_comment:
