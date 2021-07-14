@@ -9,7 +9,7 @@ import { movieUpdateByRange, movieUpdateList } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
-import { ActionBadge, TextPopover } from "../components";
+import { ActionBadge, LanguageText, TextPopover } from "../components";
 import BaseItemView from "../generic/BaseItemView";
 import { BuildKey } from "../utilites";
 
@@ -89,7 +89,7 @@ const MovieView: FunctionComponent<Props> = () => {
               variant="warning"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
-              {v.code2}
+              <LanguageText text={v}></LanguageText>
             </Badge>
           ));
         },
