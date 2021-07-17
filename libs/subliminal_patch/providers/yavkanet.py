@@ -15,7 +15,7 @@ from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle, guess_matches
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 from subliminal.cache import region
@@ -23,6 +23,22 @@ from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
+
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+    """
+    return fix_inconsistent_naming(title, {"Superman & Lois": "Superman and Lois",
+                                           }, True)
+
+
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {
+                                           }, True)
+
 
 
 class YavkaNetSubtitle(Subtitle):
@@ -112,10 +128,10 @@ class YavkaNetProvider(Provider):
         }
 
         if isEpisode:
-            params['s'] = "%s s%02de%02d" % (sanitize(video.series, {'\''}), video.season, video.episode)
+            params['s'] = "%s s%02de%02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['y'] = video.year
-            params['s'] = sanitize(video.title, {'\''})
+            params['s'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if   language == 'en' or language == 'eng':
             params['l'] = 'EN'
