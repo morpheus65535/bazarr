@@ -6,9 +6,11 @@ import os
 from subliminal.exceptions import ConfigurationError
 
 from subliminal.providers.legendastv import LegendasTVSubtitle as _LegendasTVSubtitle, \
-    LegendasTVProvider as _LegendasTVProvider, Episode, Movie, guess_matches, guessit, sanitize, region, type_map, \
+    LegendasTVProvider as _LegendasTVProvider, Episode, Movie, guessit, sanitize, region, type_map, \
     raise_for_status, json, SHOW_EXPIRATION_TIME, title_re, season_re, datetime, pytz, NO_VALUE, releases_key, \
     SUBTITLE_EXTENSIONS, language_converters
+
+from subliminal_patch.subtitle import guess_matches
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ class LegendasTVSubtitle(_LegendasTVSubtitle):
                 matches.add('imdb_id')
 
         # name
-        matches |= guess_matches(video, guessit(self.name, {'type': self.type, 'single_value': True}))
+        matches |= guess_matches(video, guessit(self.name, {'type': self.type}))
 
         return matches
 

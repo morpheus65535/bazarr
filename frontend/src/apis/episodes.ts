@@ -5,9 +5,21 @@ class EpisodeApi extends BaseApi {
     super("/episodes");
   }
 
-  async bySeriesId(seriesid: number): Promise<Array<Item.Episode>> {
+  async bySeriesId(seriesid: number[]): Promise<Array<Item.Episode>> {
     return new Promise<Array<Item.Episode>>((resolve, reject) => {
       this.get<DataWrapper<Array<Item.Episode>>>("", { seriesid })
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async byEpisodeId(episodeid: number[]): Promise<Array<Item.Episode>> {
+    return new Promise<Array<Item.Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -29,24 +41,11 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  // TODO: Implement this on backend
-  async wantedBy(episodeid?: number) {
+  async wantedBy(episodeid: number[]) {
     return new Promise<AsyncDataWrapper<Wanted.Episode>>((resolve, reject) => {
       this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", { episodeid })
         .then((result) => {
           resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
-  async byEpisodeId(episodeid: number): Promise<Array<Item.Episode>> {
-    return new Promise<Array<Item.Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })
-        .then((result) => {
-          resolve(result.data.data);
         })
         .catch((reason) => {
           reject(reason);

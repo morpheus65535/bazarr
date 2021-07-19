@@ -15,8 +15,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA  02110-1335  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
 from ._abnf import *
@@ -26,4 +25,4 @@ from ._exceptions import *
 from ._logging import *
 from ._socket import *
 
-__version__ = "0.44.0"
+__version__ = "1.0.0"

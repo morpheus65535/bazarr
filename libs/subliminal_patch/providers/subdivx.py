@@ -24,7 +24,7 @@ from subliminal_patch.providers import Provider
 from guessit import guessit
 
 
-CLEAN_TITLE_RES = [
+_CLEAN_TITLE_RES = [
     (r"subt[ií]tulos de", ""),
     (r"´|`", "'"),
     (r" {2,}", " "),
@@ -82,7 +82,7 @@ class SubdivxSubtitle(Subtitle):
 class SubdivxSubtitlesProvider(Provider):
     provider_name = "subdivx"
     hash_verifiable = False
-    languages = {Language.fromalpha2(lang) for lang in ["es"]}
+    languages = {Language("spa", "MX")} | {Language.fromalpha2("es")}
     subtitle_class = SubdivxSubtitle
 
     server_url = "https://www.subdivx.com/"
@@ -176,22 +176,30 @@ class SubdivxSubtitlesProvider(Provider):
 
         for subtitle in range(0, len(title_soups)):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
-
             # title
             title = self._clean_title(title_soup.find("a").text)
+            # discard subtitles if a year between parenthesis is present in title and doesn't match the one provided
+            # in video object
+            if re.match(r'(\(\d{4}\))', title):
+                if video.year and str(video.year) not in title:
+                    continue
 
-            # filter by year
-            if video.year and str(video.year) not in title:
+            # Data
+            datos = body_soup.find("div", {"id": "buscador_detalle_sub_datos"}).text
+            # Ignore multi-disc and non-srt subtitles
+            if not any(item in datos for item in ("Cds:</b> 1", "SubRip")):
                 continue
 
-            page_link = title_soup.find("a")["href"]
+            spain = "/pais/7.gif" in datos
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
             # description
-            description = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
-            description = description.replace(",", " ").lower()
+            sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
+            description = sub_details.replace(",", " ").lower()
 
             # uploader
             uploader = body_soup.find("a", {"class": "link1"}).text
+            page_link = title_soup.find("a")["href"]
 
             subtitle = self.subtitle_class(
                 language, video, page_link, title, description, uploader
@@ -228,7 +236,7 @@ class SubdivxSubtitlesProvider(Provider):
         Normalize apostrophes and spaces to avoid matching problems
         (e.g. Subtitulos de  Carlito´s  Way -> Carlito's Way)
         """
-        for og, new in CLEAN_TITLE_RES:
+        for og, new in _CLEAN_TITLE_RES:
             title = re.sub(og, new, title, flags=re.IGNORECASE)
 
         return title

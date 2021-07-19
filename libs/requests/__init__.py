@@ -9,14 +9,14 @@
 Requests HTTP Library
 ~~~~~~~~~~~~~~~~~~~~~
 
-Requests is an HTTP library, written in Python, for human beings. Basic GET
-usage:
+Requests is an HTTP library, written in Python, for human beings.
+Basic GET usage:
 
    >>> import requests
    >>> r = requests.get('https://www.python.org')
    >>> r.status_code
    200
-   >>> 'Python is a programming language' in r.content
+   >>> b'Python is a programming language' in r.content
    True
 
 ... or POST:
@@ -27,14 +27,14 @@ usage:
    {
      ...
      "form": {
-       "key2": "value2",
-       "key1": "value1"
+       "key1": "value1",
+       "key2": "value2"
      },
      ...
    }
 
 The other HTTP methods are supported - see `requests.api`. Full documentation
-is at <http://python-requests.org>.
+is at <https://requests.readthedocs.io>.
 
 :copyright: (c) 2017 by Kenneth Reitz.
 :license: Apache 2.0, see LICENSE for more details.
@@ -57,18 +57,16 @@ def check_compatibility(urllib3_version, chardet_version):
     # Check urllib3 for compatibility.
     major, minor, patch = urllib3_version  # noqa: F811
     major, minor, patch = int(major), int(minor), int(patch)
-    # urllib3 >= 1.21.1, <= 1.25
+    # urllib3 >= 1.21.1, <= 1.26
     assert major == 1
     assert minor >= 21
-    assert minor <= 25
+    assert minor <= 26
 
     # Check chardet for compatibility.
     major, minor, patch = chardet_version.split('.')[:3]
     major, minor, patch = int(major), int(minor), int(patch)
-    # chardet >= 3.0.2, < 3.1.0
-    assert major == 3
-    assert minor < 1
-    assert patch >= 2
+    # chardet >= 3.0.2, < 5.0.0
+    assert (3, 0, 2) <= (major, minor, patch) < (5, 0, 0)
 
 
 def _check_cryptography(cryptography_version):
@@ -90,14 +88,22 @@ except (AssertionError, ValueError):
                   "version!".format(urllib3.__version__, chardet.__version__),
                   RequestsDependencyWarning)
 
-# Attempt to enable urllib3's SNI support, if possible
+# Attempt to enable urllib3's fallback for SNI support
+# if the standard library doesn't support SNI or the
+# 'ssl' library isn't available.
 try:
-    from urllib3.contrib import pyopenssl
-    pyopenssl.inject_into_urllib3()
+    try:
+        import ssl
+    except ImportError:
+        ssl = None
 
-    # Check cryptography version
-    from cryptography import __version__ as cryptography_version
-    _check_cryptography(cryptography_version)
+    if not getattr(ssl, "HAS_SNI", False):
+        from urllib3.contrib import pyopenssl
+        pyopenssl.inject_into_urllib3()
+
+        # Check cryptography version
+        from cryptography import __version__ as cryptography_version
+        _check_cryptography(cryptography_version)
 except ImportError:
     pass
 

@@ -14,11 +14,13 @@ from subliminal_patch.exceptions import TooManyRequests
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
 from .mixins import ProviderRetryMixin
-from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
+from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.utils import fix_inconsistent_naming
 from subliminal.cache import region
+from dogpile.cache.api import NO_VALUE
 from guessit import guessit
 
 logger = logging.getLogger(__name__)
@@ -73,9 +75,10 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
+        type_ = "movie" if isinstance(video, Movie) else "episode"
 
         # handle movies and series separately
-        if isinstance(video, Episode):
+        if type_ == "episode":
             # series
             matches.add('series')
             # year
@@ -87,8 +90,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
             # episode
             if video.episode == self.episode:
                 matches.add('episode')
-        # movie
-        elif isinstance(video, Movie):
+        else:
             # title
             matches.add('title')
             # year
@@ -102,17 +104,12 @@ class OpenSubtitlesComSubtitle(Subtitle):
                 any(r in sanitize_release_group(self.releases)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.releases and video.resolution in self.releases.lower():
-            matches.add('resolution')
-        # source
-        if video.source and self.releases and video.source.lower() in self.releases.lower():
-            matches.add('source')
-        # hash
+
         if self.hash_matched:
             matches.add('hash')
+
         # other properties
-        matches |= guess_matches(video, guessit(self.releases))
+        matches |= guess_matches(video, guessit(self.releases, {"type": type_}))
 
         self.matches = matches
 
@@ -121,7 +118,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
 
 class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     """OpenSubtitlesCom Provider"""
-    server_url = 'https://www.opensubtitles.com/api/v1/'
+    server_url = 'https://api.opensubtitles.com/api/v1/'
 
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
@@ -144,13 +141,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.use_hash = use_hash
 
     def initialize(self):
-        self.login()
-        self.token = region.get("oscom_token")
+        self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
+        if self.token is NO_VALUE:
+            self.login()
 
     def terminate(self):
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=TOKEN_EXPIRATION_TIME)
     def login(self):
         try:
             r = self.session.post(self.server_url + 'login',
@@ -172,6 +169,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
             elif r.status_code == 429:
                 raise TooManyRequests()
+            elif r.status_code == 503:
+                raise ProviderError(r.reason)
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
         finally:
@@ -205,8 +204,12 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             if results.status_code == 429:
                 raise TooManyRequests()
+            elif results.status_code == 503:
+                raise ProviderError(results.reason)
         elif results.status_code == 429:
             raise TooManyRequests()
+        elif results.status_code == 503:
+            raise ProviderError(results.reason)
 
         # deserialize results
         try:
@@ -267,6 +270,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if res.status_code == 429:
             raise TooManyRequests()
 
+        elif res.status_code == 503:
+            raise ProviderError(res.reason)
+
         subtitles = []
 
         try:
@@ -316,6 +322,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
+        if self.token is NO_VALUE:
+            logger.debug("No cached token, we'll try to login again.")
+            self.login()
+        if self.token is NO_VALUE:
+            logger.debug("Unable to obtain an authentication token right now, we'll try again later.")
+            raise ProviderError("Unable to obtain an authentication token")
+
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
@@ -328,6 +341,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             raise TooManyRequests()
         elif res.status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
+        elif res.status_code == 503:
+            raise ProviderError(res.reason)
         else:
             try:
                 subtitle.download_link = res.json()['link']
@@ -340,6 +355,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     raise TooManyRequests()
                 elif res.status_code == 406:
                     raise DownloadLimitExceeded("Daily download limit reached")
+                elif res.status_code == 503:
+                    raise ProviderError(res.reason)
 
                 subtitle_content = r.content
 

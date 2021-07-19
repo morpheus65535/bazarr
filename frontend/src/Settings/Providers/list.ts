@@ -23,7 +23,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       password: "",
     },
   },
-  { key: "argenteam", description: "Spanish Subtitles Provider" },
+  { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },
   {
     key: "assrt",
     description: "Chinese Subtitles Provider",
@@ -130,7 +130,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Sous-Titres.eu",
     description: "Mostly French Subtitles Provider",
   },
-  { key: "subdivx", description: "Spanish Subtitles Provider" },
+  { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
   {
     key: "subssabbz",
     name: "Subs.sab.bz",
@@ -144,11 +144,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subs4series",
     name: "Subs4Series",
-    description: "Greek Subtitles Provider",
+    description:
+      "Greek Subtitles Provider. Require anti-captcha provider to solve on each download.",
   },
   {
     key: "subscene",
-    description: "Requires Anti-Captcha Provider",
     defaultKey: {
       username: "",
       password: "",
@@ -171,7 +171,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Subtitulamos.tv",
     description: "Spanish Subtitles Provider",
   },
-  { key: "sucha", description: "Spanish Subtitles Provider" },
+  { key: "sucha", description: "LATAM Spanish Subtitles Provider" },
   { key: "supersubtitles" },
   {
     key: "titlovi",
@@ -184,7 +184,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
-    description: "Spanish / English Subtitles Provider for TV Shows",
+    description:
+      "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },

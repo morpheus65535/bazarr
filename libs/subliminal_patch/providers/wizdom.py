@@ -46,8 +46,6 @@ class WizdomSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        subtitle_filename = self.release.lower()
-
         # episode
         if isinstance(video, Episode):
             # series
@@ -64,49 +62,16 @@ class WizdomSubtitle(Subtitle):
             if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
                 matches.add('series_imdb_id')
             # guess
-            matches |= guess_matches(video, guessit(self.release, {'type': 'episode'}), partial=True)
+            matches |= guess_matches(video, guessit(self.release, {'type': 'episode'}))
         # movie
         elif isinstance(video, Movie):
             # guess
-            matches |= guess_matches(video, guessit(self.release, {'type': 'movie'}), partial=True)
+            matches |= guess_matches(video, guessit(self.release, {'type': 'movie'}))
 
             # title
             if video.title and (sanitize(self.title) in (
                     sanitize(name) for name in [video.title] + video.alternative_titles)):
                 matches.add('title')
-
-        # release_group
-        if video.release_group and video.release_group.lower() in subtitle_filename:
-            matches.add('release_group')
-
-        # resolution
-        if video.resolution and video.resolution.lower() in subtitle_filename:
-            matches.add('resolution')
-
-        # source
-        formats = []
-        if video.source:
-            formats = [video.source.lower()]
-            if formats[0] == "web":
-                formats.append("webdl")
-                formats.append("webrip")
-                formats.append("web ")
-            for frmt in formats:
-                if frmt.lower() in subtitle_filename:
-                    matches.add('source')
-                    break
-
-        # video_codec
-        if video.video_codec:
-            video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "h.264":
-                formats.append("x264")
-            elif video_codecs[0] == "h.265":
-                formats.append("x265")
-            for vc in formats:
-                if vc.lower() in subtitle_filename:
-                    matches.add('video_codec')
-                    break
 
         return matches
 
@@ -155,7 +120,11 @@ class WizdomProvider(Provider):
                 r = self.session.get('http://api.tmdb.org/3/{}/{}{}?api_key={}&language=en'.format(
                     category, tmdb_id, '' if is_movie else '/external_ids', self._tmdb_api_key))
                 r.raise_for_status()
-                return str(r.json().get('imdb_id', '')) or None
+                imdb_id = r.json().get('imdb_id')
+                if imdb_id:
+                    return str(imdb_id)
+                else:
+                    return None
         return None
 
     def query(self, title, season=None, episode=None, year=None, filename=None, imdb_id=None):
@@ -220,6 +189,7 @@ class WizdomProvider(Provider):
             imdb_id = video.series_imdb_id
         else:
             titles = [video.title] + video.alternative_titles
+            imdb_id = video.imdb_id
 
         for title in titles:
             subtitles = [s for s in

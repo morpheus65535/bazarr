@@ -1,4 +1,9 @@
 @import "../../@scss/variable.scss";
+@import "../../@scss/bazarr.scss";
+
+@function theme-color($key: "primary") {
+  @return map-get($theme-colors, $key);
+}
 
 .alert-container {
   position: fixed;
@@ -13,11 +18,29 @@
     padding: 1rem;
 
     .toast {
-      max-width: 260px;
-      min-width: 200px;
+      width: 16rem;
 
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+
+      .toast-body {
+        span {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          width: 100%;
+          display: inline-block;
+        }
+        .progress {
+          .progress-bar {
+            text-shadow: -2px -2px 5px theme-color("primary"),
+              2px -2px 5px theme-color("primary"),
+              -2px 2px 5px theme-color("primary"),
+              2px 2px 5px theme-color("primary");
+            overflow: visible;
+          }
+        }
+      }
     }
   }
 }

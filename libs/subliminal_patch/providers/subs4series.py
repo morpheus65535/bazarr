@@ -7,17 +7,21 @@ import os
 import rarfile
 import re
 import zipfile
-import cloudscraper
 
 from subzero.language import Language
 from guessit import guessit
+from requests import Session
 
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
+from dogpile.cache.api import NO_VALUE
 from subliminal.score import get_equivalent_release_groups
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode
+from subliminal_patch.http import RetryingCFSession
+from subliminal_patch.pitcher import pitchers, load_verification, store_verification
+from subliminal_patch.subtitle import guess_matches
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +84,10 @@ class Subs4SeriesProvider(Provider):
 
     def __init__(self):
         self.session = None
+        self.captcha_session = None
 
     def initialize(self):
-        self.session = cloudscraper.create_scraper(debug=False)
+        self.session = RetryingCFSession()
         self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
                                              'like Gecko) Chrome/83.0.4103.116 Safari/537.36'
         # We don't use FIRST_THOUSAND_OR_SO_USER_AGENTS list because it includes mobile browser that get redirected to
@@ -203,12 +208,41 @@ class Subs4SeriesProvider(Provider):
         if isinstance(subtitle, Subs4SeriesSubtitle):
             # download the subtitle
             logger.info('Downloading subtitle %r', subtitle)
-            r = self.session.get(subtitle.download_link, headers={'Referer': subtitle.page_link}, timeout=10)
-            r.raise_for_status()
+            data = {"my_recaptcha_challenge_field": "manual_challenge"}
+            tries = 0
+            while tries <= 3:
+                tries += 1
+                r = self.session.get(subtitle.download_link, headers={'Referer': subtitle.page_link}, timeout=10)
 
-            if not r.content:
-                logger.debug('Unable to download subtitle. No data returned from provider')
-                return
+                if "g-recaptcha" in r.text or "grecaptcha" in r.text:
+                    logger.info('Subs4series: Solving captcha. This might take a couple of minutes, but should only '
+                                'happen once every so often')
+
+                    for g, s in (("g-recaptcha-response", r'g-recaptcha.+?data-sitekey=\"(.+?)\"'),
+                                 ("recaptcha_response", r'grecaptcha.execute\(\'(.+?)\',')):
+                        site_key = re.search(s, r.text).group(1)
+                        if site_key:
+                            break
+                    if not site_key:
+                        logger.error("Subs4series: Captcha site-key not found!")
+                        return
+
+                    pitcher = pitchers.get_pitcher()("Subs4series", subtitle.download_link, site_key,
+                                                     user_agent=self.session.headers["User-Agent"],
+                                                     cookies=self.session.cookies.get_dict(),
+                                                     headers={'Referer': subtitle.page_link},
+                                                     is_invisible=True)
+
+                    result = pitcher.throw()
+                    if not result:
+                        if tries >= 3:
+                            raise Exception("Subs4series: Couldn't solve captcha!")
+                        logger.info("Subs4series: Couldn't solve captcha! Retrying")
+                        continue
+                    else:
+                        data['g-recaptcha-response'] = result
+                        logger.info("Subs4series: Captcha solved. Trying to download subtitles...")
+                        break
 
             soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
             download_element = soup.select_one('a.style55ws')
@@ -225,8 +259,10 @@ class Subs4SeriesProvider(Provider):
             self.apply_anti_block(subtitle)
 
             download_url = self.server_url + target
-            r = self.session.get(download_url, headers={'Referer': subtitle.download_link}, timeout=10)
-            r.raise_for_status()
+            r = self.session.post(download_url, data, headers={'Referer': subtitle.download_link},
+                                  allow_redirects=True, timeout=10)
+            if r.status_code == 403:
+                raise Exception("Subs4series: captcha expired waiting to be solved.")
 
             if not r.content:
                 logger.debug('Unable to download subtitle. No data returned from provider')

@@ -3,31 +3,36 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
+import { useProfileItems } from "../../@redux/hooks";
+import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
+import { filterSubtitleBy } from "../../utilites";
 
 const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
-  update: (id: number) => void;
+  profile?: Profile.Languages;
 }
 
-const Table: FunctionComponent<Props> = (props) => {
-  const { movie, update } = props;
+const Table: FunctionComponent<Props> = ({ movie, profile }) => {
+  const onlyDesired = useShowOnlyDesired();
+
+  const profileItems = useProfileItems(profile);
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
       {
         Header: "Subtitle Path",
         accessor: "path",
-        Cell: (row) => {
-          if (row.value === null || row.value.length === 0) {
+        Cell: ({ value }) => {
+          if (value === null || value.length === 0) {
             return "Video File Subtitle Track";
-          } else if (row.value === missingText) {
-            return <span className="text-muted">{row.value}</span>;
+          } else if (value === missingText) {
+            return <span className="text-muted">{value}</span>;
           } else {
-            return row.value;
+            return value;
           }
         },
       },
@@ -66,7 +71,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     forced: original.forced,
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
                 variant="light"
                 size="sm"
               >
@@ -86,7 +90,6 @@ const Table: FunctionComponent<Props> = (props) => {
                     path: original.path ?? "",
                   })
                 }
-                onSuccess={() => update(movie.radarrId)}
               >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
               </AsyncButton>
@@ -95,7 +98,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    [movie, update]
+    [movie]
   );
 
   const data: Subtitle[] = useMemo(() => {
@@ -104,8 +107,13 @@ const Table: FunctionComponent<Props> = (props) => {
       return item;
     });
 
-    return movie.subtitles.concat(missing);
-  }, [movie.missing_subtitles, movie.subtitles]);
+    let raw_subtitles = movie.subtitles;
+    if (onlyDesired) {
+      raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
+    }
+
+    return [...raw_subtitles, ...missing];
+  }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);
 
   return (
     <SimpleTable

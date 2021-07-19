@@ -68,9 +68,10 @@ def check_if_new_update():
         if release:
             logging.debug('BAZARR last release available is {}'.format(release['name']))
 
+            current_version = None
             try:
-                semver.parse(os.environ["BAZARR_VERSION"])
-                semver.parse(release['name'].lstrip('v'))
+                current_version = semver.VersionInfo.parse(os.environ["BAZARR_VERSION"])
+                semver.VersionInfo.parse(release['name'].lstrip('v'))
             except ValueError:
                 new_version = True
             else:
@@ -81,6 +82,11 @@ def check_if_new_update():
             if new_version and release['name'] != 'v0.9.1.1':
                 logging.debug('BAZARR newer release available and will be downloaded: {}'.format(release['name']))
                 download_release(url=release['download_link'])
+            # rolling back from nightly to stable release
+            elif current_version:
+                if current_version.prerelease and not use_prerelease:
+                    logging.debug('BAZARR previous stable version will be downloaded: {}'.format(release['name']))
+                    download_release(url=release['download_link'])
             else:
                 logging.debug('BAZARR no newer release have been found')
         else:

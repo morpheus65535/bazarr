@@ -24,11 +24,7 @@ import {
   useCloseModal,
   usePayload,
 } from "..";
-import {
-  useEpisodesBy,
-  useProfileBy,
-  useProfileItems,
-} from "../../@redux/hooks";
+import { useProfileBy, useProfileItems } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
 import BaseModal, { BaseModalProps } from "./BaseModal";
@@ -59,14 +55,15 @@ type EpisodeMap = {
   [name: string]: Item.Episode;
 };
 
-interface MovieProps {}
+interface SerieProps {
+  episodes: readonly Item.Episode[];
+}
 
-const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
-  modal
-) => {
+const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
+  episodes,
+  ...modal
+}) => {
   const series = usePayload<Item.Series>(modal.modalKey);
-
-  const [episodes, updateEpisodes] = useEpisodesBy(series?.sonarrSeriesId);
 
   const [uploading, setUpload] = useState(false);
 
@@ -122,7 +119,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
         const results = await SubtitlesApi.info(names);
 
         const episodeMap = results.reduce<EpisodeMap>((prev, curr) => {
-          const ep = episodes.data.find(
+          const ep = episodes.find(
             (v) => v.season === curr.season && v.episode === curr.episode
           );
           if (ep) {
@@ -140,7 +137,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
         );
       }
     },
-    [episodes.data]
+    [episodes]
   );
 
   const updateLanguage = useCallback(
@@ -208,18 +205,33 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
     setProcessState(uploadStates);
 
+    let exception = false;
+
     for (const info of pending) {
       if (info.instance) {
         const { sonarrEpisodeId: episodeid } = info.instance;
-        await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
 
-        uploadStates = {
-          ...uploadStates,
-          [info.form.file.name]: { state: State.Valid, infos: [] },
-        };
+        try {
+          await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
+
+          uploadStates = {
+            ...uploadStates,
+            [info.form.file.name]: { state: State.Valid, infos: [] },
+          };
+        } catch (error) {
+          uploadStates = {
+            ...uploadStates,
+            [info.form.file.name]: { state: State.Error, infos: [] },
+          };
+          exception = true;
+        }
 
         setProcessState(uploadStates);
       }
+    }
+
+    if (exception) {
+      throw new Error("Error when uploading subtitles");
     }
   }, [series, pending]);
 
@@ -292,6 +304,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
         accessor: "instance",
         className: "vw-1",
         Cell: ({ value, loose, row, externalUpdate }) => {
+          const uploading = loose![0] as boolean;
           const availables = loose![2] as Item.Episode[];
 
           const options = availables.map<SelectorOption<Item.Episode>>(
@@ -314,6 +327,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
           return (
             <Selector
+              disabled={uploading}
               options={options}
               value={value ?? null}
               onChange={change}
@@ -379,14 +393,12 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           Clean
         </Button>
         <AsyncButton
-          noReset
           disabled={!canUpload}
           onChange={setUpload}
           promise={uploadSubtitles}
           onSuccess={() => {
             closeModal();
             setFiles([]);
-            updateEpisodes();
           }}
         >
           Upload
@@ -419,7 +431,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           <SimpleTable
             columns={columns}
             data={pending}
-            loose={[uploading, processState, episodes.data]}
+            loose={[uploading, processState, episodes]}
             responsive={false}
             externalUpdate={updateItem}
           ></SimpleTable>

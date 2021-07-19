@@ -1,20 +1,15 @@
 export const seriesSyncOptions: SelectorOption<number>[] = [
-  { label: "1 Minute", value: 1 },
-  { label: "5 Minutes", value: 5 },
-  { label: "15 Minutes", value: 15 },
-  { label: "1 Hour", value: 60 },
-  { label: "3 Hours", value: 180 },
-];
-
-export const episodesSyncOptions: SelectorOption<number>[] = [
-  { label: "5 Minutes", value: 5 },
   { label: "15 Minutes", value: 15 },
   { label: "1 Hour", value: 60 },
   { label: "3 Hours", value: 180 },
   { label: "6 Hours", value: 360 },
+  { label: "12 Hours", value: 720 },
+  { label: "24 Hours", value: 1440 },
 ];
 
-export const moviesSyncOptions = episodesSyncOptions;
+export const episodesSyncOptions = seriesSyncOptions;
+
+export const moviesSyncOptions = seriesSyncOptions;
 
 export const diskUpdateOptions: SelectorOption<string>[] = [
   { label: "Manually", value: "Manually" },

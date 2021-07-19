@@ -1,8 +1,6 @@
-import { isArray, isEqual } from "lodash";
+import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
-import { useStore } from "react-redux";
 import { useSystemSettings } from "../../@redux/hooks";
-import { mergeArray } from "../../utilites";
 import { log } from "../../utilites/logger";
 import { StagedChangesContext } from "./provider";
 
@@ -46,7 +44,7 @@ export function useMultiUpdate() {
 
 type ValidateFuncType<T> = (v: any) => v is T;
 
-export type OverrideFuncType<T> = (settings: Settings, store: ReduxStore) => T;
+export type OverrideFuncType<T> = (settings: Settings) => T;
 
 export function useExtract<T>(
   key: string,
@@ -55,8 +53,6 @@ export function useExtract<T>(
 ): Readonly<Nullable<T>> {
   const [systemSettings] = useSystemSettings();
   const settings = systemSettings.data;
-
-  const store = useStore<ReduxStore>();
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;
@@ -90,44 +86,10 @@ export function useExtract<T>(
 
   if (override && settings !== undefined) {
     // TODO: Temporarily override
-    return override(settings, store.getState());
+    return override(settings);
   } else {
     return extractValue;
   }
-}
-
-export function useUpdateArray<T>(
-  key: string,
-  compare?: (one: T, another: T) => boolean
-) {
-  const update = useSingleUpdate();
-  const stagedValue = useStagedValues();
-
-  if (compare === undefined) {
-    compare = isEqual;
-  }
-
-  const staged: T[] = useMemo(() => {
-    if (key in stagedValue) {
-      return stagedValue[key];
-    } else {
-      return [];
-    }
-  }, [key, stagedValue]);
-
-  return useCallback(
-    (v: T) => {
-      const newArray = [...staged];
-      const idx = newArray.findIndex((inn) => compare!(inn, v));
-      if (idx !== -1) {
-        newArray[idx] = v;
-      } else {
-        newArray.push(v);
-      }
-      update(newArray, key);
-    },
-    [compare, staged, key, update]
-  );
 }
 
 export function useLatest<T>(
@@ -144,18 +106,13 @@ export function useLatest<T>(
   }
 }
 
-// Merge Two Array
-export function useLatestMergeArray<T>(
+export function useLatestArray<T>(
   key: string,
-  compare: Comparer<T>,
+  compare: keyof T,
   override?: OverrideFuncType<T[]>
 ): Readonly<Nullable<T[]>> {
   const extractValue = useExtract<T[]>(key, isArray, override);
   const stagedValue = useStagedValues();
-
-  if (compare === undefined) {
-    compare = isEqual;
-  }
 
   let staged: T[] | undefined = undefined;
   if (key in stagedValue) {
@@ -164,9 +121,30 @@ export function useLatestMergeArray<T>(
 
   return useMemo(() => {
     if (staged !== undefined && extractValue) {
-      return mergeArray(extractValue, staged, compare);
+      return uniqBy([...staged, ...extractValue], compare);
     } else {
       return extractValue;
     }
   }, [extractValue, staged, compare]);
+}
+
+export function useUpdateArray<T>(key: string, compare: keyof T) {
+  const update = useSingleUpdate();
+  const stagedValue = useStagedValues();
+
+  const staged: T[] = useMemo(() => {
+    if (key in stagedValue) {
+      return stagedValue[key];
+    } else {
+      return [];
+    }
+  }, [key, stagedValue]);
+
+  return useCallback(
+    (v: T) => {
+      const newArray = uniqBy([v, ...staged], compare);
+      update(newArray, key);
+    },
+    [compare, staged, key, update]
+  );
 }

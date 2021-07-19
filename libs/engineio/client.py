@@ -1,3 +1,5 @@
+from base64 import b64encode
+from json import JSONDecodeError
 import logging
 try:
     import queue
@@ -7,9 +9,8 @@ import signal
 import ssl
 import threading
 import time
+import urllib
 
-import six
-from six.moves import urllib
 try:
     import requests
 except ImportError:  # pragma: no cover
@@ -25,9 +26,6 @@ from . import payload
 default_logger = logging.getLogger('engineio.client')
 connected_clients = []
 
-if six.PY2:  # pragma: no cover
-    ConnectionError = OSError
-
 
 def signal_handler(sig, frame):
     """SIGINT handler.
@@ -35,10 +33,8 @@ def signal_handler(sig, frame):
     Disconnect all active clients and then invoke the original signal handler.
     """
     for client in connected_clients[:]:
-        if client.is_asyncio_based():
-            client.start_background_task(client.disconnect, abort=True)
-        else:
-            client.disconnect(abort=True)
+        if not client.is_asyncio_based():
+            client.disconnect()
     if callable(original_signal_handler):
         return original_signal_handler(sig, frame)
     else:  # pragma: no cover
@@ -57,13 +53,18 @@ class Client(object):
 
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``. The default is
-                   ``False``.
+                   ``False``. Note that fatal errors are logged even when
+                   ``logger`` is ``False``.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param http_session: an initialized ``requests.Session`` object to be used
+                         when sending requests to the server. Use it if you
+                         need to add special client options such as proxy
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -75,9 +76,11 @@ class Client(object):
                  logger=False,
                  json=None,
                  request_timeout=5,
+                 http_session=None,
                  ssl_verify=True):
         global original_signal_handler
-        if original_signal_handler is None:
+        if original_signal_handler is None and \
+                threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
         self.handlers = {}
@@ -88,13 +91,10 @@ class Client(object):
         self.upgrades = None
         self.ping_interval = None
         self.ping_timeout = None
-        self.pong_received = True
-        self.http = None
+        self.http = http_session
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
-        self.ping_loop_task = None
-        self.ping_loop_event = None
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
@@ -105,8 +105,7 @@ class Client(object):
             self.logger = logger
         else:
             self.logger = default_logger
-            if not logging.root.handlers and \
-                    self.logger.level == logging.NOTSET:
+            if self.logger.level == logging.NOTSET:
                 if logger:
                     self.logger.setLevel(logging.INFO)
                 else:
@@ -151,7 +150,7 @@ class Client(object):
             return set_handler
         set_handler(handler)
 
-    def connect(self, url, headers={}, transports=None,
+    def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
@@ -176,7 +175,7 @@ class Client(object):
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
         if transports is not None:
-            if isinstance(transports, six.string_types):
+            if isinstance(transports, str):
                 transports = [transports]
             transports = [transport for transport in transports
                           if transport in valid_transports]
@@ -185,7 +184,7 @@ class Client(object):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers or {}, engineio_path)
 
     def wait(self):
         """Wait until the connection with the server ends.
@@ -196,19 +195,14 @@ class Client(object):
         if self.read_loop_task:
             self.read_loop_task.join()
 
-    def send(self, data, binary=None):
+    def send(self, data):
         """Send a message to a client.
 
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
         """
-        self._send_packet(packet.Packet(packet.MESSAGE, data=data,
-                                        binary=binary))
+        self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
     def disconnect(self, abort=False):
         """Disconnect from the server.
@@ -293,14 +287,19 @@ class Client(object):
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
         if r.status_code < 200 or r.status_code >= 300:
+            self._reset()
+            try:
+                arg = r.json()
+            except JSONDecodeError:
+                arg = None
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status_code))
+                    r.status_code), arg)
         try:
-            p = payload.Payload(encoded_payload=r.content)
+            p = payload.Payload(encoded_payload=r.content.decode('utf-8'))
         except ValueError:
-            six.raise_from(exceptions.ConnectionError(
-                'Unexpected response from server'), None)
+            raise exceptions.ConnectionError(
+                'Unexpected response from server') from None
         open_packet = p.packets[0]
         if open_packet.packet_type != packet.OPEN:
             raise exceptions.ConnectionError(
@@ -309,8 +308,8 @@ class Client(object):
             'Polling connection accepted with ' + str(open_packet.data))
         self.sid = open_packet.data['sid']
         self.upgrades = open_packet.data['upgrades']
-        self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-        self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+        self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+        self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
         self.current_transport = 'polling'
         self.base_url += '&sid=' + self.sid
 
@@ -328,7 +327,6 @@ class Client(object):
                 return
 
         # start background tasks associated with this client
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -337,8 +335,8 @@ class Client(object):
         """Establish or upgrade to a WebSocket connection with the server."""
         if websocket is None:  # pragma: no cover
             # not installed
-            self.logger.warning('websocket-client package not installed, only '
-                                'polling transport is available')
+            self.logger.error('websocket-client package not installed, only '
+                              'polling transport is available')
             return False
         websocket_url = self._get_engineio_url(url, engineio_path, 'websocket')
         if self.sid:
@@ -352,22 +350,75 @@ class Client(object):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
 
-        # get the cookies from the long-polling connection so that they can
-        # also be sent the the WebSocket route
+        # get cookies and other settings from the long-polling connection
+        # so that they are preserved when connecting to the WebSocket route
         cookies = None
+        extra_options = {}
         if self.http:
+            # cookies
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
+            for header, value in headers.items():
+                if header.lower() == 'cookie':
+                    if cookies:
+                        cookies += '; '
+                    cookies += value
+                    del headers[header]
+                    break
 
+            # auth
+            if 'Authorization' not in headers and self.http.auth is not None:
+                if not isinstance(self.http.auth, tuple):  # pragma: no cover
+                    raise ValueError('Only basic authentication is supported')
+                basic_auth = '{}:{}'.format(
+                    self.http.auth[0], self.http.auth[1]).encode('utf-8')
+                basic_auth = b64encode(basic_auth).decode('utf-8')
+                headers['Authorization'] = 'Basic ' + basic_auth
+
+            # cert
+            # this can be given as ('certfile', 'keyfile') or just 'certfile'
+            if isinstance(self.http.cert, tuple):
+                extra_options['sslopt'] = {
+                    'certfile': self.http.cert[0],
+                    'keyfile': self.http.cert[1]}
+            elif self.http.cert:
+                extra_options['sslopt'] = {'certfile': self.http.cert}
+
+            # proxies
+            if self.http.proxies:
+                proxy_url = None
+                if websocket_url.startswith('ws://'):
+                    proxy_url = self.http.proxies.get(
+                        'ws', self.http.proxies.get('http'))
+                else:  # wss://
+                    proxy_url = self.http.proxies.get(
+                        'wss', self.http.proxies.get('https'))
+                if proxy_url:
+                    parsed_url = urllib.parse.urlparse(
+                        proxy_url if '://' in proxy_url
+                        else 'scheme://' + proxy_url)
+                    extra_options['http_proxy_host'] = parsed_url.hostname
+                    extra_options['http_proxy_port'] = parsed_url.port
+                    extra_options['http_proxy_auth'] = (
+                        (parsed_url.username, parsed_url.password)
+                        if parsed_url.username or parsed_url.password
+                        else None)
+
+            # verify
+            if isinstance(self.http.verify, str):
+                if 'sslopt' in extra_options:
+                    extra_options['sslopt']['ca_certs'] = self.http.verify
+                else:
+                    extra_options['sslopt'] = {'ca_certs': self.http.verify}
+            elif not self.http.verify:
+                self.ssl_verify = False
+
+        if not self.ssl_verify:
+            extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
         try:
-            if not self.ssl_verify:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE})
-            else:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies)
+            ws = websocket.create_connection(
+                websocket_url + self._get_url_timestamp(), header=headers,
+                cookie=cookies, enable_multithread=True, **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
@@ -376,8 +427,7 @@ class Client(object):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            p = packet.Packet(packet.PING,
-                              data=six.text_type('probe')).encode()
+            p = packet.Packet(packet.PING, data='probe').encode()
             try:
                 ws.send(p)
             except Exception as e:  # pragma: no cover
@@ -420,17 +470,17 @@ class Client(object):
                 'WebSocket connection accepted with ' + str(open_packet.data))
             self.sid = open_packet.data['sid']
             self.upgrades = open_packet.data['upgrades']
-            self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-            self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+            self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+            self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
             self.current_transport = 'websocket'
 
             self.state = 'connected'
             connected_clients.append(self)
             self._trigger_event('connect', run_async=False)
         self.ws = ws
+        self.ws.settimeout(self.ping_interval + self.ping_timeout)
 
         # start background tasks associated with this client
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -445,8 +495,8 @@ class Client(object):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
             self._trigger_event('message', pkt.data, run_async=True)
-        elif pkt.packet_type == packet.PONG:
-            self.pong_received = True
+        elif pkt.packet_type == packet.PING:
+            self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
             self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
@@ -470,9 +520,11 @@ class Client(object):
             timeout=None):  # pragma: no cover
         if self.http is None:
             self.http = requests.Session()
+        if not self.ssl_verify:
+            self.http.verify = False
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout, verify=self.ssl_verify)
+                                     timeout=timeout)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
@@ -504,7 +556,7 @@ class Client(object):
             scheme += 's'
 
         return ('{scheme}://{netloc}/{path}/?{query}'
-                '{sep}transport={transport}&EIO=3').format(
+                '{sep}transport={transport}&EIO=4').format(
                     scheme=scheme, netloc=parsed_url.netloc,
                     path=engineio_path, query=parsed_url.query,
                     sep='&' if parsed_url.query else '',
@@ -513,28 +565,6 @@ class Client(object):
     def _get_url_timestamp(self):
         """Generate the Engine.IO query string timestamp."""
         return '&t=' + str(time.time())
-
-    def _ping_loop(self):
-        """This background task sends a PING to the server at the requested
-        interval.
-        """
-        self.pong_received = True
-        if self.ping_loop_event is None:
-            self.ping_loop_event = self.create_event()
-        else:
-            self.ping_loop_event.clear()
-        while self.state == 'connected':
-            if not self.pong_received:
-                self.logger.info(
-                    'PONG response has not been received, aborting')
-                if self.ws:
-                    self.ws.close(timeout=0)
-                self.queue.put(None)
-                break
-            self.pong_received = False
-            self._send_packet(packet.Packet(packet.PING))
-            self.ping_loop_event.wait(timeout=self.ping_interval)
-        self.logger.info('Exiting ping task')
 
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
@@ -555,7 +585,7 @@ class Client(object):
                 self.queue.put(None)
                 break
             try:
-                p = payload.Payload(encoded_payload=r.content)
+                p = payload.Payload(encoded_payload=r.content.decode('utf-8'))
             except ValueError:
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
@@ -566,10 +596,6 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -585,6 +611,11 @@ class Client(object):
             p = None
             try:
                 p = self.ws.recv()
+            except websocket.WebSocketTimeoutException:
+                self.logger.warning(
+                    'Server has stopped communicating, aborting')
+                self.queue.put(None)
+                break
             except websocket.WebSocketConnectionClosedException:
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')
@@ -592,20 +623,21 @@ class Client(object):
                 break
             except Exception as e:
                 self.logger.info(
-                    'Unexpected error "%s", aborting', str(e))
+                    'Unexpected error receiving packet: "%s", aborting',
+                    str(e))
                 self.queue.put(None)
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
-            pkt = packet.Packet(encoded_packet=p)
+            try:
+                pkt = packet.Packet(encoded_packet=p)
+            except Exception as e:  # pragma: no cover
+                self.logger.info(
+                    'Unexpected error decoding packet: "%s", aborting', str(e))
+                self.queue.put(None)
+                break
             self._receive_packet(pkt)
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -667,13 +699,14 @@ class Client(object):
                 # websocket
                 try:
                     for pkt in packets:
-                        encoded_packet = pkt.encode(always_bytes=False)
+                        encoded_packet = pkt.encode()
                         if pkt.binary:
                             self.ws.send_binary(encoded_packet)
                         else:
                             self.ws.send(encoded_packet)
                         self.queue.task_done()
-                except websocket.WebSocketConnectionClosedException:
+                except (websocket.WebSocketConnectionClosedException,
+                        BrokenPipeError, OSError):
                     self.logger.warning(
                         'WebSocket connection was closed, aborting')
                     break

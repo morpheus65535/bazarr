@@ -45,7 +45,7 @@ import logging
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad
+        import lxml, numpy, webrtcvad, gevent, geventwebsocket, setuptools
     except ImportError:
         try:
             import pip
@@ -56,10 +56,17 @@ if not args.no_update:
                 logging.info('BAZARR unable to install requirements (user without home directory).')
             else:
                 logging.info('BAZARR installing requirements...')
-                subprocess.call([sys.executable, '-m', 'pip', 'install', '--user', '-r',
-                                 os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                logging.info('BAZARR requirements installed.')
+                try:
+                    subprocess.check_output([sys.executable, '-m', 'pip', 'install', '--user', '-qq',
+                                             '--disable-pip-version-check', '--no-color', '-r',
+                                             os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
+                                            stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as e:
+                    logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
+                    os._exit(1)
+                else:
+                    logging.info('BAZARR requirements installed.')
+
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
@@ -119,27 +126,6 @@ if os.path.isfile(package_info_file):
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
             settings.write(handle)
 
-# create database file
-if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
-    import sqlite3
-    # Get SQL script from file
-    fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
-    script = fd.read()
-    # Close SQL script file
-    fd.close()
-    # Open database connection
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    # Execute script and commit change to database
-    c.executescript(script)
-    # Close database connection
-    db.close()
-    logging.info('BAZARR Database created successfully')
-
-# upgrade database schema
-from database import db_upgrade
-db_upgrade()
-
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
 subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
@@ -168,41 +154,6 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
     settings.write(handle)
 
 
-# Commenting out the password reset process as it could be having unwanted effects and most of the users have already
-# moved to new password hashing algorithm.
-
-# Reset form login password for Bazarr after migration from 0.8.x to 0.9. Password will be equal to username.
-# if settings.auth.type == 'form' and \
-#         os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-#     username = False
-#     with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))) as json_file:
-#         try:
-#             data = json.load(json_file)
-#             username = next(iter(data))
-#         except:
-#             logging.error('BAZARR is unable to migrate credentials. You should disable login by modifying config.ini '
-#                           'file and settings [auth]-->type = None')
-#     if username:
-#         settings.auth.username = username
-#         settings.auth.password = hashlib.md5(username.encode('utf-8')).hexdigest()
-#         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-#             settings.write(handle)
-#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
-#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
-#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
-#         logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
-#                      'to your username. Please change it as soon as possible in settings.')
-# else:
-#     if os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-#         try:
-#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
-#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
-#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
-#         except:
-#             logging.error("BAZARR cannot delete those file. Please do it manually: users.json, roles.json, "
-#                           "register.json")
-
-
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
@@ -223,5 +174,8 @@ def init_binaries():
     return unrar
 
 
+from database import init_db, migrate_db
+init_db()
+migrate_db()
 init_binaries()
 path_mappings.update()

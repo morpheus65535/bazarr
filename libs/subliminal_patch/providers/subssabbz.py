@@ -14,9 +14,8 @@ from requests import Session
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
-from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 from subliminal.cache import region
@@ -42,6 +41,7 @@ def fix_tv_naming(title):
                                            "Doctor Who (2005)": "Doctor Who",
                                            "Star Trek: Deep Space Nine": "Star Trek DS9",
                                            "Star Trek: The Next Generation": "Star Trek TNG",
+                                           "Superman & Lois": "Superman and Lois",
                                            }, True)
 
 

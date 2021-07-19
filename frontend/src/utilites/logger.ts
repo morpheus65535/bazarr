@@ -11,3 +11,13 @@ export function log(type: LoggerType, msg: string, ...payload: any[]) {
     logger(`[${type}] ${msg}`, ...payload);
   }
 }
+
+export function conditionalLog(
+  condition: boolean,
+  msg: string,
+  ...payload: any[]
+) {
+  if (condition) {
+    log("error", msg, payload);
+  }
+}

@@ -1,16 +1,16 @@
-import { Action, handleActions } from "redux-actions";
+import { handleActions } from "redux-actions";
 import {
-  PROVIDER_UPDATE_LIST,
-  SYSTEM_RUN_TASK,
+  SYSTEM_UPDATE_HEALTH,
   SYSTEM_UPDATE_LANGUAGES_LIST,
   SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
   SYSTEM_UPDATE_LOGS,
+  SYSTEM_UPDATE_PROVIDERS,
   SYSTEM_UPDATE_RELEASES,
   SYSTEM_UPDATE_SETTINGS,
   SYSTEM_UPDATE_STATUS,
   SYSTEM_UPDATE_TASKS,
 } from "../constants";
-import { updateAsyncState } from "./mapper";
+import { updateAsyncState } from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.System, any>(
   {
@@ -46,32 +46,19 @@ const reducer = handleActions<ReduxStore.System, any>(
         ),
       };
     },
+    [SYSTEM_UPDATE_HEALTH]: (state, action) => {
+      return {
+        ...state,
+        health: updateAsyncState(action, state.health.data),
+      };
+    },
     [SYSTEM_UPDATE_TASKS]: (state, action) => {
       return {
         ...state,
         tasks: updateAsyncState<Array<System.Task>>(action, state.tasks.data),
       };
     },
-    [SYSTEM_RUN_TASK]: (state, action: Action<string>) => {
-      const id = action.payload;
-      const tasks = state.tasks;
-      const newItems = [...tasks.data];
-
-      const idx = newItems.findIndex((v) => v.job_id === id);
-
-      if (idx !== -1) {
-        newItems[idx].job_running = true;
-      }
-
-      return {
-        ...state,
-        tasks: {
-          ...tasks,
-          data: newItems,
-        },
-      };
-    },
-    [PROVIDER_UPDATE_LIST]: (state, action) => {
+    [SYSTEM_UPDATE_PROVIDERS]: (state, action) => {
       return {
         ...state,
         providers: updateAsyncState(action, state.providers.data),
@@ -103,6 +90,10 @@ const reducer = handleActions<ReduxStore.System, any>(
     status: {
       updating: true,
       data: undefined,
+    },
+    health: {
+      updating: true,
+      data: [],
     },
     tasks: {
       updating: true,

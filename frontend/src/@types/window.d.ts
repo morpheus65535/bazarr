@@ -1,6 +1,12 @@
+interface SocketIODebugger {
+  dump: () => void;
+  emit: (event: SocketIO.Event) => void;
+}
+
 declare global {
   interface Window {
     Bazarr: BazarrServer;
+    _socketio: SocketIODebugger;
   }
 }
 

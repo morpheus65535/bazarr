@@ -1,4 +1,8 @@
 """
+
+"""
+
+"""
 websocket - WebSocket client library for Python
 
 Copyright (C) 2010 Hiroki Ohtani(liris)
@@ -15,13 +19,12 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA 02110-1335  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
+import errno
+import selectors
 import socket
-
-import six
 
 from ._exceptions import *
 from ._ssl_compat import *
@@ -59,7 +62,10 @@ def setdefaulttimeout(timeout):
     """
     Set the global timeout setting to connect.
 
-    timeout: default socket timeout time. This value is second.
+    Parameters
+    ----------
+    timeout: int or float
+        default socket timeout time (in seconds)
     """
     global _default_timeout
     _default_timeout = timeout
@@ -67,7 +73,12 @@ def setdefaulttimeout(timeout):
 
 def getdefaulttimeout():
     """
-    Return the global timeout setting(second) to connect.
+    Get default timeout
+
+    Returns
+    ----------
+    _default_timeout: int or float
+        Return the global timeout setting (in seconds) to connect.
     """
     return _default_timeout
 
@@ -76,14 +87,38 @@ def recv(sock, bufsize):
     if not sock:
         raise WebSocketConnectionClosedException("socket is already closed.")
 
+    def _recv():
+        try:
+            return sock.recv(bufsize)
+        except SSLWantReadError:
+            pass
+        except socket.error as exc:
+            error_code = extract_error_code(exc)
+            if error_code is None:
+                raise
+            if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
+                raise
+
+        sel = selectors.DefaultSelector()
+        sel.register(sock, selectors.EVENT_READ)
+
+        r = sel.select(sock.gettimeout())
+        sel.close()
+
+        if r:
+            return sock.recv(bufsize)
+
     try:
-        bytes_ = sock.recv(bufsize)
+        if sock.gettimeout() == 0:
+            bytes_ = sock.recv(bufsize)
+        else:
+            bytes_ = _recv()
     except socket.timeout as e:
         message = extract_err_message(e)
         raise WebSocketTimeoutException(message)
     except SSLError as e:
         message = extract_err_message(e)
-        if message == "The read operation timed out":
+        if isinstance(message, str) and 'timed out' in message:
             raise WebSocketTimeoutException(message)
         else:
             raise
@@ -100,20 +135,44 @@ def recv_line(sock):
     while True:
         c = recv(sock, 1)
         line.append(c)
-        if c == six.b("\n"):
+        if c == b'\n':
             break
-    return six.b("").join(line)
+    return b''.join(line)
 
 
 def send(sock, data):
-    if isinstance(data, six.text_type):
+    if isinstance(data, str):
         data = data.encode('utf-8')
 
     if not sock:
         raise WebSocketConnectionClosedException("socket is already closed.")
 
+    def _send():
+        try:
+            return sock.send(data)
+        except SSLWantWriteError:
+            pass
+        except socket.error as exc:
+            error_code = extract_error_code(exc)
+            if error_code is None:
+                raise
+            if error_code != errno.EAGAIN or error_code != errno.EWOULDBLOCK:
+                raise
+
+        sel = selectors.DefaultSelector()
+        sel.register(sock, selectors.EVENT_WRITE)
+
+        w = sel.select(sock.gettimeout())
+        sel.close()
+
+        if w:
+            return sock.send(data)
+
     try:
-        return sock.send(data)
+        if sock.gettimeout() == 0:
+            return sock.send(data)
+        else:
+            return _send()
     except socket.timeout as e:
         message = extract_err_message(e)
         raise WebSocketTimeoutException(message)

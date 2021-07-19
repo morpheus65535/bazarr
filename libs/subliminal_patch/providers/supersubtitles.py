@@ -47,6 +47,7 @@ def fix_tv_naming(title):
                                            "Marvel's Jessica Jones": "Jessica Jones",
                                            "DC's Legends of Tomorrow": "Legends of Tomorrow",
                                            "Star Trek: The Next Generation": "Star Trek TNG",
+                                           "Loki (aka. Marvel\'s Loki)": "Loki",
                                            }, True)
 
 
@@ -108,7 +109,8 @@ class SuperSubtitlesSubtitle(Subtitle):
         return str(self.subtitle_id)
 
     def get_matches(self, video):
-        matches = guess_matches(video, guessit(self.release_info))
+        type_ = "movie" if isinstance(video, Movie) else "episode"
+        matches = guess_matches(video, guessit(self.release_info, {"type": type_}))
 
         # episode
         if isinstance(video, Episode):
@@ -150,12 +152,6 @@ class SuperSubtitlesSubtitle(Subtitle):
                 any(r in sanitize_release_group(self.version)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.version and video.resolution in self.version.lower():
-            matches.add('resolution')
-        # source
-        if video.source and self.version and video.source.lower() in self.version.lower():
-            matches.add('source')
 
         self.matches = matches
         return matches

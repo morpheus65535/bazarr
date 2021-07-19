@@ -18,8 +18,8 @@ from subzero.language import Language
 from guessit import guessit
 from requests import Session
 from six import text_type
+from random import randint
 
-from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
@@ -30,6 +30,7 @@ from subliminal_patch.subtitle import (
     Subtitle,
     guess_matches
 )
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,7 @@ class ZimukuSubtitle(Subtitle):
         if isinstance(video, Episode):
             info = guessit(self.version, {"type": "episode"})
             # other properties
-            matches |= guess_matches(video, info, partial=True)
+            matches |= guess_matches(video, info)
 
             # add year to matches if video doesn't have a year but series, season and episode are matched
             if not video.year and all(item in matches for item in ['series', 'season', 'episode']):
@@ -74,9 +75,7 @@ class ZimukuSubtitle(Subtitle):
         # movie
         elif isinstance(video, Movie):
             # other properties
-            matches |= guess_matches(
-                video, guessit(self.version, {"type": "movie"}), partial=True
-            )
+            matches |= guess_matches(video, guessit(self.version, {"type": "movie"}))
 
         return matches
 
@@ -87,11 +86,9 @@ class ZimukuProvider(Provider):
     languages = {Language(*l) for l in supported_languages}
     logger.info(str(supported_languages))
 
-    server_url = "http://www.zmk.pw"
+    server_url = "http://zimuku.org"
     search_url = "/search?q={}"
-    download_url = "http://www.zmk.pw/"
-
-    UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)"
+    download_url = "http://zimuku.org/"
 
     subtitle_class = ZimukuSubtitle
 
@@ -100,7 +97,7 @@ class ZimukuProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers["User-Agent"] = "Subliminal/{}".format(__short_version__)
+        self.session.headers["User-Agent"] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
@@ -260,9 +257,13 @@ class ZimukuProvider(Provider):
         logger.info("Downloading subtitle %r", subtitle)
         self.session = subtitle.session
         download_link = _get_archive_dowload_link(self.session, subtitle.page_link)
-        r = self.session.get(download_link, timeout=30)
+        r = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
         r.raise_for_status()
-        filename = r.headers["Content-Disposition"]
+        try:
+            filename = r.headers["Content-Disposition"]
+        except KeyError:
+            logger.debug("Unable to parse subtitles filename. Dropping this subtitles.")
+            return
 
         if not r.content:
             logger.debug("Unable to download subtitle. No data returned from provider")

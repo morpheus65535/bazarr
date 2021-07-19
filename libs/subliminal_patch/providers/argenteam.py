@@ -1,9 +1,13 @@
 # coding=utf-8
 from __future__ import absolute_import
+
 import logging
 import os
 import io
 import time
+import urllib.parse
+
+from json.decoder import JSONDecodeError
 
 from zipfile import ZipFile
 from guessit import guessit
@@ -30,23 +34,33 @@ class ArgenteamSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = download_link
         self.found_matches = matches
-        self.release_info = release_info
+        self._release_info = release_info
+        # Original subtitle filename guessed from the URL
+        self.release_info = urllib.parse.unquote(self.download_link.split("/")[-1])
 
     @property
     def id(self):
         return self.download_link
 
     def get_matches(self, video):
-        # Download links always have the srt filename with the release info.
-        # We combine it with the release info as guessit will return the first key match.
-        new_file = self.download_link.split("/")[-1] + self.release_info
-        self.found_matches |= guess_matches(video, guessit(new_file))
+        type_ = "episode" if isinstance(video, Episode) else "movie"
+
+        self.found_matches |= guess_matches(
+            video,
+            guessit(self.release_info, {"type": type_}),
+        )
+        self.found_matches |= guess_matches(
+            video,
+            guessit(self._release_info, {"type": type_}),
+        )
+
         return self.found_matches
 
 
 class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = "argenteam"
-    languages = {Language.fromalpha2(l) for l in ["es"]}
+    # Safe to assume every subtitle from Argenteam is Latam Spanish
+    languages = {Language("spa", "MX")}
     video_types = (Episode, Movie)
     subtitle_class = ArgenteamSubtitle
     hearing_impaired_verifiable = False
@@ -59,9 +73,9 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {
-            "User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
-        }
+        self.session.headers.update(
+            {"User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        )
 
     def terminate(self):
         self.session.close()
@@ -75,48 +89,45 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
             is_episode = True
             query = f"{title} S{kwargs['season']:02}E{kwargs['episode']:02}"
 
-        logger.info(f"Searching ID (episode: {is_episode}) for {query}")
+        logger.debug(f"Searching ID (episode: {is_episode}) for {query}")
 
         r = self.session.get(API_URL + "search", params={"q": query}, timeout=10)
         r.raise_for_status()
 
-        results = r.json()
+        try:
+            results = r.json()
+        except JSONDecodeError:
+            return []
+
+        if not results.get("results"):
+            return []
+
         match_ids = []
-        if results["total"] >= 1:
-            for result in results["results"]:
-                if (result["type"] == "episode" and not is_episode) or (
-                    result["type"] == "movie" and is_episode
-                ):
+        for result in results["results"]:
+            if result["type"] == "movie" and is_episode:
+                continue
+
+            imdb = f"tt{result.get('imdb', 'n/a')}"
+            if not is_episode and imdb == kwargs.get("imdb_id"):
+                logger.debug("Movie matched by IMDB ID, taking shortcut")
+                match_ids = [result["id"]]
+                break
+
+            # advanced title check in case of multiple movie results
+            title_year = kwargs.get("year") and kwargs.get("title")
+            if results["total"] > 1 and not is_episode and title_year:
+                sanitized = sanitize(result["title"])
+                titles = [f"{sanitize(name)} {kwargs['year']}" for name in titles]
+                if sanitized not in titles:
                     continue
 
-                # shortcut in case of matching imdb id (don't match NoneType)
-                if not is_episode and f"tt{result.get('imdb', 'n/a')}" == kwargs.get(
-                    "imdb_id"
-                ):
-                    logger.debug(f"Movie matched by IMDB ID, taking shortcut")
-                    match_ids = [result["id"]]
-                    break
-
-                # advanced title check in case of multiple movie results
-                if results["total"] > 1:
-                    if not is_episode and kwargs.get("year"):
-                        if result["title"] and not (
-                            sanitize(result["title"])
-                            in (
-                                "%s %s" % (sanitize(name), kwargs.get("year"))
-                                for name in titles
-                            )
-                        ):
-                            continue
-
-                match_ids.append(result["id"])
-        else:
-            logger.error(f"No episode ID found for {query}")
+            match_ids.append(result["id"])
 
         if match_ids:
-            logger.debug(
-                f"Found matching IDs: {', '.join(str(id) for id in match_ids)}"
-            )
+            ids = ", ".join(str(id) for id in match_ids)
+            logger.debug("Found matching IDs: %s", ids)
+        else:
+            logger.debug("Nothing found from %s query", query)
 
         return match_ids
 
@@ -193,11 +204,13 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
         for aid in argenteam_ids:
             response = self.session.get(url, params={"id": aid}, timeout=10)
             response.raise_for_status()
-            content = response.json()
-            if not content:
+
+            try:
+                content = response.json()
+            except JSONDecodeError:
                 continue
 
-            if not content.get("releases"):
+            if not content or not content.get("releases"):
                 continue
 
             imdb_id = year = None

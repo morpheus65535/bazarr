@@ -1,11 +1,11 @@
+import base64
 import gzip
 import importlib
+import io
 import logging
-import uuid
+import secrets
+import urllib
 import zlib
-
-import six
-from six.moves import urllib
 
 from . import exceptions
 from . import packet
@@ -29,17 +29,16 @@ class Server(object):
                        "gevent_uwsgi", then "gevent", and finally "threading".
                        The first async mode that has all its dependencies
                        installed is the one that is chosen.
-    :param ping_timeout: The time in seconds that the client waits for the
-                         server to respond before disconnecting. The default
-                         is 60 seconds.
-    :param ping_interval: The interval in seconds at which the client pings
-                          the server. The default is 25 seconds. For advanced
+    :param ping_interval: The interval in seconds at which the server pings
+                          the client. The default is 25 seconds. For advanced
                           control, a two element tuple can be given, where
                           the first number is the ping interval and the second
-                          is a grace period added by the server. The default
-                          grace period is 5 seconds.
+                          is a grace period added by the server.
+    :param ping_timeout: The time in seconds that the client waits for the
+                         server to respond before disconnecting. The default
+                         is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport. The default is 100,000,000
+                                 polling transport. The default is 1,000,000
                                  bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not. The
                            default is ``True``.
@@ -48,9 +47,14 @@ class Server(object):
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value. The default is
                                   1024 bytes.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
-                   The default is ``'io'``.
+    :param cookie: If set to a string, it is the name of the HTTP cookie the
+                   server sends back tot he client containing the client
+                   session id. If set to a dictionary, the ``'name'`` key
+                   contains the cookie name and other keys define cookie
+                   attributes, where the value of each attribute can be a
+                   string, a callable with no arguments, or a boolean. If set
+                   to ``None`` (the default), a cookie is not sent to the
+                   client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -61,7 +65,8 @@ class Server(object):
                              is ``True``.
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``. The default is
-                   ``False``.
+                   ``False``. Note that fatal errors are logged even when
+                   ``logger`` is ``False``.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
@@ -79,11 +84,12 @@ class Server(object):
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
     _default_monitor_clients = True
+    sequence_number = 0
 
-    def __init__(self, async_mode=None, ping_timeout=60, ping_interval=25,
-                 max_http_buffer_size=100000000, allow_upgrades=True,
+    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=5,
+                 max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
-                 cookie='io', cors_allowed_origins=None,
+                 cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
                  async_handlers=True, monitor_clients=None, **kwargs):
         self.ping_timeout = ping_timeout
@@ -92,7 +98,7 @@ class Server(object):
             self.ping_interval_grace_period = ping_interval[1]
         else:
             self.ping_interval = ping_interval
-            self.ping_interval_grace_period = 5
+            self.ping_interval_grace_period = 0
         self.max_http_buffer_size = max_http_buffer_size
         self.allow_upgrades = allow_upgrades
         self.http_compression = http_compression
@@ -103,6 +109,7 @@ class Server(object):
         self.async_handlers = async_handlers
         self.sockets = {}
         self.handlers = {}
+        self.log_message_keys = set()
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
         if json is not None:
@@ -111,8 +118,7 @@ class Server(object):
             self.logger = logger
         else:
             self.logger = default_logger
-            if not logging.root.handlers and \
-                    self.logger.level == logging.NOTSET:
+            if self.logger.level == logging.NOTSET:
                 if logger:
                     self.logger.setLevel(logging.INFO)
                 else:
@@ -196,17 +202,13 @@ class Server(object):
             return set_handler
         set_handler(handler)
 
-    def send(self, sid, data, binary=None):
+    def send(self, sid, data):
         """Send a message to a client.
 
         :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
         """
         try:
             socket = self._get_socket(sid)
@@ -214,7 +216,7 @@ class Server(object):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        socket.send(packet.Packet(packet.MESSAGE, data=data, binary=binary))
+        socket.send(packet.Packet(packet.MESSAGE, data=data))
 
     def get_session(self, sid):
         """Return the user session for a client.
@@ -292,7 +294,7 @@ class Server(object):
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            for client in six.itervalues(self.sockets):
+            for client in self.sockets.values():
                 client.close()
             self.sockets = {}
 
@@ -329,22 +331,30 @@ class Server(object):
                 allowed_origins = self._cors_allowed_origins(environ)
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
-                    self.logger.info(origin + ' is not an accepted origin.')
-                    r = self._bad_request()
+                    self._log_error_once(
+                        origin + ' is not an accepted origin.', 'bad-origin')
+                    r = self._bad_request(
+                        origin + ' is not an accepted origin.')
                     start_response(r['status'], r['headers'])
                     return [r['response']]
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
-
-        sid = query['sid'][0] if 'sid' in query else None
-        b64 = False
         jsonp = False
         jsonp_index = None
 
-        if 'b64' in query:
-            if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
-                b64 = True
+        # make sure the client speaks a compatible Engine.IO version
+        sid = query['sid'][0] if 'sid' in query else None
+        if sid is None and query.get('EIO') != ['4']:
+            self._log_error_once(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols', 'bad-version')
+            r = self._bad_request(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols')
+            start_response(r['status'], r['headers'])
+            return [r['response']]
+
         if 'j' in query:
             jsonp = True
             try:
@@ -354,29 +364,35 @@ class Server(object):
                 pass
 
         if jsonp and jsonp_index is None:
-            self.logger.warning('Invalid JSONP index number')
-            r = self._bad_request()
+            self._log_error_once('Invalid JSONP index number',
+                                 'bad-jsonp-index')
+            r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
-                if transport != 'polling' and transport != 'websocket':
-                    self.logger.warning('Invalid transport %s', transport)
-                    r = self._bad_request()
-                else:
+                # transport must be one of 'polling' or 'websocket'.
+                # if 'websocket', the HTTP_UPGRADE header must match.
+                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                    if 'HTTP_UPGRADE' in environ else None
+                if transport == 'polling' \
+                        or transport == upgrade_header == 'websocket':
                     r = self._handle_connect(environ, start_response,
-                                             transport, b64, jsonp_index)
+                                             transport, jsonp_index)
+                else:
+                    self._log_error_once('Invalid transport ' + transport,
+                                         'bad-transport')
+                    r = self._bad_request('Invalid transport ' + transport)
             else:
                 if sid not in self.sockets:
-                    self.logger.warning('Invalid session %s', sid)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                    r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
                     try:
                         packets = socket.handle_get_request(
                             environ, start_response)
                         if isinstance(packets, list):
-                            r = self._ok(packets, b64=b64,
-                                         jsonp_index=jsonp_index)
+                            r = self._ok(packets, jsonp_index=jsonp_index)
                         else:
                             r = packets
                     except exceptions.EngineIOError:
@@ -387,8 +403,9 @@ class Server(object):
                         del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self.logger.warning('Invalid session %s', sid)
-                r = self._bad_request()
+                self._log_error_once(
+                    'Invalid session ' + (sid or 'None'), 'bad-sid')
+                r = self._bad_request('Invalid session ' + (sid or 'None'))
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -481,11 +498,28 @@ class Server(object):
         """
         return self._async['event'](*args, **kwargs)
 
-    def _generate_id(self):
+    def generate_id(self):
         """Generate a unique session id."""
-        return uuid.uuid4().hex
+        id = base64.b64encode(
+            secrets.token_bytes(12) + self.sequence_number.to_bytes(3, 'big'))
+        self.sequence_number = (self.sequence_number + 1) & 0xffffff
+        return id.decode('utf-8').replace('/', '_').replace('+', '-')
 
-    def _handle_connect(self, environ, start_response, transport, b64=False,
+    def _generate_sid_cookie(self, sid, attributes):
+        """Generate the sid cookie."""
+        cookie = attributes.get('name', 'io') + '=' + sid
+        for attribute, value in attributes.items():
+            if attribute == 'name':
+                continue
+            if callable(value):
+                value = value()
+            if value is True:
+                cookie += '; ' + attribute
+            else:
+                cookie += '; ' + attribute + '=' + value
+        return cookie
+
+    def _handle_connect(self, environ, start_response, transport,
                         jsonp_index=None):
         """Handle a client connection request."""
         if self.start_service_task:
@@ -493,36 +527,53 @@ class Server(object):
             self.start_service_task = False
             self.start_background_task(self._service_task)
 
-        sid = self._generate_id()
+        sid = self.generate_id()
         s = socket.Socket(self, sid)
         self.sockets[sid] = s
 
-        pkt = packet.Packet(
-            packet.OPEN, {'sid': sid,
-                          'upgrades': self._upgrades(sid, transport),
-                          'pingTimeout': int(self.ping_timeout * 1000),
-                          'pingInterval': int(self.ping_interval * 1000)})
+        pkt = packet.Packet(packet.OPEN, {
+            'sid': sid,
+            'upgrades': self._upgrades(sid, transport),
+            'pingTimeout': int(self.ping_timeout * 1000),
+            'pingInterval': int(
+                self.ping_interval + self.ping_interval_grace_period) * 1000})
         s.send(pkt)
+        s.schedule_ping()
 
+        # NOTE: some sections below are marked as "no cover" to workaround
+        # what seems to be a bug in the coverage package. All the lines below
+        # are covered by tests, but some are not reported as such for some
+        # reason
         ret = self._trigger_event('connect', sid, environ, run_async=False)
-        if ret is False:
+        if ret is not None and ret is not True:  # pragma: no cover
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
-            return self._unauthorized()
+            return self._unauthorized(ret or None)
 
-        if transport == 'websocket':
+        if transport == 'websocket':  # pragma: no cover
             ret = s.handle_get_request(environ, start_response)
-            if s.closed:
+            if s.closed and sid in self.sockets:
                 # websocket connection ended, so we are done
                 del self.sockets[sid]
             return ret
-        else:
+        else:  # pragma: no cover
             s.connected = True
             headers = None
             if self.cookie:
-                headers = [('Set-Cookie', self.cookie + '=' + sid)]
+                if isinstance(self.cookie, dict):
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, self.cookie)
+                    )]
+                else:
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, {
+                            'name': self.cookie, 'path': '/', 'SameSite': 'Lax'
+                        })
+                    )]
             try:
-                return self._ok(s.poll(), headers=headers, b64=b64,
+                return self._ok(s.poll(), headers=headers,
                                 jsonp_index=jsonp_index)
             except exceptions.QueueEmpty:
                 return self._bad_request()
@@ -561,29 +612,29 @@ class Server(object):
             raise KeyError('Session is disconnected')
         return s
 
-    def _ok(self, packets=None, headers=None, b64=False, jsonp_index=None):
+    def _ok(self, packets=None, headers=None, jsonp_index=None):
         """Generate a successful HTTP response."""
         if packets is not None:
             if headers is None:
                 headers = []
-            if b64:
-                headers += [('Content-Type', 'text/plain; charset=UTF-8')]
-            else:
-                headers += [('Content-Type', 'application/octet-stream')]
+            headers += [('Content-Type', 'text/plain; charset=UTF-8')]
             return {'status': '200 OK',
                     'headers': headers,
                     'response': payload.Payload(packets=packets).encode(
-                        b64=b64, jsonp_index=jsonp_index)}
+                        jsonp_index=jsonp_index).encode('utf-8')}
         else:
             return {'status': '200 OK',
                     'headers': [('Content-Type', 'text/plain')],
                     'response': b'OK'}
 
-    def _bad_request(self):
+    def _bad_request(self, message=None):
         """Generate a bad request HTTP error response."""
+        if message is None:
+            message = 'Bad Request'
+        message = packet.Packet.json.dumps(message)
         return {'status': '400 BAD REQUEST',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': b'Bad Request'}
+                'response': message.encode('utf-8')}
 
     def _method_not_found(self):
         """Generate a method not found HTTP error response."""
@@ -591,11 +642,14 @@ class Server(object):
                 'headers': [('Content-Type', 'text/plain')],
                 'response': b'Method Not Found'}
 
-    def _unauthorized(self):
+    def _unauthorized(self, message=None):
         """Generate a unauthorized HTTP error response."""
+        if message is None:
+            message = 'Unauthorized'
+        message = packet.Packet.json.dumps(message)
         return {'status': '401 UNAUTHORIZED',
-                'headers': [('Content-Type', 'text/plain')],
-                'response': b'Unauthorized'}
+                'headers': [('Content-Type', 'application/json')],
+                'response': message.encode('utf-8')}
 
     def _cors_allowed_origins(self, environ):
         default_origins = []
@@ -613,7 +667,7 @@ class Server(object):
             allowed_origins = default_origins
         elif self.cors_allowed_origins == '*':
             allowed_origins = None
-        elif isinstance(self.cors_allowed_origins, six.string_types):
+        elif isinstance(self.cors_allowed_origins, str):
             allowed_origins = [self.cors_allowed_origins]
         else:
             allowed_origins = self.cors_allowed_origins
@@ -641,7 +695,7 @@ class Server(object):
 
     def _gzip(self, response):
         """Apply gzip compression to a response."""
-        bytesio = six.BytesIO()
+        bytesio = io.BytesIO()
         with gzip.GzipFile(fileobj=bytesio, mode='w') as gz:
             gz.write(response)
         return bytesio.getvalue()
@@ -649,6 +703,16 @@ class Server(object):
     def _deflate(self, response):
         """Apply deflate compression to a response."""
         return zlib.compress(response)
+
+    def _log_error_once(self, message, message_key):
+        """Log message with logging.ERROR level the first time, then log
+        with given level."""
+        if message_key not in self.log_message_keys:
+            self.logger.error(message + ' (further occurrences of this error '
+                              'will be logged with level INFO)')
+            self.log_message_keys.add(message_key)
+        else:
+            self.logger.info(message)
 
     def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""

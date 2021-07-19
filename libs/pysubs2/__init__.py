@@ -10,3 +10,6 @@ load = SSAFile.load
 
 #: Alias for :meth:`pysubs2.time.make_time()`.
 make_time = time.make_time
+
+#: Alias for `pysubs2.common.VERSION`.
+__version__ = VERSION

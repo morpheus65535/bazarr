@@ -5,15 +5,13 @@ from .. import exceptions
 
 import tornado.web
 import tornado.websocket
-import six
 
 
 def get_tornado_handler(engineio_server):
     class Handler(tornado.websocket.WebSocketHandler):  # pragma: no cover
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            if isinstance(engineio_server.cors_allowed_origins,
-                          six.string_types):
+            if isinstance(engineio_server.cors_allowed_origins, str):
                 if engineio_server.cors_allowed_origins == '*':
                     self.allowed_origins = None
                 else:
@@ -170,8 +168,8 @@ class WebSocket(object):  # pragma: no cover
 
     async def wait(self):
         msg = await self.tornado_handler.get_next_message()
-        if not isinstance(msg, six.binary_type) and \
-                not isinstance(msg, six.text_type):
+        if not isinstance(msg, bytes) and \
+                not isinstance(msg, str):
             raise IOError()
         return msg
 

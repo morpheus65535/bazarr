@@ -7,12 +7,7 @@ import {
   useCloseModal,
   usePayload,
 } from "..";
-import {
-  useLanguageBy,
-  useLanguages,
-  useMovieBy,
-  useProfileBy,
-} from "../../@redux/hooks";
+import { useLanguageBy, useLanguages, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 interface MovieProps {}
@@ -25,7 +20,6 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   const [availableLanguages] = useLanguages(true);
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
-  const [, update] = useMovieBy(movie?.radarrId);
 
   const closeModal = useCloseModal();
 
@@ -63,10 +57,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           return null;
         }
       }}
-      onSuccess={() => {
-        closeModal();
-        update();
-      }}
+      onSuccess={closeModal}
     >
       Upload
     </AsyncButton>

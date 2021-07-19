@@ -24,7 +24,7 @@ class AsyncNamespace(namespace.Namespace):
 
         In the most common usage, this method is not overloaded by subclasses,
         as it performs the routing of events to methods. However, this
-        method can be overriden if special dispatching rules are needed, or if
+        method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
 
         Note: this method is a coroutine.
@@ -149,7 +149,7 @@ class AsyncClientNamespace(namespace.ClientNamespace):
 
         In the most common usage, this method is not overloaded by subclasses,
         as it performs the routing of events to methods. However, this
-        method can be overriden if special dispatching rules are needed, or if
+        method can be overridden if special dispatching rules are needed, or if
         having a single method that catches all events is desired.
 
         Note: this method is a coroutine.

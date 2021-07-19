@@ -12,8 +12,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useLanguages, useProviders } from "../../@redux/hooks";
-import { HistoryApi } from "../../apis";
+import {
+  HistoryApi,
+  ProvidersApi,
+  SystemApi,
+  useAsyncRequest,
+} from "../../apis";
 import {
   AsyncSelector,
   ContentHeader,
@@ -21,7 +25,6 @@ import {
   PromiseOverlay,
   Selector,
 } from "../../components";
-import { useAutoUpdate } from "../../utilites/hooks";
 import { actionOptions, timeframeOptions } from "./options";
 
 function converter(item: History.Stat) {
@@ -46,10 +49,12 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const [languages] = useLanguages(true);
+  const [languages] = useAsyncRequest(() => SystemApi.languages(true), []);
 
-  const [providerList, update] = useProviders();
-  useAutoUpdate(update);
+  const [providerList] = useAsyncRequest(
+    () => ProvidersApi.providers(true),
+    []
+  );
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
@@ -104,7 +109,7 @@ const HistoryStats: FunctionComponent = () => {
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages}
+                  options={languages.data}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>

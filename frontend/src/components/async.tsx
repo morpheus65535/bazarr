@@ -25,10 +25,15 @@ enum RequestState {
   Invalid,
 }
 
+interface ChildProps<T> {
+  data: NonNullable<Readonly<T>>;
+  error?: Error;
+}
+
 interface AsyncStateOverlayProps<T> {
   state: AsyncState<T>;
   exist?: (item: T) => boolean;
-  children?: (item: NonNullable<Readonly<T>>, error?: Error) => JSX.Element;
+  children?: FunctionComponent<ChildProps<T>>;
 }
 
 function defaultExist(item: any) {
@@ -43,7 +48,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const { exist, state, children } = props;
   const missing = exist ? !exist(state.data) : !defaultExist(state.data);
 
-  const onError = useNotification("async-overlay");
+  const onError = useNotification("async-loading");
 
   useEffect(() => {
     if (!state.updating && state.error !== undefined && !missing) {
@@ -83,7 +88,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     }
   }
 
-  return children ? children(state.data!, state.error) : null;
+  return children ? children({ data: state.data!, error: state.error }) : null;
 }
 
 interface PromiseProps<T> {
@@ -156,6 +161,7 @@ interface AsyncButtonProps<T> {
   onChange?: (v: boolean) => void;
 
   noReset?: boolean;
+  animation?: boolean;
 
   promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
@@ -171,6 +177,7 @@ export function AsyncButton<T>(
     promise,
     onSuccess,
     noReset,
+    animation,
     error,
     onChange,
     disabled,
@@ -230,15 +237,19 @@ export function AsyncButton<T>(
     }
   }, [error, onChange, promise, onSuccess, state]);
 
-  let children = propChildren;
-  if (loading) {
-    children = <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>;
-  }
+  const showAnimation = animation ?? true;
 
-  if (state === RequestState.Success) {
-    children = <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>;
-  } else if (state === RequestState.Error) {
-    children = <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>;
+  let children = propChildren;
+  if (showAnimation) {
+    if (loading) {
+      children = <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>;
+    }
+
+    if (state === RequestState.Success) {
+      children = <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>;
+    } else if (state === RequestState.Error) {
+      children = <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>;
+    }
   }
 
   return (

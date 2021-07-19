@@ -35,7 +35,7 @@ export const colorOptions: SelectorOption<string>[] = [
   },
   {
     label: "Light Gray",
-    value: buildColor("lightgray"),
+    value: buildColor("light-gray"),
   },
   {
     label: "Red",
@@ -67,30 +67,30 @@ export const colorOptions: SelectorOption<string>[] = [
   },
   {
     label: "Dark Red",
-    value: buildColor("darkred"),
+    value: buildColor("dark-red"),
   },
   {
     label: "Dark Green",
-    value: buildColor("darkgreen"),
+    value: buildColor("dark-green"),
   },
   {
     label: "Dark Yellow",
-    value: buildColor("darkyellow"),
+    value: buildColor("dark-yellow"),
   },
   {
     label: "Dark Blue",
-    value: buildColor("darkblue"),
+    value: buildColor("dark-blue"),
   },
   {
     label: "Dark Magenta",
-    value: buildColor("darkmagenta"),
+    value: buildColor("dark-magenta"),
   },
   {
     label: "Dark Cyan",
-    value: buildColor("darkcyan"),
+    value: buildColor("dark-cyan"),
   },
   {
     label: "Dark Grey",
-    value: buildColor("darkgrey"),
+    value: buildColor("dark-grey"),
   },
 ];

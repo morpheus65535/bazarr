@@ -1,30 +1,32 @@
-from collections import namedtuple
-import sys
+from dataclasses import dataclass
+from typing import Union
 
-_Color = namedtuple("Color", "r g b a")
 
-class Color(_Color):
+@dataclass(init=False)
+class Color:
     """
-    (r, g, b, a) namedtuple for 8-bit RGB color with alpha channel.
+    8-bit RGB color with alpha channel.
 
     All values are ints from 0 to 255.
     """
-    def __new__(cls, r, g, b, a=0):
+    r: int
+    g: int
+    b: int
+    a: int = 0
+
+    def __init__(self, r: int, g: int, b: int, a: int = 0):
         for value in r, g, b, a:
             if value not in range(256):
                 raise ValueError("Color channels must have values 0-255")
 
-        return _Color.__new__(cls, r, g, b, a)
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+
 
 #: Version of the pysubs2 library.
-VERSION = "0.2.4"
+VERSION = "1.2.0"
 
 
-PY3 = sys.version_info.major == 3
-
-if PY3:
-    text_type = str
-    binary_string_type = bytes
-else:
-    text_type = unicode
-    binary_string_type = str
+IntOrFloat = Union[int, float]

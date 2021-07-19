@@ -1,5 +1,13 @@
 # coding=utf-8
 
+# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
+try:
+    from gevent import monkey, Greenlet
+except ImportError:
+    pass
+else:
+    monkey.patch_all()
+
 import os
 
 bazarr_version = 'unknown'
@@ -10,36 +18,32 @@ if os.path.isfile(version_file):
         bazarr_version = f.readline()
         bazarr_version = bazarr_version.rstrip('\n')
 
-os.environ["BAZARR_VERSION"] = bazarr_version
+os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
-import gc
 import libs
 
-import hashlib
-import calendar
-
 from get_args import args
-from logger import empty_log
 from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
-from database import database
+from database import System
 
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha2, alpha3_from_alpha2
+from get_languages import load_language_in_db
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
 from get_series import *
 from get_episodes import *
 from get_movies import *
+from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
-from utils import check_credentials
+from utils import check_credentials, get_sonarr_version, get_radarr_version
 
 # Install downloaded update
 if bazarr_version != '':
@@ -49,7 +53,7 @@ check_releases()
 configure_proxy_func()
 
 # Reset the updated once Bazarr have been restarted after an update
-database.execute("UPDATE system SET updated='0'")
+System.update({System.updated: '0'}).execute()
 
 # Load languages in database
 load_language_in_db()
@@ -57,6 +61,8 @@ load_language_in_db()
 login_auth = settings.auth.type
 
 update_notifier()
+
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 def check_login(actual_method):
@@ -94,9 +100,9 @@ def catch_all(path):
             auth = False
 
     try:
-        updated = database.execute("SELECT updated FROM system", only_one=True)['updated']
+        updated = System.get().updated
     except:
-        updated = False
+        updated = '0'
 
     inject = dict()
     inject["baseUrl"] = base_url
@@ -125,9 +131,15 @@ def series_images(url):
     url = url.strip("/")
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
-    url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    sonarr_version = get_sonarr_version()
+    if sonarr_version.startswith('2'):
+        url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
+                     apikey).replace('poster-250', 'poster-500')
+    else:
+        url_image = (url_sonarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' +
+                     apikey).replace('poster-250', 'poster-500')
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:
         return '', 404
     else:
@@ -139,9 +151,13 @@ def series_images(url):
 def movies_images(url):
     apikey = settings.radarr.apikey
     baseUrl = settings.radarr.base_url
-    url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+    radarr_version = get_radarr_version()
+    if radarr_version.startswith('0'):
+        url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
+    else:
+        url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
     except:
         return '', 404
     else:
@@ -158,7 +174,7 @@ def movies_images(url):
 
 
 def configured():
-    database.execute("UPDATE system SET configured = 1")
+    System.update({System.configured: '1'}).execute()
 
 
 @check_login
@@ -168,7 +184,7 @@ def proxy(protocol, url):
     url = protocol + '://' + unquote(url)
     params = request.args
     try:
-        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5)
+        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5, headers=headers)
     except Exception as e:
         return dict(status=False, error=repr(e))
     else:
@@ -177,13 +193,21 @@ def proxy(protocol, url):
                 version = result.json()['version']
                 return dict(status=True, version=version)
             except Exception:
-                return dict(status=False, error='Error Occured. Check your settings.')
+                return dict(status=False, error='Error Occurred. Check your settings.')
         elif result.status_code == 401:
             return dict(status=False, error='Access Denied. Check API key.')
+        elif result.status_code == 404:
+            return dict(status=False, error='Cannot get version. Maybe unsupported legacy API call?')
         elif 300 <= result.status_code <= 399:
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
+
+
+if settings.general.getboolean('use_sonarr'):
+    Greenlet.spawn(sonarr_signalr_client.start)
+if settings.general.getboolean('use_radarr'):
+    Greenlet.spawn(radarr_signalr_client.start)
 
 
 if __name__ == "__main__":

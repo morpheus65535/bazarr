@@ -1,14 +1,9 @@
-import {
-  faCheck,
-  faExclamationTriangle,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateByRange, seriesUpdateInfoAll } from "../@redux/actions";
+import { seriesUpdateByRange, seriesUpdateList } from "../@redux/actions";
 import { useRawSeries } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
@@ -38,21 +33,6 @@ const SeriesView: FunctionComponent<Props> = () => {
               </Link>
             );
           }
-        },
-      },
-      {
-        Header: "Exist",
-        accessor: "exist",
-        selectHide: true,
-        Cell: (row) => {
-          const exist = row.value;
-          const { path } = row.row.original;
-          return (
-            <FontAwesomeIcon
-              title={path}
-              icon={exist ? faCheck : faExclamationTriangle}
-            ></FontAwesomeIcon>
-          );
         },
       },
       {
@@ -138,9 +118,9 @@ const SeriesView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={series}
       name="Series"
-      updateAction={seriesUpdateInfoAll}
+      updateAction={seriesUpdateList}
       loader={load}
-      columns={columns as Column<Item.Base>[]}
+      columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>
   );

@@ -8,14 +8,16 @@ import re
 from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
+from gevent import sleep
 
-from database import database, get_profiles_list, get_profile_cutoff
+from custom_lang import CustomLanguage
+from database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
 from get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
 from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
-from event_handler import event_stream
+from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
 
 gc.enable()
@@ -24,18 +26,21 @@ global hi_regex
 hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
 
-def store_subtitles(original_path, reversed_path):
+def store_subtitles(original_path, reversed_path, use_cache=True):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                item = database.execute('SELECT file_size, episode_file_id FROM table_episodes '
-                                                            'WHERE path = ?', (original_path,), only_one=True)
+                item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
+                    .where(TableEpisodes.path == original_path)\
+                    .dicts()\
+                    .get()
                 subtitle_languages = embedded_subs_reader(reversed_path,
                                                           file_size=item['file_size'],
-                                                          episode_file_id=item['episode_file_id'])
+                                                          episode_file_id=item['episode_file_id'],
+                                                          use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -61,16 +66,6 @@ def store_subtitles(original_path, reversed_path):
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
-
-        brazilian_portuguese = [".pt-br", ".pob", "pb"]
-        brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
-        simplified_chinese_fuzzy = [u"简", u"双语"]
-        simplified_chinese = [".chs", ".sc", ".zhs",".zh-hans",".hans",".zh_hans",".zhhans",".gb",".simplified"]
-        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", "hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
-        traditional_chinese_fuzzy = [u"繁", u"雙語"]
-        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
-        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced", "hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
-
         try:
             dest_folder = get_subtitle_destination_folder()
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -83,38 +78,19 @@ def store_subtitles(original_path, reversed_path):
                 elif settings.general.subfolder == "relative":
                     full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
-        except Exception as e:
+        except Exception:
             logging.exception("BAZARR unable to index external subtitles.")
-            pass
         else:
             for subtitle, language in subtitles.items():
-                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
-                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
-                    logging.debug("BAZARR external subtitles detected: " + "pb")
-                    actual_subtitles.append(
-                        [str("pb"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
-                    logging.debug("BAZARR external subtitles detected: " + "pb:forced")
-                    actual_subtitles.append(
-                        [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(simplified_chinese)) or (str(subtitle_path).lower())[:-5] in simplified_chinese_fuzzy:
-                    logging.debug("BAZARR external subtitles detected: " + "zh")
-                    actual_subtitles.append(
-                        [str("zh"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese_forced):
-                    logging.debug("BAZARR external subtitles detected: " + "zh:forced")
-                    actual_subtitles.append(
-                        [str("zh:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
-                    logging.debug("BAZARR external subtitles detected: " + "zt")
-                    actual_subtitles.append(
-                        [str("zt"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese_forced):
-                    logging.debug("BAZARR external subtitles detected: " + "zt:forced")
-                    actual_subtitles.append(
-                        [str("zt:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif not language:
+                if not language:
                     continue
+
+                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
+
+                custom = CustomLanguage.found_external(subtitle, subtitle_path)
+                if custom is not None:
+                    actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path)])
+
                 elif str(language) != 'und':
                     if language.forced:
                         language_str = str(language)
@@ -125,10 +101,12 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + language_str)
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path)])
 
-        database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
-                         (str(actual_subtitles), original_path))
-        matching_episodes = database.execute("SELECT sonarrEpisodeId, sonarrSeriesId FROM table_episodes WHERE path=?",
-                                   (original_path,))
+        TableEpisodes.update({TableEpisodes.subtitles: str(actual_subtitles)})\
+            .where(TableEpisodes.path == original_path)\
+            .execute()
+        matching_episodes = TableEpisodes.select(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)\
+            .where(TableEpisodes.path == original_path)\
+            .dicts()
 
         for episode in matching_episodes:
             if episode:
@@ -144,18 +122,21 @@ def store_subtitles(original_path, reversed_path):
     return actual_subtitles
 
 
-def store_subtitles_movie(original_path, reversed_path):
+def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                item = database.execute('SELECT file_size, movie_file_id FROM table_movies '
-                                        'WHERE path = ?', (original_path,), only_one=True)
+                item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
+                    .where(TableMovies.path == original_path)\
+                    .dicts()\
+                    .get()
                 subtitle_languages = embedded_subs_reader(reversed_path,
                                                           file_size=item['file_size'],
-                                                          movie_file_id=item['movie_file_id'])
+                                                          movie_file_id=item['movie_file_id'],
+                                                          use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
@@ -177,19 +158,11 @@ def store_subtitles_movie(original_path, reversed_path):
                     except:
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
                         pass
-            except Exception as e:
+            except Exception:
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
 
-        brazilian_portuguese = [".pt-br", ".pob", "pb"]
-        brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
-        simplified_chinese_fuzzy = [u"简", u"双语"]
-        simplified_chinese = [".chs", ".sc", ".zhs",".zh-hans",".hans",".zh_hans",".zhhans",".gb",".simplified"]
-        simplified_chinese_forced = [".chs.forced", ".sc.forced", ".zhs.forced", "hans.forced", ".gb.forced", u"简体中文.forced", u"双语.forced"]
-        traditional_chinese_fuzzy = [u"繁", u"雙語"]
-        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
-        traditional_chinese_forced = [".cht.forced", ".tc.forced", ".zht.forced", "hant.forced", ".big5.forced", u"繁體中文.forced", u"雙語.forced", "zh-tw.forced"]
         try:
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -206,27 +179,15 @@ def store_subtitles_movie(original_path, reversed_path):
             pass
         else:
             for subtitle, language in subtitles.items():
-                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
-                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
-                    logging.debug("BAZARR external subtitles detected: " + "pb")
-                    actual_subtitles.append([str("pb"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
-                    logging.debug("BAZARR external subtitles detected: " + "pb:forced")
-                    actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(simplified_chinese)) or (str(subtitle_path).lower())[:-5] in simplified_chinese_fuzzy:
-                    logging.debug("BAZARR external subtitles detected: " + "zh")
-                    actual_subtitles.append([str("zh"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in simplified_chinese_forced):
-                    logging.debug("BAZARR external subtitles detected: " + "zh:forced")
-                    actual_subtitles.append([str("zh:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
-                    logging.debug("BAZARR external subtitles detected: " + "zt")
-                    actual_subtitles.append([str("zt"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif any(ext in (str(os.path.splitext(subtitle)[0]).lower())[-12:] for ext in traditional_chinese_forced):
-                    logging.debug("BAZARR external subtitles detected: " + "zt:forced")
-                    actual_subtitles.append([str("zt:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif not language:
+                if not language:
                     continue
+
+                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
+                custom = CustomLanguage.found_external(subtitle, subtitle_path)
+
+                if custom is not None:
+                    actual_subtitles.append([custom, path_mappings.path_replace_reverse_movie(subtitle_path)])
+
                 elif str(language.basename) != 'und':
                     if language.forced:
                         language_str = str(language)
@@ -237,9 +198,10 @@ def store_subtitles_movie(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + language_str)
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
         
-        database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
-                         (str(actual_subtitles), original_path))
-        matching_movies = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
+        TableMovies.update({TableMovies.subtitles: str(actual_subtitles)})\
+            .where(TableMovies.path == original_path)\
+            .execute()
+        matching_movies = TableMovies.select(TableMovies.radarrId).where(TableMovies.path == original_path).dicts()
 
         for movie in matching_movies:
             if movie:
@@ -257,16 +219,19 @@ def store_subtitles_movie(original_path, reversed_path):
 
 def list_missing_subtitles(no=None, epno=None, send_event=True):
     if epno is not None:
-        episodes_subtitles_clause = " WHERE table_episodes.sonarrEpisodeId=" + str(epno)
+        episodes_subtitles_clause = (TableEpisodes.sonarrEpisodeId == epno)
     elif no is not None:
-        episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
+        episodes_subtitles_clause = (TableEpisodes.sonarrSeriesId == no)
     else:
-        episodes_subtitles_clause = ""
-    episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
-                                          "table_episodes.subtitles, table_shows.profileId, "
-                                          "table_episodes.audio_language FROM table_episodes "
-                                          "LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
-                                          "table_shows.sonarrSeriesId" + episodes_subtitles_clause)
+        episodes_subtitles_clause = None
+    episodes_subtitles = TableEpisodes.select(TableShows.sonarrSeriesId,
+                                              TableEpisodes.sonarrEpisodeId,
+                                              TableEpisodes.subtitles,
+                                              TableShows.profileId,
+                                              TableEpisodes.audio_language)\
+        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .where(episodes_subtitles_clause)\
+        .dicts()
     if isinstance(episodes_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
         return
@@ -274,6 +239,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
 
     for episode_subtitles in episodes_subtitles:
+        sleep()
         missing_subtitles_text = '[]'
         if episode_subtitles['profileId']:
             # get desired subtitles
@@ -361,31 +327,30 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
-                         (missing_subtitles_text, episode_subtitles['sonarrEpisodeId']))
+        TableEpisodes.update({TableEpisodes.missing_subtitles: missing_subtitles_text})\
+            .where(TableEpisodes.sonarrEpisodeId == episode_subtitles['sonarrEpisodeId'])\
+            .execute()
 
         if send_event:
-            event_stream(type='episode', action='update', series=episode_subtitles['sonarrSeriesId'],
-                         episode=episode_subtitles['sonarrEpisodeId'])
-            event_stream(type='badges_series')
+            event_stream(type='episode', payload=episode_subtitles['sonarrEpisodeId'])
+            event_stream(type='badges')
 
 
-def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
-    if no is not None:
-        movies_subtitles_clause = " WHERE radarrId=" + str(no)
-    else:
-        movies_subtitles_clause = ""
-
-    movies_subtitles = database.execute("SELECT radarrId, subtitles, profileId, audio_language FROM table_movies" +
-                                        movies_subtitles_clause)
+def list_missing_subtitles_movies(no=None, send_event=True):
+    movies_subtitles = TableMovies.select(TableMovies.radarrId,
+                                          TableMovies.subtitles,
+                                          TableMovies.profileId,
+                                          TableMovies.audio_language)\
+        .where((TableMovies.radarrId == no) if no else None)\
+        .dicts()
     if isinstance(movies_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
         return
 
-
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
 
     for movie_subtitles in movies_subtitles:
+        sleep()
         missing_subtitles_text = '[]'
         if movie_subtitles['profileId']:
             # get desired subtitles
@@ -471,45 +436,83 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
-                         (missing_subtitles_text, movie_subtitles['radarrId']))
+        TableMovies.update({TableMovies.missing_subtitles: missing_subtitles_text})\
+            .where(TableMovies.radarrId == movie_subtitles['radarrId'])\
+            .execute()
 
         if send_event:
-            event_stream(type='movie', action='update', movie=movie_subtitles['radarrId'])
-            event_stream(type='badges_movies')
+            event_stream(type='movie', payload=movie_subtitles['radarrId'])
+            event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
-    episodes = database.execute("SELECT path FROM table_episodes")
+    episodes = TableEpisodes.select(TableEpisodes.path).dicts()
     
+    count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
+        sleep()
+        show_progress(id='episodes_disk_scan',
+                      header='Full disk scan...',
+                      name='Episodes subtitles',
+                      value=i,
+                      count=count_episodes)
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+
+    show_progress(id='episodes_disk_scan',
+                  header='Full disk scan...',
+                  name='Completed successfully',
+                  value=count_episodes,
+                  count=count_episodes)
+
+    hide_progress(id='episodes_disk_scan')
     
     gc.collect()
 
 
 def movies_full_scan_subtitles():
-    movies = database.execute("SELECT path FROM table_movies")
+    movies = TableMovies.select(TableMovies.path).dicts()
     
+    count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
+        sleep()
+        show_progress(id='movies_disk_scan',
+                      header='Full disk scan...',
+                      name='Movies subtitles',
+                      value=i,
+                      count=count_movies)
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-    
+
+    show_progress(id='movies_disk_scan',
+                  header='Full disk scan...',
+                  name='Completed successfully',
+                  value=count_movies,
+                  count=count_movies)
+
+    hide_progress(id='movies_disk_scan')
+
     gc.collect()
 
 
 def series_scan_subtitles(no):
-    episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=? ORDER BY sonarrEpisodeId",
-                                (no,))
+    episodes = TableEpisodes.select(TableEpisodes.path)\
+        .where(TableEpisodes.sonarrSeriesId == no)\
+        .order_by(TableEpisodes.sonarrEpisodeId)\
+        .dicts()
     
     for episode in episodes:
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+        sleep()
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=False)
 
 
 def movies_scan_subtitles(no):
-    movies = database.execute("SELECT path FROM table_movies WHERE radarrId=? ORDER BY radarrId", (no,))
+    movies = TableMovies.select(TableMovies.path)\
+        .where(TableMovies.radarrId == no)\
+        .order_by(TableMovies.radarrId)\
+        .dicts()
     
     for movie in movies:
-        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+        sleep()
+        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']), use_cache=False)
 
 
 def get_external_subtitles_path(file, subtitle):

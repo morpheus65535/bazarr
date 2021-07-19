@@ -1,14 +1,19 @@
-import { handleActions } from "redux-actions";
+import { Action, handleActions } from "redux-actions";
 import {
+  MOVIES_DELETE_ITEMS,
+  MOVIES_DELETE_WANTED_ITEMS,
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
-  MOVIES_UPDATE_INFO,
-  MOVIES_UPDATE_RANGE,
+  MOVIES_UPDATE_LIST,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_WANTED_RANGE,
 } from "../constants";
 import { AsyncAction } from "../types";
-import { updateAsyncState, updateOrderIdState } from "./mapper";
+import { defaultAOS } from "../utils";
+import {
+  deleteOrderListItemBy,
+  updateAsyncState,
+  updateOrderIdState,
+} from "../utils/mapper";
 
 const reducer = handleActions<ReduxStore.Movie, any>(
   {
@@ -25,17 +30,10 @@ const reducer = handleActions<ReduxStore.Movie, any>(
         ),
       };
     },
-    [MOVIES_UPDATE_WANTED_RANGE]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Movie>>
-    ) => {
+    [MOVIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        wantedMovieList: updateOrderIdState(
-          action,
-          state.wantedMovieList,
-          "radarrId"
-        ),
+        wantedMovieList: deleteOrderListItemBy(action, state.wantedMovieList),
       };
     },
     [MOVIES_UPDATE_HISTORY_LIST]: (
@@ -47,7 +45,7 @@ const reducer = handleActions<ReduxStore.Movie, any>(
         historyList: updateAsyncState(action, state.historyList.data),
       };
     },
-    [MOVIES_UPDATE_INFO]: (
+    [MOVIES_UPDATE_LIST]: (
       state,
       action: AsyncAction<AsyncDataWrapper<Item.Movie>>
     ) => {
@@ -56,13 +54,10 @@ const reducer = handleActions<ReduxStore.Movie, any>(
         movieList: updateOrderIdState(action, state.movieList, "radarrId"),
       };
     },
-    [MOVIES_UPDATE_RANGE]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Item.Movie>>
-    ) => {
+    [MOVIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
       return {
         ...state,
-        movieList: updateOrderIdState(action, state.movieList, "radarrId"),
+        movieList: deleteOrderListItemBy(action, state.movieList),
       };
     },
     [MOVIES_UPDATE_BLACKLIST]: (
@@ -76,8 +71,8 @@ const reducer = handleActions<ReduxStore.Movie, any>(
     },
   },
   {
-    movieList: { updating: true, data: { items: {}, order: [] } },
-    wantedMovieList: { updating: true, data: { items: {}, order: [] } },
+    movieList: defaultAOS(),
+    wantedMovieList: defaultAOS(),
     historyList: { updating: true, data: [] },
     blacklist: { updating: true, data: [] },
   }

@@ -1,5 +1,6 @@
+import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
-import { isEpisode, isMovie, isNullable, isSeries } from "./validate";
+import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function updateAsyncState<T>(
   promise: Promise<T>,
@@ -24,6 +25,21 @@ export function updateAsyncState<T>(
         data: defaultVal,
       });
     });
+}
+
+export function getBaseUrl(slash: boolean = false) {
+  let url: string = "/";
+  if (process.env.NODE_ENV !== "development") {
+    url = window.Bazarr.baseUrl;
+  }
+
+  const endsWithSlash = url.endsWith("/");
+  if (slash && !endsWithSlash) {
+    return `${url}/`;
+  } else if (!slash && endsWithSlash) {
+    return url.slice(0, -1);
+  }
+  return url;
 }
 
 export function copyToClipboard(s: string) {
@@ -62,7 +78,14 @@ export function GetItemId(item: any): number {
 }
 
 export function buildOrderList<T>(state: OrderIdState<T>): T[] {
-  const { items, order } = state;
+  const { order, items } = state;
+  return buildOrderListFrom(items, order);
+}
+
+export function buildOrderListFrom<T>(
+  items: IdState<T>,
+  order: (number | null)[]
+): T[] {
   return order.flatMap((v) => {
     if (v !== null && v in items) {
       const item = items[v];
@@ -71,32 +94,6 @@ export function buildOrderList<T>(state: OrderIdState<T>): T[] {
 
     return [];
   });
-}
-
-// Replace elements in old array with news
-export function mergeArray<T>(
-  olds: readonly T[],
-  news: readonly T[],
-  comparer: Comparer<NonNullable<T>>
-) {
-  const list = [...olds];
-  const newList = news.filter((v) => !isNullable(v)) as NonNullable<T>[];
-  // Performance
-  newList.forEach((v) => {
-    const idx = list.findIndex((n, idx) => {
-      if (!isNullable(n)) {
-        return comparer(n, v);
-      } else {
-        return false;
-      }
-    });
-    if (idx !== -1) {
-      list[idx] = v;
-    } else {
-      list.push(v);
-    }
-  });
-  return list;
 }
 
 export function BuildKey(...args: any[]) {
@@ -109,6 +106,24 @@ export function Reload() {
 
 export function ScrollToTop() {
   window.scrollTo(0, 0);
+}
+
+export function filterSubtitleBy(
+  subtitles: Subtitle[],
+  languages: Language[]
+): Subtitle[] {
+  if (languages.length === 0) {
+    return subtitles.filter((subtitle) => {
+      return subtitle.path !== null;
+    });
+  } else {
+    const result = differenceWith(
+      subtitles,
+      languages,
+      (a, b) => a.code2 === b.code2 || a.path !== null || a.code2 === undefined
+    );
+    return difference(subtitles, result);
+  }
 }
 
 export * from "./hooks";

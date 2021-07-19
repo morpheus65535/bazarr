@@ -7,9 +7,8 @@ import os
 from requests import Session
 from guessit import guessit
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
-from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subzero.language import Language
 
@@ -40,18 +39,16 @@ class RegieLiveSubtitle(Subtitle):
         return self.filename
 
     def get_matches(self, video):
+        type_ = "movie" if isinstance(video, Movie) else "episode"
         matches = set()
-        matches |= guess_matches(video, guessit(self.filename))
-
         subtitle_filename = self.filename
 
         # episode
-        if isinstance(video, Episode):
+        if type_ == "episode":
             # already matched in search query
             matches.update(['title', 'series', 'season', 'episode', 'year'])
-
         # movie
-        elif isinstance(video, Movie):
+        else:
             # already matched in search query
             matches.update(['title', 'year'])
 
@@ -59,34 +56,7 @@ class RegieLiveSubtitle(Subtitle):
         if video.release_group and video.release_group.lower() in subtitle_filename:
             matches.add('release_group')
 
-        # resolution
-        if video.resolution and video.resolution.lower() in subtitle_filename:
-            matches.add('resolution')
-
-        # source
-        formats = []
-        if video.source:
-            formats = [video.source.lower()]
-            if formats[0] == "web":
-                formats.append("webdl")
-                formats.append("webrip")
-                formats.append("web ")
-            for frmt in formats:
-                if frmt.lower() in subtitle_filename:
-                    matches.add('source')
-                    break
-
-        # video_codec
-        if video.video_codec:
-            video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "H.264":
-                formats.append("x264")
-            elif video_codecs[0] == "H.265":
-                formats.append("x265")
-            for vc in formats:
-                if vc.lower() in subtitle_filename:
-                    matches.add('video_codec')
-                    break
+        matches |= guess_matches(video, guessit(self.filename, {"type": type_}))
 
         return matches
 
@@ -121,7 +91,7 @@ class RegieLiveProvider(Provider):
         response = self.session.post(self.url, data=payload, headers=self.headers)
         logger.info(response.json())
         subtitles = []
-        if response.json()['cod'] == '200':
+        if response.json()['cod'] == 200:
             results_subs = response.json()['rezultate']
             for film in results_subs:
                 for sub in results_subs[film]['subtitrari']:

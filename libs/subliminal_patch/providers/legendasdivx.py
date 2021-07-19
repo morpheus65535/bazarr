@@ -13,14 +13,14 @@ from guessit import guessit
 from subliminal.cache import region
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, guess_matches
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
 from subliminal_patch.score import get_scores, framerate_equal
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
 from dogpile.cache.api import NO_VALUE
 
@@ -90,14 +90,15 @@ class LegendasdivxSubtitle(Subtitle):
         if video.year and '{:04d}'.format(video.year) in description:
             matches.update(['year'])
 
+        type_ = "movie" if isinstance(video, Movie) else "episode"
         # match movie title (include alternative movie names)
-        if isinstance(video, Movie):
+        if type_ == "movie":
             if video.title:
                 for movie_name in [video.title] + video.alternative_titles:
                     if sanitize(movie_name) in description:
                         matches.update(['title'])
 
-        if isinstance(video, Episode):
+        else:
             if video.title and sanitize(video.title) in description:
                 matches.update(['title'])
             if video.series:
@@ -113,34 +114,7 @@ class LegendasdivxSubtitle(Subtitle):
         if video.release_group and sanitize_release_group(video.release_group) in sanitize_release_group(description):
             matches.update(['release_group'])
 
-        # resolution
-        if video.resolution and video.resolution.lower() in description:
-            matches.update(['resolution'])
-
-        # source
-        formats = []
-        if video.source:
-            formats = [video.source.lower()]
-            if formats[0] == "web":
-                formats.append("webdl")
-                formats.append("webrip")
-                formats.append("web")
-            for frmt in formats:
-                if frmt in description:
-                    matches.update(['source'])
-                    break
-
-        # video_codec
-        if video.video_codec:
-            video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "H.264":
-                video_codecs.append("x264")
-            elif video_codecs[0] == "H.265":
-                video_codecs.append("x265")
-            for vc in video_codecs:
-                if vc in description:
-                    matches.update(['video_codec'])
-                    break
+        matches |= guess_matches(video, guessit(description, {"type": type_}))
 
         return matches
 

@@ -11,17 +11,29 @@ type UrlTestResponse =
     };
 
 class RequestUtils {
-  urlTest(
+  async urlTest(
     protocol: string,
     url: string,
     params?: any
   ): Promise<UrlTestResponse> {
-    return new Promise<UrlTestResponse>((resolve, reject) => {
-      apis.axios
-        .get(`../test/${protocol}/${url}api/system/status`, { params })
-        .then((result) => resolve(result.data))
-        .catch(reject);
-    });
+    try {
+      const result = await apis.axios.get<UrlTestResponse>(
+        `../test/${protocol}/${url}api/system/status`,
+        { params }
+      );
+      const { data } = result;
+      if (data.status && data.version) {
+        return data;
+      } else {
+        throw new Error("Cannot get response, fallback to v3 api");
+      }
+    } catch (e) {
+      const result = await apis.axios.get<UrlTestResponse>(
+        `../test/${protocol}/${url}api/v3/system/status`,
+        { params }
+      );
+      return result.data;
+    }
   }
 }
 

@@ -16,10 +16,10 @@ from subzero.language import Language
 
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.score import get_scores, framerate_equal
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.subtitle import sanitize, guess_matches, SUBTITLE_EXTENSIONS
+from subliminal.subtitle import sanitize, SUBTITLE_EXTENSIONS
 from subliminal.video import Episode, Movie
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 

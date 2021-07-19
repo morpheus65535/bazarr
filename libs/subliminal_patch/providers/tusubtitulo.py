@@ -15,15 +15,18 @@ from subliminal.cache import SHOW_EXPIRATION_TIME, region, EPISODE_EXPIRATION_TI
 from subliminal.exceptions import ServiceUnavailable
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
-from subliminal.subtitle import fix_line_ending, guess_matches
+from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal.subtitle import fix_line_ending
 
 logger = logging.getLogger(__name__)
 
 
+_EP_NUM_PATTERN = re.compile(r".*\d+x(0+)?(\d+) - .*?")
+_CSS1 = "span.iconos-subtitulos"
+_CSS2 = "ul > li.rng.download.green > a.fas.fa-bullhorn.notifi_icon"
+
 BASE_URL = "https://www.tusubtitulo.com"
-CSS1 = "span.iconos-subtitulos"
-CSS2 = "ul > li.rng.download.green > a.fas.fa-bullhorn.notifi_icon"
+
 
 
 class TuSubtituloSubtitle(Subtitle):
@@ -57,7 +60,9 @@ class TuSubtituloSubtitle(Subtitle):
 class TuSubtituloProvider(Provider):
     """TuSubtitulo.com Provider"""
 
-    languages = {Language.fromietf(lang) for lang in ["en", "es"]}
+    languages = {Language.fromietf(lang) for lang in ["en", "es"]} | {
+        Language("spa", "MX")
+    }
     logger.debug(languages)
     video_types = (Episode,)
 
@@ -85,7 +90,8 @@ class TuSubtituloProvider(Provider):
     def _title_available(item):
         try:
             title = item[2].find_all("a")[0]
-            episode_number = re.search(r".*\d+x(0+)?(\d+) - .*?", title.text).group(2)
+            episode_number = _EP_NUM_PATTERN.search(title.text).group(2)
+            # episode_number = re.search(r".*\d+x(0+)?(\d+) - .*?", title.text).group(2)
             episode_id = title.get("href").split("/")[4]
             return {"episode_number": episode_number, "episode_id": episode_id}
         except IndexError:
@@ -123,11 +129,13 @@ class TuSubtituloProvider(Provider):
             try:
                 content = tables[tr + inc].find_all("td")
 
-                language = content[4].text
-                if "eng" in language.lower():
-                    language = "en"
-                elif "esp" in language.lower():
-                    language = "es"
+                language = content[4].text.lower()
+                if "eng" in language:
+                    language = Language.fromietf("en")
+                elif "lat" in language:
+                    language = Language("spa", "MX")
+                elif "esp" in language:
+                    language = Language.fromietf("es")
                 else:
                     language = None
 
@@ -210,7 +218,7 @@ class TuSubtituloProvider(Provider):
         discriminator = f".{episode_dict['season']}.{episode_dict['episode']}."
         soup = bso(r.content, "lxml")
 
-        for url, selected in zip(soup.select(CSS1), soup.select(CSS2)):
+        for url, selected in zip(soup.select(_CSS1), soup.select(_CSS2)):
             meta = ".".join(
                 selected.get("href").split(discriminator)[-1].split(".")[:-1]
             )
@@ -236,7 +244,7 @@ class TuSubtituloProvider(Provider):
                 matches.update(["title", "series", "season", "episode", "year"])
                 subtitles.append(
                     TuSubtituloSubtitle(
-                        Language.fromietf(sub["language"]),
+                        sub["language"],
                         sub,
                         matches,
                     )

@@ -319,7 +319,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                compute_score=None):
+                                compute_score=None, score_obj=None):
         """Download the best matching subtitles.
         
         patch: 
@@ -365,7 +365,8 @@ class SZProviderPool(ProviderPool):
             orig_matches = matches.copy()
 
             logger.debug('%r: Found matches %r', s, matches)
-            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired)
+            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired,
+                                                      score_obj=score_obj)
             unsorted_subtitles.append(
                 (s, score, score_without_hash, matches, orig_matches))
 
@@ -643,8 +644,6 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         #add simplified/traditional chinese detection
         simplified_chinese = ["chs", "sc", "zhs", "hans","zh-hans", "gb", "简", "简中", "简体", "简体中文", "中英双语", "中日双语","中法双语","简体&英文"]
         traditional_chinese = ["cht", "tc", "zht", "hant","zh-hant", "big5", "繁", "繁中", "繁体", "繁體","繁体中文", "繁體中文", "正體中文", "中英雙語", "中日雙語","中法雙語","繁体&英文"]
-        FULL_LANGUAGE_LIST.extend(simplified_chinese)
-        FULL_LANGUAGE_LIST.extend(traditional_chinese)
         p_root = p_root.replace('zh-TW', 'zht')
 
         # remove possible language code for matching
@@ -676,7 +675,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
                     language.forced = forced
                     language.hi = hi
                 elif any(ext in str(language_code) for ext in traditional_chinese):
-                    language = Language.fromietf('zh') 
+                    language = Language.fromietf('zh')
                     language.forced = forced
                     language.hi = hi
                 else:
@@ -776,7 +775,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
 
 
 def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
-                            pool_class=ProviderPool, throttle_time=0, **kwargs):
+                            pool_class=ProviderPool, throttle_time=0, score_obj=None, **kwargs):
     """List and download the best matching subtitles.
 
     The `videos` must pass the `languages` and `undefined` (`only_one`) checks of :func:`check_video`.
@@ -820,7 +819,7 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
             subtitles = pool.download_best_subtitles(pool.list_subtitles(video, languages - video.subtitle_languages),
                                                      video, languages, min_score=min_score,
                                                      hearing_impaired=hearing_impaired, only_one=only_one,
-                                                     compute_score=compute_score)
+                                                     compute_score=compute_score, score_obj=score_obj)
             logger.info('Downloaded %d subtitle(s)', len(subtitles))
             downloaded_subtitles[video].extend(subtitles)
 

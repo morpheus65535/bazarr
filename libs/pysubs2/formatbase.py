@@ -1,4 +1,8 @@
-class FormatBase(object):
+from typing import Optional
+import io
+
+
+class FormatBase:
     """
     Base class for subtitle format implementations.
 
@@ -14,7 +18,7 @@ class FormatBase(object):
 
     """
     @classmethod
-    def from_file(cls, subs, fp, format_, **kwargs):
+    def from_file(cls, subs, fp: io.TextIOBase, format_: str, **kwargs):
         """
         Load subtitle file into an empty SSAFile.
 
@@ -37,7 +41,7 @@ class FormatBase(object):
         raise NotImplementedError("Parsing is not supported for this format")
 
     @classmethod
-    def to_file(cls, subs, fp, format_, **kwargs):
+    def to_file(cls, subs, fp: io.TextIOBase, format_: str, **kwargs):
         """
         Write SSAFile into a file.
 
@@ -62,7 +66,7 @@ class FormatBase(object):
         raise NotImplementedError("Writing is not supported for this format")
 
     @classmethod
-    def guess_format(self, text):
+    def guess_format(self, text: str) -> Optional[str]:
         """
         Return format identifier of recognized format, or None.
 

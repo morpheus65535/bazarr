@@ -19,15 +19,5 @@
       ".github/scripts/pre_check.sh"
     ],
     "after:git:release": ".github/scripts/create_asset.sh"
-  },
-  "plugins": {
-    "@release-it/bumper": {
-      "in": {
-        "file": "VERSION"
-      },
-      "out": {
-        "file": "VERSION"
-      }
-    }
   }
 }

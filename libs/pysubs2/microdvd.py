@@ -1,8 +1,5 @@
-from __future__ import unicode_literals, print_function
-
 from functools import partial
 import re
-from .common import text_type
 from .exceptions import UnknownFPSError
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
@@ -15,13 +12,16 @@ MICRODVD_LINE = re.compile(r" *\{ *(\d+) *\} *\{ *(\d+) *\}(.+)")
 
 
 class MicroDVDFormat(FormatBase):
+    """MicroDVD subtitle format implementation"""
     @classmethod
     def guess_format(cls, text):
+        """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
         if any(map(MICRODVD_LINE.match, text.splitlines())):
             return "microdvd"
 
     @classmethod
     def from_file(cls, subs, fp, format_, fps=None, **kwargs):
+        """See :meth:`pysubs2.formats.FormatBase.from_file()`"""
         for line in fp:
             match = MICRODVD_LINE.match(line)
             if not match:
@@ -63,7 +63,18 @@ class MicroDVDFormat(FormatBase):
             subs.append(ev)
 
     @classmethod
-    def to_file(cls, subs, fp, format_, fps=None, write_fps_declaration=True, **kwargs):
+    def to_file(cls, subs, fp, format_, fps=None, write_fps_declaration=True, apply_styles=True, **kwargs):
+        """
+        See :meth:`pysubs2.formats.FormatBase.to_file()`
+
+        The only supported styling is marking whole lines italic.
+
+        Keyword args:
+            write_fps_declaration: If True, create a zero-duration first subtitle which will contain
+                the fps.
+            apply_styles: If False, do not write any styling.
+
+        """
         if fps is None:
             fps = subs.fps
 
@@ -83,11 +94,14 @@ class MicroDVDFormat(FormatBase):
 
         # insert an artificial first line telling the framerate
         if write_fps_declaration:
-            subs.insert(0, SSAEvent(start=0, end=0, text=text_type(fps)))
+            subs.insert(0, SSAEvent(start=0, end=0, text=str(fps)))
 
-        for line in (ev for ev in subs if not ev.is_comment):
+        for line in subs:
+            if line.is_comment or line.is_drawing:
+                continue
+
             text = "|".join(line.plaintext.splitlines())
-            if is_entirely_italic(line):
+            if apply_styles and is_entirely_italic(line):
                 text = "{Y:i}" + text
 
             start, end = map(to_frames, (line.start, line.end))

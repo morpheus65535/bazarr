@@ -168,8 +168,8 @@ class Subtitle(Subtitle_):
         # http://scratchpad.wikia.com/wiki/Character_Encoding_Recommendation_for_Languages
 
         if self.language.alpha3 == 'zho':
-            encodings.extend(['cp936', 'gb2312', 'gbk', 'gb18030', 'hz', 'iso2022_jp_2', 'cp950', 'gb18030', 'big5',
-                              'big5hkscs', 'utf-16'])
+            encodings.extend(['cp936', 'gb2312', 'gbk', 'hz', 'iso2022_jp_2', 'cp950', 'big5hkscs', 'big5',
+                              'gb18030', 'utf-16'])
         elif self.language.alpha3 == 'jpn':
             encodings.extend(['shift-jis', 'cp932', 'euc_jp', 'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2',
                               'iso2022_jp_2004', 'iso2022_jp_3', 'iso2022_jp_ext', ])
@@ -178,7 +178,7 @@ class Subtitle(Subtitle_):
 
         # arabian/farsi
         elif self.language.alpha3 in ('ara', 'fas', 'per'):
-            encodings.extend(['windows-1256', 'utf-16'])
+            encodings.extend(['windows-1256', 'utf-16', 'utf-16le', 'ascii', 'iso-8859-6'])
         elif self.language.alpha3 == 'heb':
             encodings.extend(['windows-1255', 'iso-8859-8'])
         elif self.language.alpha3 == 'tur':
@@ -406,9 +406,28 @@ MERGED_FORMATS = {
     "Air": ("SATRip", "DVB", "PPV"),
     "Disk-HD": ("HD-DVD", "Blu-ray"),
     "Disk-SD": ("DVD", "VHS"),
+    "Web": ("Web",),
 }
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
+
+def _has_match(video, guess, key) -> bool:
+    value = getattr(video, key)
+    guess_value = guess.get(key)
+
+    # To avoid extra debug calls
+    if guess_value is None or value is None:
+        return False
+
+    if isinstance(guess_value, list):
+        matched = any(value == item for item in guess_value)
+    else:
+        matched = value == guess_value
+
+    logger.debug("%s matched? %s (%s -> %s)", key, matched, value, guess_value)
+
+    return matched
+
 
 
 def guess_matches(video, guess, partial=False):
@@ -427,7 +446,6 @@ def guess_matches(video, guess, partial=False):
     :rtype: set
 
     """
-
     matches = set()
     if isinstance(video, Episode):
         # series
@@ -487,11 +505,6 @@ def guess_matches(video, guess, partial=False):
                         get_equivalent_release_groups(sanitize_release_group(video.release_group))):
                     matches.add('release_group')
                     break
-
-    # resolution
-    if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
-        matches.add('resolution')
-
     # source
     if 'source' in guess:
         formats = guess["source"]
@@ -501,25 +514,37 @@ def guess_matches(video, guess, partial=False):
         if video.source:
             video_format = video.source.lower()
             _video_gen_format = MERGED_FORMATS_REV.get(video_format)
-            if _video_gen_format:
-                logger.debug("Treating %s as %s the same", video_format, _video_gen_format)
-
+            matched = False
             for frmt in formats:
                 _guess_gen_frmt = MERGED_FORMATS_REV.get(frmt.lower())
+                # We don't want to match a singleton
+                if _guess_gen_frmt is None: # If the source is not in MERGED_FORMATS
+                    _guess_gen_frmt = guess["source"]
 
                 if _guess_gen_frmt == _video_gen_format:
+                    matched = True
                     matches.add('source')
                     break
+
+            logger.debug("Source match found? %s: %s -> %s", matched, video.source, formats)
+
         if "release_group" in matches and "source" not in matches:
-            logger.info("Release group matched but source didn't. Remnoving release group match.")
+            logger.info("Release group matched but source didn't. Removing release group match.")
             matches.remove("release_group")
 
-    # video_codec
-    if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
-        matches.add('video_codec')
+    guess.update({"resolution": guess.get("screen_size")})
 
-    # audio_codec
-    if video.audio_codec and 'audio_codec' in guess and guess['audio_codec'] == video.audio_codec:
-        matches.add('audio_codec')
+    # Solve match keys for potential lists
+    for key in ("video_codec", "audio_codec", "edition", "streaming_service", "resolution"):
+        if _has_match(video, guess, key):
+            matches.add(key)
+
+    # Add streaming service match for non-web sources
+    if video.source and video.source != "Web":
+        matches.add("streaming_service")
+
+    # As edition tags are rare, add edition match if the video doesn't have an edition
+    if not video.edition:
+        matches.add("edition")
 
     return matches

@@ -19,6 +19,9 @@ do
     cp -r --parents $f $to_dist
 done
 
+# COPY VERSION file
+cp VERSION $to_dist
+
 pushd __builds__/bazarr
 zip -r ../bazarr.zip . -x '*.map' -b $(mktemp -d)
 popd

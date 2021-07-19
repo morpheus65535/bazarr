@@ -1,15 +1,17 @@
 *.pyc
 cachefile.dbm
-*.log
-*.log.*
-*.db
-*.pyc
-.idea/*
 bazarr.pid
+
 /venv
 /data
 /bin
-/.vscode
+
+# IDE
+.idea
+.vscode
+
+# Middleware
+VERSION
 
 # CI
 /__builds__
@@ -21,8 +23,6 @@ bazarr.pid
 
 # Frontend
 node_modules
-frontend/dist
-frontend/*.local
-frontend/.eslintcache
-frontend/.idea/*
-frontend/**/*.map
+/frontend/dist
+/frontend/*.local
+/frontend/build

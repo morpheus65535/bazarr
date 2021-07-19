@@ -5,13 +5,16 @@ from datetime import timedelta
 from dateutil import rrule
 import pretty
 import time
+import operator
 from operator import itemgetter
+from functools import reduce
 import platform
 import re
 import json
 import hashlib
 import apprise
 import gc
+from peewee import fn, Value
 
 from get_args import args
 from config import settings, base_url, save_settings, get_settings
@@ -19,8 +22,10 @@ from logger import empty_log
 
 from init import *
 import logging
-from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
-    get_audio_profile_languages, update_profile_id_list
+from database import get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
+    get_audio_profile_languages, update_profile_id_list, convert_list_to_clause, TableEpisodes, TableShows, \
+    TableMovies, TableSettingsLanguages, TableSettingsNotifier, TableLanguagesProfiles, TableHistory, \
+    TableHistoryMovie, TableBlacklist, TableBlacklistMovie
 from helper import path_mappings
 from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
@@ -31,7 +36,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials
+    delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials, get_health_issues
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
 from event_handler import event_stream
@@ -49,7 +54,9 @@ from functools import wraps
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/') + '/api')
 api = Api(api_bp)
 
-None_Keys = ['null', 'undefined', '']
+None_Keys = ['null', 'undefined', '', None]
+
+False_Keys = ['False', 'false', '0']
 
 
 def authenticate(actual_method):
@@ -70,7 +77,7 @@ def authenticate(actual_method):
     return wrapper
 
 
-def postprocess(item: dict):
+def postprocess(item):
     # Remove ffprobe_cache
     if 'ffprobe_cache' in item:
         del (item['ffprobe_cache'])
@@ -125,8 +132,6 @@ def postprocessSeries(item):
 
     if 'path' in item:
         item['path'] = path_mappings.path_replace(item['path'])
-        # Confirm if path exist
-        item['exist'] = os.path.isdir(item['path'])
 
     # map poster and fanart to server proxy
     if 'poster' in item:
@@ -138,9 +143,7 @@ def postprocessSeries(item):
         item['fanart'] = f"{base_url}/images/series{fanart}"
 
 
-def postprocessEpisode(item, desired=None):
-    if desired is None:
-        desired = []
+def postprocessEpisode(item):
     postprocess(item)
     if 'audio_language' in item and item['audio_language'] is not None:
         item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
@@ -157,7 +160,7 @@ def postprocessEpisode(item, desired=None):
             sub = {"name": language_from_alpha2(subtitle[0]),
                    "code2": subtitle[0],
                    "code3": alpha3_from_alpha2(subtitle[0]),
-                   "path": subs[1],
+                   "path": path_mappings.path_replace(subs[1]),
                    "forced": False,
                    "hi": False}
             if len(subtitle) > 1:
@@ -167,10 +170,6 @@ def postprocessEpisode(item, desired=None):
             subtitles.append(sub)
 
         item.update({"subtitles": subtitles})
-
-        if settings.general.getboolean('embedded_subs_show_desired'):
-            item['subtitles'] = [x for x in item['subtitles'] if
-                                 x['code2'] in desired or x['path']]
 
     # Parse missing subtitles
     if 'missing_subtitles' in item:
@@ -195,11 +194,9 @@ def postprocessEpisode(item, desired=None):
         item["sceneName"] = item["scene_name"]
         del item["scene_name"]
 
-    if 'path' in item:
-        if item['path']:
-            # Provide mapped path
-            item['path'] = path_mappings.path_replace(item['path'])
-            item['exist'] = os.path.isfile(item['path'])
+    if 'path' in item and item['path']:
+        # Provide mapped path
+        item['path'] = path_mappings.path_replace(item['path'])
 
 
 # TODO: Move
@@ -229,7 +226,7 @@ def postprocessMovie(item):
             item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item['subtitles'][i] = {"path": subs[1],
+            item['subtitles'][i] = {"path": path_mappings.path_replace_movie(subs[1]),
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
@@ -270,8 +267,6 @@ def postprocessMovie(item):
     if 'path' in item:
         if item['path']:
             item['path'] = path_mappings.path_replace_movie(item['path'])
-            # Confirm if path exist
-            item['exist'] = os.path.isfile(item['path'])
 
     if 'subtitles_path' in item:
         # Provide mapped subtitles path
@@ -319,25 +314,36 @@ class System(Resource):
         return '', 204
 
 
-class BadgesSeries(Resource):
+class Badges(Resource):
     @authenticate
     def get(self):
-        missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored, table_shows.seriesType "
-                                            "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId ="
-                                            " table_episodes.sonarrSeriesId WHERE missing_subtitles is not null AND "
-                                            "missing_subtitles != '[]'" + get_exclusion_clause('series'))
-        missing_episodes = len(missing_episodes)
+        episodes_conditions = [(TableEpisodes.missing_subtitles is not None),
+                               (TableEpisodes.missing_subtitles != '[]')]
+        episodes_conditions += get_exclusion_clause('series')
+        missing_episodes = TableEpisodes.select(TableShows.tags,
+                                                TableShows.seriesType,
+                                                TableEpisodes.monitored)\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .where(reduce(operator.and_, episodes_conditions))\
+            .count()
 
-        missing_movies = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles is not "
-                                          "null AND missing_subtitles != '[]'" + get_exclusion_clause('movie'))
-        missing_movies = len(missing_movies)
+        movies_conditions = [(TableMovies.missing_subtitles is not None),
+                             (TableMovies.missing_subtitles != '[]')]
+        movies_conditions += get_exclusion_clause('movie')
+        missing_movies = TableMovies.select(TableMovies.tags,
+                                            TableMovies.monitored)\
+            .where(reduce(operator.and_, movies_conditions))\
+            .count()
 
         throttled_providers = len(eval(str(get_throttled_providers())))
+
+        health_issues = len(get_health_issues())
 
         result = {
             "episodes": missing_episodes,
             "movies": missing_movies,
-            "providers": throttled_providers
+            "providers": throttled_providers,
+            "status": health_issues
         }
         return jsonify(result)
 
@@ -345,7 +351,42 @@ class BadgesSeries(Resource):
 class Languages(Resource):
     @authenticate
     def get(self):
-        result = database.execute("SELECT name, code2, enabled FROM table_settings_languages ORDER BY name")
+        history = request.args.get('history')
+        if history and history not in False_Keys:
+            languages = list(TableHistory.select(TableHistory.language)
+                             .where(TableHistory.language != None)
+                             .dicts())
+            languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
+                             .where(TableHistoryMovie.language != None)
+                              .dicts())
+            languages_list = list(set([l['language'].split(':')[0] for l in languages]))
+            languages_dicts = []
+            for language in languages_list:
+                code2 = None
+                if len(language) == 2:
+                    code2 = language
+                elif len(language) == 3:
+                    code2 = alpha2_from_alpha3(language)
+                else:
+                    continue
+
+                if not any(x['code2'] == code2 for x in languages_dicts):
+                    try:
+                        languages_dicts.append({
+                            'code2': code2,
+                            'name': language_from_alpha2(code2),
+                            # Compatibility: Use false temporarily
+                            'enabled': False
+                        })
+                    except:
+                        continue
+            return jsonify(sorted(languages_dicts, key=itemgetter('name')))
+
+        result = TableSettingsLanguages.select(TableSettingsLanguages.name,
+                                               TableSettingsLanguages.code2,
+                                               TableSettingsLanguages.enabled)\
+            .order_by(TableSettingsLanguages.name).dicts()
+        result = list(result)
         for item in result:
             item['enabled'] = item['enabled'] == 1
         return jsonify(result)
@@ -385,16 +426,24 @@ class Searches(Resource):
         if query:
             if settings.general.getboolean('use_sonarr'):
                 # Get matching series
-                series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? "
-                                          "ORDER BY title ASC", ("%" + query + "%",))
-
+                series = TableShows.select(TableShows.title,
+                                           TableShows.sonarrSeriesId,
+                                           TableShows.year)\
+                    .where(TableShows.title.contains(query))\
+                    .order_by(TableShows.title)\
+                    .dicts()
+                series = list(series)
                 search_list += series
 
             if settings.general.getboolean('use_radarr'):
                 # Get matching movies
-                movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
-                                          "title ASC", ("%" + query + "%",))
-
+                movies = TableMovies.select(TableMovies.title,
+                                            TableMovies.radarrId,
+                                            TableMovies.year) \
+                    .where(TableMovies.title.contains(query)) \
+                    .order_by(TableMovies.title) \
+                    .dicts()
+                movies = list(movies)
                 search_list += movies
 
         return jsonify(search_list)
@@ -405,7 +454,8 @@ class SystemSettings(Resource):
     def get(self):
         data = get_settings()
 
-        notifications = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
+        notifications = TableSettingsNotifier.select().order_by(TableSettingsNotifier.name).dicts()
+        notifications = list(notifications)
         for i, item in enumerate(notifications):
             item["enabled"] = item["enabled"] == 1
             notifications[i] = item
@@ -419,38 +469,54 @@ class SystemSettings(Resource):
     def post(self):
         enabled_languages = request.form.getlist('languages-enabled')
         if len(enabled_languages) != 0:
-            database.execute("UPDATE table_settings_languages SET enabled=0")
+            TableSettingsLanguages.update({
+                TableSettingsLanguages.enabled: 0
+            }).execute()
             for code in enabled_languages:
-                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (code,))
+                TableSettingsLanguages.update({
+                    TableSettingsLanguages.enabled: 1
+                })\
+                    .where(TableSettingsLanguages.code2 == code)\
+                    .execute()
+            event_stream("languages")
 
         languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
-            existing_ids = database.execute('SELECT profileId FROM table_languages_profiles')
+            existing_ids = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId).dicts()
+            existing_ids = list(existing_ids)
             existing = [x['profileId'] for x in existing_ids]
             for item in json.loads(languages_profiles):
                 if item['profileId'] in existing:
                     # Update existing profiles
-                    database.execute('UPDATE table_languages_profiles SET name = ?, cutoff = ?, items = ? '
-                                     'WHERE profileId = ?', (item['name'],
-                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
-                                                             json.dumps(item['items']),
-                                                             item['profileId']))
+                    TableLanguagesProfiles.update({
+                        TableLanguagesProfiles.name: item['name'],
+                        TableLanguagesProfiles.cutoff: item['cutoff'] if item['cutoff'] != 'null' else None,
+                        TableLanguagesProfiles.items: json.dumps(item['items'])
+                    })\
+                        .where(TableLanguagesProfiles.profileId == item['profileId'])\
+                        .execute()
                     existing.remove(item['profileId'])
                 else:
                     # Add new profiles
-                    database.execute('INSERT INTO table_languages_profiles (profileId, name, cutoff, items) '
-                                     'VALUES (?, ?, ?, ?)', (item['profileId'],
-                                                             item['name'],
-                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
-                                                             json.dumps(item['items'])))
+                    TableLanguagesProfiles.insert({
+                        TableLanguagesProfiles.profileId: item['profileId'],
+                        TableLanguagesProfiles.name: item['name'],
+                        TableLanguagesProfiles.cutoff: item['cutoff'] if item['cutoff'] != 'null' else None,
+                        TableLanguagesProfiles.items: json.dumps(item['items'])
+                    }).execute()
             for profileId in existing:
                 # Unassign this profileId from series and movies
-                database.execute('UPDATE table_shows SET profileId = null WHERE profileId = ?', (profileId,))
-                database.execute('UPDATE table_movies SET profileId = null WHERE profileId = ?', (profileId,))
+                TableShows.update({
+                    TableShows.profileId: None
+                }).where(TableShows.profileId == profileId).execute()
+                TableMovies.update({
+                    TableMovies.profileId: None
+                }).where(TableMovies.profileId == profileId).execute()
                 # Remove deleted profiles
-                database.execute('DELETE FROM table_languages_profiles WHERE profileId = ?', (profileId,))
+                TableLanguagesProfiles.delete().where(TableLanguagesProfiles.profileId == profileId).execute()
 
             update_profile_id_list()
+            event_stream("languages")
 
             if settings.general.getboolean('use_sonarr'):
                 scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
@@ -461,10 +527,13 @@ class SystemSettings(Resource):
         notifications = request.form.getlist('notifications-providers')
         for item in notifications:
             item = json.loads(item)
-            database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
-                             (item['enabled'], item['url'], item['name']))
+            TableSettingsNotifier.update({
+                TableSettingsNotifier.enabled: item['enabled'],
+                TableSettingsNotifier.url: item['url']
+            }).where(TableSettingsNotifier.name == item['name']).execute()
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
+        event_stream("settings")
         return '', 204
 
 
@@ -500,6 +569,8 @@ class SystemLogs(Resource):
             raw_lines = file.read()
             lines = raw_lines.split('|\n')
             for line in lines:
+                if line == '':
+                    continue
                 raw_message = line.split('|')
                 raw_message_len = len(raw_message)
                 if raw_message_len > 3:
@@ -521,6 +592,7 @@ class SystemLogs(Resource):
 
 
 class SystemStatus(Resource):
+    @authenticate
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
@@ -531,6 +603,12 @@ class SystemStatus(Resource):
         system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         return jsonify(data=system_status)
+
+
+class SystemHealth(Resource):
+    @authenticate
+    def get(self):
+        return jsonify(data=get_health_issues())
 
 
 class SystemReleases(Resource):
@@ -574,36 +652,40 @@ class Series(Resource):
         length = request.args.get('length') or -1
         seriesId = request.args.getlist('seriesid[]')
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
+        count = TableShows.select().count()
 
         if len(seriesId) != 0:
-            seriesIdList = ','.join(seriesId)
-            result = database.execute(
-                f"SELECT * FROM table_shows WHERE sonarrSeriesId in ({seriesIdList}) ORDER BY sortTitle ASC")
+            result = TableShows.select()\
+                .where(TableShows.sonarrSeriesId.in_(seriesId))\
+                .order_by(TableShows.sortTitle).dicts()
         else:
-            result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?"
-                                      , (length, start))
+            result = TableShows.select().order_by(TableShows.sortTitle).limit(length).offset(start).dicts()
+
+        result = list(result)
 
         for item in result:
             postprocessSeries(item)
 
             # Add missing subtitles episode count
-            episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
-                                                   "table_shows.seriesType FROM table_episodes INNER JOIN table_shows "
-                                                   "on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                                                   "WHERE table_episodes.sonarrSeriesId=? AND missing_subtitles is not "
-                                                   "null AND missing_subtitles != '[]'" +
-                                                   get_exclusion_clause('series'), (item['sonarrSeriesId'],))
-            episodeMissingCount = len(episodeMissingCount)
+            episodes_missing_conditions = [(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId']),
+                                           (TableEpisodes.missing_subtitles != '[]')]
+            episodes_missing_conditions += get_exclusion_clause('series')
+
+            episodeMissingCount = TableEpisodes.select(TableShows.tags,
+                                                       TableEpisodes.monitored,
+                                                       TableShows.seriesType)\
+                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .where(reduce(operator.and_, episodes_missing_conditions))\
+                .count()
             item.update({"episodeMissingCount": episodeMissingCount})
 
             # Add episode count
-            episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
-                                                "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
-                                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                                "table_episodes.sonarrSeriesId=?" + get_exclusion_clause('series'),
-                                                (item['sonarrSeriesId'],))
-            episodeFileCount = len(episodeFileCount)
+            episodeFileCount = TableEpisodes.select(TableShows.tags,
+                                                    TableEpisodes.monitored,
+                                                    TableShows.seriesType)\
+                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])\
+                .count()
             item.update({"episodeFileCount": episodeFileCount})
 
         return jsonify(data=result, total=count)
@@ -625,11 +707,16 @@ class Series(Resource):
                 except Exception:
                     return '', 400
 
-            database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
+            TableShows.update({
+                TableShows.profileId: profileId
+            })\
+                .where(TableShows.sonarrSeriesId == seriesId)\
+                .execute()
 
-            list_missing_subtitles(no=seriesId)
+            list_missing_subtitles(no=seriesId, send_event=False)
 
-        # event_stream(type='series', action='update', series=seriesId)
+            event_stream(type='series', payload=seriesId)
+        event_stream(type='badges')
 
         return '', 204
 
@@ -653,23 +740,22 @@ class Series(Resource):
 class Episodes(Resource):
     @authenticate
     def get(self):
-        seriesId = request.args.get('seriesid')
-        episodeId = request.args.get('episodeid')
-        if episodeId:
-            result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
-        elif seriesId:
-            result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
-                                      "episode DESC", (seriesId,))
+        seriesId = request.args.getlist('seriesid[]')
+        episodeId = request.args.getlist('episodeid[]')
+
+        if len(episodeId) > 0:
+            result = TableEpisodes.select().where(TableEpisodes.sonarrEpisodeId.in_(episodeId)).dicts()
+        elif len(seriesId) > 0:
+            result = TableEpisodes.select()\
+                .where(TableEpisodes.sonarrSeriesId.in_(seriesId))\
+                .order_by(TableEpisodes.season.desc(), TableEpisodes.episode.desc())\
+                .dicts()
         else:
-            return "Series ID not provided", 400
+            return "Series or Episode ID not provided", 400
 
-        profileId = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId = ?", (seriesId,),
-                                     only_one=True)['profileId']
-        desired_languages = str(get_desired_languages(profileId))
-        desired = ast.literal_eval(desired_languages)
-
+        result = list(result)
         for item in result:
-            postprocessEpisode(item, desired)
+            postprocessEpisode(item)
 
         return jsonify(data=result)
 
@@ -682,9 +768,13 @@ class EpisodesSubtitles(Resource):
     def patch(self):
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute(
-            "SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-            (sonarrEpisodeId,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.title,
+                                           TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableEpisodes.audio_language)\
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
+            .dicts()\
+            .get()
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -727,7 +817,7 @@ class EpisodesSubtitles(Resource):
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
-                event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
+                event_stream(type='episode', payload=sonarrEpisodeId)
 
         except OSError:
             pass
@@ -738,9 +828,13 @@ class EpisodesSubtitles(Resource):
     def post(self):
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute(
-            "SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-            (sonarrEpisodeId,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.title,
+                                           TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableEpisodes.audio_language)\
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
+            .dicts()\
+            .get()
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -792,9 +886,13 @@ class EpisodesSubtitles(Resource):
     def delete(self):
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute(
-            "SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-            (sonarrEpisodeId,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.title,
+                                           TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableEpisodes.audio_language)\
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
+            .dicts()\
+            .get()
 
         episodePath = path_mappings.path_replace(episodeInfo['path'])
 
@@ -802,6 +900,8 @@ class EpisodesSubtitles(Resource):
         forced = request.form.get('forced')
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
+
+        subtitlesPath = path_mappings.path_replace_reverse(subtitlesPath)
 
         result = delete_subtitles(media_type='series',
                                   language=language,
@@ -820,17 +920,18 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        id = request.args.getlist('radarrid[]')
+        radarrId = request.args.getlist('radarrid[]')
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
+        count = TableMovies.select().count()
 
-        if len(id) != 0:
-            movieIdList = ','.join(id)
-            result = database.execute(
-                f"SELECT * FROM table_movies WHERE radarrId in ({movieIdList}) ORDER BY sortTitle ASC")
+        if len(radarrId) != 0:
+            result = TableMovies.select()\
+                .where(TableMovies.radarrId.in_(radarrId))\
+                .order_by(TableMovies.sortTitle)\
+                .dicts()
         else:
-            result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-                                      (length, start))
+            result = TableMovies.select().order_by(TableMovies.sortTitle).limit(length).offset(start).dicts()
+        result = list(result)
         for item in result:
             postprocessMovie(item)
 
@@ -853,11 +954,16 @@ class Movies(Resource):
                 except Exception:
                     return '', 400
 
-            database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (profileId, radarrId))
+            TableMovies.update({
+                TableMovies.profileId: profileId
+            })\
+                .where(TableMovies.radarrId == radarrId)\
+                .execute()
 
-            list_missing_subtitles_movies(no=radarrId)
+            list_missing_subtitles_movies(no=radarrId, send_event=False)
 
-        # event_stream(type='movies', action='update', movie=radarrId)
+            event_stream(type='movie', payload=radarrId)
+        event_stream(type='badges')
 
         return '', 204
 
@@ -889,8 +995,13 @@ class MoviesSubtitles(Resource):
         # Download
         radarrId = request.args.get('radarrid')
 
-        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?",
-                                     (radarrId,), only_one=True)
+        movieInfo = TableMovies.select(TableMovies.title,
+                                       TableMovies.path,
+                                       TableMovies.sceneName,
+                                       TableMovies.audio_language)\
+            .where(TableMovies.radarrId == radarrId)\
+            .dicts()\
+            .get()
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
@@ -933,7 +1044,7 @@ class MoviesSubtitles(Resource):
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
-                event_stream(type='movie', action='update', movie=int(radarrId))
+                event_stream(type='movie', payload=radarrId)
         except OSError:
             pass
 
@@ -944,8 +1055,13 @@ class MoviesSubtitles(Resource):
         # Upload
         # TODO: Support Multiply Upload
         radarrId = request.args.get('radarrid')
-        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?",
-                                     (radarrId,), only_one=True)
+        movieInfo = TableMovies.select(TableMovies.title,
+                                       TableMovies.path,
+                                       TableMovies.sceneName,
+                                       TableMovies.audio_language) \
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get()
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
@@ -996,7 +1112,10 @@ class MoviesSubtitles(Resource):
     def delete(self):
         # Delete
         radarrId = request.args.get('radarrid')
-        movieInfo = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+        movieInfo = TableMovies.select(TableMovies.path) \
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get()
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 
@@ -1004,6 +1123,8 @@ class MoviesSubtitles(Resource):
         forced = request.form.get('forced')
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
+
+        subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
         result = delete_subtitles(media_type='movie',
                                   language=language,
@@ -1021,6 +1142,24 @@ class MoviesSubtitles(Resource):
 class Providers(Resource):
     @authenticate
     def get(self):
+        history = request.args.get('history')
+        if history and history not in False_Keys:
+            providers = list(TableHistory.select(TableHistory.provider)
+                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
+                             .dicts())
+            providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
+                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
+                              .dicts())
+            providers_list = list(set([x['provider'] for x in providers]))
+            providers_dicts = []
+            for provider in providers_list:
+                providers_dicts.append({
+                    'name': provider,
+                    'status': 'History',
+                    'retry': '-'
+                })
+            return jsonify(data=sorted(providers_dicts, key=itemgetter('name')))
+
         throttled_providers = list_throttled_providers()
 
         providers = list()
@@ -1048,8 +1187,13 @@ class ProviderMovies(Resource):
     def get(self):
         # Manual Search
         radarrId = request.args.get('radarrid')
-        movieInfo = database.execute("SELECT title, path, sceneName, profileId FROM table_movies WHERE radarrId=?",
-                                     (radarrId,), only_one=True)
+        movieInfo = TableMovies.select(TableMovies.title,
+                                       TableMovies.path,
+                                       TableMovies.sceneName,
+                                       TableMovies.profileId) \
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get()
 
         title = movieInfo['title']
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
@@ -1070,8 +1214,13 @@ class ProviderMovies(Resource):
     def post(self):
         # Manual Download
         radarrId = request.args.get('radarrid')
-        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?",
-                                     (radarrId,), only_one=True)
+        movieInfo = TableMovies.select(TableMovies.title,
+                                       TableMovies.path,
+                                       TableMovies.sceneName,
+                                       TableMovies.audio_language) \
+            .where(TableMovies.radarrId == radarrId) \
+            .dicts() \
+            .get()
 
         title = movieInfo['title']
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
@@ -1125,19 +1274,19 @@ class ProviderEpisodes(Resource):
     def get(self):
         # Manual Search
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute(
-            "SELECT title, path, scene_name, audio_language, sonarrSeriesId FROM table_episodes WHERE sonarrEpisodeId=?",
-            (sonarrEpisodeId,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.title,
+                                           TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableShows.profileId) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+            .dicts() \
+            .get()
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
-        seriesId = episodeInfo['sonarrSeriesId']
-
-        seriesInfo = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId=?", (seriesId,),
-                                      only_one=True)
-
-        profileId = seriesInfo['profileId']
+        profileId = episodeInfo['profileId']
         if sceneName is None: sceneName = "None"
 
         providers_list = get_providers()
@@ -1154,8 +1303,12 @@ class ProviderEpisodes(Resource):
         # Manual Download
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = database.execute("SELECT title, path, scene_name FROM table_episodes WHERE sonarrEpisodeId=?",
-                                       (sonarrEpisodeId,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.title,
+                                           TableEpisodes.path,
+                                           TableEpisodes.scene_name) \
+            .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
+            .dicts() \
+            .get()
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -1222,14 +1375,22 @@ class EpisodesHistory(Resource):
             else:
                 query_actions = [1, 3]
 
-            upgradable_episodes = database.execute(
-                "SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.tags, table_episodes.monitored, "
-                "table_shows.seriesType FROM table_history INNER JOIN table_episodes on "
-                "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
-                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" +
-                get_exclusion_clause('series') + " GROUP BY table_history.video_path", (minimum_timestamp,))
-
+            upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
+                                              (TableHistory.timestamp > minimum_timestamp),
+                                              (TableHistory.score is not None)]
+            upgradable_episodes_conditions += get_exclusion_clause('series')
+            upgradable_episodes = TableHistory.select(TableHistory.video_path,
+                                                      fn.MAX(TableHistory.timestamp).alias('timestamp'),
+                                                      TableHistory.score,
+                                                      TableShows.tags,
+                                                      TableEpisodes.monitored,
+                                                      TableShows.seriesType)\
+                .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+                .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .where(reduce(operator.and_, upgradable_episodes_conditions))\
+                .group_by(TableHistory.video_path)\
+                .dicts()
+            upgradable_episodes = list(upgradable_episodes)
             for upgradable_episode in upgradable_episodes:
                 if upgradable_episode['timestamp'] > minimum_timestamp:
                     try:
@@ -1240,24 +1401,38 @@ class EpisodesHistory(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
-        # TODO: Find a better solution
-        query_limit = ""
+        query_conditions = [(TableEpisodes.title is not None)]
         if episodeid:
-            query_limit = f"AND table_episodes.sonarrEpisodeId={episodeid}"
+            query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
+        query_condition = reduce(operator.and_, query_conditions)
+        episode_history = TableHistory.select(TableShows.title.alias('seriesTitle'),
+                                              TableEpisodes.monitored,
+                                              TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
+                                              TableEpisodes.title.alias('episodeTitle'),
+                                              TableHistory.timestamp,
+                                              TableHistory.subs_id,
+                                              TableHistory.description,
+                                              TableHistory.sonarrSeriesId,
+                                              TableEpisodes.path,
+                                              TableHistory.language,
+                                              TableHistory.score,
+                                              TableShows.tags,
+                                              TableHistory.action,
+                                              TableHistory.subtitles_path,
+                                              TableHistory.sonarrEpisodeId,
+                                              TableHistory.provider,
+                                              TableShows.seriesType)\
+            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+            .where(query_condition)\
+            .order_by(TableHistory.timestamp.desc())\
+            .limit(length)\
+            .offset(start)\
+            .dicts()
+        episode_history = list(episode_history)
 
-        episode_history = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
-                                           "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                                           "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
-                                           "table_history.description, table_history.sonarrSeriesId, table_episodes.path, "
-                                           "table_history.language, table_history.score, table_shows.tags, table_history.action, "
-                                           "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider, "
-                                           "table_shows.seriesType FROM table_history LEFT JOIN table_shows on "
-                                           "table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on "
-                                           "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                           "table_episodes.title is not NULL " + query_limit + " ORDER BY timestamp DESC LIMIT ? OFFSET ?",
-                                           (length, start))
-
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist ")
+        blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
+        blacklist_db = list(blacklist_db)
 
         for item in episode_history:
             # Mark episode as upgradable or not
@@ -1285,14 +1460,14 @@ class EpisodesHistory(Resource):
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
                 for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item[
-                        'subs_id']:
+                    if blacklisted_item['provider'] == item['provider'] and \
+                            blacklisted_item['subs_id'] == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
-                                 "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                 "table_episodes.title is not NULL", only_one=True)['count']
+        count = TableHistory.select()\
+            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+            .where(TableEpisodes.title is not None).count()
 
         return jsonify(data=episode_history, total=count)
 
@@ -1316,11 +1491,20 @@ class MoviesHistory(Resource):
             else:
                 query_actions = [1, 3]
 
-            upgradable_movies = database.execute(
-                "SELECT video_path, MAX(timestamp) as timestamp, score, tags, monitored FROM table_history_movie "
-                "INNER JOIN table_movies on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" +
-                get_exclusion_clause('movie') + " GROUP BY video_path", (minimum_timestamp,))
+            upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
+                                            (TableHistoryMovie.timestamp > minimum_timestamp),
+                                            (TableHistoryMovie.score is not None)]
+            upgradable_movies_conditions += get_exclusion_clause('movie')
+            upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
+                                                         fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+                                                         TableHistoryMovie.score,
+                                                         TableMovies.tags,
+                                                         TableMovies.monitored)\
+                .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
+                .where(reduce(operator.and_, upgradable_movies_conditions))\
+                .group_by(TableHistoryMovie.video_path)\
+                .dicts()
+            upgradable_movies = list(upgradable_movies)
 
             for upgradable_movie in upgradable_movies:
                 if upgradable_movie['timestamp'] > minimum_timestamp:
@@ -1332,22 +1516,34 @@ class MoviesHistory(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        # TODO: Find a better solution
-        query_limit = ""
+        query_conditions = [(TableMovies is not None)]
         if radarrid:
-            query_limit = f"AND table_movies.radarrid={radarrid}"
+            query_conditions.append((TableMovies.radarrId == radarrid))
+        query_condition = reduce(operator.and_, query_conditions)
 
-        movie_history = database.execute(
-            "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
-            "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored,"
-            "table_history_movie.video_path as path, table_history_movie.language, table_movies.tags, "
-            "table_history_movie.score, table_history_movie.subs_id, table_history_movie.provider, "
-            "table_history_movie.subtitles_path, table_history_movie.subtitles_path FROM "
-            "table_history_movie LEFT JOIN table_movies on table_movies.radarrId = "
-            "table_history_movie.radarrId WHERE table_movies.title is not NULL " + query_limit + " ORDER BY timestamp DESC LIMIT ? OFFSET ?",
-            (length, start))
+        movie_history = TableHistoryMovie.select(TableHistoryMovie.action,
+                                                 TableMovies.title,
+                                                 TableHistoryMovie.timestamp,
+                                                 TableHistoryMovie.description,
+                                                 TableHistoryMovie.radarrId,
+                                                 TableMovies.monitored,
+                                                 TableHistoryMovie.video_path.alias('path'),
+                                                 TableHistoryMovie.language,
+                                                 TableMovies.tags,
+                                                 TableHistoryMovie.score,
+                                                 TableHistoryMovie.subs_id,
+                                                 TableHistoryMovie.provider,
+                                                 TableHistoryMovie.subtitles_path)\
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
+            .where(query_condition)\
+            .order_by(TableHistoryMovie.timestamp.desc())\
+            .limit(length)\
+            .offset(start)\
+            .dicts()
+        movie_history = list(movie_history)
 
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie")
+        blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
+        blacklist_db = list(blacklist_db)
 
         for item in movie_history:
             # Mark movies as upgradable or not
@@ -1379,9 +1575,10 @@ class MoviesHistory(Resource):
                         item.update({"blacklisted": True})
                         break
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies on "
-                                 "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
-                                 "is not NULL", only_one=True)['count']
+        count = TableHistoryMovie.select()\
+            .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
+            .where(TableMovies.title is not None)\
+            .count()
 
         return jsonify(data=movie_history, total=count)
 
@@ -1394,38 +1591,56 @@ class HistoryStats(Resource):
         provider = request.args.get('provider') or 'All'
         language = request.args.get('language') or 'All'
 
-        history_where_clause = " WHERE id"
-
         # timeframe must be in ['week', 'month', 'trimester', 'year']
         if timeframe == 'year':
-            days = 364
+            delay = 364 * 24 * 60 * 60
         elif timeframe == 'trimester':
-            days = 90
+            delay = 90 * 24 * 60 * 60
         elif timeframe == 'month':
-            days = 30
+            delay = 30 * 24 * 60 * 60
         elif timeframe == 'week':
-            days = 6
+            delay = 6 * 24 * 60 * 60
 
-        history_where_clause += " AND datetime(timestamp, 'unixepoch') BETWEEN datetime('now', '-" + str(days) + \
-                                " days') AND datetime('now', 'localtime')"
+        now = time.time()
+        past = now - delay
+
+        history_where_clauses = [(TableHistory.timestamp.between(past, now))]
+        history_where_clauses_movie = [(TableHistoryMovie.timestamp.between(past, now))]
+
         if action != 'All':
-            history_where_clause += " AND action = " + action
+            history_where_clauses.append((TableHistory.action == action))
+            history_where_clauses_movie.append((TableHistoryMovie.action == action))
         else:
-            history_where_clause += " AND action IN (1,2,3)"
-        if provider != 'All':
-            history_where_clause += " AND provider = '" + provider + "'"
-        if language != 'All':
-            history_where_clause += " AND language = '" + language + "'"
+            history_where_clauses.append((TableHistory.action.in_([1, 2, 3])))
+            history_where_clauses_movie.append((TableHistoryMovie.action.in_([1, 2, 3])))
 
-        data_series = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
-                                       "COUNT(id) as count FROM table_history" + history_where_clause +
-                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
-        data_movies = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
-                                       "COUNT(id) as count FROM table_history_movie" + history_where_clause +
-                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
+        if provider != 'All':
+            history_where_clauses.append((TableHistory.provider == provider))
+            history_where_clauses_movie.append((TableHistoryMovie.provider == provider))
+
+        if language != 'All':
+            history_where_clauses.append((TableHistory.language == language))
+            history_where_clauses_movie.append((TableHistoryMovie.language == language))
+
+        history_where_clause = reduce(operator.and_, history_where_clauses)
+        history_where_clause_movie = reduce(operator.and_, history_where_clauses_movie)
+
+        data_series = TableHistory.select(fn.strftime('%Y-%m-%d', TableHistory.timestamp, 'unixepoch').alias('date'),
+                                          fn.COUNT(TableHistory.id).alias('count'))\
+            .where(history_where_clause) \
+            .group_by(fn.strftime('%Y-%m-%d', TableHistory.timestamp, 'unixepoch'))\
+            .dicts()
+        data_series = list(data_series)
+
+        data_movies = TableHistoryMovie.select(fn.strftime('%Y-%m-%d', TableHistoryMovie.timestamp, 'unixepoch').alias('date'),
+                                               fn.COUNT(TableHistoryMovie.id).alias('count')) \
+            .where(history_where_clause_movie) \
+            .group_by(fn.strftime('%Y-%m-%d', TableHistoryMovie.timestamp, 'unixepoch')) \
+            .dicts()
+        data_movies = list(data_movies)
 
         for dt in rrule.rrule(rrule.DAILY,
-                              dtstart=datetime.datetime.now() - datetime.timedelta(days=days),
+                              dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
                               until=datetime.datetime.now()):
             if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
                 data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
@@ -1442,25 +1657,61 @@ class HistoryStats(Resource):
 class EpisodesWanted(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
-                                "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                                "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
-                                "table_episodes.sonarrSeriesId, "
-                                "table_episodes.sonarrEpisodeId, table_episodes.scene_name as sceneName, table_shows.tags, "
-                                "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
-                                "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+        episodeid = request.args.getlist('episodeid[]')
+
+        wanted_conditions = [(TableEpisodes.missing_subtitles != '[]')]
+        if len(episodeid) > 0:
+            wanted_conditions.append((TableEpisodes.sonarrEpisodeId in episodeid))
+        wanted_conditions += get_exclusion_clause('series')
+        wanted_condition = reduce(operator.and_, wanted_conditions)
+
+        if len(episodeid) > 0:
+            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
+                                        TableEpisodes.monitored,
+                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
+                                        TableEpisodes.title.alias('episodeTitle'),
+                                        TableEpisodes.missing_subtitles,
+                                        TableEpisodes.sonarrSeriesId,
+                                        TableEpisodes.sonarrEpisodeId,
+                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableShows.tags,
+                                        TableEpisodes.failedAttempts,
+                                        TableShows.seriesType)\
+                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .where(wanted_condition)\
+                .dicts()
+        else:
+            start = request.args.get('start') or 0
+            length = request.args.get('length') or -1
+            data = TableEpisodes.select(TableShows.title.alias('seriesTitle'),
+                                        TableEpisodes.monitored,
+                                        TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
+                                        TableEpisodes.title.alias('episodeTitle'),
+                                        TableEpisodes.missing_subtitles,
+                                        TableEpisodes.sonarrSeriesId,
+                                        TableEpisodes.sonarrEpisodeId,
+                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableShows.tags,
+                                        TableEpisodes.failedAttempts,
+                                        TableShows.seriesType)\
+                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .where(wanted_condition)\
+                .limit(length)\
+                .offset(start)\
+                .dicts()
+        data = list(data)
 
         for item in data:
             postprocessEpisode(item)
 
-        count = database.execute("SELECT COUNT(*) as count, table_shows.tags, table_shows.seriesType FROM "
-                                 "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                 "table_episodes.sonarrSeriesId WHERE missing_subtitles != '[]'" +
-                                 get_exclusion_clause('series'), only_one=True)['count']
+        count_conditions = [(TableEpisodes.missing_subtitles != '[]')]
+        count_conditions += get_exclusion_clause('series')
+        count = TableEpisodes.select(TableShows.tags,
+                                     TableShows.seriesType,
+                                     TableEpisodes.monitored)\
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .where(reduce(operator.and_, count_conditions))\
+            .count()
 
         return jsonify(data=data, total=count)
 
@@ -1469,20 +1720,52 @@ class EpisodesWanted(Resource):
 class MoviesWanted(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        data = database.execute("SELECT title, missing_subtitles, radarrId, sceneName, "
-                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') +
-                                " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+        radarrid = request.args.getlist("radarrid[]")
 
-        for item in data:
+        wanted_conditions = [(TableMovies.missing_subtitles != '[]')]
+        if len(radarrid) > 0:
+            wanted_conditions.append((TableMovies.radarrId.in_(radarrid)))
+        wanted_conditions += get_exclusion_clause('movie')
+        wanted_condition = reduce(operator.and_, wanted_conditions)
+
+        if len(radarrid) > 0:
+            result = TableMovies.select(TableMovies.title,
+                                        TableMovies.missing_subtitles,
+                                        TableMovies.radarrId,
+                                        TableMovies.sceneName,
+                                        TableMovies.failedAttempts,
+                                        TableMovies.tags,
+                                        TableMovies.monitored)\
+                .where(wanted_condition)\
+                .dicts()
+        else:
+            start = request.args.get('start') or 0
+            length = request.args.get('length') or -1
+            result = TableMovies.select(TableMovies.title,
+                                        TableMovies.missing_subtitles,
+                                        TableMovies.radarrId,
+                                        TableMovies.sceneName,
+                                        TableMovies.failedAttempts,
+                                        TableMovies.tags,
+                                        TableMovies.monitored)\
+                .where(wanted_condition)\
+                .order_by(TableMovies.radarrId.desc())\
+                .limit(length)\
+                .offset(start)\
+                .dicts()
+        result = list(result)
+
+        for item in result:
             postprocessMovie(item)
 
-        count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
-                                 get_exclusion_clause('movie'), only_one=True)['count']
+        count_conditions = [(TableMovies.missing_subtitles != '[]')]
+        count_conditions += get_exclusion_clause('movie')
+        count = TableMovies.select(TableMovies.monitored,
+                                   TableMovies.tags)\
+            .where(reduce(operator.and_, count_conditions))\
+            .count()
 
-        return jsonify(data=data, total=count)
+        return jsonify(data=result, total=count)
 
 
 # GET: get blacklist
@@ -1494,14 +1777,21 @@ class EpisodesBlacklist(Resource):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
 
-        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
-                                "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
-                                "table_episodes.sonarrSeriesId, table_blacklist.provider, table_blacklist.subs_id, "
-                                "table_blacklist.language, table_blacklist.timestamp FROM table_blacklist INNER JOIN "
-                                "table_episodes on table_episodes.sonarrEpisodeId = table_blacklist.sonarr_episode_id "
-                                "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                "table_blacklist.sonarr_series_id ORDER BY table_blacklist.timestamp DESC LIMIT ? "
-                                "OFFSET ?", (length, start))
+        data = TableBlacklist.select(TableShows.title.alias('seriesTitle'),
+                                     TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
+                                     TableEpisodes.title.alias('episodeTitle'),
+                                     TableEpisodes.sonarrSeriesId,
+                                     TableBlacklist.provider,
+                                     TableBlacklist.subs_id,
+                                     TableBlacklist.language,
+                                     TableBlacklist.timestamp)\
+            .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
+            .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
+            .order_by(TableBlacklist.timestamp.desc())\
+            .limit(length)\
+            .offset(start)\
+            .dicts()
+        data = list(data)
 
         for item in data:
             # Make timestamp pretty
@@ -1520,8 +1810,10 @@ class EpisodesBlacklist(Resource):
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
 
-        episodeInfo = database.execute("SELECT path FROM table_episodes WHERE sonarrEpisodeId=?",
-                                       (sonarr_episode_id,), only_one=True)
+        episodeInfo = TableEpisodes.select(TableEpisodes.path)\
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
+            .dicts()\
+            .get()
 
         media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')
@@ -1532,7 +1824,7 @@ class EpisodesBlacklist(Resource):
                       subs_id=subs_id,
                       language=language)
         delete_subtitles(media_type='series',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=False,
                          hi=False,
                          media_path=path_mappings.path_replace(media_path),
@@ -1540,7 +1832,7 @@ class EpisodesBlacklist(Resource):
                          sonarr_series_id=sonarr_series_id,
                          sonarr_episode_id=sonarr_episode_id)
         episode_download_subtitles(sonarr_episode_id)
-        event_stream(type='episodeHistory')
+        event_stream(type='episode-history')
         return '', 200
 
     @authenticate
@@ -1563,12 +1855,18 @@ class MoviesBlacklist(Resource):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
 
-        data = database.execute("SELECT table_movies.title, table_movies.radarrId, table_blacklist_movie.provider, "
-                                "table_blacklist_movie.subs_id, table_blacklist_movie.language, "
-                                "table_blacklist_movie.timestamp FROM table_blacklist_movie INNER JOIN "
-                                "table_movies on table_movies.radarrId = table_blacklist_movie.radarr_id "
-                                "ORDER BY table_blacklist_movie.timestamp DESC LIMIT ? "
-                                "OFFSET ?", (length, start))
+        data = TableBlacklistMovie.select(TableMovies.title,
+                                          TableMovies.radarrId,
+                                          TableBlacklistMovie.provider,
+                                          TableBlacklistMovie.subs_id,
+                                          TableBlacklistMovie.language,
+                                          TableBlacklistMovie.timestamp)\
+            .join(TableMovies, on=(TableBlacklistMovie.radarr_id == TableMovies.radarrId))\
+            .order_by(TableBlacklistMovie.timestamp.desc())\
+            .limit(length)\
+            .offset(start)\
+            .dicts()
+        data = list(data)
 
         for item in data:
             postprocessMovie(item)
@@ -1589,7 +1887,7 @@ class MoviesBlacklist(Resource):
         forced = False
         hi = False
 
-        data = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarr_id,), only_one=True)
+        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get()
 
         media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')
@@ -1599,14 +1897,14 @@ class MoviesBlacklist(Resource):
                             subs_id=subs_id,
                             language=language)
         delete_subtitles(media_type='movie',
-                         language=alpha3_from_alpha2(language),
+                         language=language,
                          forced=forced,
                          hi=hi,
                          media_path=path_mappings.path_replace_movie(media_path),
                          subtitles_path=subtitles_path,
                          radarr_id=radarr_id)
         movies_download_subtitles(radarr_id)
-        event_stream(type='movieHistory')
+        event_stream(type='movie-history')
         return '', 200
 
     @authenticate
@@ -1632,13 +1930,14 @@ class Subtitles(Resource):
 
         if media_type == 'episode':
             subtitles_path = path_mappings.path_replace(subtitles_path)
-            metadata = database.execute("SELECT path, sonarrSeriesId FROM table_episodes"
-                                        " WHERE sonarrEpisodeId = ?", (id,), only_one=True)
+            metadata = TableEpisodes.select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)\
+                .where(TableEpisodes.sonarrEpisodeId == id)\
+                .dicts()\
+                .get()
             video_path = path_mappings.path_replace(metadata['path'])
         else:
             subtitles_path = path_mappings.path_replace_movie(subtitles_path)
-            metadata = database.execute("SELECT path FROM table_movies WHERE radarrId = ?",
-                                        (id,), only_one=True)
+            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get()
             video_path = path_mappings.path_replace_movie(metadata['path'])
 
         if action == 'sync':
@@ -1746,7 +2045,7 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
-api.add_resource(BadgesSeries, '/badges')
+api.add_resource(Badges, '/badges')
 
 api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
@@ -1758,6 +2057,7 @@ api.add_resource(SystemAccount, '/system/account')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
 api.add_resource(SystemStatus, '/system/status')
+api.add_resource(SystemHealth, '/system/health')
 api.add_resource(SystemReleases, '/system/releases')
 api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')

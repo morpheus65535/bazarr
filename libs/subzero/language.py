@@ -32,10 +32,15 @@ repl_map = {
     "tib": "bo",
 }
 
+CUSTOM_LIST = ["chs", "sc", "zhs", "hans", "gb", u"简", u"双语",
+               "cht", "tc", "zht", "hant", "big5", u"繁", u"雙語",
+               "spl", "ea", "pob", "pb"]
+
 ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)))) + list(repl_map.values())
 ALPHA3b_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha3, LANGUAGE_MATRIX)))) + \
                list(set(filter(lambda x: len(x) == 3, list(repl_map.keys()))))
 FULL_LANGUAGE_LIST = ALPHA2_LIST + ALPHA3b_LIST
+FULL_LANGUAGE_LIST.extend(CUSTOM_LIST)
 
 
 def language_from_stream(l):

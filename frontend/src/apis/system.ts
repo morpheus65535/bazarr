@@ -57,9 +57,9 @@ class SystemApi extends BaseApi {
     });
   }
 
-  async languages() {
+  async languages(history: boolean = false) {
     return new Promise<Array<ApiLanguage>>((resolve, reject) => {
-      this.get<Array<ApiLanguage>>("/languages")
+      this.get<Array<ApiLanguage>>("/languages", { history })
         .then((result) => {
           resolve(result.data);
         })
@@ -80,6 +80,18 @@ class SystemApi extends BaseApi {
   async status() {
     return new Promise<System.Status>((resolve, reject) => {
       this.get<DataWrapper<System.Status>>("/status")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async health() {
+    return new Promise<System.Health>((resolve, reject) => {
+      this.get<DataWrapper<System.Health>>("/health")
         .then((result) => {
           resolve(result.data.data);
         })

@@ -8,3 +8,11 @@ updates:
       prefix: "[bot]"
     open-pull-requests-limit: 1
     target-branch: "development"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: "[workflow]"
+    open-pull-requests-limit: 1
+    target-branch: "development"

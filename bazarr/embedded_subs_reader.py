@@ -7,69 +7,90 @@ from knowit import api
 import enzyme
 from enzyme.exceptions import MalformedMKVError
 from enzyme.exceptions import MalformedMKVError
-from database import database
+from custom_lang import CustomLanguage
+from database import TableEpisodes, TableMovies
+
+logger = logging.getLogger(__name__)
 
 
-def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None):
-    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id)
+def _handle_alpha3(detected_language: dict):
+    alpha3 = detected_language["language"].alpha3
+    custom = CustomLanguage.from_value(alpha3, "official_alpha3")
+
+    if custom and custom.ffprobe_found(detected_language):
+        logger.debug("Custom embedded language found: %s", custom.name)
+        return custom.alpha3
+
+    return alpha3
+
+
+def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
+    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
 
     subtitles_list = []
-    if data['ffprobe']:
-        traditional_chinese = ["cht", "tc", "traditional", "zht", "hant", "big5", u"繁", u"雙語"]
-        brazilian_portuguese = ["pt-br", "pob", "pb", "brazilian", "brasil", "brazil"]
+    if data["ffprobe"] and "subtitle" in data["ffprobe"]:
+        for detected_language in data["ffprobe"]["subtitle"]:
+            if not "language" in detected_language:
+                continue
 
-        if 'subtitle' in data['ffprobe']:
-            for detected_language in data['ffprobe']['subtitle']:
-                if 'language' in detected_language:
-                    language = detected_language['language'].alpha3
-                    if language == 'zho' and 'name' in detected_language:
-                        if any (ext in (detected_language['name'].lower()) for ext in traditional_chinese):
-                            language = 'zht'
-                    if language == 'por' and 'name' in detected_language:
-                        if any (ext in (detected_language['name'].lower()) for ext in brazilian_portuguese):
-                            language = 'pob'
-                    forced = detected_language['forced'] if 'forced' in detected_language else False
-                    hearing_impaired = detected_language['hearing_impaired'] if 'hearing_impaired' in \
-                                                                                detected_language else False
-                    codec = detected_language['format'] if 'format' in detected_language else None
-                    subtitles_list.append([language, forced, hearing_impaired, codec])
-                else:
-                    continue
-    elif data['enzyme']:
-        for subtitle_track in data['enzyme'].subtitle_tracks:
-            hearing_impaired = False
-            if subtitle_track.name:
-                if 'sdh' in subtitle_track.name.lower():
-                    hearing_impaired = True
-            subtitles_list.append([subtitle_track.language, subtitle_track.forced, hearing_impaired,
-                                   subtitle_track.codec_id])
+            # Avoid commentary subtitles
+            name = detected_language.get("name", "").lower()
+            if "commentary" in name:
+                logging.debug("Ignoring commentary subtitle: %s", name)
+                continue
+
+            language = _handle_alpha3(detected_language)
+
+            forced = detected_language.get("forced", False)
+            hearing_impaired = detected_language.get("hearing_impaired", False)
+            codec = detected_language.get("format")  # or None
+            subtitles_list.append([language, forced, hearing_impaired, codec])
+
+    elif data["enzyme"]:
+        for subtitle_track in data["enzyme"].subtitle_tracks:
+            hearing_impaired = (
+                subtitle_track.name and "sdh" in subtitle_track.name.lower()
+            )
+
+            subtitles_list.append(
+                [
+                    subtitle_track.language,
+                    subtitle_track.forced,
+                    hearing_impaired,
+                    subtitle_track.codec_id,
+                ]
+            )
 
     return subtitles_list
 
 
-def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None):
+def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
     # Define default data keys value
     data = {
-        'ffprobe': {},
-        'enzyme': {},
-        'file_id': episode_file_id if episode_file_id else movie_file_id,
-        'file_size': file_size
+        "ffprobe": {},
+        "enzyme": {},
+        "file_id": episode_file_id or movie_file_id,
+        "file_size": file_size,
     }
 
-    # Get the actual cache value form database
-    if episode_file_id:
-        cache_key = database.execute('SELECT ffprobe_cache FROM table_episodes WHERE episode_file_id=? AND file_size=?',
-                                     (episode_file_id, file_size), only_one=True)
-    elif movie_file_id:
-        cache_key = database.execute('SELECT ffprobe_cache FROM table_movies WHERE movie_file_id=? AND file_size=?',
-                                     (movie_file_id, file_size), only_one=True)
-    else:
-        cache_key = None
+    if use_cache:
+        # Get the actual cache value form database
+        if episode_file_id:
+            cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
+                .where((TableEpisodes.episode_file_id == episode_file_id) and
+                       (TableEpisodes.file_size == file_size))\
+                .dicts()\
+                .get()
+        elif movie_file_id:
+            cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
+                .where(TableMovies.movie_file_id == movie_file_id and
+                       TableMovies.file_size == file_size)\
+                .dicts()\
+                .get()
+        else:
+            cache_key = None
 
-    # check if we have a value for that cache key
-    if not isinstance(cache_key, dict):
-        return data
-    else:
+        # check if we have a value for that cache key
         try:
             # Unpickle ffprobe cache
             cached_value = pickle.loads(cache_key['ffprobe_cache'])
@@ -82,30 +103,34 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # if not, we retrieve the metadata from the file
     from utils import get_binary
+
     ffprobe_path = get_binary("ffprobe")
 
     # if we have ffprobe available
     if ffprobe_path:
-        api.initialize({'provider': 'ffmpeg', 'ffmpeg': ffprobe_path})
-        data['ffprobe'] = api.know(file)
+        api.initialize({"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+        data["ffprobe"] = api.know(file)
     # if nto, we use enzyme for mkv files
     else:
-        if os.path.splitext(file)[1] == '.mkv':
-            with open(file, 'rb') as f:
+        if os.path.splitext(file)[1] == ".mkv":
+            with open(file, "rb") as f:
                 try:
                     mkv = enzyme.MKV(f)
                 except MalformedMKVError:
-                    logging.error(
-                        'BAZARR cannot analyze this MKV with our built-in MKV parser, you should install '
-                        'ffmpeg/ffprobe: ' + file)
+                    logger.error(
+                        "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
+                        "ffmpeg/ffprobe: " + file
+                    )
                 else:
-                    data['enzyme'] = mkv
+                    data["enzyme"] = mkv
 
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
-        database.execute('UPDATE table_episodes SET ffprobe_cache=? WHERE episode_file_id=?',
-                         (pickle.dumps(data, pickle.HIGHEST_PROTOCOL), episode_file_id))
+        TableEpisodes.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
+            .where(TableEpisodes.episode_file_id == episode_file_id)\
+            .execute()
     elif movie_file_id:
-        database.execute('UPDATE table_movies SET ffprobe_cache=? WHERE movie_file_id=?',
-                         (pickle.dumps(data, pickle.HIGHEST_PROTOCOL), movie_file_id))
+        TableMovies.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
+            .where(TableMovies.movie_file_id == movie_file_id)\
+            .execute()
     return data

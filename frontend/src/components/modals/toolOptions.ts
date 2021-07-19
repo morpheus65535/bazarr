@@ -114,7 +114,7 @@ export const colorOptions: SelectorOption<string>[] = [
   },
   {
     label: "Light Gray",
-    value: "lightgray",
+    value: "light-gray",
   },
   {
     label: "Red",
@@ -146,30 +146,30 @@ export const colorOptions: SelectorOption<string>[] = [
   },
   {
     label: "Dark Red",
-    value: "darkred",
+    value: "dark-red",
   },
   {
     label: "Dark Green",
-    value: "darkgreen",
+    value: "dark-green",
   },
   {
     label: "Dark Yellow",
-    value: "darkyellow",
+    value: "dark-yellow",
   },
   {
     label: "Dark Blue",
-    value: "darkblue",
+    value: "dark-blue",
   },
   {
     label: "Dark Magenta",
-    value: "darkmagenta",
+    value: "dark-magenta",
   },
   {
     label: "Dark Cyan",
-    value: "darkcyan",
+    value: "dark-cyan",
   },
   {
     label: "Dark Grey",
-    value: "darkgrey",
+    value: "dark-grey",
   },
 ];

@@ -37,3 +37,9 @@ type KeysOfType<D, T> = NonNullable<
 >;
 
 type ItemIdType<T> = KeysOfType<T, number>;
+
+type OptionalRecord<T, D> = { [P in T]?: D };
+
+interface IdState<T> {
+  [key: number]: Readonly<T>;
+}

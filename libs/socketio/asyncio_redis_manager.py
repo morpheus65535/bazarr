@@ -44,7 +44,7 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
                 SSL connection, use ``rediss://``.
     :param channel: The channel name on which the server sends and receives
                     notifications. Must be the same in all the servers.
-    :param write_only: If set ot ``True``, only initialize to emit events. The
+    :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
                        and receiving.
     """
@@ -95,6 +95,7 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
                         password=self.password, ssl=self.ssl
                     )
                 self.ch = (await self.sub.subscribe(self.channel))[0]
+                retry_sleep = 1
                 return await self.ch.get()
             except (aioredis.RedisError, OSError):
                 self._get_logger().error('Cannot receive from redis... '

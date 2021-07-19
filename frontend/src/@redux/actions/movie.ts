@@ -1,38 +1,35 @@
+import { createDeleteAction } from "../../@socketio/reducer";
 import { MoviesApi } from "../../apis";
 import {
+  MOVIES_DELETE_ITEMS,
+  MOVIES_DELETE_WANTED_ITEMS,
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
-  MOVIES_UPDATE_INFO,
   MOVIES_UPDATE_LIST,
-  MOVIES_UPDATE_RANGE,
   MOVIES_UPDATE_WANTED_LIST,
-  MOVIES_UPDATE_WANTED_RANGE,
 } from "../constants";
-import {
-  createAsyncAction,
-  createAsyncCombineAction,
-  createCombineAction,
-} from "./factory";
-import { badgeUpdateAll } from "./site";
+import { createAsyncAction } from "./factory";
 
-export const movieUpdateList = createAsyncAction(MOVIES_UPDATE_LIST, () =>
-  MoviesApi.movies()
+export const movieUpdateList = createAsyncAction(
+  MOVIES_UPDATE_LIST,
+  (id?: number[]) => MoviesApi.movies(id)
 );
 
-const movieUpdateWantedList = createAsyncAction(
+export const movieDeleteItems = createDeleteAction(MOVIES_DELETE_ITEMS);
+
+export const movieUpdateWantedList = createAsyncAction(
   MOVIES_UPDATE_WANTED_LIST,
-  (radarrid?: number) => MoviesApi.wantedBy(radarrid)
+  (radarrid: number[]) => MoviesApi.wantedBy(radarrid)
+);
+
+export const movieDeleteWantedItems = createDeleteAction(
+  MOVIES_DELETE_WANTED_ITEMS
 );
 
 export const movieUpdateWantedByRange = createAsyncAction(
-  MOVIES_UPDATE_WANTED_RANGE,
+  MOVIES_UPDATE_WANTED_LIST,
   (start: number, length: number) => MoviesApi.wanted(start, length)
 );
-
-export const movieUpdateWantedBy = createCombineAction((radarrid?: number) => [
-  movieUpdateWantedList(radarrid),
-  badgeUpdateAll(),
-]);
 
 export const movieUpdateHistoryList = createAsyncAction(
   MOVIES_UPDATE_HISTORY_LIST,
@@ -40,18 +37,9 @@ export const movieUpdateHistoryList = createAsyncAction(
 );
 
 export const movieUpdateByRange = createAsyncAction(
-  MOVIES_UPDATE_RANGE,
+  MOVIES_UPDATE_LIST,
   (start: number, length: number) => MoviesApi.moviesBy(start, length)
 );
-
-const movieUpdateInfo = createAsyncAction(MOVIES_UPDATE_INFO, (id?: number[]) =>
-  MoviesApi.movies(id)
-);
-
-export const movieUpdateInfoAll = createAsyncCombineAction((id?: number[]) => [
-  movieUpdateInfo(id),
-  badgeUpdateAll(),
-]);
 
 export const movieUpdateBlacklist = createAsyncAction(
   MOVIES_UPDATE_BLACKLIST,

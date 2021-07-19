@@ -28,13 +28,14 @@ server_url = 'https://api.betaseries.com/'
 class BetaSeriesSubtitle(Subtitle):
     provider_name = 'betaseries'
 
-    def __init__(self, subtitle_id, language, video_name, url, matches, source):
+    def __init__(self, subtitle_id, language, video_name, url, matches, source, video_release_group):
         super(BetaSeriesSubtitle, self).__init__(language, page_link=url)
         self.subtitle_id = subtitle_id
         self.video_name = video_name
         self.download_url = url
         self.matches = matches
         self.source = source
+        self.video_release_group = video_release_group
 
     @property
     def id(self):
@@ -67,6 +68,7 @@ class BetaSeriesProvider(Provider):
         if not token:
             raise ConfigurationError('Token must be specified')
         self.token = token
+        self.video = None
 
     def initialize(self):
         self.session = Session()
@@ -129,7 +131,8 @@ class BetaSeriesProvider(Provider):
                 # Filter seriessub source because it shut down so the links are all 404
                 if str(sub['source']) != 'seriessub':
                     subtitles.append(BetaSeriesSubtitle(
-                        sub['id'], language, sub['file'], sub['url'], matches, str(sub['source'])))
+                        sub['id'], language, sub['file'], sub['url'], matches, str(sub['source']),
+                        self.video.release_group))
 
         return subtitles
 
@@ -148,7 +151,7 @@ class BetaSeriesProvider(Provider):
         archive = _get_archive(r.content)
         if archive:
             subtitle_names = _get_subtitle_names_from_archive(archive)
-            subtitle_to_download = _choose_subtitle_with_release_group(subtitle_names, self.video.release_group)
+            subtitle_to_download = _choose_subtitle_with_release_group(subtitle_names, subtitle.video_release_group)
             logger.debug('Subtitle to download: ' + subtitle_to_download)
             subtitle_content = archive.read(subtitle_to_download)
         else:

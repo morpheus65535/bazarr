@@ -17,9 +17,10 @@ from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal import __short_version__
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
 from subliminal.score import get_equivalent_release_groups
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Movie
+from subliminal_patch.subtitle import guess_matches
 
 logger = logging.getLogger(__name__)
 

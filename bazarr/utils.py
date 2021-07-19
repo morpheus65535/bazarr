@@ -13,7 +13,9 @@ import stat
 from whichcraft import which
 from get_args import args
 from config import settings, url_sonarr, url_radarr
-from database import database
+from custom_lang import CustomLanguage
+from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
+    TableMoviesRootfolder
 from event_handler import event_stream
 from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
 from helper import path_mappings
@@ -28,6 +30,7 @@ import datetime
 import glob
 
 region = make_region().configure('dogpile.cache.memory')
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):
@@ -36,52 +39,84 @@ class BinaryNotFound(Exception):
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
                 score=None, subs_id=None, subtitles_path=None):
-    database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
-                     "video_path, language, provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                     (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
-                      provider, score, subs_id, subtitles_path))
-    event_stream(type='episodeHistory')
+    TableHistory.insert({
+        TableHistory.action: action,
+        TableHistory.sonarrSeriesId: sonarr_series_id,
+        TableHistory.sonarrEpisodeId: sonarr_episode_id,
+        TableHistory.timestamp: time.time(),
+        TableHistory.description: description,
+        TableHistory.video_path: video_path,
+        TableHistory.language: language,
+        TableHistory.provider: provider,
+        TableHistory.score: score,
+        TableHistory.subs_id: subs_id,
+        TableHistory.subtitles_path: subtitles_path
+    }).execute()
+    event_stream(type='episode-history')
 
 
 def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
-    database.execute("INSERT INTO table_blacklist (sonarr_series_id, sonarr_episode_id, timestamp, provider, "
-                     "subs_id, language) VALUES (?,?,?,?,?,?)",
-                     (sonarr_series_id, sonarr_episode_id, time.time(), provider, subs_id, language))
-    event_stream(type='episodeBlacklist')
+    TableBlacklist.insert({
+        TableBlacklist.sonarr_series_id: sonarr_series_id,
+        TableBlacklist.sonarr_episode_id: sonarr_episode_id,
+        TableBlacklist.timestamp: time.time(),
+        TableBlacklist.provider: provider,
+        TableBlacklist.subs_id: subs_id,
+        TableBlacklist.language: language
+    }).execute()
+    event_stream(type='episode-blacklist')
 
 
 def blacklist_delete(provider, subs_id):
-    database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='episodeBlacklist')
+    TableBlacklist.delete().where((TableBlacklist.provider == provider) and
+                                  (TableBlacklist.subs_id == subs_id))\
+        .execute()
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def blacklist_delete_all():
-    database.execute("DELETE FROM table_blacklist")
-    event_stream(type='episodeBlacklist')
+    TableBlacklist.delete().execute()
+    event_stream(type='episode-blacklist', action='delete')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
                       subs_id=None, subtitles_path=None):
-    database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
-                     "provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                     (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id, subtitles_path))
-    event_stream(type='movieHistory')
+    TableHistoryMovie.insert({
+        TableHistoryMovie.action: action,
+        TableHistoryMovie.radarrId: radarr_id,
+        TableHistoryMovie.timestamp: time.time(),
+        TableHistoryMovie.description: description,
+        TableHistoryMovie.video_path: video_path,
+        TableHistoryMovie.language: language,
+        TableHistoryMovie.provider: provider,
+        TableHistoryMovie.score: score,
+        TableHistoryMovie.subs_id: subs_id,
+        TableHistoryMovie.subtitles_path: subtitles_path
+    }).execute()
+    event_stream(type='movie-history')
 
 
 def blacklist_log_movie(radarr_id, provider, subs_id, language):
-    database.execute("INSERT INTO table_blacklist_movie (radarr_id, timestamp, provider, subs_id, language) "
-                     "VALUES (?,?,?,?,?)", (radarr_id, time.time(), provider, subs_id, language))
-    event_stream(type='movieBlacklist')
+    TableBlacklistMovie.insert({
+        TableBlacklistMovie.radarr_id: radarr_id,
+        TableBlacklistMovie.timestamp: time.time(),
+        TableBlacklistMovie.provider: provider,
+        TableBlacklistMovie.subs_id: subs_id,
+        TableBlacklistMovie.language: language
+    }).execute()
+    event_stream(type='movie-blacklist')
 
 
 def blacklist_delete_movie(provider, subs_id):
-    database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
-    event_stream(type='movieBlacklist')
+    TableBlacklistMovie.delete().where((TableBlacklistMovie.provider == provider) and
+                                       (TableBlacklistMovie.subs_id == subs_id))\
+        .execute()
+    event_stream(type='movie-blacklist', action='delete')
 
 
 def blacklist_delete_all_movie():
-    database.execute("DELETE FROM table_blacklist_movie")
-    event_stream(type='movieBlacklist')
+    TableBlacklistMovie.delete().execute()
+    event_stream(type='movie-blacklist', action='delete')
 
 
 @region.cache_on_arguments()
@@ -166,9 +201,9 @@ def get_binary(name):
 
 def get_blacklist(media_type):
     if media_type == 'series':
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist")
+        blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
     else:
-        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie")
+        blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
 
     blacklist_list = []
     for item in blacklist_db:
@@ -206,7 +241,12 @@ def get_sonarr_version():
     if settings.general.getboolean('use_sonarr'):
         try:
             sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
+            sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
+            if 'version' in sonarr_json:
+                sonarr_version = sonarr_json['version']
+            else:
+                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
         except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
             sonarr_version = 'unknown'
@@ -217,8 +257,11 @@ def get_sonarr_platform():
     sonarr_platform = ''
     if settings.general.getboolean('use_sonarr'):
         try:
-            sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            response = requests.get(sv, timeout=60, verify=False).json()
+            if get_sonarr_version().startswith('2'):
+                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
+            else:
+                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+            response = requests.get(sv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 sonarr_platform = 'posix'
             elif response['isWindows']:
@@ -230,12 +273,15 @@ def get_sonarr_platform():
 
 def notify_sonarr(sonarr_series_id):
     try:
-        url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        if get_sonarr_version().startswith('2'):
+            url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        else:
+            url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
         data = {
             'name': 'RescanSeries',
             'seriesId': int(sonarr_series_id)
         }
-        requests.post(url, json=data, timeout=60, verify=False)
+        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
         logging.debug('BAZARR notify Sonarr')
 
@@ -245,8 +291,13 @@ def get_radarr_version():
     if settings.general.getboolean('use_radarr'):
         try:
             rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
-        except Exception:
+            radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
+            if 'version' in radarr_json:
+                radarr_version = radarr_json['version']
+            else:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+        except Exception as e:
             logging.debug('BAZARR cannot get Radarr version')
             radarr_version = 'unknown'
     return radarr_version
@@ -256,8 +307,11 @@ def get_radarr_platform():
     radarr_platform = ''
     if settings.general.getboolean('use_radarr'):
         try:
-            rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            response = requests.get(rv, timeout=60, verify=False).json()
+            if get_radarr_version().startswith('0'):
+                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
+            else:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+            response = requests.get(rv, timeout=60, verify=False, headers=headers).json()
             if response['isLinux'] or response['isOsx']:
                 radarr_platform = 'posix'
             elif response['isWindows']:
@@ -269,12 +323,15 @@ def get_radarr_platform():
 
 def notify_radarr(radarr_id):
     try:
-        url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        if get_radarr_version().startswith('0'):
+            url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        else:
+            url = url_radarr() + "/api/v3/command?apikey=" + settings.radarr.apikey
         data = {
             'name': 'RescanMovie',
             'movieId': int(radarr_id)
         }
-        requests.post(url, json=data, timeout=60, verify=False)
+        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
         logging.debug('BAZARR notify Radarr')
 
@@ -309,6 +366,8 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                         subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
             store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             notify_sonarr(sonarr_series_id)
+            event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+            return True
     else:
         try:
             os.remove(path_mappings.path_replace_movie(subtitles_path))
@@ -322,17 +381,17 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                               subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             notify_radarr(radarr_id)
+            event_stream(type='movie-wanted', action='update', payload=radarr_id)
             return True
 
 
 def subtitles_apply_mods(language, subtitle_path, mods):
     language = alpha3_from_alpha2(language)
-    if language == 'pob':
-        lang_obj = Language('por', 'BR')
-    elif language == 'zht':
-        lang_obj = Language('zho', 'TW')
-    else:
+    custom = CustomLanguage.from_value(language, "alpha3")
+    if custom is None:
         lang_obj = Language(language)
+    else:
+        lang_obj = custom.subzero_language()
 
     sub = Subtitle(lang_obj, mods=mods)
     with open(subtitle_path, 'rb') as f:
@@ -401,7 +460,46 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     return dest_srt_file
 
+
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     return hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username
+
+
+def check_health():
+    from get_rootfolder import check_sonarr_rootfolder, check_radarr_rootfolder
+    if settings.general.getboolean('use_sonarr'):
+        check_sonarr_rootfolder()
+    if settings.general.getboolean('use_radarr'):
+        check_radarr_rootfolder()
+    event_stream(type='badges')
+
+
+def get_health_issues():
+    # this function must return a list of dictionaries consisting of to keys: object and issue
+    health_issues = []
+
+    # get Sonarr rootfolder issues
+    if settings.general.getboolean('use_sonarr'):
+        rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.path,
+                                                 TableShowsRootfolder.accessible,
+                                                 TableShowsRootfolder.error)\
+            .where(TableShowsRootfolder.accessible == 0)\
+            .dicts()
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace(item['path']),
+                                  'issue': item['error']})
+
+    # get Radarr rootfolder issues
+    if settings.general.getboolean('use_radarr'):
+        rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.path,
+                                                  TableMoviesRootfolder.accessible,
+                                                  TableMoviesRootfolder.error)\
+            .where(TableMoviesRootfolder.accessible == 0)\
+            .dicts()
+        for item in rootfolder:
+            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
+                                  'issue': item['error']})
+
+    return health_issues

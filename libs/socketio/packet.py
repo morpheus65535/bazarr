@@ -1,11 +1,9 @@
 import functools
 import json as _json
 
-import six
-
-(CONNECT, DISCONNECT, EVENT, ACK, ERROR, BINARY_EVENT, BINARY_ACK) = \
+(CONNECT, DISCONNECT, EVENT, ACK, CONNECT_ERROR, BINARY_EVENT, BINARY_ACK) = \
     (0, 1, 2, 3, 4, 5, 6)
-packet_names = ['CONNECT', 'DISCONNECT', 'EVENT', 'ACK', 'ERROR',
+packet_names = ['CONNECT', 'DISCONNECT', 'EVENT', 'ACK', 'CONNECT_ERROR',
                 'BINARY_EVENT', 'BINARY_ACK']
 
 
@@ -49,10 +47,10 @@ class Packet(object):
         of packets where the first is the original packet with placeholders for
         the binary components and the remaining ones the binary attachments.
         """
-        encoded_packet = six.text_type(self.packet_type)
+        encoded_packet = str(self.packet_type)
         if self.packet_type == BINARY_EVENT or self.packet_type == BINARY_ACK:
             data, attachments = self._deconstruct_binary(self.data)
-            encoded_packet += six.text_type(len(attachments)) + '-'
+            encoded_packet += str(len(attachments)) + '-'
         else:
             data = self.data
             attachments = None
@@ -64,7 +62,7 @@ class Packet(object):
             if needs_comma:
                 encoded_packet += ','
                 needs_comma = False
-            encoded_packet += six.text_type(self.id)
+            encoded_packet += str(self.id)
         if data is not None:
             if needs_comma:
                 encoded_packet += ','
@@ -139,7 +137,7 @@ class Packet(object):
             else:
                 return {key: self._reconstruct_binary_internal(value,
                                                                attachments)
-                        for key, value in six.iteritems(data)}
+                        for key, value in data.items()}
         else:
             return data
 
@@ -150,7 +148,7 @@ class Packet(object):
         return data, attachments
 
     def _deconstruct_binary_internal(self, data, attachments):
-        if isinstance(data, six.binary_type):
+        if isinstance(data, bytes):
             attachments.append(data)
             return {'_placeholder': True, 'num': len(attachments) - 1}
         elif isinstance(data, list):
@@ -158,13 +156,13 @@ class Packet(object):
                     for item in data]
         elif isinstance(data, dict):
             return {key: self._deconstruct_binary_internal(value, attachments)
-                    for key, value in six.iteritems(data)}
+                    for key, value in data.items()}
         else:
             return data
 
     def _data_is_binary(self, data):
         """Check if the data contains binary components."""
-        if isinstance(data, six.binary_type):
+        if isinstance(data, bytes):
             return True
         elif isinstance(data, list):
             return functools.reduce(
@@ -173,7 +171,7 @@ class Packet(object):
         elif isinstance(data, dict):
             return functools.reduce(
                 lambda a, b: a or b, [self._data_is_binary(item)
-                                      for item in six.itervalues(data)],
+                                      for item in data.values()],
                 False)
         else:
             return False

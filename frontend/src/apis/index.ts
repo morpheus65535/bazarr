@@ -1,18 +1,16 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
 import reduxStore from "../@redux/store";
+import { getBaseUrl } from "../utilites";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
 
   constructor() {
+    const baseUrl = `${getBaseUrl()}/api/`;
     if (process.env.NODE_ENV === "development") {
-      this.initialize("/api/", process.env["REACT_APP_APIKEY"]!);
+      this.initialize(baseUrl, process.env["REACT_APP_APIKEY"]!);
     } else {
-      const baseUrl =
-        window.Bazarr.baseUrl === "/"
-          ? "/api/"
-          : `${window.Bazarr.baseUrl}/api/`;
       this.initialize(baseUrl, window.Bazarr.apiKey);
     }
   }
@@ -34,7 +32,6 @@ class Api {
 
     this.axios.interceptors.response.use(
       (resp) => {
-        this.onOnline();
         if (resp.status >= 200 && resp.status < 300) {
           return Promise.resolve(resp);
         } else {
@@ -46,9 +43,7 @@ class Api {
         if (error.response) {
           const response = error.response;
           this.handleError(response.status);
-          this.onOnline();
         } else {
-          this.onOffline();
           error.message = "You have disconnected to Bazarr backend";
         }
         return Promise.reject(error);
@@ -89,6 +84,7 @@ export { default as BadgesApi } from "./badges";
 export { default as EpisodesApi } from "./episodes";
 export { default as FilesApi } from "./files";
 export { default as HistoryApi } from "./history";
+export * from "./hooks";
 export { default as MoviesApi } from "./movies";
 export { default as ProvidersApi } from "./providers";
 export { default as SeriesApi } from "./series";

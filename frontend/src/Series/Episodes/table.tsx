@@ -8,8 +8,9 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column, TableOptions, TableUpdater } from "react-table";
-import { useSerieBy } from "../../@redux/hooks";
+import { Column, TableUpdater } from "react-table";
+import { useProfileItems, useSerieBy } from "../../@redux/hooks";
+import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
@@ -21,12 +22,12 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey } from "../../utilites";
+import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
   episodes: AsyncState<Item.Episode[]>;
-  update: () => void;
+  profile?: Profile.Languages;
 }
 
 const download = (item: any, result: SearchResultType) => {
@@ -45,8 +46,12 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ episodes, update }) => {
+const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
   const showModal = useShowModal();
+
+  const onlyDesired = useShowOnlyDesired();
+
+  const profileItems = useProfileItems(profile);
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
@@ -95,7 +100,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
       {
         Header: "Subtitles",
         accessor: "missing_subtitles",
-        Cell: ({ row }) => {
+        Cell: ({ row, loose }) => {
           const episode = row.original;
 
           const seriesid = episode.sonarrSeriesId;
@@ -113,7 +118,12 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
               ></SubtitleAction>
             ));
 
-            const subtitles = episode.subtitles.map((val, idx) => (
+            let raw_subtitles = episode.subtitles;
+            if (onlyDesired) {
+              raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
+            }
+
+            const subtitles = raw_subtitles.map((val, idx) => (
               <SubtitleAction
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesid={seriesid}
@@ -160,7 +170,7 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
         },
       },
     ],
-    []
+    [onlyDesired, profileItems]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
@@ -183,43 +193,32 @@ const Table: FunctionComponent<Props> = ({ episodes, update }) => {
     [episodes]
   );
 
-  const options: TableOptions<Item.Episode> = useMemo(() => {
-    return {
-      columns,
-      data: episodes.data,
-      externalUpdate: updateRow,
-      initialState: {
-        sortBy: [
-          { id: "season", desc: true },
-          { id: "episode", desc: true },
-        ],
-        groupBy: ["season"],
-        expanded: {
-          [`season:${maxSeason}`]: true,
-        },
-      },
-    };
-  }, [episodes, columns, maxSeason, updateRow]);
-
   return (
     <React.Fragment>
       <AsyncStateOverlay state={episodes}>
-        {() => (
+        {({ data }) => (
           <GroupTable
+            columns={columns}
+            data={data}
+            externalUpdate={updateRow}
+            initialState={{
+              sortBy: [
+                { id: "season", desc: true },
+                { id: "episode", desc: true },
+              ],
+              groupBy: ["season"],
+              expanded: {
+                [`season:${maxSeason}`]: true,
+              },
+            }}
             emptyText="No Episode Found For This Series"
-            {...options}
           ></GroupTable>
         )}
       </AsyncStateOverlay>
-      <SubtitleToolModal
-        modalKey="tools"
-        size="lg"
-        update={update}
-      ></SubtitleToolModal>
+      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onDownload={update}
         onSelect={download}
       ></ManualSearchModal>
     </React.Fragment>

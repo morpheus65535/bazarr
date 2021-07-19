@@ -1,4 +1,3 @@
-import { throttle } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
@@ -8,6 +7,7 @@ import React, {
 } from "react";
 import { Dropdown, Form } from "react-bootstrap";
 import { useHistory } from "react-router";
+import { useThrottle } from "rooks";
 
 export interface SearchResult {
   name: string;
@@ -44,7 +44,7 @@ export const SearchBar: FunctionComponent<Props> = ({
     [onSearch]
   );
 
-  const debounceSearch = useMemo(() => throttle(search, 500), [search]);
+  const [debounceSearch] = useThrottle(search, 500);
 
   useEffect(() => {
     debounceSearch(text);

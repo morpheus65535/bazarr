@@ -5,7 +5,7 @@ import { AsyncButton } from "../components";
 
 interface Props {
   history: History.Base;
-  update: () => void;
+  update?: () => void;
   promise: (form: FormType.AddBlacklist) => Promise<void>;
 }
 

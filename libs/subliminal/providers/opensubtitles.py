@@ -7,14 +7,13 @@ import re
 import zlib
 
 from babelfish import Language, language_converters
-from guessit import guessit
 from six.moves.xmlrpc_client import ServerProxy
 
 from . import Provider, TimeoutSafeTransport
 from .. import __short_version__
 from ..exceptions import (AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError,
                           ServiceUnavailable)
-from ..subtitle import Subtitle, fix_line_ending, guess_matches
+from ..subtitle import Subtitle, fix_line_ending
 from ..utils import sanitize
 from ..video import Episode, Movie
 
@@ -56,7 +55,6 @@ class OpenSubtitlesSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-
         # episode
         if isinstance(video, Episode) and self.movie_kind == 'episode':
             # tag match, assume series, year, season and episode matches
@@ -78,9 +76,7 @@ class OpenSubtitlesSubtitle(Subtitle):
             # title
             if video.title and sanitize(self.series_title) == sanitize(video.title):
                 matches.add('title')
-            # guess
-            matches |= guess_matches(video, guessit(self.movie_release_name, {'type': 'episode'}))
-            matches |= guess_matches(video, guessit(self.filename, {'type': 'episode'}))
+
             # hash
             if 'opensubtitles' in video.hashes and self.hash == video.hashes['opensubtitles']:
                 if 'series' in matches and 'season' in matches and 'episode' in matches:
@@ -99,9 +95,6 @@ class OpenSubtitlesSubtitle(Subtitle):
             # year
             if video.year and self.movie_year == video.year:
                 matches.add('year')
-            # guess
-            matches |= guess_matches(video, guessit(self.movie_release_name, {'type': 'movie'}))
-            matches |= guess_matches(video, guessit(self.filename, {'type': 'movie'}))
             # hash
             if 'opensubtitles' in video.hashes and self.hash == video.hashes['opensubtitles']:
                 if 'title' in matches:

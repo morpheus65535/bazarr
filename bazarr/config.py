@@ -88,8 +88,8 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-        'series_sync': '1',
-        'episodes_sync': '5',
+        'series_sync': '60',
+        'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]'
     },
@@ -103,7 +103,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '5',
         'only_monitored': 'False',
-        'movies_sync': '5',
+        'movies_sync': '60',
         'excluded_tags': '[]'
     },
     'proxy': {
@@ -180,6 +180,34 @@ defaults = {
         'use_subsync_movie_threshold': 'False',
         'subsync_movie_threshold': '70',
         'debug': 'False'
+    },
+    'series_scores': {
+        "hash": 359,
+        "series": 180,
+        "year": 90,
+        "season": 30,
+        "episode": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
+    },
+    'movie_scores': {
+        "hash": 119,
+        "title": 60,
+        "year": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
     }
 }
 
@@ -207,6 +235,19 @@ array_keys = ['excluded_tags',
 str_keys = ['chmod']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
+
+# Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
+if int(settings.sonarr.series_sync) < 15:
+    settings.sonarr.series_sync = "60"
+if int(settings.sonarr.episodes_sync) < 15:
+    settings.sonarr.episodes_sync = "60"
+if int(settings.radarr.movies_sync) < 15:
+    settings.radarr.movies_sync = "60"
+
+if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
 
 def get_settings():
     result = dict()
@@ -249,12 +290,15 @@ def get_settings():
 
     return result
 
+
 def save_settings(settings_items):
     from database import database
 
     configure_debug = False
     configure_captcha = False
     update_schedule = False
+    sonarr_changed = False
+    radarr_changed = False
     update_path_map = False
     configure_proxy = False
     exclusion_updated = False
@@ -308,6 +352,14 @@ def save_settings(settings_items):
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
                    'settings-general-upgrade_frequency']:
             update_schedule = True
+
+        if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
+                   'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
+            sonarr_changed = True
+
+        if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
+                   'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
+            radarr_changed = True
 
         if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
             update_path_map = True
@@ -388,6 +440,14 @@ def save_settings(settings_items):
         from api import scheduler
         scheduler.update_configurable_tasks()
 
+    if sonarr_changed:
+        from signalr_client import sonarr_signalr_client
+        sonarr_signalr_client.restart()
+
+    if radarr_changed:
+        from signalr_client import radarr_signalr_client
+        radarr_signalr_client.restart()
+
     if update_path_map:
         from helper import path_mappings
         path_mappings.update()
@@ -397,8 +457,7 @@ def save_settings(settings_items):
 
     if exclusion_updated:
         from event_handler import event_stream
-        event_stream(type='badges_series')
-        event_stream(type='badges_movies')
+        event_stream(type='badges')
 
 
 def url_sonarr():
@@ -421,6 +480,7 @@ def url_sonarr():
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
 
+
 def url_sonarr_short():
     if settings.sonarr.getboolean('ssl'):
         protocol_sonarr = "https"
@@ -433,6 +493,7 @@ def url_sonarr_short():
         port = f":{settings.sonarr.port}"
 
     return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
+
 
 def url_radarr():
     if settings.radarr.getboolean('ssl'):
@@ -454,6 +515,7 @@ def url_radarr():
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
 
+
 def url_radarr_short():
     if settings.radarr.getboolean('ssl'):
         protocol_radarr = "https"
@@ -467,6 +529,7 @@ def url_radarr_short():
 
     return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
+
 def get_array_from(property):
     if property:
         if '[' in property:
@@ -477,6 +540,7 @@ def get_array_from(property):
             return [property]
     else:
         return []
+
 
 def configure_captcha_func():
     # set anti-captcha provider and key

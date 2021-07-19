@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-import six
+from bidict import bidict
 
 default_logger = logging.getLogger('socketio')
 
@@ -18,7 +18,8 @@ class BaseManager(object):
     def __init__(self):
         self.logger = None
         self.server = None
-        self.rooms = {}
+        self.rooms = {}  # self.rooms[namespace][room][sio_sid] = eio_sid
+        self.eio_to_sid = {}
         self.callbacks = {}
         self.pending_disconnect = {}
 
@@ -33,17 +34,19 @@ class BaseManager(object):
 
     def get_namespaces(self):
         """Return an iterable with the active namespace names."""
-        return six.iterkeys(self.rooms)
+        return self.rooms.keys()
 
     def get_participants(self, namespace, room):
         """Return an iterable with the active participants in a room."""
-        for sid, active in six.iteritems(self.rooms[namespace][room].copy()):
-            yield sid
+        for sid, eio_sid in self.rooms[namespace][room]._fwdm.copy().items():
+            yield sid, eio_sid
 
-    def connect(self, sid, namespace):
+    def connect(self, eio_sid, namespace):
         """Register a client connection to a namespace."""
-        self.enter_room(sid, namespace, None)
-        self.enter_room(sid, namespace, sid)
+        sid = self.server.eio.generate_id()
+        self.enter_room(sid, namespace, None, eio_sid=eio_sid)
+        self.enter_room(sid, namespace, sid, eio_sid=eio_sid)
+        return sid
 
     def is_connected(self, sid, namespace):
         if namespace in self.pending_disconnect and \
@@ -51,9 +54,22 @@ class BaseManager(object):
             # the client is in the process of being disconnected
             return False
         try:
-            return self.rooms[namespace][None][sid]
+            return self.rooms[namespace][None][sid] is not None
         except KeyError:
             pass
+
+    def sid_from_eio_sid(self, eio_sid, namespace):
+        try:
+            return self.rooms[namespace][None]._invm[eio_sid]
+        except KeyError:
+            pass
+
+    def eio_sid_from_sid(self, sid, namespace):
+        if namespace in self.rooms:
+            return self.rooms[namespace][None].get(sid)
+
+    def can_disconnect(self, sid, namespace):
+        return self.is_connected(sid, namespace)
 
     def pre_disconnect(self, sid, namespace):
         """Put the client in the to-be-disconnected list.
@@ -65,34 +81,35 @@ class BaseManager(object):
         if namespace not in self.pending_disconnect:
             self.pending_disconnect[namespace] = []
         self.pending_disconnect[namespace].append(sid)
+        return self.rooms[namespace][None].get(sid)
 
     def disconnect(self, sid, namespace):
         """Register a client disconnect from a namespace."""
         if namespace not in self.rooms:
             return
         rooms = []
-        for room_name, room in six.iteritems(self.rooms[namespace].copy()):
+        for room_name, room in self.rooms[namespace].copy().items():
             if sid in room:
                 rooms.append(room_name)
         for room in rooms:
             self.leave_room(sid, namespace, room)
-        if sid in self.callbacks and namespace in self.callbacks[sid]:
-            del self.callbacks[sid][namespace]
-            if len(self.callbacks[sid]) == 0:
-                del self.callbacks[sid]
+        if sid in self.callbacks:
+            del self.callbacks[sid]
         if namespace in self.pending_disconnect and \
                 sid in self.pending_disconnect[namespace]:
             self.pending_disconnect[namespace].remove(sid)
             if len(self.pending_disconnect[namespace]) == 0:
                 del self.pending_disconnect[namespace]
 
-    def enter_room(self, sid, namespace, room):
+    def enter_room(self, sid, namespace, room, eio_sid=None):
         """Add a client to a room."""
         if namespace not in self.rooms:
             self.rooms[namespace] = {}
         if room not in self.rooms[namespace]:
-            self.rooms[namespace][room] = {}
-        self.rooms[namespace][room][sid] = True
+            self.rooms[namespace][room] = bidict()
+        if eio_sid is None:
+            eio_sid = self.rooms[namespace][None][sid]
+        self.rooms[namespace][room][sid] = eio_sid
 
     def leave_room(self, sid, namespace, room):
         """Remove a client from a room."""
@@ -108,7 +125,7 @@ class BaseManager(object):
     def close_room(self, room, namespace):
         """Remove all participants from a room."""
         try:
-            for sid in self.get_participants(namespace, room):
+            for sid, _ in self.get_participants(namespace, room):
                 self.leave_room(sid, namespace, room)
         except KeyError:
             pass
@@ -117,8 +134,8 @@ class BaseManager(object):
         """Return the rooms a client is in."""
         r = []
         try:
-            for room_name, room in six.iteritems(self.rooms[namespace]):
-                if room_name is not None and sid in room and room[sid]:
+            for room_name, room in self.rooms[namespace].items():
+                if room_name is not None and sid in room:
                     r.append(room_name)
         except KeyError:
             pass
@@ -132,36 +149,33 @@ class BaseManager(object):
             return
         if not isinstance(skip_sid, list):
             skip_sid = [skip_sid]
-        for sid in self.get_participants(namespace, room):
+        for sid, eio_sid in self.get_participants(namespace, room):
             if sid not in skip_sid:
                 if callback is not None:
-                    id = self._generate_ack_id(sid, namespace, callback)
+                    id = self._generate_ack_id(sid, callback)
                 else:
                     id = None
-                self.server._emit_internal(sid, event, data, namespace, id)
+                self.server._emit_internal(eio_sid, event, data, namespace, id)
 
-    def trigger_callback(self, sid, namespace, id, data):
+    def trigger_callback(self, sid, id, data):
         """Invoke an application callback."""
         callback = None
         try:
-            callback = self.callbacks[sid][namespace][id]
+            callback = self.callbacks[sid][id]
         except KeyError:
             # if we get an unknown callback we just ignore it
             self._get_logger().warning('Unknown callback received, ignoring.')
         else:
-            del self.callbacks[sid][namespace][id]
+            del self.callbacks[sid][id]
         if callback is not None:
             callback(*data)
 
-    def _generate_ack_id(self, sid, namespace, callback):
+    def _generate_ack_id(self, sid, callback):
         """Generate a unique identifier for an ACK packet."""
-        namespace = namespace or '/'
         if sid not in self.callbacks:
-            self.callbacks[sid] = {}
-        if namespace not in self.callbacks[sid]:
-            self.callbacks[sid][namespace] = {0: itertools.count(1)}
-        id = six.next(self.callbacks[sid][namespace][0])
-        self.callbacks[sid][namespace][id] = callback
+            self.callbacks[sid] = {0: itertools.count(1)}
+        id = next(self.callbacks[sid][0])
+        self.callbacks[sid][id] = callback
         return id
 
     def _get_logger(self):
