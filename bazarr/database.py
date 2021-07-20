@@ -8,6 +8,7 @@ from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import *
+from playhouse.sqlite_ext import RowIDField
 
 from helper import path_mappings
 from config import settings, get_array_from
@@ -69,6 +70,7 @@ class TableBlacklistMovie(BaseModel):
 
 
 class TableEpisodes(BaseModel):
+    rowid = RowIDField()
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
     episode = IntegerField()
@@ -140,6 +142,7 @@ class TableLanguagesProfiles(BaseModel):
 
 
 class TableMovies(BaseModel):
+    rowid = RowIDField()
     alternativeTitles = TextField(null=True)
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
@@ -163,7 +166,7 @@ class TableMovies(BaseModel):
     subtitles = TextField(null=True)
     tags = TextField(null=True)
     title = TextField()
-    tmdbId = TextField(primary_key=True)
+    tmdbId = TextField(unique=True)
     video_codec = TextField(null=True)
     year = TextField(null=True)
 

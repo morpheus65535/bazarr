@@ -1696,6 +1696,7 @@ class EpisodesWanted(Resource):
                                         TableShows.seriesType)\
                 .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
                 .where(wanted_condition)\
+                .order_by(TableEpisodes.rowid.desc())\
                 .limit(length)\
                 .offset(start)\
                 .dicts()
@@ -1749,7 +1750,7 @@ class MoviesWanted(Resource):
                                         TableMovies.tags,
                                         TableMovies.monitored)\
                 .where(wanted_condition)\
-                .order_by(TableMovies.radarrId.desc())\
+                .order_by(TableMovies.rowid.desc())\
                 .limit(length)\
                 .offset(start)\
                 .dicts()
