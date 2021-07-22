@@ -292,7 +292,7 @@ def episodeParser(episode):
                             if 'name' in item:
                                 audio_language.append(item['name'])
                     else:
-                        audio_language = TableShows.get(TableShows == episode['seriesId']).audio_language
+                        audio_language = TableShows.get(TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 
                     if 'mediaInfo' in episode['episodeFile']:
                         if 'videoCodec' in episode['episodeFile']['mediaInfo']:

@@ -1516,7 +1516,7 @@ class MoviesHistory(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        query_conditions = [(TableMovies is not None)]
+        query_conditions = [(TableMovies.title is not None)]
         if radarrid:
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
