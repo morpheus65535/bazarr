@@ -204,10 +204,12 @@ def proxy(protocol, url):
             return dict(status=False, error=result.raise_for_status())
 
 
+greenlets = []
 if settings.general.getboolean('use_sonarr'):
-    Greenlet.spawn(sonarr_signalr_client.start)
+    greenlets.append(Greenlet.spawn(sonarr_signalr_client.start))
 if settings.general.getboolean('use_radarr'):
-    Greenlet.spawn(radarr_signalr_client.start)
+    greenlets.append(Greenlet.spawn(radarr_signalr_client.start))
+gevent.joinall(greenlets)
 
 
 if __name__ == "__main__":

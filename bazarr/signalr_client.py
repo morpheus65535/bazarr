@@ -33,26 +33,30 @@ class SonarrSignalrClient:
         self.connection = None
 
     def start(self):
-        if get_sonarr_version().startswith('2.'):
+        sonarr_version = get_sonarr_version()
+        if sonarr_version.startswith('2.'):
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
-                            'consider upgrading.')
-            return
-
-        logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
-        self.configure()
-        while not self.connection.started:
-            try:
-                self.connection.start()
-            except ConnectionError:
-                gevent.sleep(5)
-            except json.decoder.JSONDecodeError:
-                logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is a known issue when Sonarr "
-                              "doesn't have write permission to it's /config/xdg directory.")
-                self.stop()
-        logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-        if not args.dev:
-            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+                            'consider upgrading your version({}).'.format(sonarr_version))
+            raise gevent.GreenletExit
+        else:
+            logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
+            self.configure()
+            while not self.connection.started:
+                try:
+                    self.connection.start()
+                except ConnectionError:
+                    gevent.sleep(5)
+                except json.decoder.JSONDecodeError:
+                    logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is a known issue when "
+                                  "Sonarr have issue accessing it's /config/xdg directory. You should delete that "
+                                  "directory and restart Sonarr.")
+                    raise gevent.GreenletExit
+                else:
+                    logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
+                finally:
+                    if not args.dev:
+                        scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+                        scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def stop(self, log=True):
         try:
