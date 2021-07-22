@@ -75,12 +75,12 @@ class GreekSubsProvider(Provider):
         r = self.session.get(search_link, timeout=30)
 
         # 404 is returned if the imdb_id was not found
-        if r.status_code != 404:
-            r.raise_for_status()
+        if r.status_code == 404:
+            logger.debug('IMDB id {} not found on greeksubs'.format(imdb_id))
+            return subtitles
 
         if r.status_code != 200:
-            logger.debug('No subtitles found')
-            return subtitles
+            r.raise_for_status()
 
         soup_page = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
 
