@@ -716,6 +716,15 @@ class Series(Resource):
             list_missing_subtitles(no=seriesId, send_event=False)
 
             event_stream(type='series', payload=seriesId)
+
+            episode_id_list = TableEpisodes\
+                .select(TableEpisodes.sonarrEpisodeId)\
+                .where(TableEpisodes.sonarrSeriesId == seriesId)\
+                .dicts()
+            
+            for item in episode_id_list:
+                event_stream(type='episode-wanted', payload=item['sonarrEpisodeId'])
+
         event_stream(type='badges')
 
         return '', 204
@@ -963,6 +972,7 @@ class Movies(Resource):
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 
             event_stream(type='movie', payload=radarrId)
+            event_stream(type='movie-wanted', payload=radarrId)
         event_stream(type='badges')
 
         return '', 204
