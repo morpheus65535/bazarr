@@ -137,7 +137,7 @@ def update_series(send_event=True):
 
 
 def update_one_series(series_id, action):
-    logging.debug('BAZARR syncing this specific series from RSonarr: {}'.format(series_id))
+    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
     try:
