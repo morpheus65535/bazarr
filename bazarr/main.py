@@ -2,7 +2,7 @@
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:
-    from gevent import monkey, Greenlet
+    from gevent import monkey, Greenlet, joinall
 except ImportError:
     pass
 else:
@@ -209,7 +209,7 @@ if settings.general.getboolean('use_sonarr'):
     greenlets.append(Greenlet.spawn(sonarr_signalr_client.start))
 if settings.general.getboolean('use_radarr'):
     greenlets.append(Greenlet.spawn(radarr_signalr_client.start))
-gevent.joinall(greenlets)
+joinall(greenlets)
 
 
 if __name__ == "__main__":
