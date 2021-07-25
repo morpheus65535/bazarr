@@ -34,7 +34,7 @@ class SonarrSignalrClient:
 
     def start(self):
         sonarr_version = get_sonarr_version()
-        if sonarr_version.startswith('2.'):
+        if sonarr_version.startswith(('0.', '2.')):
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
                             'consider upgrading your version({}).'.format(sonarr_version))
             raise gevent.GreenletExit

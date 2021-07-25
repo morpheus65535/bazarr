@@ -255,9 +255,10 @@ def get_sonarr_version():
 
 def get_sonarr_platform():
     sonarr_platform = ''
+    sonarr_version = get_sonarr_version()
     if settings.general.getboolean('use_sonarr'):
         try:
-            if get_sonarr_version().startswith('2'):
+            if sonarr_version.startswith(('0.', '2.')):
                 sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
             else:
                 sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
@@ -272,8 +273,9 @@ def get_sonarr_platform():
 
 
 def notify_sonarr(sonarr_series_id):
+    sonarr_version = get_sonarr_version()
     try:
-        if get_sonarr_version().startswith('2'):
+        if sonarr_version.startswith(('0.', '2.')):
             url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
         else:
             url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey

@@ -49,7 +49,7 @@ def browse_sonarr_filesystem(path='#'):
     sonarr_version = get_sonarr_version()
     if path == '#':
         path = ''
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
                                     "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                     settings.sonarr.apikey

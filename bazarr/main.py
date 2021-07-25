@@ -132,7 +132,7 @@ def series_images(url):
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
     sonarr_version = get_sonarr_version()
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
                      apikey).replace('poster-250', 'poster-500')
     else:

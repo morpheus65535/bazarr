@@ -18,7 +18,7 @@ def get_sonarr_rootfolder():
     sonarr_version = get_sonarr_version()
 
     # Get root folder data from Sonarr
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         url_sonarr_api_rootfolder = url_sonarr() + "/api/rootfolder?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr

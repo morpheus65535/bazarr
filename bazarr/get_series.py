@@ -212,7 +212,7 @@ def get_profile_list():
     profiles_list = []
 
     # Get profiles data from Sonarr
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
@@ -230,7 +230,7 @@ def get_profile_list():
         return None
 
     # Parsing data returned from Sonarr
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         for profile in profiles_json.json():
             profiles_list.append([profile['id'], profile['language'].capitalize()])
     else:
@@ -250,10 +250,11 @@ def profile_id_to_language(id_, profiles):
 
 def get_tags():
     apikey_sonarr = settings.sonarr.apikey
+    sonarr_version = get_sonarr_version()
     tagsDict = []
 
     # Get tags data from Sonarr
-    if get_sonarr_version().startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
@@ -290,7 +291,7 @@ def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile,
         alternate_titles = str([item['title'] for item in show['alternateTitles']])
 
     audio_language = []
-    if sonarr_version.startswith('2'):
+    if sonarr_version.startswith(('0.', '2.')):
         audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
     else:
         audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
@@ -334,7 +335,7 @@ def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile,
 
 def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_version, sonarr_series_id=None):
     url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if sonarr_version.startswith('2') else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+        '' if sonarr_version.startswith(('0.', '2.')) else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()

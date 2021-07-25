@@ -63,7 +63,7 @@ def sync_episodes(series_id=None, send_event=True):
             continue
         else:
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if sonarr_version.startswith('3'):
+            if not sonarr_version.startswith(('0.', '2.')):
                 episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
                                                                  series_id=seriesId['sonarrSeriesId'])
                 for episode in episodes:
@@ -187,7 +187,7 @@ def sync_one_episode(episode_id):
 
         else:
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if sonarr_version.startswith('3'):
+            if not sonarr_version.startswith(('0.', '2.')):
                 episodeFile = get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
                                                                 episode_file_id=existing_episode['episode_file_id'])
                 if episode_data['hasFile']:
@@ -339,10 +339,10 @@ def episodeParser(episode):
 def get_series_from_sonarr_api(series_id, url, apikey_sonarr, sonarr_version):
     if series_id:
         url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
+            '' if sonarr_version.startswith(('0.', '2.')) else 'v3/', series_id, apikey_sonarr)
     else:
         url_sonarr_api_series = url + "/api/{0}series?apikey={1}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', apikey_sonarr)
+            '' if sonarr_version.startswith(('0.', '2.')) else 'v3/', apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
@@ -375,10 +375,10 @@ def get_series_from_sonarr_api(series_id, url, apikey_sonarr, sonarr_version):
 def get_episodes_from_sonarr_api(url, apikey_sonarr, sonarr_version, series_id=None, episode_id=None):
     if series_id:
         url_sonarr_api_episode = url + "/api/{0}episode?seriesId={1}&apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
+            '' if sonarr_version.startswith(('0.', '2.')) else 'v3/', series_id, apikey_sonarr)
     elif episode_id:
         url_sonarr_api_episode = url + "/api/{0}episode/{1}?apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', episode_id, apikey_sonarr)
+            '' if sonarr_version.startswith(('0.', '2.')) else 'v3/', episode_id, apikey_sonarr)
     else:
         return
 
