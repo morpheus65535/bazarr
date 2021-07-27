@@ -14,7 +14,7 @@ type StorageType = string | null;
 interface OrderIdState<T> {
   items: IdState<T>;
   order: (number | null)[];
-  fetched: boolean;
+  dirty: boolean;
 }
 
 interface AsyncState<T> {

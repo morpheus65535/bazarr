@@ -21,7 +21,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
 
   const {
     updating,
-    data: { order, items, fetched },
+    data: { order, items, dirty },
   } = aos;
 
   const allPlugins: PluginHook<T>[] = [useDefaultSettings];
@@ -85,12 +85,12 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   }, [pageIndex]);
 
   useEffect(() => {
-    const needInit = visibleItemIds.length === 0 && fetched === false;
+    const needFetch = visibleItemIds.length === 0 && dirty === false;
     const needRefresh = !visibleItemIds.every(isNonNullable);
-    if (needInit || needRefresh) {
+    if (needFetch || needRefresh) {
       loader(pageStart, pageSize);
     }
-  }, [visibleItemIds, pageStart, pageSize, loader, fetched]);
+  }, [visibleItemIds, pageStart, pageSize, loader, dirty]);
 
   const showLoading = useMemo(
     () =>
