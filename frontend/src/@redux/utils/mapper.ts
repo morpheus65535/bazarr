@@ -36,7 +36,7 @@ export function updateOrderIdState<T extends LooseObject>(
     return {
       data: {
         ...state.data,
-        dirty: true,
+        dirty: false,
       },
       updating: true,
     };
@@ -44,7 +44,7 @@ export function updateOrderIdState<T extends LooseObject>(
     return {
       data: {
         ...state.data,
-        dirty: true,
+        dirty: false,
       },
       updating: false,
       error: action.payload.item as Error,
@@ -107,7 +107,7 @@ export function updateOrderIdState<T extends LooseObject>(
     return {
       updating: false,
       data: {
-        dirty: true,
+        dirty: false,
         items: newItems,
         order: newOrder,
       },
@@ -131,9 +131,21 @@ export function deleteOrderListItemBy<T extends LooseObject>(
   return {
     ...state,
     data: {
-      dirty: true,
+      dirty: false,
       items: newItems,
       order: newOrder,
+    },
+  };
+}
+
+export function markOrderListDirty(
+  state: AsyncOrderState<any>
+): AsyncOrderState<any> {
+  return {
+    ...state,
+    data: {
+      ...state.data,
+      dirty: true,
     },
   };
 }

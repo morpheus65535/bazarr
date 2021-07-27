@@ -5,11 +5,13 @@ import {
   episodeDeleteItems,
   episodeUpdateBy,
   episodeUpdateById,
+  movieDeleteWantedItems,
   movieUpdateBlacklist,
   movieUpdateHistoryList,
   movieUpdateList,
   movieUpdateWantedList,
   providerUpdateList,
+  seriesDeleteWantedItems,
   seriesUpdateBlacklist,
   seriesUpdateHistoryList,
   seriesUpdateList,
@@ -322,12 +324,36 @@ export function useWantedSeries() {
   const update = useReduxAction(seriesUpdateWantedList);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(seriesDeleteWantedItems);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({
+      key: "episode-wanted",
+      update: updateAction,
+      delete: deleteAction,
+    }),
+    [updateAction, deleteAction]
+  );
+  useSocketIOReducer(reducer);
+
   return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
   const update = useReduxAction(movieUpdateWantedList);
   const items = useReduxStore((d) => d.movie.wantedMovieList);
+
+  const updateAction = useWrapToOptionalId(update);
+  const deleteAction = useReduxAction(movieDeleteWantedItems);
+  const reducer = useMemo<SocketIO.Reducer>(
+    () => ({
+      key: "movie-wanted",
+      update: updateAction,
+      delete: deleteAction,
+    }),
+    [updateAction, deleteAction]
+  );
+  useSocketIOReducer(reducer);
 
   return stateBuilder(items, update);
 }

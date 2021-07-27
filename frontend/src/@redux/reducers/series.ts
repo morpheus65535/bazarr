@@ -3,6 +3,7 @@ import {
   SERIES_DELETE_EPISODES,
   SERIES_DELETE_ITEMS,
   SERIES_DELETE_WANTED_ITEMS,
+  SERIES_MARK_WANTED_LIST_DIRTY,
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
@@ -14,6 +15,7 @@ import { defaultAOS } from "../utils";
 import {
   deleteAsyncListItemBy,
   deleteOrderListItemBy,
+  markOrderListDirty,
   updateAsyncList,
   updateAsyncState,
   updateOrderIdState,
@@ -41,6 +43,12 @@ const reducer = handleActions<ReduxStore.Series, any>(
           action,
           state.wantedEpisodesList
         ),
+      };
+    },
+    [SERIES_MARK_WANTED_LIST_DIRTY]: (state, action) => {
+      return {
+        ...state,
+        wantedEpisodesList: markOrderListDirty(state.wantedEpisodesList),
       };
     },
     [SERIES_UPDATE_EPISODE_LIST]: (

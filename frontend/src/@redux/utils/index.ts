@@ -4,7 +4,7 @@ export function defaultAOS(): AsyncOrderState<any> {
     data: {
       items: [],
       order: [],
-      dirty: false,
+      dirty: true,
     },
   };
 }
