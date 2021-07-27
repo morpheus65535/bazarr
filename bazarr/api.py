@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import sys
+import os
 import ast
 from datetime import timedelta
 from dateutil import rrule
@@ -1976,6 +1978,12 @@ class Subtitles(Resource):
                 return '', 404
         else:
             subtitles_apply_mods(language, subtitles_path, [action])
+
+        # apply chmod if required
+        chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
+            'win') and settings.general.getboolean('chmod_enabled') else None
+        if chmod:
+            os.chmod(subtitles_path, chmod)
 
         return '', 204
 
