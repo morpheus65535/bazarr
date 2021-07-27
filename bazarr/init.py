@@ -42,6 +42,13 @@ if not os.path.exists(os.path.join(args.config_dir, 'cache')):
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging
 
+
+def is_virtualenv():
+    # return True if Bazarr have been start from within a virtualenv or venv
+    base_prefix = getattr(sys, "base_prefix", None) or getattr(sys, "real_prefix", None) or sys.prefix
+    return base_prefix != sys.prefix
+
+
 # deploy requirements.txt
 if not args.no_update:
     try:
@@ -57,10 +64,13 @@ if not args.no_update:
             else:
                 logging.info('BAZARR installing requirements...')
                 try:
-                    subprocess.check_output([sys.executable, '-m', 'pip', 'install', '--user', '-qq',
-                                             '--disable-pip-version-check', '--no-color', '-r',
-                                             os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
-                                            stderr=subprocess.STDOUT)
+                    pip_command = [sys.executable, '-m', 'pip', 'install', '-qq', '--disable-pip-version-check',
+                                   '--no-color', '-r', os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                                                    'requirements.txt')]
+                    if not is_virtualenv():
+                        # --user only make sense if not running under venv
+                        pip_command.insert(4, '--user')
+                    subprocess.check_output(pip_command, stderr=subprocess.STDOUT)
                 except subprocess.CalledProcessError as e:
                     logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
                     os._exit(1)
