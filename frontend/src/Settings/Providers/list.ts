@@ -77,6 +77,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      featured_only: false,
+    },
+    keyNameOverride: {
+      featured_only: "Only Download Featured",
     },
   },
   { key: "napiprojekt", description: "Polish Subtitles Provider" },
