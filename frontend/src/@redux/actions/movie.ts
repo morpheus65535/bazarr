@@ -1,10 +1,8 @@
-import { createAction } from "redux-actions";
 import { createDeleteAction } from "../../@socketio/reducer";
 import { MoviesApi } from "../../apis";
 import {
   MOVIES_DELETE_ITEMS,
   MOVIES_DELETE_WANTED_ITEMS,
-  MOVIES_MARK_WANTED_LIST_DIRTY,
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_LIST,
@@ -26,10 +24,6 @@ export const movieUpdateWantedList = createAsyncAction(
 
 export const movieDeleteWantedItems = createDeleteAction(
   MOVIES_DELETE_WANTED_ITEMS
-);
-
-export const movieMarkWantedListDirty = createAction(
-  MOVIES_MARK_WANTED_LIST_DIRTY
 );
 
 export const movieUpdateWantedByRange = createAsyncAction(

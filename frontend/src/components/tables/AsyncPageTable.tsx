@@ -85,7 +85,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   }, [pageIndex]);
 
   useEffect(() => {
-    const needFetch = visibleItemIds.length === 0 || dirty === true;
+    const needFetch = visibleItemIds.length === 0 && dirty === false;
     const needRefresh = !visibleItemIds.every(isNonNullable);
     if (needFetch || needRefresh) {
       loader(pageStart, pageSize);

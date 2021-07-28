@@ -1,11 +1,9 @@
-import { createAction } from "redux-actions";
 import { createDeleteAction } from "../../@socketio/reducer";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import {
   SERIES_DELETE_EPISODES,
   SERIES_DELETE_ITEMS,
   SERIES_DELETE_WANTED_ITEMS,
-  SERIES_MARK_WANTED_LIST_DIRTY,
   SERIES_UPDATE_BLACKLIST,
   SERIES_UPDATE_EPISODE_LIST,
   SERIES_UPDATE_HISTORY_LIST,
@@ -21,10 +19,6 @@ export const seriesUpdateWantedList = createAsyncAction(
 
 export const seriesDeleteWantedItems = createDeleteAction(
   SERIES_DELETE_WANTED_ITEMS
-);
-
-export const seriesMarkWantedListDirty = createAction(
-  SERIES_MARK_WANTED_LIST_DIRTY
 );
 
 export const seriesUpdateWantedByRange = createAsyncAction(

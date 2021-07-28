@@ -2,7 +2,6 @@ import { Action, handleActions } from "redux-actions";
 import {
   MOVIES_DELETE_ITEMS,
   MOVIES_DELETE_WANTED_ITEMS,
-  MOVIES_MARK_WANTED_LIST_DIRTY,
   MOVIES_UPDATE_BLACKLIST,
   MOVIES_UPDATE_HISTORY_LIST,
   MOVIES_UPDATE_LIST,
@@ -12,7 +11,6 @@ import { AsyncAction } from "../types";
 import { defaultAOS } from "../utils";
 import {
   deleteOrderListItemBy,
-  markOrderListDirty,
   updateAsyncState,
   updateOrderIdState,
 } from "../utils/mapper";
@@ -36,12 +34,6 @@ const reducer = handleActions<ReduxStore.Movie, any>(
       return {
         ...state,
         wantedMovieList: deleteOrderListItemBy(action, state.wantedMovieList),
-      };
-    },
-    [MOVIES_MARK_WANTED_LIST_DIRTY]: (state, action) => {
-      return {
-        ...state,
-        wantedMovieList: markOrderListDirty(state.wantedMovieList),
       };
     },
     [MOVIES_UPDATE_HISTORY_LIST]: (
