@@ -17,9 +17,9 @@ class SeriesApi extends BaseApi {
     });
   }
 
-  async seriesBy(start: number, length: number) {
+  async seriesBy(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Item.Series>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Series>>("", { start, length })
+      this.get<AsyncDataWrapper<Item.Series>>("", params)
         .then((result) => {
           resolve(result.data);
         })

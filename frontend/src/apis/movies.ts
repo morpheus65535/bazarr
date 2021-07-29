@@ -49,9 +49,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async moviesBy(start: number, length: number) {
+  async moviesBy(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Movie>>("", { start, length })
+      this.get<AsyncDataWrapper<Item.Movie>>("", params)
         .then((result) => {
           resolve(result.data);
         })
@@ -69,9 +69,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async wanted(start: number, length: number) {
+  async wanted(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { start, length })
+      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", params)
         .then((result) => {
           resolve(result.data);
         })

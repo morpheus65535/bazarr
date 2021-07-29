@@ -3,9 +3,8 @@ import { MoviesApi } from "../../apis";
 
 export const movieUpdateByRange = createAsyncThunk(
   "movies/update/range",
-  async (params: ReduxStore.ByRangePayload) => {
-    const { start, length } = params;
-    const response = await MoviesApi.moviesBy(start, length);
+  async (params: Parameter.Range) => {
+    const response = await MoviesApi.moviesBy(params);
     return response;
   }
 );
@@ -34,9 +33,8 @@ export const movieRemoveWantedItems = createAction<number[]>(
 
 export const movieUpdateWantedByRange = createAsyncThunk(
   "movies/wanted/update/range",
-  async (params: ReduxStore.ByRangePayload) => {
-    const { start, length } = params;
-    const response = await MoviesApi.wanted(start, length);
+  async (params: Parameter.Range) => {
+    const response = await MoviesApi.wanted(params);
     return response;
   }
 );

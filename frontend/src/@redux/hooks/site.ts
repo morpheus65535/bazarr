@@ -7,8 +7,8 @@ export function useNotification(id: string, timeout: number = 5000) {
   const add = useReduxAction(siteAddNotifications);
 
   return useCallback(
-    (msg: Omit<ReduxStore.Notification, "id" | "timeout">) => {
-      const notification: ReduxStore.Notification = {
+    (msg: Omit<Server.Notification, "id" | "timeout">) => {
+      const notification: Server.Notification = {
         ...msg,
         id,
         timeout,

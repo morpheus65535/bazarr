@@ -12,7 +12,7 @@ type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
     aos: AsyncOrderState<T>;
-    loader: (params: ReduxStore.ByRangePayload) => void;
+    loader: (params: Parameter.Range) => void;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {

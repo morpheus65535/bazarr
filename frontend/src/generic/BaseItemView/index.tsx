@@ -13,7 +13,7 @@ import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  loader: (params: ReduxStore.ByRangePayload) => void;
+  loader: (params: Parameter.Range) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
   state: AsyncOrderState<T>;

@@ -225,6 +225,13 @@ namespace History {
   type ActionOptions = 1 | 2 | 3;
 }
 
+namespace Parameter {
+  interface Range {
+    start: number;
+    length: number;
+  }
+}
+
 interface SearchResultType {
   matches: string[];
   dont_matches: string[];

@@ -68,7 +68,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       key: "message",
       update: (msg) => {
         if (msg) {
-          const notifications = msg.map<ReduxStore.Notification>((message) => ({
+          const notifications = msg.map<Server.Notification>((message) => ({
             message,
             type: "info",
             id: "backend-message",

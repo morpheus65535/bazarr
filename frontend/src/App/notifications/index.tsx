@@ -41,7 +41,7 @@ const NotificationContainer: FunctionComponent<NotificationContainerProps> = () 
   );
 };
 
-type MessageHolderProps = ReduxStore.Notification & {};
+type MessageHolderProps = Server.Notification & {};
 
 const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   const { message, type, id, timeout } = props;
@@ -73,7 +73,7 @@ const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   );
 };
 
-type ProgressHolderProps = ReduxStore.Progress & {};
+type ProgressHolderProps = Server.Progress & {};
 
 const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
   id,

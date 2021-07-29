@@ -10,7 +10,7 @@ interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
   columns: Column<T>[];
   state: Readonly<AsyncOrderState<T>>;
-  loader: (params: ReduxStore.ByRangePayload) => void;
+  loader: (params: Parameter.Range) => void;
   searchAll: () => Promise<void>;
 }
 

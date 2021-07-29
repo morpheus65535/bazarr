@@ -3,6 +3,7 @@ import {
   AsyncThunk,
   CaseReducer,
   Draft,
+  PayloadAction,
 } from "@reduxjs/toolkit";
 import { AsyncThunkFulfilledActionCreator } from "@reduxjs/toolkit/dist/createAsyncThunk";
 import { difference, has, uniqBy } from "lodash";
@@ -53,7 +54,7 @@ export function createAOSWholeReducer<S, T, ID extends keyof T>(
 
 export function createAOSRangeReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<AsyncDataWrapper<T>, ReduxStore.ByRangePayload, {}>,
+  thunk: AsyncThunk<AsyncDataWrapper<T>, Parameter.Range, {}>,
   getAos: (state: Draft<S>) => Draft<AsyncOrderState<T>>
 ) {
   builder
@@ -74,7 +75,7 @@ export function createAOSRangeReducer<S, T>(
 
 export function removeOrderListItem<T extends LooseObject>(
   state: Draft<AsyncOrderState<T>>,
-  action: ReduxStore.Action<number[]>
+  action: PayloadAction<number[]>
 ) {
   const ids = action.payload;
   const { items, order } = state.data;
@@ -88,7 +89,7 @@ export function removeOrderListItem<T extends LooseObject>(
 
 export function removeAsyncListItem<T extends LooseObject>(
   state: Draft<AsyncState<T[]>>,
-  action: ReduxStore.Action<number[]>,
+  action: PayloadAction<number[]>,
   match: ItemIdType<T>
 ) {
   const ids = new Set(action.payload);

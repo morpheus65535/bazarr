@@ -29,9 +29,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async wanted(start: number, length: number) {
+  async wanted(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Wanted.Episode>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", { start, length })
+      this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", params)
         .then((result) => {
           resolve(result.data);
         })

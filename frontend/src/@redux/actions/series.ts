@@ -11,9 +11,8 @@ export const seriesUpdateWantedList = createAsyncThunk(
 
 export const seriesUpdateWantedListByRange = createAsyncThunk(
   "series/wanted/update/range",
-  async (params: ReduxStore.ByRangePayload) => {
-    const { start, length } = params;
-    const response = await EpisodesApi.wanted(start, length);
+  async (params: Parameter.Range) => {
+    const response = await EpisodesApi.wanted(params);
     return response;
   }
 );
@@ -36,9 +35,8 @@ export const seriesUpdateList = createAsyncThunk(
 
 export const seriesUpdateByRange = createAsyncThunk(
   "series/update/range",
-  async (params: ReduxStore.ByRangePayload) => {
-    const { start, length } = params;
-    const response = await SeriesApi.seriesBy(start, length);
+  async (params: Parameter.Range) => {
+    const response = await SeriesApi.seriesBy(params);
     return response;
   }
 );

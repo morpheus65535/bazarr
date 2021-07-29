@@ -13,70 +13,80 @@ import {
   siteUpdateOffline,
 } from "../actions/site";
 
-const reducer = createReducer<ReduxStore.Site>(
-  {
-    initialized: false,
-    auth: true,
-    progress: [],
-    notifications: [],
-    sidebar: "",
-    badges: {
-      movies: 0,
-      episodes: 0,
-      providers: 0,
-      status: 0,
-    },
-    offline: false,
+interface Site {
+  // Initialization state or error message
+  initialized: boolean | string;
+  auth: boolean;
+  progress: Server.Progress[];
+  notifications: Server.Notification[];
+  sidebar: string;
+  badges: Badge;
+  offline: boolean;
+}
+
+const defaultSite: Site = {
+  initialized: false,
+  auth: true,
+  progress: [],
+  notifications: [],
+  sidebar: "",
+  badges: {
+    movies: 0,
+    episodes: 0,
+    providers: 0,
+    status: 0,
   },
-  (builder) => {
-    builder
-      .addCase(siteRedirectToAuth, (state) => {
-        if (process.env.NODE_ENV !== "development") {
-          apis.danger_resetApi("NEED_AUTH");
-        }
-        state.auth = false;
-      })
-      .addCase(siteUpdateInitialization, (state, action) => {
-        const init =
-          action.payload !== null
-            ? action.payload
-            : "An Error Occurred When Initializing Bazarr UI";
-        state.initialized = init;
-      })
-      .addCase(siteAddNotifications, (state, action) => {
-        const notifications = uniqBy(
-          [...action.payload.reverse(), ...state.notifications],
-          (n) => n.id
-        );
-        state.notifications = notifications;
-      })
-      .addCase(siteRemoveNotifications, (state, action) => {
-        const notifications = [...state.notifications];
-        remove(notifications, (n) => n.id === action.payload);
-        state.notifications = notifications;
-      })
-      .addCase(siteAddProgress, (state, action) => {
-        const progress = uniqBy(
-          [...action.payload.reverse(), ...state.progress],
-          (n) => n.id
-        );
-        state.progress = progress;
-      })
-      .addCase(siteRemoveProgress, (state, action) => {
-        const progress = [...state.progress];
-        remove(progress, (n) => n.id === action.payload);
-        state.progress = progress;
-      })
-      .addCase(siteChangeSidebar, (state, action) => {
-        state.sidebar = action.payload;
-      })
-      .addCase(siteUpdateOffline, (state, action) => {
-        state.offline = action.payload;
-      })
-      .addCase(siteUpdateBadges.fulfilled, (state, action) => {
-        state.badges = action.payload;
-      });
-  }
-);
+  offline: false,
+};
+
+const reducer = createReducer(defaultSite, (builder) => {
+  builder
+    .addCase(siteRedirectToAuth, (state) => {
+      if (process.env.NODE_ENV !== "development") {
+        apis.danger_resetApi("NEED_AUTH");
+      }
+      state.auth = false;
+    })
+    .addCase(siteUpdateInitialization, (state, action) => {
+      const init =
+        action.payload !== null
+          ? action.payload
+          : "An Error Occurred When Initializing Bazarr UI";
+      state.initialized = init;
+    })
+    .addCase(siteAddNotifications, (state, action) => {
+      const notifications = uniqBy(
+        [...action.payload.reverse(), ...state.notifications],
+        (n) => n.id
+      );
+      state.notifications = notifications;
+    })
+    .addCase(siteRemoveNotifications, (state, action) => {
+      const notifications = [...state.notifications];
+      remove(notifications, (n) => n.id === action.payload);
+      state.notifications = notifications;
+    })
+    .addCase(siteAddProgress, (state, action) => {
+      const progress = uniqBy(
+        [...action.payload.reverse(), ...state.progress],
+        (n) => n.id
+      );
+      state.progress = progress;
+    })
+    .addCase(siteRemoveProgress, (state, action) => {
+      const progress = [...state.progress];
+      remove(progress, (n) => n.id === action.payload);
+      state.progress = progress;
+    })
+    .addCase(siteChangeSidebar, (state, action) => {
+      state.sidebar = action.payload;
+    })
+    .addCase(siteUpdateOffline, (state, action) => {
+      state.offline = action.payload;
+    })
+    .addCase(siteUpdateBadges.fulfilled, (state, action) => {
+      state.badges = action.payload;
+    });
+});
 
 export default reducer;

@@ -13,7 +13,7 @@ export const siteUpdateInitialization = createAction<string | null | true>(
 
 export const siteRedirectToAuth = createAction("site/redirect_auth");
 
-export const siteAddNotifications = createAction<ReduxStore.Notification[]>(
+export const siteAddNotifications = createAction<Server.Notification[]>(
   "site/notifications/add"
 );
 
@@ -21,7 +21,7 @@ export const siteRemoveNotifications = createAction<string>(
   "site/notifications/remove"
 );
 
-export const siteAddProgress = createAction<ReduxStore.Progress[]>(
+export const siteAddProgress = createAction<Server.Progress[]>(
   "site/progress/add"
 );
 
