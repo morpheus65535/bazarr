@@ -24,8 +24,8 @@ interface Series {
   seriesList: AsyncOrderState<Item.Series>;
   wantedEpisodesList: AsyncOrderState<Wanted.Episode>;
   episodeList: AsyncState<Item.Episode[]>;
-  historyList: AsyncState<Array<History.Episode>>;
-  blacklist: AsyncState<Array<Blacklist.Episode>>;
+  historyList: AsyncState<History.Episode[]>;
+  blacklist: AsyncState<Blacklist.Episode[]>;
 }
 
 const defaultSeries: Series = {

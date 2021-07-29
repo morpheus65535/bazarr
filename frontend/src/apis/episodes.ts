@@ -5,9 +5,9 @@ class EpisodeApi extends BaseApi {
     super("/episodes");
   }
 
-  async bySeriesId(seriesid: number[]): Promise<Array<Item.Episode>> {
-    return new Promise<Array<Item.Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Item.Episode>>>("", { seriesid })
+  async bySeriesId(seriesid: number[]): Promise<Item.Episode[]> {
+    return new Promise<Item.Episode[]>((resolve, reject) => {
+      this.get<DataWrapper<Item.Episode[]>>("", { seriesid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -17,9 +17,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async byEpisodeId(episodeid: number[]): Promise<Array<Item.Episode>> {
-    return new Promise<Array<Item.Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Item.Episode>>>("", { episodeid })
+  async byEpisodeId(episodeid: number[]): Promise<Item.Episode[]> {
+    return new Promise<Item.Episode[]>((resolve, reject) => {
+      this.get<DataWrapper<Item.Episode[]>>("", { episodeid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -53,9 +53,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async history(episodeid?: number): Promise<Array<History.Episode>> {
-    return new Promise<Array<History.Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<History.Episode>>>("/history", { episodeid })
+  async history(episodeid?: number): Promise<History.Episode[]> {
+    return new Promise<History.Episode[]>((resolve, reject) => {
+      this.get<DataWrapper<History.Episode[]>>("/history", { episodeid })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -101,9 +101,9 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async blacklist(): Promise<Array<Blacklist.Episode>> {
-    return new Promise<Array<Blacklist.Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Blacklist.Episode>>>("/blacklist")
+  async blacklist(): Promise<Blacklist.Episode[]> {
+    return new Promise<Blacklist.Episode[]>((resolve, reject) => {
+      this.get<DataWrapper<Blacklist.Episode[]>>("/blacklist")
         .then((res) => {
           resolve(res.data.data);
         })

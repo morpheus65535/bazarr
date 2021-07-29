@@ -18,8 +18,8 @@ import {
 interface Movie {
   movieList: AsyncOrderState<Item.Movie>;
   wantedMovieList: AsyncOrderState<Wanted.Movie>;
-  historyList: AsyncState<Array<History.Movie>>;
-  blacklist: AsyncState<Array<Blacklist.Movie>>;
+  historyList: AsyncState<History.Movie[]>;
+  blacklist: AsyncState<Blacklist.Movie[]>;
 }
 
 const defaultMovie: Movie = {

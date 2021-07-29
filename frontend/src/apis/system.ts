@@ -58,8 +58,8 @@ class SystemApi extends BaseApi {
   }
 
   async languages(history: boolean = false) {
-    return new Promise<Array<ApiLanguage>>((resolve, reject) => {
-      this.get<Array<ApiLanguage>>("/languages", { history })
+    return new Promise<ApiLanguage[]>((resolve, reject) => {
+      this.get<ApiLanguage[]>("/languages", { history })
         .then((result) => {
           resolve(result.data);
         })
@@ -70,8 +70,8 @@ class SystemApi extends BaseApi {
   }
 
   async languagesProfileList() {
-    return new Promise<Array<Profile.Languages>>((resolve, reject) => {
-      this.get<Array<Profile.Languages>>("/languages/profiles")
+    return new Promise<Profile.Languages[]>((resolve, reject) => {
+      this.get<Profile.Languages[]>("/languages/profiles")
         .then((result) => resolve(result.data))
         .catch(reject);
     });
@@ -102,16 +102,16 @@ class SystemApi extends BaseApi {
   }
 
   async logs() {
-    return new Promise<Array<System.Log>>((resolve, reject) => {
-      this.get<DataWrapper<Array<System.Log>>>("/logs")
+    return new Promise<System.Log[]>((resolve, reject) => {
+      this.get<DataWrapper<System.Log[]>>("/logs")
         .then((result) => resolve(result.data.data))
         .catch((err) => reject(err));
     });
   }
 
   async releases() {
-    return new Promise<Array<ReleaseInfo>>((resolve, reject) => {
-      this.get<DataWrapper<Array<ReleaseInfo>>>("/releases")
+    return new Promise<ReleaseInfo[]>((resolve, reject) => {
+      this.get<DataWrapper<ReleaseInfo[]>>("/releases")
         .then((result) => resolve(result.data.data))
         .catch(reject);
     });

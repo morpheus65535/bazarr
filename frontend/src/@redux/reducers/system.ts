@@ -14,15 +14,15 @@ import { defaultAS } from "../utils";
 import { createAsyncStateReducer } from "../utils/factory";
 
 interface System {
-  languages: AsyncState<Array<Language>>;
-  enabledLanguage: AsyncState<Array<Language>>;
-  languagesProfiles: AsyncState<Array<Profile.Languages>>;
+  languages: AsyncState<Language[]>;
+  enabledLanguage: AsyncState<Language[]>;
+  languagesProfiles: AsyncState<Profile.Languages[]>;
   status: AsyncState<System.Status | undefined>;
-  health: AsyncState<Array<System.Health>>;
-  tasks: AsyncState<Array<System.Task>>;
-  providers: AsyncState<Array<System.Provider>>;
-  logs: AsyncState<Array<System.Log>>;
-  releases: AsyncState<Array<ReleaseInfo>>;
+  health: AsyncState<System.Health[]>;
+  tasks: AsyncState<System.Task[]>;
+  providers: AsyncState<System.Provider[]>;
+  logs: AsyncState<System.Log[]>;
+  releases: AsyncState<ReleaseInfo[]>;
   settings: AsyncState<Settings | undefined>;
 }
 
