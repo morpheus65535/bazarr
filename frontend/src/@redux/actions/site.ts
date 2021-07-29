@@ -1,13 +1,18 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { BadgesApi } from "../../apis";
+import { systemUpdateAllSettings } from "./system";
 
-// export const bootstrap = createCallbackAction(
-//   () => [systemUpdateLanguagesAll(), systemUpdateSettings(), badgeUpdateAll()],
-//   () => siteUpdateInitialization(true),
-//   () => siteUpdateInitialization(null)
-// );
+export const siteBootstrap = createAsyncThunk(
+  "site/bootstrap",
+  (_: undefined, { dispatch }) => {
+    return Promise.all([
+      dispatch(systemUpdateAllSettings()),
+      dispatch(siteUpdateBadges()),
+    ]);
+  }
+);
 
-export const siteUpdateInitialization = createAction<string | null | true>(
+export const siteUpdateInitialization = createAction<string | true>(
   "site/initialization/update"
 );
 

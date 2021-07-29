@@ -6,7 +6,7 @@ import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
+import { useAppDispatch } from "../../@redux/hooks/base";
 import { ContentHeader } from "../../components";
 import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
@@ -20,7 +20,7 @@ export interface SharedProps<T extends Item.Base> {
 }
 
 interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
-  updateAction: AsyncThunk<AsyncDataWrapper<T>, number[] | undefined, any>;
+  updateAction: AsyncThunk<AsyncDataWrapper<T>, number[] | undefined, {}>;
 }
 
 function BaseItemView<T extends Item.Base>({
@@ -32,17 +32,20 @@ function BaseItemView<T extends Item.Base>({
   const [pendingEditMode, setPendingEdit] = useState(false);
   const [editMode, setEdit] = useState(false);
 
-  const onUpdated = useCallback(() => {
-    setPendingEdit((edit) => {
-      // Hack to remove all dependencies
-      setEdit(edit);
-      return edit;
-    });
-    setDirty([]);
-  }, []);
-
-  // const update = useReduxActionWith(updateAction, onUpdated);
-  const update = useReduxAction(updateAction);
+  const dispatch = useAppDispatch();
+  const update = useCallback(
+    (ids?: number[]) => {
+      dispatch(updateAction(ids)).then(() => {
+        setPendingEdit((edit) => {
+          // Hack to remove all dependencies
+          setEdit(edit);
+          return edit;
+        });
+        setDirty([]);
+      });
+    },
+    [dispatch, updateAction]
+  );
 
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);

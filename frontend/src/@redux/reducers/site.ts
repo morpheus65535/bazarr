@@ -4,6 +4,7 @@ import apis from "../../apis";
 import {
   siteAddNotifications,
   siteAddProgress,
+  siteBootstrap,
   siteChangeSidebar,
   siteRedirectToAuth,
   siteRemoveNotifications,
@@ -41,6 +42,12 @@ const defaultSite: Site = {
 
 const reducer = createReducer(defaultSite, (builder) => {
   builder
+    .addCase(siteBootstrap.fulfilled, (state) => {
+      state.initialized = true;
+    })
+    .addCase(siteBootstrap.rejected, (state) => {
+      state.initialized = "An Error Occurred When Initializing Bazarr UI";
+    })
     .addCase(siteRedirectToAuth, (state) => {
       if (process.env.NODE_ENV !== "development") {
         apis.danger_resetApi("NEED_AUTH");
@@ -48,11 +55,7 @@ const reducer = createReducer(defaultSite, (builder) => {
       state.auth = false;
     })
     .addCase(siteUpdateInitialization, (state, action) => {
-      const init =
-        action.payload !== null
-          ? action.payload
-          : "An Error Occurred When Initializing Bazarr UI";
-      state.initialized = init;
+      state.initialized = action.payload;
     })
     .addCase(siteAddNotifications, (state, action) => {
       const notifications = uniqBy(

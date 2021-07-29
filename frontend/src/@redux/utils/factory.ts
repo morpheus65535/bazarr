@@ -65,6 +65,7 @@ export function createAOSRangeReducer<S, T>(
     .addCase(thunk.fulfilled, (state, action) => {
       const aos = getAos(state);
       aos.state = "succeeded";
+      const { start, length } = action.meta.arg;
     })
     .addCase(thunk.rejected, (state, action) => {
       const aos = getAos(state);

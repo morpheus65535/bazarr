@@ -1,6 +1,17 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { ProvidersApi, SystemApi } from "../../apis";
 
+export const systemUpdateAllSettings = createAsyncThunk(
+  "system/update",
+  (_: undefined, { dispatch }) => {
+    return Promise.all([
+      dispatch(systemUpdateSettings()),
+      dispatch(systemUpdateLanguages()),
+      dispatch(systemUpdateLanguagesProfiles()),
+    ]);
+  }
+);
+
 export const systemUpdateLanguages = createAsyncThunk(
   "system/languages/update",
   async () => {

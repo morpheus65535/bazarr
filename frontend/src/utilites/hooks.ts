@@ -29,12 +29,12 @@ export function useHasUpdateInject() {
 }
 
 export function useOnLoadingFinish(
-  state: Readonly<AsyncState<any>>,
+  as: Readonly<AsyncState<any>>,
   callback: () => void
 ) {
   return useDidUpdate(() => {
-    if (!state.state) {
+    if (as.state !== "loading") {
       callback();
     }
-  }, [state.state]);
+  }, [as.state]);
 }

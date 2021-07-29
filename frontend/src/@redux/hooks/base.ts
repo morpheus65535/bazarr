@@ -10,8 +10,12 @@ export function useReduxStore<T extends (store: RootState) => any>(
   return useSelector<RootState, ReturnType<T>>(selector);
 }
 
+export function useAppDispatch() {
+  return useDispatch<AppDispatch>();
+}
+
 export function useReduxAction<T extends ActionCreator<any>>(action: T) {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   return useCallback((...args: Parameters<T>) => dispatch(action(...args)), [
     action,
     dispatch,

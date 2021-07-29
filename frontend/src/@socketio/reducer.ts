@@ -10,13 +10,13 @@ import {
   seriesUpdateWantedList,
   siteAddNotifications,
   siteAddProgress,
+  siteBootstrap,
   siteRemoveProgress,
   siteUpdateBadges,
   siteUpdateInitialization,
   siteUpdateOffline,
+  systemUpdateAllSettings,
   systemUpdateLanguages,
-  systemUpdateLanguagesProfiles,
-  systemUpdateSettings,
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 
@@ -42,12 +42,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "connect",
-      any: () => {
-        reduxStore.dispatch(systemUpdateLanguages());
-        reduxStore.dispatch(systemUpdateLanguagesProfiles());
-        reduxStore.dispatch(systemUpdateSettings());
-        reduxStore.dispatch(siteUpdateBadges());
-      },
+      any: () => reduxStore.dispatch(siteBootstrap()),
     },
     {
       key: "connect_error",
@@ -56,7 +51,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
         if (initialized === true) {
           reduxStore.dispatch(siteUpdateOffline(true));
         } else {
-          reduxStore.dispatch(siteUpdateInitialization(null));
+          reduxStore.dispatch(siteUpdateInitialization("Socket.IO Error"));
         }
       },
     },
@@ -124,7 +119,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "settings",
-      any: bindToReduxStore(systemUpdateSettings),
+      any: bindToReduxStore(systemUpdateAllSettings),
     },
     {
       key: "languages",

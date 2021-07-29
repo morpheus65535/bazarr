@@ -14,12 +14,12 @@ import {
   seriesUpdateHistoryList,
   seriesUpdateList,
   seriesUpdateWantedList,
+  systemUpdateAllSettings,
   systemUpdateHealth,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
   systemUpdateLogs,
   systemUpdateReleases,
-  systemUpdateSettings,
   systemUpdateStatus,
   systemUpdateTasks,
 } from "../actions";
@@ -33,7 +33,7 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
 }
 
 export function useSystemSettings() {
-  const update = useReduxAction(systemUpdateSettings);
+  const update = useReduxAction(systemUpdateAllSettings);
   const items = useReduxStore((s) => s.system.settings);
 
   return stateBuilder(items, update);
