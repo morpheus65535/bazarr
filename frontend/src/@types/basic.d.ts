@@ -18,7 +18,7 @@ interface OrderIdState<T> {
 }
 
 interface AsyncState<T> {
-  updating: boolean;
+  state: "loading" | "succeeded" | "failed" | "dirty" | "idle";
   error?: Error;
   data: Readonly<T>;
 }

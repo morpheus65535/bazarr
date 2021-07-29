@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
 import { buildOrderList } from "../../utilites";
 import {
-  episodeDeleteItems,
+  episodesRemoveItems,
   episodeUpdateBy,
   episodeUpdateById,
   movieUpdateBlacklist,
@@ -19,7 +19,7 @@ import {
   systemUpdateLanguagesProfiles,
   systemUpdateLogs,
   systemUpdateReleases,
-  systemUpdateSettingsAll,
+  systemUpdateSettings,
   systemUpdateStatus,
   systemUpdateTasks,
 } from "../actions";
@@ -33,7 +33,7 @@ function stateBuilder<T, D extends (...args: any[]) => any>(
 }
 
 export function useSystemSettings() {
-  const update = useReduxAction(systemUpdateSettingsAll);
+  const update = useReduxAction(systemUpdateSettings);
   const items = useReduxStore((s) => s.system.settings);
 
   return stateBuilder(items, update);
@@ -243,12 +243,18 @@ export function useEpisodesBy(seriesId?: number) {
     [list, items]
   );
 
-  const actionById = useReduxAction(episodeUpdateById);
-  const wrapActionById = useWrapToOptionalId(actionById);
-  const deleteAction = useReduxAction(episodeDeleteItems);
+  const updateById = useReduxAction(episodeUpdateById);
+  const wrappedUpdateById = useWrapToOptionalId(updateById);
+  const deleteAction = useReduxAction(episodesRemoveItems);
+  const wrappedDelete = useWrapToOptionalId(deleteAction);
+
   const episodeReducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "episode", update: wrapActionById, delete: deleteAction }),
-    [wrapActionById, deleteAction]
+    () => ({
+      key: "episode",
+      update: wrappedUpdateById,
+      delete: wrappedDelete,
+    }),
+    [wrappedUpdateById, wrappedDelete]
   );
   useSocketIOReducer(episodeReducer);
 
@@ -267,7 +273,7 @@ export function useEpisodesBy(seriesId?: number) {
 
 export function useRawMovies() {
   const update = useReduxAction(movieUpdateList);
-  const items = useReduxStore((d) => d.movie.movieList);
+  const items = useReduxStore((d) => d.movies.movieList);
   return stateBuilder(items, update);
 }
 
@@ -327,14 +333,14 @@ export function useWantedSeries() {
 
 export function useWantedMovies() {
   const update = useReduxAction(movieUpdateWantedList);
-  const items = useReduxStore((d) => d.movie.wantedMovieList);
+  const items = useReduxStore((d) => d.movies.wantedMovieList);
 
   return stateBuilder(items, update);
 }
 
 export function useBlacklistMovies() {
   const update = useReduxAction(movieUpdateBlacklist);
-  const items = useReduxStore((d) => d.movie.blacklist);
+  const items = useReduxStore((d) => d.movies.blacklist);
   const reducer = useMemo<SocketIO.Reducer>(
     () => ({ key: "movie-blacklist", any: update }),
     [update]
@@ -364,7 +370,7 @@ export function useBlacklistSeries() {
 
 export function useMoviesHistory() {
   const update = useReduxAction(movieUpdateHistoryList);
-  const items = useReduxStore((s) => s.movie.historyList);
+  const items = useReduxStore((s) => s.movies.historyList);
   const reducer = useMemo<SocketIO.Reducer>(
     () => ({ key: "movie-history", update }),
     [update]

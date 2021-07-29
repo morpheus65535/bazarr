@@ -33,8 +33,8 @@ export function useOnLoadingFinish(
   callback: () => void
 ) {
   return useDidUpdate(() => {
-    if (!state.updating) {
+    if (!state.state) {
       callback();
     }
-  }, [state.updating]);
+  }, [state.state]);
 }

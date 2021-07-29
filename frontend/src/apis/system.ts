@@ -90,8 +90,8 @@ class SystemApi extends BaseApi {
   }
 
   async health() {
-    return new Promise<System.Health>((resolve, reject) => {
-      this.get<DataWrapper<System.Health>>("/health")
+    return new Promise<System.Health[]>((resolve, reject) => {
+      this.get<DataWrapper<System.Health[]>>("/health")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -125,9 +125,9 @@ class SystemApi extends BaseApi {
     });
   }
 
-  async getTasks() {
-    return new Promise<System.Task>((resolve, reject) => {
-      this.get<DataWrapper<System.Task>>("/tasks")
+  async tasks() {
+    return new Promise<System.Task[]>((resolve, reject) => {
+      this.get<DataWrapper<System.Task[]>>("/tasks")
         .then((result) => {
           resolve(result.data.data);
         })

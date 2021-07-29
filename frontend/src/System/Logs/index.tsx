@@ -30,7 +30,7 @@ const SystemLogsView: FunctionComponent<Props> = () => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={logs.updating}
+              updating={logs.state === "loading"}
               icon={faSync}
               onClick={update}
             >

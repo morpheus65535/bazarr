@@ -1,63 +1,40 @@
-import { createAction } from "redux-actions";
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { BadgesApi } from "../../apis";
-import {
-  SITE_BADGE_UPDATE,
-  SITE_INITIALIZED,
-  SITE_INITIALIZE_FAILED,
-  SITE_NEED_AUTH,
-  SITE_NOTIFICATIONS_ADD,
-  SITE_NOTIFICATIONS_REMOVE,
-  SITE_OFFLINE_UPDATE,
-  SITE_PROGRESS_ADD,
-  SITE_PROGRESS_REMOVE,
-  SITE_SIDEBAR_UPDATE,
-} from "../constants";
-import { createAsyncAction, createCallbackAction } from "./factory";
-import { systemUpdateLanguagesAll, systemUpdateSettings } from "./system";
 
-export const bootstrap = createCallbackAction(
-  () => [systemUpdateLanguagesAll(), systemUpdateSettings(), badgeUpdateAll()],
-  () => siteInitialized(),
-  () => siteInitializationFailed()
+// export const bootstrap = createCallbackAction(
+//   () => [systemUpdateLanguagesAll(), systemUpdateSettings(), badgeUpdateAll()],
+//   () => siteUpdateInitialization(true),
+//   () => siteUpdateInitialization(null)
+// );
+
+export const siteUpdateInitialization = createAction<string | null | true>(
+  "site/initialization/update"
 );
 
-// TODO: Override error messages
-export const siteInitializationFailed = createAction(SITE_INITIALIZE_FAILED);
+export const siteRedirectToAuth = createAction("site/redirect_auth");
 
-const siteInitialized = createAction(SITE_INITIALIZED);
-
-export const siteRedirectToAuth = createAction(SITE_NEED_AUTH);
-
-export const badgeUpdateAll = createAsyncAction(SITE_BADGE_UPDATE, () =>
-  BadgesApi.all()
+export const siteAddNotifications = createAction<ReduxStore.Notification[]>(
+  "site/notifications/add"
 );
 
-export const siteAddNotifications = createAction(
-  SITE_NOTIFICATIONS_ADD,
-  (notification: ReduxStore.Notification[]) => notification
+export const siteRemoveNotifications = createAction<string>(
+  "site/notifications/remove"
 );
 
-export const siteRemoveNotifications = createAction(
-  SITE_NOTIFICATIONS_REMOVE,
-  (id: string) => id
+export const siteAddProgress = createAction<ReduxStore.Progress[]>(
+  "site/progress/add"
 );
 
-export const siteAddProgress = createAction(
-  SITE_PROGRESS_ADD,
-  (progress: ReduxStore.Progress[]) => progress
-);
+export const siteRemoveProgress = createAction<string>("site/progress/remove");
 
-export const siteRemoveProgress = createAction(
-  SITE_PROGRESS_REMOVE,
-  (id: string) => id
-);
+export const siteChangeSidebar = createAction<string>("site/sidebar/update");
 
-export const siteChangeSidebar = createAction(
-  SITE_SIDEBAR_UPDATE,
-  (id: string) => id
-);
+export const siteUpdateOffline = createAction<boolean>("site/offline/update");
 
-export const siteUpdateOffline = createAction(
-  SITE_OFFLINE_UPDATE,
-  (state: boolean) => state
+export const siteUpdateBadges = createAsyncThunk(
+  "site/badges/update",
+  async () => {
+    const response = await BadgesApi.all();
+    return response;
+  }
 );

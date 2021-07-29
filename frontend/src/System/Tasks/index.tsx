@@ -20,7 +20,7 @@ const SystemTasksView: FunctionComponent<Props> = () => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={tasks.updating}
+              updating={tasks.state === "loading"}
               icon={faSync}
               onClick={update}
             >

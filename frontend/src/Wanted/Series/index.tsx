@@ -4,7 +4,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateWantedByRange } from "../../@redux/actions";
+import { seriesUpdateWantedListByRange } from "../../@redux/actions";
 import { useWantedSeries } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
@@ -17,7 +17,7 @@ interface Props {}
 const WantedSeriesView: FunctionComponent<Props> = () => {
   const [series] = useWantedSeries();
 
-  const loader = useReduxAction(seriesUpdateWantedByRange);
+  const loader = useReduxAction(seriesUpdateWantedListByRange);
 
   const searchAll = useCallback(
     () => SeriesApi.action({ action: "search-wanted" }),

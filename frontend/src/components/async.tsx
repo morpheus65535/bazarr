@@ -51,7 +51,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
   const onError = useNotification("async-loading");
 
   useEffect(() => {
-    if (!state.updating && state.error !== undefined && !missing) {
+    if (!state.state && state.error !== undefined && !missing) {
       onError({
         type: "error",
         message: state.error.message,
@@ -59,7 +59,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     }
   }, [state, onError, missing]);
 
-  if (state.updating) {
+  if (state.state) {
     if (missing) {
       return <LoadingIndicator></LoadingIndicator>;
     }
@@ -143,7 +143,7 @@ export function AsyncSelector<
 
   return (
     <Selector
-      loading={state.updating}
+      loading={state.state === "loading"}
       options={options}
       label={label}
       {...selector}

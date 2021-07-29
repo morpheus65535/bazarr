@@ -1,120 +1,59 @@
-import { handleActions } from "redux-actions";
+import { createReducer } from "@reduxjs/toolkit";
 import {
-  SYSTEM_UPDATE_HEALTH,
-  SYSTEM_UPDATE_LANGUAGES_LIST,
-  SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
-  SYSTEM_UPDATE_LOGS,
-  SYSTEM_UPDATE_PROVIDERS,
-  SYSTEM_UPDATE_RELEASES,
-  SYSTEM_UPDATE_SETTINGS,
-  SYSTEM_UPDATE_STATUS,
-  SYSTEM_UPDATE_TASKS,
-} from "../constants";
-import { updateAsyncState } from "../utils/mapper";
+  providerUpdateList,
+  systemUpdateHealth,
+  systemUpdateLanguages,
+  systemUpdateLanguagesProfiles,
+  systemUpdateLogs,
+  systemUpdateReleases,
+  systemUpdateSettings,
+  systemUpdateStatus,
+  systemUpdateTasks,
+} from "../actions";
+import { defaultAS } from "../utils";
+import { createAsyncStateReducer } from "../utils/factory";
 
-const reducer = handleActions<ReduxStore.System, any>(
+const reducer = createReducer<ReduxStore.System>(
   {
-    [SYSTEM_UPDATE_LANGUAGES_LIST]: (state, action) => {
-      const languages = updateAsyncState<Array<ApiLanguage>>(action, []);
-      const enabledLanguage: AsyncState<ApiLanguage[]> = {
-        ...languages,
-        data: languages.data.filter((v) => v.enabled),
-      };
-      const newState = {
-        ...state,
-        languages,
-        enabledLanguage,
-      };
-      return newState;
-    },
-    [SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST]: (state, action) => {
-      const newState = {
-        ...state,
-        languagesProfiles: updateAsyncState<Array<Profile.Languages>>(
-          action,
-          []
-        ),
-      };
-      return newState;
-    },
-    [SYSTEM_UPDATE_STATUS]: (state, action) => {
-      return {
-        ...state,
-        status: updateAsyncState<System.Status | undefined>(
-          action,
-          state.status.data
-        ),
-      };
-    },
-    [SYSTEM_UPDATE_HEALTH]: (state, action) => {
-      return {
-        ...state,
-        health: updateAsyncState(action, state.health.data),
-      };
-    },
-    [SYSTEM_UPDATE_TASKS]: (state, action) => {
-      return {
-        ...state,
-        tasks: updateAsyncState<Array<System.Task>>(action, state.tasks.data),
-      };
-    },
-    [SYSTEM_UPDATE_PROVIDERS]: (state, action) => {
-      return {
-        ...state,
-        providers: updateAsyncState(action, state.providers.data),
-      };
-    },
-    [SYSTEM_UPDATE_LOGS]: (state, action) => {
-      return {
-        ...state,
-        logs: updateAsyncState(action, state.logs.data),
-      };
-    },
-    [SYSTEM_UPDATE_RELEASES]: (state, action) => {
-      return {
-        ...state,
-        releases: updateAsyncState(action, state.releases.data),
-      };
-    },
-    [SYSTEM_UPDATE_SETTINGS]: (state, action) => {
-      return {
-        ...state,
-        settings: updateAsyncState(action, state.settings.data),
-      };
-    },
+    languages: defaultAS([]),
+    enabledLanguage: defaultAS([]),
+    languagesProfiles: defaultAS([]),
+    status: defaultAS(undefined),
+    health: defaultAS([]),
+    tasks: defaultAS([]),
+    providers: defaultAS([]),
+    logs: defaultAS([]),
+    releases: defaultAS([]),
+    settings: defaultAS(undefined),
   },
-  {
-    languages: { updating: true, data: [] },
-    enabledLanguage: { updating: true, data: [] },
-    languagesProfiles: { updating: true, data: [] },
-    status: {
-      updating: true,
-      data: undefined,
-    },
-    health: {
-      updating: true,
-      data: [],
-    },
-    tasks: {
-      updating: true,
-      data: [],
-    },
-    providers: {
-      updating: true,
-      data: [],
-    },
-    logs: {
-      updating: true,
-      data: [],
-    },
-    releases: {
-      updating: true,
-      data: [],
-    },
-    settings: {
-      updating: true,
-      data: undefined,
-    },
+  (builder) => {
+    createAsyncStateReducer(
+      builder,
+      systemUpdateLanguages,
+      (s) => s.languages,
+      (state, action) => {
+        const enabled = action.payload.filter((v) => v.enabled);
+        const languages = action.payload as Language[];
+        state.enabledLanguage.state = "succeeded";
+        state.enabledLanguage.data = enabled;
+
+        state.languages.state = "succeeded";
+        state.languages.data = languages;
+      }
+    );
+
+    createAsyncStateReducer(
+      builder,
+      systemUpdateLanguagesProfiles,
+      (s) => s.languagesProfiles
+    );
+    createAsyncStateReducer(builder, systemUpdateHealth, (s) => s.health);
+    createAsyncStateReducer(builder, systemUpdateStatus, (s) => s.status);
+    createAsyncStateReducer(builder, systemUpdateLogs, (s) => s.logs);
+    createAsyncStateReducer(builder, systemUpdateTasks, (s) => s.tasks);
+    createAsyncStateReducer(builder, providerUpdateList, (s) => s.providers);
+    createAsyncStateReducer(builder, systemUpdateReleases, (s) => s.releases);
+    createAsyncStateReducer(builder, systemUpdateSettings, (s) => s.settings);
   }
 );
 

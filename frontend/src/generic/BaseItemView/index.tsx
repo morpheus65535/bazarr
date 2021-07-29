@@ -1,26 +1,26 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { AsyncThunk } from "@reduxjs/toolkit";
 import { uniqBy } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { useReduxActionWith } from "../../@redux/hooks/base";
-import { AsyncActionDispatcher } from "../../@redux/types";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { ContentHeader } from "../../components";
 import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  loader: (start: number, length: number) => void;
+  loader: (params: ReduxStore.ByRangePayload) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
   state: AsyncOrderState<T>;
 }
 
 interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
-  updateAction: (id?: number[]) => AsyncActionDispatcher<any>;
+  updateAction: AsyncThunk<AsyncDataWrapper<T>, number[] | undefined, any>;
 }
 
 function BaseItemView<T extends Item.Base>({
@@ -41,7 +41,8 @@ function BaseItemView<T extends Item.Base>({
     setDirty([]);
   }, []);
 
-  const update = useReduxActionWith(updateAction, onUpdated);
+  // const update = useReduxActionWith(updateAction, onUpdated);
+  const update = useReduxAction(updateAction);
 
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
@@ -143,7 +144,9 @@ function BaseItemView<T extends Item.Base>({
         ) : (
           <ContentHeader.Button
             updating={pendingEditMode !== editMode}
-            disabled={state.data.order.length === 0 && state.updating}
+            disabled={
+              state.data.order.length === 0 && state.state === "loading"
+            }
             icon={faList}
             onClick={startEdit}
           >

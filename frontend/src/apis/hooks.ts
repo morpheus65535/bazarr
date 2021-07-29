@@ -8,14 +8,14 @@ export function useAsyncRequest<F extends () => Promise<any>>(
   defaultData: RequestReturn<F>
 ): [AsyncState<RequestReturn<F>>, () => void] {
   const [state, setState] = useState<AsyncState<RequestReturn<F>>>({
-    updating: true,
+    state: "idle",
     data: defaultData,
   });
   const update = useCallback(() => {
-    setState((s) => ({ ...s, updating: true }));
+    setState((s) => ({ ...s, state: "loading" }));
     request()
-      .then((res) => setState({ updating: false, data: res }))
-      .catch((err) => setState((s) => ({ ...s, updating: false, err })));
+      .then((res) => setState({ state: "succeeded", data: res }))
+      .catch((err) => setState((s) => ({ ...s, state: "failed", err })));
   }, [request]);
 
   useDidMount(update);

@@ -8,19 +8,19 @@ export function updateAsyncState<T>(
   defaultVal: T
 ) {
   setter({
-    updating: true,
+    state: "loading",
     data: defaultVal,
   });
   promise
     .then((data) => {
       setter({
-        updating: false,
+        state: "succeeded",
         data: data,
       });
     })
     .catch((err) => {
       setter({
-        updating: false,
+        state: "failed",
         error: err,
         data: defaultVal,
       });

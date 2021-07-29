@@ -12,7 +12,7 @@ type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
     aos: AsyncOrderState<T>;
-    loader: (start: number, length: number) => void;
+    loader: (params: ReduxStore.ByRangePayload) => void;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {
@@ -20,7 +20,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const { style, options } = useStyleAndOptions(remain);
 
   const {
-    updating,
+    state: updating,
     data: { order, items, dirty },
   } = aos;
 
@@ -88,7 +88,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     const needFetch = visibleItemIds.length === 0 && dirty === false;
     const needRefresh = !visibleItemIds.every(isNonNullable);
     if (needFetch || needRefresh) {
-      loader(pageStart, pageSize);
+      loader({ start: pageStart, length: pageSize });
     }
   }, [visibleItemIds, pageStart, pageSize, loader, dirty]);
 

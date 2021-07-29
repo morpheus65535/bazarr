@@ -1,10 +1,14 @@
 export function defaultAOS(): AsyncOrderState<any> {
+  return defaultAS({
+    items: [],
+    order: [],
+    dirty: false,
+  });
+}
+
+export function defaultAS<T>(value: T): AsyncState<T> {
   return {
-    updating: true,
-    data: {
-      items: [],
-      order: [],
-      dirty: false,
-    },
+    state: "idle",
+    data: value,
   };
 }

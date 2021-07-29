@@ -21,7 +21,7 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={providers.updating}
+              updating={providers.state === "loading"}
               icon={faSync}
               onClick={update}
             >

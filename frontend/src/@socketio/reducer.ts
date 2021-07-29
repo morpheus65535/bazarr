@@ -1,21 +1,21 @@
-import { createAction } from "redux-actions";
+import { ActionCreatorWithPayload } from "@reduxjs/toolkit";
 import {
-  badgeUpdateAll,
-  bootstrap,
-  movieDeleteItems,
-  movieDeleteWantedItems,
+  movieRemoveItems,
+  movieRemoveWantedItems,
   movieUpdateList,
   movieUpdateWantedList,
-  seriesDeleteItems,
-  seriesDeleteWantedItems,
+  seriesRemoveItems,
+  seriesRemoveWanted,
   seriesUpdateList,
   seriesUpdateWantedList,
   siteAddNotifications,
   siteAddProgress,
-  siteInitializationFailed,
   siteRemoveProgress,
+  siteUpdateBadges,
+  siteUpdateInitialization,
   siteUpdateOffline,
-  systemUpdateLanguagesAll,
+  systemUpdateLanguages,
+  systemUpdateLanguagesProfiles,
   systemUpdateSettings,
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
@@ -26,8 +26,12 @@ function bindToReduxStore(
   return (ids?: number[]) => reduxStore.dispatch(fn(ids));
 }
 
-export function createDeleteAction(type: string): SocketIO.ActionFn<number> {
-  return createAction(type, (id?: number[]) => id ?? []);
+function bindToReduxStoreOptional(fn: ActionCreatorWithPayload<number[]>) {
+  return (ids?: number[]) => {
+    if (ids !== undefined) {
+      reduxStore.dispatch(fn(ids));
+    }
+  };
 }
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
@@ -38,7 +42,12 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "connect",
-      any: () => reduxStore.dispatch<any>(bootstrap()),
+      any: () => {
+        reduxStore.dispatch(systemUpdateLanguages());
+        reduxStore.dispatch(systemUpdateLanguagesProfiles());
+        reduxStore.dispatch(systemUpdateSettings());
+        reduxStore.dispatch(siteUpdateBadges());
+      },
     },
     {
       key: "connect_error",
@@ -47,7 +56,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
         if (initialized === true) {
           reduxStore.dispatch(siteUpdateOffline(true));
         } else {
-          reduxStore.dispatch(siteInitializationFailed());
+          reduxStore.dispatch(siteUpdateInitialization(null));
         }
       },
     },
@@ -88,12 +97,12 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "series",
       update: bindToReduxStore(seriesUpdateList),
-      delete: bindToReduxStore(seriesDeleteItems),
+      delete: bindToReduxStoreOptional(seriesRemoveItems),
     },
     {
       key: "movie",
       update: bindToReduxStore(movieUpdateList),
-      delete: bindToReduxStore(movieDeleteItems),
+      delete: bindToReduxStoreOptional(movieRemoveItems),
     },
     {
       key: "episode-wanted",
@@ -102,7 +111,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           reduxStore.dispatch(seriesUpdateWantedList(ids) as any);
         }
       },
-      delete: bindToReduxStore(seriesDeleteWantedItems),
+      delete: bindToReduxStoreOptional(seriesRemoveWanted),
     },
     {
       key: "movie-wanted",
@@ -111,7 +120,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           reduxStore.dispatch(movieUpdateWantedList(ids) as any);
         }
       },
-      delete: bindToReduxStore(movieDeleteWantedItems),
+      delete: bindToReduxStoreOptional(movieRemoveWantedItems),
     },
     {
       key: "settings",
@@ -119,11 +128,11 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "languages",
-      any: bindToReduxStore(systemUpdateLanguagesAll),
+      any: bindToReduxStore(systemUpdateLanguages),
     },
     {
       key: "badges",
-      any: bindToReduxStore(badgeUpdateAll),
+      any: bindToReduxStore(siteUpdateBadges),
     },
   ];
 }

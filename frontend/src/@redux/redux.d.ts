@@ -1,11 +1,14 @@
-interface ReduxStore {
-  system: ReduxStore.System;
-  series: ReduxStore.Series;
-  movie: ReduxStore.Movie;
-  site: ReduxStore.Site;
-}
-
 namespace ReduxStore {
+  interface Action<T> {
+    type: string;
+    payload: T;
+  }
+
+  interface ByRangePayload {
+    start: number;
+    length: number;
+  }
+
   interface Notification {
     type: "error" | "warning" | "info";
     id: string;
