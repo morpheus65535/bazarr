@@ -58,28 +58,22 @@ const reducer = createReducer(defaultSite, (builder) => {
       state.initialized = action.payload;
     })
     .addCase(siteAddNotifications, (state, action) => {
-      const notifications = uniqBy(
+      state.notifications = uniqBy(
         [...action.payload.reverse(), ...state.notifications],
         (n) => n.id
       );
-      state.notifications = notifications;
     })
     .addCase(siteRemoveNotifications, (state, action) => {
-      const notifications = [...state.notifications];
-      remove(notifications, (n) => n.id === action.payload);
-      state.notifications = notifications;
+      remove(state.notifications, (n) => n.id === action.payload);
     })
     .addCase(siteAddProgress, (state, action) => {
-      const progress = uniqBy(
+      state.progress = uniqBy(
         [...action.payload.reverse(), ...state.progress],
         (n) => n.id
       );
-      state.progress = progress;
     })
     .addCase(siteRemoveProgress, (state, action) => {
-      const progress = [...state.progress];
-      remove(progress, (n) => n.id === action.payload);
-      state.progress = progress;
+      remove(state.progress, (n) => n.id === action.payload);
     })
     .addCase(siteChangeSidebar, (state, action) => {
       state.sidebar = action.payload;

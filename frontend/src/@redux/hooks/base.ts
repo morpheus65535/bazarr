@@ -14,6 +14,7 @@ export function useAppDispatch() {
   return useDispatch<AppDispatch>();
 }
 
+// TODO: Fix type
 export function useReduxAction<T extends ActionCreator<any>>(action: T) {
   const dispatch = useAppDispatch();
   return useCallback((...args: Parameters<T>) => dispatch(action(...args)), [
