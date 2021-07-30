@@ -7,6 +7,31 @@ import {
 } from "@reduxjs/toolkit";
 import { AsyncThunkFulfilledActionCreator } from "@reduxjs/toolkit/dist/createAsyncThunk";
 import { difference, has, uniqBy } from "lodash";
+import { Async } from "../types/async";
+
+export function createAsyncItemReducer<S, T>(
+  builder: ActionReducerMapBuilder<S>,
+  thunk: AsyncThunk<T, void, {}>,
+  getItem: (state: Draft<S>) => Draft<Async.Item<T>>
+) {
+  builder
+    .addCase(thunk.pending, (state, action) => {
+      const item = getItem(state);
+      item.state = "loading";
+    })
+    .addCase(thunk.fulfilled, (state, action) => {
+      const item = getItem(state);
+      item.state = "succeeded";
+      item.content = action.payload as Draft<T>;
+    })
+    .addCase(thunk.rejected, (state, action) => {
+      const item = getItem(state);
+      item.state = "failed";
+      item.error = action.error;
+    });
+}
+
+// OLD down below
 
 export function createAOSReducer<S, T, ID extends keyof T>(
   builder: ActionReducerMapBuilder<S>,

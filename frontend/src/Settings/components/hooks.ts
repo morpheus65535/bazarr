@@ -52,7 +52,7 @@ export function useExtract<T>(
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
   const [systemSettings] = useSystemSettings();
-  const settings = systemSettings.data;
+  const settings = systemSettings.content!;
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;

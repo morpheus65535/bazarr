@@ -25,17 +25,17 @@ export function useIsOffline() {
 
 export function useIsSonarrEnabled() {
   const [settings] = useSystemSettings();
-  return settings.data?.general.use_sonarr ?? true;
+  return settings.content?.general.use_sonarr ?? true;
 }
 
 export function useIsRadarrEnabled() {
   const [settings] = useSystemSettings();
-  return settings.data?.general.use_radarr ?? true;
+  return settings.content?.general.use_radarr ?? true;
 }
 
 export function useShowOnlyDesired() {
   const [settings] = useSystemSettings();
-  return settings.data?.general.embedded_subs_show_desired ?? false;
+  return settings.content?.general.embedded_subs_show_desired ?? false;
 }
 
 export function useSetSidebar(key: string) {

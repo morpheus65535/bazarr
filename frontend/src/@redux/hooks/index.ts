@@ -64,13 +64,13 @@ export function useSystemTasks() {
 }
 
 export function useSystemStatus() {
-  const items = useReduxStore((s) => s.system.status.data);
+  const { content } = useReduxStore((s) => s.system.status);
   const update = useReduxAction(systemUpdateStatus);
 
   useEffect(() => {
     update();
   }, [update]);
-  return stateBuilder(items, update);
+  return stateBuilder(content, update);
 }
 
 export function useSystemHealth() {

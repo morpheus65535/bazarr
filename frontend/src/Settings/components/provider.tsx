@@ -10,11 +10,11 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
+import { useDidUpdate } from "rooks";
 import { useSystemSettings } from "../../@redux/hooks";
 import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
-import { useOnLoadingFinish } from "../../utilites";
 import { log } from "../../utilites/logger";
 import {
   enabledLanguageKey,
@@ -59,13 +59,14 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
-  const cleanup = useCallback(() => {
-    setChange({});
-    setUpdating(false);
-  }, []);
-
   const [settings] = useSystemSettings();
-  useOnLoadingFinish(settings, cleanup);
+  useDidUpdate(() => {
+    // Will be updated by websocket
+    if (settings.state !== "loading") {
+      setChange({});
+      setUpdating(false);
+    }
+  }, [settings.state]);
 
   const saveSettings = useCallback((settings: LooseObject) => {
     submitHooks(settings);

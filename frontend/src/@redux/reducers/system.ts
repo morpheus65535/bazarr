@@ -10,33 +10,38 @@ import {
   systemUpdateStatus,
   systemUpdateTasks,
 } from "../actions";
+import { Async } from "../types/async";
 import { defaultAS } from "../utils";
-import { createAsyncStateReducer } from "../utils/factory";
+import { AsyncUtility } from "../utils/async";
+import {
+  createAsyncItemReducer,
+  createAsyncStateReducer,
+} from "../utils/factory";
 
 interface System {
   languages: AsyncState<Language[]>;
   enabledLanguage: AsyncState<Language[]>;
   languagesProfiles: AsyncState<Profile.Languages[]>;
-  status: AsyncState<System.Status | undefined>;
+  status: Async.Item<System.Status>;
   health: AsyncState<System.Health[]>;
   tasks: AsyncState<System.Task[]>;
   providers: AsyncState<System.Provider[]>;
   logs: AsyncState<System.Log[]>;
   releases: AsyncState<ReleaseInfo[]>;
-  settings: AsyncState<Settings | undefined>;
+  settings: Async.Item<Settings>;
 }
 
 const defaultSystem: System = {
   languages: defaultAS([]),
   enabledLanguage: defaultAS([]),
   languagesProfiles: defaultAS([]),
-  status: defaultAS(undefined),
+  status: AsyncUtility.getDefaultItem(),
   health: defaultAS([]),
   tasks: defaultAS([]),
   providers: defaultAS([]),
   logs: defaultAS([]),
   releases: defaultAS([]),
-  settings: defaultAS(undefined),
+  settings: AsyncUtility.getDefaultItem(),
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
@@ -60,13 +65,14 @@ const reducer = createReducer(defaultSystem, (builder) => {
     systemUpdateLanguagesProfiles,
     (s) => s.languagesProfiles
   );
+  createAsyncItemReducer(builder, systemUpdateStatus, (s) => s.status);
+  createAsyncItemReducer(builder, systemUpdateSettings, (s) => s.settings);
+
   createAsyncStateReducer(builder, systemUpdateHealth, (s) => s.health);
-  createAsyncStateReducer(builder, systemUpdateStatus, (s) => s.status);
   createAsyncStateReducer(builder, systemUpdateLogs, (s) => s.logs);
   createAsyncStateReducer(builder, systemUpdateTasks, (s) => s.tasks);
   createAsyncStateReducer(builder, providerUpdateList, (s) => s.providers);
   createAsyncStateReducer(builder, systemUpdateReleases, (s) => s.releases);
-  createAsyncStateReducer(builder, systemUpdateSettings, (s) => s.settings);
 });
 
 export default reducer;
