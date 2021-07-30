@@ -59,7 +59,7 @@ export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
     }
   }, [state, onError, missing]);
 
-  if (state.state) {
+  if (state.state === "loading") {
     if (missing) {
       return <LoadingIndicator></LoadingIndicator>;
     }
