@@ -164,6 +164,9 @@ def get_providers_auth():
         'legendastv'      : {
             'username': settings.legendastv.username,
             'password': settings.legendastv.password,
+            'featured_only': settings.legendastv.getboolean(
+                    'featured_only'
+            ),
         },
         'xsubs'           : {
             'username': settings.xsubs.username,

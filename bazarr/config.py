@@ -139,7 +139,8 @@ defaults = {
     },
     'legendastv': {
         'username': '',
-        'password': ''
+        'password': '',
+        'featured_only': 'False'
     },
     'xsubs': {
         'username': '',
