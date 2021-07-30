@@ -141,7 +141,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   );
 
   const updateLanguage = useCallback(
-    (lang: Nullable<Language>) => {
+    (lang: Nullable<Language.Info>) => {
       if (lang) {
         const list = pending.map((v) => {
           const form = v.form;

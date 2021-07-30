@@ -4,7 +4,7 @@ import { LanguageSelector as CLanguageSelector } from "../../components";
 import { BaseInput, Selector, useSingleUpdate } from "../components";
 
 interface LanguageSelectorProps {
-  options: readonly Language[];
+  options: readonly Language.Info[];
 }
 
 export const LanguageSelector: FunctionComponent<
@@ -28,7 +28,7 @@ export const LanguageSelector: FunctionComponent<
 interface ProfileSelectorProps {}
 
 export const ProfileSelector: FunctionComponent<
-  ProfileSelectorProps & BaseInput<Profile.Languages>
+  ProfileSelectorProps & BaseInput<Language.Profile>
 > = ({ settingKey }) => {
   const profiles = useProfiles();
 

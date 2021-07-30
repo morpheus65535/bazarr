@@ -23,10 +23,10 @@ import { BuildKey } from "../../utilites";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 interface Props {
-  update: (profile: Profile.Languages) => void;
+  update: (profile: Language.Profile) => void;
 }
 
-function createDefaultProfile(): Profile.Languages {
+function createDefaultProfile(): Language.Profile {
   return {
     profileId: -1,
     name: "",
@@ -40,7 +40,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const profile = usePayload<Profile.Languages>(modal.modalKey);
+  const profile = usePayload<Language.Profile>(modal.modalKey);
 
   const closeModal = useCloseModal();
 
@@ -70,10 +70,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   }, [current.items]);
 
   const updateProfile = useCallback(
-    <K extends keyof Profile.Languages>(
-      key: K,
-      value: Profile.Languages[K]
-    ) => {
+    <K extends keyof Language.Profile>(key: K, value: Language.Profile[K]) => {
       const newProfile = { ...current };
       newProfile[key] = value;
       setProfile(newProfile);
@@ -81,8 +78,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     [current]
   );
 
-  const updateRow = useCallback<TableUpdater<Profile.Item>>(
-    (row, item: Profile.Item) => {
+  const updateRow = useCallback<TableUpdater<Language.ProfileItem>>(
+    (row, item: Language.ProfileItem) => {
       const list = [...current.items];
       if (item) {
         list[row.index] = item;
@@ -102,7 +99,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     if (languages.length > 0) {
       const language = languages[0].code2;
 
-      const item: Profile.Item = {
+      const item: Language.ProfileItem = {
         id,
         language,
         audio_exclude: "False",
@@ -131,7 +128,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     </Button>
   );
 
-  const columns = useMemo<Column<Profile.Item>[]>(
+  const columns = useMemo<Column<Language.ProfileItem>[]>(
     () => [
       {
         Header: "ID",

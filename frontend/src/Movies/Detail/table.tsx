@@ -13,7 +13,7 @@ const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie;
-  profile?: Profile.Languages;
+  profile?: Language.Profile;
 }
 
 const Table: FunctionComponent<Props> = ({ movie, profile }) => {

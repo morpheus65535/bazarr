@@ -35,7 +35,7 @@ function submitHooks(settings: LooseObject) {
   }
 
   if (enabledLanguageKey in settings) {
-    const item = settings[enabledLanguageKey] as Language[];
+    const item = settings[enabledLanguageKey] as Language.Info[];
     settings[enabledLanguageKey] = item.map((v) => v.code2);
   }
 

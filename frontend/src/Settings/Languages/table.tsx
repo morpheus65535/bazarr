@@ -34,7 +34,7 @@ const Table: FunctionComponent = () => {
   const showModal = useShowModal();
 
   const submitProfiles = useCallback(
-    (list: Profile.Languages[]) => {
+    (list: Language.Profile[]) => {
       update(list, languageProfileKey);
       setProfiles(list);
     },
@@ -42,7 +42,7 @@ const Table: FunctionComponent = () => {
   );
 
   const updateProfile = useCallback(
-    (profile: Profile.Languages) => {
+    (profile: Language.Profile) => {
       const list = [...profiles];
       const idx = list.findIndex((v) => v.profileId === profile.profileId);
 
@@ -56,8 +56,8 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const updateRow = useCallback<TableUpdater<Profile.Languages>>(
-    (row, item?: Profile.Languages) => {
+  const updateRow = useCallback<TableUpdater<Language.Profile>>(
+    (row, item?: Language.Profile) => {
       if (item) {
         showModal("profile", cloneDeep(item));
       } else {
@@ -69,7 +69,7 @@ const Table: FunctionComponent = () => {
     [submitProfiles, showModal, profiles]
   );
 
-  const columns = useMemo<Column<Profile.Languages>[]>(
+  const columns = useMemo<Column<Language.Profile>[]>(
     () => [
       {
         Header: "Name",
@@ -151,7 +151,7 @@ const Table: FunctionComponent = () => {
 
 interface ItemProps {
   className?: string;
-  item: Profile.Item;
+  item: Language.ProfileItem;
   cutoff: boolean;
 }
 

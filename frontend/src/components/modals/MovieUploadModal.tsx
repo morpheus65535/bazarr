@@ -25,7 +25,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [uploading, setUpload] = useState(false);
 
-  const [language, setLanguage] = useState<Nullable<Language>>(null);
+  const [language, setLanguage] = useState<Nullable<Language.Info>>(null);
 
   const profile = useProfileBy(movie?.profileId);
 

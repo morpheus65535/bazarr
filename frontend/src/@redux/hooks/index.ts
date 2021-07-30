@@ -120,9 +120,18 @@ export function useProfileBy(id: number | null | undefined) {
 
 export function useLanguages(enabled: boolean = false) {
   const action = useReduxAction(systemUpdateLanguages);
-  const items = useReduxStore((s) =>
-    enabled ? s.system.enabledLanguage.data : s.system.languages.data
-  );
+  const { data } = useReduxStore((s) => s.system.languages);
+
+  const items = useMemo(() => {
+    return data.flatMap<Language.Info>((curr) => {
+      if (!enabled || curr.enabled) {
+        return [{ code2: curr.code2, name: curr.name }];
+      } else {
+        return [];
+      }
+    });
+  }, [data, enabled]);
+
   return stateBuilder(items, action);
 }
 
@@ -146,12 +155,12 @@ export function useLanguageBy(code?: string) {
 }
 
 // Convert languageprofile items to language
-export function useProfileItems(profile?: Profile.Languages) {
+export function useProfileItems(profile?: Language.Profile) {
   const getter = useLanguageGetter(true);
 
   return useMemo(
     () =>
-      profile?.items.map<Language>(({ language, hi, forced }) => {
+      profile?.items.map<Language.Info>(({ language, hi, forced }) => {
         const name = getter(language)?.name ?? "";
         return {
           hi: hi === "True",

@@ -98,7 +98,7 @@ export const LoadingIndicator: FunctionComponent<{
 };
 
 interface LanguageTextProps {
-  text: Language;
+  text: Language.Info;
   className?: string;
   long?: boolean;
 }

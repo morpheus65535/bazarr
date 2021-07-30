@@ -1,5 +1,3 @@
-type LanguageCodeType = string;
-
 interface Badge {
   episodes: number;
   movies: number;
@@ -7,27 +5,30 @@ interface Badge {
   status: number;
 }
 
-interface ApiLanguage {
-  code2: LanguageCodeType;
-  name: string;
-  enabled: boolean;
-}
+namespace Language {
+  type CodeType = string;
+  interface Server {
+    code2: CodeType;
+    name: string;
+    enabled: boolean;
+  }
 
-type Language = Omit<ApiLanguage, "enabled"> & {
-  // TODO: Make things unify
-  hi?: boolean;
-  forced?: boolean;
-};
+  interface Info {
+    code2: CodeType;
+    name: string;
+    hi?: boolean;
+    forced?: boolean;
+  }
 
-namespace Profile {
-  interface Item {
+  interface ProfileItem {
     id: number;
     audio_exclude: PythonBoolean;
     forced: PythonBoolean;
     hi: PythonBoolean;
-    language: LanguageCodeType;
+    language: CodeType;
   }
-  interface Languages {
+
+  interface Profile {
     name: string;
     profileId: number;
     cutoff: number | null;
@@ -35,7 +36,9 @@ namespace Profile {
   }
 }
 
-interface Subtitle extends Language {
+interface Subtitle {
+  code2: Language.CodeType;
+  name: string;
   forced: boolean;
   hi: boolean;
   path: string | null;

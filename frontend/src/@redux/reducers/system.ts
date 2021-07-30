@@ -19,9 +19,8 @@ import {
 } from "../utils/factory";
 
 interface System {
-  languages: AsyncState<Language[]>;
-  enabledLanguage: AsyncState<Language[]>;
-  languagesProfiles: AsyncState<Profile.Languages[]>;
+  languages: AsyncState<Language.Server[]>;
+  languagesProfiles: AsyncState<Language.Profile[]>;
   status: Async.Item<System.Status>;
   health: AsyncState<System.Health[]>;
   tasks: AsyncState<System.Task[]>;
@@ -33,7 +32,6 @@ interface System {
 
 const defaultSystem: System = {
   languages: defaultAS([]),
-  enabledLanguage: defaultAS([]),
   languagesProfiles: defaultAS([]),
   status: AsyncUtility.getDefaultItem(),
   health: defaultAS([]),
@@ -45,20 +43,7 @@ const defaultSystem: System = {
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
-  createAsyncStateReducer(
-    builder,
-    systemUpdateLanguages,
-    (s) => s.languages,
-    (state, action) => {
-      const enabled = action.payload.filter((v) => v.enabled);
-      const languages = action.payload as Language[];
-      state.enabledLanguage.state = "succeeded";
-      state.enabledLanguage.data = enabled;
-
-      state.languages.state = "succeeded";
-      state.languages.data = languages;
-    }
-  );
+  createAsyncStateReducer(builder, systemUpdateLanguages, (s) => s.languages);
 
   createAsyncStateReducer(
     builder,

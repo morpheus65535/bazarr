@@ -14,14 +14,16 @@ import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 
-const EnabledLanguageContext = React.createContext<readonly Language[]>([]);
+const EnabledLanguageContext = React.createContext<readonly Language.Info[]>(
+  []
+);
 const LanguagesProfileContext = React.createContext<
-  readonly Profile.Languages[]
+  readonly Language.Profile[]
 >([]);
 
 export function useEnabledLanguages() {
   const list = useContext(EnabledLanguageContext);
-  const latest = useLatest<Language[]>(enabledLanguageKey, isArray);
+  const latest = useLatest<Language.Info[]>(enabledLanguageKey, isArray);
 
   if (latest) {
     return latest;
@@ -32,7 +34,7 @@ export function useEnabledLanguages() {
 
 export function useProfiles() {
   const list = useContext(LanguagesProfileContext);
-  const latest = useLatest<Profile.Languages[]>(languageProfileKey, isArray);
+  const latest = useLatest<Language.Profile[]>(languageProfileKey, isArray);
 
   if (latest) {
     return latest;

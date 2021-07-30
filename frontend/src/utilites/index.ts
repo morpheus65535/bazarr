@@ -110,7 +110,7 @@ export function ScrollToTop() {
 
 export function filterSubtitleBy(
   subtitles: Subtitle[],
-  languages: Language[]
+  languages: Language.Info[]
 ): Subtitle[] {
   if (languages.length === 0) {
     return subtitles.filter((subtitle) => {

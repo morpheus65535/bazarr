@@ -56,7 +56,7 @@ const SeriesView: FunctionComponent<Props> = () => {
         Cell: ({ value, loose }) => {
           if (loose) {
             // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as Profile.Languages[];
+            const profiles = loose[0] as Language.Profile[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
             return null;

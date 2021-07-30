@@ -58,8 +58,8 @@ class SystemApi extends BaseApi {
   }
 
   async languages(history: boolean = false) {
-    return new Promise<ApiLanguage[]>((resolve, reject) => {
-      this.get<ApiLanguage[]>("/languages", { history })
+    return new Promise<Language.Server[]>((resolve, reject) => {
+      this.get<Language.Server[]>("/languages", { history })
         .then((result) => {
           resolve(result.data);
         })
@@ -70,8 +70,8 @@ class SystemApi extends BaseApi {
   }
 
   async languagesProfileList() {
-    return new Promise<Profile.Languages[]>((resolve, reject) => {
-      this.get<Profile.Languages[]>("/languages/profiles")
+    return new Promise<Language.Profile[]>((resolve, reject) => {
+      this.get<Language.Profile[]>("/languages/profiles")
         .then((result) => resolve(result.data))
         .catch(reject);
     });

@@ -2,11 +2,11 @@ import React, { useMemo } from "react";
 import { Selector, SelectorProps } from "../components";
 
 interface Props {
-  options: readonly Language[];
+  options: readonly Language.Info[];
 }
 
 type RemovedSelectorProps<M extends boolean> = Omit<
-  SelectorProps<Language, M>,
+  SelectorProps<Language.Info, M>,
   "label" | "placeholder"
 >;
 
@@ -15,7 +15,7 @@ export type LanguageSelectorProps<M extends boolean> = Override<
   RemovedSelectorProps<M>
 >;
 
-function getLabel(lang: Language) {
+function getLabel(lang: Language.Info) {
   return lang.name;
 }
 
@@ -24,7 +24,7 @@ export function LanguageSelector<M extends boolean = false>(
 ) {
   const { options, ...selector } = props;
 
-  const items = useMemo<SelectorOption<Language>[]>(
+  const items = useMemo<SelectorOption<Language.Info>[]>(
     () =>
       options.map((v) => ({
         label: v.name,

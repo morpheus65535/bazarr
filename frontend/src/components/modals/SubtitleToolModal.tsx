@@ -54,7 +54,7 @@ import { availableTranslation, colorOptions } from "./toolOptions";
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
-  _language: Language;
+  _language: Language.Info;
 };
 
 enum State {
@@ -300,7 +300,9 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
     [languages]
   );
 
-  const [selectedLanguage, setLanguage] = useState<Nullable<Language>>(null);
+  const [selectedLanguage, setLanguage] = useState<Nullable<Language.Info>>(
+    null
+  );
 
   const submit = useCallback(() => {
     if (selectedLanguage) {

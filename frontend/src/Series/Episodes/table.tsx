@@ -27,7 +27,7 @@ import { SubtitleAction } from "./components";
 
 interface Props {
   episodes: AsyncState<Item.Episode[]>;
-  profile?: Profile.Languages;
+  profile?: Language.Profile;
 }
 
 const download = (item: any, result: SearchResultType) => {
