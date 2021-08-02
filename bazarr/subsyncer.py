@@ -58,6 +58,8 @@ class SubSyncer:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
                               '{0}'.format(self.srtin))
         else:
+            if settings.subsync.getboolean('debug'):
+                return result
             if os.path.isfile(self.srtout):
                 if not settings.subsync.getboolean('debug'):
                     os.remove(self.srtin)
