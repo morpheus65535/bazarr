@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import os
+import shutil
+import re
 import logging
 import json
 import requests
@@ -151,6 +153,14 @@ def apply_update():
                 logging.exception('BAZARR unable to unzip release')
             else:
                 is_updated = True
+                try:
+                    logging.debug('BAZARR successfully unzipped new release and will now try to delete the leftover '
+                                  'files.')
+                    update_cleaner(zipfile=bazarr_zip, bazarr_dir=bazarr_dir, config_dir=args.config_dir)
+                except:
+                    logging.exception('BAZARR unable to cleanup leftover files after upgrade.')
+                else:
+                    logging.debug('BAZARR successfully deleted leftover files.')
             finally:
                 logging.debug('BAZARR now deleting release archive')
                 os.remove(bazarr_zip)
@@ -161,3 +171,50 @@ def apply_update():
         logging.debug('BAZARR new release have been installed, now we restart')
         from server import webserver
         webserver.restart()
+
+
+def update_cleaner(zipfile, bazarr_dir, config_dir):
+    with ZipFile(zipfile, 'r') as archive:
+        file_in_zip = archive.namelist()
+
+    dir_to_ignore = ['^.' + os.path.sep,
+                     '^bin' + os.path.sep,
+                     '^venv' + os.path.sep,
+                     os.path.sep + '__pycache__' + os.path.sep + '$']
+    if os.path.abspath(bazarr_dir) in os.path.abspath(config_dir):
+        dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
+    dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
+    extension_to_ignore = ['.pyc']
+
+    file_on_disk = []
+    folder_list = []
+    for foldername, subfolders, filenames in os.walk(bazarr_dir):
+        relative_foldername = os.path.relpath(foldername, bazarr_dir) + os.path.sep
+
+        if not dir_to_ignore_regex.findall(relative_foldername):
+            if relative_foldername not in folder_list:
+                folder_list.append(relative_foldername)
+
+        for file in filenames:
+            if os.path.splitext(file)[1] in extension_to_ignore:
+                continue
+            elif foldername == bazarr_dir:
+                file_on_disk.append(file)
+            else:
+                current_dir = relative_foldername
+                filepath = os.path.join(current_dir, file)
+                if not dir_to_ignore_regex.findall(filepath):
+                    file_on_disk.append(filepath)
+    file_on_disk += folder_list
+
+    file_to_remove = list(set(file_on_disk) - set(file_in_zip))
+
+    for file in file_to_remove:
+        filepath = os.path.join(bazarr_dir, file)
+        try:
+            if os.path.isdir(filepath):
+                shutil.rmtree(filepath, ignore_errors=True)
+            else:
+                os.remove(filepath)
+        except:
+            pass
