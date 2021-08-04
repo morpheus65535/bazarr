@@ -39,7 +39,7 @@ from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
-    blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
+    blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_info, get_radarr_info, \
     delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials, get_health_issues
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
@@ -600,8 +600,8 @@ class SystemStatus(Resource):
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
-        system_status.update({'sonarr_version': get_sonarr_version()})
-        system_status.update({'radarr_version': get_radarr_version()})
+        system_status.update({'sonarr_version': get_sonarr_info.version()})
+        system_status.update({'radarr_version': get_radarr_info.version()})
         system_status.update({'operating_system': platform.platform()})
         system_status.update({'python_version': platform.python_version()})
         system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})

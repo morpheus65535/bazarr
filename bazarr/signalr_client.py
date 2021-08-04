@@ -15,7 +15,7 @@ from get_episodes import sync_episodes, sync_one_episode
 from get_series import update_series, update_one_series
 from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
-from utils import get_sonarr_version
+from utils import get_sonarr_info
 from get_args import args
 
 
@@ -33,10 +33,9 @@ class SonarrSignalrClient:
         self.connection = None
 
     def start(self):
-        sonarr_version = get_sonarr_version()
-        if sonarr_version.startswith(('0.', '2.')):
+        if get_sonarr_info.is_legacy():
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
-                            'consider upgrading your version({}).'.format(sonarr_version))
+                            'consider upgrading your version({}).'.format(get_sonarr_info.version()))
             raise gevent.GreenletExit
         else:
             logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
