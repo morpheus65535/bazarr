@@ -3,11 +3,11 @@ import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { AsyncStateOverlay, PageTable } from "../../components";
+import { AsyncOverlay, PageTable } from "../../components";
 
 interface Props {
   type: "movies" | "series";
-  state: Readonly<AsyncState<History.Base[]>>;
+  state: Readonly<Async.List<History.Base>>;
   columns: Column<History.Base>[];
 }
 
@@ -23,15 +23,15 @@ const HistoryGenericView: FunctionComponent<Props> = ({
         <title>{typeName} History - Bazarr</title>
       </Helmet>
       <Row>
-        <AsyncStateOverlay state={state}>
-          {({ data }) => (
+        <AsyncOverlay ctx={state}>
+          {({ content }) => (
             <PageTable
               emptyText={`Nothing Found in ${typeName} History`}
               columns={columns}
-              data={data}
+              data={content}
             ></PageTable>
           )}
-        </AsyncStateOverlay>
+        </AsyncOverlay>
       </Row>
     </Container>
   );

@@ -4,7 +4,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemProviders } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { AsyncOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {}
@@ -13,15 +13,15 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
   const [providers, update] = useSystemProviders();
 
   return (
-    <AsyncStateOverlay state={providers}>
-      {({ data }) => (
+    <AsyncOverlay ctx={providers}>
+      {({ content, state }) => (
         <Container fluid>
           <Helmet>
             <title>Providers - Bazarr (System)</title>
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={providers.state === "loading"}
+              updating={state === "loading"}
               icon={faSync}
               onClick={update}
             >
@@ -36,11 +36,11 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table providers={data}></Table>
+            <Table providers={content}></Table>
           </Row>
         </Container>
       )}
-    </AsyncStateOverlay>
+    </AsyncOverlay>
   );
 };
 

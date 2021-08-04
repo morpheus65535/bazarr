@@ -105,9 +105,9 @@ export function useSystemReleases() {
 
 export function useLanguageProfiles() {
   const action = useReduxAction(systemUpdateLanguagesProfiles);
-  const items = useReduxStore((s) => s.system.languagesProfiles.data);
+  const { content } = useReduxStore((s) => s.system.languagesProfiles);
 
-  return stateBuilder(items, action);
+  return stateBuilder(content, action);
 }
 
 export function useProfileBy(id: number | null | undefined) {
@@ -120,10 +120,10 @@ export function useProfileBy(id: number | null | undefined) {
 
 export function useLanguages(enabled: boolean = false) {
   const action = useReduxAction(systemUpdateLanguages);
-  const { data } = useReduxStore((s) => s.system.languages);
+  const data = useReduxStore((s) => s.system.languages);
 
   const items = useMemo(() => {
-    return data.flatMap<Language.Info>((curr) => {
+    return data.content.flatMap<Language.Info>((curr) => {
       if (!enabled || curr.enabled) {
         return [{ code2: curr.code2, name: curr.name }];
       } else {
@@ -238,16 +238,16 @@ export function useEpisodesBy(seriesId?: number) {
 
   const items = useMemo(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
-      return list.data.filter((v) => v.sonarrSeriesId === seriesId);
+      return list.content.filter((v) => v.sonarrSeriesId === seriesId);
     } else {
       return [];
     }
-  }, [seriesId, list.data]);
+  }, [seriesId, list.content]);
 
-  const state: AsyncState<Item.Episode[]> = useMemo(
+  const state: Async.BaseType<Item.Episode[]> = useMemo(
     () => ({
       ...list,
-      data: items,
+      content: items,
     }),
     [list, items]
   );

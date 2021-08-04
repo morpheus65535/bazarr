@@ -14,7 +14,7 @@ import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
-  AsyncStateOverlay,
+  AsyncOverlay,
   EpisodeHistoryModal,
   GroupTable,
   SubtitleToolModal,
@@ -26,7 +26,7 @@ import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  episodes: AsyncState<Item.Episode[]>;
+  episodes: Async.BaseType<Item.Episode[]>;
   profile?: Language.Profile;
 }
 
@@ -186,7 +186,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
   const maxSeason = useMemo(
     () =>
-      episodes.data.reduce<number>(
+      episodes.content.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
         0
       ),
@@ -195,11 +195,11 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
   return (
     <React.Fragment>
-      <AsyncStateOverlay state={episodes}>
-        {({ data }) => (
+      <AsyncOverlay ctx={episodes}>
+        {({ content }) => (
           <GroupTable
             columns={columns}
-            data={data}
+            data={content}
             externalUpdate={updateRow}
             initialState={{
               sortBy: [
@@ -214,7 +214,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             emptyText="No Episode Found For This Series"
           ></GroupTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal

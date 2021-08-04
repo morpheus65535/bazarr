@@ -2,31 +2,6 @@ import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
-export function updateAsyncState<T>(
-  promise: Promise<T>,
-  setter: (state: AsyncState<T>) => void,
-  defaultVal: T
-) {
-  setter({
-    state: "loading",
-    data: defaultVal,
-  });
-  promise
-    .then((data) => {
-      setter({
-        state: "succeeded",
-        data: data,
-      });
-    })
-    .catch((err) => {
-      setter({
-        state: "failed",
-        error: err,
-        data: defaultVal,
-      });
-    });
-}
-
 export function getBaseUrl(slash: boolean = false) {
   let url: string = "/";
   if (process.env.NODE_ENV !== "development") {

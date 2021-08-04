@@ -1,13 +1,11 @@
 import {
+  ActionCreatorWithPayload,
   ActionReducerMapBuilder,
   AsyncThunk,
-  CaseReducer,
   Draft,
   PayloadAction,
 } from "@reduxjs/toolkit";
-import { AsyncThunkFulfilledActionCreator } from "@reduxjs/toolkit/dist/createAsyncThunk";
-import { difference, has, uniqBy } from "lodash";
-import { Async } from "../types/async";
+import { difference, differenceWith, findIndex, has } from "lodash";
 
 export function createAsyncItemReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
@@ -29,6 +27,82 @@ export function createAsyncItemReducer<S, T>(
       item.state = "failed";
       item.error = action.error;
     });
+}
+
+export function createAsyncListReducer<S, T>(
+  builder: ActionReducerMapBuilder<S>,
+  thunk: AsyncThunk<T[], void, {}>,
+  getList: (state: Draft<S>) => Draft<Async.List<T>>
+) {
+  builder
+    .addCase(thunk.pending, (state, action) => {
+      const item = getList(state);
+      item.state = "loading";
+    })
+    .addCase(thunk.fulfilled, (state, action) => {
+      const item = getList(state);
+      item.state = "succeeded";
+      item.content = action.payload as Draft<T[]>;
+      item.dirtyEntities = [];
+    })
+    .addCase(thunk.rejected, (state, action) => {
+      const item = getList(state);
+      item.state = "failed";
+      item.error = action.error;
+    });
+}
+
+export function createAsyncListIdReducer<
+  S,
+  ID extends Async.IdType,
+  K extends keyof T,
+  T extends { [key in K]: ID }
+>(
+  builder: ActionReducerMapBuilder<S>,
+  getList: (state: Draft<S>) => Draft<Async.List<T>>,
+  idKey: K,
+  update: AsyncThunk<T[], ID[], {}>,
+  remove?: ActionCreatorWithPayload<ID[]>
+) {
+  builder
+    .addCase(update.pending, (state) => {
+      const item = getList(state);
+      item.state = "loading";
+    })
+    .addCase(update.fulfilled, (state, action) => {
+      const item = getList(state);
+      item.state = "succeeded";
+
+      action.payload.forEach((v) => {
+        const idx = findIndex(
+          item.content,
+          (d) => (d as T)[idKey] === v[idKey]
+        );
+        if (idx !== -1) {
+          item.content[idx] = v as Draft<T>;
+        }
+      });
+
+      item.dirtyEntities = difference(item.dirtyEntities, action.meta.arg);
+    })
+    .addCase(update.rejected, (state, action) => {
+      const item = getList(state);
+      item.state = "failed";
+      item.error = action.error;
+    });
+
+  if (remove) {
+    builder.addCase(remove, (state, action) => {
+      const item = getList(state);
+      item.content = differenceWith(
+        item.content,
+        action.payload,
+        (lhs, rhs) => {
+          return (lhs as T)[idKey] === rhs;
+        }
+      );
+    });
+  }
 }
 
 // OLD down below
@@ -90,7 +164,6 @@ export function createAOSRangeReducer<S, T>(
     .addCase(thunk.fulfilled, (state, action) => {
       const aos = getAos(state);
       aos.state = "succeeded";
-      const { start, length } = action.meta.arg;
     })
     .addCase(thunk.rejected, (state, action) => {
       const aos = getAos(state);
@@ -111,76 +184,6 @@ export function removeOrderListItem<T extends LooseObject>(
     }
   });
   state.data.order = difference(order, ids);
-}
-
-export function removeAsyncListItem<T extends LooseObject>(
-  state: Draft<AsyncState<T[]>>,
-  action: PayloadAction<number[]>,
-  match: ItemIdType<T>
-) {
-  const ids = new Set(action.payload);
-  state.data = state.data.filter((v) => !ids.has((v as T)[match]));
-}
-
-export function createAsyncStateReducer<
-  S,
-  T extends Array<any> | LooseObject,
-  TT extends Array<any> | LooseObject = T
->(
-  builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<TT, void, {}>,
-  getAsync: (state: Draft<S>) => Draft<AsyncState<T | undefined | null>>,
-  fulfilled?: CaseReducer<
-    S,
-    ReturnType<AsyncThunkFulfilledActionCreator<TT, void, {}>>
-  >
-) {
-  builder
-    .addCase(thunk.pending, (state) => {
-      const as = getAsync(state);
-      as.state = "loading";
-      as.error = undefined;
-    })
-    .addCase(thunk.fulfilled, (state, action) => {
-      if (fulfilled !== undefined) {
-        fulfilled(state, action);
-      } else {
-        const as = getAsync(state);
-        as.state = "succeeded";
-        as.data = action.payload as Draft<T>;
-      }
-    })
-    .addCase(thunk.rejected, (state, action) => {
-      const as = getAsync(state);
-      as.state = "failed";
-      as.error = action.error as Error;
-    });
-}
-
-export function createAsyncListReducer<S, T, ID extends keyof T>(
-  builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<T[], number[], {}>,
-  getAsync: (state: Draft<S>) => Draft<AsyncState<T[]>>,
-  match: ID
-) {
-  builder
-    .addCase(thunk.pending, (state) => {
-      const as = getAsync(state);
-      as.state = "loading";
-      as.error = undefined;
-    })
-    .addCase(thunk.fulfilled, (state, action) => {
-      const as = getAsync(state);
-      as.state = "succeeded";
-      const olds = as.data as T[];
-      const news = action.payload as T[];
-      as.data = uniqBy([...news, ...olds], match) as Draft<T>[];
-    })
-    .addCase(thunk.rejected, (state, action) => {
-      const as = getAsync(state);
-      as.state = "failed";
-      as.error = action.error as Error;
-    });
 }
 
 // export function updateOrderIdState<T extends LooseObject>(

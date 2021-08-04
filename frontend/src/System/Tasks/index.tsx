@@ -3,7 +3,7 @@ import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemTasks } from "../../@redux/hooks";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { AsyncOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {}
@@ -12,15 +12,15 @@ const SystemTasksView: FunctionComponent<Props> = () => {
   const [tasks, update] = useSystemTasks();
 
   return (
-    <AsyncStateOverlay state={tasks}>
-      {({ data }) => (
+    <AsyncOverlay ctx={tasks}>
+      {({ content, state }) => (
         <Container fluid>
           <Helmet>
             <title>Tasks - Bazarr (System)</title>
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={tasks.state === "loading"}
+              updating={state === "loading"}
               icon={faSync}
               onClick={update}
             >
@@ -28,11 +28,11 @@ const SystemTasksView: FunctionComponent<Props> = () => {
             </ContentHeader.Button>
           </ContentHeader>
           <Row>
-            <Table tasks={data}></Table>
+            <Table tasks={content}></Table>
           </Row>
         </Container>
       )}
-    </AsyncStateOverlay>
+    </AsyncOverlay>
   );
 };
 

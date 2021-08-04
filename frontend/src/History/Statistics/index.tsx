@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useDidMount } from "rooks";
 import {
   HistoryApi,
   ProvidersApi,
@@ -49,12 +50,19 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const [languages] = useAsyncRequest(() => SystemApi.languages(true), []);
-
-  const [providerList] = useAsyncRequest(
-    () => ProvidersApi.providers(true),
+  const [languages, updateLanguages] = useAsyncRequest(
+    SystemApi.languages.bind(SystemApi),
     []
   );
+  const [providerList, updateProvider] = useAsyncRequest(
+    ProvidersApi.providers.bind(ProvidersApi),
+    []
+  );
+
+  useDidMount(() => {
+    updateProvider(true);
+    updateLanguages(true);
+  });
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
@@ -109,7 +117,7 @@ const HistoryStats: FunctionComponent = () => {
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages.data}
+                  options={languages.content}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>

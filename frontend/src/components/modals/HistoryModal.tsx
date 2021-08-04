@@ -3,19 +3,12 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState,
 } from "react";
 import { Column } from "react-table";
-import {
-  AsyncStateOverlay,
-  HistoryIcon,
-  LanguageText,
-  PageTable,
-  TextPopover,
-} from "..";
-import { EpisodesApi, MoviesApi } from "../../apis";
+import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
+import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
 import { BlacklistButton } from "../../generic/blacklist";
-import { updateAsyncState } from "../../utilites";
+import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { usePayload } from "./provider";
 
@@ -24,16 +17,16 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<History.Movie[]>>({
-    state: "idle",
-    data: [],
-  });
+  const [history, setHistory] = useAsyncRequest(
+    MoviesApi.history.bind(MoviesApi),
+    []
+  );
 
   const update = useCallback(() => {
     if (movie) {
-      updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
+      setHistory(movie.radarrId);
     }
-  }, [movie]);
+  }, [movie, setHistory]);
 
   useEffect(() => {
     update();
@@ -104,15 +97,15 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
-      <AsyncStateOverlay state={history}>
-        {({ data }) => (
+      <AsyncOverlay ctx={history}>
+        {({ content }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={data}
+            data={content}
           ></PageTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
     </BaseModal>
   );
 };
@@ -124,20 +117,16 @@ export const EpisodeHistoryModal: FunctionComponent<
 > = (props) => {
   const episode = usePayload<Item.Episode>(props.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<History.Episode[]>>({
-    state: "idle",
-    data: [],
-  });
+  const [history, setHistory] = useAsyncRequest(
+    EpisodesApi.history.bind(EpisodesApi),
+    []
+  );
 
   const update = useCallback(() => {
     if (episode) {
-      updateAsyncState(
-        EpisodesApi.history(episode.sonarrEpisodeId),
-        setHistory,
-        []
-      );
+      setHistory(episode.sonarrEpisodeId);
     }
-  }, [episode]);
+  }, [episode, setHistory]);
 
   useEffect(() => update(), [update]);
 
@@ -207,15 +196,15 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
-      <AsyncStateOverlay state={history}>
-        {({ data }) => (
+      <AsyncOverlay ctx={history}>
+        {({ content }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={data}
+            data={content}
           ></PageTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
     </BaseModal>
   );
 };

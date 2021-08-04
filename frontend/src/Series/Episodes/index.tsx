@@ -44,7 +44,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
 
-  const available = episodes.data.length !== 0;
+  const available = episodes.content.length !== 0;
 
   const details = useMemo(
     () => [
@@ -116,7 +116,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             disabled={item.episodeFileCount === 0 || !available}
             icon={faBriefcase}
-            onClick={() => showModal("tools", episodes.data)}
+            onClick={() => showModal("tools", episodes.content)}
           >
             Tools
           </ContentHeader.Button>
@@ -151,7 +151,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       ></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"
-        episodes={episodes.data}
+        episodes={episodes.content}
       ></SeriesUploadModal>
     </Container>
   );

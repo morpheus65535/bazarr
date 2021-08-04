@@ -10,30 +10,30 @@ import {
   seriesUpdateList,
   seriesUpdateWantedList,
 } from "../actions";
-import { defaultAOS, defaultAS } from "../utils";
+import { defaultAOS } from "../utils";
+import { AsyncUtility } from "../utils/async";
 import {
   createAOSReducer,
   createAOSWholeReducer,
+  createAsyncListIdReducer,
   createAsyncListReducer,
-  createAsyncStateReducer,
-  removeAsyncListItem,
   removeOrderListItem,
 } from "../utils/factory";
 
 interface Series {
   seriesList: AsyncOrderState<Item.Series>;
   wantedEpisodesList: AsyncOrderState<Wanted.Episode>;
-  episodeList: AsyncState<Item.Episode[]>;
-  historyList: AsyncState<History.Episode[]>;
-  blacklist: AsyncState<Blacklist.Episode[]>;
+  episodeList: Async.List<Item.Episode>;
+  historyList: Async.List<History.Episode>;
+  blacklist: Async.List<Blacklist.Episode>;
 }
 
 const defaultSeries: Series = {
   seriesList: defaultAOS(),
   wantedEpisodesList: defaultAOS(),
-  episodeList: defaultAS([]),
-  historyList: defaultAS([]),
-  blacklist: defaultAS([]),
+  episodeList: AsyncUtility.getDefaultList(),
+  historyList: AsyncUtility.getDefaultList(),
+  blacklist: AsyncUtility.getDefaultList(),
 };
 
 const reducer = createReducer(defaultSeries, (builder) => {
@@ -51,26 +51,27 @@ const reducer = createReducer(defaultSeries, (builder) => {
     "sonarrEpisodeId"
   );
 
-  createAsyncStateReducer(
+  createAsyncListReducer(
     builder,
     seriesUpdateHistoryList,
     (s) => s.historyList
   );
 
-  createAsyncStateReducer(builder, seriesUpdateBlacklist, (s) => s.blacklist);
+  createAsyncListReducer(builder, seriesUpdateBlacklist, (s) => s.blacklist);
 
-  createAsyncListReducer(
+  createAsyncListIdReducer(
     builder,
-    episodeUpdateBy,
     (s) => s.episodeList,
-    "sonarrSeriesId"
+    "sonarrSeriesId",
+    episodeUpdateBy
   );
 
-  createAsyncListReducer(
+  createAsyncListIdReducer(
     builder,
-    episodeUpdateById,
     (s) => s.episodeList,
-    "sonarrEpisodeId"
+    "sonarrEpisodeId",
+    episodeUpdateById,
+    episodesRemoveItems
   );
 
   builder.addCase(seriesRemoveWanted, (state, action) => {
@@ -79,10 +80,6 @@ const reducer = createReducer(defaultSeries, (builder) => {
 
   builder.addCase(seriesRemoveItems, (state, action) => {
     removeOrderListItem(state.seriesList, action);
-  });
-
-  builder.addCase(episodesRemoveItems, (state, action) => {
-    removeAsyncListItem(state.episodeList, action, "sonarrEpisodeId");
   });
 });
 

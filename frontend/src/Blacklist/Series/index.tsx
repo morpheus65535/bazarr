@@ -4,7 +4,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useBlacklistSeries } from "../../@redux/hooks";
 import { EpisodesApi } from "../../apis";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { AsyncOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {}
@@ -12,8 +12,8 @@ interface Props {}
 const BlacklistSeriesView: FunctionComponent<Props> = () => {
   const [blacklist] = useBlacklistSeries();
   return (
-    <AsyncStateOverlay state={blacklist}>
-      {({ data }) => (
+    <AsyncOverlay ctx={blacklist}>
+      {({ content }) => (
         <Container fluid>
           <Helmet>
             <title>Series Blacklist - Bazarr</title>
@@ -21,18 +21,18 @@ const BlacklistSeriesView: FunctionComponent<Props> = () => {
           <ContentHeader>
             <ContentHeader.AsyncButton
               icon={faTrash}
-              disabled={data.length === 0}
+              disabled={content.length === 0}
               promise={() => EpisodesApi.deleteBlacklist(true)}
             >
               Remove All
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={data}></Table>
+            <Table blacklist={content}></Table>
           </Row>
         </Container>
       )}
-    </AsyncStateOverlay>
+    </AsyncOverlay>
   );
 };
 

@@ -10,54 +10,52 @@ import {
   systemUpdateStatus,
   systemUpdateTasks,
 } from "../actions";
-import { Async } from "../types/async";
-import { defaultAS } from "../utils";
 import { AsyncUtility } from "../utils/async";
 import {
   createAsyncItemReducer,
-  createAsyncStateReducer,
+  createAsyncListReducer,
 } from "../utils/factory";
 
 interface System {
-  languages: AsyncState<Language.Server[]>;
-  languagesProfiles: AsyncState<Language.Profile[]>;
+  languages: Async.List<Language.Server>;
+  languagesProfiles: Async.List<Language.Profile>;
   status: Async.Item<System.Status>;
-  health: AsyncState<System.Health[]>;
-  tasks: AsyncState<System.Task[]>;
-  providers: AsyncState<System.Provider[]>;
-  logs: AsyncState<System.Log[]>;
-  releases: AsyncState<ReleaseInfo[]>;
+  health: Async.List<System.Health>;
+  tasks: Async.List<System.Task>;
+  providers: Async.List<System.Provider>;
+  logs: Async.List<System.Log>;
+  releases: Async.List<ReleaseInfo>;
   settings: Async.Item<Settings>;
 }
 
 const defaultSystem: System = {
-  languages: defaultAS([]),
-  languagesProfiles: defaultAS([]),
+  languages: AsyncUtility.getDefaultList(),
+  languagesProfiles: AsyncUtility.getDefaultList(),
   status: AsyncUtility.getDefaultItem(),
-  health: defaultAS([]),
-  tasks: defaultAS([]),
-  providers: defaultAS([]),
-  logs: defaultAS([]),
-  releases: defaultAS([]),
+  health: AsyncUtility.getDefaultList(),
+  tasks: AsyncUtility.getDefaultList(),
+  providers: AsyncUtility.getDefaultList(),
+  logs: AsyncUtility.getDefaultList(),
+  releases: AsyncUtility.getDefaultList(),
   settings: AsyncUtility.getDefaultItem(),
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
-  createAsyncStateReducer(builder, systemUpdateLanguages, (s) => s.languages);
+  createAsyncListReducer(builder, systemUpdateLanguages, (s) => s.languages);
 
-  createAsyncStateReducer(
+  createAsyncListReducer(
     builder,
     systemUpdateLanguagesProfiles,
     (s) => s.languagesProfiles
   );
   createAsyncItemReducer(builder, systemUpdateStatus, (s) => s.status);
   createAsyncItemReducer(builder, systemUpdateSettings, (s) => s.settings);
+  createAsyncListReducer(builder, systemUpdateReleases, (s) => s.releases);
+  createAsyncListReducer(builder, systemUpdateLogs, (s) => s.logs);
 
-  createAsyncStateReducer(builder, systemUpdateHealth, (s) => s.health);
-  createAsyncStateReducer(builder, systemUpdateLogs, (s) => s.logs);
-  createAsyncStateReducer(builder, systemUpdateTasks, (s) => s.tasks);
-  createAsyncStateReducer(builder, providerUpdateList, (s) => s.providers);
-  createAsyncStateReducer(builder, systemUpdateReleases, (s) => s.releases);
+  createAsyncListReducer(builder, systemUpdateHealth, (s) => s.health);
+  createAsyncListReducer(builder, systemUpdateTasks, (s) => s.tasks);
+  createAsyncListReducer(builder, providerUpdateList, (s) => s.providers);
 });
 
 export default reducer;

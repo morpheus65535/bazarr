@@ -1,7 +1,6 @@
 import {
   faCheck,
   faCircleNotch,
-  faExclamationTriangle,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,82 +12,24 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Alert, Button, ButtonProps, Container } from "react-bootstrap";
+import { Button, ButtonProps } from "react-bootstrap";
 import { LoadingIndicator } from ".";
-import { useNotification } from "../@redux/hooks/site";
-import { Reload } from "../utilites";
 import { Selector, SelectorProps } from "./inputs";
 
-enum RequestState {
-  Success,
-  Error,
-  Invalid,
+interface Props<T> {
+  ctx: Async.BaseType<T>;
+  children: FunctionComponent<Async.BaseType<T>>;
 }
 
-interface ChildProps<T> {
-  data: NonNullable<Readonly<T>>;
-  error?: Error;
-}
-
-interface AsyncStateOverlayProps<T> {
-  state: AsyncState<T>;
-  exist?: (item: T) => boolean;
-  children?: FunctionComponent<ChildProps<T>>;
-}
-
-function defaultExist(item: any) {
-  if (item instanceof Array) {
-    return item.length !== 0;
+export function AsyncOverlay<T>(props: Props<T>) {
+  const { ctx, children } = props;
+  if (ctx.state === "loading" || ctx.state === "idle") {
+    return <LoadingIndicator></LoadingIndicator>;
+  } else if (ctx.state === "failed") {
+    return ctx.error;
   } else {
-    return item !== null && item !== undefined;
+    return children(ctx);
   }
-}
-
-export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
-  const { exist, state, children } = props;
-  const missing = exist ? !exist(state.data) : !defaultExist(state.data);
-
-  const onError = useNotification("async-loading");
-
-  useEffect(() => {
-    if (!state.state && state.error !== undefined && !missing) {
-      onError({
-        type: "error",
-        message: state.error.message,
-      });
-    }
-  }, [state, onError, missing]);
-
-  if (state.state === "loading") {
-    if (missing) {
-      return <LoadingIndicator></LoadingIndicator>;
-    }
-  } else {
-    if (state.error && missing) {
-      return (
-        <Container>
-          <Alert variant="danger" className="my-4">
-            <Alert.Heading>
-              <FontAwesomeIcon
-                className="mr-2"
-                icon={faExclamationTriangle}
-              ></FontAwesomeIcon>
-              <span>Ouch! You got an error</span>
-            </Alert.Heading>
-            <p>{state.error.message}</p>
-            <hr></hr>
-            <div className="d-flex justify-content-end">
-              <Button variant="outline-danger" onClick={Reload}>
-                Reload
-              </Button>
-            </div>
-          </Alert>
-        </Container>
-      );
-    }
-  }
-
-  return children ? children({ data: state.data!, error: state.error }) : null;
 }
 
 interface PromiseProps<T> {
@@ -112,11 +53,9 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   }
 }
 
-type ExtractAS<T extends AsyncState<any[]>> = Unpacked<AsyncPayload<T>>;
-
-type AsyncSelectorProps<T extends AsyncState<any[]>> = {
+type AsyncSelectorProps<V, T extends Async.BaseType<V[]>> = {
   state: T;
-  label: (item: ExtractAS<T>) => string;
+  label: (item: V) => string;
 };
 
 type RemovedSelectorProps<T, M extends boolean> = Omit<
@@ -125,16 +64,15 @@ type RemovedSelectorProps<T, M extends boolean> = Omit<
 >;
 
 export function AsyncSelector<
-  T extends AsyncState<any[]>,
+  V,
+  T extends Async.BaseType<V[]>,
   M extends boolean = false
->(
-  props: Override<AsyncSelectorProps<T>, RemovedSelectorProps<ExtractAS<T>, M>>
-) {
+>(props: Override<AsyncSelectorProps<V, T>, RemovedSelectorProps<V, M>>) {
   const { label, state, ...selector } = props;
 
-  const options = useMemo<SelectorOption<ExtractAS<T>>[]>(
+  const options = useMemo<SelectorOption<V>[]>(
     () =>
-      state.data.map((v) => ({
+      state.content.map((v) => ({
         label: label(v),
         value: v,
       })),
@@ -166,6 +104,12 @@ interface AsyncButtonProps<T> {
   promise: () => Promise<T> | null;
   onSuccess?: (result: T) => void;
   error?: () => void;
+}
+
+enum RequestState {
+  Success,
+  Error,
+  Invalid,
 }
 
 export function AsyncButton<T>(
