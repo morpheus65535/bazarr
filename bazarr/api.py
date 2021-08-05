@@ -2111,7 +2111,7 @@ class WebHooksPlex(Resource):
                     .get()
 
                 if sonarrEpisodeId:
-                    episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'])
+                    episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]

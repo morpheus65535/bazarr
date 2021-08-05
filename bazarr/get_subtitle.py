@@ -806,7 +806,7 @@ def series_download_subtitles(no):
     hide_progress(id='series_search_progress_{}'.format(no))
 
 
-def episode_download_subtitles(no):
+def episode_download_subtitles(no, send_progress=False):
     conditions = [(TableEpisodes.sonarrEpisodeId == no)]
     conditions += get_exclusion_clause('series')
     episodes_details = TableEpisodes.select(TableEpisodes.path,
@@ -818,7 +818,10 @@ def episode_download_subtitles(no):
                                             TableShows.title,
                                             TableShows.sonarrSeriesId,
                                             TableEpisodes.audio_language,
-                                            TableShows.seriesType)\
+                                            TableShows.seriesType,
+                                            TableEpisodes.title.alias('episodeTitle'),
+                                            TableEpisodes.season,
+                                            TableEpisodes.episode)\
         .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
         .where(reduce(operator.and_, conditions))\
         .dicts()
@@ -831,6 +834,15 @@ def episode_download_subtitles(no):
 
     for episode in episodes_details:
         if providers_list:
+            if send_progress:
+                show_progress(id='episode_search_progress_{}'.format(no),
+                              header='Searching missing subtitles...',
+                              name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'],
+                                                                         episode['season'],
+                                                                         episode['episode'],
+                                                                         episode['episodeTitle']),
+                              value=1,
+                              count=1)
             for language in ast.literal_eval(episode['missing_subtitles']):
                 # confirm if language is still missing or if cutoff have been reached
                 confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
@@ -875,6 +887,8 @@ def episode_download_subtitles(no):
                         history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                     language_code, provider, score, subs_id, subs_path)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+            if send_progress:
+                hide_progress(id='episode_search_progress_{}'.format(no))
         else:
             logging.info("BAZARR All providers are throttled")
             break
