@@ -54,13 +54,16 @@ const HistoryStats: FunctionComponent = () => {
     SystemApi.languages.bind(SystemApi),
     []
   );
-  const [providerList, updateProvider] = useAsyncRequest(
+  const [providerList, updateProviderParam] = useAsyncRequest(
     ProvidersApi.providers.bind(ProvidersApi),
     []
   );
 
+  const updateProvider = useCallback(() => updateProviderParam(true), [
+    updateProviderParam,
+  ]);
+
   useDidMount(() => {
-    updateProvider(true);
     updateLanguages(true);
   });
 
@@ -111,6 +114,7 @@ const HistoryStats: FunctionComponent = () => {
                   clearable
                   state={providerList}
                   label={providerLabel}
+                  update={updateProvider}
                   onChange={setProvider}
                 ></AsyncSelector>
               </SelectorContainer>
