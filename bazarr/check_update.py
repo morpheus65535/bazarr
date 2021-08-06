@@ -180,10 +180,13 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     dir_to_ignore = ['^.' + os.path.sep,
                      '^bin' + os.path.sep,
                      '^venv' + os.path.sep,
+                     '^WinPython' + os.path.sep,
                      os.path.sep + '__pycache__' + os.path.sep + '$']
     if os.path.abspath(bazarr_dir) in os.path.abspath(config_dir):
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
+
+    file_to_ignore = ['nssm.exe', '7za.exe']
     extension_to_ignore = ['.pyc']
 
     file_on_disk = []
@@ -196,7 +199,9 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                 folder_list.append(relative_foldername)
 
         for file in filenames:
-            if os.path.splitext(file)[1] in extension_to_ignore:
+            if file in file_to_ignore:
+                continue
+            elif os.path.splitext(file)[1] in extension_to_ignore:
                 continue
             elif foldername == bazarr_dir:
                 file_on_disk.append(file)
