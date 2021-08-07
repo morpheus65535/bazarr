@@ -176,12 +176,17 @@ def apply_update():
 def update_cleaner(zipfile, bazarr_dir, config_dir):
     with ZipFile(zipfile, 'r') as archive:
         file_in_zip = archive.namelist()
+    if os.path.sep == '\\':
+        for i, item in enumerate(file_in_zip):
+            file_in_zip[i] = item.replace('/', '\\')
 
-    dir_to_ignore = ['^.' + os.path.sep,
-                     '^bin' + os.path.sep,
-                     '^venv' + os.path.sep,
-                     '^WinPython' + os.path.sep,
-                     os.path.sep + '__pycache__' + os.path.sep + '$']
+    separator = os.path.sep * 2 if os.path.sep == '\\' else os.path.sep
+
+    dir_to_ignore = ['^.' + separator,
+                     '^bin' + separator,
+                     '^venv' + separator,
+                     '^WinPython' + separator,
+                     separator + '__pycache__' + separator + '$']
     if os.path.abspath(bazarr_dir) in os.path.abspath(config_dir):
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
