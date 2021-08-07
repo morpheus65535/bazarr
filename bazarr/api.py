@@ -2073,7 +2073,7 @@ class WebHooksPlex(Resource):
         parsed_json_webhook = json.loads(json_webhook)
 
         event = parsed_json_webhook['event']
-        if event not in ['media.play', 'media.resume']:
+        if event not in ['media.play']:
             return '', 204
 
         media_type = parsed_json_webhook['Metadata']['type']
