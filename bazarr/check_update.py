@@ -218,7 +218,7 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
         filepath = os.path.join(bazarr_dir, file)
         try:
             if os.path.isdir(filepath):
-                shutil.rmtree(filepath, ignore_errors=True)
+                rmtree(filepath, ignore_errors=True)
             else:
                 os.remove(filepath)
         except:
