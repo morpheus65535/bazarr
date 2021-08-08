@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
+import { useSocketIOReducer } from "../../@socketio/hooks";
 import { useConvertEntityToList } from "../../utilites";
 import {
   episodesRemoveById,
@@ -248,24 +248,21 @@ export function useEpisodesBy(seriesId?: number) {
   );
 
   const updateById = useReduxAction(episodeUpdateByEpisodeId);
-  const wrappedUpdateById = useWrapToOptionalId(updateById);
   const deleteAction = useReduxAction(episodesRemoveById);
-  const wrappedDelete = useWrapToOptionalId(deleteAction);
 
   const episodeReducer = useMemo<SocketIO.Reducer>(
     () => ({
       key: "episode",
-      update: wrappedUpdateById,
-      delete: wrappedDelete,
+      update: updateById,
+      delete: deleteAction,
     }),
-    [wrappedUpdateById, wrappedDelete]
+    [updateById, deleteAction]
   );
   useSocketIOReducer(episodeReducer);
 
-  const wrapAction = useWrapToOptionalId(action);
   const seriesReducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "series", update: wrapAction }),
-    [wrapAction]
+    () => ({ key: "series", update: action }),
+    [action]
   );
   useSocketIOReducer(seriesReducer);
 

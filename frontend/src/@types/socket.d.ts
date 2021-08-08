@@ -23,25 +23,26 @@ declare namespace SocketIO {
 
   type SpecialEventType = "message" | "progress";
 
-  type ReducerCreator<E extends EventType, U, D = never> = ValueOf<
+  type ActionType = "update" | "delete";
+
+  type ReducerCreator<E extends EventType, U, D = U> = ValueOf<
     {
       [P in E]: {
         key: P;
-        any?: () => void;
-        update?: ActionFn<U>;
-        delete?: ActionFn<D extends never ? U : D>;
-      } & LooseObject;
-      // TODO: Typing
+        any?: ActionHandler<null>;
+        update?: ActionHandler<U>;
+        delete?: ActionHandler<D>;
+      };
     }
   >;
 
   type Event = {
     type: EventType;
-    action: string;
+    action: ActionType;
     payload: any;
   };
 
-  type ActionFn<T> = (payload?: T[]) => void;
+  type ActionHandler<T> = T extends null ? () => void : (payload: T[]) => void;
 
   type Reducer =
     | ReducerCreator<NumEventType, number>
@@ -49,7 +50,11 @@ declare namespace SocketIO {
     | ReducerCreator<"message", string>
     | ReducerCreator<"progress", CustomEvent.Progress, string>;
 
-  type ActionRecord = OptionalRecord<EventType, StrictObject<any[]>>;
+  type ActionRecord = {
+    [P in EventType]?: {
+      [R in ActionType]?: any[];
+    };
+  };
 
   namespace CustomEvent {
     type Progress = Server.Progress;

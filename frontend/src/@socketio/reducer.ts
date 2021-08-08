@@ -1,4 +1,4 @@
-import { ActionCreatorWithPayload, AsyncThunk } from "@reduxjs/toolkit";
+import { ActionCreator } from "@reduxjs/toolkit";
 import {
   movieRemoveById,
   movieRemoveWantedById,
@@ -20,25 +20,18 @@ import {
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 
-function bindToReduxStore(
-  fn: (ids?: number[]) => any
-): SocketIO.ActionFn<number> {
-  return (ids?: number[]) => reduxStore.dispatch(fn(ids));
-}
-
-function bindToReduxStoreOptional(fn: ActionCreatorWithPayload<number[]>) {
-  return (ids?: number[]) => {
-    if (ids !== undefined) {
-      reduxStore.dispatch(fn(ids));
-    }
+export function bindReduxAction<T extends ActionCreator<any>>(action: T) {
+  return (...args: Parameters<T>) => {
+    reduxStore.dispatch(action(...args));
   };
 }
 
-function bindToReduxStoreAsyncOptional<S>(fn: AsyncThunk<S, number[], {}>) {
-  return (ids?: number[]) => {
-    if (ids !== undefined) {
-      reduxStore.dispatch(fn(ids));
-    }
+export function bindReduxActionWithParam<T extends ActionCreator<any>>(
+  action: T,
+  ...param: Parameters<T>
+) {
+  return () => {
+    reduxStore.dispatch(action(...param));
   };
 }
 
@@ -46,11 +39,11 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
     {
       key: "connect",
-      any: () => reduxStore.dispatch(siteUpdateOffline(false)),
+      any: bindReduxActionWithParam(siteUpdateOffline, false),
     },
     {
       key: "connect",
-      any: () => reduxStore.dispatch(siteBootstrap()),
+      any: bindReduxAction(siteBootstrap),
     },
     {
       key: "connect_error",
@@ -65,7 +58,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "disconnect",
-      any: () => reduxStore.dispatch(siteUpdateOffline(true)),
+      any: bindReduxActionWithParam(siteUpdateOffline, true),
     },
     {
       key: "message",
@@ -84,14 +77,10 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "progress",
-      update: (progress) => {
-        if (progress) {
-          reduxStore.dispatch(siteAddProgress(progress));
-        }
-      },
+      update: bindReduxAction(siteAddProgress),
       delete: (ids) => {
         setTimeout(() => {
-          ids?.forEach((id) => {
+          ids.forEach((id) => {
             reduxStore.dispatch(siteRemoveProgress(id));
           });
         }, 3 * 1000);
@@ -99,43 +88,35 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindToReduxStoreAsyncOptional(seriesUpdateById),
-      delete: bindToReduxStoreOptional(seriesRemoveById),
+      update: bindReduxAction(seriesUpdateById),
+      delete: bindReduxAction(seriesRemoveById),
     },
     {
       key: "movie",
-      update: bindToReduxStoreAsyncOptional(movieUpdateById),
-      delete: bindToReduxStoreOptional(movieRemoveById),
+      update: bindReduxAction(movieUpdateById),
+      delete: bindReduxAction(movieRemoveById),
     },
     {
       key: "episode-wanted",
-      update: (ids: number[] | undefined) => {
-        if (ids) {
-          reduxStore.dispatch(seriesUpdateWantedById(ids) as any);
-        }
-      },
-      delete: bindToReduxStoreOptional(seriesRemoveWantedById),
+      update: bindReduxAction(seriesUpdateWantedById),
+      delete: bindReduxAction(seriesRemoveWantedById),
     },
     {
       key: "movie-wanted",
-      update: (ids: number[] | undefined) => {
-        if (ids) {
-          reduxStore.dispatch(movieUpdateWantedById(ids) as any);
-        }
-      },
-      delete: bindToReduxStoreOptional(movieRemoveWantedById),
+      update: bindReduxAction(movieUpdateWantedById),
+      delete: bindReduxAction(movieRemoveWantedById),
     },
     {
       key: "settings",
-      any: bindToReduxStore(systemUpdateAllSettings),
+      any: bindReduxAction(systemUpdateAllSettings),
     },
     {
       key: "languages",
-      any: bindToReduxStore(systemUpdateLanguages),
+      any: bindReduxAction(systemUpdateLanguages),
     },
     {
       key: "badges",
-      any: bindToReduxStore(siteUpdateBadges),
+      any: bindReduxAction(siteUpdateBadges),
     },
   ];
 }

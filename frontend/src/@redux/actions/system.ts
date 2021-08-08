@@ -3,8 +3,8 @@ import { ProvidersApi, SystemApi } from "../../apis";
 
 export const systemUpdateAllSettings = createAsyncThunk(
   "system/update",
-  (_: undefined, { dispatch }) => {
-    return Promise.all([
+  async (_: undefined, { dispatch }) => {
+    await Promise.all([
       dispatch(systemUpdateSettings()),
       dispatch(systemUpdateLanguages()),
       dispatch(systemUpdateLanguagesProfiles()),
