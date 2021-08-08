@@ -1,13 +1,13 @@
 import { ActionCreatorWithPayload, AsyncThunk } from "@reduxjs/toolkit";
 import {
-  movieRemoveItems,
-  movieRemoveWantedItems,
-  movieUpdateList,
-  movieUpdateWantedList,
-  seriesRemoveItems,
-  seriesRemoveWanted,
-  seriesUpdateList,
-  seriesUpdateWantedList,
+  movieRemoveById,
+  movieRemoveWantedById,
+  movieUpdateById,
+  movieUpdateWantedById,
+  seriesRemoveById,
+  seriesRemoveWantedById,
+  seriesUpdateById,
+  seriesUpdateWantedById,
   siteAddNotifications,
   siteAddProgress,
   siteBootstrap,
@@ -99,31 +99,31 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindToReduxStoreAsyncOptional(seriesUpdateList),
-      delete: bindToReduxStoreOptional(seriesRemoveItems),
+      update: bindToReduxStoreAsyncOptional(seriesUpdateById),
+      delete: bindToReduxStoreOptional(seriesRemoveById),
     },
     {
       key: "movie",
-      update: bindToReduxStoreAsyncOptional(movieUpdateList),
-      delete: bindToReduxStoreOptional(movieRemoveItems),
+      update: bindToReduxStoreAsyncOptional(movieUpdateById),
+      delete: bindToReduxStoreOptional(movieRemoveById),
     },
     {
       key: "episode-wanted",
       update: (ids: number[] | undefined) => {
         if (ids) {
-          reduxStore.dispatch(seriesUpdateWantedList(ids) as any);
+          reduxStore.dispatch(seriesUpdateWantedById(ids) as any);
         }
       },
-      delete: bindToReduxStoreOptional(seriesRemoveWanted),
+      delete: bindToReduxStoreOptional(seriesRemoveWantedById),
     },
     {
       key: "movie-wanted",
       update: (ids: number[] | undefined) => {
         if (ids) {
-          reduxStore.dispatch(movieUpdateWantedList(ids) as any);
+          reduxStore.dispatch(movieUpdateWantedById(ids) as any);
         }
       },
-      delete: bindToReduxStoreOptional(movieRemoveWantedItems),
+      delete: bindToReduxStoreOptional(movieRemoveWantedById),
     },
     {
       key: "settings",

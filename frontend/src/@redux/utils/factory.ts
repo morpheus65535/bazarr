@@ -7,7 +7,7 @@ import {
 import { difference, differenceWith, findIndex, has } from "lodash";
 import { conditionalLog } from "../../utilites/logger";
 
-interface ActionParam<T, ID> {
+interface ActionParam<T, ID = unknown> {
   range?: AsyncThunk<T, Parameter.Range, {}>;
   all?: AsyncThunk<T, void, {}>;
   ids?: AsyncThunk<T, ID[], {}>;
@@ -16,7 +16,7 @@ interface ActionParam<T, ID> {
 
 export function createAsyncItemReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
-  actions: Pick<ActionParam<T, unknown>, "all">,
+  actions: Pick<ActionParam<T>, "all">,
   getItem: (state: Draft<S>) => Draft<Async.Item<T>>
 ) {
   const { all } = actions;

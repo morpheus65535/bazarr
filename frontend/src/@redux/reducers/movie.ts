@@ -1,14 +1,14 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
-  movieRemoveItems,
-  movieRemoveWantedItems,
+  movieRemoveById,
+  movieRemoveWantedById,
   movieUpdateAll,
   movieUpdateBlacklist,
+  movieUpdateById,
   movieUpdateByRange,
-  movieUpdateHistoryList,
-  movieUpdateList,
+  movieUpdateHistory,
+  movieUpdateWantedById,
   movieUpdateWantedByRange,
-  movieUpdateWantedList,
 } from "../actions";
 import { AsyncUtility } from "../utils/async";
 import {
@@ -33,19 +33,19 @@ const defaultMovie: Movie = {
 const reducer = createReducer(defaultMovie, (builder) => {
   createAsyncEntityReducer(builder, (s) => s.movieList, {
     range: movieUpdateByRange,
-    ids: movieUpdateList,
-    removeIds: movieRemoveItems,
+    ids: movieUpdateById,
+    removeIds: movieRemoveById,
     all: movieUpdateAll,
   });
 
   createAsyncEntityReducer(builder, (s) => s.wantedMovieList, {
     range: movieUpdateWantedByRange,
-    ids: movieUpdateWantedList,
-    removeIds: movieRemoveWantedItems,
+    ids: movieUpdateWantedById,
+    removeIds: movieRemoveWantedById,
   });
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
-    all: movieUpdateHistoryList,
+    all: movieUpdateHistory,
   });
 
   createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {

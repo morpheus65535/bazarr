@@ -1,17 +1,17 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
-  episodesRemoveItems,
-  episodeUpdateBy,
-  episodeUpdateById,
-  seriesRemoveItems,
-  seriesRemoveWanted,
+  episodesRemoveById,
+  episodeUpdateByEpisodeId,
+  episodeUpdateBySeriesId,
+  seriesRemoveById,
+  seriesRemoveWantedById,
   seriesUpdateAll,
   seriesUpdateBlacklist,
+  seriesUpdateById,
   seriesUpdateByRange,
-  seriesUpdateHistoryList,
-  seriesUpdateList,
-  seriesUpdateWantedList,
-  seriesUpdateWantedListByRange,
+  seriesUpdateHistory,
+  seriesUpdateWantedById,
+  seriesUpdateWantedByRange,
 } from "../actions";
 import { AsyncUtility } from "../utils/async";
 import {
@@ -38,19 +38,19 @@ const defaultSeries: Series = {
 const reducer = createReducer(defaultSeries, (builder) => {
   createAsyncEntityReducer(builder, (s) => s.seriesList, {
     range: seriesUpdateByRange,
-    ids: seriesUpdateList,
-    removeIds: seriesRemoveItems,
+    ids: seriesUpdateById,
+    removeIds: seriesRemoveById,
     all: seriesUpdateAll,
   });
 
   createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {
-    range: seriesUpdateWantedListByRange,
-    ids: seriesUpdateWantedList,
-    removeIds: seriesRemoveWanted,
+    range: seriesUpdateWantedByRange,
+    ids: seriesUpdateWantedById,
+    removeIds: seriesRemoveWantedById,
   });
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
-    all: seriesUpdateHistoryList,
+    all: seriesUpdateHistory,
   });
 
   createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
@@ -58,12 +58,12 @@ const reducer = createReducer(defaultSeries, (builder) => {
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
-    ids: episodeUpdateBy,
+    ids: episodeUpdateBySeriesId,
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
-    ids: episodeUpdateById,
-    removeIds: episodesRemoveItems,
+    ids: episodeUpdateByEpisodeId,
+    removeIds: episodesRemoveById,
   });
 });
 

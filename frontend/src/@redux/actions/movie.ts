@@ -9,7 +9,7 @@ export const movieUpdateByRange = createAsyncThunk(
   }
 );
 
-export const movieUpdateList = createAsyncThunk(
+export const movieUpdateById = createAsyncThunk(
   "movies/update/movie_id",
   async (ids: number[]) => {
     const response = await MoviesApi.movies(ids);
@@ -25,9 +25,9 @@ export const movieUpdateAll = createAsyncThunk(
   }
 );
 
-export const movieRemoveItems = createAction<number[]>("movies/remove");
+export const movieRemoveById = createAction<number[]>("movies/remove");
 
-export const movieUpdateWantedList = createAsyncThunk(
+export const movieUpdateWantedById = createAsyncThunk(
   "movies/wanted/update/movie_id",
   async (ids: number[]) => {
     const response = await MoviesApi.wantedBy(ids);
@@ -35,7 +35,7 @@ export const movieUpdateWantedList = createAsyncThunk(
   }
 );
 
-export const movieRemoveWantedItems = createAction<number[]>(
+export const movieRemoveWantedById = createAction<number[]>(
   "movies/wanted/remove"
 );
 
@@ -47,7 +47,7 @@ export const movieUpdateWantedByRange = createAsyncThunk(
   }
 );
 
-export const movieUpdateHistoryList = createAsyncThunk(
+export const movieUpdateHistory = createAsyncThunk(
   "movies/history/update",
   async () => {
     const response = await MoviesApi.history();

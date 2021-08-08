@@ -1,7 +1,7 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { EpisodesApi, SeriesApi } from "../../apis";
 
-export const seriesUpdateWantedList = createAsyncThunk(
+export const seriesUpdateWantedById = createAsyncThunk(
   "series/wanted/update",
   async (episodeid: number[]) => {
     const response = await EpisodesApi.wantedBy(episodeid);
@@ -9,7 +9,7 @@ export const seriesUpdateWantedList = createAsyncThunk(
   }
 );
 
-export const seriesUpdateWantedListByRange = createAsyncThunk(
+export const seriesUpdateWantedByRange = createAsyncThunk(
   "series/wanted/update/range",
   async (params: Parameter.Range) => {
     const response = await EpisodesApi.wanted(params);
@@ -17,15 +17,15 @@ export const seriesUpdateWantedListByRange = createAsyncThunk(
   }
 );
 
-export const seriesRemoveWanted = createAction<number[]>(
+export const seriesRemoveWantedById = createAction<number[]>(
   "series/wanted/remove"
 );
 
-export const seriesRemoveItems = createAction<number[]>("series/remove");
+export const seriesRemoveById = createAction<number[]>("series/remove");
 
-export const episodesRemoveItems = createAction<number[]>("episodes/remove");
+export const episodesRemoveById = createAction<number[]>("episodes/remove");
 
-export const seriesUpdateList = createAsyncThunk(
+export const seriesUpdateById = createAsyncThunk(
   "series/update",
   async (ids: number[]) => {
     const response = await SeriesApi.series(ids);
@@ -49,7 +49,7 @@ export const seriesUpdateByRange = createAsyncThunk(
   }
 );
 
-export const episodeUpdateBy = createAsyncThunk(
+export const episodeUpdateBySeriesId = createAsyncThunk(
   "episodes/update/series_id",
   async (seriesid: number[]) => {
     const response = await EpisodesApi.bySeriesId(seriesid);
@@ -57,7 +57,7 @@ export const episodeUpdateBy = createAsyncThunk(
   }
 );
 
-export const episodeUpdateById = createAsyncThunk(
+export const episodeUpdateByEpisodeId = createAsyncThunk(
   "episodes/update/episodes_id",
   async (episodeid: number[]) => {
     const response = await EpisodesApi.byEpisodeId(episodeid);
@@ -65,7 +65,7 @@ export const episodeUpdateById = createAsyncThunk(
   }
 );
 
-export const seriesUpdateHistoryList = createAsyncThunk(
+export const seriesUpdateHistory = createAsyncThunk(
   "series/history/update",
   async () => {
     const response = await EpisodesApi.history();

@@ -2,18 +2,18 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
 import { useConvertEntityToList } from "../../utilites";
 import {
-  episodesRemoveItems,
-  episodeUpdateBy,
-  episodeUpdateById,
+  episodesRemoveById,
+  episodeUpdateByEpisodeId,
+  episodeUpdateBySeriesId,
   movieUpdateBlacklist,
-  movieUpdateHistoryList,
-  movieUpdateList,
-  movieUpdateWantedList,
+  movieUpdateById,
+  movieUpdateHistory,
+  movieUpdateWantedById,
   providerUpdateList,
   seriesUpdateBlacklist,
-  seriesUpdateHistoryList,
-  seriesUpdateList,
-  seriesUpdateWantedList,
+  seriesUpdateById,
+  seriesUpdateHistory,
+  seriesUpdateWantedById,
   systemUpdateAllSettings,
   systemUpdateHealth,
   systemUpdateLanguages,
@@ -174,7 +174,7 @@ export function useProfileItems(profile?: Language.Profile) {
 }
 
 export function useRawSeries() {
-  const update = useReduxAction(seriesUpdateList);
+  const update = useReduxAction(seriesUpdateById);
   const items = useReduxStore((d) => d.series.seriesList);
   return stateBuilder(items, update);
 }
@@ -222,7 +222,7 @@ export function useSerieBy(id?: number) {
 }
 
 export function useEpisodesBy(seriesId?: number) {
-  const action = useReduxAction(episodeUpdateBy);
+  const action = useReduxAction(episodeUpdateBySeriesId);
   const update = useCallback(() => {
     if (seriesId !== undefined && !isNaN(seriesId)) {
       action([seriesId]);
@@ -247,9 +247,9 @@ export function useEpisodesBy(seriesId?: number) {
     [list, items]
   );
 
-  const updateById = useReduxAction(episodeUpdateById);
+  const updateById = useReduxAction(episodeUpdateByEpisodeId);
   const wrappedUpdateById = useWrapToOptionalId(updateById);
-  const deleteAction = useReduxAction(episodesRemoveItems);
+  const deleteAction = useReduxAction(episodesRemoveById);
   const wrappedDelete = useWrapToOptionalId(deleteAction);
 
   const episodeReducer = useMemo<SocketIO.Reducer>(
@@ -276,7 +276,7 @@ export function useEpisodesBy(seriesId?: number) {
 }
 
 export function useRawMovies() {
-  const update = useReduxAction(movieUpdateList);
+  const update = useReduxAction(movieUpdateById);
   const items = useReduxStore((d) => d.movies.movieList);
   return stateBuilder(items, update);
 }
@@ -324,14 +324,14 @@ export function useMovieBy(id?: number) {
 }
 
 export function useWantedSeries() {
-  const update = useReduxAction(seriesUpdateWantedList);
+  const update = useReduxAction(seriesUpdateWantedById);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
   return stateBuilder(items, update);
 }
 
 export function useWantedMovies() {
-  const update = useReduxAction(movieUpdateWantedList);
+  const update = useReduxAction(movieUpdateWantedById);
   const items = useReduxStore((d) => d.movies.wantedMovieList);
 
   return stateBuilder(items, update);
@@ -368,7 +368,7 @@ export function useBlacklistSeries() {
 }
 
 export function useMoviesHistory() {
-  const update = useReduxAction(movieUpdateHistoryList);
+  const update = useReduxAction(movieUpdateHistory);
   const items = useReduxStore((s) => s.movies.historyList);
   const reducer = useMemo<SocketIO.Reducer>(
     () => ({ key: "movie-history", update }),
@@ -383,7 +383,7 @@ export function useMoviesHistory() {
 }
 
 export function useSeriesHistory() {
-  const update = useReduxAction(seriesUpdateHistoryList);
+  const update = useReduxAction(seriesUpdateHistory);
   const items = useReduxStore((s) => s.series.historyList);
   const reducer = useMemo<SocketIO.Reducer>(
     () => ({ key: "episode-history", update }),
