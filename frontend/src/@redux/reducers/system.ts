@@ -41,21 +41,37 @@ const defaultSystem: System = {
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
-  createAsyncListReducer(builder, systemUpdateLanguages, (s) => s.languages);
+  createAsyncListReducer(builder, (s) => s.languages, "code2", {
+    all: systemUpdateLanguages,
+  });
 
-  createAsyncListReducer(
+  createAsyncListReducer(builder, (s) => s.languagesProfiles, "profileId", {
+    all: systemUpdateLanguagesProfiles,
+  });
+  createAsyncItemReducer(builder, { all: systemUpdateStatus }, (s) => s.status);
+  createAsyncItemReducer(
     builder,
-    systemUpdateLanguagesProfiles,
-    (s) => s.languagesProfiles
+    { all: systemUpdateSettings },
+    (s) => s.settings
   );
-  createAsyncItemReducer(builder, systemUpdateStatus, (s) => s.status);
-  createAsyncItemReducer(builder, systemUpdateSettings, (s) => s.settings);
-  createAsyncListReducer(builder, systemUpdateReleases, (s) => s.releases);
-  createAsyncListReducer(builder, systemUpdateLogs, (s) => s.logs);
+  createAsyncListReducer(builder, (s) => s.releases, "date", {
+    all: systemUpdateReleases,
+  });
+  createAsyncListReducer(builder, (s) => s.logs, "timestamp", {
+    all: systemUpdateLogs,
+  });
 
-  createAsyncListReducer(builder, systemUpdateHealth, (s) => s.health);
-  createAsyncListReducer(builder, systemUpdateTasks, (s) => s.tasks);
-  createAsyncListReducer(builder, providerUpdateList, (s) => s.providers);
+  createAsyncListReducer(builder, (s) => s.health, "object", {
+    all: systemUpdateHealth,
+  });
+
+  createAsyncListReducer(builder, (s) => s.tasks, "job_id", {
+    all: systemUpdateTasks,
+  });
+
+  createAsyncListReducer(builder, (s) => s.providers, "name", {
+    all: providerUpdateList,
+  });
 });
 
 export default reducer;

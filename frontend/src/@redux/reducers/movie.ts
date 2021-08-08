@@ -31,25 +31,26 @@ const defaultMovie: Movie = {
 };
 
 const reducer = createReducer(defaultMovie, (builder) => {
-  createAsyncEntityReducer(
-    builder,
-    (s) => s.movieList,
-    movieUpdateByRange,
-    movieUpdateList,
-    movieRemoveItems,
-    movieUpdateAll
-  );
+  createAsyncEntityReducer(builder, (s) => s.movieList, {
+    range: movieUpdateByRange,
+    ids: movieUpdateList,
+    removeIds: movieRemoveItems,
+    all: movieUpdateAll,
+  });
 
-  createAsyncEntityReducer(
-    builder,
-    (s) => s.wantedMovieList,
-    movieUpdateWantedByRange,
-    movieUpdateWantedList,
-    movieRemoveWantedItems
-  );
+  createAsyncEntityReducer(builder, (s) => s.wantedMovieList, {
+    range: movieUpdateWantedByRange,
+    ids: movieUpdateWantedList,
+    removeIds: movieRemoveWantedItems,
+  });
 
-  createAsyncListReducer(builder, movieUpdateHistoryList, (s) => s.historyList);
-  createAsyncListReducer(builder, movieUpdateBlacklist, (s) => s.blacklist);
+  createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
+    all: movieUpdateHistoryList,
+  });
+
+  createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
+    all: movieUpdateBlacklist,
+  });
 });
 
 export default reducer;

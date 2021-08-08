@@ -16,7 +16,6 @@ import {
 import { AsyncUtility } from "../utils/async";
 import {
   createAsyncEntityReducer,
-  createAsyncListIdReducer,
   createAsyncListReducer,
 } from "../utils/factory";
 
@@ -37,45 +36,35 @@ const defaultSeries: Series = {
 };
 
 const reducer = createReducer(defaultSeries, (builder) => {
-  createAsyncEntityReducer(
-    builder,
-    (s) => s.seriesList,
-    seriesUpdateByRange,
-    seriesUpdateList,
-    seriesRemoveItems,
-    seriesUpdateAll
-  );
+  createAsyncEntityReducer(builder, (s) => s.seriesList, {
+    range: seriesUpdateByRange,
+    ids: seriesUpdateList,
+    removeIds: seriesRemoveItems,
+    all: seriesUpdateAll,
+  });
 
-  createAsyncEntityReducer(
-    builder,
-    (s) => s.wantedEpisodesList,
-    seriesUpdateWantedListByRange,
-    seriesUpdateWantedList,
-    seriesRemoveWanted
-  );
+  createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {
+    range: seriesUpdateWantedListByRange,
+    ids: seriesUpdateWantedList,
+    removeIds: seriesRemoveWanted,
+  });
 
-  createAsyncListReducer(
-    builder,
-    seriesUpdateHistoryList,
-    (s) => s.historyList
-  );
+  createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
+    all: seriesUpdateHistoryList,
+  });
 
-  createAsyncListReducer(builder, seriesUpdateBlacklist, (s) => s.blacklist);
+  createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
+    all: seriesUpdateBlacklist,
+  });
 
-  createAsyncListIdReducer(
-    builder,
-    (s) => s.episodeList,
-    "sonarrEpisodeId",
-    episodeUpdateBy
-  );
+  createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
+    ids: episodeUpdateBy,
+  });
 
-  createAsyncListIdReducer(
-    builder,
-    (s) => s.episodeList,
-    "sonarrEpisodeId",
-    episodeUpdateById,
-    episodesRemoveItems
-  );
+  createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
+    ids: episodeUpdateById,
+    removeIds: episodesRemoveItems,
+  });
 });
 
 export default reducer;
