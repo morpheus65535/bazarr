@@ -16,11 +16,11 @@ export interface SharedProps<T extends Item.Base> {
   loader: (params: Parameter.Range) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: AsyncOrderState<T>;
+  state: Async.Entity<T>;
 }
 
 interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
-  updateAction: AsyncThunk<AsyncDataWrapper<T>, number[] | undefined, {}>;
+  updateAction: AsyncThunk<AsyncDataWrapper<T>, void, {}>;
 }
 
 function BaseItemView<T extends Item.Base>({
@@ -33,19 +33,16 @@ function BaseItemView<T extends Item.Base>({
   const [editMode, setEdit] = useState(false);
 
   const dispatch = useAppDispatch();
-  const update = useCallback(
-    (ids?: number[]) => {
-      dispatch(updateAction(ids)).then(() => {
-        setPendingEdit((edit) => {
-          // Hack to remove all dependencies
-          setEdit(edit);
-          return edit;
-        });
-        setDirty([]);
+  const update = useCallback(() => {
+    dispatch(updateAction()).then(() => {
+      setPendingEdit((edit) => {
+        // Hack to remove all dependencies
+        setEdit(edit);
+        return edit;
       });
-    },
-    [dispatch, updateAction]
-  );
+      setDirty([]);
+    });
+  }, [dispatch, updateAction]);
 
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
@@ -83,13 +80,13 @@ function BaseItemView<T extends Item.Base>({
   );
 
   const startEdit = useCallback(() => {
-    if (shared.state.data.order.every(isNonNullable)) {
+    if (shared.state.content.ids.every(isNonNullable)) {
       setEdit(true);
     } else {
       update();
     }
     setPendingEdit(true);
-  }, [shared.state.data.order, update]);
+  }, [shared.state.content.ids, update]);
 
   const endEdit = useCallback(() => {
     setEdit(false);
@@ -148,7 +145,7 @@ function BaseItemView<T extends Item.Base>({
           <ContentHeader.Button
             updating={pendingEditMode !== editMode}
             disabled={
-              state.data.order.length === 0 && state.state === "loading"
+              state.content.ids.length === 0 && state.state === "loading"
             }
             icon={faList}
             onClick={startEdit}

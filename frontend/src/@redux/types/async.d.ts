@@ -15,15 +15,6 @@ declare namespace Async {
 
   type Item<T> = BaseType<T | null>;
 
-  type EntityStruct<T> = {
-    keyName: keyof T;
-    ids: (string | null)[];
-    entities: {
-      [id: string]: T;
-    };
-  };
-
-  // TODO: only number temporarily
   type Entity<T> = BaseType<EntityStruct<T>> & {
     dirtyEntities: string[];
   };

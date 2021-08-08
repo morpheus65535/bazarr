@@ -26,7 +26,7 @@ export function AsyncOverlay<T>(props: Props<T>) {
   if (ctx.state === "loading" || ctx.state === "idle") {
     return <LoadingIndicator></LoadingIndicator>;
   } else if (ctx.state === "failed") {
-    return ctx.error;
+    return <p>{ctx.error}</p>;
   } else {
     return children(ctx);
   }

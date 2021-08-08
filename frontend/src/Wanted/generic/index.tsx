@@ -9,7 +9,7 @@ import { AsyncPageTable, ContentHeader } from "../../components";
 interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
   columns: Column<T>[];
-  state: Readonly<AsyncOrderState<T>>;
+  state: Async.Entity<T>;
   loader: (params: Parameter.Range) => void;
   searchAll: () => Promise<void>;
 }
@@ -23,7 +23,7 @@ function GenericWantedView<T extends Wanted.Base>({
 }: Props<T>) {
   const typeName = capitalize(type);
 
-  const dataCount = Object.keys(state.data.items).length;
+  const dataCount = Object.keys(state.content.entities).length;
 
   return (
     <Container fluid>
@@ -41,7 +41,7 @@ function GenericWantedView<T extends Wanted.Base>({
       </ContentHeader>
       <Row>
         <AsyncPageTable
-          aos={state}
+          entity={state}
           loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}

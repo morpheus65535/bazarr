@@ -16,11 +16,15 @@ export namespace AsyncUtility {
     };
   }
 
-  export function getDefaultPagination<T>(): Async.Pagination<T> {
+  export function getDefaultEntity<T>(key: keyof T): Async.Entity<T> {
     return {
       state: "idle",
       dirtyEntities: [],
-      content: {},
+      content: {
+        keyName: key,
+        ids: [],
+        entities: {},
+      },
       error: null,
     };
   }

@@ -3,58 +3,51 @@ import {
   movieRemoveItems,
   movieRemoveWantedItems,
   movieUpdateBlacklist,
+  movieUpdateByRange,
   movieUpdateHistoryList,
   movieUpdateList,
+  movieUpdateWantedByRange,
   movieUpdateWantedList,
 } from "../actions";
-import { defaultAOS } from "../utils";
 import { AsyncUtility } from "../utils/async";
 import {
-  createAOSReducer,
-  createAOSWholeReducer,
+  createAsyncEntityReducer,
   createAsyncListReducer,
-  removeOrderListItem,
 } from "../utils/factory";
 
 interface Movie {
-  movieList: AsyncOrderState<Item.Movie>;
-  wantedMovieList: AsyncOrderState<Wanted.Movie>;
+  movieList: Async.Entity<Item.Movie>;
+  wantedMovieList: Async.Entity<Wanted.Movie>;
   historyList: Async.List<History.Movie>;
   blacklist: Async.List<Blacklist.Movie>;
 }
 
 const defaultMovie: Movie = {
-  movieList: defaultAOS(),
-  wantedMovieList: defaultAOS(),
+  movieList: AsyncUtility.getDefaultEntity("radarrId"),
+  wantedMovieList: AsyncUtility.getDefaultEntity("radarrId"),
   historyList: AsyncUtility.getDefaultList(),
   blacklist: AsyncUtility.getDefaultList(),
 };
 
 const reducer = createReducer(defaultMovie, (builder) => {
-  createAOSWholeReducer(
+  createAsyncEntityReducer(
     builder,
+    movieUpdateByRange,
     movieUpdateList,
-    (s) => s.movieList,
-    "radarrId"
+    movieRemoveItems,
+    (s) => s.movieList
   );
 
-  createAOSReducer(
+  createAsyncEntityReducer(
     builder,
+    movieUpdateWantedByRange,
     movieUpdateWantedList,
-    (s) => s.wantedMovieList,
-    "radarrId"
+    movieRemoveWantedItems,
+    (s) => s.wantedMovieList
   );
 
   createAsyncListReducer(builder, movieUpdateHistoryList, (s) => s.historyList);
   createAsyncListReducer(builder, movieUpdateBlacklist, (s) => s.blacklist);
-
-  builder
-    .addCase(movieRemoveWantedItems, (state, action) => {
-      removeOrderListItem(state.wantedMovieList, action);
-    })
-    .addCase(movieRemoveItems, (state, action) => {
-      removeOrderListItem(state.movieList, action);
-    });
 });
 
 export default reducer;

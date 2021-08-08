@@ -11,8 +11,16 @@ export const movieUpdateByRange = createAsyncThunk(
 
 export const movieUpdateList = createAsyncThunk(
   "movies/update/movie_id",
-  async (ids?: number[]) => {
+  async (ids: number[]) => {
     const response = await MoviesApi.movies(ids);
+    return response;
+  }
+);
+
+export const movieUpdateAll = createAsyncThunk(
+  "movies/update/all",
+  async () => {
+    const response = await MoviesApi.movies();
     return response;
   }
 );

@@ -148,7 +148,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
-                disabled={serie.data?.profileId === null}
+                disabled={serie.content?.profileId === null}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "manual-search");
                 }}

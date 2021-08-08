@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer, useWrapToOptionalId } from "../../@socketio/hooks";
-import { buildOrderList } from "../../utilites";
+import { useConvertEntityToList } from "../../utilites";
 import {
   episodesRemoveItems,
   episodeUpdateBy,
@@ -179,36 +179,31 @@ export function useRawSeries() {
   return stateBuilder(items, update);
 }
 
-export function useSeries(order = true) {
+export function useSeries() {
   const [rawSeries, action] = useRawSeries();
-  const series = useMemo<AsyncState<Item.Series[]>>(() => {
-    const state = rawSeries.data;
-    if (order) {
-      return {
-        ...rawSeries,
-        data: buildOrderList(state),
-      };
-    } else {
-      return {
-        ...rawSeries,
-        data: Object.values(state.items),
-      };
-    }
-  }, [rawSeries, order]);
+  const content = useConvertEntityToList(rawSeries.content);
+  const series = useMemo<Async.List<Item.Series>>(() => {
+    return {
+      ...rawSeries,
+      content,
+    };
+  }, [rawSeries, content]);
   return stateBuilder(series, action);
 }
 
 export function useSerieBy(id?: number) {
   const [series, updateSerie] = useRawSeries();
-  const serie = useMemo<AsyncState<Item.Series | null>>(() => {
-    const items = series.data.items;
-    let item: Item.Series | null = null;
-    if (id && !isNaN(id) && id in items) {
-      item = items[id];
+  const serie = useMemo<Async.Item<Item.Series>>(() => {
+    const {
+      content: { entities },
+    } = series;
+    let content: Item.Series | null = null;
+    if (id && !isNaN(id) && id.toString() in entities) {
+      content = entities[id.toString()];
     }
     return {
       ...series,
-      data: item,
+      content,
     };
   }, [id, series]);
 
@@ -219,10 +214,10 @@ export function useSerieBy(id?: number) {
   }, [id, updateSerie]);
 
   useEffect(() => {
-    if (serie.data === null) {
+    if (serie.content === null && serie.state !== "loading") {
       update();
     }
-  }, [serie.data, update]);
+  }, [serie.content, serie.state, update]);
   return stateBuilder(serie, update);
 }
 
@@ -286,36 +281,31 @@ export function useRawMovies() {
   return stateBuilder(items, update);
 }
 
-export function useMovies(order = true) {
+export function useMovies() {
   const [rawMovies, action] = useRawMovies();
-  const movies = useMemo<AsyncState<Item.Movie[]>>(() => {
-    const state = rawMovies.data;
-    if (order) {
-      return {
-        ...rawMovies,
-        data: buildOrderList(state),
-      };
-    } else {
-      return {
-        ...rawMovies,
-        data: Object.values(state.items),
-      };
-    }
-  }, [rawMovies, order]);
+  const content = useConvertEntityToList(rawMovies.content);
+  const movies = useMemo<Async.List<Item.Movie>>(() => {
+    return {
+      ...rawMovies,
+      content,
+    };
+  }, [rawMovies, content]);
   return stateBuilder(movies, action);
 }
 
 export function useMovieBy(id?: number) {
   const [movies, updateMovies] = useRawMovies();
-  const movie = useMemo<AsyncState<Item.Movie | null>>(() => {
-    const items = movies.data.items;
-    let item: Item.Movie | null = null;
-    if (id && !isNaN(id) && id in items) {
-      item = items[id];
+  const movie = useMemo<Async.Item<Item.Movie>>(() => {
+    const {
+      content: { entities },
+    } = movies;
+    let content: Item.Movie | null = null;
+    if (id && !isNaN(id) && id.toString() in entities) {
+      content = entities[id.toString()];
     }
     return {
       ...movies,
-      data: item,
+      content,
     };
   }, [id, movies]);
 
@@ -326,10 +316,10 @@ export function useMovieBy(id?: number) {
   }, [id, updateMovies]);
 
   useEffect(() => {
-    if (movie.data === null) {
+    if (movie.content === null) {
       update();
     }
-  }, [movie.data, update]);
+  }, [movie.content, update]);
   return stateBuilder(movie, update);
 }
 

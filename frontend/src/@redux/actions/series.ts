@@ -27,8 +27,16 @@ export const episodesRemoveItems = createAction<number[]>("episodes/remove");
 
 export const seriesUpdateList = createAsyncThunk(
   "series/update",
-  async (ids?: number[]) => {
+  async (ids: number[]) => {
     const response = await SeriesApi.series(ids);
+    return response;
+  }
+);
+
+export const seriesUpdateAll = createAsyncThunk(
+  "series/update/all",
+  async () => {
+    const response = await SeriesApi.series();
     return response;
   }
 );

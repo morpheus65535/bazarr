@@ -52,25 +52,6 @@ export function GetItemId(item: any): number {
   }
 }
 
-export function buildOrderList<T>(state: OrderIdState<T>): T[] {
-  const { order, items } = state;
-  return buildOrderListFrom(items, order);
-}
-
-export function buildOrderListFrom<T>(
-  items: IdState<T>,
-  order: (number | null)[]
-): T[] {
-  return order.flatMap((v) => {
-    if (v !== null && v in items) {
-      const item = items[v];
-      return [item];
-    }
-
-    return [];
-  });
-}
-
 export function BuildKey(...args: any[]) {
   return args.join("-");
 }
@@ -101,5 +82,7 @@ export function filterSubtitleBy(
   }
 }
 
+export * from "./async";
+export * from "./entity";
 export * from "./hooks";
 export * from "./validate";

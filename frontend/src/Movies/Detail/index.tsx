@@ -49,19 +49,19 @@ interface Props extends RouteComponentProps<Params> {}
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
   const [movie] = useMovieBy(id);
-  const item = movie.data;
+  const item = movie.content;
 
-  const profile = useProfileBy(movie.data?.profileId);
+  const profile = useProfileBy(movie.content?.profileId);
 
   const showModal = useShowModal();
 
   const [valid, setValid] = useState(true);
 
   const validator = useCallback(() => {
-    if (movie.data === null) {
+    if (movie.content === null) {
       setValid(false);
     }
-  }, [movie.data]);
+  }, [movie.content]);
 
   useOnLoadingFinish(movie, validator);
 

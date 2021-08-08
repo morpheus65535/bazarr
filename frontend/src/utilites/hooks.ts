@@ -29,7 +29,7 @@ export function useHasUpdateInject() {
 }
 
 export function useOnLoadingFinish(
-  as: Readonly<AsyncState<any>>,
+  as: Readonly<Async.BaseType<any>>,
   callback: () => void
 ) {
   return useDidUpdate(() => {

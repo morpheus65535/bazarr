@@ -40,9 +40,9 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
   const [serie] = useSerieBy(id);
-  const item = serie.data;
+  const item = serie.content;
 
-  const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
+  const [episodes] = useEpisodesBy(serie.content?.sonarrSeriesId);
 
   const available = episodes.content.length !== 0;
 
@@ -65,14 +65,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const [valid, setValid] = useState(true);
 
   const validator = useCallback(() => {
-    if (serie.data === null) {
+    if (serie.content === null) {
       setValid(false);
     }
-  }, [serie.data]);
+  }, [serie.content]);
 
   useOnLoadingFinish(serie, validator);
 
-  const profile = useProfileBy(serie.data?.profileId);
+  const profile = useProfileBy(serie.content?.profileId);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;

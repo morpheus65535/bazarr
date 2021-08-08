@@ -17,6 +17,14 @@ type Pair<T = string> = {
   value: T;
 };
 
+type EntityStruct<T> = {
+  keyName: keyof T;
+  ids: (string | null)[];
+  entities: {
+    [id: string]: T;
+  };
+};
+
 interface DataWrapper<T> {
   data: T;
 }

@@ -3,9 +3,9 @@ import {
   ActionReducerMapBuilder,
   AsyncThunk,
   Draft,
-  PayloadAction,
 } from "@reduxjs/toolkit";
 import { difference, differenceWith, findIndex, has } from "lodash";
+import { conditionalLog } from "../../utilites/logger";
 
 export function createAsyncItemReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
@@ -25,7 +25,7 @@ export function createAsyncItemReducer<S, T>(
     .addCase(thunk.rejected, (state, action) => {
       const item = getItem(state);
       item.state = "failed";
-      item.error = action.error;
+      item.error = action.error.message ?? null;
     });
 }
 
@@ -48,7 +48,7 @@ export function createAsyncListReducer<S, T>(
     .addCase(thunk.rejected, (state, action) => {
       const item = getList(state);
       item.state = "failed";
-      item.error = action.error;
+      item.error = action.error.message ?? null;
     });
 }
 
@@ -80,6 +80,8 @@ export function createAsyncListIdReducer<
         );
         if (idx !== -1) {
           item.content[idx] = v as Draft<T>;
+        } else {
+          item.content.push(v as Draft<T>);
         }
       });
 
@@ -88,7 +90,7 @@ export function createAsyncListIdReducer<
     .addCase(update.rejected, (state, action) => {
       const item = getList(state);
       item.state = "failed";
-      item.error = action.error;
+      item.error = action.error.message ?? null;
     });
 
   if (remove) {
@@ -105,207 +107,132 @@ export function createAsyncListIdReducer<
   }
 }
 
-// OLD down below
-
-export function createAOSReducer<S, T, ID extends keyof T>(
+export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<AsyncDataWrapper<T>, number[], {}>,
-  getAos: (state: Draft<S>) => Draft<AsyncOrderState<T>>,
-  match: ID
+  rangeThunk: AsyncThunk<AsyncDataWrapper<T>, Parameter.Range, {}>,
+  itemThunk: AsyncThunk<AsyncDataWrapper<T>, ID[], {}>,
+  deleteThunk: ActionCreatorWithPayload<ID[]>,
+  getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>
 ) {
   builder
-    .addCase(thunk.pending, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "loading";
+    .addCase(rangeThunk.pending, (state) => {
+      const entity = getEntity(state);
+      entity.state = "loading";
     })
-    .addCase(thunk.fulfilled, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "succeeded";
-    })
-    .addCase(thunk.rejected, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "failed";
-      aos.error = action.error as Error;
-    });
-}
+    .addCase(rangeThunk.fulfilled, (state, action) => {
+      const entity = getEntity(state);
+      entity.state = "succeeded";
 
-export function createAOSWholeReducer<S, T, ID extends keyof T>(
-  builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<AsyncDataWrapper<T>, number[] | undefined, {}>,
-  getAos: (state: Draft<S>) => Draft<AsyncOrderState<T>>,
-  match: ID
-) {
+      const {
+        meta: {
+          arg: { start, length },
+        },
+        payload: { data, total },
+      } = action;
+
+      let {
+        content: { keyName, entities, ids },
+        dirtyEntities,
+      } = entity;
+
+      const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
+
+      if (ids.length < total) {
+        const size = total - ids.length;
+        ids.push(...Array(size).fill(null));
+      }
+
+      conditionalLog(
+        ids.length !== total,
+        "Error when building entity, size of id array mismatch"
+      );
+
+      entity.dirtyEntities = difference(
+        dirtyEntities,
+        idsToAdd as Draft<string>[]
+      );
+      ids.splice(start, length, ...idsToAdd);
+      data.forEach((v) => {
+        const key = String(v[keyName as keyof T]);
+        entities[key] = v as Draft<T>;
+      });
+    })
+    .addCase(rangeThunk.rejected, (state, action) => {
+      const entity = getEntity(state);
+      entity.state = "failed";
+      entity.error = action.error.message ?? null;
+    });
+
   builder
-    .addCase(thunk.pending, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "loading";
+    .addCase(itemThunk.pending, (state) => {
+      const entity = getEntity(state);
+      entity.state = "loading";
     })
-    .addCase(thunk.fulfilled, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "succeeded";
-    })
-    .addCase(thunk.rejected, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "failed";
-      aos.error = action.error as Error;
-    });
-}
+    .addCase(itemThunk.fulfilled, (state, action) => {
+      const entity = getEntity(state);
+      entity.state = "succeeded";
 
-export function createAOSRangeReducer<S, T>(
-  builder: ActionReducerMapBuilder<S>,
-  thunk: AsyncThunk<AsyncDataWrapper<T>, Parameter.Range, {}>,
-  getAos: (state: Draft<S>) => Draft<AsyncOrderState<T>>
-) {
-  builder
-    .addCase(thunk.pending, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "loading";
-    })
-    .addCase(thunk.fulfilled, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "succeeded";
-    })
-    .addCase(thunk.rejected, (state, action) => {
-      const aos = getAos(state);
-      aos.state = "failed";
-      aos.error = action.error as Error;
-    });
-}
+      const {
+        meta: { arg },
+        payload: { data, total },
+      } = action;
 
-export function removeOrderListItem<T extends LooseObject>(
-  state: Draft<AsyncOrderState<T>>,
-  action: PayloadAction<number[]>
-) {
-  const ids = action.payload;
-  const { items, order } = state.data;
-  ids.forEach((v) => {
-    if (has(items, v)) {
-      delete items[v];
-    }
+      let {
+        content: { keyName, entities, ids },
+        dirtyEntities,
+      } = entity;
+
+      const idsToAdd = arg.map((v) => v.toString());
+
+      if (ids.length < total) {
+        const size = total - ids.length;
+        ids.push(...Array(size).fill(null));
+      }
+
+      conditionalLog(
+        ids.length !== total,
+        "Error when building entity, size of id array mismatch"
+      );
+
+      entity.dirtyEntities = difference(
+        dirtyEntities,
+        idsToAdd as Draft<string>[]
+      );
+      data.forEach((v) => {
+        const key = String(v[keyName as keyof T]);
+        entities[key] = v as Draft<T>;
+      });
+    })
+    .addCase(itemThunk.rejected, (state, action) => {
+      const entity = getEntity(state);
+      entity.state = "failed";
+      entity.error = action.error.message ?? null;
+    });
+
+  builder.addCase(deleteThunk, (state, action) => {
+    const entity = getEntity(state);
+    conditionalLog(
+      entity.state === "loading",
+      "Try to delete async entity when it's now loading"
+    );
+
+    const idsToDelete = action.payload.map((v) => v.toString());
+
+    let {
+      content: { ids, entities },
+      dirtyEntities,
+    } = entity;
+
+    entity.content.ids = difference(ids, idsToDelete as Draft<string>[]);
+    entity.dirtyEntities = difference(
+      dirtyEntities,
+      idsToDelete as Draft<string>[]
+    );
+
+    idsToDelete.forEach((v) => {
+      if (has(entities, v)) {
+        delete entities[v];
+      }
+    });
   });
-  state.data.order = difference(order, ids);
 }
-
-// export function updateOrderIdState<T extends LooseObject>(
-//   action: AsyncAction<AsyncDataWrapper<T>>,
-//   state: AsyncOrderState<T>,
-//   id: ItemIdType<T>
-// ): AsyncOrderState<T> {
-//   if (action.payload.loading) {
-//     return {
-//       data: {
-//         ...state.data,
-//         dirty: true,
-//       },
-//       fetching: true,
-//     };
-//   } else if (action.error !== undefined) {
-//     return {
-//       data: {
-//         ...state.data,
-//         dirty: true,
-//       },
-//       fetching: false,
-//       error: action.payload.item as Error,
-//     };
-//   } else {
-//     const { data, total } = action.payload.item as AsyncDataWrapper<T>;
-//     const { parameters } = action.payload;
-//     const [start, length] = parameters;
-
-//     // Convert item list to object
-//     const newItems = data.reduce<IdState<T>>(
-//       (prev, curr) => {
-//         const tid = curr[id];
-//         prev[tid] = curr;
-//         return prev;
-//       },
-//       { ...state.data.items }
-//     );
-
-//     let newOrder = [...state.data.order];
-
-//     const countDist = total - newOrder.length;
-//     if (countDist > 0) {
-//       newOrder = Array(countDist).fill(null).concat(newOrder);
-//     } else if (countDist < 0) {
-//       // Completely drop old data if list has shrinked
-//       newOrder = Array(total).fill(null);
-//     }
-
-//     const idList = newOrder.filter(isNumber);
-
-//     const dataOrder: number[] = data.map((v) => v[id]);
-
-//     if (typeof start === "number" && typeof length === "number") {
-//       newOrder.splice(start, length, ...dataOrder);
-//     } else if (isArray(start)) {
-//       // Find the null values and delete them, insert new values to the front of array
-//       const addition = difference(dataOrder, idList);
-//       let addCount = addition.length;
-//       newOrder.unshift(...addition);
-
-//       newOrder = newOrder.flatMap((v) => {
-//         if (isNull(v) && addCount > 0) {
-//           --addCount;
-//           return [];
-//         } else {
-//           return [v];
-//         }
-//       }, []);
-
-//       conditionalLog(
-//         addCount !== 0,
-//         "Error when replacing item in OrderIdState"
-//       );
-//     } else if (parameters.length === 0) {
-//       // TODO: Delete me -> Full Update
-//       newOrder = dataOrder;
-//     }
-
-//     return {
-//       fetching: false,
-//       data: {
-//         dirty: true,
-//         items: newItems,
-//         order: newOrder,
-//       },
-//     };
-//   }
-// }
-
-// export function deleteOrderListItemBy<T extends LooseObject>(
-//   action: Action<number[]>,
-//   state: AsyncOrderState<T>
-// ): AsyncOrderState<T> {
-//   const ids = action.payload;
-//   const { items, order } = state.data;
-//   const newItems = { ...items };
-//   ids.forEach((v) => {
-//     if (has(newItems, v)) {
-//       delete newItems[v];
-//     }
-//   });
-//   const newOrder = difference(order, ids);
-//   return {
-//     ...state,
-//     data: {
-//       dirty: true,
-//       items: newItems,
-//       order: newOrder,
-//     },
-//   };
-// }
-
-// export function deleteAsyncListItemBy<T extends LooseObject>(
-//   action: Action<number[]>,
-//   state: AsyncState<T[]>,
-//   match: ItemIdType<T>
-// ): AsyncState<T[]> {
-//   const ids = new Set(action.payload);
-//   const data = [...state.data].filter((v) => !ids.has(v[match]));
-//   return {
-//     ...state,
-//     data,
-//   };
-// }

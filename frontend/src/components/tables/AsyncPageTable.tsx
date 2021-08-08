@@ -1,9 +1,12 @@
-import { isNull } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import { usePageSize } from "../../@storage/local";
-import { buildOrderListFrom, isNonNullable, ScrollToTop } from "../../utilites";
+import {
+  ScrollToTop,
+  useAsyncHasDirtyInRange,
+  useEntityContentByRange,
+} from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
@@ -11,18 +14,17 @@ import { useDefaultSettings } from "./plugins";
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
-    aos: AsyncOrderState<T>;
+    entity: Async.Entity<T>;
     loader: (params: Parameter.Range) => void;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {
-  const { aos, plugins, loader, ...remain } = props;
+  const { entity, plugins, loader, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  const {
-    state: updating,
-    data: { order, items, dirty },
-  } = aos;
+  const { state, content } = entity;
+
+  const ids = content.ids;
 
   const allPlugins: PluginHook<T>[] = [useDefaultSettings];
 
@@ -33,7 +35,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   // Impl a new pagination system instead of hooking into the existing one
   const [pageIndex, setIndex] = useState(0);
   const [pageSize] = usePageSize();
-  const totalRows = order.length;
+  const totalRows = ids.length;
   const pageCount = Math.ceil(totalRows / pageSize);
 
   const previous = useCallback(() => {
@@ -51,23 +53,14 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
 
-  const visibleItemIds = useMemo(() => order.slice(pageStart, pageEnd), [
-    pageStart,
-    pageEnd,
-    order,
-  ]);
-
-  const newData = useMemo(() => buildOrderListFrom(items, visibleItemIds), [
-    items,
-    visibleItemIds,
-  ]);
+  const data = useEntityContentByRange(content, pageStart, pageEnd);
 
   const newOptions = useMemo<TableOptions<T>>(
     () => ({
       ...options,
-      data: newData,
+      data,
     }),
-    [options, newData]
+    [options, data]
   );
 
   const instance = useTable(newOptions, ...allPlugins);
@@ -84,21 +77,16 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ScrollToTop();
   }, [pageIndex]);
 
+  const needFetch = data.length === 0 && state !== "loading";
+  const needRefresh = useAsyncHasDirtyInRange(entity, pageStart, pageEnd);
+
   useEffect(() => {
-    const needFetch = visibleItemIds.length === 0 && dirty === false;
-    const needRefresh = !visibleItemIds.every(isNonNullable);
     if (needFetch || needRefresh) {
       loader({ start: pageStart, length: pageSize });
     }
-  }, [visibleItemIds, pageStart, pageSize, loader, dirty]);
+  }, [pageStart, pageSize, loader, needFetch, needRefresh]);
 
-  const showLoading = useMemo(
-    () =>
-      updating && (visibleItemIds.every(isNull) || visibleItemIds.length === 0),
-    [visibleItemIds, updating]
-  );
-
-  if (showLoading) {
+  if (state === "loading" && data.length === 0) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 

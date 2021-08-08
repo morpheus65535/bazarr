@@ -1,4 +1,4 @@
-import { ActionCreatorWithPayload } from "@reduxjs/toolkit";
+import { ActionCreatorWithPayload, AsyncThunk } from "@reduxjs/toolkit";
 import {
   movieRemoveItems,
   movieRemoveWantedItems,
@@ -27,6 +27,14 @@ function bindToReduxStore(
 }
 
 function bindToReduxStoreOptional(fn: ActionCreatorWithPayload<number[]>) {
+  return (ids?: number[]) => {
+    if (ids !== undefined) {
+      reduxStore.dispatch(fn(ids));
+    }
+  };
+}
+
+function bindToReduxStoreAsyncOptional<S>(fn: AsyncThunk<S, number[], {}>) {
   return (ids?: number[]) => {
     if (ids !== undefined) {
       reduxStore.dispatch(fn(ids));
@@ -91,12 +99,12 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindToReduxStore(seriesUpdateList),
+      update: bindToReduxStoreAsyncOptional(seriesUpdateList),
       delete: bindToReduxStoreOptional(seriesRemoveItems),
     },
     {
       key: "movie",
-      update: bindToReduxStore(movieUpdateList),
+      update: bindToReduxStoreAsyncOptional(movieUpdateList),
       delete: bindToReduxStoreOptional(movieRemoveItems),
     },
     {

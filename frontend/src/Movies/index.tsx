@@ -5,7 +5,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateByRange, movieUpdateList } from "../@redux/actions";
+import { movieUpdateAll, movieUpdateByRange } from "../@redux/actions";
 import { useRawMovies } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
@@ -113,7 +113,7 @@ const MovieView: FunctionComponent<Props> = () => {
       state={movies}
       name="Movies"
       loader={load}
-      updateAction={movieUpdateList}
+      updateAction={movieUpdateAll}
       columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>

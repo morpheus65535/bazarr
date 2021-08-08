@@ -11,7 +11,7 @@ import {
 } from "../../components";
 import { TableStyleProps } from "../../components/tables/BaseTable";
 import { useCustomSelection } from "../../components/tables/plugins";
-import { buildOrderList, GetItemId } from "../../utilites";
+import { GetItemId, useConvertEntityToList } from "../../utilites";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];
@@ -38,9 +38,7 @@ function Table<T extends Item.Base>({
     [showModal]
   );
 
-  const idState = state.data;
-
-  const orderList = useMemo(() => buildOrderList(idState), [idState]);
+  const orderList = useConvertEntityToList(state.content);
 
   const data = useMemo(() => uniqBy([...dirtyItems, ...orderList], GetItemId), [
     dirtyItems,
@@ -71,7 +69,7 @@ function Table<T extends Item.Base>({
         <AsyncPageTable
           {...options}
           columns={columns}
-          aos={state}
+          entity={state}
           loader={loader}
           data={[]}
         ></AsyncPageTable>
