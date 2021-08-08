@@ -1,4 +1,4 @@
-namespace Async {
+declare namespace Async {
   type State = "loading" | "succeeded" | "failed" | "dirty" | "idle";
 
   type IdType = number | string;
@@ -6,7 +6,7 @@ namespace Async {
   type BaseType<T> = {
     state: State;
     content: T;
-    error: Unknown | null;
+    error: string | null;
   };
 
   type List<T> = BaseType<T[]> & {
@@ -15,7 +15,16 @@ namespace Async {
 
   type Item<T> = BaseType<T | null>;
 
-  type Pagination<T> = BaseType<{ [id: IdType]: T }> & {
-    dirtyEntities: IdType[];
+  type EntityStruct<T> = {
+    keyName: keyof T;
+    ids: (string | null)[];
+    entities: {
+      [id: string]: T;
+    };
+  };
+
+  // TODO: only number temporarily
+  type Entity<T> = BaseType<EntityStruct<T>> & {
+    dirtyEntities: string[];
   };
 }

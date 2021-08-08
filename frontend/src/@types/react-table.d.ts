@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO: Fine a better solution for this
+
 import {
   UseColumnOrderInstanceProps,
   UseColumnOrderState,

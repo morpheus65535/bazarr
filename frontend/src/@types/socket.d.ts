@@ -1,4 +1,4 @@
-namespace SocketIO {
+declare namespace SocketIO {
   type EventType = NumEventType | NullEventType | SpecialEventType;
 
   type NumEventType =
@@ -28,8 +28,8 @@ namespace SocketIO {
       [P in E]: {
         key: P;
         any?: () => void;
-        update?: ActionFn<T>;
-        delete?: ActionFn<D extends never ? T : D>;
+        update?: ActionFn<U>;
+        delete?: ActionFn<D extends never ? U : D>;
       } & LooseObject;
       // TODO: Typing
     }

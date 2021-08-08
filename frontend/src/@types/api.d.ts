@@ -5,7 +5,7 @@ interface Badge {
   status: number;
 }
 
-namespace Language {
+declare namespace Language {
   type CodeType = string;
   interface Server {
     code2: CodeType;
@@ -32,7 +32,7 @@ namespace Language {
     name: string;
     profileId: number;
     cutoff: number | null;
-    items: Item[];
+    items: ProfileItem[];
   }
 }
 
@@ -94,15 +94,15 @@ interface TitleType {
 }
 
 interface AudioLanguageType {
-  audio_language: Language[];
+  audio_language: Language.Info[];
 }
 
 interface ItemHistoryType {
-  language: Language;
+  language: Language.Info;
   provider: string;
 }
 
-namespace Item {
+declare namespace Item {
   type Base = PathType &
     TitleType &
     TagType &
@@ -155,7 +155,7 @@ namespace Item {
     };
 }
 
-namespace Wanted {
+declare namespace Wanted {
   type Base = MonitoredType &
     TagType &
     SceneNameType & {
@@ -174,7 +174,7 @@ namespace Wanted {
   type Movie = Base & MovieIdType & TitleType;
 }
 
-namespace Blacklist {
+declare namespace Blacklist {
   type Base = ItemHistoryType & {
     parsed_timestamp: string;
     timestamp: string;
@@ -190,7 +190,7 @@ namespace Blacklist {
     };
 }
 
-namespace History {
+declare namespace History {
   type Base = SubtitlePathType &
     TagType &
     MonitoredType &
@@ -199,7 +199,7 @@ namespace History {
       blacklisted: boolean;
       score?: string;
       subs_id?: string;
-      raw_timestamp: int;
+      raw_timestamp: number;
       parsed_timestamp: string;
       timestamp: string;
       description: string;
@@ -228,7 +228,7 @@ namespace History {
   type ActionOptions = 1 | 2 | 3;
 }
 
-namespace Parameter {
+declare namespace Parameter {
   interface Range {
     start: number;
     length: number;

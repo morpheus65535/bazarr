@@ -1,4 +1,4 @@
-namespace System {
+declare namespace System {
   interface Task {
     interval: string;
     job_id: string;

@@ -32,7 +32,7 @@ type Override<T, U> = T & Omit<U, keyof T>;
 
 type Comparer<T> = (lhs: T, rhs: T) => boolean;
 
-type OptionalRecord<T, D> = { [P in T]?: D };
+type OptionalRecord<T extends string | number, D> = { [P in T]?: D };
 
 interface IdState<T> {
   [key: number]: Readonly<T>;

@@ -1,4 +1,4 @@
-namespace Server {
+declare namespace Server {
   interface Notification {
     type: "error" | "warning" | "info";
     id: string;
