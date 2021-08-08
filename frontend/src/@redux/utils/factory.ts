@@ -109,17 +109,18 @@ export function createAsyncListIdReducer<
 
 export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   builder: ActionReducerMapBuilder<S>,
-  rangeThunk: AsyncThunk<AsyncDataWrapper<T>, Parameter.Range, {}>,
-  itemThunk: AsyncThunk<AsyncDataWrapper<T>, ID[], {}>,
-  deleteThunk: ActionCreatorWithPayload<ID[]>,
-  getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>
+  getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>,
+  range: AsyncThunk<AsyncDataWrapper<T>, Parameter.Range, {}>,
+  itemId: AsyncThunk<AsyncDataWrapper<T>, ID[], {}>,
+  remove: ActionCreatorWithPayload<ID[]>,
+  all?: AsyncThunk<AsyncDataWrapper<T>, void, {}>
 ) {
   builder
-    .addCase(rangeThunk.pending, (state) => {
+    .addCase(range.pending, (state) => {
       const entity = getEntity(state);
       entity.state = "loading";
     })
-    .addCase(rangeThunk.fulfilled, (state, action) => {
+    .addCase(range.fulfilled, (state, action) => {
       const entity = getEntity(state);
       entity.state = "succeeded";
 
@@ -157,18 +158,18 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
         entities[key] = v as Draft<T>;
       });
     })
-    .addCase(rangeThunk.rejected, (state, action) => {
+    .addCase(range.rejected, (state, action) => {
       const entity = getEntity(state);
       entity.state = "failed";
       entity.error = action.error.message ?? null;
     });
 
   builder
-    .addCase(itemThunk.pending, (state) => {
+    .addCase(itemId.pending, (state) => {
       const entity = getEntity(state);
       entity.state = "loading";
     })
-    .addCase(itemThunk.fulfilled, (state, action) => {
+    .addCase(itemId.fulfilled, (state, action) => {
       const entity = getEntity(state);
       entity.state = "succeeded";
 
@@ -203,13 +204,13 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
         entities[key] = v as Draft<T>;
       });
     })
-    .addCase(itemThunk.rejected, (state, action) => {
+    .addCase(itemId.rejected, (state, action) => {
       const entity = getEntity(state);
       entity.state = "failed";
       entity.error = action.error.message ?? null;
     });
 
-  builder.addCase(deleteThunk, (state, action) => {
+  builder.addCase(remove, (state, action) => {
     const entity = getEntity(state);
     conditionalLog(
       entity.state === "loading",
@@ -235,4 +236,45 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
       }
     });
   });
+
+  all &&
+    builder
+      .addCase(all.pending, (state, action) => {
+        const entity = getEntity(state);
+        entity.state = "loading";
+      })
+      .addCase(all.fulfilled, (state, action) => {
+        const entity = getEntity(state);
+        entity.state = "succeeded";
+
+        const {
+          payload: { data, total },
+        } = action;
+
+        conditionalLog(
+          data.length !== total,
+          "Length of data is mismatch with total length"
+        );
+
+        const {
+          content: { keyName },
+        } = entity;
+
+        entity.dirtyEntities = [];
+        entity.content.ids = data.map((v) => String(v[keyName as keyof T]));
+        entity.content.entities = data.reduce<
+          Draft<{
+            [id: string]: T;
+          }>
+        >((prev, curr) => {
+          const id = String(curr[keyName as keyof T]);
+          prev[id] = curr as Draft<T>;
+          return prev;
+        }, {});
+      })
+      .addCase(all.rejected, (state, action) => {
+        const entity = getEntity(state);
+        entity.state = "failed";
+        entity.error = action.error.message ?? null;
+      });
 }

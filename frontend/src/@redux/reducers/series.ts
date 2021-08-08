@@ -5,6 +5,7 @@ import {
   episodeUpdateById,
   seriesRemoveItems,
   seriesRemoveWanted,
+  seriesUpdateAll,
   seriesUpdateBlacklist,
   seriesUpdateByRange,
   seriesUpdateHistoryList,
@@ -38,18 +39,19 @@ const defaultSeries: Series = {
 const reducer = createReducer(defaultSeries, (builder) => {
   createAsyncEntityReducer(
     builder,
+    (s) => s.seriesList,
     seriesUpdateByRange,
     seriesUpdateList,
     seriesRemoveItems,
-    (s) => s.seriesList
+    seriesUpdateAll
   );
 
   createAsyncEntityReducer(
     builder,
+    (s) => s.wantedEpisodesList,
     seriesUpdateWantedListByRange,
     seriesUpdateWantedList,
-    seriesRemoveWanted,
-    (s) => s.wantedEpisodesList
+    seriesRemoveWanted
   );
 
   createAsyncListReducer(

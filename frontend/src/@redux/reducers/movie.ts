@@ -2,6 +2,7 @@ import { createReducer } from "@reduxjs/toolkit";
 import {
   movieRemoveItems,
   movieRemoveWantedItems,
+  movieUpdateAll,
   movieUpdateBlacklist,
   movieUpdateByRange,
   movieUpdateHistoryList,
@@ -32,18 +33,19 @@ const defaultMovie: Movie = {
 const reducer = createReducer(defaultMovie, (builder) => {
   createAsyncEntityReducer(
     builder,
+    (s) => s.movieList,
     movieUpdateByRange,
     movieUpdateList,
     movieRemoveItems,
-    (s) => s.movieList
+    movieUpdateAll
   );
 
   createAsyncEntityReducer(
     builder,
+    (s) => s.wantedMovieList,
     movieUpdateWantedByRange,
     movieUpdateWantedList,
-    movieRemoveWantedItems,
-    (s) => s.wantedMovieList
+    movieRemoveWantedItems
   );
 
   createAsyncListReducer(builder, movieUpdateHistoryList, (s) => s.historyList);
