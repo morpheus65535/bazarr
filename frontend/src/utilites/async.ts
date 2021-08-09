@@ -7,7 +7,7 @@ import {
   useIsEntityIncomplete,
 } from "./entity";
 
-function useHasNewEntity(entity: Async.Entity<any>): boolean {
+export function useHasNewEntity(entity: Async.Entity<any>): boolean {
   return useMemo<boolean>(() => {
     const dirtyEntities = entity.dirtyEntities;
     const rawIds = entity.content.ids;
@@ -19,7 +19,7 @@ function useHasNewEntity(entity: Async.Entity<any>): boolean {
   }, [entity.dirtyEntities, entity.content.ids, entity.state]);
 }
 
-function useHasDirtyEntity(
+export function useHasDirtyEntity(
   entity: Async.Entity<any>,
   start: number,
   end: number

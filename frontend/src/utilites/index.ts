@@ -4,7 +4,7 @@ import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function getBaseUrl(slash: boolean = false) {
   let url: string = "/";
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NODE_ENV === "production") {
     url = window.Bazarr.baseUrl;
   }
 

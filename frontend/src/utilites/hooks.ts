@@ -12,7 +12,7 @@ export function useGotoHomepage() {
 }
 
 export function useCanUpdateInject() {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV !== "production") {
     return process.env["REACT_APP_CAN_UPDATE"] === "true";
   } else {
     return window.Bazarr.canUpdate;
@@ -20,7 +20,7 @@ export function useCanUpdateInject() {
 }
 
 export function useHasUpdateInject() {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV !== "production") {
     return process.env["REACT_APP_HAS_UPDATE"] === "true";
   } else {
     return window.Bazarr.hasUpdate;

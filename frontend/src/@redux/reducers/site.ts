@@ -49,7 +49,7 @@ const reducer = createReducer(defaultSite, (builder) => {
       state.initialized = "An Error Occurred When Initializing Bazarr UI";
     })
     .addCase(siteRedirectToAuth, (state) => {
-      if (process.env.NODE_ENV !== "development") {
+      if (process.env.NODE_ENV !== "production") {
         apis.danger_resetApi("NEED_AUTH");
       }
       state.auth = false;

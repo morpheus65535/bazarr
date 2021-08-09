@@ -1,3 +1,4 @@
+import "@fontsource/roboto/300.css";
 import React, {
   FunctionComponent,
   useCallback,
@@ -5,14 +6,20 @@ import React, {
   useState,
 } from "react";
 import { Row } from "react-bootstrap";
-import { Redirect } from "react-router-dom";
+import { Provider } from "react-redux";
+import { Route, Switch } from "react-router";
+import { BrowserRouter, Redirect } from "react-router-dom";
 import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
+import store from "../@redux/store";
+import "../@scss/index.scss";
+import Socketio from "../@socketio";
+import Auth from "../Auth";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import LaunchError from "../special-pages/LaunchError";
 import UIError from "../special-pages/UIError";
-import { useHasUpdateInject } from "../utilites";
+import { useBaseUrl, useHasUpdateInject } from "../utilites";
 import Header from "./Header";
 import NotificationContainer from "./notifications";
 import Router from "./Router";
@@ -77,4 +84,36 @@ const App: FunctionComponent<Props> = () => {
   }
 };
 
-export default App;
+const MainRouter: FunctionComponent = () => {
+  const baseUrl = useBaseUrl();
+
+  useEffect(() => {
+    Socketio.initialize();
+  }, []);
+
+  return (
+    <BrowserRouter basename={baseUrl}>
+      <Switch>
+        <Route exact path="/login">
+          <Auth></Auth>
+        </Route>
+        <Route path="/">
+          <App></App>
+        </Route>
+      </Switch>
+    </BrowserRouter>
+  );
+};
+
+const Main: FunctionComponent = () => {
+  return (
+    <Provider store={store}>
+      {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
+      {/* <React.StrictMode> */}
+      <MainRouter></MainRouter>
+      {/* </React.StrictMode> */}
+    </Provider>
+  );
+};
+
+export default Main;
