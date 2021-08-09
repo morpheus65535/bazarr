@@ -65,8 +65,7 @@ if not args.no_update:
                 logging.info('BAZARR installing requirements...')
                 try:
                     pip_command = [sys.executable, '-m', 'pip', 'install', '-qq', '--disable-pip-version-check',
-                                   '--no-color', '-r', os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                                                    'requirements.txt')]
+                                   '-r', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'requirements.txt')]
                     if not is_virtualenv():
                         # --user only make sense if not running under venv
                         pip_command.insert(4, '--user')
