@@ -21,13 +21,13 @@ def check_releases():
         logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
         r = requests.get(url_releases, allow_redirects=True)
         r.raise_for_status()
-    except requests.exceptions.HTTPError as errh:
+    except requests.exceptions.HTTPError:
         logging.exception("Error trying to get releases from Github. Http error.")
-    except requests.exceptions.ConnectionError as errc:
+    except requests.exceptions.ConnectionError:
         logging.exception("Error trying to get releases from Github. Connection Error.")
-    except requests.exceptions.Timeout as errt:
+    except requests.exceptions.Timeout:
         logging.exception("Error trying to get releases from Github. Timeout Error.")
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception("Error trying to get releases from Github.")
     else:
         for release in r.json():
