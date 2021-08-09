@@ -1,5 +1,6 @@
 import { difference, intersection, isString } from "lodash";
 import { useEffect, useMemo, useState } from "react";
+import { useEffectOnceWhen } from "rooks";
 import {
   useEntityByRange,
   useEntityIdByRange,
@@ -55,7 +56,6 @@ export function useEntityPagination<T>(
 
   useEffect(() => {
     if (needInit || hasEmpty || hasNew || hasDirty) {
-      console.log({ needInit, hasNew, hasEmpty, hasDirty });
       const length = end - start;
       loader({ start, length });
       setHasLoaded(true);
@@ -63,4 +63,20 @@ export function useEntityPagination<T>(
   }, [start, end, needInit, hasDirty, hasEmpty, hasNew, loader]);
 
   return useEntityByRange(content, start, end);
+}
+
+export function useOnLoadedOnce(callback: () => void, entity: Async.Base<any>) {
+  const [loaded, setLoaded] = useState(false);
+
+  const { state } = entity;
+
+  const isPending = state !== "loading";
+
+  useEffect(() => {
+    if (!isPending) {
+      setLoaded(true);
+    }
+  }, [isPending]);
+
+  useEffectOnceWhen(callback, loaded && isPending);
 }

@@ -217,7 +217,6 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
         const entity = getEntity(state);
 
         const {
-          meta: { arg },
           payload: { data, total },
         } = action;
 
@@ -225,7 +224,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           content: { keyName },
         } = entity;
 
-        const idsToAdd = arg.map((v) => v.toString());
+        const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
 
         const addedIds = difference(
           idsToAdd,

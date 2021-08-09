@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import { useHistory } from "react-router";
-import { useDidUpdate } from "rooks";
 import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -26,15 +25,4 @@ export function useHasUpdateInject() {
   } else {
     return window.Bazarr.hasUpdate;
   }
-}
-
-export function useOnLoadingFinish(
-  as: Readonly<Async.Base<any>>,
-  callback: () => void
-) {
-  return useDidUpdate(() => {
-    if (as.state !== "loading") {
-      callback();
-    }
-  }, [as.state]);
 }

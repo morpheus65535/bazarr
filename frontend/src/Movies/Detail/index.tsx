@@ -7,7 +7,7 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
@@ -25,7 +25,7 @@ import {
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadingFinish } from "../../utilites";
+import { useOnLoadedOnce } from "../../utilites";
 import Table from "./table";
 
 const download = (item: any, result: SearchResultType) => {
@@ -57,13 +57,11 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const [valid, setValid] = useState(true);
 
-  const validator = useCallback(() => {
+  useOnLoadedOnce(() => {
     if (movie.content === null) {
       setValid(false);
     }
-  }, [movie.content]);
-
-  useOnLoadingFinish(movie, validator);
+  }, movie);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;

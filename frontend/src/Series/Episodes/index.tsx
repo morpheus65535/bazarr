@@ -7,12 +7,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
@@ -27,7 +22,7 @@ import {
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadingFinish } from "../../utilites";
+import { useOnLoadedOnce } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -64,13 +59,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const [valid, setValid] = useState(true);
 
-  const validator = useCallback(() => {
+  useOnLoadedOnce(() => {
     if (serie.content === null) {
       setValid(false);
     }
-  }, [serie.content]);
-
-  useOnLoadingFinish(serie, validator);
+  }, serie);
 
   const profile = useProfileBy(serie.content?.profileId);
 

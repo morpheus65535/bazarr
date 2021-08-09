@@ -44,15 +44,8 @@ export function useEntityByRange<T>(
 }
 
 export function useEntityAsList<T>(entity: EntityStruct<T>): T[] {
-  return useMemo<T[]>(
-    () =>
-      entity.ids.flatMap((v) => {
-        if (v) {
-          return [entity.entities[v]];
-        } else {
-          return [];
-        }
-      }),
+  return useMemo(
+    () => entity.ids.filter(isString).map((v) => entity.entities[v]),
     [entity]
   );
 }
