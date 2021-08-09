@@ -176,11 +176,17 @@ def apply_update():
 def update_cleaner(zipfile, bazarr_dir, config_dir):
     with ZipFile(zipfile, 'r') as archive:
         file_in_zip = archive.namelist()
+    logging.debug('BAZARR zip file contain {} directories and files'.format(len(file_in_zip)))
+    separator = os.path.sep
     if os.path.sep == '\\':
+        logging.debug('BAZARR upgrade leftover cleaner is running on Windows. We\'ll fix the zip file separator '
+                      'accordingly.')
         for i, item in enumerate(file_in_zip):
             file_in_zip[i] = item.replace('/', '\\')
-
-    separator = os.path.sep * 2 if os.path.sep == '\\' else os.path.sep
+        separator += os.path.sep
+    else:
+        logging.debug('BAZARR upgrade leftover cleaner is running on something else than Windows. The zip file '
+                      'separator are fine.')
 
     dir_to_ignore = ['^.' + separator,
                      '^bin' + separator,
@@ -190,9 +196,14 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     if os.path.abspath(bazarr_dir) in os.path.abspath(config_dir):
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
+    logging.debug('BAZARR upgrade leftover cleaner will ignore directories matching this regex: '
+                  '{}'.format(dir_to_ignore_regex))
 
     file_to_ignore = ['nssm.exe', '7za.exe']
+    logging.debug('BAZARR upgrade leftover cleaner will ignore those files: {}'.format(', '.join(file_to_ignore)))
     extension_to_ignore = ['.pyc']
+    logging.debug('BAZARR upgrade leftover cleaner will ignore files with those extensions: '
+                  '{}'.format(', '.join(extension_to_ignore)))
 
     file_on_disk = []
     folder_list = []
@@ -215,9 +226,14 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                 filepath = os.path.join(current_dir, file)
                 if not dir_to_ignore_regex.findall(filepath):
                     file_on_disk.append(filepath)
+    logging.debug('BAZARR directory contain {} files'.format(len(file_on_disk)))
+    logging.debug('BAZARR directory contain {} directories'.format(len(folder_list)))
     file_on_disk += folder_list
+    logging.debug('BAZARR directory contain {} directories and files'.format(len(file_on_disk)))
 
     file_to_remove = list(set(file_on_disk) - set(file_in_zip))
+    logging.debug('BAZARR will delete {} directories and files'.format(len(file_to_remove)))
+    logging.debug('BAZARR will delete this: {}'.format(', '.join(file_to_remove)))
 
     for file in file_to_remove:
         filepath = os.path.join(bazarr_dir, file)
@@ -226,5 +242,5 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                 rmtree(filepath, ignore_errors=True)
             else:
                 os.remove(filepath)
-        except:
-            pass
+        except Exception as e:
+            logging.debug('BAZARR upgrade leftover cleaner cannot delete {}'.format(filepath))
