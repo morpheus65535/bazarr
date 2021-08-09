@@ -7,7 +7,7 @@ import {
   useIsEntityIncomplete,
 } from "./entity";
 
-function useHasNewEntityToLoad(entity: Async.Entity<any>): boolean {
+function useHasNewEntity(entity: Async.Entity<any>): boolean {
   return useMemo<boolean>(() => {
     const dirtyEntities = entity.dirtyEntities;
     const rawIds = entity.content.ids;
@@ -19,7 +19,7 @@ function useHasNewEntityToLoad(entity: Async.Entity<any>): boolean {
   }, [entity.dirtyEntities, entity.content.ids, entity.state]);
 }
 
-function useHasDirtyEntityInRange(
+function useHasDirtyEntity(
   entity: Async.Entity<any>,
   start: number,
   end: number
@@ -49,16 +49,17 @@ export function useEntityPagination<T>(
   }, [start, end]);
 
   const needInit = state === "uninitialized";
-  const hasNew = useHasNewEntityToLoad(entity) && !hasLoaded;
+  const hasNew = useHasNewEntity(entity) && !hasLoaded;
   const hasEmpty = useIsEntityIncomplete(content, start, end);
-  const hasDirty =
-    useHasDirtyEntityInRange(entity, start, end) && state === "dirty";
+  const hasDirty = useHasDirtyEntity(entity, start, end) && state === "dirty";
 
   useEffect(() => {
     if (needInit || hasEmpty || hasNew || hasDirty) {
       const length = end - start;
       loader({ start, length });
-      setHasLoaded(true);
+      if (hasNew) {
+        setHasLoaded(true);
+      }
     }
   }, [start, end, needInit, hasDirty, hasEmpty, hasNew, loader]);
 
@@ -66,17 +67,17 @@ export function useEntityPagination<T>(
 }
 
 export function useOnLoadedOnce(callback: () => void, entity: Async.Base<any>) {
-  const [loaded, setLoaded] = useState(false);
+  const [didLoaded, setLoaded] = useState(false);
 
   const { state } = entity;
 
-  const isPending = state !== "loading";
+  const isLoaded = state !== "loading";
 
   useEffect(() => {
-    if (!isPending) {
+    if (!isLoaded) {
       setLoaded(true);
     }
-  }, [isPending]);
+  }, [isLoaded]);
 
-  useEffectOnceWhen(callback, loaded && isPending);
+  useEffectOnceWhen(callback, didLoaded && isLoaded);
 }
