@@ -46,9 +46,11 @@ class SonarrSignalrClient:
                 except ConnectionError:
                     gevent.sleep(5)
                 except json.decoder.JSONDecodeError:
-                    logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is a known issue when "
-                                  "Sonarr have issue accessing it's /config/xdg directory. You should delete that "
-                                  "directory and restart Sonarr.")
+                    logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is caused by a permissions "
+                                  "issue when Sonarr try to access its /config/.config directory. You should fix "
+                                  "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
+                                  "user, you should make sure you properly defined PUID/PGID environment variables. "
+                                  "Otherwise, please contact Sonarr support.")
                     raise gevent.GreenletExit
                 else:
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
