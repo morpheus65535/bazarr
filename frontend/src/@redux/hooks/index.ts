@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer } from "../../@socketio/hooks";
-import { useConvertEntityToList } from "../../utilites";
+import { useEntityAsList } from "../../utilites";
 import {
   episodesRemoveById,
   episodeUpdateByEpisodeId,
@@ -27,7 +27,7 @@ import { useReduxAction, useReduxStore } from "./base";
 
 function useItemUpdate(item: Async.Item<any>, update: () => void) {
   useEffect(() => {
-    if (item.state === "idle" || item.state === "dirty") {
+    if (item.state === "uninitialized" || item.state === "dirty") {
       update();
     }
   }, [item.state, update]);
@@ -177,7 +177,7 @@ export function useRawSeries() {
 
 export function useSeries() {
   const [rawSeries, action] = useRawSeries();
-  const content = useConvertEntityToList(rawSeries.content);
+  const content = useEntityAsList(rawSeries.content);
   const series = useMemo<Async.List<Item.Series>>(() => {
     return {
       ...rawSeries,
@@ -235,7 +235,7 @@ export function useEpisodesBy(seriesId?: number) {
     }
   }, [seriesId, list.content]);
 
-  const state: Async.BaseType<Item.Episode[]> = useMemo(
+  const state: Async.Base<Item.Episode[]> = useMemo(
     () => ({
       ...list,
       content: items,
@@ -276,7 +276,7 @@ export function useRawMovies() {
 
 export function useMovies() {
   const [rawMovies, action] = useRawMovies();
-  const content = useConvertEntityToList(rawMovies.content);
+  const content = useEntityAsList(rawMovies.content);
   const movies = useMemo<Async.List<Item.Movie>>(() => {
     return {
       ...rawMovies,

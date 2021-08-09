@@ -1,7 +1,7 @@
 export namespace AsyncUtility {
   export function getDefaultItem<T>(): Async.Item<T> {
     return {
-      state: "idle",
+      state: "uninitialized",
       content: null,
       error: null,
     };
@@ -9,7 +9,7 @@ export namespace AsyncUtility {
 
   export function getDefaultList<T>(): Async.List<T> {
     return {
-      state: "idle",
+      state: "uninitialized",
       dirtyEntities: [],
       content: [],
       error: null,
@@ -18,7 +18,7 @@ export namespace AsyncUtility {
 
   export function getDefaultEntity<T>(key: keyof T): Async.Entity<T> {
     return {
-      state: "idle",
+      state: "uninitialized",
       dirtyEntities: [],
       content: {
         keyName: key,

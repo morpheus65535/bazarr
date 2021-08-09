@@ -1,21 +1,21 @@
 declare namespace Async {
-  type State = "loading" | "succeeded" | "failed" | "dirty" | "idle";
+  type State = "loading" | "succeeded" | "failed" | "dirty" | "uninitialized";
 
   type IdType = number | string;
 
-  type BaseType<T> = {
+  type Base<T> = {
     state: State;
     content: T;
     error: string | null;
   };
 
-  type List<T> = BaseType<T[]> & {
+  type List<T> = Base<T[]> & {
     dirtyEntities: IdType[];
   };
 
-  type Item<T> = BaseType<T | null>;
+  type Item<T> = Base<T | null>;
 
-  type Entity<T> = BaseType<EntityStruct<T>> & {
+  type Entity<T> = Base<EntityStruct<T>> & {
     dirtyEntities: string[];
   };
 }

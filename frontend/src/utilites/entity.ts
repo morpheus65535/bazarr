@@ -1,42 +1,49 @@
-import { isString } from "lodash";
+import { isNull, isString } from "lodash";
 import { useMemo } from "react";
+
+export function useIsEntityIncomplete(
+  entity: EntityStruct<any>,
+  start: number,
+  end: number
+): boolean {
+  return useMemo(() => entity.ids.slice(start, end).filter(isNull).length > 0, [
+    entity.ids,
+    start,
+    end,
+  ]);
+}
 
 export function useEntityIdByRange(
   entity: EntityStruct<any>,
   start: number,
   end: number
-) {
-  return useMemo<[string[], boolean]>(() => {
+): string[] {
+  return useMemo(() => {
     const ids = entity.ids;
-    let hasEmpty = false;
-    return [
-      ids.slice(start, end).flatMap((v) => {
-        if (isString(v)) {
-          return [v];
-        } else {
-          hasEmpty = true;
-          return [];
-        }
-      }),
-      hasEmpty,
-    ];
+    return ids.slice(start, end).flatMap((v) => {
+      if (isString(v)) {
+        return [v];
+      } else {
+        return [];
+      }
+    });
   }, [entity.ids, start, end]);
 }
 
-export function useEntityContentByRange<T>(
+export function useEntityByRange<T>(
   entity: EntityStruct<T>,
   start: number,
   end: number
-): [T[], boolean] {
-  const [filteredIds, hasEmpty] = useEntityIdByRange(entity, start, end);
+): T[] {
+  const filteredIds = useEntityIdByRange(entity, start, end);
   const content = useMemo<T[]>(() => {
     const entities = entity.entities;
     return filteredIds.map((v) => entities[v]);
   }, [entity.entities, filteredIds]);
-  return [content, hasEmpty];
+  return content;
 }
 
-export function useConvertEntityToList<T>(entity: EntityStruct<T>): T[] {
+export function useEntityAsList<T>(entity: EntityStruct<T>): T[] {
   return useMemo<T[]>(
     () =>
       entity.ids.flatMap((v) => {

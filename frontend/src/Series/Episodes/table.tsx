@@ -26,7 +26,7 @@ import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  episodes: Async.BaseType<Item.Episode[]>;
+  episodes: Async.Base<Item.Episode[]>;
   profile?: Language.Profile;
 }
 

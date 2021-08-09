@@ -5,7 +5,14 @@ import {
   AsyncThunk,
   Draft,
 } from "@reduxjs/toolkit";
-import { difference, differenceWith, findIndex, has, uniq } from "lodash";
+import {
+  difference,
+  differenceWith,
+  findIndex,
+  has,
+  isString,
+  uniq,
+} from "lodash";
 import { conditionalLog } from "../../utilites/logger";
 
 interface ActionParam<T, ID = null> {
@@ -26,7 +33,7 @@ export function createAsyncItemReducer<S, T>(
   const { all, dirty } = actions;
   all &&
     builder
-      .addCase(all.pending, (state, action) => {
+      .addCase(all.pending, (state) => {
         const item = getItem(state);
         item.state = "loading";
       })
@@ -109,7 +116,7 @@ export function createAsyncListReducer<
 
   all &&
     builder
-      .addCase(all.pending, (state, action) => {
+      .addCase(all.pending, (state) => {
         const item = getList(state);
         item.state = "loading";
       })
@@ -208,7 +215,6 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
       })
       .addCase(ids.fulfilled, (state, action) => {
         const entity = getEntity(state);
-        entity.state = "succeeded";
 
         const {
           meta: { arg },
@@ -221,20 +227,38 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
         const idsToAdd = arg.map((v) => v.toString());
 
+        const addedIds = difference(
+          idsToAdd,
+          entity.content.ids.filter(isString)
+        );
+        entity.content.ids.unshift(...addedIds);
+
         if (entity.content.ids.length < total) {
           const size = total - entity.content.ids.length;
           entity.content.ids.push(...Array(size).fill(null));
+        } else if (entity.content.ids.length > total) {
+          const idSize = entity.content.ids.length;
+          const size = idSize - total;
+          const start = idSize - size;
+          const deleted = entity.content.ids
+            .splice(start, size)
+            .filter(isString);
+          deleted.forEach((v) => {
+            delete entity.content.entities[v];
+          });
         }
-
-        conditionalLog(
-          entity.content.ids.length !== total,
-          "Error when building entity, size of id array mismatch"
-        );
 
         entity.dirtyEntities = difference(
           entity.dirtyEntities,
           idsToAdd as Draft<string>[]
         );
+
+        if (entity.dirtyEntities.length > 0) {
+          entity.state = "dirty";
+        } else {
+          entity.state = "succeeded";
+        }
+
         data.forEach((v) => {
           const key = String(v[keyName as keyof T]);
           entity.content.entities[key] = v as Draft<T>;
@@ -278,7 +302,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
   all &&
     builder
-      .addCase(all.pending, (state, action) => {
+      .addCase(all.pending, (state) => {
         const entity = getEntity(state);
         entity.state = "loading";
       })

@@ -11,7 +11,7 @@ import {
 } from "../../components";
 import { TableStyleProps } from "../../components/tables/BaseTable";
 import { useCustomSelection } from "../../components/tables/plugins";
-import { GetItemId, useConvertEntityToList } from "../../utilites";
+import { GetItemId, useEntityAsList } from "../../utilites";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];
@@ -38,7 +38,7 @@ function Table<T extends Item.Base>({
     [showModal]
   );
 
-  const orderList = useConvertEntityToList(state.content);
+  const orderList = useEntityAsList(state.content);
 
   const data = useMemo(() => uniqBy([...dirtyItems, ...orderList], GetItemId), [
     dirtyItems,

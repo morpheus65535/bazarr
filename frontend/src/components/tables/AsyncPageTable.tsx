@@ -2,11 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import { usePageSize } from "../../@storage/local";
-import {
-  ScrollToTop,
-  useEntityContentByRange,
-  useIsDirtyEntityInRange,
-} from "../../utilites";
+import { ScrollToTop, useEntityPagination } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
@@ -22,32 +18,21 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const { entity, plugins, loader, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  const { state, content } = entity;
+  const {
+    state,
+    content: { ids },
+  } = entity;
 
-  const ids = content.ids;
-
-  // Impl a new pagination system instead of hooking into the existing one
+  // Impl a new pagination system instead of hacking into existing one
   const [pageIndex, setIndex] = useState(0);
   const [pageSize] = usePageSize();
   const totalRows = ids.length;
   const pageCount = Math.ceil(totalRows / pageSize);
 
-  const previous = useCallback(() => {
-    setIndex((idx) => idx - 1);
-  }, []);
-
-  const next = useCallback(() => {
-    setIndex((idx) => idx + 1);
-  }, []);
-
-  const goto = useCallback((idx: number) => {
-    setIndex(idx);
-  }, []);
-
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
 
-  const [data, hasEmpty] = useEntityContentByRange(content, pageStart, pageEnd);
+  const data = useEntityPagination(entity, loader, pageStart, pageEnd);
 
   const instance = useTable(
     {
@@ -66,19 +51,21 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     prepareRow,
   } = instance;
 
+  const previous = useCallback(() => {
+    setIndex((idx) => idx - 1);
+  }, []);
+
+  const next = useCallback(() => {
+    setIndex((idx) => idx + 1);
+  }, []);
+
+  const goto = useCallback((idx: number) => {
+    setIndex(idx);
+  }, []);
+
   useEffect(() => {
     ScrollToTop();
   }, [pageIndex]);
-
-  const needFetch = hasEmpty || state === "idle";
-  const needRefresh =
-    useIsDirtyEntityInRange(entity, pageStart, pageEnd) && state === "dirty";
-
-  useEffect(() => {
-    if (needFetch || needRefresh) {
-      loader({ start: pageStart, length: pageSize });
-    }
-  }, [pageStart, pageSize, loader, needFetch, needRefresh]);
 
   if (state === "loading" && data.length === 0) {
     return <LoadingIndicator></LoadingIndicator>;

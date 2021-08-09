@@ -17,13 +17,13 @@ import { LoadingIndicator } from ".";
 import { Selector, SelectorProps } from "./inputs";
 
 interface Props<T> {
-  ctx: Async.BaseType<T>;
-  children: FunctionComponent<Async.BaseType<T>>;
+  ctx: Async.Base<T>;
+  children: FunctionComponent<Async.Base<T>>;
 }
 
 export function AsyncOverlay<T>(props: Props<T>) {
   const { ctx, children } = props;
-  if (ctx.state === "loading" || ctx.state === "idle") {
+  if (ctx.state === "loading" || ctx.state === "uninitialized") {
     return <LoadingIndicator></LoadingIndicator>;
   } else if (ctx.state === "failed") {
     return <p>{ctx.error}</p>;
@@ -53,7 +53,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   }
 }
 
-type AsyncSelectorProps<V, T extends Async.BaseType<V[]>> = {
+type AsyncSelectorProps<V, T extends Async.Base<V[]>> = {
   state: T;
   update: () => void;
   label: (item: V) => string;
@@ -66,7 +66,7 @@ type RemovedSelectorProps<T, M extends boolean> = Omit<
 
 export function AsyncSelector<
   V,
-  T extends Async.BaseType<V[]>,
+  T extends Async.Base<V[]>,
   M extends boolean = false
 >(props: Override<AsyncSelectorProps<V, T>, RemovedSelectorProps<V, M>>) {
   const { label, state, update, ...selector } = props;
@@ -86,7 +86,7 @@ export function AsyncSelector<
       options={options}
       label={label}
       onFocus={() => {
-        if (state.state === "idle") {
+        if (state.state === "uninitialized") {
           update();
         }
       }}
