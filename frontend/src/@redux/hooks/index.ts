@@ -25,6 +25,14 @@ import {
 } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
+function useItemUpdate(item: Async.Item<any>, update: () => void) {
+  useEffect(() => {
+    if (item.state === "idle" || item.state === "dirty") {
+      update();
+    }
+  }, [item.state, update]);
+}
+
 function stateBuilder<T, D extends (...args: any[]) => any>(
   t: T,
   d: D
@@ -43,9 +51,7 @@ export function useSystemLogs() {
   const items = useReduxStore(({ system }) => system.logs);
   const update = useReduxAction(systemUpdateLogs);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -57,29 +63,23 @@ export function useSystemTasks() {
   ]);
   useSocketIOReducer(reducer);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
 export function useSystemStatus() {
-  const { content } = useReduxStore((s) => s.system.status);
+  const items = useReduxStore((s) => s.system.status);
   const update = useReduxAction(systemUpdateStatus);
 
-  useEffect(() => {
-    update();
-  }, [update]);
-  return stateBuilder(content, update);
+  useItemUpdate(items, update);
+  return stateBuilder(items.content, update);
 }
 
 export function useSystemHealth() {
-  const update = useReduxAction(systemUpdateHealth);
   const items = useReduxStore((s) => s.system.health);
+  const update = useReduxAction(systemUpdateHealth);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -87,9 +87,7 @@ export function useSystemProviders() {
   const update = useReduxAction(providerUpdateList);
   const items = useReduxStore((d) => d.system.providers);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -97,9 +95,7 @@ export function useSystemReleases() {
   const items = useReduxStore(({ system }) => system.releases);
   const update = useReduxAction(systemUpdateReleases);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -313,10 +309,10 @@ export function useMovieBy(id?: number) {
   }, [id, updateMovies]);
 
   useEffect(() => {
-    if (movie.content === null) {
+    if (movie.content === null && movie.state !== "loading") {
       update();
     }
-  }, [movie.content, update]);
+  }, [movie, update]);
   return stateBuilder(movie, update);
 }
 
@@ -343,9 +339,7 @@ export function useBlacklistMovies() {
   );
   useSocketIOReducer(reducer);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -358,9 +352,7 @@ export function useBlacklistSeries() {
   );
   useSocketIOReducer(reducer);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -373,9 +365,7 @@ export function useMoviesHistory() {
   );
   useSocketIOReducer(reducer);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -388,8 +378,6 @@ export function useSeriesHistory() {
   );
   useSocketIOReducer(reducer);
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  useItemUpdate(items, update);
   return stateBuilder(items, update);
 }

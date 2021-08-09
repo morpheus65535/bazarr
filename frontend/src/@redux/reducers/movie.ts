@@ -1,5 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
+  movieMarkDirtyById,
+  movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
   movieUpdateAll,
@@ -36,12 +38,14 @@ const reducer = createReducer(defaultMovie, (builder) => {
     ids: movieUpdateById,
     removeIds: movieRemoveById,
     all: movieUpdateAll,
+    dirty: movieMarkDirtyById,
   });
 
   createAsyncEntityReducer(builder, (s) => s.wantedMovieList, {
     range: movieUpdateWantedByRange,
     ids: movieUpdateWantedById,
     removeIds: movieRemoveWantedById,
+    dirty: movieMarkWantedDirtyById,
   });
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {

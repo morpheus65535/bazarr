@@ -6,15 +6,20 @@ export function useEntityIdByRange(
   start: number,
   end: number
 ) {
-  return useMemo<string[]>(() => {
+  return useMemo<[string[], boolean]>(() => {
     const ids = entity.ids;
-    return ids.slice(start, end).flatMap((v) => {
-      if (isString(v)) {
-        return [v];
-      } else {
-        return [];
-      }
-    });
+    let hasEmpty = false;
+    return [
+      ids.slice(start, end).flatMap((v) => {
+        if (isString(v)) {
+          return [v];
+        } else {
+          hasEmpty = true;
+          return [];
+        }
+      }),
+      hasEmpty,
+    ];
   }, [entity.ids, start, end]);
 }
 
@@ -22,12 +27,13 @@ export function useEntityContentByRange<T>(
   entity: EntityStruct<T>,
   start: number,
   end: number
-): T[] {
-  const filteredIds = useEntityIdByRange(entity, start, end);
-  return useMemo<T[]>(() => {
+): [T[], boolean] {
+  const [filteredIds, hasEmpty] = useEntityIdByRange(entity, start, end);
+  const content = useMemo<T[]>(() => {
     const entities = entity.entities;
     return filteredIds.map((v) => entities[v]);
   }, [entity.entities, filteredIds]);
+  return [content, hasEmpty];
 }
 
 export function useConvertEntityToList<T>(entity: EntityStruct<T>): T[] {

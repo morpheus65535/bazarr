@@ -1,8 +1,11 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
+  episodesMarkDirtyById,
   episodesRemoveById,
   episodeUpdateByEpisodeId,
   episodeUpdateBySeriesId,
+  seriesMarkDirtyById,
+  seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
   seriesUpdateAll,
@@ -41,12 +44,14 @@ const reducer = createReducer(defaultSeries, (builder) => {
     ids: seriesUpdateById,
     removeIds: seriesRemoveById,
     all: seriesUpdateAll,
+    dirty: seriesMarkDirtyById,
   });
 
   createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {
     range: seriesUpdateWantedByRange,
     ids: seriesUpdateWantedById,
     removeIds: seriesRemoveWantedById,
+    dirty: seriesMarkWantedDirtyById,
   });
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
@@ -64,6 +69,7 @@ const reducer = createReducer(defaultSeries, (builder) => {
   createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
     ids: episodeUpdateByEpisodeId,
     removeIds: episodesRemoveById,
+    dirty: episodesMarkDirtyById,
   });
 });
 

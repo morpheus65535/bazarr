@@ -21,9 +21,21 @@ export const seriesRemoveWantedById = createAction<number[]>(
   "series/wanted/remove"
 );
 
+export const seriesMarkWantedDirtyById = createAction<number[]>(
+  "series/wanted/mark_dirty/episode_id"
+);
+
 export const seriesRemoveById = createAction<number[]>("series/remove");
 
+export const seriesMarkDirtyById = createAction<number[]>(
+  "series/mark_dirty/id"
+);
+
 export const episodesRemoveById = createAction<number[]>("episodes/remove");
+
+export const episodesMarkDirtyById = createAction<number[]>(
+  "episodes/mark_dirty/id"
+);
 
 export const seriesUpdateById = createAsyncThunk(
   "series/update",

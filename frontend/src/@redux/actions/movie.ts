@@ -10,7 +10,7 @@ export const movieUpdateByRange = createAsyncThunk(
 );
 
 export const movieUpdateById = createAsyncThunk(
-  "movies/update/movie_id",
+  "movies/update/id",
   async (ids: number[]) => {
     const response = await MoviesApi.movies(ids);
     return response;
@@ -27,8 +27,12 @@ export const movieUpdateAll = createAsyncThunk(
 
 export const movieRemoveById = createAction<number[]>("movies/remove");
 
+export const movieMarkDirtyById = createAction<number[]>(
+  "movies/mark_dirty/id"
+);
+
 export const movieUpdateWantedById = createAsyncThunk(
-  "movies/wanted/update/movie_id",
+  "movies/wanted/update/id",
   async (ids: number[]) => {
     const response = await MoviesApi.wantedBy(ids);
     return response;
@@ -37,6 +41,10 @@ export const movieUpdateWantedById = createAsyncThunk(
 
 export const movieRemoveWantedById = createAction<number[]>(
   "movies/wanted/remove"
+);
+
+export const movieMarkWantedDirtyById = createAction<number[]>(
+  "movies/wanted/mark_dirty/id"
 );
 
 export const movieUpdateWantedByRange = createAsyncThunk(

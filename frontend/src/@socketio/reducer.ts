@@ -1,13 +1,13 @@
 import { ActionCreator } from "@reduxjs/toolkit";
 import {
+  movieMarkDirtyById,
+  movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
-  movieUpdateById,
-  movieUpdateWantedById,
+  seriesMarkDirtyById,
+  seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
-  seriesUpdateById,
-  seriesUpdateWantedById,
   siteAddNotifications,
   siteAddProgress,
   siteBootstrap,
@@ -88,22 +88,22 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindReduxAction(seriesUpdateById),
+      update: bindReduxAction(seriesMarkDirtyById),
       delete: bindReduxAction(seriesRemoveById),
     },
     {
       key: "movie",
-      update: bindReduxAction(movieUpdateById),
+      update: bindReduxAction(movieMarkDirtyById),
       delete: bindReduxAction(movieRemoveById),
     },
     {
       key: "episode-wanted",
-      update: bindReduxAction(seriesUpdateWantedById),
+      update: bindReduxAction(seriesMarkWantedDirtyById),
       delete: bindReduxAction(seriesRemoveWantedById),
     },
     {
       key: "movie-wanted",
-      update: bindReduxAction(movieUpdateWantedById),
+      update: bindReduxAction(movieMarkWantedDirtyById),
       delete: bindReduxAction(movieRemoveWantedById),
     },
     {

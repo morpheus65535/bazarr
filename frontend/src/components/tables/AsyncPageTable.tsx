@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import { usePageSize } from "../../@storage/local";
 import {
   ScrollToTop,
-  useAsyncHasDirtyInRange,
   useEntityContentByRange,
+  useIsDirtyEntityInRange,
 } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -25,12 +25,6 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const { state, content } = entity;
 
   const ids = content.ids;
-
-  const allPlugins: PluginHook<T>[] = [useDefaultSettings];
-
-  if (plugins) {
-    allPlugins.push(...plugins);
-  }
 
   // Impl a new pagination system instead of hooking into the existing one
   const [pageIndex, setIndex] = useState(0);
@@ -53,17 +47,16 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
 
-  const data = useEntityContentByRange(content, pageStart, pageEnd);
+  const [data, hasEmpty] = useEntityContentByRange(content, pageStart, pageEnd);
 
-  const newOptions = useMemo<TableOptions<T>>(
-    () => ({
+  const instance = useTable(
+    {
       ...options,
       data,
-    }),
-    [options, data]
+    },
+    useDefaultSettings,
+    ...(plugins ?? [])
   );
-
-  const instance = useTable(newOptions, ...allPlugins);
 
   const {
     getTableProps,
@@ -77,8 +70,9 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ScrollToTop();
   }, [pageIndex]);
 
-  const needFetch = data.length === 0 && state !== "loading";
-  const needRefresh = useAsyncHasDirtyInRange(entity, pageStart, pageEnd);
+  const needFetch = hasEmpty || state === "idle";
+  const needRefresh =
+    useIsDirtyEntityInRange(entity, pageStart, pageEnd) && state === "dirty";
 
   useEffect(() => {
     if (needFetch || needRefresh) {
