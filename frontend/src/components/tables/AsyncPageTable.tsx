@@ -62,6 +62,14 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ScrollToTop();
   }, [pageIndex]);
 
+  useEffect(() => {
+    if (pageIndex > pageCount) {
+      setIndex(pageCount - 1);
+    } else if (pageIndex < 0) {
+      setIndex(0);
+    }
+  }, [pageIndex, pageCount]);
+
   if ((state === "loading" && data.length === 0) || state === "uninitialized") {
     return <LoadingIndicator></LoadingIndicator>;
   }

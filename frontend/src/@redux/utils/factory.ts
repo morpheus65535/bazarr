@@ -181,19 +181,11 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
         const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
 
-        if (entity.content.ids.length < total) {
-          const size = total - entity.content.ids.length;
-          entity.content.ids.push(...Array(size).fill(null));
-        } else if (entity.content.ids.length > total) {
-          const idSize = entity.content.ids.length;
-          const size = idSize - total;
-          const start = idSize - size;
-          const deleted = entity.content.ids.splice(start, size);
-          deleted.forEach((v) => {
-            if (v) {
-              delete entity.content.entities[v];
-            }
-          });
+        if (entity.content.ids.length !== total) {
+          // Reset Entity State
+          entity.dirtyEntities = [];
+          entity.content.ids = Array(total).fill(null);
+          entity.content.entities = {};
         }
 
         entity.dirtyEntities = difference(
@@ -238,26 +230,26 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
         const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
 
+        if (entity.content.ids.length !== total) {
+          // Reset Entity State
+          entity.dirtyEntities = [];
+          entity.content.ids = Array(total).fill(null);
+          entity.content.entities = {};
+        }
+
+        // For new ids, remove null from list and add them
         const addedIds = difference(
           idsToAdd,
           entity.content.ids.filter(isString)
         );
-        entity.content.ids.unshift(...addedIds);
-
-        if (entity.content.ids.length < total) {
-          const size = total - entity.content.ids.length;
-          entity.content.ids.push(...Array(size).fill(null));
-        } else if (entity.content.ids.length > total) {
-          const idSize = entity.content.ids.length;
-          const size = idSize - total;
-          const start = idSize - size;
-          const deleted = entity.content.ids
-            .splice(start, size)
-            .filter(isString);
-          deleted.forEach((v) => {
-            delete entity.content.entities[v];
+        const newSize = entity.content.ids.unshift(...addedIds);
+        Array(newSize - total)
+          .fill(undefined)
+          .forEach(() => {
+            const idx = entity.content.ids.findIndex(isNull);
+            conditionalLog(idx === -1, "Error when deleting ids from entity");
+            entity.content.ids.splice(idx, 1);
           });
-        }
 
         entity.dirtyEntities = difference(
           entity.dirtyEntities,

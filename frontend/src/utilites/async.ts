@@ -42,14 +42,8 @@ export function useEntityPagination<T>(
 ): T[] {
   const { state, content } = entity;
 
-  const [hasLoaded, setHasLoaded] = useState(false);
-
-  useEffect(() => {
-    setHasLoaded(false);
-  }, [start, end]);
-
   const needInit = state === "uninitialized";
-  const hasNew = useHasNewEntity(entity) && !hasLoaded;
+  const hasNew = useHasNewEntity(entity);
   const hasEmpty = useIsEntityIncomplete(content, start, end);
   const hasDirty = useHasDirtyEntity(entity, start, end) && state === "dirty";
 
@@ -57,9 +51,6 @@ export function useEntityPagination<T>(
     if (needInit || hasEmpty || hasNew || hasDirty) {
       const length = end - start;
       loader({ start, length });
-      if (hasNew) {
-        setHasLoaded(true);
-      }
     }
   }, [start, end, needInit, hasDirty, hasEmpty, hasNew, loader]);
 
