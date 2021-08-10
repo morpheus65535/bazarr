@@ -1,5 +1,5 @@
 import {} from "jest";
-import { AsyncUtility } from "../../@redux/utils/async";
+import { AsyncUtility } from "../async";
 
 interface AsyncTest {
   id: string;

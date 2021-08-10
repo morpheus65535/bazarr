@@ -87,9 +87,9 @@ export function createAsyncListReducer<
             (d) => (d as T)[idKey] === v[idKey]
           );
           if (idx !== -1) {
-            item.content[idx] = v as Draft<T>;
+            item.content.splice(idx, 1, v as Draft<T>);
           } else {
-            item.content.push(v as Draft<T>);
+            item.content.unshift(v as Draft<T>);
           }
         });
 
