@@ -20,13 +20,13 @@ import {
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 
-export function bindReduxAction<T extends ActionCreator<any>>(action: T) {
+function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {
     reduxStore.dispatch(action(...args));
   };
 }
 
-export function bindReduxActionWithParam<T extends ActionCreator<any>>(
+function bindReduxActionWithParam<T extends ActionCreator<any>>(
   action: T,
   ...param: Parameters<T>
 ) {

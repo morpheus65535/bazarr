@@ -1,10 +1,11 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
-import reduxStore from "../@redux/store";
+import { siteRedirectToAuth } from "../@redux/actions";
+import { AppDispatch } from "../@redux/store";
 import { getBaseUrl } from "../utilites";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
+  dispatch!: AppDispatch;
 
   constructor() {
     const baseUrl = `${getBaseUrl()}/api/`;
@@ -55,21 +56,10 @@ class Api {
     this.axios.defaults.headers.common["X-API-KEY"] = apikey;
   }
 
-  onOnline() {
-    const offline = reduxStore.getState().site.offline;
-    if (offline) {
-      reduxStore.dispatch(siteUpdateOffline(false));
-    }
-  }
-
-  onOffline() {
-    reduxStore.dispatch(siteUpdateOffline(true));
-  }
-
   handleError(code: number) {
     switch (code) {
       case 401:
-        reduxStore.dispatch(siteRedirectToAuth());
+        this.dispatch(siteRedirectToAuth());
         break;
       case 500:
         break;

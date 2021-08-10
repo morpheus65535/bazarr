@@ -118,7 +118,7 @@ export function createAsyncListReducer<
         }
       );
       item.dirtyEntities = difference(item.dirtyEntities, action.payload);
-      if (item.state === "dirty" && item.dirtyEntities.length == 0) {
+      if (item.state === "dirty" && item.dirtyEntities.length === 0) {
         item.state = "succeeded";
       }
     });

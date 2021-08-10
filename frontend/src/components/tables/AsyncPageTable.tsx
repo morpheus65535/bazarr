@@ -43,13 +43,8 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ...(plugins ?? [])
   );
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-  } = instance;
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
+    instance;
 
   const previous = useCallback(() => {
     setIndex((idx) => idx - 1);
@@ -67,7 +62,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ScrollToTop();
   }, [pageIndex]);
 
-  if (state === "loading" && data.length === 0) {
+  if ((state === "loading" && data.length === 0) || state === "uninitialized") {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
