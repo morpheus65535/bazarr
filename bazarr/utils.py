@@ -261,6 +261,7 @@ class GetSonarrInfo:
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
+        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
         region.set("sonarr_version", sonarr_version)
         return sonarr_version
 
@@ -303,6 +304,7 @@ class GetRadarrInfo:
         """
         radarr_version = region.get("radarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
         if radarr_version:
+            region.set("radarr_version", radarr_version)
             return radarr_version
         else:
             radarr_version = ''
@@ -318,6 +320,7 @@ class GetRadarrInfo:
             except Exception as e:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
+        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
         region.set("radarr_version", radarr_version)
         return radarr_version
 
