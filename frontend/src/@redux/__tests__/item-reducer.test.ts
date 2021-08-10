@@ -48,41 +48,61 @@ function createStore() {
 it("item update", async () => {
   const store = createStore();
 
+  store.dispatch(dirty());
+  testItem(store, (item) => {
+    expect(item.error).toBeNull();
+    expect(item.content).toBeNull();
+  });
+
   await store.dispatch(allResolved());
   testItem(store, (item) => {
-    expect(store.getState().item.error).toBeNull();
-    expect(store.getState().item.content).toEqual(defaultItem);
-    expect(store.getState().item.state).toEqual("succeeded");
+    expect(item.error).toBeNull();
+    expect(item.content).toEqual(defaultItem);
   });
 
   await store.dispatch(allRejected());
   testItem(store, (item) => {
-    expect(store.getState().item.error).toEqual("Error");
-    expect(store.getState().item.content).toEqual(defaultItem);
-    expect(store.getState().item.state).toEqual("failed");
+    expect(item.content).toEqual(defaultItem);
   });
 
   await store.dispatch(allResolved());
   testItem(store, (item) => {
-    expect(store.getState().item.error).toBeNull();
-    expect(store.getState().item.content).toEqual(defaultItem);
-    expect(store.getState().item.state).toEqual("succeeded");
+    expect(item.content).toEqual(defaultItem);
   });
 });
 
-it("item mark dirty", async () => {
+it("item state transfer", async () => {
   const store = createStore();
 
   store.dispatch(dirty());
   testItem(store, (item) => {
-    expect(store.getState().item.content).toBeNull();
-    expect(store.getState().item.state).toEqual("uninitialized");
+    expect(item.state).toEqual("uninitialized");
   });
 
   await store.dispatch(allResolved());
+  testItem(store, (item) => {
+    expect(item.state).toEqual("succeeded");
+  });
+
   store.dispatch(dirty());
   testItem(store, (item) => {
-    expect(store.getState().item.content).toEqual(defaultItem);
-    expect(store.getState().item.state).toEqual("dirty");
+    expect(item.state).toEqual("dirty");
+  });
+
+  await store.dispatch(allRejected());
+  testItem(store, (item) => {
+    expect(item.error).toEqual("Error");
+    expect(item.state).toEqual("failed");
+  });
+
+  store.dispatch(dirty());
+  testItem(store, (item) => {
+    expect(item.state).toEqual("dirty");
+  });
+
+  await store.dispatch(allResolved());
+  testItem(store, (item) => {
+    expect(item.error).toBeNull();
+    expect(item.state).toEqual("succeeded");
   });
 });

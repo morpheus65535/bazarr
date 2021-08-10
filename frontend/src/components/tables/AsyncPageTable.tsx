@@ -2,10 +2,39 @@ import React, { useCallback, useEffect, useState } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import { usePageSize } from "../../@storage/local";
-import { ScrollToTop, useEntityPagination } from "../../utilites";
+import {
+  ScrollToTop,
+  useEntityByRange,
+  useHasDirtyEntity,
+  useHasNewEntity,
+  useIsEntityIncomplete,
+} from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
+
+function useEntityPagination<T>(
+  entity: Async.Entity<T>,
+  loader: (range: Parameter.Range) => void,
+  start: number,
+  end: number
+): T[] {
+  const { state, content } = entity;
+
+  const needInit = state === "uninitialized";
+  const hasNew = useHasNewEntity(entity);
+  const hasEmpty = useIsEntityIncomplete(content, start, end);
+  const hasDirty = useHasDirtyEntity(entity, start, end) && state === "dirty";
+
+  useEffect(() => {
+    if (needInit || hasEmpty || hasNew || hasDirty) {
+      const length = end - start;
+      loader({ start, length });
+    }
+  }, [start, end, needInit, hasDirty, hasEmpty, hasNew, loader]);
+
+  return useEntityByRange(content, start, end);
+}
 
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {

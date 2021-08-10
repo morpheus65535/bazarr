@@ -179,8 +179,6 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           content: { keyName },
         } = entity;
 
-        const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
-
         if (entity.content.ids.length !== total) {
           // Reset Entity State
           entity.dirtyEntities = [];
@@ -188,11 +186,13 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           entity.content.entities = {};
         }
 
+        const idsToUpdate = data.map((v) => String(v[keyName as keyof T]));
+
         entity.dirtyEntities = difference(
           entity.dirtyEntities,
-          idsToAdd as Draft<string>[]
+          idsToUpdate as Draft<string>[]
         );
-        entity.content.ids.splice(start, length, ...idsToAdd);
+        entity.content.ids.splice(start, length, ...idsToUpdate);
         data.forEach((v) => {
           const key = String(v[keyName as keyof T]);
           entity.content.entities[key] = v as Draft<T>;
@@ -228,8 +228,6 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           content: { keyName },
         } = entity;
 
-        const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
-
         if (entity.content.ids.length !== total) {
           // Reset Entity State
           entity.dirtyEntities = [];
@@ -237,12 +235,14 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           entity.content.entities = {};
         }
 
+        const idsToAdd = data.map((v) => String(v[keyName as keyof T]));
+
         // For new ids, remove null from list and add them
-        const addedIds = difference(
+        const newIds = difference(
           idsToAdd,
           entity.content.ids.filter(isString)
         );
-        const newSize = entity.content.ids.unshift(...addedIds);
+        const newSize = entity.content.ids.unshift(...newIds);
         Array(newSize - total)
           .fill(undefined)
           .forEach(() => {

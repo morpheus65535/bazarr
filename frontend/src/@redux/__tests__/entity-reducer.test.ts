@@ -5,7 +5,7 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import {} from "jest";
-import { intersectionWith, isString } from "lodash";
+import { differenceWith, intersectionWith, isString } from "lodash";
 import { defaultList, defaultState, TestType } from "../tests/helper";
 import { createAsyncEntityReducer } from "../utils/factory";
 
@@ -173,24 +173,26 @@ it("entity update all", async () => {
 
   await store.dispatch(allResolved());
   testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(
-      Object.keys(store.getState().entities.content.entities)
-    ).toHaveLength(defaultList.length);
     expect(entities.dirtyEntities).toHaveLength(0);
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
+    defaultList.forEach((v, index) => {
+      const id = v.id.toString();
+      expect(entities.content.ids[index]).toEqual(id);
+      expect(entities.content.entities[id]).toEqual(v);
+    });
   });
 
   await store.dispatch(allRejected());
   testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(Object.keys(entities.content.entities)).toHaveLength(
-      defaultList.length
-    );
     expect(entities.dirtyEntities).toHaveLength(0);
     expect(entities.error).not.toBeNull();
     expect(entities.state).toBe("failed");
+    defaultList.forEach((v, index) => {
+      const id = v.id.toString();
+      expect(entities.content.ids[index]).toEqual(id);
+      expect(entities.content.entities[id]).toEqual(v);
+    });
   });
 });
 
@@ -200,12 +202,35 @@ it("entity mark dirty", async () => {
 
   store.dispatch(dirty([1, 2, 3]));
   testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(Object.keys(entities.content.entities)).toHaveLength(
-      defaultList.length
-    );
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("dirty");
+    defaultList.forEach((v, index) => {
+      const id = v.id.toString();
+      expect(entities.content.ids[index]).toEqual(id);
+      expect(entities.content.entities[id]).toEqual(v);
+    });
+  });
+});
+
+it("delete entity item", async () => {
+  const store = createStore();
+  await store.dispatch(allResolved());
+
+  const idsToRemove = [0, 1, 3, 5];
+  const expectResults = differenceWith(
+    defaultList,
+    idsToRemove,
+    (l, r) => l.id === r
+  );
+
+  store.dispatch(removeIds(idsToRemove));
+  testEntities(store, (entities) => {
+    expect(entities.state).toBe("succeeded");
+    expectResults.forEach((v, index) => {
+      const id = v.id.toString();
+      expect(entities.content.ids[index]).toEqual(id);
+      expect(entities.content.entities[id]).toEqual(v);
+    });
   });
 });
 
@@ -287,52 +312,34 @@ it("entity update by range", async () => {
 
 it("entity update by ids", async () => {
   const store = createStore();
-  await store.dispatch(idsResolved([0, 1]));
-  testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(entities.content.ids.filter(isString)).toHaveLength(2);
-    [0, 1]
-      .map((v) => v.toString())
-      .forEach((v) => {
-        expect(entities.content.ids).toContain(v);
-        expect(entities.content.entities).toHaveProperty(v);
-      });
-    expect(entities.error).toBeNull();
-    expect(entities.state).toBe("succeeded");
-  });
 
-  await store.dispatch(idsResolved([1, 2]));
-  testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(entities.content.ids.filter(isString)).toHaveLength(3);
-    [1, 2]
-      .map((v) => v.toString())
-      .forEach((v) => {
-        expect(entities.content.ids).toContain(v);
-        expect(entities.content.entities).toHaveProperty(v);
-      });
-    expect(entities.error).toBeNull();
-    expect(entities.state).toBe("succeeded");
-  });
+  const testIds = async (idsToAdd: number[]) => {
+    const expectResults = intersectionWith(
+      defaultList,
+      idsToAdd,
+      (l, r) => l.id === r
+    );
 
-  await store.dispatch(idsResolved([5, 6]));
-  testEntities(store, (entities) => {
-    expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(entities.content.ids.filter(isString)).toHaveLength(5);
-    [5, 6]
-      .map((v) => v.toString())
-      .forEach((v) => {
-        expect(entities.content.ids).toContain(v);
-        expect(entities.content.entities).toHaveProperty(v);
+    await store.dispatch(idsResolved(idsToAdd));
+    testEntities(store, (entities) => {
+      expect(entities.content.ids).toHaveLength(defaultList.length);
+      expectResults.forEach((v) => {
+        const id = v.id.toString();
+        expect(entities.content.ids).toContain(id);
+        expect(entities.content.entities[id]).toEqual(v);
       });
-    expect(entities.error).toBeNull();
-    expect(entities.state).toBe("succeeded");
-  });
+      expect(entities.error).toBeNull();
+      expect(entities.state).toBe("succeeded");
+    });
+  };
+
+  await testIds([0, 1, 3, 5]);
+  await testIds([4, 6]);
 
   await store.dispatch(idsResolved([999]));
   testEntities(store, (entities) => {
     expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(entities.content.ids.filter(isString)).toHaveLength(5);
+    expect(entities.content.ids.filter(isString)).toHaveLength(6);
     expect(entities.content.entities).not.toHaveProperty("999");
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
@@ -341,7 +348,7 @@ it("entity update by ids", async () => {
   store.dispatch(dirty([0, 1, 2]));
   testEntities(store, (entities) => {
     expect(entities.content.ids).toHaveLength(defaultList.length);
-    expect(entities.content.ids.filter(isString)).toHaveLength(5);
+    expect(entities.content.ids.filter(isString)).toHaveLength(6);
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("dirty");
   });
@@ -349,6 +356,7 @@ it("entity update by ids", async () => {
   await store.dispatch(idsResolved([1, 2]));
   testEntities(store, (entities) => {
     expect(entities.dirtyEntities).toHaveLength(1);
+    expect(entities.content.ids.filter(isString)).toHaveLength(7);
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("dirty");
   });
@@ -356,6 +364,7 @@ it("entity update by ids", async () => {
   await store.dispatch(idsResolved([0]));
   testEntities(store, (entities) => {
     expect(entities.dirtyEntities).toHaveLength(0);
+    expect(entities.content.ids.filter(isString)).toHaveLength(7);
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
   });

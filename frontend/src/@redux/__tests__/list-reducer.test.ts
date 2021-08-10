@@ -108,7 +108,7 @@ it("list update by ids", async () => {
     expect(list.state).toEqual("succeeded");
   });
 
-  // re-update by range shouldn't change order
+  // re-update by range shouldn't change anything
   await store.dispatch(idsResolved([1, 2]));
   testList(store, (list) => {
     expect(list.content).toHaveLength(2);
