@@ -117,6 +117,10 @@ export function createAsyncListReducer<
           return (lhs as T)[idKey] === rhs;
         }
       );
+      item.dirtyEntities = difference(item.dirtyEntities, action.payload);
+      if (item.state === "dirty" && item.dirtyEntities.length == 0) {
+        item.state = "succeeded";
+      }
     });
 
   all &&
