@@ -139,7 +139,8 @@ defaults = {
     },
     'legendastv': {
         'username': '',
-        'password': ''
+        'password': '',
+        'featured_only': 'False'
     },
     'xsubs': {
         'username': '',
@@ -442,11 +443,17 @@ def save_settings(settings_items):
 
     if sonarr_changed:
         from signalr_client import sonarr_signalr_client
-        sonarr_signalr_client.restart()
+        try:
+            sonarr_signalr_client.restart()
+        except:
+            pass
 
     if radarr_changed:
         from signalr_client import radarr_signalr_client
-        radarr_signalr_client.restart()
+        try:
+            radarr_signalr_client.restart()
+        except:
+            pass
 
     if update_path_map:
         from helper import path_mappings

@@ -70,7 +70,7 @@ class LegendasTVProvider(_LegendasTVProvider):
     languages = {Language(*l) for l in language_converters['legendastv'].to_legendastv.keys()}
     subtitle_class = LegendasTVSubtitle
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, username=None, password=None, featured_only=False):
 
         # Provider needs UNRAR installed. If not available raise ConfigurationError
         try:
@@ -85,6 +85,7 @@ class LegendasTVProvider(_LegendasTVProvider):
         self.password = password
         self.logged_in = False
         self.session = None
+        self.featured_only = featured_only
 
     @staticmethod
     def is_valid_title(title, title_id, sanitized_title, season, year, imdb_id):
@@ -208,6 +209,11 @@ class LegendasTVProvider(_LegendasTVProvider):
 
             # iterate over title's archives
             for a in archives:
+
+                # Check if featured
+                if self.featured_only and a.featured == False:
+                    logger.info('Subtitle is not featured, skipping')
+                    continue
 
                 # compute an expiration time based on the archive timestamp
                 expiration_time = (datetime.utcnow().replace(tzinfo=pytz.utc) - a.timestamp).total_seconds()
