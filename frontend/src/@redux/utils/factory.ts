@@ -10,6 +10,7 @@ import {
   differenceWith,
   findIndex,
   has,
+  isNull,
   isString,
   uniq,
 } from "lodash";
@@ -36,6 +37,7 @@ export function createAsyncItemReducer<S, T>(
       .addCase(all.pending, (state) => {
         const item = getItem(state);
         item.state = "loading";
+        item.error = null;
       })
       .addCase(all.fulfilled, (state, action) => {
         const item = getItem(state);
@@ -51,7 +53,9 @@ export function createAsyncItemReducer<S, T>(
   dirty &&
     builder.addCase(dirty, (state) => {
       const item = getItem(state);
-      item.state = "dirty";
+      if (!isNull(item.content)) {
+        item.state = "dirty";
+      }
     });
 }
 
@@ -72,6 +76,7 @@ export function createAsyncListReducer<
       .addCase(ids.pending, (state) => {
         const item = getList(state);
         item.state = "loading";
+        item.error = null;
       })
       .addCase(ids.fulfilled, (state, action) => {
         const item = getList(state);
@@ -119,6 +124,7 @@ export function createAsyncListReducer<
       .addCase(all.pending, (state) => {
         const item = getList(state);
         item.state = "loading";
+        item.error = null;
       })
       .addCase(all.fulfilled, (state, action) => {
         const item = getList(state);
@@ -153,6 +159,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
       .addCase(range.pending, (state) => {
         const entity = getEntity(state);
         entity.state = "loading";
+        entity.error = null;
       })
       .addCase(range.fulfilled, (state, action) => {
         const entity = getEntity(state);
@@ -212,6 +219,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
       .addCase(ids.pending, (state) => {
         const entity = getEntity(state);
         entity.state = "loading";
+        entity.error = null;
       })
       .addCase(ids.fulfilled, (state, action) => {
         const entity = getEntity(state);
@@ -304,6 +312,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
       .addCase(all.pending, (state) => {
         const entity = getEntity(state);
         entity.state = "loading";
+        entity.error = null;
       })
       .addCase(all.fulfilled, (state, action) => {
         const entity = getEntity(state);
