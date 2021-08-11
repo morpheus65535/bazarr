@@ -4,7 +4,10 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateWantedByRange } from "../../@redux/actions";
+import {
+  movieUpdateWantedById,
+  movieUpdateWantedByRange,
+} from "../../@redux/actions";
 import { useWantedMovies } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi } from "../../apis";
@@ -17,7 +20,8 @@ interface Props {}
 const WantedMoviesView: FunctionComponent<Props> = () => {
   const [movies] = useWantedMovies();
 
-  const loader = useReduxAction(movieUpdateWantedByRange);
+  const rangeLoader = useReduxAction(movieUpdateWantedByRange);
+  const idLoader = useReduxAction(movieUpdateWantedById);
 
   const searchAll = useCallback(
     () => MoviesApi.action({ action: "search-wanted" }),
@@ -76,7 +80,8 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       type="movies"
       columns={columns}
       state={movies}
-      loader={loader}
+      rangeLoader={rangeLoader}
+      idLoader={idLoader}
       searchAll={searchAll}
     ></GenericWantedView>
   );

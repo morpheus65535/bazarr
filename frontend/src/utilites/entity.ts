@@ -1,16 +1,15 @@
 import { isNull, isString } from "lodash";
 import { useMemo } from "react";
 
-export function useIsEntityIncomplete(
+export function useIsEntityLoaded(
   entity: EntityStruct<any>,
   start: number,
   end: number
 ): boolean {
-  return useMemo(() => entity.ids.slice(start, end).filter(isNull).length > 0, [
-    entity.ids,
-    start,
-    end,
-  ]);
+  return useMemo(
+    () => entity.ids.slice(start, end).filter(isNull).length === 0,
+    [entity.ids, start, end]
+  );
 }
 
 export function useEntityIdByRange(

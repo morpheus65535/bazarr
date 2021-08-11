@@ -368,6 +368,16 @@ it("entity update by ids", async () => {
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
   });
+
+  // non-exist entity update should remove ids from dirty list
+  store.dispatch(dirty([999]));
+  await store.dispatch(idsResolved([999]));
+  testEntities(store, (entities) => {
+    expect(entities.content.ids).not.toContain("999");
+    expect(entities.content.entities).not.toHaveProperty("999");
+    expect(entities.dirtyEntities).toHaveLength(0);
+    expect(entities.state).toBe("succeeded");
+  });
 });
 
 it("entity update by variant range", async () => {

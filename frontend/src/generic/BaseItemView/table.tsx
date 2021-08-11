@@ -26,7 +26,8 @@ function Table<T extends Item.Base>({
   editMode,
   select,
   columns,
-  loader,
+  rangeLoader,
+  idLoader,
   name,
 }: Props<T>) {
   const showModal = useShowModal();
@@ -40,10 +41,10 @@ function Table<T extends Item.Base>({
 
   const orderList = useEntityAsList(state.content);
 
-  const data = useMemo(() => uniqBy([...dirtyItems, ...orderList], GetItemId), [
-    dirtyItems,
-    orderList,
-  ]);
+  const data = useMemo(
+    () => uniqBy([...dirtyItems, ...orderList], GetItemId),
+    [dirtyItems, orderList]
+  );
 
   const [profiles] = useLanguageProfiles();
 
@@ -70,7 +71,8 @@ function Table<T extends Item.Base>({
           {...options}
           columns={columns}
           entity={state}
-          loader={loader}
+          rangeLoader={rangeLoader}
+          idLoader={idLoader}
           data={[]}
         ></AsyncPageTable>
       )}

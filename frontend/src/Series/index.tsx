@@ -3,7 +3,11 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateAll, seriesUpdateByRange } from "../@redux/actions";
+import {
+  seriesUpdateAll,
+  seriesUpdateById,
+  seriesUpdateByRange,
+} from "../@redux/actions";
 import { useRawSeries } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
@@ -15,7 +19,8 @@ interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
   const [series] = useRawSeries();
-  const load = useReduxAction(seriesUpdateByRange);
+  const rangeLoader = useReduxAction(seriesUpdateByRange);
+  const idLoader = useReduxAction(seriesUpdateById);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -68,11 +73,8 @@ const SeriesView: FunctionComponent<Props> = () => {
         accessor: "episodeFileCount",
         selectHide: true,
         Cell: (row) => {
-          const {
-            episodeFileCount,
-            episodeMissingCount,
-            profileId,
-          } = row.row.original;
+          const { episodeFileCount, episodeMissingCount, profileId } =
+            row.row.original;
           let progress = 0;
           let label = "";
           if (episodeFileCount === 0 || !profileId) {
@@ -119,7 +121,8 @@ const SeriesView: FunctionComponent<Props> = () => {
       state={series}
       name="Series"
       updateAction={seriesUpdateAll}
-      loader={load}
+      rangeLoader={rangeLoader}
+      idLoader={idLoader}
       columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>

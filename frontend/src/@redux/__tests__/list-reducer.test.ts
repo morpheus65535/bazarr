@@ -181,6 +181,14 @@ it("list update by ids", async () => {
     expect(list.dirtyEntities).toHaveLength(0);
     expect(list.state).toEqual("succeeded");
   });
+
+  store.dispatch(dirty([999]));
+  await store.dispatch(idsResolved([999]));
+  testList(store, (list) => {
+    expect(list.content.find((v) => v.id === 999)).toBeUndefined();
+    expect(list.dirtyEntities).toHaveLength(0);
+    expect(list.state).toBe("succeeded");
+  });
 });
 
 it("list remove by ids", async () => {

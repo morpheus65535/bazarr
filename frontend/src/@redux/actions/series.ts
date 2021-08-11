@@ -2,7 +2,7 @@ import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { EpisodesApi, SeriesApi } from "../../apis";
 
 export const seriesUpdateWantedById = createAsyncThunk(
-  "series/wanted/update",
+  "series/wanted/update/id",
   async (episodeid: number[]) => {
     const response = await EpisodesApi.wantedBy(episodeid);
     return response;
@@ -18,7 +18,7 @@ export const seriesUpdateWantedByRange = createAsyncThunk(
 );
 
 export const seriesRemoveWantedById = createAction<number[]>(
-  "series/wanted/remove"
+  "series/wanted/remove/id"
 );
 
 export const seriesMarkWantedDirtyById = createAction<number[]>(
@@ -38,7 +38,7 @@ export const episodesMarkDirtyById = createAction<number[]>(
 );
 
 export const seriesUpdateById = createAsyncThunk(
-  "series/update",
+  "series/update/id",
   async (ids: number[]) => {
     const response = await SeriesApi.series(ids);
     return response;

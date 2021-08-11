@@ -5,9 +5,7 @@ import { usePageSize } from "../../@storage/local";
 import {
   ScrollToTop,
   useEntityByRange,
-  useHasDirtyEntity,
-  useHasNewEntity,
-  useIsEntityIncomplete,
+  useIsEntityLoaded,
 } from "../../utilites";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -15,23 +13,25 @@ import { useDefaultSettings } from "./plugins";
 
 function useEntityPagination<T>(
   entity: Async.Entity<T>,
-  loader: (range: Parameter.Range) => void,
+  rangeLoader: (range: Parameter.Range) => void,
+  idLoader: (ids: number[]) => void,
   start: number,
   end: number
 ): T[] {
-  const { state, content } = entity;
+  const { state, content, dirtyEntities } = entity;
 
   const needInit = state === "uninitialized";
-  const hasNew = useHasNewEntity(entity);
-  const hasEmpty = useIsEntityIncomplete(content, start, end);
-  const hasDirty = useHasDirtyEntity(entity, start, end) && state === "dirty";
+  const hasDirty = dirtyEntities.length > 0 && state === "dirty";
+  const hasEmpty = useIsEntityLoaded(content, start, end) === false;
 
   useEffect(() => {
-    if (needInit || hasEmpty || hasNew || hasDirty) {
+    if (needInit || hasEmpty) {
       const length = end - start;
-      loader({ start, length });
+      rangeLoader({ start, length });
+    } else if (hasDirty) {
+      idLoader(dirtyEntities.map((v) => Number(v)));
     }
-  }, [start, end, needInit, hasDirty, hasEmpty, hasNew, loader]);
+  });
 
   return useEntityByRange(content, start, end);
 }
@@ -40,11 +40,12 @@ type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
     entity: Async.Entity<T>;
-    loader: (params: Parameter.Range) => void;
+    rangeLoader: (params: Parameter.Range) => void;
+    idLoader: (params: number[]) => void;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {
-  const { entity, plugins, loader, ...remain } = props;
+  const { entity, plugins, rangeLoader, idLoader, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
   const {
@@ -61,7 +62,13 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
 
-  const data = useEntityPagination(entity, loader, pageStart, pageEnd);
+  const data = useEntityPagination(
+    entity,
+    rangeLoader,
+    idLoader,
+    pageStart,
+    pageEnd
+  );
 
   const instance = useTable(
     {
@@ -91,8 +98,11 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     ScrollToTop();
   }, [pageIndex]);
 
+  // Reset page index if we out of bound
   useEffect(() => {
-    if (pageIndex > pageCount) {
+    if (pageCount === 0) return;
+
+    if (pageIndex >= pageCount) {
       setIndex(pageCount - 1);
     } else if (pageIndex < 0) {
       setIndex(0);

@@ -3,31 +3,28 @@ import { useEffect, useMemo, useState } from "react";
 import { useEffectOnceWhen } from "rooks";
 import { useEntityIdByRange } from "./entity";
 
-export function useHasNewEntity(entity: Async.Entity<any>): boolean {
-  return useMemo<boolean>(() => {
+export function useNewEntityIds(entity: Async.Entity<any>) {
+  return useMemo(() => {
     const dirtyEntities = entity.dirtyEntities;
     const rawIds = entity.content.ids;
 
     const ids = rawIds.filter(isString);
-    const diff = difference(dirtyEntities, ids);
 
-    return diff.length > 0 && entity.state === "dirty";
-  }, [entity.dirtyEntities, entity.content.ids, entity.state]);
+    return difference(dirtyEntities, ids);
+  }, [entity.dirtyEntities, entity.content.ids]);
 }
 
-export function useHasDirtyEntity(
+export function useDirtyEntityIds(
   entity: Async.Entity<any>,
   start: number,
   end: number
-): boolean {
+) {
   const ids = useEntityIdByRange(entity.content, start, end);
 
-  const hasDirty = useMemo<boolean>(() => {
+  return useMemo(() => {
     const dirtyIds = entity.dirtyEntities;
-    return intersection(ids, dirtyIds).length > 0;
+    return intersection(ids, dirtyIds);
   }, [ids, entity.dirtyEntities]);
-
-  return hasDirty;
 }
 
 export function useOnLoadedOnce(callback: () => void, entity: Async.Base<any>) {

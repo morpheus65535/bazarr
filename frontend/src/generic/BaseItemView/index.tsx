@@ -13,7 +13,8 @@ import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  loader: (params: Parameter.Range) => void;
+  rangeLoader: (params: Parameter.Range) => void;
+  idLoader: (params: number[]) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
   state: Async.Entity<T>;

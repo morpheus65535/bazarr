@@ -221,6 +221,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
         const entity = getEntity(state);
 
         const {
+          meta: { arg },
           payload: { data, total },
         } = action;
 
@@ -253,7 +254,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
         entity.dirtyEntities = difference(
           entity.dirtyEntities,
-          idsToAdd as Draft<string>[]
+          arg.map((v) => v.toString())
         );
 
         if (entity.dirtyEntities.length > 0) {

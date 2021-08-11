@@ -40,7 +40,7 @@ export const movieUpdateWantedById = createAsyncThunk(
 );
 
 export const movieRemoveWantedById = createAction<number[]>(
-  "movies/wanted/remove"
+  "movies/wanted/remove/id"
 );
 
 export const movieMarkWantedDirtyById = createAction<number[]>(
