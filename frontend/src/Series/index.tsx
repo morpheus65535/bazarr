@@ -8,7 +8,7 @@ import {
   seriesUpdateById,
   seriesUpdateByRange,
 } from "../@redux/actions";
-import { useRawSeries } from "../@redux/hooks";
+import { useSerieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
 import { ActionBadge } from "../components";
@@ -18,7 +18,7 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
-  const [series] = useRawSeries();
+  const [series] = useSerieEntities();
   const rangeLoader = useReduxAction(seriesUpdateByRange);
   const idLoader = useReduxAction(seriesUpdateById);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(

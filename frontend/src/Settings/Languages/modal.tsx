@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useEnabledLanguages } from ".";
+import { useEnabledLanguagesContext } from ".";
 import {
   ActionButton,
   BaseModal,
@@ -44,7 +44,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 
   const closeModal = useCloseModal();
 
-  const languages = useEnabledLanguages();
+  const languages = useEnabledLanguagesContext();
 
   const [current, setProfile] = useState(createDefaultProfile);
 

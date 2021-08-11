@@ -42,7 +42,7 @@ import {
   usePayload,
   useShowModal,
 } from "..";
-import { useLanguages } from "../../@redux/hooks";
+import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
 import { isMovie, submodProcessColor } from "../../utilites";
 import { log } from "../../utilites/logger";
@@ -207,10 +207,7 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
 
   const [isPlus, setPlus] = useState(true);
   const [offset, setOffset] = useState<[number, number, number, number]>([
-    0,
-    0,
-    0,
-    0,
+    0, 0, 0, 0,
   ]);
 
   const updateOffset = useCallback(
@@ -293,16 +290,15 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   process,
   ...modal
 }) => {
-  const [languages] = useLanguages(true);
+  const [languages] = useEnabledLanguages();
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in availableTranslation),
     [languages]
   );
 
-  const [selectedLanguage, setLanguage] = useState<Nullable<Language.Info>>(
-    null
-  );
+  const [selectedLanguage, setLanguage] =
+    useState<Nullable<Language.Info>>(null);
 
   const submit = useCallback(() => {
     if (selectedLanguage) {

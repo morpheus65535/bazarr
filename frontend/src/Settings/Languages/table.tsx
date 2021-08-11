@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useEnabledLanguages, useProfiles } from ".";
+import { useEnabledLanguagesContext, useProfilesContext } from ".";
 import { ActionButton, SimpleTable, useShowModal } from "../../components";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
@@ -16,9 +16,9 @@ import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
-  const originalProfiles = useProfiles();
+  const originalProfiles = useProfilesContext();
 
-  const languages = useEnabledLanguages();
+  const languages = useEnabledLanguagesContext();
 
   const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
 

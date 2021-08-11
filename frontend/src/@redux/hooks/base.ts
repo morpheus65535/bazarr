@@ -17,8 +17,15 @@ export function useAppDispatch() {
 // TODO: Fix type
 export function useReduxAction<T extends ActionCreator<any>>(action: T) {
   const dispatch = useAppDispatch();
-  return useCallback((...args: Parameters<T>) => dispatch(action(...args)), [
-    action,
-    dispatch,
-  ]);
+  return useCallback(
+    (...args: Parameters<T>) => dispatch(action(...args)),
+    [action, dispatch]
+  );
+}
+
+export function stateBuilder<T, D extends (...args: any[]) => any>(
+  t: T,
+  d: D
+): [Readonly<T>, D] {
+  return [t, d];
 }

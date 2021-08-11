@@ -1,6 +1,10 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
-import { useLanguageProfiles, useLanguages } from "../../@redux/hooks";
+import {
+  useEnabledLanguages,
+  useLanguageProfiles,
+  useLanguages,
+} from "../../@redux/hooks";
 import {
   Check,
   CollapseBox,
@@ -21,7 +25,7 @@ const LanguagesProfileContext = React.createContext<
   readonly Language.Profile[]
 >([]);
 
-export function useEnabledLanguages() {
+export function useEnabledLanguagesContext() {
   const list = useContext(EnabledLanguageContext);
   const latest = useLatest<Language.Info[]>(enabledLanguageKey, isArray);
 
@@ -32,7 +36,7 @@ export function useEnabledLanguages() {
   }
 }
 
-export function useProfiles() {
+export function useProfilesContext() {
   const list = useContext(LanguagesProfileContext);
   const latest = useLatest<Language.Profile[]>(languageProfileKey, isArray);
 
@@ -46,8 +50,8 @@ export function useProfiles() {
 interface Props {}
 
 const SettingsLanguagesView: FunctionComponent<Props> = () => {
-  const [languages] = useLanguages(false);
-  const [enabled] = useLanguages(true);
+  const [languages] = useLanguages();
+  const [enabled] = useEnabledLanguages();
   const [profiles] = useLanguageProfiles();
 
   return (

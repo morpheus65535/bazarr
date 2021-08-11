@@ -10,7 +10,7 @@ import {
   movieUpdateById,
   movieUpdateByRange,
 } from "../@redux/actions";
-import { useRawMovies } from "../@redux/hooks";
+import { useMovieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../components";
@@ -20,7 +20,7 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
-  const [movies] = useRawMovies();
+  const [movies] = useMovieEntities();
   const rangeLoader = useReduxAction(movieUpdateByRange);
   const idLoader = useReduxAction(movieUpdateById);
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
