@@ -16,7 +16,7 @@ import subliminal
 import datetime
 
 # set subliminal_patch user agent
-os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
 
 # set anti-captcha provider and key
 configure_captcha_func()
