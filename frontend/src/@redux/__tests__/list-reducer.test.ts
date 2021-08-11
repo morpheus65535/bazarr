@@ -33,13 +33,13 @@ const removeIds = createAction<number[]>("remove/id");
 const dirty = createAction<number[]>("dirty/id");
 
 const reducer = createReducer(defaultState, (builder) => {
-  createAsyncListReducer(builder, (s) => s.list, "id", {
+  createAsyncListReducer(builder, (s) => s.list, {
     all: allResolved,
     ids: idsResolved,
     removeIds,
     dirty,
   });
-  createAsyncListReducer(builder, (s) => s.list, "id", {
+  createAsyncListReducer(builder, (s) => s.list, {
     all: allRejected,
     ids: idsRejected,
   });

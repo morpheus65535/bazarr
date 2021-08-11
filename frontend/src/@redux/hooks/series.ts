@@ -22,6 +22,7 @@ export function useSeries() {
   const series = useMemo<Async.List<Item.Series>>(() => {
     return {
       ...rawSeries,
+      keyName: rawSeries.content.keyName,
       content,
     };
   }, [rawSeries, content]);

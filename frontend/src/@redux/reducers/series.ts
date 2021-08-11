@@ -36,7 +36,7 @@ interface Series {
 const defaultSeries: Series = {
   seriesList: AsyncUtility.getDefaultEntity("sonarrSeriesId"),
   wantedEpisodesList: AsyncUtility.getDefaultEntity("sonarrEpisodeId"),
-  episodeList: AsyncUtility.getDefaultList(),
+  episodeList: AsyncUtility.getDefaultList("sonarrEpisodeId"),
   historyList: AsyncUtility.getDefaultItem(),
   blacklist: AsyncUtility.getDefaultItem(),
 };
@@ -67,11 +67,11 @@ const reducer = createReducer(defaultSeries, (builder) => {
     dirty: seriesMarkBlacklistDirty,
   });
 
-  createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
+  createAsyncListReducer(builder, (s) => s.episodeList, {
     ids: episodeUpdateBySeriesId,
   });
 
-  createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
+  createAsyncListReducer(builder, (s) => s.episodeList, {
     ids: episodeUpdateByEpisodeId,
     removeIds: episodesRemoveById,
     dirty: episodesMarkDirtyById,

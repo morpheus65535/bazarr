@@ -7,9 +7,10 @@ export namespace AsyncUtility {
     };
   }
 
-  export function getDefaultList<T>(): Async.List<T> {
+  export function getDefaultList<T>(key: keyof T): Async.List<T> {
     return {
       state: "uninitialized",
+      keyName: key,
       dirtyEntities: [],
       content: [],
       error: null,

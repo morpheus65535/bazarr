@@ -30,8 +30,8 @@ interface System {
 }
 
 const defaultSystem: System = {
-  languages: AsyncUtility.getDefaultList(),
-  languagesProfiles: AsyncUtility.getDefaultList(),
+  languages: AsyncUtility.getDefaultList("code2"),
+  languagesProfiles: AsyncUtility.getDefaultList("profileId"),
   status: AsyncUtility.getDefaultItem(),
   health: AsyncUtility.getDefaultItem(),
   tasks: AsyncUtility.getDefaultItem(),
@@ -42,11 +42,11 @@ const defaultSystem: System = {
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
-  createAsyncListReducer(builder, (s) => s.languages, "code2", {
+  createAsyncListReducer(builder, (s) => s.languages, {
     all: systemUpdateLanguages,
   });
 
-  createAsyncListReducer(builder, (s) => s.languagesProfiles, "profileId", {
+  createAsyncListReducer(builder, (s) => s.languagesProfiles, {
     all: systemUpdateLanguagesProfiles,
   });
   createAsyncItemReducer(builder, (s) => s.status, { all: systemUpdateStatus });

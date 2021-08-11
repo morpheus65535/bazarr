@@ -20,6 +20,7 @@ export function useMovies() {
   const movies = useMemo<Async.List<Item.Movie>>(() => {
     return {
       ...rawMovies,
+      keyName: rawMovies.content.keyName,
       content,
     };
   }, [rawMovies, content]);

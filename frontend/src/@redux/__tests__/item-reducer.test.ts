@@ -23,8 +23,8 @@ const allRejected = createAsyncThunk("all/rejected", () => {
 const dirty = createAction("dirty/ids");
 
 const reducer = createReducer(defaultState, (builder) => {
-  createAsyncItemReducer(builder, { all: allResolved, dirty }, (s) => s.item);
-  createAsyncItemReducer(builder, { all: allRejected }, (s) => s.item);
+  createAsyncItemReducer(builder, (s) => s.item, { all: allResolved, dirty });
+  createAsyncItemReducer(builder, (s) => s.item, { all: allRejected });
 });
 
 function testItem(

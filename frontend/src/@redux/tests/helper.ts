@@ -13,7 +13,7 @@ export interface Reducer {
 
 export const defaultState: Reducer = {
   item: AsyncUtility.getDefaultItem(),
-  list: AsyncUtility.getDefaultList(),
+  list: AsyncUtility.getDefaultList("id"),
   entities: AsyncUtility.getDefaultEntity("id"),
 };
 

@@ -59,95 +59,89 @@ export function createAsyncItemReducer<S, T>(
     });
 }
 
-export function createAsyncListReducer<
-  S,
-  ID extends Async.IdType,
-  T extends { [key in K]: ID },
-  K extends keyof T
->(
+export function createAsyncListReducer<S, T, ID extends Async.IdType>(
   builder: ActionReducerMapBuilder<S>,
   getList: (state: Draft<S>) => Draft<Async.List<T>>,
-  idKey: K,
   actions: ActionParam<T[], ID>
 ) {
   const { ids, removeIds, all, dirty } = actions;
   ids &&
     builder
       .addCase(ids.pending, (state) => {
-        const item = getList(state);
-        item.state = "loading";
-        item.error = null;
+        const list = getList(state);
+        list.state = "loading";
+        list.error = null;
       })
       .addCase(ids.fulfilled, (state, action) => {
-        const item = getList(state);
+        const list = getList(state);
+
+        const { keyName } = list;
 
         action.payload.forEach((v) => {
-          const idx = findIndex(
-            item.content,
-            (d) => (d as T)[idKey] === v[idKey]
-          );
+          const idx = findIndex(list.content, [keyName, v[keyName as keyof T]]);
           if (idx !== -1) {
-            item.content.splice(idx, 1, v as Draft<T>);
+            list.content.splice(idx, 1, v as Draft<T>);
           } else {
-            item.content.unshift(v as Draft<T>);
+            list.content.unshift(v as Draft<T>);
           }
         });
 
-        item.dirtyEntities = difference(item.dirtyEntities, action.meta.arg);
+        list.dirtyEntities = difference(list.dirtyEntities, action.meta.arg);
 
-        if (item.dirtyEntities.length > 0) {
-          item.state = "dirty";
+        if (list.dirtyEntities.length > 0) {
+          list.state = "dirty";
         } else {
-          item.state = "succeeded";
+          list.state = "succeeded";
         }
       })
       .addCase(ids.rejected, (state, action) => {
-        const item = getList(state);
-        item.state = "failed";
-        item.error = action.error.message ?? null;
+        const list = getList(state);
+        list.state = "failed";
+        list.error = action.error.message ?? null;
       });
 
   removeIds &&
     builder.addCase(removeIds, (state, action) => {
-      const item = getList(state);
-      item.content = differenceWith(
-        item.content,
-        action.payload,
+      const list = getList(state);
+      const { keyName } = list;
+      list.content = differenceWith(
+        list.content,
+        action.payload.map(String),
         (lhs, rhs) => {
-          return (lhs as T)[idKey] === rhs;
+          return String((lhs as T)[keyName as keyof T]) === rhs;
         }
       );
-      item.dirtyEntities = difference(item.dirtyEntities, action.payload);
-      if (item.state === "dirty" && item.dirtyEntities.length === 0) {
-        item.state = "succeeded";
+      list.dirtyEntities = difference(list.dirtyEntities, action.payload);
+      if (list.state === "dirty" && list.dirtyEntities.length === 0) {
+        list.state = "succeeded";
       }
     });
 
   all &&
     builder
       .addCase(all.pending, (state) => {
-        const item = getList(state);
-        item.state = "loading";
-        item.error = null;
+        const list = getList(state);
+        list.state = "loading";
+        list.error = null;
       })
       .addCase(all.fulfilled, (state, action) => {
-        const item = getList(state);
-        item.state = "succeeded";
-        item.content = action.payload as Draft<T[]>;
-        item.dirtyEntities = [];
+        const list = getList(state);
+        list.state = "succeeded";
+        list.content = action.payload as Draft<T[]>;
+        list.dirtyEntities = [];
       })
       .addCase(all.rejected, (state, action) => {
-        const item = getList(state);
-        item.state = "failed";
-        item.error = action.error.message ?? null;
+        const list = getList(state);
+        list.state = "failed";
+        list.error = action.error.message ?? null;
       });
 
   dirty &&
     builder.addCase(dirty, (state, action) => {
-      const item = getList(state);
-      item.state = "dirty";
-      item.dirtyEntities.push(...action.payload);
-      item.dirtyEntities = uniq(item.dirtyEntities);
+      const list = getList(state);
+      list.state = "dirty";
+      list.dirtyEntities.push(...action.payload);
+      list.dirtyEntities = uniq(list.dirtyEntities);
     });
 }
 
