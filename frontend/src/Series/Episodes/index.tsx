@@ -34,10 +34,9 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [serie] = useSerieBy(id);
-  const item = serie.content;
-
-  const [episodes] = useEpisodesBy(serie.content?.sonarrSeriesId);
+  const [series] = useSerieBy(id);
+  const [episodes] = useEpisodesBy(id);
+  const serie = series.content;
 
   const available = episodes.content.length !== 0;
 
@@ -45,14 +44,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     () => [
       {
         icon: faHdd,
-        text: `${item?.episodeFileCount} files`,
+        text: `${serie?.episodeFileCount} files`,
       },
       {
         icon: faAdjust,
-        text: item?.seriesType ?? "",
+        text: serie?.seriesType ?? "",
       },
     ],
-    [item]
+    [serie]
   );
 
   const showModal = useShowModal();
@@ -60,25 +59,25 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const [valid, setValid] = useState(true);
 
   useOnLoadedOnce(() => {
-    if (serie.content === null) {
+    if (series.content === null) {
       setValid(false);
     }
-  }, serie);
+  }, series);
 
-  const profile = useProfileBy(serie.content?.profileId);
+  const profile = useProfileBy(series.content?.profileId);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 
-  if (!item) {
+  if (!serie) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
   return (
     <Container fluid>
       <Helmet>
-        <title>{item.title} - Bazarr (Series)</title>
+        <title>{serie.title} - Bazarr (Series)</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
@@ -97,8 +96,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
             disabled={
-              item.episodeFileCount === 0 ||
-              item.profileId === null ||
+              serie.episodeFileCount === 0 ||
+              serie.profileId === null ||
               !available
             }
           >
@@ -107,7 +106,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={item.episodeFileCount === 0 || !available}
+            disabled={serie.episodeFileCount === 0 || !available}
             icon={faBriefcase}
             onClick={() => showModal("tools", episodes.content)}
           >
@@ -115,25 +114,25 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             disabled={
-              item.episodeFileCount === 0 ||
-              item.profileId === null ||
+              serie.episodeFileCount === 0 ||
+              serie.profileId === null ||
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", item)}
+            onClick={() => showModal("upload", serie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
-            onClick={() => showModal("edit", item)}
+            onClick={() => showModal("edit", serie)}
           >
             Edit Series
           </ContentHeader.Button>
         </ContentHeader.Group>
       </ContentHeader>
       <Row>
-        <ItemOverview item={item} details={details}></ItemOverview>
+        <ItemOverview item={serie} details={details}></ItemOverview>
       </Row>
       <Row>
         <Table episodes={episodes} profile={profile}></Table>

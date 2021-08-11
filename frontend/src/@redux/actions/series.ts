@@ -31,12 +31,6 @@ export const seriesMarkDirtyById = createAction<number[]>(
   "series/mark_dirty/id"
 );
 
-export const episodesRemoveById = createAction<number[]>("episodes/remove");
-
-export const episodesMarkDirtyById = createAction<number[]>(
-  "episodes/mark_dirty/id"
-);
-
 export const seriesUpdateById = createAsyncThunk(
   "series/update/id",
   async (ids: number[]) => {
@@ -59,6 +53,12 @@ export const seriesUpdateByRange = createAsyncThunk(
     const response = await SeriesApi.seriesBy(params);
     return response;
   }
+);
+
+export const episodesRemoveById = createAction<number[]>("episodes/remove");
+
+export const episodesMarkDirtyById = createAction<number[]>(
+  "episodes/mark_dirty/id"
 );
 
 export const episodeUpdateBySeriesId = createAsyncThunk(
@@ -85,6 +85,8 @@ export const seriesUpdateHistory = createAsyncThunk(
   }
 );
 
+export const seriesMarkHistoryDirty = createAction("series/history/update");
+
 export const seriesUpdateBlacklist = createAsyncThunk(
   "series/blacklist/update",
   async () => {
@@ -92,3 +94,5 @@ export const seriesUpdateBlacklist = createAsyncThunk(
     return response;
   }
 );
+
+export const seriesMarkBlacklistDirty = createAction("series/blacklist/update");

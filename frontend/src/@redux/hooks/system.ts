@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useSocketIOReducer } from "../../@socketio/hooks";
 import {
   providerUpdateList,
   systemUpdateHealth,
@@ -29,11 +28,6 @@ export function useSystemLogs() {
 export function useSystemTasks() {
   const items = useReduxStore((s) => s.system.tasks);
   const update = useReduxAction(systemUpdateTasks);
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "task", update }),
-    [update]
-  );
-  useSocketIOReducer(reducer);
 
   useAutoUpdate(items, update);
   return stateBuilder(items, update);

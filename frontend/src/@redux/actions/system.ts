@@ -1,4 +1,4 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ProvidersApi, SystemApi } from "../../apis";
 
 export const systemUpdateAllSettings = createAsyncThunk(
@@ -43,6 +43,8 @@ export const systemUpdateHealth = createAsyncThunk(
     return response;
   }
 );
+
+export const systemMarkTasksDirty = createAction("system/tasks/mark_dirty");
 
 export const systemUpdateTasks = createAsyncThunk(
   "system/tasks/update",

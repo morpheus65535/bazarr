@@ -63,10 +63,16 @@ export const movieUpdateHistory = createAsyncThunk(
   }
 );
 
+export const movieMarkHistoryDirty = createAction("movies/history/mark_dirty");
+
 export const movieUpdateBlacklist = createAsyncThunk(
   "movies/blacklist/update",
   async () => {
     const response = await MoviesApi.blacklist();
     return response;
   }
+);
+
+export const movieMarkBlacklistDirty = createAction(
+  "movies/blacklist/mark_dirty"
 );

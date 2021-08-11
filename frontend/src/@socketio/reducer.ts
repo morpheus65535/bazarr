@@ -1,10 +1,16 @@
 import { ActionCreator } from "@reduxjs/toolkit";
 import {
+  episodesMarkDirtyById,
+  episodesRemoveById,
+  movieMarkBlacklistDirty,
   movieMarkDirtyById,
+  movieMarkHistoryDirty,
   movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
+  seriesMarkBlacklistDirty,
   seriesMarkDirtyById,
+  seriesMarkHistoryDirty,
   seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
@@ -15,6 +21,7 @@ import {
   siteUpdateBadges,
   siteUpdateInitialization,
   siteUpdateOffline,
+  systemMarkTasksDirty,
   systemUpdateAllSettings,
   systemUpdateLanguages,
 } from "../@redux/actions";
@@ -97,6 +104,11 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       delete: bindReduxAction(movieRemoveById),
     },
     {
+      key: "episode",
+      update: bindReduxAction(episodesMarkDirtyById),
+      delete: bindReduxAction(episodesRemoveById),
+    },
+    {
       key: "episode-wanted",
       update: bindReduxAction(seriesMarkWantedDirtyById),
       delete: bindReduxAction(seriesRemoveWantedById),
@@ -117,6 +129,26 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "badges",
       any: bindReduxAction(siteUpdateBadges),
+    },
+    {
+      key: "movie-history",
+      any: bindReduxAction(movieMarkHistoryDirty),
+    },
+    {
+      key: "movie-blacklist",
+      any: bindReduxAction(movieMarkBlacklistDirty),
+    },
+    {
+      key: "episode-history",
+      any: bindReduxAction(seriesMarkHistoryDirty),
+    },
+    {
+      key: "episode-blacklist",
+      any: bindReduxAction(seriesMarkBlacklistDirty),
+    },
+    {
+      key: "task",
+      any: bindReduxAction(systemMarkTasksDirty),
     },
   ];
 }

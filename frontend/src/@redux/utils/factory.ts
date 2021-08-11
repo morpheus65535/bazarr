@@ -21,17 +21,16 @@ interface ActionParam<T, ID = null> {
   all?: AsyncThunk<T, void, {}>;
   ids?: AsyncThunk<T, ID[], {}>;
   removeIds?: ActionCreatorWithPayload<ID[]>;
-  dirty?: ID extends null
-    ? ActionCreatorWithoutPayload
-    : ActionCreatorWithPayload<ID[]>;
+  dirty?: ActionCreatorWithPayload<ID[]>;
+  allDirty?: ActionCreatorWithoutPayload;
 }
 
 export function createAsyncItemReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
-  actions: Pick<ActionParam<T>, "all" | "dirty">,
+  actions: Pick<ActionParam<T>, "all" | "allDirty">,
   getItem: (state: Draft<S>) => Draft<Async.Item<T>>
 ) {
-  const { all, dirty } = actions;
+  const { all, allDirty } = actions;
   all &&
     builder
       .addCase(all.pending, (state) => {
@@ -50,10 +49,10 @@ export function createAsyncItemReducer<S, T>(
         item.error = action.error.message ?? null;
       });
 
-  dirty &&
-    builder.addCase(dirty, (state) => {
+  allDirty &&
+    builder.addCase(allDirty, (state) => {
       const item = getItem(state);
-      if (!isNull(item.content)) {
+      if (item.state !== "uninitialized") {
         item.state = "dirty";
       }
     });
@@ -70,7 +69,7 @@ export function createAsyncListReducer<
   idKey: K,
   actions: ActionParam<T[], ID>
 ) {
-  const { ids, removeIds, all, dirty } = actions;
+  const { ids, removeIds, all, dirty, allDirty } = actions;
   ids &&
     builder
       .addCase(ids.pending, (state) => {
@@ -149,12 +148,18 @@ export function createAsyncListReducer<
       item.dirtyEntities.push(...action.payload);
       item.dirtyEntities = uniq(item.dirtyEntities);
     });
+
+  allDirty &&
+    builder.addCase(allDirty, (state) => {
+      const list = getList(state);
+      list.state = "dirty";
+    });
 }
 
 export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   builder: ActionReducerMapBuilder<S>,
   getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>,
-  actions: ActionParam<AsyncDataWrapper<T>, ID>
+  actions: Omit<ActionParam<AsyncDataWrapper<T>, ID>, "allDirty">
 ) {
   const { all, removeIds, ids, range, dirty } = actions;
 

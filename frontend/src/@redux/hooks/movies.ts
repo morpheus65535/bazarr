@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from "react";
-import { useSocketIOReducer } from "../../@socketio/hooks";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   movieUpdateBlacklist,
@@ -53,11 +52,6 @@ export function useWantedMovies() {
 export function useBlacklistMovies() {
   const update = useReduxAction(movieUpdateBlacklist);
   const items = useReduxStore((d) => d.movies.blacklist);
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "movie-blacklist", any: update }),
-    [update]
-  );
-  useSocketIOReducer(reducer);
 
   useAutoUpdate(items, update);
   return stateBuilder(items, update);
@@ -66,11 +60,6 @@ export function useBlacklistMovies() {
 export function useMoviesHistory() {
   const update = useReduxAction(movieUpdateHistory);
   const items = useReduxStore((s) => s.movies.historyList);
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "movie-history", update }),
-    [update]
-  );
-  useSocketIOReducer(reducer);
 
   useAutoUpdate(items, update);
   return stateBuilder(items, update);

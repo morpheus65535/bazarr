@@ -4,7 +4,9 @@ import {
   episodesRemoveById,
   episodeUpdateByEpisodeId,
   episodeUpdateBySeriesId,
+  seriesMarkBlacklistDirty,
   seriesMarkDirtyById,
+  seriesMarkHistoryDirty,
   seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
@@ -56,10 +58,12 @@ const reducer = createReducer(defaultSeries, (builder) => {
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
     all: seriesUpdateHistory,
+    allDirty: seriesMarkHistoryDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
     all: seriesUpdateBlacklist,
+    allDirty: seriesMarkBlacklistDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {

@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useSocketIOReducer } from "../../@socketio/hooks";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
-  episodesRemoveById,
-  episodeUpdateByEpisodeId,
   episodeUpdateBySeriesId,
   seriesUpdateBlacklist,
   seriesUpdateById,
@@ -45,10 +42,10 @@ export function useSerieBy(id: number) {
   return stateBuilder(serie, update);
 }
 
-export function useEpisodesBy(seriesId?: number) {
+export function useEpisodesBy(seriesId: number) {
   const action = useReduxAction(episodeUpdateBySeriesId);
   const update = useCallback(() => {
-    if (seriesId !== undefined && !isNaN(seriesId)) {
+    if (!isNaN(seriesId)) {
       action([seriesId]);
     }
   }, [action, seriesId]);
@@ -56,7 +53,7 @@ export function useEpisodesBy(seriesId?: number) {
   const list = useReduxStore((d) => d.series.episodeList);
 
   const items = useMemo(() => {
-    if (seriesId !== undefined && !isNaN(seriesId)) {
+    if (!isNaN(seriesId)) {
       return list.content.filter((v) => v.sonarrSeriesId === seriesId);
     } else {
       return [];
@@ -70,25 +67,6 @@ export function useEpisodesBy(seriesId?: number) {
     }),
     [list, items]
   );
-
-  const updateById = useReduxAction(episodeUpdateByEpisodeId);
-  const deleteAction = useReduxAction(episodesRemoveById);
-
-  const episodeReducer = useMemo<SocketIO.Reducer>(
-    () => ({
-      key: "episode",
-      update: updateById,
-      delete: deleteAction,
-    }),
-    [updateById, deleteAction]
-  );
-  useSocketIOReducer(episodeReducer);
-
-  const seriesReducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "series", update: action }),
-    [action]
-  );
-  useSocketIOReducer(seriesReducer);
 
   useEffect(() => {
     update();
@@ -106,11 +84,6 @@ export function useWantedSeries() {
 export function useBlacklistSeries() {
   const update = useReduxAction(seriesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "episode-blacklist", any: update }),
-    [update]
-  );
-  useSocketIOReducer(reducer);
 
   useAutoUpdate(items, update);
   return stateBuilder(items, update);
@@ -119,11 +92,6 @@ export function useBlacklistSeries() {
 export function useSeriesHistory() {
   const update = useReduxAction(seriesUpdateHistory);
   const items = useReduxStore((s) => s.series.historyList);
-  const reducer = useMemo<SocketIO.Reducer>(
-    () => ({ key: "episode-history", update }),
-    [update]
-  );
-  useSocketIOReducer(reducer);
 
   useAutoUpdate(items, update);
   return stateBuilder(items, update);

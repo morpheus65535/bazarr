@@ -1,6 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
   providerUpdateList,
+  systemMarkTasksDirty,
   systemUpdateHealth,
   systemUpdateLanguages,
   systemUpdateLanguagesProfiles,
@@ -67,6 +68,7 @@ const reducer = createReducer(defaultSystem, (builder) => {
 
   createAsyncListReducer(builder, (s) => s.tasks, "job_id", {
     all: systemUpdateTasks,
+    allDirty: systemMarkTasksDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.providers, "name", {

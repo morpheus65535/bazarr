@@ -1,6 +1,8 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
+  movieMarkBlacklistDirty,
   movieMarkDirtyById,
+  movieMarkHistoryDirty,
   movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
@@ -50,10 +52,12 @@ const reducer = createReducer(defaultMovie, (builder) => {
 
   createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
     all: movieUpdateHistory,
+    allDirty: movieMarkHistoryDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
     all: movieUpdateBlacklist,
+    allDirty: movieMarkBlacklistDirty,
   });
 });
 
