@@ -11,7 +11,7 @@ declare namespace Async {
 
   type List<T> = Base<T[]> & {
     keyName: keyof T;
-    dirtyEntities: IdType[];
+    dirtyEntities: string[];
   };
 
   type Item<T> = Base<T | null>;

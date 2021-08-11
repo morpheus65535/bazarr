@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
+  episodesUpdateBlacklist,
+  episodesUpdateHistory,
   episodeUpdateBySeriesId,
-  seriesUpdateBlacklist,
   seriesUpdateById,
-  seriesUpdateHistory,
   seriesUpdateWantedById,
 } from "../actions";
 import { useAutoUpdate } from "./async";
 import { stateBuilder, useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
-  const update = useReduxAction(seriesUpdateById);
   const items = useReduxStore((d) => d.series.seriesList);
+  const update = useReduxAction(seriesUpdateById);
   return stateBuilder(items, update);
 }
 
@@ -79,7 +79,7 @@ export function useWantedSeries() {
 }
 
 export function useBlacklistSeries() {
-  const update = useReduxAction(seriesUpdateBlacklist);
+  const update = useReduxAction(episodesUpdateBlacklist);
   const items = useReduxStore((d) => d.series.blacklist);
 
   useAutoUpdate(items, update);
@@ -87,7 +87,7 @@ export function useBlacklistSeries() {
 }
 
 export function useSeriesHistory() {
-  const update = useReduxAction(seriesUpdateHistory);
+  const update = useReduxAction(episodesUpdateHistory);
   const items = useReduxStore((s) => s.series.historyList);
 
   useAutoUpdate(items, update);

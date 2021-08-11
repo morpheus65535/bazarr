@@ -1,24 +1,24 @@
 import { createReducer } from "@reduxjs/toolkit";
 import {
+  episodesMarkBlacklistDirty,
   episodesMarkDirtyById,
+  episodesMarkHistoryDirty,
   episodesRemoveById,
-  episodeUpdateByEpisodeId,
+  episodesUpdateBlacklist,
+  episodesUpdateHistory,
+  episodeUpdateById,
   episodeUpdateBySeriesId,
-  seriesMarkBlacklistDirty,
   seriesMarkDirtyById,
-  seriesMarkHistoryDirty,
   seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
   seriesUpdateAll,
-  seriesUpdateBlacklist,
   seriesUpdateById,
   seriesUpdateByRange,
-  seriesUpdateHistory,
   seriesUpdateWantedById,
   seriesUpdateWantedByRange,
 } from "../actions";
-import { AsyncUtility } from "../utils/async";
+import { AsyncReducer, AsyncUtility } from "../utils/async";
 import {
   createAsyncEntityReducer,
   createAsyncItemReducer,
@@ -50,6 +50,22 @@ const reducer = createReducer(defaultSeries, (builder) => {
     dirty: seriesMarkDirtyById,
   });
 
+  builder.addCase(seriesMarkDirtyById, (state, action) => {
+    const series = state.seriesList;
+    const dirtyIds = action.payload.map(String);
+
+    AsyncReducer.markDirty(series, dirtyIds);
+
+    // Update episode list
+    const episodes = state.episodeList;
+    const dirtyIdsSet = new Set(dirtyIds);
+    const dirtyEpisodeIds = episodes.content
+      .filter((v) => dirtyIdsSet.has(v.sonarrSeriesId.toString()))
+      .map((v) => String(v.sonarrEpisodeId));
+
+    AsyncReducer.markDirty(episodes, dirtyEpisodeIds);
+  });
+
   createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {
     range: seriesUpdateWantedByRange,
     ids: seriesUpdateWantedById,
@@ -58,13 +74,13 @@ const reducer = createReducer(defaultSeries, (builder) => {
   });
 
   createAsyncItemReducer(builder, (s) => s.historyList, {
-    all: seriesUpdateHistory,
-    dirty: seriesMarkHistoryDirty,
+    all: episodesUpdateHistory,
+    dirty: episodesMarkHistoryDirty,
   });
 
   createAsyncItemReducer(builder, (s) => s.blacklist, {
-    all: seriesUpdateBlacklist,
-    dirty: seriesMarkBlacklistDirty,
+    all: episodesUpdateBlacklist,
+    dirty: episodesMarkBlacklistDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, {
@@ -72,7 +88,7 @@ const reducer = createReducer(defaultSeries, (builder) => {
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, {
-    ids: episodeUpdateByEpisodeId,
+    ids: episodeUpdateById,
     removeIds: episodesRemoveById,
     dirty: episodesMarkDirtyById,
   });

@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useProfileItems, useSerieBy } from "../../@redux/hooks";
+import { useProfileItems } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
@@ -26,6 +26,7 @@ import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
+  serie: Async.Item<Item.Series>;
   episodes: Async.Base<Item.Episode[]>;
   profile?: Language.Profile;
 }
@@ -46,7 +47,7 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
+const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
   const showModal = useShowModal();
 
   const onlyDesired = useShowOnlyDesired();
@@ -142,8 +143,6 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: ({ row, externalUpdate }) => {
-          const [serie] = useSerieBy(row.original.sonarrSeriesId);
-
           return (
             <ButtonGroup>
               <ActionButton
@@ -170,7 +169,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
         },
       },
     ],
-    [onlyDesired, profileItems]
+    [onlyDesired, profileItems, serie]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(

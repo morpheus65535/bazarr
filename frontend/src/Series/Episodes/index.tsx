@@ -135,7 +135,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={serie} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes} profile={profile}></Table>
+        <Table serie={series} episodes={episodes} profile={profile}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"

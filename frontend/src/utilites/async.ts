@@ -35,12 +35,14 @@ export function useEntityItemById<T>(
   const item = useEntityToItem(content, id);
 
   const newState = useMemo<Async.State>(() => {
-    if (state === "loading" || state === "uninitialized") {
-      return state;
-    } else if (dirtyEntities.find((v) => v === id)) {
-      return "dirty";
+    if (state === "dirty") {
+      if (dirtyEntities.find((v) => v === id)) {
+        return "dirty";
+      } else {
+        return "succeeded";
+      }
     } else {
-      return "succeeded";
+      return state;
     }
   }, [dirtyEntities, id, state]);
 

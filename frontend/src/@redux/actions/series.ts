@@ -69,7 +69,7 @@ export const episodeUpdateBySeriesId = createAsyncThunk(
   }
 );
 
-export const episodeUpdateByEpisodeId = createAsyncThunk(
+export const episodeUpdateById = createAsyncThunk(
   "episodes/update/episodes_id",
   async (episodeid: number[]) => {
     const response = await EpisodesApi.byEpisodeId(episodeid);
@@ -77,22 +77,24 @@ export const episodeUpdateByEpisodeId = createAsyncThunk(
   }
 );
 
-export const seriesUpdateHistory = createAsyncThunk(
-  "series/history/update",
+export const episodesUpdateHistory = createAsyncThunk(
+  "episodes/history/update",
   async () => {
     const response = await EpisodesApi.history();
     return response;
   }
 );
 
-export const seriesMarkHistoryDirty = createAction("series/history/update");
+export const episodesMarkHistoryDirty = createAction("episodes/history/update");
 
-export const seriesUpdateBlacklist = createAsyncThunk(
-  "series/blacklist/update",
+export const episodesUpdateBlacklist = createAsyncThunk(
+  "episodes/blacklist/update",
   async () => {
     const response = await EpisodesApi.blacklist();
     return response;
   }
 );
 
-export const seriesMarkBlacklistDirty = createAction("series/blacklist/update");
+export const episodesMarkBlacklistDirty = createAction(
+  "episodes/blacklist/update"
+);

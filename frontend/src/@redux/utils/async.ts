@@ -1,3 +1,6 @@
+import { Draft } from "@reduxjs/toolkit";
+import { difference, uniq } from "lodash";
+
 export namespace AsyncUtility {
   export function getDefaultItem<T>(): Async.Item<T> {
     return {
@@ -28,5 +31,41 @@ export namespace AsyncUtility {
       },
       error: null,
     };
+  }
+}
+
+export namespace AsyncReducer {
+  type DirtyType = Draft<Async.Entity<any>> | Draft<Async.List<any>>;
+  export function markDirty<T extends DirtyType>(
+    entity: T,
+    dirtyIds: string[]
+  ) {
+    if (entity.state !== "uninitialized") {
+      entity.state = "dirty";
+      entity.dirtyEntities.push(...dirtyIds);
+      entity.dirtyEntities = uniq(entity.dirtyEntities);
+    }
+  }
+
+  export function updateDirty<T extends DirtyType>(
+    entity: T,
+    updatedIds: string[]
+  ) {
+    entity.dirtyEntities = difference(entity.dirtyEntities, updatedIds);
+    if (entity.dirtyEntities.length > 0) {
+      entity.state = "dirty";
+    } else {
+      entity.state = "succeeded";
+    }
+  }
+
+  export function removeDirty<T extends DirtyType>(
+    entity: T,
+    removedIds: string[]
+  ) {
+    entity.dirtyEntities = difference(entity.dirtyEntities, removedIds);
+    if (entity.dirtyEntities.length === 0 && entity.state === "dirty") {
+      entity.state = "succeeded";
+    }
   }
 }
