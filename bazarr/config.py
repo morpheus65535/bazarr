@@ -318,7 +318,7 @@ def save_settings(settings_items):
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
-            if value in empty_values and value is not '':
+            if value in empty_values and value != '':
                 value = None
 
         # Make sure empty language list are stored correctly
