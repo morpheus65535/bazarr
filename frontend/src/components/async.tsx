@@ -4,6 +4,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isEmpty } from "lodash";
 import React, {
   FunctionComponent,
   PropsWithChildren,
@@ -23,7 +24,10 @@ interface Props<T> {
 
 export function AsyncOverlay<T>(props: Props<T>) {
   const { ctx, children } = props;
-  if (ctx.state === "loading" || ctx.state === "uninitialized") {
+  if (
+    ctx.state === "uninitialized" ||
+    (ctx.state === "loading" && isEmpty(ctx.content))
+  ) {
     return <LoadingIndicator></LoadingIndicator>;
   } else if (ctx.state === "failed") {
     return <p>{ctx.error}</p>;
