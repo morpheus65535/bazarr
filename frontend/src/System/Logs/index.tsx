@@ -54,7 +54,7 @@ const SystemLogsView: FunctionComponent<Props> = () => {
             </ContentHeader.Button>
           </ContentHeader>
           <Row>
-            <Table logs={content}></Table>
+            <Table logs={content ?? []}></Table>
           </Row>
         </Container>
       )}

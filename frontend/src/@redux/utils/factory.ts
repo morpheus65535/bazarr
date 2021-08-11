@@ -21,16 +21,17 @@ interface ActionParam<T, ID = null> {
   all?: AsyncThunk<T, void, {}>;
   ids?: AsyncThunk<T, ID[], {}>;
   removeIds?: ActionCreatorWithPayload<ID[]>;
-  dirty?: ActionCreatorWithPayload<ID[]>;
-  allDirty?: ActionCreatorWithoutPayload;
+  dirty?: ID extends null
+    ? ActionCreatorWithoutPayload
+    : ActionCreatorWithPayload<ID[]>;
 }
 
 export function createAsyncItemReducer<S, T>(
   builder: ActionReducerMapBuilder<S>,
-  actions: Pick<ActionParam<T>, "all" | "allDirty">,
-  getItem: (state: Draft<S>) => Draft<Async.Item<T>>
+  getItem: (state: Draft<S>) => Draft<Async.Item<T>>,
+  actions: Pick<ActionParam<T>, "all" | "dirty">
 ) {
-  const { all, allDirty } = actions;
+  const { all, dirty } = actions;
   all &&
     builder
       .addCase(all.pending, (state) => {
@@ -49,8 +50,8 @@ export function createAsyncItemReducer<S, T>(
         item.error = action.error.message ?? null;
       });
 
-  allDirty &&
-    builder.addCase(allDirty, (state) => {
+  dirty &&
+    builder.addCase(dirty, (state) => {
       const item = getItem(state);
       if (item.state !== "uninitialized") {
         item.state = "dirty";
@@ -69,7 +70,7 @@ export function createAsyncListReducer<
   idKey: K,
   actions: ActionParam<T[], ID>
 ) {
-  const { ids, removeIds, all, dirty, allDirty } = actions;
+  const { ids, removeIds, all, dirty } = actions;
   ids &&
     builder
       .addCase(ids.pending, (state) => {
@@ -147,12 +148,6 @@ export function createAsyncListReducer<
       item.state = "dirty";
       item.dirtyEntities.push(...action.payload);
       item.dirtyEntities = uniq(item.dirtyEntities);
-    });
-
-  allDirty &&
-    builder.addCase(allDirty, (state) => {
-      const list = getList(state);
-      list.state = "dirty";
     });
 }
 

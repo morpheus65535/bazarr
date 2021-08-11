@@ -21,11 +21,11 @@ interface System {
   languages: Async.List<Language.Server>;
   languagesProfiles: Async.List<Language.Profile>;
   status: Async.Item<System.Status>;
-  health: Async.List<System.Health>;
-  tasks: Async.List<System.Task>;
-  providers: Async.List<System.Provider>;
-  logs: Async.List<System.Log>;
-  releases: Async.List<ReleaseInfo>;
+  health: Async.Item<System.Health[]>;
+  tasks: Async.Item<System.Task[]>;
+  providers: Async.Item<System.Provider[]>;
+  logs: Async.Item<System.Log[]>;
+  releases: Async.Item<ReleaseInfo[]>;
   settings: Async.Item<Settings>;
 }
 
@@ -33,11 +33,11 @@ const defaultSystem: System = {
   languages: AsyncUtility.getDefaultList(),
   languagesProfiles: AsyncUtility.getDefaultList(),
   status: AsyncUtility.getDefaultItem(),
-  health: AsyncUtility.getDefaultList(),
-  tasks: AsyncUtility.getDefaultList(),
-  providers: AsyncUtility.getDefaultList(),
-  logs: AsyncUtility.getDefaultList(),
-  releases: AsyncUtility.getDefaultList(),
+  health: AsyncUtility.getDefaultItem(),
+  tasks: AsyncUtility.getDefaultItem(),
+  providers: AsyncUtility.getDefaultItem(),
+  logs: AsyncUtility.getDefaultItem(),
+  releases: AsyncUtility.getDefaultItem(),
   settings: AsyncUtility.getDefaultItem(),
 };
 
@@ -49,29 +49,27 @@ const reducer = createReducer(defaultSystem, (builder) => {
   createAsyncListReducer(builder, (s) => s.languagesProfiles, "profileId", {
     all: systemUpdateLanguagesProfiles,
   });
-  createAsyncItemReducer(builder, { all: systemUpdateStatus }, (s) => s.status);
-  createAsyncItemReducer(
-    builder,
-    { all: systemUpdateSettings },
-    (s) => s.settings
-  );
-  createAsyncListReducer(builder, (s) => s.releases, "date", {
+  createAsyncItemReducer(builder, (s) => s.status, { all: systemUpdateStatus });
+  createAsyncItemReducer(builder, (s) => s.settings, {
+    all: systemUpdateSettings,
+  });
+  createAsyncItemReducer(builder, (s) => s.releases, {
     all: systemUpdateReleases,
   });
-  createAsyncListReducer(builder, (s) => s.logs, "timestamp", {
+  createAsyncItemReducer(builder, (s) => s.logs, {
     all: systemUpdateLogs,
   });
 
-  createAsyncListReducer(builder, (s) => s.health, "object", {
+  createAsyncItemReducer(builder, (s) => s.health, {
     all: systemUpdateHealth,
   });
 
-  createAsyncListReducer(builder, (s) => s.tasks, "job_id", {
+  createAsyncItemReducer(builder, (s) => s.tasks, {
     all: systemUpdateTasks,
-    allDirty: systemMarkTasksDirty,
+    dirty: systemMarkTasksDirty,
   });
 
-  createAsyncListReducer(builder, (s) => s.providers, "name", {
+  createAsyncItemReducer(builder, (s) => s.providers, {
     all: providerUpdateList,
   });
 });

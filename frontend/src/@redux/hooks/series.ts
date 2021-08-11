@@ -50,22 +50,18 @@ export function useEpisodesBy(seriesId: number) {
     }
   }, [action, seriesId]);
 
-  const list = useReduxStore((d) => d.series.episodeList);
+  const episodes = useReduxStore((d) => d.series.episodeList);
 
-  const items = useMemo(() => {
-    if (!isNaN(seriesId)) {
-      return list.content.filter((v) => v.sonarrSeriesId === seriesId);
-    } else {
-      return [];
-    }
-  }, [seriesId, list.content]);
+  const newContent = useMemo(() => {
+    return episodes.content.filter((v) => v.sonarrSeriesId === seriesId);
+  }, [seriesId, episodes.content]);
 
   const state: Async.List<Item.Episode> = useMemo(
     () => ({
-      ...list,
-      content: items,
+      ...episodes,
+      content: newContent,
     }),
-    [list, items]
+    [episodes, newContent]
   );
 
   useEffect(() => {

@@ -20,7 +20,7 @@ const ReleasesView: FunctionComponent<Props> = () => {
           {({ content }) => {
             return (
               <React.Fragment>
-                {content.map((v, idx) => (
+                {content?.map((v, idx) => (
                   <Col xs={12} key={BuildKey(idx, v.date)}>
                     <InfoElement {...v}></InfoElement>
                   </Col>

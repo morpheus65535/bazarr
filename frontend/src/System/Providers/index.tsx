@@ -36,7 +36,7 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table providers={content}></Table>
+            <Table providers={content ?? []}></Table>
           </Row>
         </Container>
       )}

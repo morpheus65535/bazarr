@@ -28,7 +28,7 @@ const SystemTasksView: FunctionComponent<Props> = () => {
             </ContentHeader.Button>
           </ContentHeader>
           <Row>
-            <Table tasks={content}></Table>
+            <Table tasks={content ?? []}></Table>
           </Row>
         </Container>
       )}

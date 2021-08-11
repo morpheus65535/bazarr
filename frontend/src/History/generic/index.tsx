@@ -7,7 +7,7 @@ import { AsyncOverlay, PageTable } from "../../components";
 
 interface Props {
   type: "movies" | "series";
-  state: Readonly<Async.List<History.Base>>;
+  state: Readonly<Async.Item<History.Base[]>>;
   columns: Column<History.Base>[];
 }
 
@@ -28,7 +28,7 @@ const HistoryGenericView: FunctionComponent<Props> = ({
             <PageTable
               emptyText={`Nothing Found in ${typeName} History`}
               columns={columns}
-              data={content}
+              data={content ?? []}
             ></PageTable>
           )}
         </AsyncOverlay>

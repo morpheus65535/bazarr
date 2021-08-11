@@ -17,21 +17,21 @@ import {
 import { AsyncUtility } from "../utils/async";
 import {
   createAsyncEntityReducer,
-  createAsyncListReducer,
+  createAsyncItemReducer,
 } from "../utils/factory";
 
 interface Movie {
   movieList: Async.Entity<Item.Movie>;
   wantedMovieList: Async.Entity<Wanted.Movie>;
-  historyList: Async.List<History.Movie>;
-  blacklist: Async.List<Blacklist.Movie>;
+  historyList: Async.Item<History.Movie[]>;
+  blacklist: Async.Item<Blacklist.Movie[]>;
 }
 
 const defaultMovie: Movie = {
   movieList: AsyncUtility.getDefaultEntity("radarrId"),
   wantedMovieList: AsyncUtility.getDefaultEntity("radarrId"),
-  historyList: AsyncUtility.getDefaultList(),
-  blacklist: AsyncUtility.getDefaultList(),
+  historyList: AsyncUtility.getDefaultItem(),
+  blacklist: AsyncUtility.getDefaultItem(),
 };
 
 const reducer = createReducer(defaultMovie, (builder) => {
@@ -50,14 +50,14 @@ const reducer = createReducer(defaultMovie, (builder) => {
     dirty: movieMarkWantedDirtyById,
   });
 
-  createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
+  createAsyncItemReducer(builder, (s) => s.historyList, {
     all: movieUpdateHistory,
-    allDirty: movieMarkHistoryDirty,
+    dirty: movieMarkHistoryDirty,
   });
 
-  createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
+  createAsyncItemReducer(builder, (s) => s.blacklist, {
     all: movieUpdateBlacklist,
-    allDirty: movieMarkBlacklistDirty,
+    dirty: movieMarkBlacklistDirty,
   });
 });
 

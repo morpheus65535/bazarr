@@ -77,7 +77,7 @@ const SystemStatusView: FunctionComponent<Props> = () => {
         <InfoContainer title="Health">
           <AsyncOverlay ctx={health}>
             {({ content }) => {
-              return <Table health={content}></Table>;
+              return <Table health={content ?? []}></Table>;
             }}
           </AsyncOverlay>
         </InfoContainer>

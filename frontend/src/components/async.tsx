@@ -17,12 +17,12 @@ import { Button, ButtonProps } from "react-bootstrap";
 import { LoadingIndicator } from ".";
 import { Selector, SelectorProps } from "./inputs";
 
-interface Props<T> {
-  ctx: Async.Base<T>;
-  children: FunctionComponent<Async.Base<T>>;
+interface Props<T extends Async.Base<any>> {
+  ctx: T;
+  children: FunctionComponent<T>;
 }
 
-export function AsyncOverlay<T>(props: Props<T>) {
+export function AsyncOverlay<T extends Async.Base<any>>(props: Props<T>) {
   const { ctx, children } = props;
   if (
     ctx.state === "uninitialized" ||

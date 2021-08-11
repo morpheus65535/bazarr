@@ -21,14 +21,14 @@ const BlacklistSeriesView: FunctionComponent<Props> = () => {
           <ContentHeader>
             <ContentHeader.AsyncButton
               icon={faTrash}
-              disabled={content.length === 0}
+              disabled={content?.length === 0}
               promise={() => EpisodesApi.deleteBlacklist(true)}
             >
               Remove All
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={content}></Table>
+            <Table blacklist={content ?? []}></Table>
           </Row>
         </Container>
       )}

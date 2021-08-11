@@ -21,6 +21,7 @@ import {
 import { AsyncUtility } from "../utils/async";
 import {
   createAsyncEntityReducer,
+  createAsyncItemReducer,
   createAsyncListReducer,
 } from "../utils/factory";
 
@@ -28,16 +29,16 @@ interface Series {
   seriesList: Async.Entity<Item.Series>;
   wantedEpisodesList: Async.Entity<Wanted.Episode>;
   episodeList: Async.List<Item.Episode>;
-  historyList: Async.List<History.Episode>;
-  blacklist: Async.List<Blacklist.Episode>;
+  historyList: Async.Item<History.Episode[]>;
+  blacklist: Async.Item<Blacklist.Episode[]>;
 }
 
 const defaultSeries: Series = {
   seriesList: AsyncUtility.getDefaultEntity("sonarrSeriesId"),
   wantedEpisodesList: AsyncUtility.getDefaultEntity("sonarrEpisodeId"),
   episodeList: AsyncUtility.getDefaultList(),
-  historyList: AsyncUtility.getDefaultList(),
-  blacklist: AsyncUtility.getDefaultList(),
+  historyList: AsyncUtility.getDefaultItem(),
+  blacklist: AsyncUtility.getDefaultItem(),
 };
 
 const reducer = createReducer(defaultSeries, (builder) => {
@@ -56,14 +57,14 @@ const reducer = createReducer(defaultSeries, (builder) => {
     dirty: seriesMarkWantedDirtyById,
   });
 
-  createAsyncListReducer(builder, (s) => s.historyList, "raw_timestamp", {
+  createAsyncItemReducer(builder, (s) => s.historyList, {
     all: seriesUpdateHistory,
-    allDirty: seriesMarkHistoryDirty,
+    dirty: seriesMarkHistoryDirty,
   });
 
-  createAsyncListReducer(builder, (s) => s.blacklist, "timestamp", {
+  createAsyncItemReducer(builder, (s) => s.blacklist, {
     all: seriesUpdateBlacklist,
-    allDirty: seriesMarkBlacklistDirty,
+    dirty: seriesMarkBlacklistDirty,
   });
 
   createAsyncListReducer(builder, (s) => s.episodeList, "sonarrEpisodeId", {
