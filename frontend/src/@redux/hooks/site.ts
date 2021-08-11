@@ -24,17 +24,17 @@ export function useIsOffline() {
 }
 
 export function useIsSonarrEnabled() {
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
   return settings.content?.general.use_sonarr ?? true;
 }
 
 export function useIsRadarrEnabled() {
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
   return settings.content?.general.use_radarr ?? true;
 }
 
 export function useShowOnlyDesired() {
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
   return settings.content?.general.embedded_subs_show_desired ?? false;
 }
 

@@ -51,8 +51,7 @@ export function useExtract<T>(
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
-  const [systemSettings] = useSystemSettings();
-  const settings = systemSettings.content!;
+  const settings = useSystemSettings().content!;
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;

@@ -14,7 +14,7 @@ interface Props {
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { onSuccess, submit, ...modal } = props;
 
-  const [profiles] = useLanguageProfiles();
+  const profiles = useLanguageProfiles();
 
   const item = usePayload<Item.Base>(modal.modalKey);
 

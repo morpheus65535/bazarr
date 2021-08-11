@@ -1,24 +1,23 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSocketIOReducer } from "../../@socketio/hooks";
-import { useEntityAsList } from "../../utilites";
+import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   movieUpdateBlacklist,
   movieUpdateById,
   movieUpdateHistory,
   movieUpdateWantedById,
 } from "../actions";
-import { useAutoUpdateItem } from "./async";
+import { useAutoUpdate } from "./async";
 import { stateBuilder, useReduxAction, useReduxStore } from "./base";
 
 export function useMovieEntities() {
-  const update = useReduxAction(movieUpdateById);
-  const items = useReduxStore((d) => d.movies.movieList);
-  return stateBuilder(items, update);
+  return useReduxStore((d) => d.movies.movieList);
 }
 
 export function useMovies() {
-  const [rawMovies, action] = useMovieEntities();
-  const content = useEntityAsList(rawMovies.content);
+  const rawMovies = useMovieEntities();
+  const action = useReduxAction(movieUpdateById);
+  const content = useEntityToList(rawMovies.content);
   const movies = useMemo<Async.List<Item.Movie>>(() => {
     return {
       ...rawMovies,
@@ -28,33 +27,19 @@ export function useMovies() {
   return stateBuilder(movies, action);
 }
 
-export function useMovieBy(id?: number) {
-  const [movies, updateMovies] = useMovieEntities();
-  const movie = useMemo<Async.Item<Item.Movie>>(() => {
-    const {
-      content: { entities },
-    } = movies;
-    let content: Item.Movie | null = null;
-    if (id && !isNaN(id) && id.toString() in entities) {
-      content = entities[id.toString()];
-    }
-    return {
-      ...movies,
-      content,
-    };
-  }, [id, movies]);
+export function useMovieBy(id: number) {
+  const movies = useMovieEntities();
+  const action = useReduxAction(movieUpdateById);
 
   const update = useCallback(() => {
-    if (id && !isNaN(id)) {
-      updateMovies([id]);
+    if (!isNaN(id)) {
+      action([id]);
     }
-  }, [id, updateMovies]);
+  }, [id, action]);
 
-  useEffect(() => {
-    if (movie.content === null && movie.state !== "loading") {
-      update();
-    }
-  }, [movie, update]);
+  const movie = useEntityItemById(movies, id.toString());
+
+  useAutoUpdate(movie, update);
   return stateBuilder(movie, update);
 }
 
@@ -74,7 +59,7 @@ export function useBlacklistMovies() {
   );
   useSocketIOReducer(reducer);
 
-  useAutoUpdateItem(items, update);
+  useAutoUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -87,6 +72,6 @@ export function useMoviesHistory() {
   );
   useSocketIOReducer(reducer);
 
-  useAutoUpdateItem(items, update);
+  useAutoUpdate(items, update);
   return stateBuilder(items, update);
 }

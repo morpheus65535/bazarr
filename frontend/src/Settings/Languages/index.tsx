@@ -50,9 +50,9 @@ export function useProfilesContext() {
 interface Props {}
 
 const SettingsLanguagesView: FunctionComponent<Props> = () => {
-  const [languages] = useLanguages();
-  const [enabled] = useEnabledLanguages();
-  const [profiles] = useLanguageProfiles();
+  const languages = useLanguages();
+  const enabled = useEnabledLanguages();
+  const profiles = useLanguageProfiles();
 
   return (
     <SettingsProvider title="Languages - Bazarr (Settings)">

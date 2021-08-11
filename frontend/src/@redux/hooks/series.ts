@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useSocketIOReducer } from "../../@socketio/hooks";
-import { useEntityAsList } from "../../utilites";
+import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   episodesRemoveById,
   episodeUpdateByEpisodeId,
@@ -10,7 +10,7 @@ import {
   seriesUpdateHistory,
   seriesUpdateWantedById,
 } from "../actions";
-import { useAutoUpdateItem } from "./async";
+import { useAutoUpdate } from "./async";
 import { stateBuilder, useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
@@ -21,7 +21,7 @@ export function useSerieEntities() {
 
 export function useSeries() {
   const [rawSeries, action] = useSerieEntities();
-  const content = useEntityAsList(rawSeries.content);
+  const content = useEntityToList(rawSeries.content);
   const series = useMemo<Async.List<Item.Series>>(() => {
     return {
       ...rawSeries,
@@ -31,30 +31,17 @@ export function useSeries() {
   return stateBuilder(series, action);
 }
 
-export function useSerieBy(id?: number) {
+export function useSerieBy(id: number) {
   const [series, updateSerie] = useSerieEntities();
-  const serie = useMemo<Async.Item<Item.Series>>(() => {
-    const {
-      content: { entities },
-    } = series;
-    let content: Item.Series | null = null;
-    if (id && !isNaN(id) && id.toString() in entities) {
-      content = entities[id.toString()];
-    }
-    return {
-      ...series,
-      content,
-    };
-  }, [id, series]);
+  const serie = useEntityItemById(series, id.toString());
 
   const update = useCallback(() => {
-    if (id && !isNaN(id)) {
+    if (!isNaN(id)) {
       updateSerie([id]);
     }
   }, [id, updateSerie]);
 
-  useAutoUpdateItem(serie, update);
-
+  useAutoUpdate(serie, update);
   return stateBuilder(serie, update);
 }
 
@@ -125,7 +112,7 @@ export function useBlacklistSeries() {
   );
   useSocketIOReducer(reducer);
 
-  useAutoUpdateItem(items, update);
+  useAutoUpdate(items, update);
   return stateBuilder(items, update);
 }
 
@@ -138,6 +125,6 @@ export function useSeriesHistory() {
   );
   useSocketIOReducer(reducer);
 
-  useAutoUpdateItem(items, update);
+  useAutoUpdate(items, update);
   return stateBuilder(items, update);
 }

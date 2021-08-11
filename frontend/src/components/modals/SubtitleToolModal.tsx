@@ -290,7 +290,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   process,
   ...modal
 }) => {
-  const [languages] = useEnabledLanguages();
+  const languages = useEnabledLanguages();
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in availableTranslation),

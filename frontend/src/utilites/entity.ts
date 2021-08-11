@@ -42,9 +42,22 @@ export function useEntityByRange<T>(
   return content;
 }
 
-export function useEntityAsList<T>(entity: EntityStruct<T>): T[] {
+export function useEntityToList<T>(entity: EntityStruct<T>): T[] {
   return useMemo(
     () => entity.ids.filter(isString).map((v) => entity.entities[v]),
     [entity]
   );
+}
+
+export function useEntityToItem<T>(
+  entity: EntityStruct<T>,
+  id: string
+): T | null {
+  return useMemo(() => {
+    if (id in entity.entities) {
+      return entity.entities[id];
+    } else {
+      return null;
+    }
+  }, [entity.entities, id]);
 }

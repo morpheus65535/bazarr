@@ -48,7 +48,7 @@ function BaseItemView<T extends Item.Base>({
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
 
-  const [profiles] = useLanguageProfiles();
+  const profiles = useLanguageProfiles();
 
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];

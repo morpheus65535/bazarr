@@ -59,7 +59,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
   useDidUpdate(() => {
     // Will be updated by websocket
     if (settings.state !== "loading") {
@@ -91,9 +91,10 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     setDispatcher(newDispatch);
   }, [saveSettings, saveLocalStorage]);
 
-  const defaultDispatcher = useMemo(() => dispatcher["__default__"], [
-    dispatcher,
-  ]);
+  const defaultDispatcher = useMemo(
+    () => dispatcher["__default__"],
+    [dispatcher]
+  );
 
   const submit = useCallback(() => {
     const dispatchMaps = new Map<string, LooseObject>();

@@ -21,7 +21,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const modal = props;
 
-  const [availableLanguages] = useEnabledLanguages();
+  const availableLanguages = useEnabledLanguages();
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
 

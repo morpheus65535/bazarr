@@ -20,7 +20,7 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
-  const [movies] = useMovieEntities();
+  const movies = useMovieEntities();
   const rangeLoader = useReduxAction(movieUpdateByRange);
   const idLoader = useReduxAction(movieUpdateById);
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(

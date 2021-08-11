@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 
-export function useAutoUpdateItem(item: Async.Item<any>, update: () => void) {
+export function useAutoUpdate(item: Async.Base<any>, updateAll: () => void) {
   useEffect(() => {
     if (item.state === "uninitialized" || item.state === "dirty") {
-      update();
+      updateAll();
     }
-  }, [item.state, update]);
+  }, [item.state, updateAll]);
 }
