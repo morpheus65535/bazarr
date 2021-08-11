@@ -124,6 +124,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
 
     def __init__(self, username=None, password=None, use_hash=True, api_key=None):
+        if not all((username, password)):
+            raise ConfigurationError('Username and password must be specified')
+
         if not api_key:
             raise ConfigurationError('Api_key must be specified')
 
