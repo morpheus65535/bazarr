@@ -57,7 +57,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = () => {
   return (
     <SettingsProvider title="Languages - Bazarr (Settings)">
       <EnabledLanguageContext.Provider value={enabled}>
-        <LanguagesProfileContext.Provider value={profiles}>
+        <LanguagesProfileContext.Provider value={profiles ?? []}>
           <Group header="Subtitles Language">
             <Input>
               <Check

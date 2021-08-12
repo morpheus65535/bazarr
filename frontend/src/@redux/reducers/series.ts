@@ -47,7 +47,6 @@ const reducer = createReducer(defaultSeries, (builder) => {
     ids: seriesUpdateById,
     removeIds: seriesRemoveById,
     all: seriesUpdateAll,
-    dirty: seriesMarkDirtyById,
   });
 
   builder.addCase(seriesMarkDirtyById, (state, action) => {

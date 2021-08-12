@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
-import { useProfileItems } from "../../@redux/hooks";
+import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
@@ -19,7 +19,7 @@ interface Props {
 const Table: FunctionComponent<Props> = ({ movie, profile }) => {
   const onlyDesired = useShowOnlyDesired();
 
-  const profileItems = useProfileItems(profile);
+  const profileItems = useProfileItemsToLanguages(profile);
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [

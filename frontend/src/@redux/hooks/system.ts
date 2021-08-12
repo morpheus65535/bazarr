@@ -76,7 +76,7 @@ export function useLanguageProfiles() {
 export function useProfileBy(id: number | null | undefined) {
   const profiles = useLanguageProfiles();
   return useMemo(
-    () => profiles.find((v) => v.profileId === id),
+    () => profiles?.find((v) => v.profileId === id),
     [id, profiles]
   );
 }
@@ -85,7 +85,7 @@ export function useLanguages() {
   const data = useReduxStore((s) => s.system.languages);
 
   const languages = useMemo<Language.Info[]>(
-    () => data.content.map((v) => ({ code2: v.code2, name: v.name })),
+    () => data.content?.map((v) => ({ code2: v.code2, name: v.name })) ?? [],
     [data.content]
   );
 
@@ -98,8 +98,8 @@ export function useEnabledLanguages() {
   const enabled = useMemo<Language.Info[]>(
     () =>
       data.content
-        .filter((v) => v.enabled)
-        .map((v) => ({ code2: v.code2, name: v.name })),
+        ?.filter((v) => v.enabled)
+        .map((v) => ({ code2: v.code2, name: v.name })) ?? [],
     [data.content]
   );
 
@@ -115,7 +115,7 @@ export function useLanguageBy(code?: string) {
 }
 
 // Convert languageprofile items to language
-export function useProfileItems(profile?: Language.Profile) {
+export function useProfileItemsToLanguages(profile?: Language.Profile) {
   const languages = useLanguages();
 
   return useMemo(

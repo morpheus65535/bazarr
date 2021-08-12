@@ -22,9 +22,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
-      profiles.map((v) => {
+      profiles?.map((v) => {
         return { label: v.name, value: v.profileId };
-      }),
+      }) ?? [],
     [profiles]
   );
   const [id, setId] = useState<Nullable<number>>(null);

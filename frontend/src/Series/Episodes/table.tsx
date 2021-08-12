@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useProfileItems } from "../../@redux/hooks";
+import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
@@ -52,7 +52,7 @@ const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
 
   const onlyDesired = useShowOnlyDesired();
 
-  const profileItems = useProfileItems(profile);
+  const profileItems = useProfileItemsToLanguages(profile);
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [

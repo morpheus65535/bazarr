@@ -52,17 +52,20 @@ function BaseItemView<T extends Item.Base>({
 
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];
-    items.push(
-      <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
-    );
-    items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
-    items.push(
-      ...profiles.map((v) => (
-        <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
-          {v.name}
-        </Dropdown.Item>
-      ))
-    );
+    if (profiles) {
+      items.push(
+        <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
+      );
+      items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
+      items.push(
+        ...profiles.map((v) => (
+          <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
+            {v.name}
+          </Dropdown.Item>
+        ))
+      );
+    }
+
     return items;
   }, [profiles]);
 

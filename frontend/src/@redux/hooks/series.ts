@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   episodesUpdateBlacklist,
   episodesUpdateHistory,
+  episodeUpdateById,
   episodeUpdateBySeriesId,
   seriesUpdateById,
   seriesUpdateWantedById,
 } from "../actions";
-import { useAutoUpdate } from "./async";
+import { useAutoListUpdate, useAutoUpdate } from "./async";
 import { stateBuilder, useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
@@ -65,9 +66,9 @@ export function useEpisodesBy(seriesId: number) {
     [episodes, newContent]
   );
 
-  useEffect(() => {
-    update();
-  }, [update]);
+  const updateIds = useReduxAction(episodeUpdateById);
+
+  useAutoListUpdate(state, update, updateIds);
   return stateBuilder(state, update);
 }
 

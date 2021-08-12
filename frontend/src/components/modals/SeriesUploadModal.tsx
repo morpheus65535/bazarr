@@ -24,7 +24,7 @@ import {
   useCloseModal,
   usePayload,
 } from "..";
-import { useProfileBy, useProfileItems } from "../../@redux/hooks";
+import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
 import BaseModal, { BaseModalProps } from "./BaseModal";
@@ -75,7 +75,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
   const profile = useProfileBy(series?.profileId);
 
-  const languages = useProfileItems(profile);
+  const languages = useProfileItemsToLanguages(profile);
 
   const filelist = useMemo(() => pending.map((v) => v.form.file), [pending]);
 

@@ -12,14 +12,11 @@ import {
   systemUpdateTasks,
 } from "../actions";
 import { AsyncUtility } from "../utils/async";
-import {
-  createAsyncItemReducer,
-  createAsyncListReducer,
-} from "../utils/factory";
+import { createAsyncItemReducer } from "../utils/factory";
 
 interface System {
-  languages: Async.List<Language.Server>;
-  languagesProfiles: Async.List<Language.Profile>;
+  languages: Async.Item<Language.Server[]>;
+  languagesProfiles: Async.Item<Language.Profile[]>;
   status: Async.Item<System.Status>;
   health: Async.Item<System.Health[]>;
   tasks: Async.Item<System.Task[]>;
@@ -30,8 +27,8 @@ interface System {
 }
 
 const defaultSystem: System = {
-  languages: AsyncUtility.getDefaultList("code2"),
-  languagesProfiles: AsyncUtility.getDefaultList("profileId"),
+  languages: AsyncUtility.getDefaultItem(),
+  languagesProfiles: AsyncUtility.getDefaultItem(),
   status: AsyncUtility.getDefaultItem(),
   health: AsyncUtility.getDefaultItem(),
   tasks: AsyncUtility.getDefaultItem(),
@@ -42,11 +39,11 @@ const defaultSystem: System = {
 };
 
 const reducer = createReducer(defaultSystem, (builder) => {
-  createAsyncListReducer(builder, (s) => s.languages, {
+  createAsyncItemReducer(builder, (s) => s.languages, {
     all: systemUpdateLanguages,
   });
 
-  createAsyncListReducer(builder, (s) => s.languagesProfiles, {
+  createAsyncItemReducer(builder, (s) => s.languagesProfiles, {
     all: systemUpdateLanguagesProfiles,
   });
   createAsyncItemReducer(builder, (s) => s.status, { all: systemUpdateStatus });

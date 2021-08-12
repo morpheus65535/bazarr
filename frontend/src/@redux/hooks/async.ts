@@ -7,3 +7,17 @@ export function useAutoUpdate(item: Async.Item<any>, update: () => void) {
     }
   }, [item.state, update]);
 }
+
+export function useAutoListUpdate(
+  list: Async.List<any>,
+  update: () => void,
+  updateIds: (params: number[]) => void
+) {
+  useEffect(() => {
+    if (list.state === "uninitialized") {
+      update();
+    } else if (list.state === "dirty") {
+      updateIds(list.dirtyEntities.map(Number));
+    }
+  }, [list.state, list.dirtyEntities, updateIds, update]);
+}
