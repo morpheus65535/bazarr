@@ -27,14 +27,6 @@ const reducer = createReducer(defaultState, (builder) => {
   createAsyncItemReducer(builder, (s) => s.item, { all: allRejected });
 });
 
-function testItem(
-  store: ReturnType<typeof createStore>,
-  callback: (entities: Async.Item<TestType>) => void
-) {
-  const item = store.getState().item;
-  callback(item);
-}
-
 function createStore() {
   const store = configureStore({
     reducer,
@@ -43,66 +35,121 @@ function createStore() {
   return store;
 }
 
+let store = createStore();
+
+function use(callback: (entities: Async.Item<TestType>) => void) {
+  const item = store.getState().item;
+  callback(item);
+}
+
 // Begin Test Section
 
-it("item update", async () => {
-  const store = createStore();
+beforeEach(() => {
+  store = createStore();
+});
 
-  store.dispatch(dirty());
-  testItem(store, (item) => {
-    expect(item.error).toBeNull();
-    expect(item.content).toBeNull();
+it("item loading", async () => {
+  return new Promise<void>((done) => {
+    store.dispatch(allResolved()).finally(() => {
+      use((item) => {
+        expect(item.error).toBeNull();
+        expect(item.content).toEqual(defaultItem);
+      });
+      done();
+    });
+    use((item) => {
+      expect(item.state).toBe("loading");
+      expect(item.error).toBeNull();
+      expect(item.content).toBeNull();
+    });
   });
+});
 
+it("item uninitialized -> succeeded", async () => {
   await store.dispatch(allResolved());
-  testItem(store, (item) => {
+  use((item) => {
+    expect(item.state).toBe("succeeded");
     expect(item.error).toBeNull();
-    expect(item.content).toEqual(defaultItem);
-  });
-
-  await store.dispatch(allRejected());
-  testItem(store, (item) => {
-    expect(item.content).toEqual(defaultItem);
-  });
-
-  await store.dispatch(allResolved());
-  testItem(store, (item) => {
     expect(item.content).toEqual(defaultItem);
   });
 });
 
-it("item state transfer", async () => {
-  const store = createStore();
-
-  store.dispatch(dirty());
-  testItem(store, (item) => {
-    expect(item.state).toEqual("uninitialized");
-  });
-
-  await store.dispatch(allResolved());
-  testItem(store, (item) => {
-    expect(item.state).toEqual("succeeded");
-  });
-
-  store.dispatch(dirty());
-  testItem(store, (item) => {
-    expect(item.state).toEqual("dirty");
-  });
-
+it("item uninitialized -> failed", async () => {
   await store.dispatch(allRejected());
-  testItem(store, (item) => {
-    expect(item.error).toEqual("Error");
-    expect(item.state).toEqual("failed");
+  use((item) => {
+    expect(item.state).toBe("failed");
+    expect(item.error).not.toBeNull();
+    expect(item.content).toBeNull();
   });
+});
 
+it("item uninitialized -> dirty", () => {
   store.dispatch(dirty());
-  testItem(store, (item) => {
-    expect(item.state).toEqual("dirty");
-  });
-
-  await store.dispatch(allResolved());
-  testItem(store, (item) => {
+  use((item) => {
+    expect(item.state).toBe("uninitialized");
     expect(item.error).toBeNull();
-    expect(item.state).toEqual("succeeded");
+    expect(item.content).toBeNull();
+  });
+});
+
+it("item succeeded -> failed", async () => {
+  await store.dispatch(allResolved());
+  await store.dispatch(allRejected());
+  use((item) => {
+    expect(item.state).toBe("failed");
+    expect(item.error).not.toBeNull();
+    expect(item.content).toEqual(defaultItem);
+  });
+});
+
+it("item failed -> succeeded", async () => {
+  await store.dispatch(allRejected());
+  await store.dispatch(allResolved());
+  use((item) => {
+    expect(item.state).toBe("succeeded");
+    expect(item.error).toBeNull();
+    expect(item.content).toEqual(defaultItem);
+  });
+});
+
+it("item succeeded -> dirty", async () => {
+  await store.dispatch(allResolved());
+  store.dispatch(dirty());
+  use((item) => {
+    expect(item.state).toBe("dirty");
+    expect(item.error).toBeNull();
+    expect(item.content).toEqual(defaultItem);
+  });
+});
+
+it("item failed -> dirty", async () => {
+  await store.dispatch(allRejected());
+  store.dispatch(dirty());
+  use((item) => {
+    expect(item.state).toBe("dirty");
+    expect(item.error).not.toBeNull();
+    expect(item.content).toBeNull();
+  });
+});
+
+it("item dirty -> failed", async () => {
+  await store.dispatch(allResolved());
+  store.dispatch(dirty());
+  await store.dispatch(allRejected());
+  use((item) => {
+    expect(item.state).toBe("failed");
+    expect(item.error).not.toBeNull();
+    expect(item.content).toEqual(defaultItem);
+  });
+});
+
+it("item dirty -> succeeded", async () => {
+  await store.dispatch(allResolved());
+  store.dispatch(dirty());
+  await store.dispatch(allResolved());
+  use((item) => {
+    expect(item.state).toBe("succeeded");
+    expect(item.error).toBeNull();
+    expect(item.content).toEqual(defaultItem);
   });
 });

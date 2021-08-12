@@ -14,7 +14,7 @@ it("Item Init", () => {
 });
 
 it("List Init", () => {
-  const list = AsyncUtility.getDefaultList<AsyncTest>();
+  const list = AsyncUtility.getDefaultList<AsyncTest>("id");
   expect(list.state).toEqual("uninitialized");
   expect(list.dirtyEntities).toHaveLength(0);
   expect(list.error).toBeNull();

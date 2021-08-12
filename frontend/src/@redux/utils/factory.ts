@@ -33,6 +33,7 @@ export function createAsyncItemReducer<S, T>(
   actions: Pick<ActionParam<T>, "all" | "dirty">
 ) {
   const { all, dirty } = actions;
+
   all &&
     builder
       .addCase(all.pending, (state) => {
