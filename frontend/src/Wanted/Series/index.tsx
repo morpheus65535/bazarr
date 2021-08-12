@@ -4,10 +4,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import {
-  seriesUpdateWantedById,
-  seriesUpdateWantedByRange,
-} from "../../@redux/actions";
+import { seriesUpdateWantedByRange } from "../../@redux/actions";
 import { useWantedSeries } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
@@ -20,8 +17,7 @@ interface Props {}
 const WantedSeriesView: FunctionComponent<Props> = () => {
   const series = useWantedSeries();
 
-  const rangeLoader = useReduxAction(seriesUpdateWantedByRange);
-  const idLoader = useReduxAction(seriesUpdateWantedById);
+  const loader = useReduxAction(seriesUpdateWantedByRange);
 
   const searchAll = useCallback(
     () => SeriesApi.action({ action: "search-wanted" }),
@@ -88,8 +84,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       type="series"
       columns={columns}
       state={series}
-      rangeLoader={rangeLoader}
-      idLoader={idLoader}
+      loader={loader}
       searchAll={searchAll}
     ></GenericWantedView>
   );

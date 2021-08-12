@@ -5,11 +5,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import {
-  movieUpdateAll,
-  movieUpdateById,
-  movieUpdateByRange,
-} from "../@redux/actions";
+import { movieUpdateAll, movieUpdateByRange } from "../@redux/actions";
 import { useMovieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
@@ -21,8 +17,7 @@ interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
   const movies = useMovieEntities();
-  const rangeLoader = useReduxAction(movieUpdateByRange);
-  const idLoader = useReduxAction(movieUpdateById);
+  const loader = useReduxAction(movieUpdateByRange);
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
@@ -117,8 +112,7 @@ const MovieView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={movies}
       name="Movies"
-      rangeLoader={rangeLoader}
-      idLoader={idLoader}
+      loader={loader}
       updateAction={movieUpdateAll}
       columns={columns}
       modify={(form) => MoviesApi.modify(form)}

@@ -3,11 +3,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import {
-  seriesUpdateAll,
-  seriesUpdateById,
-  seriesUpdateByRange,
-} from "../@redux/actions";
+import { seriesUpdateAll, seriesUpdateByRange } from "../@redux/actions";
 import { useSerieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
@@ -19,8 +15,7 @@ interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
   const series = useSerieEntities();
-  const rangeLoader = useReduxAction(seriesUpdateByRange);
-  const idLoader = useReduxAction(seriesUpdateById);
+  const loader = useReduxAction(seriesUpdateByRange);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -121,8 +116,7 @@ const SeriesView: FunctionComponent<Props> = () => {
       state={series}
       name="Series"
       updateAction={seriesUpdateAll}
-      rangeLoader={rangeLoader}
-      idLoader={idLoader}
+      loader={loader}
       columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   episodesUpdateBlacklist,
@@ -6,12 +6,15 @@ import {
   episodeUpdateById,
   episodeUpdateBySeriesId,
   seriesUpdateById,
+  seriesUpdateWantedById,
 } from "../actions";
-import { useAutoListUpdate, useAutoUpdate } from "./async";
+import { useAutoDirtyUpdate, useAutoUpdate } from "./async";
 import { useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
   const items = useReduxStore((d) => d.series.seriesList);
+  const updateIds = useReduxAction(seriesUpdateById);
+  useAutoDirtyUpdate(items, updateIds);
   return items;
 }
 
@@ -57,7 +60,7 @@ export function useEpisodesBy(seriesId: number) {
     return episodes.content.filter((v) => v.sonarrSeriesId === seriesId);
   }, [seriesId, episodes.content]);
 
-  const state: Async.List<Item.Episode> = useMemo(
+  const newList: Async.List<Item.Episode> = useMemo(
     () => ({
       ...episodes,
       content: newContent,
@@ -67,12 +70,20 @@ export function useEpisodesBy(seriesId: number) {
 
   const updateIds = useReduxAction(episodeUpdateById);
 
-  useAutoListUpdate(state, update, updateIds);
-  return state;
+  useEffect(() => {
+    update();
+  }, [update]);
+
+  useAutoDirtyUpdate(episodes, updateIds);
+
+  return newList;
 }
 
 export function useWantedSeries() {
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
+
+  const updateIds = useReduxAction(seriesUpdateWantedById);
+  useAutoDirtyUpdate(items, updateIds);
 
   return items;
 }

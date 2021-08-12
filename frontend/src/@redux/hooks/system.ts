@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import {
   providerUpdateList,
   systemUpdateHealth,
-  systemUpdateLanguagesProfiles,
   systemUpdateLogs,
   systemUpdateReleases,
   systemUpdateStatus,
@@ -67,9 +66,7 @@ export function useSystemReleases() {
 
 export function useLanguageProfiles() {
   const items = useReduxStore((s) => s.system.languagesProfiles);
-  const action = useReduxAction(systemUpdateLanguagesProfiles);
 
-  useAutoUpdate(items, action);
   return items.content;
 }
 

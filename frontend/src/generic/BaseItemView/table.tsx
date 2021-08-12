@@ -26,8 +26,7 @@ function Table<T extends Item.Base>({
   editMode,
   select,
   columns,
-  rangeLoader,
-  idLoader,
+  loader,
   name,
 }: Props<T>) {
   const showModal = useShowModal();
@@ -71,8 +70,7 @@ function Table<T extends Item.Base>({
           {...options}
           columns={columns}
           entity={state}
-          rangeLoader={rangeLoader}
-          idLoader={idLoader}
+          loader={loader}
           data={[]}
         ></AsyncPageTable>
       )}

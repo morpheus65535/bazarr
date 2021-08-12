@@ -10,8 +10,7 @@ interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
   columns: Column<T>[];
   state: Async.Entity<T>;
-  rangeLoader: (params: Parameter.Range) => void;
-  idLoader: (ids: number[]) => void;
+  loader: (params: Parameter.Range) => void;
   searchAll: () => Promise<void>;
 }
 
@@ -19,8 +18,7 @@ function GenericWantedView<T extends Wanted.Base>({
   type,
   columns,
   state,
-  rangeLoader,
-  idLoader,
+  loader,
   searchAll,
 }: Props<T>) {
   const typeName = capitalize(type);
@@ -44,8 +42,7 @@ function GenericWantedView<T extends Wanted.Base>({
       <Row>
         <AsyncPageTable
           entity={state}
-          rangeLoader={rangeLoader}
-          idLoader={idLoader}
+          loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
           columns={columns}
           data={[]}

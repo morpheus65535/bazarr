@@ -13,23 +13,19 @@ import { useDefaultSettings } from "./plugins";
 
 function useEntityPagination<T>(
   entity: Async.Entity<T>,
-  rangeLoader: (range: Parameter.Range) => void,
-  idLoader: (ids: number[]) => void,
+  loader: (range: Parameter.Range) => void,
   start: number,
   end: number
 ): T[] {
-  const { state, content, dirtyEntities } = entity;
+  const { state, content } = entity;
 
   const needInit = state === "uninitialized";
-  const hasDirty = dirtyEntities.length > 0 && state === "dirty";
   const hasEmpty = useIsEntityLoaded(content, start, end) === false;
 
   useEffect(() => {
     if (needInit || hasEmpty) {
       const length = end - start;
-      rangeLoader({ start, length });
-    } else if (hasDirty) {
-      idLoader(dirtyEntities.map((v) => Number(v)));
+      loader({ start, length });
     }
   });
 
@@ -40,12 +36,11 @@ type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
     entity: Async.Entity<T>;
-    rangeLoader: (params: Parameter.Range) => void;
-    idLoader: (params: number[]) => void;
+    loader: (params: Parameter.Range) => void;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {
-  const { entity, plugins, rangeLoader, idLoader, ...remain } = props;
+  const { entity, plugins, loader, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
   const {
@@ -62,13 +57,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
   const pageStart = pageIndex * pageSize;
   const pageEnd = pageStart + pageSize;
 
-  const data = useEntityPagination(
-    entity,
-    rangeLoader,
-    idLoader,
-    pageStart,
-    pageEnd
-  );
+  const data = useEntityPagination(entity, loader, pageStart, pageEnd);
 
   const instance = useTable(
     {

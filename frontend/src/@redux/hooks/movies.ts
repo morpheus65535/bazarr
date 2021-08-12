@@ -4,12 +4,18 @@ import {
   movieUpdateBlacklist,
   movieUpdateById,
   movieUpdateHistory,
+  movieUpdateWantedById,
 } from "../actions";
-import { useAutoUpdate } from "./async";
+import { useAutoDirtyUpdate, useAutoUpdate } from "./async";
 import { useReduxAction, useReduxStore } from "./base";
 
 export function useMovieEntities() {
-  return useReduxStore((d) => d.movies.movieList);
+  const entities = useReduxStore((d) => d.movies.movieList);
+
+  const updateIds = useReduxAction(movieUpdateById);
+  useAutoDirtyUpdate(entities, updateIds);
+
+  return entities;
 }
 
 export function useMovies() {
@@ -43,6 +49,9 @@ export function useMovieBy(id: number) {
 
 export function useWantedMovies() {
   const items = useReduxStore((d) => d.movies.wantedMovieList);
+
+  const updateIds = useReduxAction(movieUpdateWantedById);
+  useAutoDirtyUpdate(items, updateIds);
 
   return items;
 }
