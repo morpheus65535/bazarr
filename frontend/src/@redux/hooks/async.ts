@@ -1,5 +1,7 @@
+import { AsyncThunk } from "@reduxjs/toolkit";
 import { useEffect } from "react";
 import { log } from "../../utilites/logger";
+import { useReduxAction } from "./base";
 
 export function useAutoUpdate(item: Async.Item<any>, update: () => void) {
   useEffect(() => {
@@ -11,10 +13,12 @@ export function useAutoUpdate(item: Async.Item<any>, update: () => void) {
 
 export function useAutoDirtyUpdate(
   item: Async.List<any> | Async.Entity<any>,
-  update: (ids: number[]) => void
+  updateAction: AsyncThunk<any, number[], {}>
 ) {
   const { state, dirtyEntities } = item;
   const hasDirty = dirtyEntities.length > 0 && state === "dirty";
+
+  const update = useReduxAction(updateAction);
 
   useEffect(() => {
     if (hasDirty) {

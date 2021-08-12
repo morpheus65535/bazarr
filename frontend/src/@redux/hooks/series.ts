@@ -13,8 +13,8 @@ import { useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
   const items = useReduxStore((d) => d.series.seriesList);
-  const updateIds = useReduxAction(seriesUpdateById);
-  useAutoDirtyUpdate(items, updateIds);
+
+  useAutoDirtyUpdate(items, seriesUpdateById);
   return items;
 }
 
@@ -68,13 +68,12 @@ export function useEpisodesBy(seriesId: number) {
     [episodes, newContent]
   );
 
-  const updateIds = useReduxAction(episodeUpdateById);
-
+  // FIXME
   useEffect(() => {
     update();
   }, [update]);
 
-  useAutoDirtyUpdate(episodes, updateIds);
+  useAutoDirtyUpdate(episodes, episodeUpdateById);
 
   return newList;
 }
@@ -82,9 +81,7 @@ export function useEpisodesBy(seriesId: number) {
 export function useWantedSeries() {
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
-  const updateIds = useReduxAction(seriesUpdateWantedById);
-  useAutoDirtyUpdate(items, updateIds);
-
+  useAutoDirtyUpdate(items, seriesUpdateWantedById);
   return items;
 }
 

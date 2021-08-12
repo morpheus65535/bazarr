@@ -12,8 +12,7 @@ import { useReduxAction, useReduxStore } from "./base";
 export function useMovieEntities() {
   const entities = useReduxStore((d) => d.movies.movieList);
 
-  const updateIds = useReduxAction(movieUpdateById);
-  useAutoDirtyUpdate(entities, updateIds);
+  useAutoDirtyUpdate(entities, movieUpdateById);
 
   return entities;
 }
@@ -50,9 +49,7 @@ export function useMovieBy(id: number) {
 export function useWantedMovies() {
   const items = useReduxStore((d) => d.movies.wantedMovieList);
 
-  const updateIds = useReduxAction(movieUpdateWantedById);
-  useAutoDirtyUpdate(items, updateIds);
-
+  useAutoDirtyUpdate(items, movieUpdateWantedById);
   return items;
 }
 
