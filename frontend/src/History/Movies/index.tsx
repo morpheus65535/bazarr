@@ -13,7 +13,7 @@ import HistoryGenericView from "../generic";
 interface Props {}
 
 const MoviesHistoryView: FunctionComponent<Props> = () => {
-  const [movies] = useMoviesHistory();
+  const movies = useMoviesHistory();
 
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [

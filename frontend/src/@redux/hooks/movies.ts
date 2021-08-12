@@ -4,10 +4,9 @@ import {
   movieUpdateBlacklist,
   movieUpdateById,
   movieUpdateHistory,
-  movieUpdateWantedById,
 } from "../actions";
 import { useAutoUpdate } from "./async";
-import { stateBuilder, useReduxAction, useReduxStore } from "./base";
+import { useReduxAction, useReduxStore } from "./base";
 
 export function useMovieEntities() {
   return useReduxStore((d) => d.movies.movieList);
@@ -15,7 +14,6 @@ export function useMovieEntities() {
 
 export function useMovies() {
   const rawMovies = useMovieEntities();
-  const action = useReduxAction(movieUpdateById);
   const content = useEntityToList(rawMovies.content);
   const movies = useMemo<Async.List<Item.Movie>>(() => {
     return {
@@ -24,7 +22,7 @@ export function useMovies() {
       content,
     };
   }, [rawMovies, content]);
-  return stateBuilder(movies, action);
+  return movies;
 }
 
 export function useMovieBy(id: number) {
@@ -40,14 +38,13 @@ export function useMovieBy(id: number) {
   const movie = useEntityItemById(movies, id.toString());
 
   useAutoUpdate(movie, update);
-  return stateBuilder(movie, update);
+  return movie;
 }
 
 export function useWantedMovies() {
-  const update = useReduxAction(movieUpdateWantedById);
   const items = useReduxStore((d) => d.movies.wantedMovieList);
 
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useBlacklistMovies() {
@@ -55,7 +52,7 @@ export function useBlacklistMovies() {
   const items = useReduxStore((d) => d.movies.blacklist);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useMoviesHistory() {
@@ -63,5 +60,5 @@ export function useMoviesHistory() {
   const items = useReduxStore((s) => s.movies.historyList);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }

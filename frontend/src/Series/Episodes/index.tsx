@@ -34,8 +34,8 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [series] = useSerieBy(id);
-  const [episodes] = useEpisodesBy(id);
+  const series = useSerieBy(id);
+  const episodes = useEpisodesBy(id);
   const serie = series.content;
 
   const available = episodes.content.length !== 0;

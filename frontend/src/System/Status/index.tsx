@@ -65,8 +65,8 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
-  const [health] = useSystemHealth();
-  const [status] = useSystemStatus();
+  const health = useSystemHealth();
+  const status = useSystemStatus();
 
   return (
     <Container className="p-5">

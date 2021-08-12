@@ -10,7 +10,7 @@ import Table from "./table";
 interface Props {}
 
 const BlacklistMoviesView: FunctionComponent<Props> = () => {
-  const [blacklist] = useBlacklistMovies();
+  const blacklist = useBlacklistMovies();
   return (
     <AsyncOverlay ctx={blacklist}>
       {({ content }) => (

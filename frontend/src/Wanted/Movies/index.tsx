@@ -18,7 +18,7 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedMoviesView: FunctionComponent<Props> = () => {
-  const [movies] = useWantedMovies();
+  const wantedMovies = useWantedMovies();
 
   const rangeLoader = useReduxAction(movieUpdateWantedByRange);
   const idLoader = useReduxAction(movieUpdateWantedById);
@@ -79,7 +79,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
     <GenericWantedView
       type="movies"
       columns={columns}
-      state={movies}
+      state={wantedMovies}
       rangeLoader={rangeLoader}
       idLoader={idLoader}
       searchAll={searchAll}

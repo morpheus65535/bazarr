@@ -18,7 +18,7 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
-  const [series] = useSerieEntities();
+  const series = useSerieEntities();
   const rangeLoader = useReduxAction(seriesUpdateByRange);
   const idLoader = useReduxAction(seriesUpdateById);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(

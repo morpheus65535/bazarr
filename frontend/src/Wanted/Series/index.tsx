@@ -18,7 +18,7 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
-  const [series] = useWantedSeries();
+  const series = useWantedSeries();
 
   const rangeLoader = useReduxAction(seriesUpdateWantedByRange);
   const idLoader = useReduxAction(seriesUpdateWantedById);

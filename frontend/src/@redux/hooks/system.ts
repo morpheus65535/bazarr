@@ -9,7 +9,7 @@ import {
   systemUpdateTasks,
 } from "../actions";
 import { useAutoUpdate } from "./async";
-import { stateBuilder, useReduxAction, useReduxStore } from "./base";
+import { useReduxAction, useReduxStore } from "./base";
 
 export function useSystemSettings() {
   const items = useReduxStore((s) => s.system.settings);
@@ -22,7 +22,7 @@ export function useSystemLogs() {
   const update = useReduxAction(systemUpdateLogs);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSystemTasks() {
@@ -30,7 +30,7 @@ export function useSystemTasks() {
   const update = useReduxAction(systemUpdateTasks);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSystemStatus() {
@@ -38,7 +38,7 @@ export function useSystemStatus() {
   const update = useReduxAction(systemUpdateStatus);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items.content, update);
+  return items.content;
 }
 
 export function useSystemHealth() {
@@ -46,7 +46,7 @@ export function useSystemHealth() {
   const update = useReduxAction(systemUpdateHealth);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSystemProviders() {
@@ -54,7 +54,7 @@ export function useSystemProviders() {
   const items = useReduxStore((d) => d.system.providers);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSystemReleases() {
@@ -62,7 +62,7 @@ export function useSystemReleases() {
   const update = useReduxAction(systemUpdateReleases);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useLanguageProfiles() {

@@ -8,7 +8,7 @@ import { BuildKey } from "../../utilites";
 interface Props {}
 
 const ReleasesView: FunctionComponent<Props> = () => {
-  const [releases] = useSystemReleases();
+  const releases = useSystemReleases();
 
   return (
     <Container fluid className="px-5 py-4 bg-light">

@@ -6,19 +6,17 @@ import {
   episodeUpdateById,
   episodeUpdateBySeriesId,
   seriesUpdateById,
-  seriesUpdateWantedById,
 } from "../actions";
 import { useAutoListUpdate, useAutoUpdate } from "./async";
-import { stateBuilder, useReduxAction, useReduxStore } from "./base";
+import { useReduxAction, useReduxStore } from "./base";
 
 export function useSerieEntities() {
   const items = useReduxStore((d) => d.series.seriesList);
-  const update = useReduxAction(seriesUpdateById);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSeries() {
-  const [rawSeries, action] = useSerieEntities();
+  const rawSeries = useSerieEntities();
   const content = useEntityToList(rawSeries.content);
   const series = useMemo<Async.List<Item.Series>>(() => {
     return {
@@ -27,21 +25,22 @@ export function useSeries() {
       content,
     };
   }, [rawSeries, content]);
-  return stateBuilder(series, action);
+  return series;
 }
 
 export function useSerieBy(id: number) {
-  const [series, updateSerie] = useSerieEntities();
+  const series = useSerieEntities();
+  const action = useReduxAction(seriesUpdateById);
   const serie = useEntityItemById(series, id.toString());
 
   const update = useCallback(() => {
     if (!isNaN(id)) {
-      updateSerie([id]);
+      action([id]);
     }
-  }, [id, updateSerie]);
+  }, [id, action]);
 
   useAutoUpdate(serie, update);
-  return stateBuilder(serie, update);
+  return serie;
 }
 
 export function useEpisodesBy(seriesId: number) {
@@ -69,14 +68,13 @@ export function useEpisodesBy(seriesId: number) {
   const updateIds = useReduxAction(episodeUpdateById);
 
   useAutoListUpdate(state, update, updateIds);
-  return stateBuilder(state, update);
+  return state;
 }
 
 export function useWantedSeries() {
-  const update = useReduxAction(seriesUpdateWantedById);
   const items = useReduxStore((d) => d.series.wantedEpisodesList);
 
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useBlacklistSeries() {
@@ -84,7 +82,7 @@ export function useBlacklistSeries() {
   const items = useReduxStore((d) => d.series.blacklist);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }
 
 export function useSeriesHistory() {
@@ -92,5 +90,5 @@ export function useSeriesHistory() {
   const items = useReduxStore((s) => s.series.historyList);
 
   useAutoUpdate(items, update);
-  return stateBuilder(items, update);
+  return items;
 }

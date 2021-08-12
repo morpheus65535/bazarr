@@ -22,10 +22,3 @@ export function useReduxAction<T extends ActionCreator<any>>(action: T) {
     [action, dispatch]
   );
 }
-
-export function stateBuilder<T, D extends (...args: any[]) => any>(
-  t: T,
-  d: D
-): [Readonly<T>, D] {
-  return [t, d];
-}

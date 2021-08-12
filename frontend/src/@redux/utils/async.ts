@@ -40,7 +40,7 @@ export namespace AsyncReducer {
     entity: T,
     dirtyIds: string[]
   ) {
-    if (entity.state !== "uninitialized") {
+    if (entity.state !== "uninitialized" && entity.state !== "loading") {
       entity.state = "dirty";
       entity.dirtyEntities.push(...dirtyIds);
       entity.dirtyEntities = uniq(entity.dirtyEntities);
