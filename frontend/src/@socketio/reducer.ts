@@ -3,9 +3,13 @@ import {
   badgeUpdateAll,
   bootstrap,
   movieDeleteItems,
+  movieDeleteWantedItems,
   movieUpdateList,
+  movieUpdateWantedList,
   seriesDeleteItems,
+  seriesDeleteWantedItems,
   seriesUpdateList,
+  seriesUpdateWantedList,
   siteAddNotifications,
   siteAddProgress,
   siteInitializationFailed,
@@ -90,6 +94,24 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       key: "movie",
       update: bindToReduxStore(movieUpdateList),
       delete: bindToReduxStore(movieDeleteItems),
+    },
+    {
+      key: "episode-wanted",
+      update: (ids: number[] | undefined) => {
+        if (ids) {
+          reduxStore.dispatch(seriesUpdateWantedList(ids) as any);
+        }
+      },
+      delete: bindToReduxStore(seriesDeleteWantedItems),
+    },
+    {
+      key: "movie-wanted",
+      update: (ids: number[] | undefined) => {
+        if (ids) {
+          reduxStore.dispatch(movieUpdateWantedList(ids) as any);
+        }
+      },
+      delete: bindToReduxStore(movieDeleteWantedItems),
     },
     {
       key: "settings",

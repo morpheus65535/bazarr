@@ -10,7 +10,7 @@ from peewee import DoesNotExist
 
 from config import settings, url_radarr
 from helper import path_mappings
-from utils import get_radarr_version
+from utils import get_radarr_info
 from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 from get_rootfolder import check_radarr_rootfolder
 
@@ -31,7 +31,6 @@ def update_movies(send_event=True):
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
 
-    radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
 
     if movie_default_enabled is True:
@@ -45,11 +44,10 @@ def update_movies(send_event=True):
         pass
     else:
         audio_profiles = get_profile_list()
-        tagsDict = get_tags(radarr_version=radarr_version)
+        tagsDict = get_tags()
         
         # Get movies data from radarr
-        movies = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
-                                            apikey_radarr=apikey_radarr)
+        movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
         if not movies:
             return
         else:
@@ -82,13 +80,11 @@ def update_movies(send_event=True):
 
                             if str(movie['tmdbId']) in current_movies_db_list:
                                 movies_to_update.append(movieParser(movie, action='update',
-                                                                    radarr_version=radarr_version,
                                                                     tags_dict=tagsDict,
                                                                     movie_default_profile=movie_default_profile,
                                                                     audio_profiles=audio_profiles))
                             else:
                                 movies_to_add.append(movieParser(movie, action='insert',
-                                                                 radarr_version=radarr_version,
                                                                  tags_dict=tagsDict,
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
@@ -190,7 +186,6 @@ def update_one_movie(movie_id, action):
                 existing_movie['path'])))
         return
 
-    radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
 
     if movie_default_enabled is True:
@@ -201,24 +196,22 @@ def update_one_movie(movie_id, action):
         movie_default_profile = None
 
     audio_profiles = get_profile_list()
-    tagsDict = get_tags(radarr_version=radarr_version)
+    tagsDict = get_tags()
 
     try:
         # Get movie data from radarr api
         movie = None
-        movie_data = get_movies_from_radarr_api(radarr_version=radarr_version, url=url_radarr(),
-                                                apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
+        movie_data = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=settings.radarr.apikey,
+                                                radarr_id=movie_id)
         if not movie_data:
             return
         else:
             if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', radarr_version=radarr_version,
-                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
-                                    audio_profiles=audio_profiles)
+                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, 
+                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', radarr_version=radarr_version,
-                                    tags_dict=tagsDict, movie_default_profile=movie_default_profile,
-                                    audio_profiles=audio_profiles)
+                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, 
+                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return
@@ -262,10 +255,9 @@ def update_one_movie(movie_id, action):
 
 def get_profile_list():
     apikey_radarr = settings.radarr.apikey
-    radarr_version = get_radarr_version()
     profiles_list = []
     # Get profiles data from radarr
-    if radarr_version.startswith('0'):
+    if get_radarr_info.is_legacy():
         url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
     else:
         url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
@@ -280,7 +272,7 @@ def get_profile_list():
         logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
-        if radarr_version.startswith('0'):
+        if get_radarr_info.is_legacy():
             for profile in profiles_json.json():
                 profiles_list.append([profile['id'], profile['language'].capitalize()])
         else:
@@ -346,12 +338,12 @@ def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
     return videoFormat
 
 
-def get_tags(radarr_version):
+def get_tags():
     apikey_radarr = settings.radarr.apikey
     tagsDict = []
 
     # Get tags data from Radarr
-    if radarr_version.startswith('0'):
+    if get_radarr_info.is_legacy():
         url_radarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
     else:
         url_radarr_api_series = url_radarr() + "/api/v3/tag?apikey=" + apikey_radarr
@@ -371,7 +363,7 @@ def get_tags(radarr_version):
         return tagsDict.json()
 
 
-def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile, audio_profiles):
+def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
     if 'movieFile' in movie:
         # Detect file separator
         if movie['path'][0] == "/":
@@ -399,7 +391,7 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
             sceneName = None
 
         alternativeTitles = None
-        if radarr_version.startswith('0'):
+        if get_radarr_info.is_legacy():
             if 'alternativeTitles' in movie:
                 alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
         else:
@@ -422,7 +414,7 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
 
         if 'mediaInfo' in movie['movieFile']:
             videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
-            if radarr_version.startswith('0'):
+            if get_radarr_info.is_legacy():
                 if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = \
                 movie['movieFile']['mediaInfo']['videoFormat']
             else:
@@ -437,7 +429,7 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
             videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
             audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
-            if radarr_version.startswith('0'):
+            if get_radarr_info.is_legacy():
                 if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = \
                 movie['movieFile']['mediaInfo']['audioFormat']
             else:
@@ -456,7 +448,7 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
             audioCodec = None
 
         audio_language = []
-        if radarr_version.startswith('0'):
+        if get_radarr_info.is_legacy():
             if 'mediaInfo' in movie['movieFile']:
                 if 'audioLanguages' in movie['movieFile']['mediaInfo']:
                     audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
@@ -522,8 +514,8 @@ def movieParser(movie, action, radarr_version, tags_dict, movie_default_profile,
                     'file_size': movie['movieFile']['size']}
 
 
-def get_movies_from_radarr_api(radarr_version, url, apikey_radarr, radarr_id=None):
-    if radarr_version.startswith('0'):
+def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
+    if get_radarr_info.is_legacy():
         url_radarr_api_movies = url + "/api/movie" + ("/{}".format(radarr_id) if radarr_id else "") + "?apikey=" + \
                                 apikey_radarr
     else:

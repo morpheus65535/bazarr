@@ -7,7 +7,7 @@ import logging
 from config import settings, url_sonarr, url_radarr
 from helper import path_mappings
 from database import TableShowsRootfolder, TableMoviesRootfolder, TableShows, TableMovies
-from utils import get_sonarr_version, get_radarr_version
+from utils import get_sonarr_info, get_radarr_info
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -15,10 +15,9 @@ headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 def get_sonarr_rootfolder():
     apikey_sonarr = settings.sonarr.apikey
     sonarr_rootfolder = []
-    sonarr_version = get_sonarr_version()
 
     # Get root folder data from Sonarr
-    if sonarr_version.startswith('2'):
+    if get_sonarr_info.is_legacy():
         url_sonarr_api_rootfolder = url_sonarr() + "/api/rootfolder?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_rootfolder = url_sonarr() + "/api/v3/rootfolder?apikey=" + apikey_sonarr
@@ -63,8 +62,11 @@ def check_sonarr_rootfolder():
     rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
     for item in rootfolder:
         root_path = item['path']
-        if not root_path.endswith(os.path.sep):
-            root_path += os.path.sep
+        if not root_path.endswith(('/', '\\')):
+            if root_path.startswith('/'):
+                root_path += '/'
+            else:
+                root_path += '\\'
         if not os.path.isdir(path_mappings.path_replace(root_path)):
             TableShowsRootfolder.update({TableShowsRootfolder.accessible: 0,
                                          TableShowsRootfolder.error: 'This Sonarr root directory does not seems to '
@@ -87,10 +89,9 @@ def check_sonarr_rootfolder():
 def get_radarr_rootfolder():
     apikey_radarr = settings.radarr.apikey
     radarr_rootfolder = []
-    radarr_version = get_radarr_version()
 
     # Get root folder data from Radarr
-    if radarr_version.startswith('0'):
+    if get_radarr_info.is_legacy():
         url_radarr_api_rootfolder = url_radarr() + "/api/rootfolder?apikey=" + apikey_radarr
     else:
         url_radarr_api_rootfolder = url_radarr() + "/api/v3/rootfolder?apikey=" + apikey_radarr
@@ -134,8 +135,11 @@ def check_radarr_rootfolder():
     rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.id, TableMoviesRootfolder.path).dicts()
     for item in rootfolder:
         root_path = item['path']
-        if not root_path.endswith(os.path.sep):
-            root_path += os.path.sep
+        if not root_path.endswith(('/', '\\')):
+            if root_path.startswith('/'):
+                root_path += '/'
+            else:
+                root_path += '\\'
         if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
             TableMoviesRootfolder.update({TableMoviesRootfolder.accessible: 0,
                                          TableMoviesRootfolder.error: 'This Radarr root directory does not seems to '

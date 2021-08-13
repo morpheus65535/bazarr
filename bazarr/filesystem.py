@@ -6,7 +6,7 @@ import logging
 import string
 
 from config import settings, url_sonarr, url_radarr
-from utils import get_sonarr_version, get_radarr_version
+from utils import get_sonarr_info, get_radarr_info
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -46,10 +46,9 @@ def browse_bazarr_filesystem(path='#'):
 
 
 def browse_sonarr_filesystem(path='#'):
-    sonarr_version = get_sonarr_version()
     if path == '#':
         path = ''
-    if sonarr_version.startswith('2'):
+    if get_sonarr_info.is_legacy():
         url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
                                     "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                     settings.sonarr.apikey
@@ -77,11 +76,10 @@ def browse_sonarr_filesystem(path='#'):
 
 
 def browse_radarr_filesystem(path='#'):
-    radarr_version = get_radarr_version()
     if path == '#':
         path = ''
 
-    if radarr_version.startswith('0'):
+    if get_radarr_info.is_legacy():
         url_radarr_api_filesystem = url_radarr() + "/api/filesystem?path=" + path + \
                                     "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                     settings.radarr.apikey

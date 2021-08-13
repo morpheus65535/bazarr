@@ -181,7 +181,9 @@ namespace Settings {
     skip_wrong_fps: boolean;
   }
 
-  interface Legendastv extends BaseProvider {}
+  interface Legendastv extends BaseProvider {
+    featured_only: boolean;
+  }
 
   interface XSubs extends BaseProvider {}
 

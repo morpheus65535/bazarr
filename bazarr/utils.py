@@ -236,44 +236,53 @@ def cache_maintenance():
         remove_expired(fn, pack_cache_validity)
 
 
-def get_sonarr_version():
-    sonarr_version = ''
-    if settings.general.getboolean('use_sonarr'):
-        try:
-            sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
-            if 'version' in sonarr_json:
-                sonarr_version = sonarr_json['version']
-            else:
-                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
-        except Exception:
-            logging.debug('BAZARR cannot get Sonarr version')
-            sonarr_version = 'unknown'
-    return sonarr_version
-
-
-def get_sonarr_platform():
-    sonarr_platform = ''
-    if settings.general.getboolean('use_sonarr'):
-        try:
-            if get_sonarr_version().startswith('2'):
+class GetSonarrInfo:
+    @staticmethod
+    def version():
+        """
+        Call system/status API endpoint and get the Sonarr version
+        @return: str
+        """
+        sonarr_version = region.get("sonarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
+        if sonarr_version:
+            region.set("sonarr_version", sonarr_version)
+            return sonarr_version
+        else:
+            sonarr_version = ''
+        if settings.general.getboolean('use_sonarr'):
+            try:
                 sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-            else:
-                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-            response = requests.get(sv, timeout=60, verify=False, headers=headers).json()
-            if response['isLinux'] or response['isOsx']:
-                sonarr_platform = 'posix'
-            elif response['isWindows']:
-                sonarr_platform = 'nt'
-        except Exception:
-            logging.debug('BAZARR cannot get Sonarr platform')
-    return sonarr_platform
+                sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
+                if 'version' in sonarr_json:
+                    sonarr_version = sonarr_json['version']
+                else:
+                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                    sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
+            except Exception:
+                logging.debug('BAZARR cannot get Sonarr version')
+                sonarr_version = 'unknown'
+        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
+        region.set("sonarr_version", sonarr_version)
+        return sonarr_version
+
+    def is_legacy(self):
+        """
+        Call self.version() and parse the result to determine if it's a legacy version of Sonarr API
+        @return: bool
+        """
+        sonarr_version = self.version()
+        if sonarr_version.startswith(('0.', '2.')):
+            return True
+        else:
+            return False
+
+
+get_sonarr_info = GetSonarrInfo()
 
 
 def notify_sonarr(sonarr_series_id):
     try:
-        if get_sonarr_version().startswith('2'):
+        if get_sonarr_info.is_legacy():
             url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
         else:
             url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
@@ -283,47 +292,56 @@ def notify_sonarr(sonarr_series_id):
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
-        logging.debug('BAZARR notify Sonarr')
+        logging.exception('BAZARR cannot notify Sonarr')
 
 
-def get_radarr_version():
-    radarr_version = ''
-    if settings.general.getboolean('use_radarr'):
-        try:
-            rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
-            if 'version' in radarr_json:
-                radarr_version = radarr_json['version']
-            else:
-                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-        except Exception as e:
-            logging.debug('BAZARR cannot get Radarr version')
-            radarr_version = 'unknown'
-    return radarr_version
-
-
-def get_radarr_platform():
-    radarr_platform = ''
-    if settings.general.getboolean('use_radarr'):
-        try:
-            if get_radarr_version().startswith('0'):
+class GetRadarrInfo:
+    @staticmethod
+    def version():
+        """
+        Call system/status API endpoint and get the Radarr version
+        @return: str
+        """
+        radarr_version = region.get("radarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
+        if radarr_version:
+            region.set("radarr_version", radarr_version)
+            return radarr_version
+        else:
+            radarr_version = ''
+        if settings.general.getboolean('use_radarr'):
+            try:
                 rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-            else:
-                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-            response = requests.get(rv, timeout=60, verify=False, headers=headers).json()
-            if response['isLinux'] or response['isOsx']:
-                radarr_platform = 'posix'
-            elif response['isWindows']:
-                radarr_platform = 'nt'
-        except Exception:
-            logging.debug('BAZARR cannot get Radarr platform')
-    return radarr_platform
+                radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
+                if 'version' in radarr_json:
+                    radarr_version = radarr_json['version']
+                else:
+                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+            except Exception as e:
+                logging.debug('BAZARR cannot get Radarr version')
+                radarr_version = 'unknown'
+        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
+        region.set("radarr_version", radarr_version)
+        return radarr_version
+
+    def is_legacy(self):
+        """
+        Call self.version() and parse the result to determine if it's a legacy version of Radarr
+        @return: bool
+        """
+        radarr_version = self.version()
+        if radarr_version.startswith('0.'):
+            return True
+        else:
+            return False
+
+
+get_radarr_info = GetRadarrInfo()
 
 
 def notify_radarr(radarr_id):
     try:
-        if get_radarr_version().startswith('0'):
+        if get_radarr_info.is_legacy():
             url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
         else:
             url = url_radarr() + "/api/v3/command?apikey=" + settings.radarr.apikey
@@ -333,7 +351,7 @@ def notify_radarr(radarr_id):
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
     except Exception as e:
-        logging.debug('BAZARR notify Radarr')
+        logging.exception('BAZARR cannot notify Radarr')
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,

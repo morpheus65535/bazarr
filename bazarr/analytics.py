@@ -12,10 +12,10 @@ from pyga.entities import CustomVariable
 
 from get_args import args
 from config import settings
-from utils import get_sonarr_version, get_radarr_version
+from utils import get_sonarr_info, get_radarr_info
 
-sonarr_version = get_sonarr_version()
-radarr_version = get_radarr_version()
+sonarr_version = get_sonarr_info.version()
+radarr_version = get_radarr_info.version()
 
 
 def track_event(category=None, action=None, label=None):

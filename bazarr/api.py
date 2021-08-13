@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import sys
+import os
 import ast
 from datetime import timedelta
 from dateutil import rrule
@@ -15,6 +17,8 @@ import hashlib
 import apprise
 import gc
 from peewee import fn, Value
+import requests
+from bs4 import BeautifulSoup as bso
 
 from get_args import args
 from config import settings, base_url, save_settings, get_settings
@@ -35,7 +39,7 @@ from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
-    blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
+    blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_info, get_radarr_info, \
     delete_subtitles, subtitles_apply_mods, translate_subtitles_file, check_credentials, get_health_issues
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
     get_throttled_providers, set_throttled_providers
@@ -596,8 +600,8 @@ class SystemStatus(Resource):
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
-        system_status.update({'sonarr_version': get_sonarr_version()})
-        system_status.update({'radarr_version': get_radarr_version()})
+        system_status.update({'sonarr_version': get_sonarr_info.version()})
+        system_status.update({'radarr_version': get_radarr_info.version()})
         system_status.update({'operating_system': platform.platform()})
         system_status.update({'python_version': platform.python_version()})
         system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
@@ -716,6 +720,15 @@ class Series(Resource):
             list_missing_subtitles(no=seriesId, send_event=False)
 
             event_stream(type='series', payload=seriesId)
+
+            episode_id_list = TableEpisodes\
+                .select(TableEpisodes.sonarrEpisodeId)\
+                .where(TableEpisodes.sonarrSeriesId == seriesId)\
+                .dicts()
+            
+            for item in episode_id_list:
+                event_stream(type='episode-wanted', payload=item['sonarrEpisodeId'])
+
         event_stream(type='badges')
 
         return '', 204
@@ -963,6 +976,7 @@ class Movies(Resource):
             list_missing_subtitles_movies(no=radarrId, send_event=False)
 
             event_stream(type='movie', payload=radarrId)
+            event_stream(type='movie-wanted', payload=radarrId)
         event_stream(type='badges')
 
         return '', 204
@@ -1516,7 +1530,7 @@ class MoviesHistory(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        query_conditions = [(TableMovies is not None)]
+        query_conditions = [(TableMovies.title is not None)]
         if radarrid:
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
@@ -1696,6 +1710,7 @@ class EpisodesWanted(Resource):
                                         TableShows.seriesType)\
                 .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
                 .where(wanted_condition)\
+                .order_by(TableEpisodes.rowid.desc())\
                 .limit(length)\
                 .offset(start)\
                 .dicts()
@@ -1749,7 +1764,7 @@ class MoviesWanted(Resource):
                                         TableMovies.tags,
                                         TableMovies.monitored)\
                 .where(wanted_condition)\
-                .order_by(TableMovies.radarrId.desc())\
+                .order_by(TableMovies.rowid.desc())\
                 .limit(length)\
                 .offset(start)\
                 .dicts()
@@ -1966,6 +1981,12 @@ class Subtitles(Resource):
         else:
             subtitles_apply_mods(language, subtitles_path, [action])
 
+        # apply chmod if required
+        chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
+            'win') and settings.general.getboolean('chmod_enabled') else None
+        if chmod:
+            os.chmod(subtitles_path, chmod)
+
         return '', 204
 
 
@@ -2045,6 +2066,68 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
+class WebHooksPlex(Resource):
+    @authenticate
+    def post(self):
+        json_webhook = request.form.get('payload')
+        parsed_json_webhook = json.loads(json_webhook)
+
+        event = parsed_json_webhook['event']
+        if event not in ['media.play']:
+            return '', 204
+
+        media_type = parsed_json_webhook['Metadata']['type']
+
+        if media_type == 'episode':
+            season = parsed_json_webhook['Metadata']['parentIndex']
+            episode = parsed_json_webhook['Metadata']['index']
+        else:
+            season = episode = None
+
+        ids = []
+        for item in parsed_json_webhook['Metadata']['Guid']:
+            splitted_id = item['id'].split('://')
+            if len(splitted_id) == 2:
+                ids.append({splitted_id[0]: splitted_id[1]})
+        if not ids:
+            return '', 404
+
+        if media_type == 'episode':
+            try:
+                episode_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
+                r = requests.get('https://imdb.com/title/{}'.format(episode_imdb_id),
+                                 headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
+                soup = bso(r.content, "html.parser")
+                series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
+            except:
+                return '', 404
+            else:
+                sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
+                    .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                    .where(TableShows.imdbId == series_imdb_id,
+                           TableEpisodes.season == season,
+                           TableEpisodes.episode == episode) \
+                    .dicts() \
+                    .get()
+
+                if sonarrEpisodeId:
+                    episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
+        else:
+            try:
+                movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
+            except:
+                return '', 404
+            else:
+                radarrId = TableMovies.select(TableMovies.radarrId)\
+                    .where(TableMovies.imdbId == movie_imdb_id)\
+                    .dicts()\
+                    .get()
+                if radarrId:
+                    movies_download_subtitles(no=radarrId['radarrId'])
+
+        return '', 200
+
+
 api.add_resource(Badges, '/badges')
 
 api.add_resource(Providers, '/providers')
@@ -2086,3 +2169,5 @@ api.add_resource(HistoryStats, '/history/stats')
 api.add_resource(BrowseBazarrFS, '/files')
 api.add_resource(BrowseSonarrFS, '/files/sonarr')
 api.add_resource(BrowseRadarrFS, '/files/radarr')
+
+api.add_resource(WebHooksPlex, '/webhooks/plex')

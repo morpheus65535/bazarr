@@ -23,6 +23,6 @@ done
 cp VERSION $to_dist
 
 pushd __builds__/bazarr
-zip -r ../bazarr.zip . -x '*.map' -b $(mktemp -d)
+zip -r ../bazarr.zip . -b $(mktemp -d)
 popd
 rm -rf $to_dist

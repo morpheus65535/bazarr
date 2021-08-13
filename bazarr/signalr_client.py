@@ -15,7 +15,7 @@ from get_episodes import sync_episodes, sync_one_episode
 from get_series import update_series, update_one_series
 from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
-from utils import get_sonarr_version
+from utils import get_sonarr_info
 from get_args import args
 
 
@@ -33,26 +33,31 @@ class SonarrSignalrClient:
         self.connection = None
 
     def start(self):
-        if get_sonarr_version().startswith('2.'):
+        if get_sonarr_info.is_legacy():
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
-                            'consider upgrading.')
-            return
-
-        logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
-        self.configure()
-        while not self.connection.started:
-            try:
-                self.connection.start()
-            except ConnectionError:
-                gevent.sleep(5)
-            except json.decoder.JSONDecodeError:
-                logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is a known issue when Sonarr "
-                              "doesn't have write permission to it's /config/xdg directory.")
-                self.stop()
-        logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
-        if not args.dev:
-            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
-            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+                            'consider upgrading your version({}).'.format(get_sonarr_info.version()))
+            raise gevent.GreenletExit
+        else:
+            logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
+            self.configure()
+            while not self.connection.started:
+                try:
+                    self.connection.start()
+                except ConnectionError:
+                    gevent.sleep(5)
+                except json.decoder.JSONDecodeError:
+                    logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is caused by a permissions "
+                                  "issue when Sonarr try to access its /config/.config directory. You should fix "
+                                  "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
+                                  "user, you should make sure you properly defined PUID/PGID environment variables. "
+                                  "Otherwise, please contact Sonarr support.")
+                    raise gevent.GreenletExit
+                else:
+                    logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
+                finally:
+                    if not args.dev:
+                        scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+                        scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
 
     def stop(self, log=True):
         try:

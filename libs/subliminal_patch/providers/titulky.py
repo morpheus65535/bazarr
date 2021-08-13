@@ -152,12 +152,12 @@ class TitulkyProvider(Provider):
     """Titulky Provider."""
     languages = {Language(l) for l in ['ces', 'slk']}
     
-    server_url = 'https://premium.titulky.com'
+    server_url = 'https://oldpremium.titulky.com'
     sign_out_url = '?Logoff=true'
     search_url_series = '?Fulltext={}'
     search_url_movies = '?Searching=AdvancedResult&ARelease={}'
-    dn_url = 'https://premium.titulky.com'
-    download_url = 'https://premium.titulky.com/idown.php?titulky='
+    dn_url = 'https://oldpremium.titulky.com'
+    download_url = 'https://oldpremium.titulky.com/idown.php?titulky='
     
     UserAgent = 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)'
     

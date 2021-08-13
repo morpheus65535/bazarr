@@ -11,7 +11,7 @@ from list_subtitles import list_missing_subtitles
 from get_rootfolder import check_sonarr_rootfolder
 from database import TableShows, TableEpisodes
 from get_episodes import sync_episodes
-from utils import get_sonarr_version
+from utils import get_sonarr_info
 from helper import path_mappings
 from event_handler import event_stream, show_progress, hide_progress
 
@@ -24,7 +24,6 @@ def update_series(send_event=True):
     if apikey_sonarr is None:
         return
 
-    sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
 
     if serie_default_enabled is True:
@@ -38,8 +37,7 @@ def update_series(send_event=True):
     tagsDict = get_tags()
 
     # Get shows data from Sonarr
-    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr, 
-                                        sonarr_version=sonarr_version)
+    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
     if not series:
         return
     else:
@@ -65,12 +63,12 @@ def update_series(send_event=True):
             current_shows_sonarr.append(show['id'])
 
             if show['id'] in current_shows_db_list:
-                series_to_update.append(seriesParser(show, action='update', sonarr_version=sonarr_version,
-                                                     tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                series_to_update.append(seriesParser(show, action='update', tags_dict=tagsDict, 
+                                                     serie_default_profile=serie_default_profile,
                                                      audio_profiles=audio_profiles))
             else:
-                series_to_add.append(seriesParser(show, action='insert', sonarr_version=sonarr_version,
-                                                  tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                series_to_add.append(seriesParser(show, action='insert', tags_dict=tagsDict, 
+                                                  serie_default_profile=serie_default_profile,
                                                   audio_profiles=audio_profiles))
 
         if send_event:
@@ -137,7 +135,7 @@ def update_series(send_event=True):
 
 
 def update_one_series(series_id, action):
-    logging.debug('BAZARR syncing this specific series from RSonarr: {}'.format(series_id))
+    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
     try:
@@ -155,7 +153,6 @@ def update_one_series(series_id, action):
         event_stream(type='series', action='delete', payload=int(series_id))
         return
 
-    sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
 
     if serie_default_enabled is True:
@@ -173,18 +170,19 @@ def update_one_series(series_id, action):
         series = None
 
         series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                 sonarr_series_id=int(series_id), sonarr_version=get_sonarr_version())
+                                                 sonarr_series_id=int(series_id),
+                                                 sonarr_version=get_sonarr_info.version())
 
         if not series_data:
             return
         else:
             if action == 'updated' and existing_series:
-                series = seriesParser(series_data, action='update', sonarr_version=sonarr_version,
-                                      tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                series = seriesParser(series_data, action='update', tags_dict=tagsDict, 
+                                      serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_series:
-                series = seriesParser(series_data, action='insert', sonarr_version=sonarr_version,
-                                      tags_dict=tagsDict, serie_default_profile=serie_default_profile,
+                series = seriesParser(series_data, action='insert', tags_dict=tagsDict, 
+                                      serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:
         logging.debug('BAZARR cannot parse series returned by SignalR feed.')
@@ -208,11 +206,10 @@ def update_one_series(series_id, action):
 
 def get_profile_list():
     apikey_sonarr = settings.sonarr.apikey
-    sonarr_version = get_sonarr_version()
     profiles_list = []
 
     # Get profiles data from Sonarr
-    if sonarr_version.startswith('2'):
+    if get_sonarr_info.is_legacy():
         url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
@@ -230,7 +227,7 @@ def get_profile_list():
         return None
 
     # Parsing data returned from Sonarr
-    if sonarr_version.startswith('2'):
+    if get_sonarr_info.is_legacy():
         for profile in profiles_json.json():
             profiles_list.append([profile['id'], profile['language'].capitalize()])
     else:
@@ -253,7 +250,7 @@ def get_tags():
     tagsDict = []
 
     # Get tags data from Sonarr
-    if get_sonarr_version().startswith('2'):
+    if get_sonarr_info.is_legacy():
         url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
     else:
         url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
@@ -273,7 +270,7 @@ def get_tags():
         return tagsDict.json()
 
 
-def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile, audio_profiles):
+def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
     overview = show['overview'] if 'overview' in show else ''
     poster = ''
     fanart = ''
@@ -290,7 +287,7 @@ def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile,
         alternate_titles = str([item['title'] for item in show['alternateTitles']])
 
     audio_language = []
-    if sonarr_version.startswith('2'):
+    if get_sonarr_info.is_legacy():
         audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
     else:
         audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
@@ -332,9 +329,9 @@ def seriesParser(show, action, sonarr_version, tags_dict, serie_default_profile,
                 'profileId': serie_default_profile}
 
 
-def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_version, sonarr_series_id=None):
+def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
     url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if sonarr_version.startswith('2') else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()

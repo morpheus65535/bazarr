@@ -12,7 +12,7 @@ from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream, show_progress, hide_progress
-from utils import get_sonarr_version
+from utils import get_sonarr_info
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -25,7 +25,6 @@ def update_all_episodes():
 def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
-    sonarr_version = get_sonarr_version()
     
     # Get current episodes id in DB
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
@@ -42,8 +41,7 @@ def sync_episodes(series_id=None, send_event=True):
     altered_episodes = []
     
     # Get sonarrId for each series from database
-    seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr, 
-                                              sonarr_version=sonarr_version)
+    seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr,)
 
     series_count = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
@@ -57,13 +55,12 @@ def sync_episodes(series_id=None, send_event=True):
 
         # Get episodes data for a series from Sonarr
         episodes = get_episodes_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
-                                                series_id=seriesId['sonarrSeriesId'],
-                                                sonarr_version=sonarr_version)
+                                                series_id=seriesId['sonarrSeriesId'])
         if not episodes:
             continue
         else:
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if sonarr_version.startswith('3'):
+            if not get_sonarr_info.is_legacy():
                 episodeFiles = get_episodesFiles_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr,
                                                                  series_id=seriesId['sonarrSeriesId'])
                 for episode in episodes:
@@ -166,7 +163,6 @@ def sync_one_episode(episode_id):
     logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
     url = url_sonarr()
     apikey_sonarr = settings.sonarr.apikey
-    sonarr_version = get_sonarr_version()
 
     # Check if there's a row in database for this episode ID
     try:
@@ -181,13 +177,13 @@ def sync_one_episode(episode_id):
         # Get episode data from sonarr api
         episode = None
         episode_data = get_episodes_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                    episode_id=episode_id, sonarr_version=sonarr_version)
+                                                    episode_id=episode_id)
         if not episode_data:
             return
 
         else:
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if sonarr_version.startswith('3'):
+            if not get_sonarr_info.is_legacy():
                 episodeFile = get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
                                                                 episode_file_id=existing_episode['episode_file_id'])
                 if episode_data['hasFile']:
@@ -292,7 +288,7 @@ def episodeParser(episode):
                             if 'name' in item:
                                 audio_language.append(item['name'])
                     else:
-                        audio_language = TableShows.get(TableShows == episode['seriesId']).audio_language
+                        audio_language = TableShows.get(TableShows.sonarrSeriesId == episode['seriesId']).audio_language
 
                     if 'mediaInfo' in episode['episodeFile']:
                         if 'videoCodec' in episode['episodeFile']['mediaInfo']:
@@ -336,13 +332,13 @@ def episodeParser(episode):
                             'file_size': episode['episodeFile']['size']}
 
 
-def get_series_from_sonarr_api(series_id, url, apikey_sonarr, sonarr_version):
+def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
     if series_id:
         url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
+            '' if get_sonarr_info.is_legacy() else 'v3/', series_id, apikey_sonarr)
     else:
         url_sonarr_api_series = url + "/api/{0}series?apikey={1}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', apikey_sonarr)
+            '' if get_sonarr_info.is_legacy() else 'v3/', apikey_sonarr)
     try:
         r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
         r.raise_for_status()
@@ -372,13 +368,13 @@ def get_series_from_sonarr_api(series_id, url, apikey_sonarr, sonarr_version):
         return series_list
 
 
-def get_episodes_from_sonarr_api(url, apikey_sonarr, sonarr_version, series_id=None, episode_id=None):
+def get_episodes_from_sonarr_api(url, apikey_sonarr, series_id=None, episode_id=None):
     if series_id:
         url_sonarr_api_episode = url + "/api/{0}episode?seriesId={1}&apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', series_id, apikey_sonarr)
+            '' if get_sonarr_info.is_legacy() else 'v3/', series_id, apikey_sonarr)
     elif episode_id:
         url_sonarr_api_episode = url + "/api/{0}episode/{1}?apikey={2}".format(
-            '' if sonarr_version.startswith('2') else 'v3/', episode_id, apikey_sonarr)
+            '' if get_sonarr_info.is_legacy() else 'v3/', episode_id, apikey_sonarr)
     else:
         return
 
