@@ -1,44 +1,56 @@
-import { createAction } from "redux-actions";
+import { ActionCreator } from "@reduxjs/toolkit";
 import {
-  badgeUpdateAll,
-  bootstrap,
-  movieDeleteItems,
-  movieDeleteWantedItems,
-  movieUpdateList,
-  movieUpdateWantedList,
-  seriesDeleteItems,
-  seriesDeleteWantedItems,
-  seriesUpdateList,
-  seriesUpdateWantedList,
+  episodesMarkBlacklistDirty,
+  episodesMarkDirtyById,
+  episodesMarkHistoryDirty,
+  episodesRemoveById,
+  movieMarkBlacklistDirty,
+  movieMarkDirtyById,
+  movieMarkHistoryDirty,
+  movieMarkWantedDirtyById,
+  movieRemoveById,
+  movieRemoveWantedById,
+  seriesMarkDirtyById,
+  seriesMarkWantedDirtyById,
+  seriesRemoveById,
+  seriesRemoveWantedById,
   siteAddNotifications,
   siteAddProgress,
-  siteInitializationFailed,
+  siteBootstrap,
   siteRemoveProgress,
+  siteUpdateBadges,
+  siteUpdateInitialization,
   siteUpdateOffline,
-  systemUpdateLanguagesAll,
-  systemUpdateSettings,
+  systemMarkTasksDirty,
+  systemUpdateAllSettings,
+  systemUpdateLanguages,
 } from "../@redux/actions";
 import reduxStore from "../@redux/store";
 
-function bindToReduxStore(
-  fn: (ids?: number[]) => any
-): SocketIO.ActionFn<number> {
-  return (ids?: number[]) => reduxStore.dispatch(fn(ids));
+function bindReduxAction<T extends ActionCreator<any>>(action: T) {
+  return (...args: Parameters<T>) => {
+    reduxStore.dispatch(action(...args));
+  };
 }
 
-export function createDeleteAction(type: string): SocketIO.ActionFn<number> {
-  return createAction(type, (id?: number[]) => id ?? []);
+function bindReduxActionWithParam<T extends ActionCreator<any>>(
+  action: T,
+  ...param: Parameters<T>
+) {
+  return () => {
+    reduxStore.dispatch(action(...param));
+  };
 }
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
     {
       key: "connect",
-      any: () => reduxStore.dispatch(siteUpdateOffline(false)),
+      any: bindReduxActionWithParam(siteUpdateOffline, false),
     },
     {
       key: "connect",
-      any: () => reduxStore.dispatch<any>(bootstrap()),
+      any: bindReduxAction(siteBootstrap),
     },
     {
       key: "connect_error",
@@ -47,19 +59,19 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
         if (initialized === true) {
           reduxStore.dispatch(siteUpdateOffline(true));
         } else {
-          reduxStore.dispatch(siteInitializationFailed());
+          reduxStore.dispatch(siteUpdateInitialization("Socket.IO Error"));
         }
       },
     },
     {
       key: "disconnect",
-      any: () => reduxStore.dispatch(siteUpdateOffline(true)),
+      any: bindReduxActionWithParam(siteUpdateOffline, true),
     },
     {
       key: "message",
       update: (msg) => {
         if (msg) {
-          const notifications = msg.map<ReduxStore.Notification>((message) => ({
+          const notifications = msg.map<Server.Notification>((message) => ({
             message,
             type: "info",
             id: "backend-message",
@@ -72,14 +84,10 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "progress",
-      update: (progress) => {
-        if (progress) {
-          reduxStore.dispatch(siteAddProgress(progress));
-        }
-      },
+      update: bindReduxAction(siteAddProgress),
       delete: (ids) => {
         setTimeout(() => {
-          ids?.forEach((id) => {
+          ids.forEach((id) => {
             reduxStore.dispatch(siteRemoveProgress(id));
           });
         }, 3 * 1000);
@@ -87,43 +95,60 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindToReduxStore(seriesUpdateList),
-      delete: bindToReduxStore(seriesDeleteItems),
+      update: bindReduxAction(seriesMarkDirtyById),
+      delete: bindReduxAction(seriesRemoveById),
     },
     {
       key: "movie",
-      update: bindToReduxStore(movieUpdateList),
-      delete: bindToReduxStore(movieDeleteItems),
+      update: bindReduxAction(movieMarkDirtyById),
+      delete: bindReduxAction(movieRemoveById),
+    },
+    {
+      key: "episode",
+      update: bindReduxAction(episodesMarkDirtyById),
+      delete: bindReduxAction(episodesRemoveById),
     },
     {
       key: "episode-wanted",
-      update: (ids: number[] | undefined) => {
-        if (ids) {
-          reduxStore.dispatch(seriesUpdateWantedList(ids) as any);
-        }
-      },
-      delete: bindToReduxStore(seriesDeleteWantedItems),
+      update: bindReduxAction(seriesMarkWantedDirtyById),
+      delete: bindReduxAction(seriesRemoveWantedById),
     },
     {
       key: "movie-wanted",
-      update: (ids: number[] | undefined) => {
-        if (ids) {
-          reduxStore.dispatch(movieUpdateWantedList(ids) as any);
-        }
-      },
-      delete: bindToReduxStore(movieDeleteWantedItems),
+      update: bindReduxAction(movieMarkWantedDirtyById),
+      delete: bindReduxAction(movieRemoveWantedById),
     },
     {
       key: "settings",
-      any: bindToReduxStore(systemUpdateSettings),
+      any: bindReduxAction(systemUpdateAllSettings),
     },
     {
       key: "languages",
-      any: bindToReduxStore(systemUpdateLanguagesAll),
+      any: bindReduxAction(systemUpdateLanguages),
     },
     {
       key: "badges",
-      any: bindToReduxStore(badgeUpdateAll),
+      any: bindReduxAction(siteUpdateBadges),
+    },
+    {
+      key: "movie-history",
+      any: bindReduxAction(movieMarkHistoryDirty),
+    },
+    {
+      key: "movie-blacklist",
+      any: bindReduxAction(movieMarkBlacklistDirty),
+    },
+    {
+      key: "episode-history",
+      any: bindReduxAction(episodesMarkHistoryDirty),
+    },
+    {
+      key: "episode-blacklist",
+      any: bindReduxAction(episodesMarkBlacklistDirty),
+    },
+    {
+      key: "task",
+      any: bindReduxAction(systemMarkTasksDirty),
     },
   ];
 }

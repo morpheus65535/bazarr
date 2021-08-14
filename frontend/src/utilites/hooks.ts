@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import { useHistory } from "react-router";
-import { useDidUpdate } from "rooks";
 import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -13,7 +12,7 @@ export function useGotoHomepage() {
 }
 
 export function useCanUpdateInject() {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV !== "production") {
     return process.env["REACT_APP_CAN_UPDATE"] === "true";
   } else {
     return window.Bazarr.canUpdate;
@@ -21,20 +20,9 @@ export function useCanUpdateInject() {
 }
 
 export function useHasUpdateInject() {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV !== "production") {
     return process.env["REACT_APP_HAS_UPDATE"] === "true";
   } else {
     return window.Bazarr.hasUpdate;
   }
-}
-
-export function useOnLoadingFinish(
-  state: Readonly<AsyncState<any>>,
-  callback: () => void
-) {
-  return useDidUpdate(() => {
-    if (!state.updating) {
-      callback();
-    }
-  }, [state.updating]);
 }

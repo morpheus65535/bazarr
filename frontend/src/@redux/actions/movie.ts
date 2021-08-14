@@ -1,47 +1,78 @@
-import { createDeleteAction } from "../../@socketio/reducer";
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { MoviesApi } from "../../apis";
-import {
-  MOVIES_DELETE_ITEMS,
-  MOVIES_DELETE_WANTED_ITEMS,
-  MOVIES_UPDATE_BLACKLIST,
-  MOVIES_UPDATE_HISTORY_LIST,
-  MOVIES_UPDATE_LIST,
-  MOVIES_UPDATE_WANTED_LIST,
-} from "../constants";
-import { createAsyncAction } from "./factory";
 
-export const movieUpdateList = createAsyncAction(
-  MOVIES_UPDATE_LIST,
-  (id?: number[]) => MoviesApi.movies(id)
+export const movieUpdateByRange = createAsyncThunk(
+  "movies/update/range",
+  async (params: Parameter.Range) => {
+    const response = await MoviesApi.moviesBy(params);
+    return response;
+  }
 );
 
-export const movieDeleteItems = createDeleteAction(MOVIES_DELETE_ITEMS);
-
-export const movieUpdateWantedList = createAsyncAction(
-  MOVIES_UPDATE_WANTED_LIST,
-  (radarrid: number[]) => MoviesApi.wantedBy(radarrid)
+export const movieUpdateById = createAsyncThunk(
+  "movies/update/id",
+  async (ids: number[]) => {
+    const response = await MoviesApi.movies(ids);
+    return response;
+  }
 );
 
-export const movieDeleteWantedItems = createDeleteAction(
-  MOVIES_DELETE_WANTED_ITEMS
+export const movieUpdateAll = createAsyncThunk(
+  "movies/update/all",
+  async () => {
+    const response = await MoviesApi.movies();
+    return response;
+  }
 );
 
-export const movieUpdateWantedByRange = createAsyncAction(
-  MOVIES_UPDATE_WANTED_LIST,
-  (start: number, length: number) => MoviesApi.wanted(start, length)
+export const movieRemoveById = createAction<number[]>("movies/remove");
+
+export const movieMarkDirtyById = createAction<number[]>(
+  "movies/mark_dirty/id"
 );
 
-export const movieUpdateHistoryList = createAsyncAction(
-  MOVIES_UPDATE_HISTORY_LIST,
-  () => MoviesApi.history()
+export const movieUpdateWantedById = createAsyncThunk(
+  "movies/wanted/update/id",
+  async (ids: number[]) => {
+    const response = await MoviesApi.wantedBy(ids);
+    return response;
+  }
 );
 
-export const movieUpdateByRange = createAsyncAction(
-  MOVIES_UPDATE_LIST,
-  (start: number, length: number) => MoviesApi.moviesBy(start, length)
+export const movieRemoveWantedById = createAction<number[]>(
+  "movies/wanted/remove/id"
 );
 
-export const movieUpdateBlacklist = createAsyncAction(
-  MOVIES_UPDATE_BLACKLIST,
-  () => MoviesApi.blacklist()
+export const movieMarkWantedDirtyById = createAction<number[]>(
+  "movies/wanted/mark_dirty/id"
+);
+
+export const movieUpdateWantedByRange = createAsyncThunk(
+  "movies/wanted/update/range",
+  async (params: Parameter.Range) => {
+    const response = await MoviesApi.wanted(params);
+    return response;
+  }
+);
+
+export const movieUpdateHistory = createAsyncThunk(
+  "movies/history/update",
+  async () => {
+    const response = await MoviesApi.history();
+    return response;
+  }
+);
+
+export const movieMarkHistoryDirty = createAction("movies/history/mark_dirty");
+
+export const movieUpdateBlacklist = createAsyncThunk(
+  "movies/blacklist/update",
+  async () => {
+    const response = await MoviesApi.blacklist();
+    return response;
+  }
+);
+
+export const movieMarkBlacklistDirty = createAction(
+  "movies/blacklist/mark_dirty"
 );

@@ -20,37 +20,38 @@ import "./style.scss";
 
 export interface NotificationContainerProps {}
 
-const NotificationContainer: FunctionComponent<NotificationContainerProps> = () => {
-  const { progress, notifications } = useReduxStore((s) => s.site);
+const NotificationContainer: FunctionComponent<NotificationContainerProps> =
+  () => {
+    const { progress, notifications } = useReduxStore((s) => s.site);
 
-  const items = useMemo(() => {
-    const progressItems = progress.map((v) => (
-      <ProgressToast key={v.id} {...v}></ProgressToast>
-    ));
+    const items = useMemo(() => {
+      const progressItems = progress.map((v) => (
+        <ProgressToast key={v.id} {...v}></ProgressToast>
+      ));
 
-    const notificationItems = notifications.map((v) => (
-      <NotificationToast key={v.id} {...v}></NotificationToast>
-    ));
+      const notificationItems = notifications.map((v) => (
+        <NotificationToast key={v.id} {...v}></NotificationToast>
+      ));
 
-    return [...progressItems, ...notificationItems];
-  }, [notifications, progress]);
-  return (
-    <div className="alert-container">
-      <div className="toast-container">{items}</div>
-    </div>
-  );
-};
+      return [...progressItems, ...notificationItems];
+    }, [notifications, progress]);
+    return (
+      <div className="alert-container">
+        <div className="toast-container">{items}</div>
+      </div>
+    );
+  };
 
-type MessageHolderProps = ReduxStore.Notification & {};
+type MessageHolderProps = Server.Notification & {};
 
 const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   const { message, type, id, timeout } = props;
   const removeNotification = useReduxAction(siteRemoveNotifications);
 
-  const remove = useCallback(() => removeNotification(id), [
-    removeNotification,
-    id,
-  ]);
+  const remove = useCallback(
+    () => removeNotification(id),
+    [removeNotification, id]
+  );
 
   useEffect(() => {
     const handle = setTimeout(remove, timeout);
@@ -73,7 +74,7 @@ const NotificationToast: FunctionComponent<MessageHolderProps> = (props) => {
   );
 };
 
-type ProgressHolderProps = ReduxStore.Progress & {};
+type ProgressHolderProps = Server.Progress & {};
 
 const ProgressToast: FunctionComponent<ProgressHolderProps> = ({
   id,

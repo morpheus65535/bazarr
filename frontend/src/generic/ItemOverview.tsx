@@ -22,7 +22,7 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { useProfileBy, useProfileItems } from "../@redux/hooks";
+import { useProfileBy, useProfileItemsToLanguages } from "../@redux/hooks";
 import { LanguageText } from "../components";
 import { BuildKey, isMovie } from "../utilites";
 
@@ -76,7 +76,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 
   const profile = useProfileBy(item.profileId);
-  const profileItems = useProfileItems(profile);
+  const profileItems = useProfileItemsToLanguages(profile);
 
   const languageBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];

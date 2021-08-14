@@ -1,6 +1,10 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
-import { useLanguageProfiles, useLanguages } from "../../@redux/hooks";
+import {
+  useEnabledLanguages,
+  useLanguageProfiles,
+  useLanguages,
+} from "../../@redux/hooks";
 import {
   Check,
   CollapseBox,
@@ -14,14 +18,16 @@ import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 
-const EnabledLanguageContext = React.createContext<readonly Language[]>([]);
+const EnabledLanguageContext = React.createContext<readonly Language.Info[]>(
+  []
+);
 const LanguagesProfileContext = React.createContext<
-  readonly Profile.Languages[]
+  readonly Language.Profile[]
 >([]);
 
-export function useEnabledLanguages() {
+export function useEnabledLanguagesContext() {
   const list = useContext(EnabledLanguageContext);
-  const latest = useLatest<Language[]>(enabledLanguageKey, isArray);
+  const latest = useLatest<Language.Info[]>(enabledLanguageKey, isArray);
 
   if (latest) {
     return latest;
@@ -30,9 +36,9 @@ export function useEnabledLanguages() {
   }
 }
 
-export function useProfiles() {
+export function useProfilesContext() {
   const list = useContext(LanguagesProfileContext);
-  const latest = useLatest<Profile.Languages[]>(languageProfileKey, isArray);
+  const latest = useLatest<Language.Profile[]>(languageProfileKey, isArray);
 
   if (latest) {
     return latest;
@@ -44,14 +50,14 @@ export function useProfiles() {
 interface Props {}
 
 const SettingsLanguagesView: FunctionComponent<Props> = () => {
-  const [languages] = useLanguages(false);
-  const [enabled] = useLanguages(true);
-  const [profiles] = useLanguageProfiles();
+  const languages = useLanguages();
+  const enabled = useEnabledLanguages();
+  const profiles = useLanguageProfiles();
 
   return (
     <SettingsProvider title="Languages - Bazarr (Settings)">
       <EnabledLanguageContext.Provider value={enabled}>
-        <LanguagesProfileContext.Provider value={profiles}>
+        <LanguagesProfileContext.Provider value={profiles ?? []}>
           <Group header="Subtitles Language">
             <Input>
               <Check

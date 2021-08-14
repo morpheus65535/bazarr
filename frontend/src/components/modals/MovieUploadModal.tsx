@@ -7,7 +7,11 @@ import {
   useCloseModal,
   usePayload,
 } from "..";
-import { useLanguageBy, useLanguages, useProfileBy } from "../../@redux/hooks";
+import {
+  useEnabledLanguages,
+  useLanguageBy,
+  useProfileBy,
+} from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 interface MovieProps {}
@@ -17,7 +21,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 ) => {
   const modal = props;
 
-  const [availableLanguages] = useLanguages(true);
+  const availableLanguages = useEnabledLanguages();
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
 
@@ -25,7 +29,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const [uploading, setUpload] = useState(false);
 
-  const [language, setLanguage] = useState<Nullable<Language>>(null);
+  const [language, setLanguage] = useState<Nullable<Language.Info>>(null);
 
   const profile = useProfileBy(movie?.profileId);
 

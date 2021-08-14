@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useDidMount } from "rooks";
 import {
   HistoryApi,
   ProvidersApi,
@@ -49,16 +50,26 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const [languages] = useAsyncRequest(() => SystemApi.languages(true), []);
-
-  const [providerList] = useAsyncRequest(
-    () => ProvidersApi.providers(true),
+  const [languages, updateLanguages] = useAsyncRequest(
+    SystemApi.languages.bind(SystemApi),
+    []
+  );
+  const [providerList, updateProviderParam] = useAsyncRequest(
+    ProvidersApi.providers.bind(ProvidersApi),
     []
   );
 
+  const updateProvider = useCallback(() => updateProviderParam(true), [
+    updateProviderParam,
+  ]);
+
+  useDidMount(() => {
+    updateLanguages(true);
+  });
+
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
-  const [lang, setLanguage] = useState<Nullable<Language>>(null);
+  const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
   const promise = useCallback(() => {
@@ -103,13 +114,14 @@ const HistoryStats: FunctionComponent = () => {
                   clearable
                   state={providerList}
                   label={providerLabel}
+                  update={updateProvider}
                   onChange={setProvider}
                 ></AsyncSelector>
               </SelectorContainer>
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages.data}
+                  options={languages.content}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>

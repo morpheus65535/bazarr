@@ -65,12 +65,13 @@ class SocketIOClient {
       if (!(e.type in records)) {
         records[e.type] = {};
       }
+
       const record = records[e.type]!;
       if (!(e.action in record)) {
         record[e.action] = [];
       }
       if (e.payload) {
-        record[e.action]?.push(e.payload);
+        record[e.action]!.push(e.payload);
       }
     });
 
@@ -91,11 +92,11 @@ class SocketIOClient {
 
           forIn(element, (ids, key) => {
             ids = uniq(ids);
-            const action = handler[key];
-            if (typeof action == "function") {
+            const action = handler[key as SocketIO.ActionType];
+            if (action) {
               action(ids);
             } else if (anyAction === undefined) {
-              log("warning", "Unhandle action of SocketIO event", key, type);
+              log("warning", "Unhandled SocketIO event", key, type);
             }
           });
         });

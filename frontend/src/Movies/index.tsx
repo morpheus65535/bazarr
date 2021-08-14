@@ -5,8 +5,8 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateByRange, movieUpdateList } from "../@redux/actions";
-import { useRawMovies } from "../@redux/hooks";
+import { movieUpdateAll, movieUpdateByRange } from "../@redux/actions";
+import { useMovieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { MoviesApi } from "../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../components";
@@ -16,8 +16,8 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
-  const [movies] = useRawMovies();
-  const load = useReduxAction(movieUpdateByRange);
+  const movies = useMovieEntities();
+  const loader = useReduxAction(movieUpdateByRange);
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
@@ -70,7 +70,7 @@ const MovieView: FunctionComponent<Props> = () => {
         Cell: ({ value, loose }) => {
           if (loose) {
             // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as Profile.Languages[];
+            const profiles = loose[0] as Language.Profile[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
             return null;
@@ -112,8 +112,8 @@ const MovieView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={movies}
       name="Movies"
-      loader={load}
-      updateAction={movieUpdateList}
+      loader={loader}
+      updateAction={movieUpdateAll}
       columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>

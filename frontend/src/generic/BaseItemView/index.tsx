@@ -1,26 +1,26 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { AsyncThunk } from "@reduxjs/toolkit";
 import { uniqBy } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { useReduxActionWith } from "../../@redux/hooks/base";
-import { AsyncActionDispatcher } from "../../@redux/types";
+import { useAppDispatch } from "../../@redux/hooks/base";
 import { ContentHeader } from "../../components";
 import { GetItemId, isNonNullable } from "../../utilites";
 import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  loader: (start: number, length: number) => void;
+  loader: (params: Parameter.Range) => void;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: AsyncOrderState<T>;
+  state: Async.Entity<T>;
 }
 
 interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
-  updateAction: (id?: number[]) => AsyncActionDispatcher<any>;
+  updateAction: AsyncThunk<AsyncDataWrapper<T>, void, {}>;
 }
 
 function BaseItemView<T extends Item.Base>({
@@ -32,35 +32,39 @@ function BaseItemView<T extends Item.Base>({
   const [pendingEditMode, setPendingEdit] = useState(false);
   const [editMode, setEdit] = useState(false);
 
-  const onUpdated = useCallback(() => {
-    setPendingEdit((edit) => {
-      // Hack to remove all dependencies
-      setEdit(edit);
-      return edit;
+  const dispatch = useAppDispatch();
+  const update = useCallback(() => {
+    dispatch(updateAction()).then(() => {
+      setPendingEdit((edit) => {
+        // Hack to remove all dependencies
+        setEdit(edit);
+        return edit;
+      });
+      setDirty([]);
     });
-    setDirty([]);
-  }, []);
-
-  const update = useReduxActionWith(updateAction, onUpdated);
+  }, [dispatch, updateAction]);
 
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
 
-  const [profiles] = useLanguageProfiles();
+  const profiles = useLanguageProfiles();
 
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];
-    items.push(
-      <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
-    );
-    items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
-    items.push(
-      ...profiles.map((v) => (
-        <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
-          {v.name}
-        </Dropdown.Item>
-      ))
-    );
+    if (profiles) {
+      items.push(
+        <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
+      );
+      items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
+      items.push(
+        ...profiles.map((v) => (
+          <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
+            {v.name}
+          </Dropdown.Item>
+        ))
+      );
+    }
+
     return items;
   }, [profiles]);
 
@@ -79,13 +83,13 @@ function BaseItemView<T extends Item.Base>({
   );
 
   const startEdit = useCallback(() => {
-    if (shared.state.data.order.every(isNonNullable)) {
+    if (shared.state.content.ids.every(isNonNullable)) {
       setEdit(true);
     } else {
       update();
     }
     setPendingEdit(true);
-  }, [shared.state.data.order, update]);
+  }, [shared.state.content.ids, update]);
 
   const endEdit = useCallback(() => {
     setEdit(false);
@@ -143,7 +147,9 @@ function BaseItemView<T extends Item.Base>({
         ) : (
           <ContentHeader.Button
             updating={pendingEditMode !== editMode}
-            disabled={state.data.order.length === 0 && state.updating}
+            disabled={
+              state.content.ids.length === 0 && state.state === "loading"
+            }
             icon={faList}
             onClick={startEdit}
           >

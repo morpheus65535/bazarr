@@ -13,7 +13,7 @@ import HistoryGenericView from "../generic";
 interface Props {}
 
 const SeriesHistoryView: FunctionComponent<Props> = () => {
-  const [series] = useSeriesHistory();
+  const series = useSeriesHistory();
 
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [

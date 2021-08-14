@@ -13,6 +13,7 @@ export interface SelectorProps<T, M extends boolean> {
   loading?: boolean;
   multiple?: M;
   onChange?: (k: SelectorValueType<T, M>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;
@@ -32,6 +33,7 @@ export function Selector<T = string, M extends boolean = false>(
     options,
     multiple,
     onChange,
+    onFocus,
     defaultValue,
     components,
     value,
@@ -89,6 +91,7 @@ export function Selector<T = string, M extends boolean = false>(
       components={components}
       className={`custom-selector w-100 ${className ?? ""}`}
       classNamePrefix="selector"
+      onFocus={onFocus}
       onChange={(v) => {
         if (onChange) {
           let res: T | T[] | null = null;

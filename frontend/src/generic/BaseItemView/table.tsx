@@ -11,7 +11,7 @@ import {
 } from "../../components";
 import { TableStyleProps } from "../../components/tables/BaseTable";
 import { useCustomSelection } from "../../components/tables/plugins";
-import { buildOrderList, GetItemId } from "../../utilites";
+import { GetItemId, useEntityToList } from "../../utilites";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];
@@ -38,16 +38,14 @@ function Table<T extends Item.Base>({
     [showModal]
   );
 
-  const idState = state.data;
+  const orderList = useEntityToList(state.content);
 
-  const orderList = useMemo(() => buildOrderList(idState), [idState]);
+  const data = useMemo(
+    () => uniqBy([...dirtyItems, ...orderList], GetItemId),
+    [dirtyItems, orderList]
+  );
 
-  const data = useMemo(() => uniqBy([...dirtyItems, ...orderList], GetItemId), [
-    dirtyItems,
-    orderList,
-  ]);
-
-  const [profiles] = useLanguageProfiles();
+  const profiles = useLanguageProfiles();
 
   const options: Partial<TableOptions<T> & TableStyleProps<T>> = {
     loose: [profiles],
@@ -71,7 +69,7 @@ function Table<T extends Item.Base>({
         <AsyncPageTable
           {...options}
           columns={columns}
-          aos={state}
+          entity={state}
           loader={loader}
           data={[]}
         ></AsyncPageTable>

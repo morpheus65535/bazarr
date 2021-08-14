@@ -9,7 +9,7 @@ class HistoryApi extends BaseApi {
     timeframe?: History.TimeframeOptions,
     action?: History.ActionOptions,
     provider?: string,
-    language?: LanguageCodeType
+    language?: Language.CodeType
   ): Promise<History.Stat> {
     return new Promise((resolve, reject) => {
       this.get<History.Stat>("/stats", {

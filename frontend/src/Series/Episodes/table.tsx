@@ -9,12 +9,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useProfileItems, useSerieBy } from "../../@redux/hooks";
+import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
-  AsyncStateOverlay,
+  AsyncOverlay,
   EpisodeHistoryModal,
   GroupTable,
   SubtitleToolModal,
@@ -26,8 +26,9 @@ import { BuildKey, filterSubtitleBy } from "../../utilites";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  episodes: AsyncState<Item.Episode[]>;
-  profile?: Profile.Languages;
+  serie: Async.Item<Item.Series>;
+  episodes: Async.Base<Item.Episode[]>;
+  profile?: Language.Profile;
 }
 
 const download = (item: any, result: SearchResultType) => {
@@ -46,12 +47,12 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
+const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
   const showModal = useShowModal();
 
   const onlyDesired = useShowOnlyDesired();
 
-  const profileItems = useProfileItems(profile);
+  const profileItems = useProfileItemsToLanguages(profile);
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
@@ -142,13 +143,11 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: ({ row, externalUpdate }) => {
-          const [serie] = useSerieBy(row.original.sonarrSeriesId);
-
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
-                disabled={serie.data?.profileId === null}
+                disabled={serie.content?.profileId === null}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "manual-search");
                 }}
@@ -170,7 +169,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
         },
       },
     ],
-    [onlyDesired, profileItems]
+    [onlyDesired, profileItems, serie]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
@@ -186,7 +185,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
   const maxSeason = useMemo(
     () =>
-      episodes.data.reduce<number>(
+      episodes.content.reduce<number>(
         (prev, curr) => Math.max(prev, curr.season),
         0
       ),
@@ -195,11 +194,11 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
 
   return (
     <React.Fragment>
-      <AsyncStateOverlay state={episodes}>
-        {({ data }) => (
+      <AsyncOverlay ctx={episodes}>
+        {({ content }) => (
           <GroupTable
             columns={columns}
-            data={data}
+            data={content}
             externalUpdate={updateRow}
             initialState={{
               sortBy: [
@@ -214,7 +213,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile }) => {
             emptyText="No Episode Found For This Series"
           ></GroupTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal

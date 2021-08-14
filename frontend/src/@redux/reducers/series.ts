@@ -1,116 +1,96 @@
-import { Action, handleActions } from "redux-actions";
+import { createReducer } from "@reduxjs/toolkit";
 import {
-  SERIES_DELETE_EPISODES,
-  SERIES_DELETE_ITEMS,
-  SERIES_DELETE_WANTED_ITEMS,
-  SERIES_UPDATE_BLACKLIST,
-  SERIES_UPDATE_EPISODE_LIST,
-  SERIES_UPDATE_HISTORY_LIST,
-  SERIES_UPDATE_LIST,
-  SERIES_UPDATE_WANTED_LIST,
-} from "../constants";
-import { AsyncAction } from "../types";
-import { defaultAOS } from "../utils";
+  episodesMarkBlacklistDirty,
+  episodesMarkDirtyById,
+  episodesMarkHistoryDirty,
+  episodesRemoveById,
+  episodesUpdateBlacklist,
+  episodesUpdateHistory,
+  episodeUpdateById,
+  episodeUpdateBySeriesId,
+  seriesMarkDirtyById,
+  seriesMarkWantedDirtyById,
+  seriesRemoveById,
+  seriesRemoveWantedById,
+  seriesUpdateAll,
+  seriesUpdateById,
+  seriesUpdateByRange,
+  seriesUpdateWantedById,
+  seriesUpdateWantedByRange,
+} from "../actions";
+import { AsyncReducer, AsyncUtility } from "../utils/async";
 import {
-  deleteAsyncListItemBy,
-  deleteOrderListItemBy,
-  updateAsyncList,
-  updateAsyncState,
-  updateOrderIdState,
-} from "../utils/mapper";
+  createAsyncEntityReducer,
+  createAsyncItemReducer,
+  createAsyncListReducer,
+} from "../utils/factory";
 
-const reducer = handleActions<ReduxStore.Series, any>(
-  {
-    [SERIES_UPDATE_WANTED_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Episode>>
-    ) => {
-      return {
-        ...state,
-        wantedEpisodesList: updateOrderIdState(
-          action,
-          state.wantedEpisodesList,
-          "sonarrEpisodeId"
-        ),
-      };
-    },
-    [SERIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
-      return {
-        ...state,
-        wantedEpisodesList: deleteOrderListItemBy(
-          action,
-          state.wantedEpisodesList
-        ),
-      };
-    },
-    [SERIES_UPDATE_EPISODE_LIST]: (
-      state,
-      action: AsyncAction<Item.Episode[]>
-    ) => {
-      return {
-        ...state,
-        episodeList: updateAsyncList(
-          action,
-          state.episodeList,
-          "sonarrEpisodeId"
-        ),
-      };
-    },
-    [SERIES_DELETE_EPISODES]: (state, action: Action<number[]>) => {
-      return {
-        ...state,
-        episodeList: deleteAsyncListItemBy(
-          action,
-          state.episodeList,
-          "sonarrEpisodeId"
-        ),
-      };
-    },
-    [SERIES_UPDATE_HISTORY_LIST]: (
-      state,
-      action: AsyncAction<History.Episode[]>
-    ) => {
-      return {
-        ...state,
-        historyList: updateAsyncState(action, state.historyList.data),
-      };
-    },
-    [SERIES_UPDATE_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Item.Series>>
-    ) => {
-      return {
-        ...state,
-        seriesList: updateOrderIdState(
-          action,
-          state.seriesList,
-          "sonarrSeriesId"
-        ),
-      };
-    },
-    [SERIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
-      return {
-        ...state,
-        seriesList: deleteOrderListItemBy(action, state.seriesList),
-      };
-    },
-    [SERIES_UPDATE_BLACKLIST]: (
-      state,
-      action: AsyncAction<Blacklist.Episode[]>
-    ) => {
-      return {
-        ...state,
-        blacklist: updateAsyncState(action, state.blacklist.data),
-      };
-    },
-  },
-  {
-    seriesList: defaultAOS(),
-    wantedEpisodesList: defaultAOS(),
-    episodeList: { updating: true, data: [] },
-    historyList: { updating: true, data: [] },
-    blacklist: { updating: true, data: [] },
-  }
-);
+interface Series {
+  seriesList: Async.Entity<Item.Series>;
+  wantedEpisodesList: Async.Entity<Wanted.Episode>;
+  episodeList: Async.List<Item.Episode>;
+  historyList: Async.Item<History.Episode[]>;
+  blacklist: Async.Item<Blacklist.Episode[]>;
+}
+
+const defaultSeries: Series = {
+  seriesList: AsyncUtility.getDefaultEntity("sonarrSeriesId"),
+  wantedEpisodesList: AsyncUtility.getDefaultEntity("sonarrEpisodeId"),
+  episodeList: AsyncUtility.getDefaultList("sonarrEpisodeId"),
+  historyList: AsyncUtility.getDefaultItem(),
+  blacklist: AsyncUtility.getDefaultItem(),
+};
+
+const reducer = createReducer(defaultSeries, (builder) => {
+  createAsyncEntityReducer(builder, (s) => s.seriesList, {
+    range: seriesUpdateByRange,
+    ids: seriesUpdateById,
+    removeIds: seriesRemoveById,
+    all: seriesUpdateAll,
+  });
+
+  builder.addCase(seriesMarkDirtyById, (state, action) => {
+    const series = state.seriesList;
+    const dirtyIds = action.payload.map(String);
+
+    AsyncReducer.markDirty(series, dirtyIds);
+
+    // Update episode list
+    const episodes = state.episodeList;
+    const dirtyIdsSet = new Set(dirtyIds);
+    const dirtyEpisodeIds = episodes.content
+      .filter((v) => dirtyIdsSet.has(v.sonarrSeriesId.toString()))
+      .map((v) => String(v.sonarrEpisodeId));
+
+    AsyncReducer.markDirty(episodes, dirtyEpisodeIds);
+  });
+
+  createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {
+    range: seriesUpdateWantedByRange,
+    ids: seriesUpdateWantedById,
+    removeIds: seriesRemoveWantedById,
+    dirty: seriesMarkWantedDirtyById,
+  });
+
+  createAsyncItemReducer(builder, (s) => s.historyList, {
+    all: episodesUpdateHistory,
+    dirty: episodesMarkHistoryDirty,
+  });
+
+  createAsyncItemReducer(builder, (s) => s.blacklist, {
+    all: episodesUpdateBlacklist,
+    dirty: episodesMarkBlacklistDirty,
+  });
+
+  createAsyncListReducer(builder, (s) => s.episodeList, {
+    ids: episodeUpdateBySeriesId,
+  });
+
+  createAsyncListReducer(builder, (s) => s.episodeList, {
+    ids: episodeUpdateById,
+    removeIds: episodesRemoveById,
+    dirty: episodesMarkDirtyById,
+  });
+});
 
 export default reducer;

@@ -2,34 +2,9 @@ import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
-export function updateAsyncState<T>(
-  promise: Promise<T>,
-  setter: (state: AsyncState<T>) => void,
-  defaultVal: T
-) {
-  setter({
-    updating: true,
-    data: defaultVal,
-  });
-  promise
-    .then((data) => {
-      setter({
-        updating: false,
-        data: data,
-      });
-    })
-    .catch((err) => {
-      setter({
-        updating: false,
-        error: err,
-        data: defaultVal,
-      });
-    });
-}
-
 export function getBaseUrl(slash: boolean = false) {
   let url: string = "/";
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NODE_ENV === "production") {
     url = window.Bazarr.baseUrl;
   }
 
@@ -77,25 +52,6 @@ export function GetItemId(item: any): number {
   }
 }
 
-export function buildOrderList<T>(state: OrderIdState<T>): T[] {
-  const { order, items } = state;
-  return buildOrderListFrom(items, order);
-}
-
-export function buildOrderListFrom<T>(
-  items: IdState<T>,
-  order: (number | null)[]
-): T[] {
-  return order.flatMap((v) => {
-    if (v !== null && v in items) {
-      const item = items[v];
-      return [item];
-    }
-
-    return [];
-  });
-}
-
 export function BuildKey(...args: any[]) {
   return args.join("-");
 }
@@ -110,7 +66,7 @@ export function ScrollToTop() {
 
 export function filterSubtitleBy(
   subtitles: Subtitle[],
-  languages: Language[]
+  languages: Language.Info[]
 ): Subtitle[] {
   if (languages.length === 0) {
     return subtitles.filter((subtitle) => {
@@ -126,5 +82,7 @@ export function filterSubtitleBy(
   }
 }
 
+export * from "./async";
+export * from "./entity";
 export * from "./hooks";
 export * from "./validate";

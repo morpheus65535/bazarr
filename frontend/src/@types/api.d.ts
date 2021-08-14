@@ -1,5 +1,3 @@
-type LanguageCodeType = string;
-
 interface Badge {
   episodes: number;
   movies: number;
@@ -7,35 +5,40 @@ interface Badge {
   status: number;
 }
 
-interface ApiLanguage {
-  code2: LanguageCodeType;
-  name: string;
-  enabled: boolean;
-}
+declare namespace Language {
+  type CodeType = string;
+  interface Server {
+    code2: CodeType;
+    name: string;
+    enabled: boolean;
+  }
 
-type Language = Omit<ApiLanguage, "enabled"> & {
-  // TODO: Make things unify
-  hi?: boolean;
-  forced?: boolean;
-};
+  interface Info {
+    code2: CodeType;
+    name: string;
+    hi?: boolean;
+    forced?: boolean;
+  }
 
-namespace Profile {
-  interface Item {
+  interface ProfileItem {
     id: number;
     audio_exclude: PythonBoolean;
     forced: PythonBoolean;
     hi: PythonBoolean;
-    language: LanguageCodeType;
+    language: CodeType;
   }
-  interface Languages {
+
+  interface Profile {
     name: string;
     profileId: number;
     cutoff: number | null;
-    items: Item[];
+    items: ProfileItem[];
   }
 }
 
-interface Subtitle extends Language {
+interface Subtitle {
+  code2: Language.CodeType;
+  name: string;
   forced: boolean;
   hi: boolean;
   path: string | null;
@@ -91,15 +94,15 @@ interface TitleType {
 }
 
 interface AudioLanguageType {
-  audio_language: Language[];
+  audio_language: Language.Info[];
 }
 
 interface ItemHistoryType {
-  language: Language;
+  language: Language.Info;
   provider: string;
 }
 
-namespace Item {
+declare namespace Item {
   type Base = PathType &
     TitleType &
     TagType &
@@ -152,7 +155,7 @@ namespace Item {
     };
 }
 
-namespace Wanted {
+declare namespace Wanted {
   type Base = MonitoredType &
     TagType &
     SceneNameType & {
@@ -171,7 +174,7 @@ namespace Wanted {
   type Movie = Base & MovieIdType & TitleType;
 }
 
-namespace Blacklist {
+declare namespace Blacklist {
   type Base = ItemHistoryType & {
     parsed_timestamp: string;
     timestamp: string;
@@ -187,7 +190,7 @@ namespace Blacklist {
     };
 }
 
-namespace History {
+declare namespace History {
   type Base = SubtitlePathType &
     TagType &
     MonitoredType &
@@ -196,7 +199,7 @@ namespace History {
       blacklisted: boolean;
       score?: string;
       subs_id?: string;
-      raw_timestamp: int;
+      raw_timestamp: number;
       parsed_timestamp: string;
       timestamp: string;
       description: string;
@@ -223,6 +226,13 @@ namespace History {
 
   type TimeframeOptions = "week" | "month" | "trimester" | "year";
   type ActionOptions = 1 | 2 | 3;
+}
+
+declare namespace Parameter {
+  interface Range {
+    start: number;
+    length: number;
+  }
 }
 
 interface SearchResultType {

@@ -50,9 +50,9 @@ interface Props {}
 const Header: FunctionComponent<Props> = () => {
   const setNeedAuth = useReduxAction(siteRedirectToAuth);
 
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
 
-  const canLogout = (settings.data?.auth.type ?? "none") === "form";
+  const canLogout = (settings.content?.auth.type ?? "none") === "form";
 
   const toggleSidebar = useContext(SidebarToggleContext);
 

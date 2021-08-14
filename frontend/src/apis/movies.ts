@@ -5,9 +5,9 @@ class MovieApi extends BaseApi {
     super("/movies");
   }
 
-  async blacklist(): Promise<Array<Blacklist.Movie>> {
-    return new Promise<Array<Blacklist.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Blacklist.Movie>>>("/blacklist")
+  async blacklist(): Promise<Blacklist.Movie[]> {
+    return new Promise<Blacklist.Movie[]>((resolve, reject) => {
+      this.get<DataWrapper<Blacklist.Movie[]>>("/blacklist")
         .then((res) => {
           resolve(res.data.data);
         })
@@ -49,9 +49,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async moviesBy(start: number, length: number) {
+  async moviesBy(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Movie>>("", { start, length })
+      this.get<AsyncDataWrapper<Item.Movie>>("", params)
         .then((result) => {
           resolve(result.data);
         })
@@ -69,9 +69,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async wanted(start: number, length: number) {
+  async wanted(params: Parameter.Range) {
     return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { start, length })
+      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", params)
         .then((result) => {
           resolve(result.data);
         })
@@ -93,9 +93,9 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async history(id?: number): Promise<Array<History.Movie>> {
-    return new Promise<Array<History.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<History.Movie>>>("/history", {
+  async history(id?: number): Promise<History.Movie[]> {
+    return new Promise<History.Movie[]>((resolve, reject) => {
+      this.get<DataWrapper<History.Movie[]>>("/history", {
         radarrid: id,
       })
         .then((result) => {

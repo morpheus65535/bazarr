@@ -10,11 +10,11 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
+import { useDidUpdate } from "rooks";
 import { useSystemSettings } from "../../@redux/hooks";
 import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
-import { useOnLoadingFinish } from "../../utilites";
 import { log } from "../../utilites/logger";
 import {
   enabledLanguageKey,
@@ -35,7 +35,7 @@ function submitHooks(settings: LooseObject) {
   }
 
   if (enabledLanguageKey in settings) {
-    const item = settings[enabledLanguageKey] as Language[];
+    const item = settings[enabledLanguageKey] as Language.Info[];
     settings[enabledLanguageKey] = item.map((v) => v.code2);
   }
 
@@ -59,13 +59,14 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
-  const cleanup = useCallback(() => {
-    setChange({});
-    setUpdating(false);
-  }, []);
-
-  const [settings] = useSystemSettings();
-  useOnLoadingFinish(settings, cleanup);
+  const settings = useSystemSettings();
+  useDidUpdate(() => {
+    // Will be updated by websocket
+    if (settings.state !== "loading") {
+      setChange({});
+      setUpdating(false);
+    }
+  }, [settings.state]);
 
   const saveSettings = useCallback((settings: LooseObject) => {
     submitHooks(settings);
@@ -90,9 +91,10 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     setDispatcher(newDispatch);
   }, [saveSettings, saveLocalStorage]);
 
-  const defaultDispatcher = useMemo(() => dispatcher["__default__"], [
-    dispatcher,
-  ]);
+  const defaultDispatcher = useMemo(
+    () => dispatcher["__default__"],
+    [dispatcher]
+  );
 
   const submit = useCallback(() => {
     const dispatchMaps = new Map<string, LooseObject>();

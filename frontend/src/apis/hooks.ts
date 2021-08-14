@@ -1,24 +1,28 @@
 import { useCallback, useState } from "react";
-import { useDidMount } from "rooks";
 
-type RequestReturn<F extends () => Promise<any>> = PromiseType<ReturnType<F>>;
+type Request = (...args: any[]) => Promise<any>;
+type Return<T extends Request> = PromiseType<ReturnType<T>>;
 
-export function useAsyncRequest<F extends () => Promise<any>>(
+export function useAsyncRequest<F extends Request>(
   request: F,
-  defaultData: RequestReturn<F>
-): [AsyncState<RequestReturn<F>>, () => void] {
-  const [state, setState] = useState<AsyncState<RequestReturn<F>>>({
-    updating: true,
-    data: defaultData,
+  initial: Return<F>
+): [Async.Base<Return<F>>, (...args: Parameters<F>) => void] {
+  const [state, setState] = useState<Async.Base<Return<F>>>({
+    state: "uninitialized",
+    content: initial,
+    error: null,
   });
-  const update = useCallback(() => {
-    setState((s) => ({ ...s, updating: true }));
-    request()
-      .then((res) => setState({ updating: false, data: res }))
-      .catch((err) => setState((s) => ({ ...s, updating: false, err })));
-  }, [request]);
-
-  useDidMount(update);
+  const update = useCallback(
+    (...args: Parameters<F>) => {
+      setState((s) => ({ ...s, state: "loading" }));
+      request(...args)
+        .then((res) =>
+          setState({ state: "succeeded", content: res, error: null })
+        )
+        .catch((error) => setState((s) => ({ ...s, state: "failed", error })));
+    },
+    [request]
+  );
 
   return [state, update];
 }

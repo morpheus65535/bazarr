@@ -2,32 +2,55 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemReleases } from "../../@redux/hooks";
-import { AsyncStateOverlay } from "../../components";
+import { AsyncOverlay } from "../../components";
 import { BuildKey } from "../../utilites";
 
 interface Props {}
 
 const ReleasesView: FunctionComponent<Props> = () => {
-  const [releases] = useSystemReleases();
+  const releases = useSystemReleases();
 
   return (
-    <AsyncStateOverlay state={releases}>
-      {({ data }) => (
-        <Container fluid className="px-5 py-4 bg-light">
-          <Helmet>
-            <title>Releases - Bazarr (System)</title>
-          </Helmet>
-          <Row>
-            {data.map((v, idx) => (
-              <Col xs={12} key={BuildKey(idx, v.date)}>
-                <InfoElement {...v}></InfoElement>
-              </Col>
-            ))}
-          </Row>
-        </Container>
-      )}
-    </AsyncStateOverlay>
+    <Container fluid className="px-5 py-4 bg-light">
+      <Helmet>
+        <title>Releases - Bazarr (System)</title>
+      </Helmet>
+      <Row>
+        <AsyncOverlay ctx={releases}>
+          {({ content }) => {
+            return (
+              <React.Fragment>
+                {content?.map((v, idx) => (
+                  <Col xs={12} key={BuildKey(idx, v.date)}>
+                    <InfoElement {...v}></InfoElement>
+                  </Col>
+                ))}
+              </React.Fragment>
+            );
+          }}
+        </AsyncOverlay>
+      </Row>
+    </Container>
   );
+
+  // return (
+  //   <AsyncStateOverlay state={releases}>
+  //     {({ data }) => (
+  //       <Container fluid className="px-5 py-4 bg-light">
+  //         <Helmet>
+  //           <title>Releases - Bazarr (System)</title>
+  //         </Helmet>
+  //         <Row>
+  //           {data.map((v, idx) => (
+  //             <Col xs={12} key={BuildKey(idx, v.date)}>
+  //               <InfoElement {...v}></InfoElement>
+  //             </Col>
+  //           ))}
+  //         </Row>
+  //       </Container>
+  //     )}
+  //   </AsyncStateOverlay>
+  // );
 };
 
 const headerBadgeCls = "mr-2";

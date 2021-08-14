@@ -3,8 +3,8 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateByRange, seriesUpdateList } from "../@redux/actions";
-import { useRawSeries } from "../@redux/hooks";
+import { seriesUpdateAll, seriesUpdateByRange } from "../@redux/actions";
+import { useSerieEntities } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { SeriesApi } from "../apis";
 import { ActionBadge } from "../components";
@@ -14,8 +14,8 @@ import { BuildKey } from "../utilites";
 interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
-  const [series] = useRawSeries();
-  const load = useReduxAction(seriesUpdateByRange);
+  const series = useSerieEntities();
+  const loader = useReduxAction(seriesUpdateByRange);
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -56,7 +56,7 @@ const SeriesView: FunctionComponent<Props> = () => {
         Cell: ({ value, loose }) => {
           if (loose) {
             // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as Profile.Languages[];
+            const profiles = loose[0] as Language.Profile[];
             return profiles.find((v) => v.profileId === value)?.name ?? null;
           } else {
             return null;
@@ -68,11 +68,8 @@ const SeriesView: FunctionComponent<Props> = () => {
         accessor: "episodeFileCount",
         selectHide: true,
         Cell: (row) => {
-          const {
-            episodeFileCount,
-            episodeMissingCount,
-            profileId,
-          } = row.row.original;
+          const { episodeFileCount, episodeMissingCount, profileId } =
+            row.row.original;
           let progress = 0;
           let label = "";
           if (episodeFileCount === 0 || !profileId) {
@@ -118,8 +115,8 @@ const SeriesView: FunctionComponent<Props> = () => {
     <BaseItemView
       state={series}
       name="Series"
-      updateAction={seriesUpdateList}
-      loader={load}
+      updateAction={seriesUpdateAll}
+      loader={loader}
       columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>

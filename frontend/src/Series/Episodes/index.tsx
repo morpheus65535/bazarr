@@ -7,12 +7,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
@@ -27,7 +22,7 @@ import {
 } from "../../components";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadingFinish } from "../../utilites";
+import { useOnLoadedOnce } from "../../utilites";
 import Table from "./table";
 
 interface Params {
@@ -39,53 +34,50 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const [serie] = useSerieBy(id);
-  const item = serie.data;
+  const series = useSerieBy(id);
+  const episodes = useEpisodesBy(id);
+  const serie = series.content;
 
-  const [episodes] = useEpisodesBy(serie.data?.sonarrSeriesId);
-
-  const available = episodes.data.length !== 0;
+  const available = episodes.content.length !== 0;
 
   const details = useMemo(
     () => [
       {
         icon: faHdd,
-        text: `${item?.episodeFileCount} files`,
+        text: `${serie?.episodeFileCount} files`,
       },
       {
         icon: faAdjust,
-        text: item?.seriesType ?? "",
+        text: serie?.seriesType ?? "",
       },
     ],
-    [item]
+    [serie]
   );
 
   const showModal = useShowModal();
 
   const [valid, setValid] = useState(true);
 
-  const validator = useCallback(() => {
-    if (serie.data === null) {
+  useOnLoadedOnce(() => {
+    if (series.content === null) {
       setValid(false);
     }
-  }, [serie.data]);
+  }, series);
 
-  useOnLoadingFinish(serie, validator);
-
-  const profile = useProfileBy(serie.data?.profileId);
+  const profile = useProfileBy(series.content?.profileId);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 
-  if (!item) {
+  if (!serie) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
   return (
     <Container fluid>
       <Helmet>
-        <title>{item.title} - Bazarr (Series)</title>
+        <title>{serie.title} - Bazarr (Series)</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
@@ -104,8 +96,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               SeriesApi.action({ action: "search-missing", seriesid: id })
             }
             disabled={
-              item.episodeFileCount === 0 ||
-              item.profileId === null ||
+              serie.episodeFileCount === 0 ||
+              serie.profileId === null ||
               !available
             }
           >
@@ -114,36 +106,36 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={item.episodeFileCount === 0 || !available}
+            disabled={serie.episodeFileCount === 0 || !available}
             icon={faBriefcase}
-            onClick={() => showModal("tools", episodes.data)}
+            onClick={() => showModal("tools", episodes.content)}
           >
             Tools
           </ContentHeader.Button>
           <ContentHeader.Button
             disabled={
-              item.episodeFileCount === 0 ||
-              item.profileId === null ||
+              serie.episodeFileCount === 0 ||
+              serie.profileId === null ||
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", item)}
+            onClick={() => showModal("upload", serie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
-            onClick={() => showModal("edit", item)}
+            onClick={() => showModal("edit", serie)}
           >
             Edit Series
           </ContentHeader.Button>
         </ContentHeader.Group>
       </ContentHeader>
       <Row>
-        <ItemOverview item={item} details={details}></ItemOverview>
+        <ItemOverview item={serie} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table episodes={episodes} profile={profile}></Table>
+        <Table serie={series} episodes={episodes} profile={profile}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
@@ -151,7 +143,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       ></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"
-        episodes={episodes.data}
+        episodes={episodes.content}
       ></SeriesUploadModal>
     </Container>
   );
