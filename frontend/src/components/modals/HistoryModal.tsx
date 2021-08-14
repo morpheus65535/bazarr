@@ -1,10 +1,6 @@
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import { useDidUpdate } from "rooks";
 import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
 import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
 import { BlacklistButton } from "../../generic/blacklist";
@@ -17,20 +13,20 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const movie = usePayload<Item.Movie>(modal.modalKey);
 
-  const [history, setHistory] = useAsyncRequest(
+  const [history, updateHistory] = useAsyncRequest(
     MoviesApi.history.bind(MoviesApi),
     []
   );
 
   const update = useCallback(() => {
     if (movie) {
-      setHistory(movie.radarrId);
+      updateHistory(movie.radarrId);
     }
-  }, [movie, setHistory]);
+  }, [movie, updateHistory]);
 
-  useEffect(() => {
+  useDidUpdate(() => {
     update();
-  }, [update]);
+  }, [movie?.radarrId]);
 
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
@@ -117,18 +113,20 @@ export const EpisodeHistoryModal: FunctionComponent<
 > = (props) => {
   const episode = usePayload<Item.Episode>(props.modalKey);
 
-  const [history, setHistory] = useAsyncRequest(
+  const [history, updateHistory] = useAsyncRequest(
     EpisodesApi.history.bind(EpisodesApi),
     []
   );
 
   const update = useCallback(() => {
     if (episode) {
-      setHistory(episode.sonarrEpisodeId);
+      updateHistory(episode.sonarrEpisodeId);
     }
-  }, [episode, setHistory]);
+  }, [episode, updateHistory]);
 
-  useEffect(() => update(), [update]);
+  useDidUpdate(() => {
+    update();
+  }, [episode?.sonarrEpisodeId]);
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [

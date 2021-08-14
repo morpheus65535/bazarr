@@ -14,6 +14,7 @@ import React, {
   useState,
 } from "react";
 import { Button, ButtonProps } from "react-bootstrap";
+import { useTimeoutWhen } from "rooks";
 import { LoadingIndicator } from ".";
 import { Selector, SelectorProps } from "./inputs";
 
@@ -46,7 +47,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
 
   useEffect(() => {
     promise()
-      .then((result) => setItem(result))
+      .then(setItem)
       .catch(() => {});
   }, [promise]);
 
@@ -142,28 +143,15 @@ export function AsyncButton<T>(
 
   const [state, setState] = useState(RequestState.Invalid);
 
-  const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
+  const needFire = state !== RequestState.Invalid && !noReset;
 
-  useEffect(() => {
-    if (noReset) {
-      return;
-    }
-
-    if (state === RequestState.Error || state === RequestState.Success) {
-      const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
-      setHandle(handle);
-    }
-
-    // Clear timeout handle so we wont leak memory
-    return () => {
-      setHandle((handle) => {
-        if (handle) {
-          clearTimeout(handle);
-        }
-        return null;
-      });
-    };
-  }, [state, noReset]);
+  useTimeoutWhen(
+    () => {
+      setState(RequestState.Invalid);
+    },
+    2 * 1000,
+    needFire
+  );
 
   const click = useCallback(() => {
     if (state !== RequestState.Invalid) {

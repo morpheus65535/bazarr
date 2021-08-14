@@ -9,6 +9,7 @@ import { Row } from "react-bootstrap";
 import { Provider } from "react-redux";
 import { Route, Switch } from "react-router";
 import { BrowserRouter, Redirect } from "react-router-dom";
+import { useEffectOnceWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
 import store from "../@redux/store";
@@ -36,17 +37,15 @@ const App: FunctionComponent<Props> = () => {
 
   // Has any update?
   const hasUpdate = useHasUpdateInject();
-  useEffect(() => {
-    if (initialized) {
-      if (hasUpdate) {
-        notify({
-          type: "info",
-          message: "A new version of Bazarr is ready, restart is required",
-          // TODO: Restart action
-        });
-      }
+  useEffectOnceWhen(() => {
+    if (hasUpdate) {
+      notify({
+        type: "info",
+        message: "A new version of Bazarr is ready, restart is required",
+        // TODO: Restart action
+      });
     }
-  }, [initialized, hasUpdate, notify]);
+  }, initialized === true);
 
   const [sidebar, setSidebar] = useState(false);
   const toggleSidebar = useCallback(() => setSidebar((s) => !s), []);
