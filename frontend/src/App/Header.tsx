@@ -25,6 +25,7 @@ import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage } from "../utilites";
 import "./header.scss";
+import NotificationCenter from "./Notification";
 
 async function SearchItem(text: string) {
   const results = await SystemApi.search(text);
@@ -58,7 +59,7 @@ const Header: FunctionComponent<Props> = () => {
 
   const offline = useIsOffline();
 
-  const dropdown = useMemo(
+  const serverActions = useMemo(
     () => (
       <Dropdown alignRight>
         <Dropdown.Toggle className="dropdown-hidden" as={Button}>
@@ -117,6 +118,7 @@ const Header: FunctionComponent<Props> = () => {
             <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
+            <NotificationCenter></NotificationCenter>
             <Button
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
@@ -134,7 +136,7 @@ const Header: FunctionComponent<Props> = () => {
                 Connecting...
               </ActionButton>
             ) : (
-              dropdown
+              serverActions
             )}
           </Col>
         </Row>

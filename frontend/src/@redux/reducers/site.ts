@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit";
-import { remove, uniqBy } from "lodash";
+import { pullAllWith, remove, uniqBy } from "lodash";
 import apis from "../../apis";
 import {
   siteAddNotifications,
@@ -73,7 +73,7 @@ const reducer = createReducer(defaultSite, (builder) => {
       );
     })
     .addCase(siteRemoveProgress, (state, action) => {
-      remove(state.progress, (n) => n.id === action.payload);
+      pullAllWith(state.progress, action.payload, (l, r) => l.id === r);
     })
     .addCase(siteChangeSidebar, (state, action) => {
       state.sidebar = action.payload;

@@ -22,7 +22,6 @@ import LaunchError from "../special-pages/LaunchError";
 import UIError from "../special-pages/UIError";
 import { useBaseUrl, useHasUpdateInject } from "../utilites";
 import Header from "./Header";
-import NotificationContainer from "./notifications";
 import Router from "./Router";
 
 // Sidebar Toggle
@@ -75,7 +74,6 @@ const App: FunctionComponent<Props> = () => {
             <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
           </ModalProvider>
         </Row>
-        <NotificationContainer></NotificationContainer>
       </SidebarToggleContext.Provider>
     );
   } catch (e) {

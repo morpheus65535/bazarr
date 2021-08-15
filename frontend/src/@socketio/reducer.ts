@@ -87,9 +87,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       update: bindReduxAction(siteAddProgress),
       delete: (ids) => {
         setTimeout(() => {
-          ids.forEach((id) => {
-            reduxStore.dispatch(siteRemoveProgress(id));
-          });
+          reduxStore.dispatch(siteRemoveProgress(ids));
         }, 3 * 1000);
       },
     },

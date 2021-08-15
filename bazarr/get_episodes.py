@@ -85,12 +85,6 @@ def sync_episodes(series_id=None, send_event=True):
                                     episodes_to_add.append(episodeParser(episode))
 
     if send_event:
-        show_progress(id='episodes_progress',
-                      header='Syncing episodes...',
-                      name='Completed successfully',
-                      value=series_count,
-                      count=series_count)
-
         hide_progress(id='episodes_progress')
 
     # Remove old episodes from DB

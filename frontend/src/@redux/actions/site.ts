@@ -26,11 +26,12 @@ export const siteRemoveNotifications = createAction<string>(
   "site/notifications/remove"
 );
 
-export const siteAddProgress = createAction<Server.Progress[]>(
-  "site/progress/add"
-);
+export const siteAddProgress =
+  createAction<Server.Progress[]>("site/progress/add");
 
-export const siteRemoveProgress = createAction<string>("site/progress/remove");
+export const siteRemoveProgress = createAction<string[]>(
+  "site/progress/remove"
+);
 
 export const siteChangeSidebar = createAction<string>("site/sidebar/update");
 

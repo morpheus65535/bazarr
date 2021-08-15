@@ -1,0 +1,43 @@
+@function theme-color($key: "primary") {
+  @return map-get($theme-colors, $key);
+}
+
+.notification-btn {
+  &.new-item {
+    &::after {
+      position: absolute;
+      background-color: red;
+      content: "";
+      border-radius: 50%;
+      height: 6px;
+      width: 6px;
+      right: 10%;
+      top: 10%;
+    }
+  }
+
+  .dropdown-menu {
+    max-width: 20rem;
+    max-height: 40rem;
+    overflow-y: scroll;
+  }
+
+  $content-width: 16rem;
+
+  .notification-center-progress {
+    width: $content-width;
+    max-width: $content-width;
+
+    .progress-name {
+      word-wrap: break-word;
+      white-space: normal;
+    }
+  }
+
+  .notification-center-notification {
+    word-wrap: break-word;
+    white-space: normal;
+    width: $content-width;
+    max-width: $content-width;
+  }
+}

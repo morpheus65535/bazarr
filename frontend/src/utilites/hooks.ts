@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useHistory } from "react-router";
+import { useDidUpdate } from "rooks";
 import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -25,4 +26,16 @@ export function useHasUpdateInject() {
   } else {
     return window.Bazarr.hasUpdate;
   }
+}
+
+export function useIsArrayExtended(arr: any[]) {
+  const [size, setSize] = useState(arr.length);
+  const [isExtended, setExtended] = useState(arr.length !== 0);
+
+  useDidUpdate(() => {
+    setExtended(arr.length > size);
+    setSize(arr.length);
+  }, [arr.length]);
+
+  return isExtended;
 }

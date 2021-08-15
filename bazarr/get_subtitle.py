@@ -796,13 +796,6 @@ def series_download_subtitles(no):
             logging.info("BAZARR All providers are throttled")
             break
 
-    if count_episodes_details:
-        show_progress(id='series_search_progress_{}'.format(no),
-                      header='Searching missing subtitles...',
-                      name='Completed successfully',
-                      value=count_episodes_details,
-                      count=count_episodes_details)
-
     hide_progress(id='series_search_progress_{}'.format(no))
 
 
@@ -974,13 +967,6 @@ def movies_download_subtitles(no):
         else:
             logging.info("BAZARR All providers are throttled")
             break
-
-    if count_movie:
-        show_progress(id='movie_search_progress_{}'.format(no),
-                      header='Searching missing subtitles...',
-                      name='Completed successfully',
-                      value=count_movie,
-                      count=count_movie)
 
     hide_progress(id='movie_search_progress_{}'.format(no))
 
@@ -1189,12 +1175,6 @@ def wanted_search_missing_subtitles_series():
             logging.info("BAZARR All providers are throttled")
             return
 
-    show_progress(id='wanted_episodes_progress',
-                  header='Searching subtitles...',
-                  name='Completed successfully',
-                  value=count_episodes,
-                  count=count_episodes)
-
     hide_progress(id='wanted_episodes_progress')
 
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
@@ -1225,12 +1205,6 @@ def wanted_search_missing_subtitles_movies():
         else:
             logging.info("BAZARR All providers are throttled")
             return
-
-    show_progress(id='wanted_movies_progress',
-                  header='Searching subtitles...',
-                  name='Completed successfully',
-                  value=count_movies,
-                  count=count_movies)
 
     hide_progress(id='wanted_movies_progress')
     
@@ -1559,12 +1533,6 @@ def upgrade_subtitles():
                             language_code, provider, score, subs_id, subs_path)
                 send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
-        show_progress(id='upgrade_episodes_progress',
-                      header='Upgrading episodes subtitles...',
-                      name='Completed successfully',
-                      value=count_episode_to_upgrade,
-                      count=count_episode_to_upgrade)
-
         hide_progress(id='upgrade_episodes_progress')
 
     if settings.general.getboolean('use_radarr'):
@@ -1631,12 +1599,6 @@ def upgrade_subtitles():
                                       path_mappings.path_replace_movie(movie['video_path']))
                 history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(movie['radarrId'], message)
-
-        show_progress(id='upgrade_movies_progress',
-                      header='Upgrading movies subtitles...',
-                      name='Completed successfully',
-                      value=count_movie_to_upgrade,
-                      count=count_movie_to_upgrade)
 
         hide_progress(id='upgrade_movies_progress')
 

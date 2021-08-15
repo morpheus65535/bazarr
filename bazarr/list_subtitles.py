@@ -458,12 +458,6 @@ def series_full_scan_subtitles():
                       count=count_episodes)
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
-    show_progress(id='episodes_disk_scan',
-                  header='Full disk scan...',
-                  name='Completed successfully',
-                  value=count_episodes,
-                  count=count_episodes)
-
     hide_progress(id='episodes_disk_scan')
     
     gc.collect()
@@ -481,12 +475,6 @@ def movies_full_scan_subtitles():
                       value=i,
                       count=count_movies)
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-
-    show_progress(id='movies_disk_scan',
-                  header='Full disk scan...',
-                  name='Completed successfully',
-                  value=count_movies,
-                  count=count_movies)
 
     hide_progress(id='movies_disk_scan')
 

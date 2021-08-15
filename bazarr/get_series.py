@@ -72,12 +72,6 @@ def update_series(send_event=True):
                                                   audio_profiles=audio_profiles))
 
         if send_event:
-            show_progress(id='series_progress',
-                          header='Syncing series...',
-                          name='Completed successfully',
-                          value=series_count,
-                          count=series_count)
-
             hide_progress(id='series_progress')
 
         # Remove old series from DB

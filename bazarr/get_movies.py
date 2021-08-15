@@ -88,14 +88,8 @@ def update_movies(send_event=True):
                                                                  tags_dict=tagsDict,
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
-
+ 
             if send_event:
-                show_progress(id='movies_progress',
-                              header='Syncing movies...',
-                              name='Completed successfully',
-                              value=movies_count,
-                              count=movies_count)
-
                 hide_progress(id='movies_progress')
 
             # Remove old movies from DB
