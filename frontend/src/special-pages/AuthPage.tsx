@@ -12,7 +12,7 @@ import { Redirect } from "react-router-dom";
 import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
-import "./style.scss";
+import "./AuthPage.scss";
 
 interface Props {}
 
