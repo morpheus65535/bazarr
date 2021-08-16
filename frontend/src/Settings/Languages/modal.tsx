@@ -16,8 +16,7 @@ import {
   LanguageSelector,
   Selector,
   SimpleTable,
-  useCloseModal,
-  usePayload,
+  useModalInformation,
 } from "../../components";
 import { BuildKey } from "../../utilites";
 import { Input, Message } from "../components";
@@ -40,9 +39,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const profile = usePayload<Language.Profile>(modal.modalKey);
-
-  const closeModal = useCloseModal();
+  const { payload: profile, closeModal } =
+    useModalInformation<Language.Profile>(modal.modalKey);
 
   const languages = useEnabledLanguagesContext();
 

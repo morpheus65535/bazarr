@@ -1,7 +1,6 @@
 import React, { FunctionComponent, useCallback, useState } from "react";
 import { Modal } from "react-bootstrap";
-import { useIsModalShow } from ".";
-import { useCloseModal } from "./hooks";
+import { useModalInformation } from "./hooks";
 
 export interface BaseModalProps {
   modalKey: string;
@@ -15,8 +14,7 @@ export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
   const { size, modalKey, title, children, footer } = props;
   const [needExit, setExit] = useState(false);
 
-  const show = useIsModalShow(modalKey);
-  const close = useCloseModal();
+  const { isShow, closeModal } = useModalInformation(modalKey);
 
   const closeable = props.closeable !== false;
 
@@ -25,15 +23,15 @@ export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
   }, []);
 
   const exit = useCallback(() => {
-    close();
+    closeModal(modalKey);
     setExit(false);
-  }, [close]);
+  }, [closeModal, modalKey]);
 
   return (
     <Modal
       centered
       size={size}
-      show={show && !needExit}
+      show={isShow && !needExit}
       onHide={hide}
       onExited={exit}
       backdrop={closeable ? undefined : "static"}

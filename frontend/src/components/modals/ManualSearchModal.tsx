@@ -31,7 +31,7 @@ import {
   LanguageText,
   LoadingIndicator,
   PageTable,
-  usePayload,
+  useModalPayload,
 } from "..";
 import { ProvidersApi } from "../../apis";
 import { isMovie } from "../../utilites";
@@ -58,7 +58,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
   const [result, setResult] = useState<SearchResultType[]>([]);
   const [searchState, setSearchState] = useState(SearchState.Ready);
 
-  const item = usePayload<SupportType>(modal.modalKey);
+  const item = useModalPayload<SupportType>(modal.modalKey);
 
   const search = useCallback(async () => {
     if (item) {

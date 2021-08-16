@@ -21,13 +21,12 @@ import {
   LanguageSelector,
   MessageIcon,
   SimpleTable,
-  useCloseModal,
-  usePayload,
 } from "..";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
 import BaseModal, { BaseModalProps } from "./BaseModal";
+import { useModalInformation } from "./hooks";
 
 enum State {
   Update,
@@ -63,17 +62,17 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   episodes,
   ...modal
 }) => {
-  const series = usePayload<Item.Series>(modal.modalKey);
+  const { payload, closeModal } = useModalInformation<Item.Series>(
+    modal.modalKey
+  );
 
   const [uploading, setUpload] = useState(false);
-
-  const closeModal = useCloseModal();
 
   const [pending, setPending] = useState<PendingSubtitle[]>([]);
 
   const [processState, setProcessState] = useState<ProcessState>({});
 
-  const profile = useProfileBy(series?.profileId);
+  const profile = useProfileBy(payload?.profileId);
 
   const avaliableLanguages = useProfileItemsToLanguages(profile);
 
@@ -173,11 +172,11 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   );
 
   const uploadSubtitles = useCallback(async () => {
-    if (series === null || language === null) {
+    if (payload === null || language === null) {
       return;
     }
 
-    const { sonarrSeriesId: seriesid } = series;
+    const { sonarrSeriesId: seriesid } = payload;
 
     let uploadStates = pending.reduce<ProcessState>((prev, curr) => {
       prev[curr.file.name] = { state: State.Update, infos: [] };
@@ -223,7 +222,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     if (exception) {
       throw new Error("Error when uploading subtitles");
     }
-  }, [series, pending, language]);
+  }, [payload, pending, language]);
 
   const canUpload = useMemo(
     () =>

@@ -4,7 +4,7 @@ import { AsyncButton, Selector } from "../";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { GetItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal, usePayload } from "./hooks";
+import { useModalInformation } from "./hooks";
 
 interface Props {
   submit: (form: FormType.ModifyItem) => Promise<void>;
@@ -16,9 +16,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const profiles = useLanguageProfiles();
 
-  const item = usePayload<Item.Base>(modal.modalKey);
-
-  const closeModal = useCloseModal();
+  const { payload, closeModal } = useModalInformation<Item.Base>(
+    modal.modalKey
+  );
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
@@ -37,8 +37,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
         noReset
         onChange={setUpdating}
         promise={() => {
-          if (item) {
-            const itemId = GetItemId(item);
+          if (payload) {
+            const itemId = GetItemId(payload);
             return submit({
               id: [itemId],
               profileid: [id],
@@ -49,20 +49,20 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
         }}
         onSuccess={() => {
           closeModal();
-          onSuccess && item && onSuccess(item);
+          onSuccess && payload && onSuccess(payload);
         }}
       >
         Save
       </AsyncButton>
     ),
-    [closeModal, id, item, onSuccess, submit]
+    [closeModal, id, payload, onSuccess, submit]
   );
 
   return (
     <BaseModal
       closeable={!updating}
       footer={footer}
-      title={item?.title}
+      title={payload?.title}
       {...modal}
     >
       <Container fluid>
@@ -72,7 +72,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
             <Form.Control
               type="text"
               disabled
-              defaultValue={item?.audio_language.map((v) => v.name).join(", ")}
+              defaultValue={payload?.audio_language
+                .map((v) => v.name)
+                .join(", ")}
             ></Form.Control>
           </Form.Group>
           <Form.Group>
@@ -80,7 +82,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
             <Selector
               clearable
               options={profileOptions}
-              defaultValue={item?.profileId}
+              defaultValue={payload?.profileId}
               onChange={(v) => setId(v === undefined ? null : v)}
             ></Selector>
           </Form.Group>

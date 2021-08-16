@@ -11,9 +11,8 @@ import { SelectComponents } from "react-select/src/components";
 import {
   BaseModal,
   Selector,
-  useCloseModal,
+  useModalInformation,
   useOnModalShow,
-  usePayload,
   useShowModal,
 } from "../../components";
 import { BuildKey, isReactText } from "../../utilites";
@@ -78,17 +77,15 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 export const ProviderModal: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo>(ModalKey);
+  const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
 
-  const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload ?? null);
+  const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
-  useOnModalShow(() => setInfo(payload ?? null), ModalKey);
+  useOnModalShow<ProviderInfo>((p) => setInfo(p), ModalKey);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
-
-  const closeModal = useCloseModal();
 
   const updateGlobal = useMultiUpdate();
 

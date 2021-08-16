@@ -37,7 +37,6 @@ export function useSerieBy(id: number) {
   const serie = useEntityItemById(series, String(id));
 
   const update = useCallback(() => {
-    console.log("try loading", id);
     if (!isNaN(id)) {
       action([id]);
     }

@@ -1,12 +1,6 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
-import {
-  AsyncButton,
-  FileForm,
-  LanguageSelector,
-  useCloseModal,
-  usePayload,
-} from "..";
+import { AsyncButton, FileForm, LanguageSelector } from "..";
 import {
   useEnabledLanguages,
   useLanguageBy,
@@ -14,6 +8,7 @@ import {
 } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import BaseModal, { BaseModalProps } from "./BaseModal";
+import { useModalInformation } from "./hooks";
 interface MovieProps {}
 
 const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
@@ -23,15 +18,15 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   const availableLanguages = useEnabledLanguages();
 
-  const movie = usePayload<Item.Movie>(modal.modalKey);
-
-  const closeModal = useCloseModal();
+  const { payload, closeModal } = useModalInformation<Item.Movie>(
+    modal.modalKey
+  );
 
   const [uploading, setUpload] = useState(false);
 
   const [language, setLanguage] = useState<Nullable<Language.Info>>(null);
 
-  const profile = useProfileBy(movie?.profileId);
+  const profile = useProfileBy(payload?.profileId);
 
   const defaultLanguage = useLanguageBy(profile?.items[0]?.language);
 
@@ -50,8 +45,8 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
       disabled={!canUpload}
       onChange={setUpload}
       promise={() => {
-        if (file && movie && language) {
-          return MoviesApi.uploadSubtitles(movie.radarrId, {
+        if (file && payload && language) {
+          return MoviesApi.uploadSubtitles(payload.radarrId, {
             file: file,
             forced,
             hi: false,
@@ -61,7 +56,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
           return null;
         }
       }}
-      onSuccess={closeModal}
+      onSuccess={() => closeModal()}
     >
       Upload
     </AsyncButton>
@@ -69,7 +64,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
 
   return (
     <BaseModal
-      title={`Upload - ${movie?.title}`}
+      title={`Upload - ${payload?.title}`}
       closeable={!uploading}
       footer={footer}
       {...modal}

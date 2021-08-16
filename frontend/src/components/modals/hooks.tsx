@@ -3,6 +3,27 @@ import { useDidUpdate } from "rooks";
 import { log } from "../../utilites/logger";
 import { ModalContext } from "./provider";
 
+interface ModalInformation<T> {
+  isShow: boolean;
+  payload: T | null;
+  closeModal: ReturnType<typeof useCloseModal>;
+}
+
+export function useModalInformation<T>(key: string): ModalInformation<T> {
+  const isShow = useIsModalShow(key);
+  const payload = useModalPayload<T>(key);
+  const closeModal = useCloseModal();
+
+  return useMemo(
+    () => ({
+      isShow,
+      payload,
+      closeModal,
+    }),
+    [isShow, payload, closeModal]
+  );
+}
+
 export function useShowModal() {
   const {
     control: { push },
@@ -20,28 +41,44 @@ export function useShowModal() {
 
 export function useCloseModal() {
   const {
-    control: { pop },
+    control: { pop, peek },
   } = useContext(ModalContext);
-  return pop;
+  return useCallback(
+    (key?: string) => {
+      const modal = peek();
+      if (key) {
+        if (modal?.key === key) {
+          pop();
+        }
+      } else {
+        pop();
+      }
+    },
+    [pop, peek]
+  );
 }
 
-export function useCloseModalUntil() {
+export function useCloseModalIfCovered() {
   const {
     control: { pop, peek },
   } = useContext(ModalContext);
   return useCallback(
     (key: string) => {
       let modal = peek();
-      while (modal) {
-        if (modal.key === key) {
-          break;
-        } else {
-          modal = pop();
-        }
+      if (modal && modal.key !== key) {
+        pop();
       }
     },
     [pop, peek]
   );
+}
+
+export function useModalIsCovered(key: string) {
+  const { modals } = useContext(ModalContext);
+  return useMemo(() => {
+    const idx = modals.findIndex((v) => v.key === key);
+    return idx !== -1 && idx !== 0;
+  }, [modals, key]);
 }
 
 export function useIsModalShow(key: string) {
@@ -52,23 +89,30 @@ export function useIsModalShow(key: string) {
   return key === modal?.key;
 }
 
-export function useOnModalShow(callback: () => void, key: string) {
-  const isShow = useIsModalShow(key);
+export function useOnModalShow<T>(
+  callback: (payload: T | null) => void,
+  key: string
+) {
+  const {
+    modals,
+    control: { peek },
+  } = useContext(ModalContext);
   useDidUpdate(() => {
-    if (isShow) {
-      callback();
+    const modal = peek();
+    if (modal && modal.key === key) {
+      callback(modal.payload ?? null);
     }
-  }, [isShow]);
+  }, [modals.length, key]);
 }
 
-export function usePayload<T>(key: string): T | null {
+export function useModalPayload<T>(key: string): T | null {
   const {
     control: { peek },
   } = useContext(ModalContext);
   return useMemo(() => {
     const modal = peek();
     if (modal && modal.key === key) {
-      return modal.payload as T;
+      return (modal.payload as T) ?? null;
     } else {
       return null;
     }

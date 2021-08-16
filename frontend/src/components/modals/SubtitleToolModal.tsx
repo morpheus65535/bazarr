@@ -39,7 +39,8 @@ import {
   LanguageText,
   Selector,
   SimpleTable,
-  usePayload,
+  useCloseModalIfCovered,
+  useModalPayload,
   useShowModal,
 } from "..";
 import { useEnabledLanguages } from "../../@redux/hooks";
@@ -48,7 +49,6 @@ import { isMovie, submodProcessColor } from "../../utilites";
 import { log } from "../../utilites/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModalUntil } from "./hooks";
 import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
@@ -331,18 +331,18 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
 interface STMProps {}
 
 const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
-  const items = usePayload<SupportType[]>(props.modalKey);
+  const payload = useModalPayload<SupportType[]>(props.modalKey);
 
   const [updating, setUpdate] = useState<boolean>(false);
   const [processState, setProcessState] = useState<ProcessState>({});
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const closeUntil = useCloseModalUntil();
+  const closeModal = useCloseModalIfCovered();
 
   const process = useCallback(
     async (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       log("info", "executing action", action);
-      closeUntil(props.modalKey);
+      closeModal(props.modalKey);
       setUpdate(true);
 
       let states = selections.reduce<ProcessState>(
@@ -374,7 +374,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
       }
       setUpdate(false);
     },
-    [closeUntil, selections, props.modalKey]
+    [closeModal, selections, props.modalKey]
   );
 
   const showModal = useShowModal();
@@ -431,7 +431,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
 
   const data = useMemo<TableColumnType[]>(
     () =>
-      items?.flatMap((item) => {
+      payload?.flatMap((item) => {
         const [id, type] = getIdAndType(item);
         return item.subtitles.flatMap((v) => {
           if (v.path !== null) {
@@ -449,7 +449,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
           }
         });
       }) ?? [],
-    [items]
+    [payload]
   );
 
   const plugins = [useRowSelect, useCustomSelection];

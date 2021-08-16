@@ -6,12 +6,12 @@ import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
 import { BlacklistButton } from "../../generic/blacklist";
 import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { usePayload } from "./hooks";
+import { useModalPayload } from "./hooks";
 
 export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
-  const movie = usePayload<Item.Movie>(modal.modalKey);
+  const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
   const [history, updateHistory] = useAsyncRequest(
     MoviesApi.history.bind(MoviesApi),
@@ -111,7 +111,7 @@ interface EpisodeHistoryProps {}
 export const EpisodeHistoryModal: FunctionComponent<
   BaseModalProps & EpisodeHistoryProps
 > = (props) => {
-  const episode = usePayload<Item.Episode>(props.modalKey);
+  const episode = useModalPayload<Item.Episode>(props.modalKey);
 
   const [history, updateHistory] = useAsyncRequest(
     EpisodesApi.history.bind(EpisodesApi),
