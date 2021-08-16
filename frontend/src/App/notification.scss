@@ -20,12 +20,11 @@
   }
 
   .dropdown-menu {
-    max-width: 20rem;
     max-height: 85vh;
     overflow-y: auto;
   }
 
-  $content-width: 16rem;
+  $content-width: 14rem;
 
   .notification-center-progress {
     width: $content-width;

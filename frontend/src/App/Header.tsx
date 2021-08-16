@@ -23,7 +23,7 @@ import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
-import { useGotoHomepage } from "../utilites";
+import { useGotoHomepage, useIsMobile } from "../utilites";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 
@@ -58,6 +58,8 @@ const Header: FunctionComponent<Props> = () => {
   const toggleSidebar = useContext(SidebarToggleContext);
 
   const offline = useIsOffline();
+
+  const isMobile = useIsMobile();
 
   const serverActions = useMemo(
     () => (
@@ -114,7 +116,7 @@ const Header: FunctionComponent<Props> = () => {
       </Button>
       <Container fluid>
         <Row noGutters className="flex-grow-1">
-          <Col xs={6} sm={4} className="d-flex align-items-center">
+          <Col xs={4} sm={6} className="d-flex align-items-center">
             <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
@@ -133,7 +135,7 @@ const Header: FunctionComponent<Props> = () => {
                 variant="warning"
                 icon={faNetworkWired}
               >
-                Connecting...
+                {isMobile ? "" : "Connecting..."}
               </ActionButton>
             ) : (
               serverActions

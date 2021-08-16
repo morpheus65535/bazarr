@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useHistory } from "react-router";
-import { useDidUpdate } from "rooks";
+import { useDidUpdate, useMediaMatch } from "rooks";
 import { getBaseUrl } from ".";
 
 export function useBaseUrl(slash: boolean = false) {
@@ -26,6 +26,10 @@ export function useHasUpdateInject() {
   } else {
     return window.Bazarr.hasUpdate;
   }
+}
+
+export function useIsMobile() {
+  return useMediaMatch("(max-width: 576px)");
 }
 
 export function useIsArrayExtended(arr: any[]) {
