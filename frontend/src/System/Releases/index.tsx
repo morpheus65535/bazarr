@@ -11,7 +11,7 @@ const ReleasesView: FunctionComponent<Props> = () => {
   const releases = useSystemReleases();
 
   return (
-    <Container fluid className="px-5 py-4 bg-light">
+    <Container fluid className="px-3 py-4 bg-light">
       <Helmet>
         <title>Releases - Bazarr (System)</title>
       </Helmet>

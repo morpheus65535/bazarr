@@ -12,6 +12,7 @@ import { Helmet } from "react-helmet";
 import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
 import { AsyncOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
+import "./style.scss";
 import Table from "./table";
 
 interface InfoProps {

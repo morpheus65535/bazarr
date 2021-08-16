@@ -18,8 +18,8 @@
 
   .dropdown-menu {
     max-width: 20rem;
-    max-height: 40rem;
-    overflow-y: scroll;
+    max-height: 85vh;
+    overflow-y: auto;
   }
 
   $content-width: 16rem;
