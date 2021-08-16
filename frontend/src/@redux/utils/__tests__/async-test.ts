@@ -1,5 +1,5 @@
 import {} from "jest";
-import { AsyncUtility } from "../async";
+import { AsyncUtility } from "..";
 
 interface AsyncTest {
   id: string;

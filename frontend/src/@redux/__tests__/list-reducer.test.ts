@@ -69,6 +69,7 @@ it("list all uninitialized -> succeeded", async () => {
   use((list) => {
     expect(list.content).toEqual(defaultList);
     expect(list.dirtyEntities).toHaveLength(0);
+    expect(list.didLoaded).toHaveLength(defaultList.length);
     expect(list.error).toBeNull();
     expect(list.state).toEqual("succeeded");
   });
@@ -109,6 +110,7 @@ it("list ids uninitialized -> succeeded", async () => {
   await store.dispatch(idsResolved([0, 1, 2]));
   use((list) => {
     expect(list.content).toHaveLength(3);
+    expect(list.didLoaded).toHaveLength(3);
     expect(list.dirtyEntities).toHaveLength(0);
     expect(list.error).toBeNull();
     expect(list.state).toEqual("succeeded");
@@ -147,6 +149,7 @@ it("list ids update duplicative data", async () => {
   await store.dispatch(idsResolved([2, 3]));
   use((list) => {
     expect(list.content).toHaveLength(4);
+    expect(list.didLoaded).toHaveLength(4);
     expect(list.state).toEqual("succeeded");
   });
 });
@@ -156,6 +159,7 @@ it("list ids update new data", async () => {
   await store.dispatch(idsResolved([2, 3]));
   use((list) => {
     expect(list.content).toHaveLength(4);
+    expect(list.didLoaded).toHaveLength(4);
     expect(list.content[1].id).toBe(2);
     expect(list.content[0].id).toBe(3);
     expect(list.state).toEqual("succeeded");

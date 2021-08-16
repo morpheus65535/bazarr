@@ -18,7 +18,7 @@ import {
   seriesUpdateWantedById,
   seriesUpdateWantedByRange,
 } from "../actions";
-import { AsyncReducer, AsyncUtility } from "../utils/async";
+import { AsyncUtility, ReducerUtility } from "../utils";
 import {
   createAsyncEntityReducer,
   createAsyncItemReducer,
@@ -53,7 +53,7 @@ const reducer = createReducer(defaultSeries, (builder) => {
     const series = state.seriesList;
     const dirtyIds = action.payload.map(String);
 
-    AsyncReducer.markDirty(series, dirtyIds);
+    ReducerUtility.markDirty(series, dirtyIds);
 
     // Update episode list
     const episodes = state.episodeList;
@@ -62,7 +62,7 @@ const reducer = createReducer(defaultSeries, (builder) => {
       .filter((v) => dirtyIdsSet.has(v.sonarrSeriesId.toString()))
       .map((v) => String(v.sonarrEpisodeId));
 
-    AsyncReducer.markDirty(episodes, dirtyEpisodeIds);
+    ReducerUtility.markDirty(episodes, dirtyEpisodeIds);
   });
 
   createAsyncEntityReducer(builder, (s) => s.wantedEpisodesList, {

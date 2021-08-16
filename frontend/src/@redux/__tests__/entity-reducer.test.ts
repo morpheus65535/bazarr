@@ -5,7 +5,7 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import {} from "jest";
-import { differenceWith, intersectionWith, isString } from "lodash";
+import { differenceWith, intersectionWith, isString, uniq } from "lodash";
 import { defaultList, defaultState, TestType } from "../tests/helper";
 import { createAsyncEntityReducer } from "../utils/factory";
 
@@ -181,6 +181,7 @@ it("entity update all resolved", async () => {
       const id = v.id.toString();
       expect(entities.content.ids[index]).toEqual(id);
       expect(entities.content.entities[id]).toEqual(v);
+      expect(entities.didLoaded).toContain(id);
     });
   });
 });
@@ -224,6 +225,9 @@ it("delete entity item", async () => {
   store.dispatch(removeIds(idsToRemove));
   use((entities) => {
     expect(entities.state).toBe("succeeded");
+    idsToRemove.map(String).forEach((v) => {
+      expect(entities.didLoaded).not.toContain(v);
+    });
     expectResults.forEach((v, index) => {
       const id = v.id.toString();
       expect(entities.content.ids[index]).toEqual(id);
@@ -242,6 +246,7 @@ it("entity update by range", async () => {
       const id = v.toString();
       expect(entities.content.ids).toContain(id);
       expect(entities.content.entities[id].id).toEqual(v);
+      expect(entities.didLoaded).toContain(id);
     });
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
@@ -258,9 +263,21 @@ it("entity update by duplicative range", async () => {
       const id = v.id.toString();
       expect(entities.content.ids).toContain(id);
       expect(entities.content.entities[id]).toEqual(v);
+      expect(entities.didLoaded.filter((v) => v === id)).toHaveLength(1);
     });
     expect(entities.error).toBeNull();
     expect(entities.state).toBe("succeeded");
+  });
+});
+
+it("entity update by range and ids", async () => {
+  await store.dispatch(rangeResolved({ start: 0, length: 2 }));
+  await store.dispatch(idsResolved([3]));
+  await store.dispatch(rangeResolved({ start: 2, length: 2 }));
+  use((entries) => {
+    const ids = entries.content.ids.filter(isString);
+    const dedupIds = uniq(ids);
+    expect(ids.length).toBe(dedupIds.length);
   });
 });
 

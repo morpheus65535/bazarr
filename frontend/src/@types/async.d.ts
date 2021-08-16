@@ -12,11 +12,13 @@ declare namespace Async {
   type List<T> = Base<T[]> & {
     keyName: keyof T;
     dirtyEntities: string[];
+    didLoaded: string[];
   };
 
   type Item<T> = Base<T | null>;
 
   type Entity<T> = Base<EntityStruct<T>> & {
     dirtyEntities: string[];
+    didLoaded: string[];
   };
 }

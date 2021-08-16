@@ -34,9 +34,10 @@ export function useSeries() {
 export function useSerieBy(id: number) {
   const series = useSerieEntities();
   const action = useReduxAction(seriesUpdateById);
-  const serie = useEntityItemById(series, id.toString());
+  const serie = useEntityItemById(series, String(id));
 
   const update = useCallback(() => {
+    console.log("try loading", id);
     if (!isNaN(id)) {
       action([id]);
     }

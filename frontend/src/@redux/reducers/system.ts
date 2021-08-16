@@ -11,7 +11,7 @@ import {
   systemUpdateStatus,
   systemUpdateTasks,
 } from "../actions";
-import { AsyncUtility } from "../utils/async";
+import { AsyncUtility } from "../utils";
 import { createAsyncItemReducer } from "../utils/factory";
 
 interface System {

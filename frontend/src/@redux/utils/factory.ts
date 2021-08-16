@@ -14,8 +14,8 @@ import {
   pullAll,
   pullAllWith,
 } from "lodash";
+import { ReducerUtility } from ".";
 import { conditionalLog } from "../../utilites/logger";
-import { AsyncReducer } from "./async";
 
 interface ActionParam<T, ID = null> {
   range?: AsyncThunk<T, Parameter.Range, {}>;
@@ -81,6 +81,8 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
           meta: { arg },
         } = action;
 
+        const strIds = arg.map(String);
+
         const keyName = list.keyName as keyof T;
 
         action.payload.forEach((v) => {
@@ -92,7 +94,8 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
           }
         });
 
-        AsyncReducer.updateDirty(list, arg.map(String));
+        ReducerUtility.updateDirty(list, strIds);
+        ReducerUtility.updateDidLoaded(list, strIds);
       })
       .addCase(ids.rejected, (state, action) => {
         const list = getList(state);
@@ -111,7 +114,8 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
         return String((lhs as T)[keyName]) === rhs;
       });
 
-      AsyncReducer.removeDirty(list, removeIds);
+      ReducerUtility.removeDirty(list, removeIds);
+      ReducerUtility.removeDidLoaded(list, removeIds);
     });
 
   all &&
@@ -126,6 +130,11 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
         list.state = "succeeded";
         list.content = action.payload as Draft<T[]>;
         list.dirtyEntities = [];
+
+        const ids = action.payload.map((v) =>
+          String(v[list.keyName as keyof T])
+        );
+        ReducerUtility.updateDidLoaded(list, ids);
       })
       .addCase(all.rejected, (state, action) => {
         const list = getList(state);
@@ -136,7 +145,7 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
   dirty &&
     builder.addCase(dirty, (state, action) => {
       const list = getList(state);
-      AsyncReducer.markDirty(list, action.payload.map(String));
+      ReducerUtility.markDirty(list, action.payload.map(String));
     });
 }
 
@@ -177,15 +186,22 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
         checkSizeUpdate(entity, total);
 
-        const idsToUpdate = data.map((v) => String(v[keyName]));
-
-        entity.content.ids.splice(start, length, ...idsToUpdate);
         data.forEach((v) => {
           const key = String(v[keyName]);
           entity.content.entities[key] = v as Draft<T>;
         });
 
-        AsyncReducer.updateDirty(entity, idsToUpdate);
+        const idsToUpdate = data.map((v) => String(v[keyName]));
+
+        // Remove duplicated ids
+        const pulledSize =
+          total - pullAll(entity.content.ids, idsToUpdate).length;
+        entity.content.ids.push(...Array(pulledSize).fill(null));
+
+        entity.content.ids.splice(start, length, ...idsToUpdate);
+
+        ReducerUtility.updateDirty(entity, idsToUpdate);
+        ReducerUtility.updateDidLoaded(entity, idsToUpdate);
       })
       .addCase(range.rejected, (state, action) => {
         const entity = getEntity(state);
@@ -233,7 +249,10 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           entity.content.entities[key] = v as Draft<T>;
         });
 
-        AsyncReducer.updateDirty(entity, arg.map(String));
+        const allIds = arg.map(String);
+
+        ReducerUtility.updateDirty(entity, allIds);
+        ReducerUtility.updateDidLoaded(entity, allIds);
       })
       .addCase(ids.rejected, (state, action) => {
         const entity = getEntity(state);
@@ -251,7 +270,9 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
 
       const idsToDelete = action.payload.map(String);
       pullAll(entity.content.ids, idsToDelete);
-      AsyncReducer.removeDirty(entity, idsToDelete);
+      ReducerUtility.removeDirty(entity, idsToDelete);
+      ReducerUtility.removeDidLoaded(entity, idsToDelete);
+
       omit(entity.content.entities, idsToDelete);
     });
 
@@ -288,6 +309,9 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
           prev[id] = curr as Draft<T>;
           return prev;
         }, {});
+
+        const allIds = entity.content.ids.filter(isString);
+        ReducerUtility.updateDidLoaded(entity, allIds);
       })
       .addCase(all.rejected, (state, action) => {
         const entity = getEntity(state);
@@ -298,6 +322,6 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   dirty &&
     builder.addCase(dirty, (state, action) => {
       const entity = getEntity(state);
-      AsyncReducer.markDirty(entity, action.payload.map(String));
+      ReducerUtility.markDirty(entity, action.payload.map(String));
     });
 }

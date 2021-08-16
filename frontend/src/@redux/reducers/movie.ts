@@ -14,7 +14,7 @@ import {
   movieUpdateWantedById,
   movieUpdateWantedByRange,
 } from "../actions";
-import { AsyncUtility } from "../utils/async";
+import { AsyncUtility } from "../utils";
 import {
   createAsyncEntityReducer,
   createAsyncItemReducer,

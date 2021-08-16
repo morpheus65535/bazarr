@@ -31,52 +31,29 @@ export function useEntityItemById<T>(
   entity: Async.Entity<T>,
   id: string
 ): Async.Item<T> {
-  const { content, dirtyEntities, error, state } = entity;
+  const { content, dirtyEntities, didLoaded, error, state } = entity;
   const item = useEntityToItem(content, id);
 
   const newState = useMemo<Async.State>(() => {
-    if (state === "dirty") {
-      if (dirtyEntities.find((v) => v === id)) {
-        return "dirty";
-      } else {
-        return "succeeded";
-      }
-    } else {
-      return state;
+    switch (state) {
+      case "loading":
+        return state;
+      default:
+        if (dirtyEntities.find((v) => v === id)) {
+          return "dirty";
+        } else if (!didLoaded.find((v) => v === id)) {
+          return "uninitialized";
+        } else {
+          return state;
+        }
     }
-  }, [dirtyEntities, id, state]);
+  }, [dirtyEntities, id, state, didLoaded]);
 
   return useMemo(
     () => ({ content: item, state: newState, error }),
     [error, newState, item]
   );
 }
-
-// export function useListItemById<T>(
-//   list: Async.List<T>,
-//   id: string
-// ): Async.Item<T> {
-//   const { content, dirtyEntities, error, state, keyName } = list;
-//   const item = useMemo(
-//     () => content.find((v) => String(v[keyName]) === id) ?? null,
-//     [content, id, keyName]
-//   );
-
-//   const newState = useMemo<Async.State>(() => {
-//     if (state === "loading" || state === "uninitialized") {
-//       return state;
-//     } else if (dirtyEntities.find((v) => v === id)) {
-//       return "dirty";
-//     } else {
-//       return "succeeded";
-//     }
-//   }, [dirtyEntities, error, id, state]);
-
-//   return useMemo(
-//     () => ({ content: item, state: newState, error }),
-//     [item, newState, error]
-//   );
-// }
 
 export function useOnLoadedOnce(callback: () => void, entity: Async.Base<any>) {
   const [didLoaded, setLoaded] = useState(false);

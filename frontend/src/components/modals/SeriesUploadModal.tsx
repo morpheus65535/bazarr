@@ -140,26 +140,20 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     [episodes]
   );
 
-  const updateLanguage = useCallback(
-    (lang: Nullable<Language.Info>) => {
-      if (lang) {
-        const list = pending.map((v) => {
-          const form = v.form;
-          return {
-            ...v,
-            form: {
-              ...form,
-              language: lang.code2,
-              hi: lang.hi ?? false,
-              forced: lang.forced ?? false,
-            },
-          };
+  const updateLanguage = useCallback((lang: Nullable<Language.Info>) => {
+    if (lang) {
+      const { code2, hi, forced } = lang;
+      setPending((pending) => {
+        return pending.map((v) => {
+          const newValue = { ...v };
+          newValue.form.language = code2;
+          newValue.form.hi = hi ?? false;
+          newValue.form.forced = forced ?? false;
+          return newValue;
         });
-        setPending(list);
-      }
-    },
-    [pending]
-  );
+      });
+    }
+  }, []);
 
   const setFiles = useCallback(
     (files: File[]) => {

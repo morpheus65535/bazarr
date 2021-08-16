@@ -1,4 +1,4 @@
-import { AsyncUtility } from "../utils/async";
+import { AsyncUtility } from "../utils";
 
 export interface TestType {
   id: number;
