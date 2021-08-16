@@ -37,7 +37,7 @@ enum State {
 }
 
 interface PendingSubtitle {
-  form: FormType.UploadSubtitle;
+  file: File;
   didCheck: boolean;
   instance?: Item.Episode;
 }
@@ -75,9 +75,17 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
   const profile = useProfileBy(series?.profileId);
 
-  const languages = useProfileItemsToLanguages(profile);
+  const avaliableLanguages = useProfileItemsToLanguages(profile);
 
-  const filelist = useMemo(() => pending.map((v) => v.form.file), [pending]);
+  const [language, setLanguage] = useState<Language.Info | null>(null);
+
+  useEffect(() => {
+    if (avaliableLanguages.length > 0) {
+      setLanguage(avaliableLanguages[0]);
+    }
+  }, [avaliableLanguages]);
+
+  const filelist = useMemo(() => pending.map((v) => v.file), [pending]);
 
   // Vaildate
   useEffect(() => {
@@ -87,7 +95,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         infos: [],
       };
 
-      const { form, instance } = info;
+      const { file, instance } = info;
 
       if (!info.didCheck) {
         subState.state = State.Update;
@@ -96,7 +104,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         subState.state = State.Error;
       } else {
         if (
-          instance.subtitles.find((v) => v.code2 === form.language) !==
+          instance.subtitles.find((v) => v.code2 === language?.code2) !==
           undefined
         ) {
           subState.infos.push("Overwrite existing subtitle");
@@ -104,16 +112,16 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         }
       }
 
-      prev[form.file.name] = subState;
+      prev[file.name] = subState;
       return prev;
     }, {});
 
     setProcessState(states);
-  }, [pending]);
+  }, [pending, language?.code2]);
 
   const checkEpisodes = useCallback(
     async (list: PendingSubtitle[]) => {
-      const names = list.map((v) => v.form.file.name);
+      const names = list.map((v) => v.file.name);
 
       if (names.length > 0) {
         const results = await SubtitlesApi.info(names);
@@ -132,7 +140,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
           pd.map((v) => ({
             ...v,
             didCheck: true,
-            instance: episodeMap[v.form.file.name],
+            instance: episodeMap[v.file.name],
           }))
         );
       }
@@ -140,33 +148,12 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     [episodes]
   );
 
-  const updateLanguage = useCallback((lang: Nullable<Language.Info>) => {
-    if (lang) {
-      const { code2, hi, forced } = lang;
-      setPending((pending) => {
-        return pending.map((v) => {
-          const newValue = { ...v };
-          newValue.form.language = code2;
-          newValue.form.hi = hi ?? false;
-          newValue.form.forced = forced ?? false;
-          return newValue;
-        });
-      });
-    }
-  }, []);
-
   const setFiles = useCallback(
     (files: File[]) => {
       // At lease 1 language is required
-      const lang = languages[0];
       const list: PendingSubtitle[] = files.map((f) => {
         return {
-          form: {
-            file: f,
-            language: lang.code2,
-            hi: lang.hi ?? false,
-            forced: lang.forced ?? false,
-          },
+          file: f,
           didCheck: false,
         };
       });
@@ -182,7 +169,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       setProcessState(states);
       checkEpisodes(list);
     },
-    [languages, checkEpisodes]
+    [checkEpisodes]
   );
 
   const uploadSubtitles = useCallback(async () => {
@@ -193,7 +180,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     const { sonarrSeriesId: seriesid } = series;
 
     let uploadStates = pending.reduce<ProcessState>((prev, curr) => {
-      prev[curr.form.file.name] = { state: State.Update, infos: [] };
+      prev[curr.file.name] = { state: State.Update, infos: [] };
       return prev;
     }, {});
 
@@ -202,20 +189,29 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     let exception = false;
 
     for (const info of pending) {
-      if (info.instance) {
+      if (info.instance && language) {
         const { sonarrEpisodeId: episodeid } = info.instance;
+        const { file } = info;
+        const { code2, hi, forced } = language;
 
         try {
-          await EpisodesApi.uploadSubtitles(seriesid, episodeid, info.form);
+          const form: FormType.UploadSubtitle = {
+            file,
+            language: code2,
+            hi: hi ?? false,
+            forced: forced ?? false,
+          };
+
+          await EpisodesApi.uploadSubtitles(seriesid, episodeid, form);
 
           uploadStates = {
             ...uploadStates,
-            [info.form.file.name]: { state: State.Valid, infos: [] },
+            [info.file.name]: { state: State.Valid, infos: [] },
           };
         } catch (error) {
           uploadStates = {
             ...uploadStates,
-            [info.form.file.name]: { state: State.Error, infos: [] },
+            [info.file.name]: { state: State.Error, infos: [] },
           };
           exception = true;
         }
@@ -227,11 +223,14 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     if (exception) {
       throw new Error("Error when uploading subtitles");
     }
-  }, [series, pending]);
+  }, [series, pending, language]);
 
   const canUpload = useMemo(
-    () => pending.length > 0 && pending.every((v) => v.instance !== undefined),
-    [pending]
+    () =>
+      pending.length > 0 &&
+      pending.every((v) => v.instance !== undefined) &&
+      language,
+    [pending, language]
   );
 
   const tableShow = pending.length > 0;
@@ -243,9 +242,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         accessor: "instance",
         className: "text-center",
         Cell: ({ row, loose }) => {
-          const {
-            form: { file },
-          } = row.original;
+          const { file } = row.original;
 
           const name = file.name;
           const states = loose![1] as ProcessState;
@@ -291,7 +288,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       },
       {
         Header: "File",
-        accessor: (d) => d.form.file.name,
+        accessor: (d) => d.file.name,
       },
       {
         Header: "Episode",
@@ -330,7 +327,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         },
       },
       {
-        accessor: "form",
+        accessor: "file",
         Cell: ({ row, externalUpdate, loose }) => {
           const [uploading] = loose!;
           return (
@@ -371,9 +368,13 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       <div className="w-25">
         <LanguageSelector
           disabled={uploading}
-          options={languages}
-          defaultValue={languages.length > 0 ? languages[0] : undefined}
-          onChange={updateLanguage}
+          options={avaliableLanguages}
+          value={language}
+          onChange={(l) => {
+            if (l) {
+              setLanguage(l);
+            }
+          }}
         ></LanguageSelector>
       </div>
       <div>
@@ -414,7 +415,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
           <Form.Group>
             <FileForm
               emptyText="Select..."
-              disabled={tableShow || languages.length === 0}
+              disabled={tableShow || avaliableLanguages.length === 0}
               multiple
               value={filelist}
               onChange={setFiles}
