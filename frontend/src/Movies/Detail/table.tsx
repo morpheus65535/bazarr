@@ -102,10 +102,10 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
   );
 
   const data: Subtitle[] = useMemo(() => {
-    const missing = movie.missing_subtitles.map((item) => {
-      item.path = missingText;
-      return item;
-    });
+    const missing = movie.missing_subtitles.map((item) => ({
+      ...item,
+      path: missingText
+    }));
 
     let raw_subtitles = movie.subtitles;
     if (onlyDesired) {
