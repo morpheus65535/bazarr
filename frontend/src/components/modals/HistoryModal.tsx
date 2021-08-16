@@ -6,7 +6,7 @@ import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
 import { BlacklistButton } from "../../generic/blacklist";
 import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { usePayload } from "./provider";
+import { usePayload } from "./hooks";
 
 export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;

@@ -50,9 +50,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     payload ?? null
   );
 
-  const onShow = useCallback(() => setCurrent(payload ?? null), [payload]);
-
-  useOnModalShow(modal.modalKey, onShow);
+  useOnModalShow(() => setCurrent(payload ?? null), modal.modalKey);
 
   const updateUrl = useCallback(
     (s: string) => {

@@ -4,7 +4,7 @@ import { AsyncButton, Selector } from "../";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { GetItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal, usePayload } from "./provider";
+import { useCloseModal, usePayload } from "./hooks";
 
 interface Props {
   submit: (form: FormType.ModifyItem) => Promise<void>;

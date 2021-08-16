@@ -48,7 +48,7 @@ import { isMovie, submodProcessColor } from "../../utilites";
 import { log } from "../../utilites/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModalUntil } from "./provider";
+import { useCloseModalUntil } from "./hooks";
 import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
@@ -337,12 +337,12 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
   const [processState, setProcessState] = useState<ProcessState>({});
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const closeUntil = useCloseModalUntil(props.modalKey);
+  const closeUntil = useCloseModalUntil();
 
   const process = useCallback(
     async (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       log("info", "executing action", action);
-      closeUntil();
+      closeUntil(props.modalKey);
       setUpdate(true);
 
       let states = selections.reduce<ProcessState>(
@@ -374,7 +374,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
       }
       setUpdate(false);
     },
-    [closeUntil, selections]
+    [closeUntil, selections, props.modalKey]
   );
 
   const showModal = useShowModal();

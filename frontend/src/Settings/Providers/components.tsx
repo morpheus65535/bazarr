@@ -84,9 +84,7 @@ export const ProviderModal: FunctionComponent = () => {
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload ?? null);
 
-  const onShow = useCallback(() => setInfo(payload ?? null), [payload]);
-
-  useOnModalShow(ModalKey, onShow);
+  useOnModalShow(() => setInfo(payload ?? null), ModalKey);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
