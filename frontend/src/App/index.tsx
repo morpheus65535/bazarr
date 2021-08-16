@@ -18,8 +18,8 @@ import Socketio from "../@socketio";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";
+import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
-import UIError from "../special-pages/UIError";
 import { useBaseUrl, useHasUpdateInject } from "../utilites";
 import Header from "./Header";
 import Router from "./Router";
@@ -62,8 +62,8 @@ const App: FunctionComponent<Props> = () => {
   } else if (typeof initialized === "string") {
     return <LaunchError>{initialized}</LaunchError>;
   }
-  try {
-    return (
+  return (
+    <ErrorBoundary>
       <SidebarToggleContext.Provider value={toggleSidebar}>
         <Row noGutters className="header-container">
           <Header></Header>
@@ -75,10 +75,8 @@ const App: FunctionComponent<Props> = () => {
           </ModalProvider>
         </Row>
       </SidebarToggleContext.Provider>
-    );
-  } catch (e) {
-    return <UIError error={e}></UIError>;
-  }
+    </ErrorBoundary>
+  );
 };
 
 const MainRouter: FunctionComponent = () => {

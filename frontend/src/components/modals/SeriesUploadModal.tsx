@@ -173,7 +173,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   );
 
   const uploadSubtitles = useCallback(async () => {
-    if (series === null) {
+    if (series === null || language === null) {
       return;
     }
 
@@ -189,7 +189,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     let exception = false;
 
     for (const info of pending) {
-      if (info.instance && language) {
+      if (info.instance) {
         const { sonarrEpisodeId: episodeid } = info.instance;
         const { file } = info;
         const { code2, hi, forced } = language;
