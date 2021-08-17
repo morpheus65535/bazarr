@@ -9,6 +9,7 @@ from enzyme.exceptions import MalformedMKVError
 from enzyme.exceptions import MalformedMKVError
 from custom_lang import CustomLanguage
 from database import TableEpisodes, TableMovies
+from helper import path_mappings
 
 logger = logging.getLogger(__name__)
 
@@ -77,14 +78,12 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         # Get the actual cache value form database
         if episode_file_id:
             cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
-                .where((TableEpisodes.episode_file_id == episode_file_id) and
-                       (TableEpisodes.file_size == file_size))\
+                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
                 .dicts()\
                 .get()
         elif movie_file_id:
             cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
-                .where(TableMovies.movie_file_id == movie_file_id and
-                       TableMovies.file_size == file_size)\
+                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
                 .dicts()\
                 .get()
         else:
@@ -110,7 +109,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     if ffprobe_path:
         api.initialize({"provider": "ffmpeg", "ffmpeg": ffprobe_path})
         data["ffprobe"] = api.know(file)
-    # if nto, we use enzyme for mkv files
+    # if not, we use enzyme for mkv files
     else:
         if os.path.splitext(file)[1] == ".mkv":
             with open(file, "rb") as f:
@@ -127,10 +126,10 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
         TableEpisodes.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableEpisodes.episode_file_id == episode_file_id)\
+            .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
             .execute()
     elif movie_file_id:
         TableMovies.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableMovies.movie_file_id == movie_file_id)\
+            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
             .execute()
     return data
