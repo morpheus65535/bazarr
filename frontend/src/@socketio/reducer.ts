@@ -2,11 +2,9 @@ import { ActionCreator } from "@reduxjs/toolkit";
 import {
   episodesMarkBlacklistDirty,
   episodesMarkDirtyById,
-  episodesMarkHistoryDirty,
   episodesRemoveById,
   movieMarkBlacklistDirty,
   movieMarkDirtyById,
-  movieMarkHistoryDirty,
   movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
@@ -130,7 +128,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "movie-history",
-      any: bindReduxAction(movieMarkHistoryDirty),
+      // any: bindReduxAction(movieMarkHistoryDirty),
     },
     {
       key: "movie-blacklist",
@@ -138,7 +136,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "episode-history",
-      any: bindReduxAction(episodesMarkHistoryDirty),
+      // any: bindReduxAction(episodesMarkHistoryDirty),
     },
     {
       key: "episode-blacklist",

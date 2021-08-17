@@ -55,15 +55,17 @@ export const movieUpdateWantedByRange = createAsyncThunk(
   }
 );
 
-export const movieUpdateHistory = createAsyncThunk(
-  "movies/history/update",
-  async () => {
-    const response = await MoviesApi.history();
+export const movieUpdateHistoryByRange = createAsyncThunk(
+  "movies/history/update/range",
+  async (params: Parameter.Range) => {
+    const response = await MoviesApi.history(params);
     return response;
   }
 );
 
-export const movieMarkHistoryDirty = createAction("movies/history/mark_dirty");
+export const movieMarkHistoryDirty = createAction<number[]>(
+  "movies/history/mark_dirty"
+);
 
 export const movieUpdateBlacklist = createAsyncThunk(
   "movies/blacklist/update",

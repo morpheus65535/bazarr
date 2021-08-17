@@ -10,7 +10,7 @@ import {
   movieUpdateBlacklist,
   movieUpdateById,
   movieUpdateByRange,
-  movieUpdateHistory,
+  movieUpdateHistoryByRange,
   movieUpdateWantedById,
   movieUpdateWantedByRange,
 } from "../actions";
@@ -23,14 +23,14 @@ import {
 interface Movie {
   movieList: Async.Entity<Item.Movie>;
   wantedMovieList: Async.Entity<Wanted.Movie>;
-  historyList: Async.Item<History.Movie[]>;
+  historyList: Async.Entity<History.Movie>;
   blacklist: Async.Item<Blacklist.Movie[]>;
 }
 
 const defaultMovie: Movie = {
   movieList: AsyncUtility.getDefaultEntity("radarrId"),
   wantedMovieList: AsyncUtility.getDefaultEntity("radarrId"),
-  historyList: AsyncUtility.getDefaultItem(),
+  historyList: AsyncUtility.getDefaultEntity("id"),
   blacklist: AsyncUtility.getDefaultItem(),
 };
 
@@ -50,8 +50,8 @@ const reducer = createReducer(defaultMovie, (builder) => {
     dirty: movieMarkWantedDirtyById,
   });
 
-  createAsyncItemReducer(builder, (s) => s.historyList, {
-    all: movieUpdateHistory,
+  createAsyncEntityReducer(builder, (s) => s.historyList, {
+    range: movieUpdateHistoryByRange,
     dirty: movieMarkHistoryDirty,
   });
 

@@ -1419,7 +1419,8 @@ class EpisodesHistory(Resource):
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
         query_condition = reduce(operator.and_, query_conditions)
-        episode_history = TableHistory.select(TableShows.title.alias('seriesTitle'),
+        episode_history = TableHistory.select(TableHistory.id,
+                                              TableShows.title.alias('seriesTitle'),
                                               TableEpisodes.monitored,
                                               TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
                                               TableEpisodes.title.alias('episodeTitle'),
@@ -1535,7 +1536,8 @@ class MoviesHistory(Resource):
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
 
-        movie_history = TableHistoryMovie.select(TableHistoryMovie.action,
+        movie_history = TableHistoryMovie.select(TableHistoryMovie.id,
+                                                 TableHistoryMovie.action,
                                                  TableMovies.title,
                                                  TableHistoryMovie.timestamp,
                                                  TableHistoryMovie.description,

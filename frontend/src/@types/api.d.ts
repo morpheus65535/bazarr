@@ -195,6 +195,7 @@ declare namespace History {
     TagType &
     MonitoredType &
     Partial<ItemHistoryType> & {
+      id: number;
       action: number;
       blacklisted: boolean;
       score?: string;

@@ -3,7 +3,6 @@ import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   movieUpdateBlacklist,
   movieUpdateById,
-  movieUpdateHistory,
   movieUpdateWantedById,
 } from "../actions";
 import { useAutoDirtyUpdate, useAutoUpdate } from "./async";
@@ -62,9 +61,7 @@ export function useBlacklistMovies() {
 }
 
 export function useMoviesHistory() {
-  const update = useReduxAction(movieUpdateHistory);
   const items = useReduxStore((s) => s.movies.historyList);
 
-  useAutoUpdate(items, update);
   return items;
 }

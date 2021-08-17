@@ -5,7 +5,7 @@ import {
   episodesMarkHistoryDirty,
   episodesRemoveById,
   episodesUpdateBlacklist,
-  episodesUpdateHistory,
+  episodesUpdateHistoryByRange,
   episodeUpdateById,
   episodeUpdateBySeriesId,
   seriesMarkDirtyById,
@@ -29,7 +29,7 @@ interface Series {
   seriesList: Async.Entity<Item.Series>;
   wantedEpisodesList: Async.Entity<Wanted.Episode>;
   episodeList: Async.List<Item.Episode>;
-  historyList: Async.Item<History.Episode[]>;
+  historyList: Async.Entity<History.Episode>;
   blacklist: Async.Item<Blacklist.Episode[]>;
 }
 
@@ -37,7 +37,7 @@ const defaultSeries: Series = {
   seriesList: AsyncUtility.getDefaultEntity("sonarrSeriesId"),
   wantedEpisodesList: AsyncUtility.getDefaultEntity("sonarrEpisodeId"),
   episodeList: AsyncUtility.getDefaultList("sonarrEpisodeId"),
-  historyList: AsyncUtility.getDefaultItem(),
+  historyList: AsyncUtility.getDefaultEntity("id"),
   blacklist: AsyncUtility.getDefaultItem(),
 };
 
@@ -72,8 +72,8 @@ const reducer = createReducer(defaultSeries, (builder) => {
     dirty: seriesMarkWantedDirtyById,
   });
 
-  createAsyncItemReducer(builder, (s) => s.historyList, {
-    all: episodesUpdateHistory,
+  createAsyncEntityReducer(builder, (s) => s.historyList, {
+    range: episodesUpdateHistoryByRange,
     dirty: episodesMarkHistoryDirty,
   });
 

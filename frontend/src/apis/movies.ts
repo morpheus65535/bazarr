@@ -93,18 +93,20 @@ class MovieApi extends BaseApi {
     });
   }
 
-  async history(id?: number): Promise<History.Movie[]> {
-    return new Promise<History.Movie[]>((resolve, reject) => {
-      this.get<DataWrapper<History.Movie[]>>("/history", {
-        radarrid: id,
-      })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+  async history(params: Parameter.Range) {
+    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+      "/history",
+      params
+    );
+    return response.data;
+  }
+
+  async historyBy(radarrid: number) {
+    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+      "/history",
+      { radarrid }
+    );
+    return response.data;
   }
 
   async action(action: FormType.MoviesAction) {

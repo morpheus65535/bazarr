@@ -53,16 +53,20 @@ class EpisodeApi extends BaseApi {
     });
   }
 
-  async history(episodeid?: number): Promise<History.Episode[]> {
-    return new Promise<History.Episode[]>((resolve, reject) => {
-      this.get<DataWrapper<History.Episode[]>>("/history", { episodeid })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+  async history(params: Parameter.Range) {
+    const response = await this.get<AsyncDataWrapper<History.Episode>>(
+      "/history",
+      params
+    );
+    return response.data;
+  }
+
+  async historyBy(episodeid: number) {
+    const response = await this.get<AsyncDataWrapper<History.Episode>>(
+      "/history",
+      { episodeid }
+    );
+    return response.data;
   }
 
   async downloadSubtitles(

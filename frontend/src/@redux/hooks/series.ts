@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useEntityItemById, useEntityToList } from "../../utilites";
 import {
   episodesUpdateBlacklist,
-  episodesUpdateHistory,
   episodeUpdateById,
   episodeUpdateBySeriesId,
   seriesUpdateById,
@@ -94,9 +93,7 @@ export function useBlacklistSeries() {
 }
 
 export function useSeriesHistory() {
-  const update = useReduxAction(episodesUpdateHistory);
   const items = useReduxStore((s) => s.series.historyList);
 
-  useAutoUpdate(items, update);
   return items;
 }

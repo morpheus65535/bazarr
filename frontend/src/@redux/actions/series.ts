@@ -77,15 +77,17 @@ export const episodeUpdateById = createAsyncThunk(
   }
 );
 
-export const episodesUpdateHistory = createAsyncThunk(
-  "episodes/history/update",
-  async () => {
-    const response = await EpisodesApi.history();
+export const episodesUpdateHistoryByRange = createAsyncThunk(
+  "episodes/history/update/range",
+  async (param: Parameter.Range) => {
+    const response = await EpisodesApi.history(param);
     return response;
   }
 );
 
-export const episodesMarkHistoryDirty = createAction("episodes/history/update");
+export const episodesMarkHistoryDirty = createAction<number[]>(
+  "episodes/history/update"
+);
 
 export const episodesUpdateBlacklist = createAsyncThunk(
   "episodes/blacklist/update",
