@@ -207,7 +207,6 @@ if settings.general.getboolean('use_sonarr'):
     greenlets.append(Greenlet.spawn(sonarr_signalr_client.start))
 if settings.general.getboolean('use_radarr'):
     greenlets.append(Greenlet.spawn(radarr_signalr_client.start))
-joinall(greenlets)
 
 
 if __name__ == "__main__":
