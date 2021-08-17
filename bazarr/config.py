@@ -91,7 +91,8 @@ defaults = {
         'series_sync': '60',
         'episodes_sync': '60',
         'excluded_tags': '[]',
-        'excluded_series_types': '[]'
+        'excluded_series_types': '[]',
+        'use_ffprobe_cache': 'True'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -104,7 +105,8 @@ defaults = {
         'full_update_hour': '5',
         'only_monitored': 'False',
         'movies_sync': '60',
-        'excluded_tags': '[]'
+        'excluded_tags': '[]',
+        'use_ffprobe_cache': 'True'
     },
     'proxy': {
         'type': 'None',
