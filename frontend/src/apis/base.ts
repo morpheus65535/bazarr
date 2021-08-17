@@ -30,11 +30,12 @@ class BaseApi {
     }
   }
 
-  protected get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(this.prefix + path, { params });
+  protected async get<T = unknown>(path: string, params?: any) {
+    const response = await apis.axios.get<T>(this.prefix + path, { params });
+    return response.data;
   }
 
-  protected post<T>(
+  protected post<T = void>(
     path: string,
     formdata?: LooseObject,
     params?: any
@@ -43,7 +44,7 @@ class BaseApi {
     return apis.axios.post(this.prefix + path, form, { params });
   }
 
-  protected patch<T>(
+  protected patch<T = void>(
     path: string,
     formdata?: LooseObject,
     params?: any
@@ -52,7 +53,7 @@ class BaseApi {
     return apis.axios.patch(this.prefix + path, form, { params });
   }
 
-  protected delete<T>(
+  protected delete<T = void>(
     path: string,
     formdata?: any,
     params?: any

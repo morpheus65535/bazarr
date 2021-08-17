@@ -1,19 +1,13 @@
-import { AxiosResponse } from "axios";
-import apis from ".";
+import BaseApi from "./base";
 
-class BadgesApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/badges${path}`, { params });
+class BadgesApi extends BaseApi {
+  constructor() {
+    super("/badges");
   }
 
-  async all(): Promise<Badge> {
-    return new Promise<Badge>((resolve, reject) => {
-      this.get<Badge>("")
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch(reject);
-    });
+  async all() {
+    const response = await this.get<Badge>("");
+    return response;
   }
 }
 

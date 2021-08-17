@@ -5,23 +5,20 @@ class FilesApi extends BaseApi {
     super("/files");
   }
 
-  async browse(name: string, path?: string): Promise<FileTree[]> {
-    return new Promise((resolve, reject) => {
-      this.get<FileTree[]>(name, { path })
-        .then((res) => resolve(res.data))
-        .catch(reject);
-    });
+  async browse(name: string, path?: string) {
+    const response = await this.get<FileTree[]>(name, { path });
+    return response;
   }
 
-  async bazarr(path?: string): Promise<FileTree[]> {
+  async bazarr(path?: string) {
     return this.browse("", path);
   }
 
-  async sonarr(path?: string): Promise<FileTree[]> {
+  async sonarr(path?: string) {
     return this.browse("/sonarr", path);
   }
 
-  async radarr(path?: string): Promise<FileTree[]> {
+  async radarr(path?: string) {
     return this.browse("/radarr", path);
   }
 }

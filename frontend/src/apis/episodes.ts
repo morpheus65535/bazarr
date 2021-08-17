@@ -5,52 +5,34 @@ class EpisodeApi extends BaseApi {
     super("/episodes");
   }
 
-  async bySeriesId(seriesid: number[]): Promise<Item.Episode[]> {
-    return new Promise<Item.Episode[]>((resolve, reject) => {
-      this.get<DataWrapper<Item.Episode[]>>("", { seriesid })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
+  async bySeriesId(seriesid: number[]) {
+    const response = await this.get<DataWrapper<Item.Episode[]>>("", {
+      seriesid,
     });
+    return response.data;
   }
 
-  async byEpisodeId(episodeid: number[]): Promise<Item.Episode[]> {
-    return new Promise<Item.Episode[]>((resolve, reject) => {
-      this.get<DataWrapper<Item.Episode[]>>("", { episodeid })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
+  async byEpisodeId(episodeid: number[]) {
+    const response = await this.get<DataWrapper<Item.Episode[]>>("", {
+      episodeid,
     });
+    return response.data;
   }
 
   async wanted(params: Parameter.Range) {
-    return new Promise<AsyncDataWrapper<Wanted.Episode>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", params)
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+    const response = await this.get<AsyncDataWrapper<Wanted.Episode>>(
+      "/wanted",
+      params
+    );
+    return response;
   }
 
   async wantedBy(episodeid: number[]) {
-    return new Promise<AsyncDataWrapper<Wanted.Episode>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Episode>>("/wanted", { episodeid })
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+    const response = await this.get<AsyncDataWrapper<Wanted.Episode>>(
+      "/wanted",
+      { episodeid }
+    );
+    return response;
   }
 
   async history(params: Parameter.Range) {
@@ -58,7 +40,7 @@ class EpisodeApi extends BaseApi {
       "/history",
       params
     );
-    return response.data;
+    return response;
   }
 
   async historyBy(episodeid: number) {
@@ -66,76 +48,50 @@ class EpisodeApi extends BaseApi {
       "/history",
       { episodeid }
     );
-    return response.data;
+    return response;
   }
 
   async downloadSubtitles(
     seriesid: number,
     episodeid: number,
     form: FormType.Subtitle
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/subtitles", form, { seriesid, episodeid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  ) {
+    await this.patch("/subtitles", form, { seriesid, episodeid });
   }
 
   async uploadSubtitles(
     seriesid: number,
     episodeid: number,
     form: FormType.UploadSubtitle
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.post("/subtitles", form, { seriesid, episodeid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  ) {
+    await this.post("/subtitles", form, { seriesid, episodeid });
   }
 
   async deleteSubtitles(
     seriesid: number,
     episodeid: number,
     form: FormType.DeleteSubtitle
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.delete("/subtitles", form, { seriesid, episodeid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  ) {
+    await this.delete("/subtitles", form, { seriesid, episodeid });
   }
 
-  async blacklist(): Promise<Blacklist.Episode[]> {
-    return new Promise<Blacklist.Episode[]>((resolve, reject) => {
-      this.get<DataWrapper<Blacklist.Episode[]>>("/blacklist")
-        .then((res) => {
-          resolve(res.data.data);
-        })
-        .catch(reject);
-    });
+  async blacklist() {
+    const response = await this.get<DataWrapper<Blacklist.Episode[]>>(
+      "/blacklist"
+    );
+    return response.data;
   }
 
   async addBlacklist(
     seriesid: number,
     episodeid: number,
     form: FormType.AddBlacklist
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.post<void>("/blacklist", form, { seriesid, episodeid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  ) {
+    await this.post("/blacklist", form, { seriesid, episodeid });
   }
 
-  async deleteBlacklist(
-    all?: boolean,
-    form?: FormType.DeleteBlacklist
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.delete<void>("/blacklist", form, { all })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
+    await this.delete("/blacklist", form, { all });
   }
 }
 
