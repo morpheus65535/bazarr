@@ -3,6 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useEffectOnceWhen } from "rooks";
 import { useEntityIdByRange, useEntityToItem } from "./entity";
 
+export async function waitFor(time: number) {
+  return new Promise((resolved) => {
+    setTimeout(resolved, time);
+  });
+}
+
 export function useNewEntityIds(entity: Async.Entity<any>) {
   return useMemo(() => {
     const dirtyEntities = entity.dirtyEntities;

@@ -202,7 +202,7 @@ const Progress: FunctionComponent<Server.Progress> = ({
   count,
   header,
 }) => {
-  const isCompleted = value / count >= 1;
+  const isCompleted = value / count > 1;
   return (
     <div className="notification-center-progress d-flex flex-column">
       <p className="progress-header m-0 h-6 text-dark font-weight-bold">

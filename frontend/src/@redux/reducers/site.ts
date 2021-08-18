@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit";
-import { pullAllWith, remove, uniqBy } from "lodash";
+import { intersectionWith, pullAllWith, remove, sortBy, uniqBy } from "lodash";
 import apis from "../../apis";
 import {
   siteAddNotifications,
@@ -50,31 +50,49 @@ const reducer = createReducer(defaultSite, (builder) => {
     })
     .addCase(siteRedirectToAuth, (state) => {
       if (process.env.NODE_ENV !== "production") {
-        apis.danger_resetApi("NEED_AUTH");
+        apis._resetApi("NEED_AUTH");
       }
       state.auth = false;
     })
     .addCase(siteUpdateInitialization, (state, action) => {
       state.initialized = action.payload;
-    })
+    });
+
+  builder
     .addCase(siteAddNotifications, (state, action) => {
       state.notifications = uniqBy(
-        [...action.payload.reverse(), ...state.notifications],
-        (n) => n.id
+        [...action.payload, ...state.notifications],
+        (v) => v.id
       );
+      state.notifications = sortBy(state.notifications, (v) => v.id);
     })
     .addCase(siteRemoveNotifications, (state, action) => {
       remove(state.notifications, (n) => n.id === action.payload);
-    })
+    });
+
+  builder
     .addCase(siteAddProgress, (state, action) => {
       state.progress = uniqBy(
-        [...action.payload.reverse(), ...state.progress],
+        [...action.payload, ...state.progress],
         (n) => n.id
       );
+      state.progress = sortBy(state.progress, (v) => v.id);
     })
-    .addCase(siteRemoveProgress, (state, action) => {
+    .addCase(siteRemoveProgress.pending, (state, action) => {
+      // Mark completed
+      intersectionWith(
+        state.progress,
+        action.meta.arg,
+        (l, r) => l.id === r
+      ).forEach((v) => {
+        v.value = v.count + 1;
+      });
+    })
+    .addCase(siteRemoveProgress.fulfilled, (state, action) => {
       pullAllWith(state.progress, action.payload, (l, r) => l.id === r);
-    })
+    });
+
+  builder
     .addCase(siteChangeSidebar, (state, action) => {
       state.sidebar = action.payload;
     })
