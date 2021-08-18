@@ -729,7 +729,8 @@ def series_download_subtitles(no):
         .where(reduce(operator.and_, conditions))\
         .dicts()
     if not episodes_details:
-        logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
+        logging.debug("BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
+                      "ignored because of monitored status, series type or series tags: {}".format(no))
         return
 
     providers_list = get_providers()
