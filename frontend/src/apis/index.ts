@@ -52,8 +52,10 @@ class Api {
     );
   }
 
-  danger_resetApi(apikey: string) {
-    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
+  _resetApi(apikey: string) {
+    if (process.env.NODE_ENV !== "production") {
+      this.axios.defaults.headers.common["X-API-KEY"] = apikey;
+    }
   }
 
   handleError(code: number) {

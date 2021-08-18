@@ -83,11 +83,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "progress",
       update: bindReduxAction(siteAddProgress),
-      delete: (ids) => {
-        setTimeout(() => {
-          reduxStore.dispatch(siteRemoveProgress(ids));
-        }, 3 * 1000);
-      },
+      delete: bindReduxAction(siteRemoveProgress),
     },
     {
       key: "series",

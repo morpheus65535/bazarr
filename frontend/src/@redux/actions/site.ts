@@ -1,5 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { BadgesApi } from "../../apis";
+import { waitFor } from "../../utilites";
 import { systemUpdateAllSettings } from "./system";
 
 export const siteBootstrap = createAsyncThunk(
@@ -29,8 +30,12 @@ export const siteRemoveNotifications = createAction<string>(
 export const siteAddProgress =
   createAction<Server.Progress[]>("site/progress/add");
 
-export const siteRemoveProgress = createAction<string[]>(
-  "site/progress/remove"
+export const siteRemoveProgress = createAsyncThunk(
+  "site/progress/remove",
+  async (ids: string[]) => {
+    await waitFor(3 * 1000);
+    return ids;
+  }
 );
 
 export const siteChangeSidebar = createAction<string>("site/sidebar/update");
