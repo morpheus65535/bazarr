@@ -402,9 +402,9 @@ class ModifiedSubtitle(Subtitle):
 
 
 MERGED_FORMATS = {
-    "TV": ("HDTV", "SDTV", "AHDTV", "UHDTV"),
-    "Air": ("SATRip", "DVB", "PPV"),
-    "Disk-HD": ("HD-DVD", "Blu-ray"),
+    "TV": ("HDTV", "SDTV", "AHDTV", "Ultra HDTV"),
+    "Air": ("SATRip", "DVB", "PPV", "Digital TV"),
+    "Disk-HD": ("HD-DVD", "Blu-ray", "Ultra HD Blu-ray"),
     "Disk-SD": ("DVD", "VHS"),
     "Web": ("Web",),
 }
