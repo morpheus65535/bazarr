@@ -22,8 +22,8 @@ import {
   systemMarkTasksDirty,
   systemUpdateAllSettings,
   systemUpdateLanguages,
-} from "../@redux/actions";
-import reduxStore from "../@redux/store";
+} from "../../@redux/actions";
+import reduxStore from "../../@redux/store";
 
 function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {
