@@ -11,6 +11,7 @@ import React, { FunctionComponent, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { useIsGroupTaskRunningWithId } from "../../@modules/task/hooks";
 import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -23,6 +24,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
+import { TaskGroupName } from "../../components/modals/MovieUploadModal";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
 import { useOnLoadedOnce } from "../../utilites";
@@ -57,6 +59,8 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const [valid, setValid] = useState(true);
 
+  const hasTask = useIsGroupTaskRunningWithId(TaskGroupName, id);
+
   useOnLoadedOnce(() => {
     if (movie.content === null) {
       setValid(false);
@@ -82,6 +86,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         <ContentHeader.Group pos="start">
           <ContentHeader.AsyncButton
             icon={faSync}
+            disabled={hasTask}
             promise={() =>
               MoviesApi.action({ action: "scan-disk", radarrid: item.radarrId })
             }
@@ -90,7 +95,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.AsyncButton>
           <ContentHeader.AsyncButton
             icon={faSearch}
-            disabled={item.profileId === null}
+            disabled={item.profileId === null || hasTask}
             promise={() =>
               MoviesApi.action({
                 action: "search-missing",
@@ -102,7 +107,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.AsyncButton>
           <ContentHeader.Button
             icon={faUser}
-            disabled={item.profileId === null}
+            disabled={item.profileId === null || hasTask}
             onClick={() => showModal<Item.Movie>("manual-search", item)}
           >
             Manual
@@ -115,6 +120,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
+            disabled={hasTask}
             onClick={() => showModal("tools", [item])}
           >
             Tools
@@ -123,7 +129,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={!allowEdit || item.profileId === null}
+            disabled={!allowEdit || item.profileId === null || hasTask}
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", item)}
           >
@@ -131,6 +137,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
+            disabled={hasTask}
             onClick={() => showModal("edit", item)}
           >
             Edit Movie

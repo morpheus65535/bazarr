@@ -1,6 +1,9 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
-import { Container, Form } from "react-bootstrap";
-import { AsyncButton, FileForm, LanguageSelector } from "..";
+import { Button, Container, Form } from "react-bootstrap";
+import { FileForm, LanguageSelector } from "..";
+import BackgroundTask from "../../@modules/task";
+import { useIsGroupTaskRunning } from "../../@modules/task/hooks";
+import { createTask } from "../../@modules/task/utilites";
 import {
   useEnabledLanguages,
   useLanguageBy,
@@ -9,11 +12,10 @@ import {
 import { MoviesApi } from "../../apis";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
-interface MovieProps {}
 
-const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
-  props
-) => {
+export const TaskGroupName = "Uploading Movie Subtitles...";
+
+const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;
 
   const availableLanguages = useEnabledLanguages();
@@ -21,8 +23,6 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   const { payload, closeModal } = useModalInformation<Item.Movie>(
     modal.modalKey
   );
-
-  const [uploading, setUpload] = useState(false);
 
   const [language, setLanguage] = useState<Nullable<Language.Info>>(null);
 
@@ -35,40 +35,41 @@ const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
   const [file, setFile] = useState<Nullable<File>>(null);
   const [forced, setForced] = useState(false);
 
+  const hasTask = useIsGroupTaskRunning(TaskGroupName);
+
   const canUpload = useMemo(() => {
-    return file !== null && language?.code2;
-  }, [language, file]);
+    return file !== null && language?.code2 && !hasTask;
+  }, [language, file, hasTask]);
 
   const footer = (
-    <AsyncButton
-      noReset
+    <Button
       disabled={!canUpload}
-      onChange={setUpload}
-      promise={() => {
+      onClick={() => {
         if (file && payload && language) {
-          return MoviesApi.uploadSubtitles(payload.radarrId, {
-            file: file,
-            forced,
-            hi: false,
-            language: language.code2,
-          });
-        } else {
-          return null;
+          const id = payload.radarrId;
+          const task = createTask(
+            file.name,
+            id,
+            MoviesApi.uploadSubtitles.bind(MoviesApi),
+            id,
+            {
+              file: file,
+              forced,
+              hi: false,
+              language: language.code2,
+            }
+          );
+          BackgroundTask.dispatch(TaskGroupName, [task]);
+          closeModal(props.modalKey);
         }
       }}
-      onSuccess={() => closeModal()}
     >
       Upload
-    </AsyncButton>
+    </Button>
   );
 
   return (
-    <BaseModal
-      title={`Upload - ${payload?.title}`}
-      closeable={!uploading}
-      footer={footer}
-      {...modal}
-    >
+    <BaseModal title={`Upload - ${payload?.title}`} footer={footer} {...modal}>
       <Container fluid>
         <Form>
           <Form.Group>

@@ -97,12 +97,14 @@ const MovieView: FunctionComponent<Props> = () => {
       {
         accessor: "radarrId",
         selectHide: true,
-        Cell: ({ row, externalUpdate }) => (
-          <ActionBadge
-            icon={faWrench}
-            onClick={() => externalUpdate && externalUpdate(row, "edit")}
-          ></ActionBadge>
-        ),
+        Cell: ({ row, value, externalUpdate }) => {
+          return (
+            <ActionBadge
+              icon={faWrench}
+              onClick={() => externalUpdate && externalUpdate(row, "edit")}
+            ></ActionBadge>
+          );
+        },
       },
     ],
     []

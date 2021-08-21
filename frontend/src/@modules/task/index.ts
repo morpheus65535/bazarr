@@ -54,6 +54,16 @@ class BackgroundTask {
     return groupName in this.groups;
   }
 
+  hasId(id: number) {
+    for (const key in this.groups) {
+      const tasks = this.groups[key];
+      if (tasks.find((v) => v.id === id) !== undefined) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   isRunning() {
     return keys(this.groups).length > 0;
   }

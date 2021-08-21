@@ -1,6 +1,7 @@
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
+import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { GetItemId } from "../../utilites";
 import BaseModal, { BaseModalProps } from "./BaseModal";
@@ -20,6 +21,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     modal.modalKey
   );
 
+  // TODO: Separate movies and series
+  const hasTask = useIsAnyTaskRunningWithId(payload ? GetItemId(payload) : -1);
+
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
       profiles?.map((v) => {
@@ -31,31 +35,29 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const [updating, setUpdating] = useState(false);
 
-  const footer = useMemo(
-    () => (
-      <AsyncButton
-        noReset
-        onChange={setUpdating}
-        promise={() => {
-          if (payload) {
-            const itemId = GetItemId(payload);
-            return submit({
-              id: [itemId],
-              profileid: [id],
-            });
-          } else {
-            return null;
-          }
-        }}
-        onSuccess={() => {
-          closeModal();
-          onSuccess && payload && onSuccess(payload);
-        }}
-      >
-        Save
-      </AsyncButton>
-    ),
-    [closeModal, id, payload, onSuccess, submit]
+  const footer = (
+    <AsyncButton
+      noReset
+      onChange={setUpdating}
+      disabled={hasTask}
+      promise={() => {
+        if (payload) {
+          const itemId = GetItemId(payload);
+          return submit({
+            id: [itemId],
+            profileid: [id],
+          });
+        } else {
+          return null;
+        }
+      }}
+      onSuccess={() => {
+        closeModal();
+        onSuccess && payload && onSuccess(payload);
+      }}
+    >
+      Save
+    </AsyncButton>
   );
 
   return (
@@ -81,6 +83,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
             <Form.Label>Languages Profiles</Form.Label>
             <Selector
               clearable
+              disabled={hasTask}
               options={profileOptions}
               defaultValue={payload?.profileId}
               onChange={(v) => setId(v === undefined ? null : v)}
