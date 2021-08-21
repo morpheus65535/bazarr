@@ -30,6 +30,11 @@ export const siteRemoveNotifications = createAction<string>(
 export const siteAddProgress =
   createAction<Site.Progress[]>("site/progress/add");
 
+export const siteUpdateProgressCount = createAction<{
+  id: string;
+  count: number;
+}>("site/progress/update_count");
+
 export const siteRemoveProgress = createAsyncThunk(
   "site/progress/remove",
   async (ids: string[]) => {

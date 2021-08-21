@@ -1,5 +1,9 @@
 import { keys } from "lodash";
-import { siteAddProgress, siteRemoveProgress } from "../../@redux/actions";
+import {
+  siteAddProgress,
+  siteRemoveProgress,
+  siteUpdateProgressCount,
+} from "../../@redux/actions";
 import store from "../../@redux/store";
 
 // A background task manager, use for dispatching task one by one
@@ -11,17 +15,22 @@ class BackgroundTask {
 
   dispatch<T extends Task.Callable>(groupName: string, tasks: Task.Task<T>[]) {
     if (groupName in this.groups) {
-      return false;
+      this.groups[groupName].push(...tasks);
+      store.dispatch(
+        siteUpdateProgressCount({
+          id: groupName,
+          count: this.groups[groupName].length,
+        })
+      );
+      return;
     }
 
     this.groups[groupName] = tasks;
     setTimeout(async () => {
-      const dispatch = store.dispatch;
-
       for (let index = 0; index < tasks.length; index++) {
         const task = tasks[index];
 
-        dispatch(
+        store.dispatch(
           siteAddProgress([
             {
               id: groupName,
@@ -37,10 +46,8 @@ class BackgroundTask {
         } catch (error) {}
       }
       delete this.groups[groupName];
-      dispatch(siteRemoveProgress([groupName]));
+      store.dispatch(siteRemoveProgress([groupName]));
     });
-
-    return true;
   }
 
   find(groupName: string, id: number) {

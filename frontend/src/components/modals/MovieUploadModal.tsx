@@ -2,7 +2,6 @@ import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { FileForm, LanguageSelector } from "..";
 import BackgroundTask from "../../@modules/task";
-import { useIsGroupTaskRunning } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilites";
 import {
   useEnabledLanguages,
@@ -35,11 +34,9 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const [file, setFile] = useState<Nullable<File>>(null);
   const [forced, setForced] = useState(false);
 
-  const hasTask = useIsGroupTaskRunning(TaskGroupName);
-
   const canUpload = useMemo(() => {
-    return file !== null && language?.code2 && !hasTask;
-  }, [language, file, hasTask]);
+    return file !== null && language?.code2;
+  }, [language, file]);
 
   const footer = (
     <Button

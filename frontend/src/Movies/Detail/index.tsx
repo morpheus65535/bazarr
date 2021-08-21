@@ -8,7 +8,7 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useState } from "react";
-import { Container, Row } from "react-bootstrap";
+import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { useIsGroupTaskRunningWithId } from "../../@modules/task/hooks";
@@ -144,6 +144,16 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
         </ContentHeader.Group>
       </ContentHeader>
+      <Row>
+        <Alert
+          className="w-100 m-0 py-2"
+          show={hasTask}
+          style={{ borderRadius: 0 }}
+          variant="light"
+        >
+          A background task is running for this movie, actions are unavailable
+        </Alert>
+      </Row>
       <Row>
         <ItemOverview item={item} details={[]}></ItemOverview>
       </Row>

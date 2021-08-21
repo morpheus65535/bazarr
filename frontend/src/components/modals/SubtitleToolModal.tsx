@@ -40,7 +40,6 @@ import {
   useShowModal,
 } from "..";
 import BackgroundTask from "../../@modules/task";
-import { useIsGroupTaskRunning } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilites";
 import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
@@ -300,8 +299,6 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
   const payload = useModalPayload<SupportType[]>(props.modalKey);
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const hasTask = useIsGroupTaskRunning(TaskGroupName);
-
   const closeModal = useCloseModal();
 
   const process = useCallback(
@@ -398,14 +395,14 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
       <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
         <ActionButton
           size="sm"
-          disabled={selections.length === 0 || hasTask}
+          disabled={selections.length === 0}
           icon={faPlay}
           onClick={() => process("sync")}
         >
           Sync
         </ActionButton>
         <Dropdown.Toggle
-          disabled={selections.length === 0 || hasTask}
+          disabled={selections.length === 0}
           split
           variant="light"
           size="sm"
@@ -449,7 +446,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         </Dropdown.Menu>
       </Dropdown>
     ),
-    [showModal, selections.length, process, hasTask]
+    [showModal, selections.length, process]
   );
 
   return (

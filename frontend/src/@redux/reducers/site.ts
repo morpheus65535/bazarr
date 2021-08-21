@@ -12,6 +12,7 @@ import {
   siteUpdateBadges,
   siteUpdateInitialization,
   siteUpdateOffline,
+  siteUpdateProgressCount,
 } from "../actions/site";
 
 interface Site {
@@ -90,6 +91,13 @@ const reducer = createReducer(defaultSite, (builder) => {
     })
     .addCase(siteRemoveProgress.fulfilled, (state, action) => {
       pullAllWith(state.progress, action.payload, (l, r) => l.id === r);
+    })
+    .addCase(siteUpdateProgressCount, (state, action) => {
+      const { id, count } = action.payload;
+      const progress = state.progress.find((v) => v.id === id);
+      if (progress) {
+        progress.count = count;
+      }
     });
 
   builder
