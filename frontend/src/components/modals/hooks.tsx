@@ -41,44 +41,14 @@ export function useShowModal() {
 
 export function useCloseModal() {
   const {
-    control: { pop, peek },
+    control: { pop },
   } = useContext(ModalContext);
   return useCallback(
     (key?: string) => {
-      const modal = peek();
-      if (key) {
-        if (modal?.key === key) {
-          pop();
-        }
-      } else {
-        pop();
-      }
+      pop(key);
     },
-    [pop, peek]
+    [pop]
   );
-}
-
-export function useCloseModalIfCovered() {
-  const {
-    control: { pop, peek },
-  } = useContext(ModalContext);
-  return useCallback(
-    (key: string) => {
-      let modal = peek();
-      if (modal && modal.key !== key) {
-        pop();
-      }
-    },
-    [pop, peek]
-  );
-}
-
-export function useModalIsCovered(key: string) {
-  const { modals } = useContext(ModalContext);
-  return useMemo(() => {
-    const idx = modals.findIndex((v) => v.key === key);
-    return idx !== -1 && idx !== 0;
-  }, [modals, key]);
 }
 
 export function useIsModalShow(key: string) {

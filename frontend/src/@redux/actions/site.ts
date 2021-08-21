@@ -28,7 +28,7 @@ export const siteRemoveNotifications = createAction<string>(
 );
 
 export const siteAddProgress =
-  createAction<Server.Progress[]>("site/progress/add");
+  createAction<Site.Progress[]>("site/progress/add");
 
 export const siteRemoveProgress = createAsyncThunk(
   "site/progress/remove",

@@ -36,7 +36,7 @@ enum State {
   Failed,
 }
 
-function useTotalProgress(progress: Server.Progress[]) {
+function useTotalProgress(progress: Site.Progress[]) {
   return useMemo(() => {
     const { value, count } = progress.reduce(
       (prev, { value, count }) => {
@@ -50,7 +50,7 @@ function useTotalProgress(progress: Server.Progress[]) {
     if (count === 0) {
       return 0;
     } else {
-      return value / count;
+      return (value + 0.001) / count;
     }
   }, [progress]);
 }
@@ -196,13 +196,14 @@ const Notification: FunctionComponent<Server.Notification> = ({
   );
 };
 
-const Progress: FunctionComponent<Server.Progress> = ({
+const Progress: FunctionComponent<Site.Progress> = ({
   name,
   value,
   count,
   header,
 }) => {
   const isCompleted = value / count > 1;
+  const displayValue = Math.min(count, value + 1);
   return (
     <div className="notification-center-progress d-flex flex-column">
       <p className="progress-header m-0 h-6 text-dark font-weight-bold">
@@ -214,9 +215,9 @@ const Progress: FunctionComponent<Server.Progress> = ({
       <ProgressBar
         className="mt-2"
         animated={!isCompleted}
-        now={value / count}
+        now={displayValue / count}
         max={1}
-        label={`${value}/${count}`}
+        label={`${displayValue}/${count}`}
       ></ProgressBar>
     </div>
   );

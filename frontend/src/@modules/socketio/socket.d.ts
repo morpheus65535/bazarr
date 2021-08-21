@@ -57,6 +57,6 @@ declare namespace SocketIO {
   };
 
   namespace CustomEvent {
-    type Progress = Server.Progress;
+    type Progress = Site.Progress;
   }
 }

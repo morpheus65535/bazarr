@@ -1,5 +1,9 @@
-import React, { FunctionComponent, useMemo } from "react";
-import { useStackState } from "rooks";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 
 interface Modal {
   key: string;
@@ -9,7 +13,7 @@ interface Modal {
 interface ModalControl {
   push: (modal: Modal) => void;
   peek: () => Modal | undefined;
-  pop: () => Modal | undefined;
+  pop: (key: string | undefined) => void;
 }
 
 interface ModalContextType {
@@ -33,7 +37,39 @@ export const ModalContext = React.createContext<ModalContextType>({
 });
 
 const ModalProvider: FunctionComponent = ({ children }) => {
-  const [stack, { push, pop, peek }] = useStackState([]);
+  const [stack, setStack] = useState<Modal[]>([]);
+
+  const push = useCallback<ModalControl["push"]>((model) => {
+    setStack((old) => {
+      return [...old, model];
+    });
+  }, []);
+
+  const pop = useCallback<ModalControl["pop"]>((key) => {
+    setStack((old) => {
+      if (old.length === 0) {
+        return [];
+      }
+
+      if (key === undefined) {
+        const newOld = old;
+        newOld.pop();
+        return newOld;
+      }
+
+      // find key
+      const index = old.findIndex((v) => v.key === key);
+      if (index !== -1) {
+        return old.slice(0, index);
+      } else {
+        return old;
+      }
+    });
+  }, []);
+
+  const peek = useCallback<ModalControl["peek"]>(() => {
+    return stack.length > 0 ? stack[stack.length - 1] : undefined;
+  }, [stack]);
 
   const context = useMemo<ModalContextType>(
     () => ({ modals: stack, control: { push, pop, peek } }),

@@ -5,7 +5,9 @@ declare namespace Server {
     message: string;
     timeout: number;
   }
+}
 
+declare namespace Site {
   interface Progress {
     id: string;
     header: string;

@@ -18,7 +18,7 @@ interface Site {
   // Initialization state or error message
   initialized: boolean | string;
   auth: boolean;
-  progress: Server.Progress[];
+  progress: Site.Progress[];
   notifications: Server.Notification[];
   sidebar: string;
   badges: Badge;

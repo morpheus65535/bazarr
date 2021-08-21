@@ -23,9 +23,11 @@ export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
   }, []);
 
   const exit = useCallback(() => {
-    closeModal(modalKey);
+    if (isShow) {
+      closeModal(modalKey);
+    }
     setExit(false);
-  }, [closeModal, modalKey]);
+  }, [closeModal, modalKey, isShow]);
 
   return (
     <Modal
