@@ -40,7 +40,7 @@ export function submodProcessColor(s: string) {
   return `color(name=${s})`;
 }
 
-export function GetItemId(item: any): number {
+export function GetItemId<T extends object>(item: T): number {
   if (isMovie(item)) {
     return item.radarrId;
   } else if (isEpisode(item)) {

@@ -31,8 +31,7 @@ import { RouterEmptyPath } from "../../special-pages/404";
 import { useOnLoadedOnce } from "../../utilites";
 import Table from "./table";
 
-const download = (item: any, result: SearchResultType) => {
-  item = item as Item.Movie;
+const download = (item: Item.Movie, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
   return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
     language,
@@ -182,7 +181,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onSelect={download}
+        download={download}
       ></ManualSearchModal>
     </Container>
   );

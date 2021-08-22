@@ -32,8 +32,7 @@ interface Props {
   profile?: Language.Profile;
 }
 
-const download = (item: any, result: SearchResultType) => {
-  item = item as Item.Episode;
+const download = (item: Item.Episode, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
   return ProvidersApi.downloadEpisodeSubtitle(
     item.sonarrSeriesId,
@@ -226,7 +225,7 @@ const Table: FunctionComponent<Props> = ({
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
         modalKey="manual-search"
-        onSelect={download}
+        download={download}
       ></ManualSearchModal>
     </React.Fragment>
   );
