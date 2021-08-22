@@ -84,9 +84,9 @@ const NotificationCenter: FunctionComponent = () => {
   useEffect(() => {
     if (hasError) {
       setBtnState(State.Failed);
-    } else if (totalProgress > 0) {
+    } else if (totalProgress > 0 && totalProgress < 1.0) {
       setBtnState(State.Working);
-    } else if (totalProgress <= 0) {
+    } else {
       setBtnState(State.Idle);
     }
   }, [totalProgress, hasError]);

@@ -37,7 +37,7 @@ const defaultSite: Site = {
   progress: [],
   notifier: {
     content: null,
-    timestamp: String(Date.now),
+    timestamp: String(Date.now()),
   },
   notifications: [],
   sidebar: "",
@@ -111,7 +111,7 @@ const reducer = createReducer(defaultSite, (builder) => {
 
   builder.addCase(siteUpdateNotifier, (state, action) => {
     state.notifier.content = action.payload;
-    state.notifier.timestamp = String(Date.now);
+    state.notifier.timestamp = String(Date.now());
   });
 
   builder

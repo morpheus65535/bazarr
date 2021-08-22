@@ -69,9 +69,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const profile = useProfileBy(series.content?.profileId);
 
-  const hasTask = useIsAnyTaskRunningWithId(
-    episodes.content.map((v) => v.sonarrEpisodeId)
-  );
+  const hasTask = useIsAnyTaskRunningWithId([
+    ...episodes.content.map((v) => v.sonarrEpisodeId),
+    id,
+  ]);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
