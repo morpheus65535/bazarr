@@ -11,7 +11,9 @@ import React, { FunctionComponent, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
+import { createTask } from "../../@modules/task/utilites";
 import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -83,27 +85,39 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
-          <ContentHeader.AsyncButton
+          <ContentHeader.Button
             icon={faSync}
             disabled={hasTask}
-            promise={() =>
-              MoviesApi.action({ action: "scan-disk", radarrid: item.radarrId })
-            }
+            onClick={() => {
+              const task = createTask(
+                item.title,
+                id,
+                MoviesApi.action.bind(MoviesApi),
+                { action: "scan-disk", radarrid: id }
+              );
+              dispatchTask("Scaning Disk...", [task], "Scaning...");
+            }}
           >
             Scan Disk
-          </ContentHeader.AsyncButton>
-          <ContentHeader.AsyncButton
+          </ContentHeader.Button>
+          <ContentHeader.Button
             icon={faSearch}
             disabled={item.profileId === null || hasTask}
-            promise={() =>
-              MoviesApi.action({
-                action: "search-missing",
-                radarrid: item.radarrId,
-              })
-            }
+            onClick={() => {
+              const task = createTask(
+                item.title,
+                id,
+                MoviesApi.action.bind(MoviesApi),
+                {
+                  action: "search-missing",
+                  radarrid: id,
+                }
+              );
+              dispatchTask("Searching subtitles...", [task], "Searching...");
+            }}
           >
             Search
-          </ContentHeader.AsyncButton>
+          </ContentHeader.Button>
           <ContentHeader.Button
             icon={faUser}
             disabled={item.profileId === null || hasTask}

@@ -11,7 +11,9 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
+import { createTask } from "../../@modules/task/utilites";
 import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
@@ -86,20 +88,38 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
-          <ContentHeader.AsyncButton
+          <ContentHeader.Button
             icon={faSync}
             disabled={!available || hasTask}
-            promise={() =>
-              SeriesApi.action({ action: "scan-disk", seriesid: id })
-            }
+            onClick={() => {
+              const task = createTask(
+                serie.title,
+                id,
+                SeriesApi.action.bind(SeriesApi),
+                {
+                  action: "scan-disk",
+                  seriesid: id,
+                }
+              );
+              dispatchTask("Scaning disk...", [task], "Scaning...");
+            }}
           >
             Scan Disk
-          </ContentHeader.AsyncButton>
-          <ContentHeader.AsyncButton
+          </ContentHeader.Button>
+          <ContentHeader.Button
             icon={faSearch}
-            promise={() =>
-              SeriesApi.action({ action: "search-missing", seriesid: id })
-            }
+            onClick={() => {
+              const task = createTask(
+                serie.title,
+                id,
+                SeriesApi.action.bind(SeriesApi),
+                {
+                  action: "search-missing",
+                  seriesid: id,
+                }
+              );
+              dispatchTask("Searching subtitles...", [task], "Searching...");
+            }}
             disabled={
               serie.episodeFileCount === 0 ||
               serie.profileId === null ||
@@ -108,7 +128,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             }
           >
             Search
-          </ContentHeader.AsyncButton>
+          </ContentHeader.Button>
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
