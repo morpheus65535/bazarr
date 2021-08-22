@@ -14,13 +14,7 @@ import React, {
 } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import {
-  AsyncButton,
-  FileForm,
-  LanguageSelector,
-  MessageIcon,
-  SimpleTable,
-} from "..";
+import { FileForm, LanguageSelector, MessageIcon, SimpleTable } from "..";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilites";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
@@ -52,8 +46,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   const { payload, closeModal } = useModalInformation<Item.Series>(
     modal.modalKey
   );
-
-  const [uploading, setUpload] = useState(false);
 
   const [pending, setPending] = useState<PendingSubtitle[]>([]);
 
@@ -119,7 +111,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     [checkEpisodes]
   );
 
-  const uploadSubtitles = useCallback(async () => {
+  const upload = useCallback(() => {
     if (payload === null || language === null) {
       return;
     }
@@ -150,7 +142,9 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       });
 
     dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
-  }, [payload, pending, language]);
+    setFiles([]);
+    closeModal();
+  }, [payload, pending, language, closeModal, setFiles]);
 
   const canUpload = useMemo(
     () =>
@@ -234,7 +228,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
           return (
             <Selector
-              disabled={uploading}
               options={options}
               value={value ?? null}
               onChange={change}
@@ -249,7 +242,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
             <Button
               size="sm"
               variant="light"
-              disabled={uploading}
               onClick={() => {
                 update && update(row);
               }}
@@ -260,7 +252,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         },
       },
     ],
-    [language?.code2, episodes, uploading]
+    [language?.code2, episodes]
   );
 
   const updateItem = useCallback<TableUpdater<PendingSubtitle>>(
@@ -282,7 +274,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     <div className="d-flex flex-row flex-grow-1 justify-content-between">
       <div className="w-25">
         <LanguageSelector
-          disabled={uploading}
           options={avaliableLanguages}
           value={language}
           onChange={(l) => {
@@ -294,7 +285,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       </div>
       <div>
         <Button
-          hidden={uploading}
           disabled={pending.length === 0}
           variant="outline-secondary"
           className="mr-2"
@@ -302,29 +292,15 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         >
           Clean
         </Button>
-        <AsyncButton
-          disabled={!canUpload}
-          onChange={setUpload}
-          promise={uploadSubtitles}
-          onSuccess={() => {
-            closeModal();
-            setFiles([]);
-          }}
-        >
+        <Button disabled={!canUpload} onClick={upload}>
           Upload
-        </AsyncButton>
+        </Button>
       </div>
     </div>
   );
 
   return (
-    <BaseModal
-      size="lg"
-      title="Upload Subtitles"
-      closeable={!uploading}
-      footer={footer}
-      {...modal}
-    >
+    <BaseModal size="lg" title="Upload Subtitles" footer={footer} {...modal}>
       <Container fluid className="flex-column">
         <Form>
           <Form.Group>
