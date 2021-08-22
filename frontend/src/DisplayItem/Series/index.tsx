@@ -4,7 +4,7 @@ import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateAll, seriesUpdateByRange } from "../../@redux/actions";
-import { useSerieEntities } from "../../@redux/hooks";
+import { useLanguageProfiles, useSerieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { SeriesApi } from "../../apis";
 import { ActionBadge } from "../../components";
@@ -16,6 +16,7 @@ interface Props {}
 const SeriesView: FunctionComponent<Props> = () => {
   const series = useSerieEntities();
   const loader = useReduxAction(seriesUpdateByRange);
+  const profiles = useLanguageProfiles();
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -53,14 +54,8 @@ const SeriesView: FunctionComponent<Props> = () => {
       {
         Header: "Languages Profile",
         accessor: "profileId",
-        Cell: ({ value, loose }) => {
-          if (loose) {
-            // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as Language.Profile[];
-            return profiles.find((v) => v.profileId === value)?.name ?? null;
-          } else {
-            return null;
-          }
+        Cell: ({ value }) => {
+          return profiles?.find((v) => v.profileId === value)?.name ?? null;
         },
       },
       {
@@ -98,17 +93,17 @@ const SeriesView: FunctionComponent<Props> = () => {
       {
         accessor: "sonarrSeriesId",
         selectHide: true,
-        Cell: ({ row, externalUpdate }) => (
+        Cell: ({ row, update }) => (
           <ActionBadge
             icon={faWrench}
             onClick={() => {
-              externalUpdate && externalUpdate(row, "edit");
+              update && update(row, "edit");
             }}
           ></ActionBadge>
         ),
       },
     ],
-    []
+    [profiles]
   );
 
   return (

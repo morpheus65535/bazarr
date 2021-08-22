@@ -147,28 +147,28 @@ const Table: FunctionComponent<Props> = ({
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row, update }) => {
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
                 disabled={serie.content?.profileId === null || disabled}
                 onClick={() => {
-                  externalUpdate && externalUpdate(row, "manual-search");
+                  update && update(row, "manual-search");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
                 disabled={disabled}
                 onClick={() => {
-                  externalUpdate && externalUpdate(row, "history");
+                  update && update(row, "history");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
                 disabled={disabled}
                 onClick={() => {
-                  externalUpdate && externalUpdate(row, "tools");
+                  update && update(row, "tools");
                 }}
               ></ActionButton>
             </ButtonGroup>
@@ -206,7 +206,7 @@ const Table: FunctionComponent<Props> = ({
           <GroupTable
             columns={columns}
             data={content}
-            externalUpdate={updateRow}
+            update={updateRow}
             initialState={{
               sortBy: [
                 { id: "season", desc: true },

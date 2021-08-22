@@ -41,7 +41,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value, externalUpdate }) => {
+        Cell: ({ row, value, update }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const movieid = wanted.radarrId;
@@ -59,7 +59,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
                   forced: false,
                 })
               }
-              onSuccess={() => externalUpdate && externalUpdate(row, movieid)}
+              onSuccess={() => update && update(row, movieid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>

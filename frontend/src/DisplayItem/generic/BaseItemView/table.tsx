@@ -2,7 +2,6 @@ import { uniqBy } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { TableOptions, TableUpdater, useRowSelect } from "react-table";
 import { SharedProps } from ".";
-import { useLanguageProfiles } from "../../../@redux/hooks";
 import {
   AsyncPageTable,
   ItemEditorModal,
@@ -45,12 +44,9 @@ function Table<T extends Item.Base>({
     [dirtyItems, orderList]
   );
 
-  const profiles = useLanguageProfiles();
-
   const options: Partial<TableOptions<T> & TableStyleProps<T>> = {
-    loose: [profiles],
     emptyText: `No ${name} Found`,
-    externalUpdate: updateRow,
+    update: updateRow,
   };
 
   return (

@@ -96,7 +96,7 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row, update }) => {
           const profile = row.original;
 
           return (
@@ -104,12 +104,12 @@ const Table: FunctionComponent = () => {
               <ActionButton
                 icon={faWrench}
                 onClick={() => {
-                  externalUpdate && externalUpdate(row, profile);
+                  update && update(row, profile);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => externalUpdate && externalUpdate(row)}
+                onClick={() => update && update(row)}
               ></ActionButton>
             </ButtonGroup>
           );
@@ -126,7 +126,7 @@ const Table: FunctionComponent = () => {
       <SimpleTable
         columns={columns}
         data={profiles}
-        externalUpdate={updateRow}
+        update={updateRow}
       ></SimpleTable>
       <Button
         block

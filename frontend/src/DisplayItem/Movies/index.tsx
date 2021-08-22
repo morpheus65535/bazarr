@@ -6,7 +6,7 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateAll, movieUpdateByRange } from "../../@redux/actions";
-import { useMovieEntities } from "../../@redux/hooks";
+import { useLanguageProfiles, useMovieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi } from "../../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
@@ -18,6 +18,8 @@ interface Props {}
 const MovieView: FunctionComponent<Props> = () => {
   const movies = useMovieEntities();
   const loader = useReduxAction(movieUpdateByRange);
+  const profiles = useLanguageProfiles();
+
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
       {
@@ -67,14 +69,8 @@ const MovieView: FunctionComponent<Props> = () => {
       {
         Header: "Languages Profile",
         accessor: "profileId",
-        Cell: ({ value, loose }) => {
-          if (loose) {
-            // Define in generic/BaseItemView/table.tsx
-            const profiles = loose[0] as Language.Profile[];
-            return profiles.find((v) => v.profileId === value)?.name ?? null;
-          } else {
-            return null;
-          }
+        Cell: ({ value }) => {
+          return profiles?.find((v) => v.profileId === value)?.name ?? null;
         },
       },
       {
@@ -97,17 +93,17 @@ const MovieView: FunctionComponent<Props> = () => {
       {
         accessor: "radarrId",
         selectHide: true,
-        Cell: ({ row, value, externalUpdate }) => {
+        Cell: ({ row, update }) => {
           return (
             <ActionBadge
               icon={faWrench}
-              onClick={() => externalUpdate && externalUpdate(row, "edit")}
+              onClick={() => update && update(row, "edit")}
             ></ActionBadge>
           );
         },
       },
     ],
-    []
+    [profiles]
   );
 
   return (

@@ -48,7 +48,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, externalUpdate: update, value }) => {
+        Cell: ({ row, update, value }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const seriesid = wanted.sonarrSeriesId;

@@ -215,26 +215,21 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         Header: "Episode",
         accessor: "instance",
         className: "vw-1",
-        Cell: ({ value, loose, row, externalUpdate }) => {
-          const uploading = loose![0] as boolean;
-          const availables = loose![1] as Item.Episode[];
-
-          const options = availables.map<SelectorOption<Item.Episode>>(
-            (ep) => ({
-              label: `(${ep.season}x${ep.episode}) ${ep.title}`,
-              value: ep,
-            })
-          );
+        Cell: ({ value, row, update }) => {
+          const options = episodes.map<SelectorOption<Item.Episode>>((ep) => ({
+            label: `(${ep.season}x${ep.episode}) ${ep.title}`,
+            value: ep,
+          }));
 
           const change = useCallback(
             (ep: Nullable<Item.Episode>) => {
               if (ep) {
                 const newInfo = { ...row.original };
                 newInfo.instance = ep;
-                externalUpdate && externalUpdate(row, newInfo);
+                update && update(row, newInfo);
               }
             },
-            [row, externalUpdate]
+            [row, update]
           );
 
           return (
@@ -249,15 +244,14 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
       },
       {
         accessor: "file",
-        Cell: ({ row, externalUpdate, loose }) => {
-          const [uploading] = loose!;
+        Cell: ({ row, update }) => {
           return (
             <Button
               size="sm"
               variant="light"
               disabled={uploading}
               onClick={() => {
-                externalUpdate && externalUpdate(row);
+                update && update(row);
               }}
             >
               <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
@@ -266,7 +260,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         },
       },
     ],
-    [language?.code2]
+    [language?.code2, episodes, uploading]
   );
 
   const updateItem = useCallback<TableUpdater<PendingSubtitle>>(
@@ -347,9 +341,8 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
           <SimpleTable
             columns={columns}
             data={pending}
-            loose={[uploading, episodes]}
             responsive={false}
-            externalUpdate={updateItem}
+            update={updateItem}
           ></SimpleTable>
         </div>
       </Container>
