@@ -24,7 +24,7 @@ interface Site {
   progress: Site.Progress[];
   notifier: {
     content: string | null;
-    update: Date;
+    timestamp: string;
   };
   notifications: Server.Notification[];
   sidebar: string;
@@ -37,7 +37,7 @@ const defaultSite: Site = {
   progress: [],
   notifier: {
     content: null,
-    update: new Date(),
+    timestamp: String(Date.now),
   },
   notifications: [],
   sidebar: "",
@@ -111,7 +111,7 @@ const reducer = createReducer(defaultSite, (builder) => {
 
   builder.addCase(siteUpdateNotifier, (state, action) => {
     state.notifier.content = action.payload;
-    state.notifier.update = new Date();
+    state.notifier.timestamp = String(Date.now);
   });
 
   builder

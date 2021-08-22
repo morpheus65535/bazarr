@@ -154,7 +154,7 @@ const NotificationCenter: FunctionComponent = () => {
     if (notifier.content) {
       setTooltip(true);
     }
-  }, [notifier.update]);
+  }, [notifier.timestamp]);
 
   return (
     <React.Fragment>
