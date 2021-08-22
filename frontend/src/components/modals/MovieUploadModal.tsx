@@ -12,7 +12,7 @@ import { MoviesApi } from "../../apis";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 
-export const TaskGroupName = "Uploading Movie Subtitles...";
+export const TaskGroupName = "Uploading Subtitles...";
 
 const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;

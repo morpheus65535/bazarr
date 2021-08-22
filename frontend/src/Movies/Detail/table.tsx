@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
+import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
@@ -20,6 +21,8 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
+
+  const hasTask = useIsAnyTaskRunningWithId(movie.radarrId);
 
   const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
@@ -64,6 +67,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
           } else if (original.path === missingText) {
             return (
               <AsyncButton
+                disabled={hasTask}
                 promise={() =>
                   MoviesApi.downloadSubtitles(movie.radarrId, {
                     language: original.code2,
@@ -80,6 +84,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
           } else {
             return (
               <AsyncButton
+                disabled={hasTask}
                 variant="light"
                 size="sm"
                 promise={() =>
@@ -98,7 +103,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile }) => {
         },
       },
     ],
-    [movie]
+    [movie, hasTask]
   );
 
   const data: Subtitle[] = useMemo(() => {

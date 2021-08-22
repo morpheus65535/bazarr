@@ -11,7 +11,7 @@ import React, { FunctionComponent, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useIsGroupTaskRunningWithId } from "../../@modules/task/hooks";
+import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -24,7 +24,6 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { TaskGroupName } from "../../components/modals/MovieUploadModal";
 import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
 import { useOnLoadedOnce } from "../../utilites";
@@ -59,7 +58,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const [valid, setValid] = useState(true);
 
-  const hasTask = useIsGroupTaskRunningWithId(TaskGroupName, id);
+  const hasTask = useIsAnyTaskRunningWithId(id);
 
   useOnLoadedOnce(() => {
     if (movie.content === null) {

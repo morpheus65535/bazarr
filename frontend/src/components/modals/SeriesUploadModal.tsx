@@ -1,7 +1,6 @@
 import {
   faCheck,
   faCircleNotch,
-  faExclamationTriangle,
   faInfoCircle,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
@@ -22,6 +21,8 @@ import {
   MessageIcon,
   SimpleTable,
 } from "..";
+import BackgroundTask from "../../@modules/task";
+import { createTask } from "../../@modules/task/utilites";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
@@ -29,26 +30,16 @@ import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 
 enum State {
-  Update,
+  Updating,
   Valid,
   Warning,
-  Error,
 }
 
 interface PendingSubtitle {
   file: File;
-  didCheck: boolean;
+  state: State;
   instance?: Item.Episode;
 }
-
-type SubtitleState = {
-  state: State;
-  infos: string[];
-};
-
-type ProcessState = {
-  [name: string]: SubtitleState;
-};
 
 type EpisodeMap = {
   [name: string]: Item.Episode;
@@ -57,6 +48,8 @@ type EpisodeMap = {
 interface SerieProps {
   episodes: readonly Item.Episode[];
 }
+
+export const TaskGroupName = "Uploading Subtitles...";
 
 const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   episodes,
@@ -69,8 +62,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   const [uploading, setUpload] = useState(false);
 
   const [pending, setPending] = useState<PendingSubtitle[]>([]);
-
-  const [processState, setProcessState] = useState<ProcessState>({});
 
   const profile = useProfileBy(payload?.profileId);
 
@@ -85,38 +76,6 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
   }, [avaliableLanguages]);
 
   const filelist = useMemo(() => pending.map((v) => v.file), [pending]);
-
-  // Vaildate
-  useEffect(() => {
-    const states = pending.reduce<ProcessState>((prev, info) => {
-      const subState: SubtitleState = {
-        state: State.Valid,
-        infos: [],
-      };
-
-      const { file, instance } = info;
-
-      if (!info.didCheck) {
-        subState.state = State.Update;
-      } else if (!instance) {
-        subState.infos.push("Season or episode info is missing");
-        subState.state = State.Error;
-      } else {
-        if (
-          instance.subtitles.find((v) => v.code2 === language?.code2) !==
-          undefined
-        ) {
-          subState.infos.push("Overwrite existing subtitle");
-          subState.state = State.Warning;
-        }
-      }
-
-      prev[file.name] = subState;
-      return prev;
-    }, {});
-
-    setProcessState(states);
-  }, [pending, language?.code2]);
 
   const checkEpisodes = useCallback(
     async (list: PendingSubtitle[]) => {
@@ -138,7 +97,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         setPending((pd) =>
           pd.map((v) => ({
             ...v,
-            didCheck: true,
+            state: State.Valid,
             instance: episodeMap[v.file.name],
           }))
         );
@@ -154,18 +113,10 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         return {
           file: f,
           didCheck: false,
+          state: State.Updating,
         };
       });
       setPending(list);
-
-      const states = files.reduce<ProcessState>(
-        (v, curr) => ({
-          ...v,
-          [curr.name]: { state: State.Update, infos: [] },
-        }),
-        {}
-      );
-      setProcessState(states);
       checkEpisodes(list);
     },
     [checkEpisodes]
@@ -177,51 +128,31 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     }
 
     const { sonarrSeriesId: seriesid } = payload;
+    const { code2, hi, forced } = language;
 
-    let uploadStates = pending.reduce<ProcessState>((prev, curr) => {
-      prev[curr.file.name] = { state: State.Update, infos: [] };
-      return prev;
-    }, {});
+    const tasks = pending
+      .filter((v) => v.instance !== undefined)
+      .map((v) => {
+        const { sonarrEpisodeId: episodeid } = v.instance!;
 
-    setProcessState(uploadStates);
+        const form: FormType.UploadSubtitle = {
+          file: v.file,
+          language: code2,
+          hi: hi ?? false,
+          forced: forced ?? false,
+        };
 
-    let exception = false;
+        return createTask(
+          v.file.name,
+          seriesid,
+          EpisodesApi.uploadSubtitles.bind(EpisodesApi),
+          seriesid,
+          episodeid,
+          form
+        );
+      });
 
-    for (const info of pending) {
-      if (info.instance) {
-        const { sonarrEpisodeId: episodeid } = info.instance;
-        const { file } = info;
-        const { code2, hi, forced } = language;
-
-        try {
-          const form: FormType.UploadSubtitle = {
-            file,
-            language: code2,
-            hi: hi ?? false,
-            forced: forced ?? false,
-          };
-
-          await EpisodesApi.uploadSubtitles(seriesid, episodeid, form);
-
-          uploadStates = {
-            ...uploadStates,
-            [info.file.name]: { state: State.Valid, infos: [] },
-          };
-        } catch (error) {
-          uploadStates = {
-            ...uploadStates,
-            [info.file.name]: { state: State.Error, infos: [] },
-          };
-          exception = true;
-        }
-
-        setProcessState(uploadStates);
-      }
-    }
-
-    if (exception) {
-      throw new Error("Error when uploading subtitles");
-    }
+    BackgroundTask.dispatch(TaskGroupName, tasks);
   }, [payload, pending, language]);
 
   const canUpload = useMemo(
@@ -232,47 +163,34 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     [pending, language]
   );
 
-  const tableShow = pending.length > 0;
+  const showTable = pending.length > 0;
 
   const columns = useMemo<Column<PendingSubtitle>[]>(
     () => [
       {
         id: "Icon",
-        accessor: "instance",
+        accessor: "state",
         className: "text-center",
-        Cell: ({ row, loose }) => {
-          const { file } = row.original;
-
-          const name = file.name;
-          const states = loose![1] as ProcessState;
-
+        Cell: ({ value: state }) => {
           let icon = faCircleNotch;
           let color: string | undefined = undefined;
           let spin = false;
           let msgs: string[] = [];
 
-          if (name in states) {
-            const state = states[name];
-            msgs = state.infos;
-            switch (state.state) {
-              case State.Error:
-                icon = faExclamationTriangle;
-                color = "var(--danger)";
-                break;
-              case State.Valid:
-                icon = faCheck;
-                color = "var(--success)";
-                break;
-              case State.Warning:
-                icon = faInfoCircle;
-                color = "var(--warning)";
-                break;
-              case State.Update:
-                spin = true;
-                break;
-              default:
-                break;
-            }
+          switch (state) {
+            case State.Valid:
+              icon = faCheck;
+              color = "var(--success)";
+              break;
+            case State.Warning:
+              icon = faInfoCircle;
+              color = "var(--warning)";
+              break;
+            case State.Updating:
+              spin = true;
+              break;
+            default:
+              break;
           }
 
           return (
@@ -295,7 +213,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         className: "vw-1",
         Cell: ({ value, loose, row, externalUpdate }) => {
           const uploading = loose![0] as boolean;
-          const availables = loose![2] as Item.Episode[];
+          const availables = loose![1] as Item.Episode[];
 
           const options = availables.map<SelectorOption<Item.Episode>>(
             (ep) => ({
@@ -414,18 +332,18 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
           <Form.Group>
             <FileForm
               emptyText="Select..."
-              disabled={tableShow || avaliableLanguages.length === 0}
+              disabled={showTable || avaliableLanguages.length === 0}
               multiple
               value={filelist}
               onChange={setFiles}
             ></FileForm>
           </Form.Group>
         </Form>
-        <div hidden={!tableShow}>
+        <div hidden={!showTable}>
           <SimpleTable
             columns={columns}
             data={pending}
-            loose={[uploading, processState, episodes]}
+            loose={[uploading, episodes]}
             responsive={false}
             externalUpdate={updateItem}
           ></SimpleTable>
