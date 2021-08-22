@@ -21,7 +21,7 @@ import {
   MessageIcon,
   SimpleTable,
 } from "..";
-import BackgroundTask from "../../@modules/task";
+import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilites";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
@@ -29,15 +29,9 @@ import { Selector } from "../inputs";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 
-enum State {
-  Updating,
-  Valid,
-  Warning,
-}
-
 interface PendingSubtitle {
   file: File;
-  state: State;
+  fetching: boolean;
   instance?: Item.Episode;
 }
 
@@ -95,11 +89,14 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         }, {});
 
         setPending((pd) =>
-          pd.map((v) => ({
-            ...v,
-            state: State.Valid,
-            instance: episodeMap[v.file.name],
-          }))
+          pd.map((v) => {
+            const instance = episodeMap[v.file.name];
+            return {
+              ...v,
+              instance,
+              fetching: false,
+            };
+          })
         );
       }
     },
@@ -113,7 +110,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         return {
           file: f,
           didCheck: false,
-          state: State.Updating,
+          fetching: true,
         };
       });
       setPending(list);
@@ -144,7 +141,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
         return createTask(
           v.file.name,
-          seriesid,
+          episodeid,
           EpisodesApi.uploadSubtitles.bind(EpisodesApi),
           seriesid,
           episodeid,
@@ -152,7 +149,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         );
       });
 
-    BackgroundTask.dispatch(TaskGroupName, tasks);
+    dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
   }, [payload, pending, language]);
 
   const canUpload = useMemo(
@@ -169,28 +166,35 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
     () => [
       {
         id: "Icon",
-        accessor: "state",
+        accessor: "fetching",
         className: "text-center",
-        Cell: ({ value: state }) => {
+        Cell: ({ value: fetching, row: { original } }) => {
           let icon = faCircleNotch;
           let color: string | undefined = undefined;
           let spin = false;
           let msgs: string[] = [];
 
-          switch (state) {
-            case State.Valid:
-              icon = faCheck;
-              color = "var(--success)";
-              break;
-            case State.Warning:
-              icon = faInfoCircle;
-              color = "var(--warning)";
-              break;
-            case State.Updating:
-              spin = true;
-              break;
-            default:
-              break;
+          const override = useMemo(
+            () =>
+              original.instance?.subtitles.find(
+                (v) => v.code2 === language?.code2
+              ) !== undefined,
+            [original.instance?.subtitles]
+          );
+
+          if (fetching) {
+            spin = true;
+          } else if (override) {
+            icon = faInfoCircle;
+            color = "var(--warning)";
+            msgs.push("Overwrite existing subtitle");
+          } else if (original.instance) {
+            icon = faCheck;
+            color = "var(--success)";
+          } else {
+            icon = faInfoCircle;
+            color = "var(--warning)";
+            msgs.push("Season or episode info is missing");
           }
 
           return (
@@ -262,7 +266,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
         },
       },
     ],
-    []
+    [language?.code2]
   );
 
   const updateItem = useCallback<TableUpdater<PendingSubtitle>>(

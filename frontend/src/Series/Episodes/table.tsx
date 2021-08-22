@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
@@ -29,6 +28,7 @@ import { SubtitleAction } from "./components";
 interface Props {
   serie: Async.Item<Item.Series>;
   episodes: Async.Base<Item.Episode[]>;
+  disabled?: boolean;
   profile?: Language.Profile;
 }
 
@@ -48,16 +48,17 @@ const download = (item: any, result: SearchResultType) => {
   );
 };
 
-const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
+const Table: FunctionComponent<Props> = ({
+  serie,
+  episodes,
+  profile,
+  disabled,
+}) => {
   const showModal = useShowModal();
 
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
-
-  const hasTask = useIsAnyTaskRunningWithId(
-    serie.content?.sonarrSeriesId ?? -1
-  );
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
@@ -152,20 +153,21 @@ const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
-                disabled={serie.content?.profileId === null || hasTask}
+                disabled={serie.content?.profileId === null || disabled}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "manual-search");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
+                disabled={disabled}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "history");
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
-                disabled={hasTask}
+                disabled={disabled}
                 onClick={() => {
                   externalUpdate && externalUpdate(row, "tools");
                 }}
@@ -175,7 +177,7 @@ const Table: FunctionComponent<Props> = ({ serie, episodes, profile }) => {
         },
       },
     ],
-    [onlyDesired, profileItems, serie, hasTask]
+    [onlyDesired, profileItems, serie, disabled]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(

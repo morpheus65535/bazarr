@@ -39,7 +39,7 @@ import {
   useModalPayload,
   useShowModal,
 } from "..";
-import BackgroundTask from "../../@modules/task";
+import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilites";
 import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
@@ -323,7 +323,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         );
       });
 
-      BackgroundTask.dispatch(TaskGroupName, tasks);
+      dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");
     },
     [closeModal, selections, props.modalKey]
   );

@@ -11,6 +11,7 @@ import {
   siteRemoveProgress,
   siteUpdateBadges,
   siteUpdateInitialization,
+  siteUpdateNotifier,
   siteUpdateOffline,
   siteUpdateProgressCount,
 } from "../actions/site";
@@ -18,18 +19,26 @@ import {
 interface Site {
   // Initialization state or error message
   initialized: boolean | string;
+  offline: boolean;
   auth: boolean;
   progress: Site.Progress[];
+  notifier: {
+    content: string | null;
+    update: Date;
+  };
   notifications: Server.Notification[];
   sidebar: string;
   badges: Badge;
-  offline: boolean;
 }
 
 const defaultSite: Site = {
   initialized: false,
   auth: true,
   progress: [],
+  notifier: {
+    content: null,
+    update: new Date(),
+  },
   notifications: [],
   sidebar: "",
   badges: {
@@ -99,6 +108,11 @@ const reducer = createReducer(defaultSite, (builder) => {
         progress.count = count;
       }
     });
+
+  builder.addCase(siteUpdateNotifier, (state, action) => {
+    state.notifier.content = action.payload;
+    state.notifier.update = new Date();
+  });
 
   builder
     .addCase(siteChangeSidebar, (state, action) => {

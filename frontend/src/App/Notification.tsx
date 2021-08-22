@@ -25,7 +25,7 @@ import {
   ProgressBar,
   Tooltip,
 } from "react-bootstrap";
-import { useDidUpdate } from "rooks";
+import { useDidUpdate, useTimeoutWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import { BuildKey, useIsArrayExtended } from "../utilites";
 import "./notification.scss";
@@ -63,7 +63,7 @@ function useHasErrorNotification(notifications: Server.Notification[]) {
 }
 
 const NotificationCenter: FunctionComponent = () => {
-  const { progress, notifications } = useReduxStore((s) => s.site);
+  const { progress, notifications, notifier } = useReduxStore((s) => s.site);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [hasNew, setHasNew] = useState(false);
@@ -147,6 +147,15 @@ const NotificationCenter: FunctionComponent = () => {
     setHasNew(false);
   }, []);
 
+  // Tooltip Controller
+  const [showTooltip, setTooltip] = useState(false);
+  useTimeoutWhen(() => setTooltip(false), 3 * 1000, showTooltip);
+  useDidUpdate(() => {
+    if (notifier.content) {
+      setTooltip(true);
+    }
+  }, [notifier.update]);
+
   return (
     <React.Fragment>
       <Dropdown
@@ -160,12 +169,11 @@ const NotificationCenter: FunctionComponent = () => {
         </Dropdown.Toggle>
         <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>
       </Dropdown>
-      {/* Handle this later */}
-      <Overlay target={dropdownRef} show={false} placement="bottom">
+      <Overlay target={dropdownRef} show={showTooltip} placement="bottom">
         {(props) => {
           return (
             <Tooltip id="new-notification-tip" {...props}>
-              New Notifications
+              {notifier.content}
             </Tooltip>
           );
         }}

@@ -43,6 +43,10 @@ export const siteRemoveProgress = createAsyncThunk(
   }
 );
 
+export const siteUpdateNotifier = createAction<string>(
+  "site/progress/update_notifier"
+);
+
 export const siteChangeSidebar = createAction<string>("site/sidebar/update");
 
 export const siteUpdateOffline = createAction<boolean>("site/offline/update");

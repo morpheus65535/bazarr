@@ -67,7 +67,9 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const profile = useProfileBy(series.content?.profileId);
 
-  const hasTask = useIsAnyTaskRunningWithId(id);
+  const hasTask = useIsAnyTaskRunningWithId(
+    episodes.content.map((v) => v.sonarrEpisodeId)
+  );
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
@@ -150,7 +152,12 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={serie} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table serie={series} episodes={episodes} profile={profile}></Table>
+        <Table
+          serie={series}
+          episodes={episodes}
+          profile={profile}
+          disabled={hasTask}
+        ></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"

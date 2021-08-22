@@ -4,8 +4,8 @@ export function useIsAnyTaskRunning() {
   return BGT.isRunning();
 }
 
-export function useIsAnyTaskRunningWithId(id: number) {
-  return BGT.hasId(id);
+export function useIsAnyTaskRunningWithId(ids: number[]) {
+  return BGT.hasId(ids);
 }
 
 export function useIsGroupTaskRunning(groupName: string) {

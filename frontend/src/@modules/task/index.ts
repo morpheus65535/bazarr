@@ -2,6 +2,7 @@ import { keys } from "lodash";
 import {
   siteAddProgress,
   siteRemoveProgress,
+  siteUpdateNotifier,
   siteUpdateProgressCount,
 } from "../../@redux/actions";
 import store from "../../@redux/store";
@@ -61,11 +62,13 @@ class BackgroundTask {
     return groupName in this.groups;
   }
 
-  hasId(id: number) {
-    for (const key in this.groups) {
-      const tasks = this.groups[key];
-      if (tasks.find((v) => v.id === id) !== undefined) {
-        return true;
+  hasId(ids: number[]) {
+    for (const id of ids) {
+      for (const key in this.groups) {
+        const tasks = this.groups[key];
+        if (tasks.find((v) => v.id === id) !== undefined) {
+          return true;
+        }
       }
     }
     return false;
@@ -76,4 +79,18 @@ class BackgroundTask {
   }
 }
 
-export default new BackgroundTask();
+const BGT = new BackgroundTask();
+
+export default BGT;
+
+export function dispatchTask<T extends Task.Callable>(
+  groupName: string,
+  tasks: Task.Task<T>[],
+  comment?: string
+) {
+  BGT.dispatch(groupName, tasks);
+
+  if (comment) {
+    store.dispatch(siteUpdateNotifier(comment));
+  }
+}

@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
+import { useIsAnyTaskRunning } from "../../@modules/task/hooks";
 import { useLanguageProfiles } from "../../@redux/hooks";
 import { useAppDispatch } from "../../@redux/hooks/base";
 import { ContentHeader } from "../../components";
@@ -111,6 +112,8 @@ function BaseItemView<T extends Item.Base>({
     return shared.modify(form);
   }, [dirtyItems, shared]);
 
+  const hasTask = useIsAnyTaskRunning();
+
   return (
     <Container fluid>
       <Helmet>
@@ -136,7 +139,7 @@ function BaseItemView<T extends Item.Base>({
               </ContentHeader.Button>
               <ContentHeader.AsyncButton
                 icon={faCheck}
-                disabled={dirtyItems.length === 0}
+                disabled={dirtyItems.length === 0 || hasTask}
                 promise={saveItems}
                 onSuccess={endEdit}
               >
@@ -148,7 +151,8 @@ function BaseItemView<T extends Item.Base>({
           <ContentHeader.Button
             updating={pendingEditMode !== editMode}
             disabled={
-              state.content.ids.length === 0 && state.state === "loading"
+              (state.content.ids.length === 0 && state.state === "loading") ||
+              hasTask
             }
             icon={faList}
             onClick={startEdit}

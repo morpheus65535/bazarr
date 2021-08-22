@@ -22,7 +22,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   );
 
   // TODO: Separate movies and series
-  const hasTask = useIsAnyTaskRunningWithId(payload ? GetItemId(payload) : -1);
+  const hasTask = useIsAnyTaskRunningWithId([
+    payload ? GetItemId(payload) : -1,
+  ]);
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>

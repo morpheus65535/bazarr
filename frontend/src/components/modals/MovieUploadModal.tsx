@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { FileForm, LanguageSelector } from "..";
-import BackgroundTask from "../../@modules/task";
+import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilites";
 import {
   useEnabledLanguages,
@@ -56,7 +56,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
               language: language.code2,
             }
           );
-          BackgroundTask.dispatch(TaskGroupName, [task]);
+          dispatchTask(TaskGroupName, [task], "Uploading subtitles...");
           closeModal(props.modalKey);
         }
       }}

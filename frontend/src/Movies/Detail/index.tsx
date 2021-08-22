@@ -58,7 +58,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const [valid, setValid] = useState(true);
 
-  const hasTask = useIsAnyTaskRunningWithId(id);
+  const hasTask = useIsAnyTaskRunningWithId([id]);
 
   useOnLoadedOnce(() => {
     if (movie.content === null) {
