@@ -15,6 +15,7 @@ import {
   Navbar,
   Row,
 } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { useSystemSettings } from "../@redux/hooks";
@@ -101,6 +102,9 @@ const Header: FunctionComponent<Props> = () => {
 
   return (
     <Navbar bg="primary" className="flex-grow-1 px-0">
+      <Helmet>
+        <meta name="theme-color" content="#911f93" />
+      </Helmet>
       <div className="header-icon px-3 m-0 d-none d-md-block">
         <Image
           alt="brand"
