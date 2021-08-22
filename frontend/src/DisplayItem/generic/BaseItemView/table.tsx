@@ -2,16 +2,16 @@ import { uniqBy } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { TableOptions, TableUpdater, useRowSelect } from "react-table";
 import { SharedProps } from ".";
-import { useLanguageProfiles } from "../../@redux/hooks";
+import { useLanguageProfiles } from "../../../@redux/hooks";
 import {
   AsyncPageTable,
   ItemEditorModal,
   SimpleTable,
   useShowModal,
-} from "../../components";
-import { TableStyleProps } from "../../components/tables/BaseTable";
-import { useCustomSelection } from "../../components/tables/plugins";
-import { GetItemId, useEntityToList } from "../../utilites";
+} from "../../../components";
+import { TableStyleProps } from "../../../components/tables/BaseTable";
+import { useCustomSelection } from "../../../components/tables/plugins";
+import { GetItemId, useEntityToList } from "../../../utilites";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];

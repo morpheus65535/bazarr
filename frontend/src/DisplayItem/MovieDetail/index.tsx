@@ -26,9 +26,9 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
 import { useOnLoadedOnce } from "../../utilites";
+import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
 const download = (item: Item.Movie, result: SearchResultType) => {

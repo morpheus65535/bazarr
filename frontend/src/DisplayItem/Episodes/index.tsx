@@ -23,9 +23,9 @@ import {
   SeriesUploadModal,
   useShowModal,
 } from "../../components";
-import ItemOverview from "../../generic/ItemOverview";
 import { RouterEmptyPath } from "../../special-pages/404";
 import { useOnLoadedOnce } from "../../utilites";
+import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
 interface Params {

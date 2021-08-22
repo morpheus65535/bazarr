@@ -22,9 +22,9 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { useProfileBy, useProfileItemsToLanguages } from "../@redux/hooks";
-import { LanguageText } from "../components";
-import { BuildKey, isMovie } from "../utilites";
+import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
+import { LanguageText } from "../../components";
+import { BuildKey, isMovie } from "../../utilites";
 
 interface Props {
   item: Item.Base;

@@ -5,11 +5,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { useIsAnyTaskRunning } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../@redux/hooks";
-import { useAppDispatch } from "../../@redux/hooks/base";
-import { ContentHeader } from "../../components";
-import { GetItemId, isNonNullable } from "../../utilites";
+import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
+import { useLanguageProfiles } from "../../../@redux/hooks";
+import { useAppDispatch } from "../../../@redux/hooks/base";
+import { ContentHeader } from "../../../components";
+import { GetItemId, isNonNullable } from "../../../utilites";
 import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
