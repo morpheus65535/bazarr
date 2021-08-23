@@ -170,7 +170,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         <ItemOverview item={item} details={[]}></ItemOverview>
       </Row>
       <Row>
-        <Table movie={item} profile={profile}></Table>
+        <Table movie={item} profile={profile} disabled={hasTask}></Table>
       </Row>
       <ItemEditorModal
         modalKey="edit"
