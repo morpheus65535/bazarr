@@ -429,6 +429,10 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    language_code_convert_dict = {
+        'he': 'iw',
+    }
+
     to_lang = alpha3_from_alpha2(to_lang)
     lang_obj = Language(to_lang)
     if forced:
@@ -464,7 +468,9 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     for block_str in lines_block_list:
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
-                                                           target=lang_obj.basename).translate(text=block_str)
+                                                           target=language_code_convert_dict.get(lang_obj.basename,
+                                                                                                 lang_obj.basename)
+                                                           ).translate(text=block_str)
         except:
             return False
         else:
