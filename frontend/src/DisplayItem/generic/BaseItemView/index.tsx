@@ -77,10 +77,11 @@ function BaseItemView<T extends Item.Base>({
         item.profileId = id;
         return item;
       });
-      const newDirty = uniqBy([...newItems, ...dirtyItems], GetItemId);
-      setDirty(newDirty);
+      setDirty((dirty) => {
+        return uniqBy([...newItems, ...dirty], GetItemId);
+      });
     },
-    [selections, dirtyItems]
+    [selections]
   );
 
   const startEdit = useCallback(() => {
@@ -99,7 +100,7 @@ function BaseItemView<T extends Item.Base>({
     setSelections([]);
   }, []);
 
-  const saveItems = useCallback(() => {
+  const save = useCallback(() => {
     const form: FormType.ModifyItem = {
       id: [],
       profileid: [],
@@ -140,7 +141,7 @@ function BaseItemView<T extends Item.Base>({
               <ContentHeader.AsyncButton
                 icon={faCheck}
                 disabled={dirtyItems.length === 0 || hasTask}
-                promise={saveItems}
+                promise={save}
                 onSuccess={endEdit}
               >
                 Save

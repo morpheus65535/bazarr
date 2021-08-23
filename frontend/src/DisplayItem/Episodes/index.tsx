@@ -124,8 +124,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={
               serie.episodeFileCount === 0 ||
               serie.profileId === null ||
-              !available ||
-              hasTask
+              !available
             }
           >
             Search

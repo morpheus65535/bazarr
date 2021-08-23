@@ -26,27 +26,34 @@ export const Chips: FunctionComponent<ChipsProps> = ({
 
   const input = useRef<HTMLInputElement>(null);
 
+  const changeRef = useRef(onChange);
+
   const addChip = useCallback(
     (value: string) => {
-      const newChips = [...chips];
-      newChips.push(value);
-      setChips(newChips);
-      onChange && onChange(newChips);
+      setChips((cp) => {
+        const newChips = [...cp, value];
+        changeRef.current && changeRef.current(newChips);
+        return newChips;
+      });
     },
-    [chips, onChange]
+    [changeRef]
   );
 
   const removeChip = useCallback(
     (idx?: number) => {
-      idx = idx ?? chips.length - 1;
-      if (idx !== -1) {
-        const newChips = [...chips];
-        newChips.splice(idx, 1);
-        setChips(newChips);
-        onChange && onChange(newChips);
-      }
+      setChips((cp) => {
+        const index = idx ?? cp.length - 1;
+        if (index !== -1) {
+          const newChips = [...cp];
+          newChips.splice(index, 1);
+          changeRef.current && changeRef.current(newChips);
+          return newChips;
+        } else {
+          return cp;
+        }
+      });
     },
-    [chips, onChange]
+    [changeRef]
   );
 
   const clearInput = useCallback(() => {

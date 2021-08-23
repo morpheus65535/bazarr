@@ -44,7 +44,9 @@ class BackgroundTask {
         );
         try {
           await task.callable(...task.parameters);
-        } catch (error) {}
+        } catch (error) {
+          // TODO
+        }
       }
       delete this.groups[groupName];
       store.dispatch(siteRemoveProgress([groupName]));

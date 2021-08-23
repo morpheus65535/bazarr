@@ -58,7 +58,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   }
 }
 
-type AsyncSelectorProps<V, T extends Async.Base<V[]>> = {
+type AsyncSelectorProps<V, T extends Async.Item<V[]>> = {
   state: T;
   update: () => void;
   label: (item: V) => string;
@@ -71,17 +71,17 @@ type RemovedSelectorProps<T, M extends boolean> = Omit<
 
 export function AsyncSelector<
   V,
-  T extends Async.Base<V[]>,
+  T extends Async.Item<V[]>,
   M extends boolean = false
 >(props: Override<AsyncSelectorProps<V, T>, RemovedSelectorProps<V, M>>) {
   const { label, state, update, ...selector } = props;
 
   const options = useMemo<SelectorOption<V>[]>(
     () =>
-      state.content.map((v) => ({
+      state.content?.map((v) => ({
         label: label(v),
         value: v,
-      })),
+      })) ?? [],
     [state, label]
   );
 

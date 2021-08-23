@@ -14,8 +14,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
   const [history, updateHistory] = useAsyncRequest(
-    MoviesApi.historyBy.bind(MoviesApi),
-    { data: [], total: 0 }
+    MoviesApi.historyBy.bind(MoviesApi)
   );
 
   const update = useCallback(() => {
@@ -98,7 +97,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={content.data}
+            data={content?.data ?? []}
           ></PageTable>
         )}
       </AsyncOverlay>
@@ -114,8 +113,7 @@ export const EpisodeHistoryModal: FunctionComponent<
   const episode = useModalPayload<Item.Episode>(props.modalKey);
 
   const [history, updateHistory] = useAsyncRequest(
-    EpisodesApi.historyBy.bind(EpisodesApi),
-    { data: [], total: 0 }
+    EpisodesApi.historyBy.bind(EpisodesApi)
   );
 
   const update = useCallback(() => {
@@ -199,7 +197,7 @@ export const EpisodeHistoryModal: FunctionComponent<
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={content.data}
+            data={content?.data ?? []}
           ></PageTable>
         )}
       </AsyncOverlay>

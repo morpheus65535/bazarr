@@ -101,7 +101,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faSearch}
-            disabled={item.profileId === null || hasTask}
+            disabled={item.profileId === null}
             onClick={() => {
               const task = createTask(
                 item.title,

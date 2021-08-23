@@ -1,5 +1,10 @@
 import { merge } from "lodash";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
@@ -20,10 +25,10 @@ import {
   useAsyncRequest,
 } from "../../apis";
 import {
+  AsyncOverlay,
   AsyncSelector,
   ContentHeader,
   LanguageSelector,
-  PromiseOverlay,
   Selector,
 } from "../../components";
 import { actionOptions, timeframeOptions } from "./options";
@@ -51,17 +56,16 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 
 const HistoryStats: FunctionComponent = () => {
   const [languages, updateLanguages] = useAsyncRequest(
-    SystemApi.languages.bind(SystemApi),
-    []
+    SystemApi.languages.bind(SystemApi)
   );
   const [providerList, updateProviderParam] = useAsyncRequest(
-    ProvidersApi.providers.bind(ProvidersApi),
-    []
+    ProvidersApi.providers.bind(ProvidersApi)
   );
 
-  const updateProvider = useCallback(() => updateProviderParam(true), [
-    updateProviderParam,
-  ]);
+  const updateProvider = useCallback(
+    () => updateProviderParam(true),
+    [updateProviderParam]
+  );
 
   useDidMount(() => {
     updateLanguages(true);
@@ -72,14 +76,11 @@ const HistoryStats: FunctionComponent = () => {
   const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
-  const promise = useCallback(() => {
-    return HistoryApi.stats(
-      timeframe,
-      action ?? undefined,
-      provider?.name,
-      lang?.code2
-    );
-  }, [timeframe, lang?.code2, action, provider]);
+  const [stats, update] = useAsyncRequest(HistoryApi.stats.bind(HistoryApi));
+
+  useEffect(() => {
+    update(timeframe, action ?? undefined, provider?.name, lang?.code2);
+  }, [timeframe, action, provider?.name, lang?.code2, update]);
 
   return (
     // TODO: Responsive
@@ -87,8 +88,8 @@ const HistoryStats: FunctionComponent = () => {
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
-      <PromiseOverlay promise={promise}>
-        {(data) => (
+      <AsyncOverlay ctx={stats}>
+        {({ content }) => (
           <React.Fragment>
             <ContentHeader scroll={false}>
               <SelectorContainer>
@@ -121,14 +122,14 @@ const HistoryStats: FunctionComponent = () => {
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages.content}
+                  options={languages.content ?? []}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>
               </SelectorContainer>
             </ContentHeader>
             <ResponsiveContainer height="100%">
-              <BarChart data={converter(data)}>
+              <BarChart data={content ? converter(content) : []}>
                 <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
                 <XAxis dataKey="date"></XAxis>
                 <YAxis allowDecimals={false}></YAxis>
@@ -140,7 +141,7 @@ const HistoryStats: FunctionComponent = () => {
             </ResponsiveContainer>
           </React.Fragment>
         )}
-      </PromiseOverlay>
+      </AsyncOverlay>
     </Container>
   );
 };
