@@ -12,6 +12,17 @@ class BackgroundTask {
   private groups: Task.Group;
   constructor() {
     this.groups = {};
+    window.addEventListener("beforeunload", this.onBeforeUnload.bind(this));
+  }
+
+  private onBeforeUnload(e: BeforeUnloadEvent) {
+    const message = "Background tasks are still running";
+    if (Object.keys(this.groups).length !== 0) {
+      e.preventDefault();
+      e.returnValue = message;
+      return;
+    }
+    delete e["returnValue"];
   }
 
   dispatch<T extends Task.Callable>(groupName: string, tasks: Task.Task<T>[]) {
