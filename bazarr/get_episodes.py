@@ -44,7 +44,7 @@ def sync_episodes(series_id=None, send_event=True):
     seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr,)
 
     series_count = len(seriesIdList)
-    for i, seriesId in enumerate(seriesIdList, 1):
+    for i, seriesId in enumerate(seriesIdList):
         sleep()
         if send_event:
             show_progress(id='episodes_progress',

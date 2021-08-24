@@ -451,7 +451,7 @@ def series_full_scan_subtitles():
     episodes = TableEpisodes.select(TableEpisodes.path).dicts()
     
     count_episodes = len(episodes)
-    for i, episode in enumerate(episodes, 1):
+    for i, episode in enumerate(episodes):
         sleep()
         show_progress(id='episodes_disk_scan',
                       header='Full disk scan...',
@@ -471,7 +471,7 @@ def movies_full_scan_subtitles():
     movies = TableMovies.select(TableMovies.path).dicts()
     
     count_movies = len(movies)
-    for i, movie in enumerate(movies, 1):
+    for i, movie in enumerate(movies):
         sleep()
         show_progress(id='movies_disk_scan',
                       header='Full disk scan...',

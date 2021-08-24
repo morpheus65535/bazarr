@@ -63,7 +63,7 @@ def update_movies(send_event=True):
 
             # Build new and updated movies
             movies_count = len(movies)
-            for i, movie in enumerate(movies, 1):
+            for i, movie in enumerate(movies):
                 sleep()
                 if send_event:
                     show_progress(id='movies_progress',

@@ -738,7 +738,7 @@ def series_download_subtitles(no):
 
     count_episodes_details = len(episodes_details)
 
-    for i, episode in enumerate(episodes_details, 1):
+    for i, episode in enumerate(episodes_details):
         if providers_list:
             show_progress(id='series_search_progress_{}'.format(no),
                           header='Searching missing subtitles...',
@@ -835,7 +835,7 @@ def episode_download_subtitles(no, send_progress=False):
                                                                          episode['season'],
                                                                          episode['episode'],
                                                                          episode['episodeTitle']),
-                              value=1,
+                              value=0,
                               count=1)
             for language in ast.literal_eval(episode['missing_subtitles']):
                 # confirm if language is still missing or if cutoff have been reached
@@ -915,7 +915,7 @@ def movies_download_subtitles(no):
     else:
         count_movie = 0
 
-    for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
+    for i, language in enumerate(ast.literal_eval(movie['missing_subtitles'])):
         # confirm if language is still missing or if cutoff have been reached
         confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles)\
             .where(TableMovies.radarrId == movie['radarrId'])\
@@ -1159,7 +1159,7 @@ def wanted_search_missing_subtitles_series():
     episodes = list(episodes)
 
     count_episodes = len(episodes)
-    for i, episode in enumerate(episodes, 1):
+    for i, episode in enumerate(episodes):
         show_progress(id='wanted_episodes_progress',
                       header='Searching subtitles...',
                       name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['title'],
@@ -1193,7 +1193,7 @@ def wanted_search_missing_subtitles_movies():
     movies = list(movies)
 
     count_movies = len(movies)
-    for i, movie in enumerate(movies, 1):
+    for i, movie in enumerate(movies):
         show_progress(id='wanted_movies_progress',
                       header='Searching subtitles...',
                       name=movie['title'],
@@ -1470,7 +1470,7 @@ def upgrade_subtitles():
     providers_auth = get_providers_auth()
 
     if settings.general.getboolean('use_sonarr'):
-        for i, episode in enumerate(episodes_to_upgrade, 1):
+        for i, episode in enumerate(episodes_to_upgrade):
             show_progress(id='upgrade_episodes_progress',
                           header='Upgrading episodes subtitles...',
                           name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['seriesTitle'],
@@ -1537,7 +1537,7 @@ def upgrade_subtitles():
         hide_progress(id='upgrade_episodes_progress')
 
     if settings.general.getboolean('use_radarr'):
-        for i, movie in enumerate(movies_to_upgrade, 1):
+        for i, movie in enumerate(movies_to_upgrade):
             show_progress(id='upgrade_movies_progress',
                           header='Upgrading movies subtitles...',
                           name=movie['title'],

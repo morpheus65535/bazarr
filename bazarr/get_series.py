@@ -50,7 +50,7 @@ def update_series(send_event=True):
         series_to_add = []
 
         series_count = len(series)
-        for i, show in enumerate(series, 1):
+        for i, show in enumerate(series):
             sleep()
             if send_event:
                 show_progress(id='series_progress',
