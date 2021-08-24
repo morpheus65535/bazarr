@@ -3,7 +3,7 @@ import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemReleases } from "../../@redux/hooks";
 import { AsyncOverlay } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 
 interface Props {}
 

@@ -8,7 +8,7 @@ import HistoryRouter from "../History/Router";
 import SettingRouter from "../Settings/Router";
 import EmptyPage, { RouterEmptyPath } from "../special-pages/404";
 import SystemRouter from "../System/Router";
-import { ScrollToTop } from "../utilites";
+import { ScrollToTop } from "../utilities";
 import WantedRouter from "../Wanted/Router";
 
 const Router: FunctionComponent<{ className?: string }> = ({ className }) => {

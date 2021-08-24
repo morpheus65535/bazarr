@@ -40,11 +40,11 @@ import {
   useShowModal,
 } from "..";
 import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
-import { isMovie, submodProcessColor } from "../../utilites";
-import { log } from "../../utilites/logger";
+import { isMovie, submodProcessColor } from "../../utilities";
+import { log } from "../../utilities/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./hooks";

@@ -9,7 +9,7 @@ import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
 import { useLanguageProfiles } from "../../../@redux/hooks";
 import { useAppDispatch } from "../../../@redux/hooks/base";
 import { ContentHeader } from "../../../components";
-import { GetItemId, isNonNullable } from "../../../utilites";
+import { GetItemId, isNonNullable } from "../../../utilities";
 import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {

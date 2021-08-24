@@ -10,7 +10,7 @@ import {
   copyToClipboard,
   toggleState,
   useCanUpdateInject,
-} from "../../utilites";
+} from "../../utilities";
 import {
   Button,
   Check,

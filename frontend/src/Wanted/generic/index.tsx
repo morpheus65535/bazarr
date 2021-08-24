@@ -6,7 +6,7 @@ import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { dispatchTask } from "../../@modules/task";
 import { useIsGroupTaskRunning } from "../../@modules/task/hooks";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { AsyncPageTable, ContentHeader } from "../../components";
 
 interface Props<T extends Wanted.Base> {

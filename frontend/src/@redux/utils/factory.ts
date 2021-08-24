@@ -15,7 +15,7 @@ import {
   pullAllWith,
 } from "lodash";
 import { ReducerUtility } from ".";
-import { conditionalLog } from "../../utilites/logger";
+import { conditionalLog } from "../../utilities/logger";
 
 interface ActionParam<T, ID = null> {
   range?: AsyncThunk<T, Parameter.Range, {}>;

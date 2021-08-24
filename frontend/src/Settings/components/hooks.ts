@@ -1,7 +1,7 @@
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
 import { useSystemSettings } from "../../@redux/hooks";
-import { log } from "../../utilites/logger";
+import { log } from "../../utilities/logger";
 import { StagedChangesContext } from "./provider";
 
 export function useStagedValues(): LooseObject {

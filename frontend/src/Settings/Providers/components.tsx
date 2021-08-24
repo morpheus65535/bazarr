@@ -15,7 +15,7 @@ import {
   useOnModalShow,
   useShowModal,
 } from "../../components";
-import { BuildKey, isReactText } from "../../utilites";
+import { BuildKey, isReactText } from "../../utilities";
 import {
   Check,
   ColCard,

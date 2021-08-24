@@ -14,7 +14,7 @@ import {
   Slider as CSlider,
   SliderProps as CSliderProps,
 } from "../../components";
-import { isReactText } from "../../utilites";
+import { isReactText } from "../../utilities";
 import { OverrideFuncType, useSingleUpdate } from "./hooks";
 
 export const Message: FunctionComponent<{

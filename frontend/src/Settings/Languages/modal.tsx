@@ -18,7 +18,7 @@ import {
   SimpleTable,
   useModalInformation,
 } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 interface Props {

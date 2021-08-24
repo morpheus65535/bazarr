@@ -9,7 +9,7 @@ import { useWantedSeries } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
 
 interface Props {}

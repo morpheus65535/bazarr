@@ -22,7 +22,7 @@ import {
   useShowModal,
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey, filterSubtitleBy } from "../../utilites";
+import { BuildKey, filterSubtitleBy } from "../../utilities";
 import { SubtitleAction } from "./components";
 
 interface Props {

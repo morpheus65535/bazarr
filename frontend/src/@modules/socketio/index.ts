@@ -1,7 +1,7 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
-import { getBaseUrl } from "../../utilites";
-import { conditionalLog, log } from "../../utilites/logger";
+import { getBaseUrl } from "../../utilities";
+import { conditionalLog, log } from "../../utilities/logger";
 import { createDefaultReducer } from "./reducer";
 
 class SocketIOClient {

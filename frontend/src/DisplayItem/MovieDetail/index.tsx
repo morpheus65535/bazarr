@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
@@ -27,7 +27,7 @@ import {
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadedOnce } from "../../utilites";
+import { useOnLoadedOnce } from "../../utilities";
 import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 

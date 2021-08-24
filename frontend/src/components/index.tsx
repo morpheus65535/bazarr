@@ -164,7 +164,7 @@ export const TextPopover: FunctionComponent<TextPopoverProps> = ({
 
 export * from "./async";
 export * from "./buttons";
-export * from "./ContentHeader";
+export * from "./header";
 export * from "./inputs";
 export * from "./LanguageSelector";
 export * from "./modals";

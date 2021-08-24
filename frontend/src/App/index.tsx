@@ -20,7 +20,7 @@ import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";
 import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
-import { useBaseUrl, useHasUpdateInject } from "../utilites";
+import { useBaseUrl, useHasUpdateInject } from "../utilities";
 import Header from "./Header";
 import Router from "./Router";
 

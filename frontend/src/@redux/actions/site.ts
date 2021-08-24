@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { BadgesApi } from "../../apis";
-import { waitFor } from "../../utilites";
+import { waitFor } from "../../utilities";
 import { systemUpdateAllSettings } from "./system";
 
 export const siteBootstrap = createAsyncThunk(

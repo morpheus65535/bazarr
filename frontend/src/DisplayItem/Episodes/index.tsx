@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
@@ -24,7 +24,7 @@ import {
   useShowModal,
 } from "../../components";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadedOnce } from "../../utilites";
+import { useOnLoadedOnce } from "../../utilities";
 import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 

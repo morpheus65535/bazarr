@@ -15,7 +15,7 @@ import {
   useOnModalShow,
   useShowModal,
 } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 

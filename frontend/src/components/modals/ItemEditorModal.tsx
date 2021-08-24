@@ -3,7 +3,7 @@ import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { useLanguageProfiles } from "../../@redux/hooks";
-import { GetItemId } from "../../utilites";
+import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 

@@ -10,7 +10,7 @@ import { useLanguageProfiles, useMovieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi } from "../../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {}

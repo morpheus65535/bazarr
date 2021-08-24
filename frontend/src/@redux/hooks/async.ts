@@ -1,6 +1,6 @@
 import { AsyncThunk } from "@reduxjs/toolkit";
 import { useEffect } from "react";
-import { log } from "../../utilites/logger";
+import { log } from "../../utilities/logger";
 import { useReduxAction } from "./base";
 
 export function useAutoUpdate(item: Async.Item<any>, update: () => void) {

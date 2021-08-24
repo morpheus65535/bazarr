@@ -1,7 +1,7 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { AppDispatch } from "../@redux/store";
-import { getBaseUrl } from "../utilites";
+import { getBaseUrl } from "../utilities";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;

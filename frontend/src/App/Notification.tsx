@@ -27,7 +27,7 @@ import {
 } from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
-import { BuildKey, useIsArrayExtended } from "../utilites";
+import { BuildKey, useIsArrayExtended } from "../utilities";
 import "./notification.scss";
 
 enum State {

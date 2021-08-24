@@ -16,7 +16,7 @@ import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { FileForm, LanguageSelector, MessageIcon, SimpleTable } from "..";
 import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";

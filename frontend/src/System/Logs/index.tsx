@@ -7,7 +7,7 @@ import { useSystemLogs } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncOverlay, ContentHeader } from "../../components";
-import { useBaseUrl } from "../../utilites";
+import { useBaseUrl } from "../../utilities";
 import Table from "./table";
 
 interface Props {}

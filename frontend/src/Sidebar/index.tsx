@@ -4,7 +4,7 @@ import { useReduxStore } from "../@redux/hooks/base";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SidebarToggleContext } from "../App";
-import { useGotoHomepage } from "../utilites/hooks";
+import { useGotoHomepage } from "../utilities/hooks";
 import {
   BadgesContext,
   CollapseItem,

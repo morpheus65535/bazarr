@@ -6,7 +6,7 @@ import {
   ScrollToTop,
   useEntityByRange,
   useIsEntityLoaded,
-} from "../../utilites";
+} from "../../utilities";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";

@@ -15,7 +15,7 @@ import { useSystemSettings } from "../../@redux/hooks";
 import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi } from "../../apis";
 import { ContentHeader } from "../../components";
-import { log } from "../../utilites/logger";
+import { log } from "../../utilities/logger";
 import {
   enabledLanguageKey,
   languageProfileKey,

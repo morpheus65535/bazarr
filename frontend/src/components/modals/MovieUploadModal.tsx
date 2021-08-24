@@ -9,10 +9,10 @@ import React, {
 import { Button, Container, Form } from "react-bootstrap";
 import { Column, Row } from "react-table";
 import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import { FileForm } from "../inputs";
 import { LanguageSelector } from "../LanguageSelector";
 import { SimpleTable } from "../tables";
@@ -100,6 +100,12 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const columns = useMemo<Column<PendingSubtitle>[]>(
     () => [
+      {
+        id: "state",
+        Cell: () => {
+          return "hello";
+        },
+      },
       {
         id: "name",
         Header: "File",

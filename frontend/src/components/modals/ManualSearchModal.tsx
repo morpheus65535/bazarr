@@ -33,9 +33,9 @@ import {
   useModalPayload,
 } from "..";
 import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilites";
+import { createTask } from "../../@modules/task/utilities";
 import { ProvidersApi } from "../../apis";
-import { GetItemId, isMovie } from "../../utilites";
+import { GetItemId, isMovie } from "../../utilities";
 import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;

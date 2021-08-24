@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useEntityItemById, useEntityToList } from "../../utilites";
+import { useEntityItemById, useEntityToList } from "../../utilities";
 import {
   episodesUpdateBlacklist,
   episodeUpdateById,

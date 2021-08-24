@@ -7,7 +7,7 @@ import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
-import { filterSubtitleBy } from "../../utilites";
+import { filterSubtitleBy } from "../../utilities";
 
 const missingText = "Missing Subtitles";
 

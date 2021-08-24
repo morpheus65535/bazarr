@@ -8,7 +8,7 @@ import { useLanguageProfiles, useSerieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { SeriesApi } from "../../apis";
 import { ActionBadge } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {}
