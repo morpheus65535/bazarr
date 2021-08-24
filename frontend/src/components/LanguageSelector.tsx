@@ -7,7 +7,7 @@ interface Props {
 
 type RemovedSelectorProps<M extends boolean> = Omit<
   SelectorProps<Language.Info, M>,
-  "label" | "placeholder"
+  "label"
 >;
 
 export type LanguageSelectorProps<M extends boolean> = Override<

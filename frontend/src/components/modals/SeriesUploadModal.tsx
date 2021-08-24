@@ -1,213 +1,126 @@
-import {
-  faCheck,
-  faCircleNotch,
-  faInfoCircle,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Button, Container, Form } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
-import { FileForm, LanguageSelector, MessageIcon, SimpleTable } from "..";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { Column } from "react-table";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
-import BaseModal, { BaseModalProps } from "./BaseModal";
+import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
+import SubtitleUploadModal, {
+  PendingSubtitle,
+  Validator,
+} from "./SubtitleUploadModal";
 
-interface PendingSubtitle {
-  file: File;
-  fetching: boolean;
-  instance?: Item.Episode;
+interface Payload {
+  instance: Item.Episode | null;
 }
 
-type EpisodeMap = {
-  [name: string]: Item.Episode;
-};
-
-interface SerieProps {
+interface SeriesProps {
   episodes: readonly Item.Episode[];
 }
 
 export const TaskGroupName = "Uploading Subtitles...";
 
-const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
+const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
   episodes,
   ...modal
 }) => {
-  const { payload, closeModal } = useModalInformation<Item.Series>(
-    modal.modalKey
-  );
-
-  const [pending, setPending] = useState<PendingSubtitle[]>([]);
+  const { payload } = useModalInformation<Item.Series>(modal.modalKey);
 
   const profile = useProfileBy(payload?.profileId);
 
-  const avaliableLanguages = useProfileItemsToLanguages(profile);
+  const availableLanguages = useProfileItemsToLanguages(profile);
 
-  const [language, setLanguage] = useState<Language.Info | null>(null);
-
-  useEffect(() => {
-    if (avaliableLanguages.length > 0) {
-      setLanguage(avaliableLanguages[0]);
-    }
-  }, [avaliableLanguages]);
-
-  const filelist = useMemo(() => pending.map((v) => v.file), [pending]);
-
-  const checkEpisodes = useCallback(
-    async (list: PendingSubtitle[]) => {
+  const update = useCallback(
+    async (list: PendingSubtitle<Payload>[]) => {
+      const newList = [...list];
       const names = list.map((v) => v.file.name);
 
       if (names.length > 0) {
         const results = await SubtitlesApi.info(names);
 
-        const episodeMap = results.reduce<EpisodeMap>((prev, curr) => {
-          const ep = episodes.find(
-            (v) => v.season === curr.season && v.episode === curr.episode
-          );
-          if (ep) {
-            prev[curr.filename] = ep;
+        // TODO: Optimization
+        newList.forEach((v) => {
+          const info = results.find((f) => f.filename === v.file.name);
+          if (info) {
+            v.payload.instance =
+              episodes.find(
+                (e) => e.season === info.season && e.episode === info.episode
+              ) ?? null;
           }
-          return prev;
-        }, {});
-
-        setPending((pd) =>
-          pd.map((v) => {
-            const instance = episodeMap[v.file.name];
-            return {
-              ...v,
-              instance,
-              fetching: false,
-            };
-          })
-        );
+        });
       }
+
+      return newList;
     },
     [episodes]
   );
 
-  const setFiles = useCallback(
-    (files: File[]) => {
-      // At lease 1 language is required
-      const list: PendingSubtitle[] = files.map((f) => {
-        return {
-          file: f,
-          didCheck: false,
-          fetching: true,
-        };
-      });
-      setPending(list);
-      checkEpisodes(list);
-    },
-    [checkEpisodes]
-  );
-
-  const upload = useCallback(() => {
-    if (payload === null || language === null) {
-      return;
+  const validate = useCallback<Validator<Payload>>((item) => {
+    const { language } = item;
+    const { instance } = item.payload;
+    if (language === null || instance === null) {
+      return {
+        state: "error",
+        messages: ["Language or Episode is not selected"],
+      };
+    } else if (
+      instance.subtitles.find((v) => v.code2 === language.code2) !== undefined
+    ) {
+      return {
+        state: "warning",
+        messages: ["Override existing subtitle"],
+      };
     }
+    return {
+      state: "valid",
+      messages: [],
+    };
+  }, []);
 
-    const { sonarrSeriesId: seriesid } = payload;
-    const { code2, hi, forced } = language;
+  const upload = useCallback(
+    (items: PendingSubtitle<Payload>[]) => {
+      if (payload === null) {
+        return;
+      }
 
-    const tasks = pending
-      .filter((v) => v.instance !== undefined)
-      .map((v) => {
-        const { sonarrEpisodeId: episodeid } = v.instance!;
+      const { sonarrSeriesId: seriesid } = payload;
 
-        const form: FormType.UploadSubtitle = {
-          file: v.file,
-          language: code2,
-          hi: hi ?? false,
-          forced: forced ?? false,
-        };
+      const tasks = items
+        .filter((v) => v.payload.instance !== undefined)
+        .map((v) => {
+          const { code2, hi, forced } = v.language!;
+          const { sonarrEpisodeId: episodeid } = v.payload.instance!;
 
-        return createTask(
-          v.file.name,
-          episodeid,
-          EpisodesApi.uploadSubtitles.bind(EpisodesApi),
-          seriesid,
-          episodeid,
-          form
-        );
-      });
+          const form: FormType.UploadSubtitle = {
+            file: v.file,
+            language: code2,
+            hi: hi ?? false,
+            forced: forced ?? false,
+          };
 
-    dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
-    setFiles([]);
-    closeModal();
-  }, [payload, pending, language, closeModal, setFiles]);
+          return createTask(
+            v.file.name,
+            episodeid,
+            EpisodesApi.uploadSubtitles.bind(EpisodesApi),
+            seriesid,
+            episodeid,
+            form
+          );
+        });
 
-  const canUpload = useMemo(
-    () =>
-      pending.length > 0 &&
-      pending.every((v) => v.instance !== undefined) &&
-      language,
-    [pending, language]
+      dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
+    },
+    [payload]
   );
 
-  const showTable = pending.length > 0;
-
-  const columns = useMemo<Column<PendingSubtitle>[]>(
+  const columns = useMemo<Column<PendingSubtitle<Payload>>[]>(
     () => [
       {
-        id: "Icon",
-        accessor: "fetching",
-        className: "text-center",
-        Cell: ({ value: fetching, row: { original } }) => {
-          let icon = faCircleNotch;
-          let color: string | undefined = undefined;
-          let spin = false;
-          let msgs: string[] = [];
-
-          const override = useMemo(
-            () =>
-              original.instance?.subtitles.find(
-                (v) => v.code2 === language?.code2
-              ) !== undefined,
-            [original.instance?.subtitles]
-          );
-
-          if (fetching) {
-            spin = true;
-          } else if (override) {
-            icon = faInfoCircle;
-            color = "var(--warning)";
-            msgs.push("Overwrite existing subtitle");
-          } else if (original.instance) {
-            icon = faCheck;
-            color = "var(--success)";
-          } else {
-            icon = faInfoCircle;
-            color = "var(--warning)";
-            msgs.push("Season or episode info is missing");
-          }
-
-          return (
-            <MessageIcon
-              messages={msgs}
-              color={color}
-              icon={icon}
-              spin={spin}
-            ></MessageIcon>
-          );
-        },
-      },
-      {
-        Header: "File",
-        accessor: (d) => d.file.name,
-      },
-      {
+        id: "instance",
         Header: "Episode",
-        accessor: "instance",
+        accessor: "payload",
         className: "vw-1",
         Cell: ({ value, row, update }) => {
           const options = episodes.map<SelectorOption<Item.Episode>>((ep) => ({
@@ -219,7 +132,7 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
             (ep: Nullable<Item.Episode>) => {
               if (ep) {
                 const newInfo = { ...row.original };
-                newInfo.instance = ep;
+                newInfo.payload.instance = ep;
                 update && update(row, newInfo);
               }
             },
@@ -228,101 +141,28 @@ const SeriesUploadModal: FunctionComponent<SerieProps & BaseModalProps> = ({
 
           return (
             <Selector
+              disabled={row.original.state === "fetching"}
               options={options}
-              value={value ?? null}
+              value={value.instance}
               onChange={change}
             ></Selector>
           );
         },
       },
-      {
-        accessor: "file",
-        Cell: ({ row, update }) => {
-          return (
-            <Button
-              size="sm"
-              variant="light"
-              onClick={() => {
-                update && update(row);
-              }}
-            >
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </Button>
-          );
-        },
-      },
     ],
-    [language?.code2, episodes]
-  );
-
-  const updateItem = useCallback<TableUpdater<PendingSubtitle>>(
-    (row, info?: PendingSubtitle) => {
-      setPending((pd) => {
-        const newPending = [...pd];
-        if (info) {
-          newPending[row.index] = info;
-        } else {
-          newPending.splice(row.index, 1);
-        }
-        return newPending;
-      });
-    },
-    []
-  );
-
-  const footer = (
-    <div className="d-flex flex-row flex-grow-1 justify-content-between">
-      <div className="w-25">
-        <LanguageSelector
-          options={avaliableLanguages}
-          value={language}
-          onChange={(l) => {
-            if (l) {
-              setLanguage(l);
-            }
-          }}
-        ></LanguageSelector>
-      </div>
-      <div>
-        <Button
-          disabled={pending.length === 0}
-          variant="outline-secondary"
-          className="mr-2"
-          onClick={() => setFiles([])}
-        >
-          Clean
-        </Button>
-        <Button disabled={!canUpload} onClick={upload}>
-          Upload
-        </Button>
-      </div>
-    </div>
+    [episodes]
   );
 
   return (
-    <BaseModal size="lg" title="Upload Subtitles" footer={footer} {...modal}>
-      <Container fluid className="flex-column">
-        <Form>
-          <Form.Group>
-            <FileForm
-              emptyText="Select..."
-              disabled={showTable || avaliableLanguages.length === 0}
-              multiple
-              value={filelist}
-              onChange={setFiles}
-            ></FileForm>
-          </Form.Group>
-        </Form>
-        <div hidden={!showTable}>
-          <SimpleTable
-            columns={columns}
-            data={pending}
-            responsive={false}
-            update={updateItem}
-          ></SimpleTable>
-        </div>
-      </Container>
-    </BaseModal>
+    <SubtitleUploadModal
+      columns={columns}
+      initial={{ instance: null }}
+      availableLanguages={availableLanguages}
+      upload={upload}
+      update={update}
+      validate={validate}
+      {...modal}
+    ></SubtitleUploadModal>
   );
 };
 

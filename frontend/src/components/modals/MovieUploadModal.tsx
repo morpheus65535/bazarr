@@ -1,27 +1,19 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
-import { Button, Container, Form } from "react-bootstrap";
-import { Column, Row } from "react-table";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { Form } from "react-bootstrap";
+import { Column } from "react-table";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
 import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { BuildKey } from "../../utilities";
-import { FileForm } from "../inputs";
-import { LanguageSelector } from "../LanguageSelector";
-import { SimpleTable } from "../tables";
-import BaseModal, { BaseModalProps } from "./BaseModal";
+import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
+import SubtitleUploadModal, {
+  PendingSubtitle,
+  Validator,
+} from "./SubtitleUploadModal";
 
-interface PendingSubtitle {
-  file: File;
-  language: Language.Info;
+interface Payload {
   forced: boolean;
 }
 
@@ -30,178 +22,114 @@ export const TaskGroupName = "Uploading Subtitles...";
 const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;
 
-  const { payload, closeModal } = useModalInformation<Item.Movie>(
-    modal.modalKey
-  );
+  const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
 
   const profile = useProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
-  const [pending, setPending] = useState<PendingSubtitle[]>([]);
+  const update = useCallback(async (list: PendingSubtitle<Payload>[]) => {
+    return list;
+  }, []);
 
-  const filelist = useMemo(() => pending.map((v) => v.file), [pending]);
-
-  const setFiles = useCallback(
-    (files: File[]) => {
-      const list: PendingSubtitle[] = files.map((v) => ({
-        file: v,
-        forced: availableLanguages[0].forced ?? false,
-        language: availableLanguages[0],
-      }));
-      setPending(list);
+  const validate = useCallback<Validator<Payload>>(
+    (item) => {
+      if (item.language === null) {
+        return {
+          state: "error",
+          messages: ["Language is not selected"],
+        };
+      } else if (
+        payload?.subtitles.find((v) => v.code2 === item.language?.code2) !==
+        undefined
+      ) {
+        return {
+          state: "warning",
+          messages: ["Override existing subtitle"],
+        };
+      }
+      return {
+        state: "valid",
+        messages: [],
+      };
     },
-    [availableLanguages]
+    [payload?.subtitles]
   );
 
-  const upload = useCallback(() => {
-    if (payload === null || pending.length === 0) {
-      return;
-    }
+  const upload = useCallback(
+    (items: PendingSubtitle<Payload>[]) => {
+      if (payload === null) {
+        return;
+      }
 
-    const { radarrId } = payload;
+      const { radarrId } = payload;
 
-    const tasks = pending.map((v) => {
-      const { file, language, forced } = v;
+      const tasks = items
+        .filter((v) => v.language !== null)
+        .map((v) => {
+          const {
+            file,
+            language,
+            payload: { forced },
+          } = v;
 
-      return createTask(
-        file.name,
-        radarrId,
-        MoviesApi.uploadSubtitles.bind(MoviesApi),
-        radarrId,
-        {
-          file: file,
-          forced,
-          hi: false,
-          language: language.code2,
-        }
-      );
-    });
+          return createTask(
+            file.name,
+            radarrId,
+            MoviesApi.uploadSubtitles.bind(MoviesApi),
+            radarrId,
+            {
+              file: file,
+              forced,
+              hi: false,
+              language: language!.code2,
+            }
+          );
+        });
 
-    dispatchTask(TaskGroupName, tasks, "Uploading...");
-    setFiles([]);
-    closeModal();
-  }, [payload, closeModal, pending, setFiles]);
-
-  const modify = useCallback(
-    (row: Row<PendingSubtitle>, info?: PendingSubtitle) => {
-      setPending((pd) => {
-        const newPending = [...pd];
-        if (info) {
-          newPending[row.index] = info;
-        } else {
-          newPending.splice(row.index, 1);
-        }
-        return newPending;
-      });
+      dispatchTask(TaskGroupName, tasks, "Uploading...");
     },
-    []
+    [payload]
   );
 
-  const columns = useMemo<Column<PendingSubtitle>[]>(
+  const columns = useMemo<Column<PendingSubtitle<Payload>>[]>(
     () => [
       {
-        id: "state",
-        Cell: () => {
-          return "hello";
-        },
-      },
-      {
-        id: "name",
-        Header: "File",
-        accessor: (d) => d.file.name,
-      },
-      {
+        id: "forced",
         Header: "Forced",
-        accessor: "forced",
+        accessor: "payload",
         Cell: ({ row, value, update }) => {
           const { original, index } = row;
           return (
             <Form.Check
               custom
+              disabled={original.state === "fetching"}
               id={BuildKey(index, original.file.name, "forced")}
-              checked={value}
+              checked={value.forced}
               onChange={(v) => {
                 const newInfo = { ...row.original };
-                newInfo.forced = v.target.checked;
+                newInfo.payload.forced = v.target.checked;
                 update && update(row, newInfo);
               }}
             ></Form.Check>
           );
         },
       },
-      {
-        Header: "Language",
-        accessor: "language",
-        className: "w-25",
-        Cell: ({ row, update, value }) => {
-          return (
-            <LanguageSelector
-              options={availableLanguages}
-              value={value}
-              onChange={(lang) => {
-                if (lang && update) {
-                  const newInfo = { ...row.original };
-                  newInfo.language = lang;
-                  update(row, newInfo);
-                }
-              }}
-            ></LanguageSelector>
-          );
-        },
-      },
-      {
-        accessor: "file",
-        Cell: ({ row, update }) => {
-          return (
-            <Button
-              size="sm"
-              variant="light"
-              onClick={() => {
-                update && update(row);
-              }}
-            >
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </Button>
-          );
-        },
-      },
     ],
-    [availableLanguages]
-  );
-
-  const canUpload = pending.length > 0;
-
-  const footer = (
-    <Button disabled={!canUpload} onClick={upload}>
-      Upload
-    </Button>
+    []
   );
 
   return (
-    <BaseModal title={`Upload - ${payload?.title}`} footer={footer} {...modal}>
-      <Container fluid className="flex-column">
-        <Form>
-          <Form.Group>
-            <FileForm
-              emptyText="Select..."
-              disabled={canUpload || availableLanguages.length === 0}
-              multiple
-              value={filelist}
-              onChange={setFiles}
-            ></FileForm>
-          </Form.Group>
-        </Form>
-        <div hidden={!canUpload}>
-          <SimpleTable
-            columns={columns}
-            data={pending}
-            responsive={false}
-            update={modify}
-          ></SimpleTable>
-        </div>
-      </Container>
-    </BaseModal>
+    <SubtitleUploadModal
+      hideAllLanguages
+      initial={{ forced: false }}
+      availableLanguages={availableLanguages}
+      columns={columns}
+      upload={upload}
+      update={update}
+      validate={validate}
+      {...modal}
+    ></SubtitleUploadModal>
   );
 };
 
