@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { LanguageSelector, MessageIcon } from "..";
+import { BuildKey } from "../../utilities";
 import { FileForm } from "../inputs";
 import { SimpleTable } from "../tables";
 import BaseModal, { BaseModalProps } from "./BaseModal";
@@ -20,6 +21,8 @@ export interface PendingSubtitle<P> {
   state: "valid" | "fetching" | "warning" | "error";
   messages: string[];
   language: Language.Info | null;
+  forced: boolean;
+  hi: boolean;
   payload: P;
 }
 
@@ -67,6 +70,8 @@ export default function SubtitleUploadModal<T>(
         state: "fetching",
         messages: [],
         language: initialLanguage,
+        forced: false,
+        hi: false,
         payload: { ...initialRef.current },
       }));
 
@@ -165,7 +170,48 @@ export default function SubtitleUploadModal<T>(
         Header: "File",
         accessor: (d) => d.file.name,
       },
-      ...columns,
+      {
+        id: "hi",
+        Header: "HI",
+        accessor: "hi",
+        Cell: ({ row, value, update }) => {
+          const { original, index } = row;
+          return (
+            <Form.Check
+              custom
+              disabled={original.state === "fetching"}
+              id={BuildKey(index, original.file.name, "hi")}
+              checked={value}
+              onChange={(v) => {
+                const newInfo = { ...row.original };
+                newInfo.hi = v.target.checked;
+                update && update(row, newInfo);
+              }}
+            ></Form.Check>
+          );
+        },
+      },
+      {
+        id: "forced",
+        Header: "Forced",
+        accessor: "forced",
+        Cell: ({ row, value, update }) => {
+          const { original, index } = row;
+          return (
+            <Form.Check
+              custom
+              disabled={original.state === "fetching"}
+              id={BuildKey(index, original.file.name, "forced")}
+              checked={value}
+              onChange={(v) => {
+                const newInfo = { ...row.original };
+                newInfo.forced = v.target.checked;
+                update && update(row, newInfo);
+              }}
+            ></Form.Check>
+          );
+        },
+      },
       {
         id: "language",
         Header: "Language",
@@ -188,6 +234,7 @@ export default function SubtitleUploadModal<T>(
           );
         },
       },
+      ...columns,
       {
         id: "action",
         accessor: "file",
