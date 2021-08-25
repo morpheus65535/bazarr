@@ -96,16 +96,33 @@ class PathMappings:
 path_mappings = PathMappings()
 
 
-def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced, score, subtitle_id, provider, series_id, episode_id):
-    is_forced = ":forced" if forced else ""
-    is_forced_string = " forced" if forced else ""
+def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced, score, subtitle_id, provider, series_id, episode_id, hi):
+    if hi:
+        modifier_string = " HI"
+    elif forced:
+        modifier_string = " forced"
+    else:
+        modifier_string = ""
+
+    if hi:
+        modifier_code = ":hi"
+        modifier_code_dot = ".hi"
+    elif forced:
+        modifier_code = ":forced"
+        modifier_code_dot = ".forced"
+    else:
+        modifier_code = ""
+        modifier_code_dot = ""
+
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
     pp_command = pp_command.replace('{{episode_name}}', os.path.splitext(os.path.basename(episode))[0])
     pp_command = pp_command.replace('{{subtitles}}', str(subtitles))
-    pp_command = pp_command.replace('{{subtitles_language}}', str(language) + is_forced_string)
-    pp_command = pp_command.replace('{{subtitles_language_code2}}', str(language_code2) + is_forced)
-    pp_command = pp_command.replace('{{subtitles_language_code3}}', str(language_code3) + is_forced)
+    pp_command = pp_command.replace('{{subtitles_language}}', str(language) + modifier_string)
+    pp_command = pp_command.replace('{{subtitles_language_code2}}', str(language_code2) + modifier_code)
+    pp_command = pp_command.replace('{{subtitles_language_code3}}', str(language_code3) + modifier_code)
+    pp_command = pp_command.replace('{{subtitles_language_code2_dot}}', str(language_code2) + modifier_code_dot)
+    pp_command = pp_command.replace('{{subtitles_language_code3_dot}}', str(language_code3) + modifier_code_dot)
     pp_command = pp_command.replace('{{episode_language}}', str(episode_language))
     pp_command = pp_command.replace('{{episode_language_code2}}', str(episode_language_code2))
     pp_command = pp_command.replace('{{episode_language_code3}}', str(episode_language_code3))

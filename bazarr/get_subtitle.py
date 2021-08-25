@@ -249,7 +249,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced,
-                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
+                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id,
+                                                 subtitle.language.hi)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -569,7 +570,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced,
-                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
+                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id,
+                                                 subtitle.language.hi)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -610,7 +612,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
     logging.debug('BAZARR Ended manually downloading Subtitles for file: ' + path)
 
 
-def manual_upload_subtitle(path, language, forced, title, scene_name, media_type, subtitle, audio_language):
+def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_type, subtitle, audio_language):
     logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
 
     single = settings.general.getboolean('single_language')
@@ -663,11 +665,24 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
         return
 
     subtitle_path = saved_subtitles[0].storage_path
-    message = language_from_alpha3(language) + (" forced" if forced else "") + " Subtitles manually uploaded."
 
-    uploaded_language_code3 = language
-    uploaded_language = language_from_alpha3(uploaded_language_code3)
-    uploaded_language_code2 = alpha2_from_alpha3(uploaded_language_code3)
+    if hi:
+        modifier_string = " HI"
+    elif forced:
+        modifier_string = " forced"
+    else:
+        modifier_string = ""
+    message = language_from_alpha3(language) + modifier_string + " Subtitles manually uploaded."
+
+    if hi:
+        modifier_code = ":hi"
+    elif forced:
+        modifier_code = ":forced"
+    else:
+        modifier_code = ""
+    uploaded_language_code3 = language + modifier_code
+    uploaded_language = language_from_alpha3(language) + modifier_string
+    uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
     audio_language_code2 = alpha2_from_language(audio_language)
     audio_language_code3 = alpha3_from_language(audio_language)
 
@@ -694,7 +709,8 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if use_postprocessing :
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id, episode_id)
+                             audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id,
+                             episode_id, hi=hi)
         postprocessing(command, path)
 
     if media_type == 'series':

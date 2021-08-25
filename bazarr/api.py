@@ -857,6 +857,7 @@ class EpisodesSubtitles(Resource):
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'on' else False
+        hi = True if request.form.get('hi') == 'on' else False
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -868,6 +869,7 @@ class EpisodesSubtitles(Resource):
             result = manual_upload_subtitle(path=episodePath,
                                             language=language,
                                             forced=forced,
+                                            hi=hi,
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
@@ -1086,6 +1088,7 @@ class MoviesSubtitles(Resource):
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -1097,6 +1100,7 @@ class MoviesSubtitles(Resource):
             result = manual_upload_subtitle(path=moviePath,
                                             language=language,
                                             forced=forced,
+                                            hi=hi,
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='movie',
