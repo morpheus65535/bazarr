@@ -167,7 +167,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     raise ProviderError('Invalid JSON returned by provider')
                 else:
                     region.set("oscom_token", self.token)
-                    return True
+                    return
             elif r.status_code == 401:
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
             elif r.status_code == 429:
@@ -176,8 +176,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 raise ProviderError(r.reason)
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
-        finally:
-            return False
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def search_titles(self, title):
