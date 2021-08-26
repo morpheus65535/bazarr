@@ -856,8 +856,8 @@ class EpisodesSubtitles(Resource):
         if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'on' else False
-        hi = True if request.form.get('hi') == 'on' else False
+        forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -880,7 +880,9 @@ class EpisodesSubtitles(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                if forced:
+                if hi:
+                    language_code = language + ":hi"
+                elif forced:
                     language_code = language + ":forced"
                 else:
                     language_code = language
@@ -1111,7 +1113,9 @@ class MoviesSubtitles(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                if forced:
+                if hi:
+                    language_code = language + ":hi"
+                elif forced:
                     language_code = language + ":forced"
                 else:
                     language_code = language
