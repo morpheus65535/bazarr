@@ -279,6 +279,7 @@ export default function SubtitleUploadModal<T>(
           disabled={!canUpload || !showTable}
           onClick={() => {
             upload(pending);
+            setFiles([]);
             closeModal();
           }}
         >
