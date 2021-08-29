@@ -70,6 +70,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       skip_wrong_fps: "Skip Wrong FPS",
     },
   },
+  { key: "ktuvit", 
+    description: "Ktuvit.me Subtitles Provider.", 
+    defaultKey: {
+      email: "",
+      hashed_password: "",
+    },
+    keyNameOverride: {
+      hashed_password: "Hashed Password"
+    }  
+  },
   {
     key: "legendastv",
     name: "LegendasTV",
