@@ -130,26 +130,56 @@ class KtuvitProvider(Provider):
         # login
         if self.email and self.hashed_password:
             logger.info("Logging in")
-            self.session.get(self.server_url + self.sign_in_url)
+
             data = {"request": {"Email": self.email, "Password": self.hashed_password}}
+            headers = {
+                'Accept-Encoding': 'gzip',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache',
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36',
+                'Content-Length': len(str(data))
+                }
+
             r = self.session.post(
                 self.server_url + self.sign_in_url,
                 data,
+                headers=headers,
                 allow_redirects=False,
                 timeout=10,
             )
 
-            if r.status_code != 302:
-                raise AuthenticationError(self.username)
+            logger.debug("request: " + str(r) );
+
+            logger.debug("Logging in to Ktuvit:")
+            logger.debug("URL: " + self.server_url + self.sign_in_url)
+            logger.debug("Headers: " + json.dumps(headers))
+            logger.debug("Body: " + json.dumps(data))
+
+            logger.debug("Response:")
+            logger.debug("Code: " + str(r.status_code))
+            logger.debug("Headers: " + str(r.headers))
+            logger.debug("Body: " + str(r.content))
+            
+
+            if r.content:
+                isSuccess = json.loads(r.json.get("d", "")).get("isSuccess", False)
+
+                if not isSuccess:
+                    AuthenticationError("ErrorMessage: " + str(json.loads(r.get("d", "")).get("ErrorMessage", ""))) 
+            if r.status_code != 200:
+                raise AuthenticationError(self.email)
 
             logger.debug("Logged in")
             self.loginCookie = (
                 r.headers["set-cookie"][1].split(";")[0].replace("Login=", "")
             )
-            self.headers = {
-                "accept": "application/json, text/javascript, */*; q=0.01",
-                "cookie": "Login=" + self.loginCookie,
-            }
+
+            headers["accept"]="application/json, text/javascript, */*; q=0.01"
+            headers["cookie"]= "Login=" + self.loginCookie
+            
+            self.headers = headers            
             self.logged_in = True
 
     def terminate(self):
@@ -252,7 +282,7 @@ class KtuvitProvider(Provider):
         except ValueError:
             return {}
 
-        results = json.loads(r.get("d", "")).get("Films", [])
+        results = json.loads(r.json.get("d", "")).get("Films", [])
 
         # loop over results
         subtitles = {}
