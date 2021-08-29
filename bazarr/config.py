@@ -174,6 +174,10 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'ktuvit': {
+        'email': '',
+        'hashed_password': ''
+    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',

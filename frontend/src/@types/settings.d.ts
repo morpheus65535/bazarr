@@ -21,6 +21,7 @@ interface Settings {
   subscene: Settings.Subscene;
   betaseries: Settings.Betaseries;
   titlovi: Settings.titlovi;
+  ktuvit: Settings.ktuvit;
   notifications: Settings.Notifications;
 }
 

@@ -77,6 +77,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       hashed_password: "",
     },
     keyNameOverride: {
+      email: "Email",
       hashed_password: "Hashed Password"
     }  
   },

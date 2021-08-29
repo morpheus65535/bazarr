@@ -188,6 +188,10 @@ def get_providers_auth():
             'username': settings.titlovi.username,
             'password': settings.titlovi.password,
         },
+        'ktuvit'         : {
+            'email': settings.ktuvit.email,
+            'hashed_password': settings.ktuvit.hashed_password,
+        },
     }
 
 
