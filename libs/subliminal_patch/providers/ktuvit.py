@@ -131,7 +131,7 @@ class KtuvitProvider(Provider):
         if self.email and self.hashed_password:
             logger.info("Logging in")
             self.session.get(self.server_url + self.sign_in_url)
-            data = {"request": {"Email": self.email, "Password": self.hashedPass}}
+            data = {"request": {"Email": self.email, "Password": self.hashed_password}}
             r = self.session.post(
                 self.server_url + self.sign_in_url,
                 data,
