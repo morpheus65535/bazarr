@@ -8,12 +8,13 @@ from subzero.language import Language
 from guessit import guessit
 from requests import Session
 
-from subliminal_patch.providers import ParserBeautifulSoup, Provider
+from subliminal.providers import ParserBeautifulSoup
+from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending
 from subliminal import __short_version__
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
-from subliminal_patch.exceptions import AuthenticationError, ConfigurationError
+from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.utils import sanitize
 from subliminal.video import Episode, Movie
