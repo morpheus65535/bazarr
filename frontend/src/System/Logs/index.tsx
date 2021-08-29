@@ -7,7 +7,7 @@ import { useSystemLogs } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { SystemApi } from "../../apis";
 import { AsyncOverlay, ContentHeader } from "../../components";
-import { useBaseUrl } from "../../utilities";
+import { Environment } from "../../utilities";
 import Table from "./table";
 
 interface Props {}
@@ -18,11 +18,9 @@ const SystemLogsView: FunctionComponent<Props> = () => {
 
   const [resetting, setReset] = useState(false);
 
-  const baseUrl = useBaseUrl(true);
-
   const download = useCallback(() => {
-    window.open(`${baseUrl}bazarr.log`);
-  }, [baseUrl]);
+    window.open(`${Environment.baseUrl}/bazarr.log`);
+  }, []);
 
   return (
     <AsyncOverlay ctx={logs}>

@@ -32,7 +32,7 @@
     "@types/react-table": "^7",
     "axios": "^0.21",
     "bootstrap": "^4",
-    "http-proxy-middleware": "^0.19",
+    "http-proxy-middleware": "^2",
     "lodash": "^4",
     "rc-slider": "^9.7",
     "react": "^17",

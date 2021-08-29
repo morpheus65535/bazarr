@@ -6,11 +6,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
-import {
-  copyToClipboard,
-  toggleState,
-  useCanUpdateInject,
-} from "../../utilities";
+import { copyToClipboard, Environment, toggleState } from "../../utilities";
 import {
   Button,
   Check,
@@ -40,8 +36,6 @@ const baseUrlOverride = (settings: Settings) =>
 
 const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
-
-  const canUpdate = useCanUpdateInject();
 
   return (
     <SettingsProvider title="General - Bazarr (Settings)">
@@ -155,7 +149,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           </CollapseBox.Content>
         </CollapseBox>
       </Group>
-      <Group header="Updates" hidden={!canUpdate}>
+      <Group header="Updates" hidden={!Environment.canUpdate}>
         <Input>
           <Check
             label="Automatic"

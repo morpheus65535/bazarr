@@ -1,19 +1,15 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { AppDispatch } from "../@redux/store";
-import { getBaseUrl } from "../utilities";
+import { Environment, isProdEnv } from "../utilities";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
   dispatch!: AppDispatch;
 
   constructor() {
-    const baseUrl = `${getBaseUrl()}/api/`;
-    if (process.env.NODE_ENV !== "production") {
-      this.initialize(baseUrl, process.env["REACT_APP_APIKEY"]!);
-    } else {
-      this.initialize(baseUrl, window.Bazarr.apiKey);
-    }
+    const baseUrl = `${Environment.baseUrl}/api/`;
+    this.initialize(baseUrl, Environment.apiKey);
   }
 
   initialize(url: string, apikey?: string) {
@@ -53,7 +49,7 @@ class Api {
   }
 
   _resetApi(apikey: string) {
-    if (process.env.NODE_ENV !== "production") {
+    if (!isProdEnv) {
       this.axios.defaults.headers.common["X-API-KEY"] = apikey;
     }
   }

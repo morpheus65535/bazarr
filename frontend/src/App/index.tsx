@@ -20,7 +20,7 @@ import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";
 import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
-import { useBaseUrl, useHasUpdateInject } from "../utilities";
+import { Environment } from "../utilities";
 import Header from "./Header";
 import Router from "./Router";
 
@@ -35,9 +35,8 @@ const App: FunctionComponent<Props> = () => {
   const notify = useNotification("has-update", 10 * 1000);
 
   // Has any update?
-  const hasUpdate = useHasUpdateInject();
   useEffectOnceWhen(() => {
-    if (hasUpdate) {
+    if (Environment.hasUpdate) {
       notify({
         type: "info",
         message: "A new version of Bazarr is ready, restart is required",
@@ -80,14 +79,12 @@ const App: FunctionComponent<Props> = () => {
 };
 
 const MainRouter: FunctionComponent = () => {
-  const baseUrl = useBaseUrl();
-
   useEffect(() => {
     Socketio.initialize();
   }, []);
 
   return (
-    <BrowserRouter basename={baseUrl}>
+    <BrowserRouter basename={Environment.baseUrl}>
       <Switch>
         <Route exact path="/login">
           <Auth></Auth>

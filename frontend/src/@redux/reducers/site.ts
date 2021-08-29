@@ -1,6 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit";
 import { intersectionWith, pullAllWith, remove, sortBy, uniqBy } from "lodash";
 import apis from "../../apis";
+import { isProdEnv } from "../../utilities";
 import {
   siteAddNotifications,
   siteAddProgress,
@@ -59,7 +60,7 @@ const reducer = createReducer(defaultSite, (builder) => {
       state.initialized = "An Error Occurred When Initializing Bazarr UI";
     })
     .addCase(siteRedirectToAuth, (state) => {
-      if (process.env.NODE_ENV !== "production") {
+      if (!isProdEnv) {
         apis._resetApi("NEED_AUTH");
       }
       state.auth = false;

@@ -1,6 +1,6 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
-import { getBaseUrl } from "../../utilities";
+import { Environment } from "../../utilities";
 import { conditionalLog, log } from "../../utilities/logger";
 import { createDefaultReducer } from "./reducer";
 
@@ -12,9 +12,8 @@ class SocketIOClient {
   private reducers: SocketIO.Reducer[];
 
   constructor() {
-    const baseUrl = getBaseUrl();
     this.socket = io({
-      path: `${baseUrl}/api/socket.io`,
+      path: `${Environment.baseUrl}/api/socket.io`,
       transports: ["polling", "websocket"],
       upgrade: true,
       rememberUpgrade: true,

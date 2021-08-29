@@ -1,17 +1,23 @@
-const proxy = require("http-proxy-middleware");
+const { createProxyMiddleware } = require("http-proxy-middleware");
 
-const target = "http://localhost:6767";
+const target = process.env["REACT_APP_PROXY_URL"];
+const allowWs = process.env["REACT_APP_ALLOW_WEBSOCKET"] === "true";
+const secure = process.env["REACT_APP_PROXY_SECURE"] === "true";
 
 module.exports = function (app) {
   app.use(
-    proxy(["/api", "/images", "/test", "/bazarr.log"], {
+    createProxyMiddleware(["/api", "/images", "/test", "/bazarr.log"], {
       target,
+      changeOrigin: true,
+      secure,
     })
   );
   app.use(
-    proxy("/api/socket.io", {
+    createProxyMiddleware("/api/socket.io", {
       target,
-      ws: true,
+      ws: allowWs,
+      changeOrigin: true,
+      secure,
       logLevel: "error",
     })
   );
