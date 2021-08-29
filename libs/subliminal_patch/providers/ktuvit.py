@@ -316,10 +316,10 @@ class KtuvitProvider(Provider):
 
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub["rls"] = column.get_text().strip().split("\n")[0]
+                    sub["rls"] = column.find("div").html().split("<br>")[0].trim()
                 if index == 5:
-                    sub["sub_id"] = column.find("input", attrs={"data-sub-id": True})[
-                        "data-sub-id"
+                    sub["sub_id"] = column.find(".fa")[
+                        "data-subtitle-id"
                     ]
 
             subs.append(sub)
