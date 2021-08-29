@@ -1,4 +1,3 @@
-import "@fontsource/roboto/300.css";
 import React, {
   FunctionComponent,
   useCallback,
@@ -14,7 +13,6 @@ import Socketio from "../@modules/socketio";
 import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
 import store from "../@redux/store";
-import "../@scss/index.scss";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";

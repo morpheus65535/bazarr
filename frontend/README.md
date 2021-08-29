@@ -30,7 +30,7 @@
 
    ```
    # API key of your backend
-   REACT_APP_APIKEY="REPLACE_ME_TO_YOUR_SERVER_API_KEY"
+   REACT_APP_APIKEY="YOUR_SERVER_API_KEY"
    ```
 
 5. Change the address of your backend server (Optional)
