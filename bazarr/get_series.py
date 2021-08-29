@@ -164,8 +164,7 @@ def update_one_series(series_id, action):
         series = None
 
         series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                 sonarr_series_id=int(series_id),
-                                                 sonarr_version=get_sonarr_info.version())
+                                                 sonarr_series_id=int(series_id))
 
         if not series_data:
             return
