@@ -103,6 +103,10 @@ def get_providers_auth():
         'subscene': {
             'only_foreign': False,  # fixme
         },
+        'ktuvit': {
+            'email': settings.ktuvit.email,
+            'hashed_password': settings.ktuvit.hashed_password,
+        },
         'legendastv': {'username': settings.legendastv.username,
                        'password': settings.legendastv.password,
                        },

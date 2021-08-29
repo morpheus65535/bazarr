@@ -90,6 +90,10 @@ defaults = {
         'password': '',
         'random_agents': 'True'
     },
+    'ktuvit': {
+        'email': '',
+        'hashed_password': ''
+    },
     'legendastv': {
         'username': '',
         'password': ''

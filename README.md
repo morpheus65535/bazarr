@@ -47,6 +47,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * GreekSubtitles
 * Hosszupuska
 * LegendasTV
+* Ktuvit
 * Napiprojekt
 * OpenSubtitles
 * Podnapisi
