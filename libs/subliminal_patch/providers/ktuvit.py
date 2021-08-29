@@ -23,10 +23,23 @@ logger = logging.getLogger(__name__)
 
 class KtuvitSubtitle(Subtitle):
     """Ktuvit Subtitle."""
-    provider_name = 'ktuvit'
 
-    def __init__(self, language, hearing_impaired, page_link, series, season, episode, title, imdb_id, ktuvit_id, subtitle_id,
-                 release):
+    provider_name = "ktuvit"
+
+    def __init__(
+        self,
+        language,
+        hearing_impaired,
+        page_link,
+        series,
+        season,
+        episode,
+        title,
+        imdb_id,
+        ktuvit_id,
+        subtitle_id,
+        release,
+    ):
         super(KtuvitSubtitle, self).__init__(language, hearing_impaired, page_link)
         self.series = series
         self.season = season
@@ -50,50 +63,57 @@ class KtuvitSubtitle(Subtitle):
         # episode
         if isinstance(video, Episode):
             # series
-            if video.series and (sanitize(self.title) in (
-                    sanitize(name) for name in [video.series] + video.alternative_series)):
-                matches.add('series')
+            if video.series and (
+                sanitize(self.title)
+                in (
+                    sanitize(name) for name in [video.series] + video.alternative_series
+                )
+            ):
+                matches.add("series")
             # season
             if video.season and self.season == video.season:
-                matches.add('season')
+                matches.add("season")
             # episode
             if video.episode and self.episode == video.episode:
-                matches.add('episode')
+                matches.add("episode")
             # imdb_id
             if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
-                matches.add('series_imdb_id')
+                matches.add("series_imdb_id")
             # guess
-            matches |= guess_matches(video, guessit(self.release, {'type': 'episode'}))
+            matches |= guess_matches(video, guessit(self.release, {"type": "episode"}))
         # movie
         elif isinstance(video, Movie):
             # guess
-            matches |= guess_matches(video, guessit(self.release, {'type': 'movie'}))
+            matches |= guess_matches(video, guessit(self.release, {"type": "movie"}))
 
             # title
-            if video.title and (sanitize(self.title) in (
-                    sanitize(name) for name in [video.title] + video.alternative_titles)):
-                matches.add('title')
+            if video.title and (
+                sanitize(self.title)
+                in (sanitize(name) for name in [video.title] + video.alternative_titles)
+            ):
+                matches.add("title")
 
         return matches
 
 
 class KtuvitProvider(Provider):
     """Ktuvit Provider."""
-    languages = {Language(l) for l in ['heb']}
-    server_url = 'https://www.ktuvit.me/'
-    sign_in_url = 'Services/MembershipService.svc/Login'
-    search_url = 'Services/ContentProvider.svc/SearchPage_search'
-    movie_info_url = 'MovieInfo.aspx?ID='
-    episode_info_url = 'Services/GetModuleAjax.ashx?'
-    request_download_id_url = 'Services/ContentProvider.svc/RequestSubtitleDownload'
-    download_link = 'Services/DownloadFile.ashx?DownloadIdentifier='
+
+    languages = {Language(l) for l in ["heb"]}
+    server_url = "https://www.ktuvit.me/"
+    sign_in_url = "Services/MembershipService.svc/Login"
+    search_url = "Services/ContentProvider.svc/SearchPage_search"
+    movie_info_url = "MovieInfo.aspx?ID="
+    episode_info_url = "Services/GetModuleAjax.ashx?"
+    request_download_id_url = "Services/ContentProvider.svc/RequestSubtitleDownload"
+    download_link = "Services/DownloadFile.ashx?DownloadIdentifier="
     subtitle_class = KtuvitSubtitle
 
-    _tmdb_api_key = 'a51ee051bcd762543373903de296e0a3'
+    _tmdb_api_key = "a51ee051bcd762543373903de296e0a3"
 
-def __init__(self, email=None, hashed_password=None):
+    def __init__(self, email=None, hashed_password=None):
         if any((email, hashed_password)) and not all((email, hashed_password)):
-            raise ConfigurationError('Username and password must be specified')
+            raise ConfigurationError("Username and password must be specified")
 
         self.email = email
         self.hashed_password = hashed_password
@@ -104,23 +124,30 @@ def __init__(self, email=None, hashed_password=None):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
+        self.session.headers["User-Agent"] = "Subliminal/{}".format(__short_version__)
 
         # login
         if self.email and self.hashed_password:
-            logger.info('Logging in')
+            logger.info("Logging in")
             self.session.get(self.server_url + self.sign_in_url)
-            data = {'request' :{'Email': self.email , 'Password': self.hashedPass}}
-            r = self.session.post(self.server_url + self.sign_in_url, data, allow_redirects=False, timeout=10)
+            data = {"request": {"Email": self.email, "Password": self.hashedPass}}
+            r = self.session.post(
+                self.server_url + self.sign_in_url,
+                data,
+                allow_redirects=False,
+                timeout=10,
+            )
 
             if r.status_code != 302:
                 raise AuthenticationError(self.username)
 
-            logger.debug('Logged in')
-            self.loginCookie = r.headers['set-cookie'][1].split(';')[0].replace('Login=','')
+            logger.debug("Logged in")
+            self.loginCookie = (
+                r.headers["set-cookie"][1].split(";")[0].replace("Login=", "")
+            )
             self.headers = {
-                            'accept': 'application/json, text/javascript, */*; q=0.01',
-                            'cookie': 'Login=' + self.loginCookie
+                "accept": "application/json, text/javascript, */*; q=0.01",
+                "cookie": "Login=" + self.loginCookie,
             }
             self.logged_in = True
 
@@ -139,29 +166,47 @@ def __init__(self, email=None, hashed_password=None):
 
         """
         # make the search
-        logger.info('Searching IMDB ID for %r%r', title, '' if not year else ' ({})'.format(year))
-        category = 'movie' if is_movie else 'tv'
-        title = title.replace('\'', '')
+        logger.info(
+            "Searching IMDB ID for %r%r",
+            title,
+            "" if not year else " ({})".format(year),
+        )
+        category = "movie" if is_movie else "tv"
+        title = title.replace("'", "")
         # get TMDB ID first
-        r = self.session.get('http://api.tmdb.org/3/search/{}?api_key={}&query={}{}&language=en'.format(
-            category, self._tmdb_api_key, title, '' if not year else '&year={}'.format(year)))
+        r = self.session.get(
+            "http://api.tmdb.org/3/search/{}?api_key={}&query={}{}&language=en".format(
+                category,
+                self._tmdb_api_key,
+                title,
+                "" if not year else "&year={}".format(year),
+            )
+        )
         r.raise_for_status()
-        tmdb_results = r.json().get('results')
+        tmdb_results = r.json().get("results")
         if tmdb_results:
-            tmdb_id = tmdb_results[0].get('id')
+            tmdb_id = tmdb_results[0].get("id")
             if tmdb_id:
                 # get actual IMDB ID from TMDB
-                r = self.session.get('http://api.tmdb.org/3/{}/{}{}?api_key={}&language=en'.format(
-                    category, tmdb_id, '' if is_movie else '/external_ids', self._tmdb_api_key))
+                r = self.session.get(
+                    "http://api.tmdb.org/3/{}/{}{}?api_key={}&language=en".format(
+                        category,
+                        tmdb_id,
+                        "" if is_movie else "/external_ids",
+                        self._tmdb_api_key,
+                    )
+                )
                 r.raise_for_status()
-                imdb_id = r.json().get('imdb_id')
+                imdb_id = r.json().get("imdb_id")
                 if imdb_id:
                     return str(imdb_id)
                 else:
                     return None
         return None
 
-    def query(self, title, season=None, episode=None, year=None, filename=None, imdb_id=None):
+    def query(
+        self, title, season=None, episode=None, year=None, filename=None, imdb_id=None
+    ):
         # search for the IMDB ID if needed.
         is_movie = not (season and episode)
         imdb_id = imdb_id or self._search_imdb_id(title, year, is_movie)
@@ -169,9 +214,10 @@ def __init__(self, email=None, hashed_password=None):
             return {}
 
         # search
-        logger.debug('Using IMDB ID %r', imdb_id)
-        
-        query = {"FilmName": title,
+        logger.debug("Using IMDB ID %r", imdb_id)
+
+        query = {
+            "FilmName": title,
             "Actors": [],
             "Studios": [],
             "Directors": [],
@@ -182,40 +228,46 @@ def __init__(self, email=None, hashed_password=None):
             "Rating": [],
             "Page": 1,
             "SearchType": "0",
-            "WithSubsOnly": False}
+            "WithSubsOnly": False,
+        }
 
         if not is_movie:
             query["SearchType"] = "1"
-        
+
         if year:
             query["Year"] = year
 
-
         # get the list of subtitles
-        logger.debug('Getting the list of subtitles')
+        logger.debug("Getting the list of subtitles")
 
         url = self.server_url + self.search_url
-        r = self.session.post(url, data={"request": query}, headers=self.headers, timeout=10)
+        r = self.session.post(
+            url, data={"request": query}, headers=self.headers, timeout=10
+        )
         r.raise_for_status()
-        
+
         try:
             results = r.json()
         except ValueError:
             return {}
 
-        results = json.loads(r.get('d', "")).get("Films", [])
+        results = json.loads(r.get("d", "")).get("Films", [])
 
         # loop over results
         subtitles = {}
         for result in results:
-            if result['ImdbID'] is not imdb_id:
-                logger.debug('Subtitles is for IMDB %r but actual IMDB ID is %r', result['ImdbID'], imdb_id)
+            if result["ImdbID"] is not imdb_id:
+                logger.debug(
+                    "Subtitles is for IMDB %r but actual IMDB ID is %r",
+                    result["ImdbID"],
+                    imdb_id,
+                )
                 continue
 
-            language = Language('heb')
+            language = Language("heb")
             hearing_impaired = False
-            ktuvit_id = result['ID']
-            page_link = https://www.ktuvit.me/MovieInfo.aspx?ID= + ktuvit_id
+            ktuvit_id = result["ID"]
+            page_link = self.server_url + self.movie_info_url + ktuvit_id
 
             if is_movie:
                 subs = self._search_movie(ktuvit_id, subtitles)
@@ -223,20 +275,34 @@ def __init__(self, email=None, hashed_password=None):
                 subs = self._search_tvshow(ktuvit_id, season, episode, subtitles)
 
             for sub in subs:
-            # otherwise create it
-                subtitle = KtuvitSubtitle(language, hearing_impaired, page_link, title, season, episode, title, imdb_id,
-                                        sub['sub_id'], sub['rls'])
-                logger.debug('Found subtitle %r', subtitle)
-                sub['sub_id'] = subtitle
+                # otherwise create it
+                subtitle = KtuvitSubtitle(
+                    language,
+                    hearing_impaired,
+                    page_link,
+                    title,
+                    season,
+                    episode,
+                    title,
+                    imdb_id,
+                    sub["sub_id"],
+                    sub["rls"],
+                )
+                logger.debug("Found subtitle %r", subtitle)
+                sub["sub_id"] = subtitle
 
         return subtitles.values()
-
-
 
     def _search_tvshow(self, id, season, episode):
         subs = []
 
-        url = self.server_url + self.episode_info_url + "moduleName=SubtitlesList&SeriesID={}&Season={}&Episode={}".format(id, season, episode);
+        url = (
+            self.server_url
+            + self.episode_info_url
+            + "moduleName=SubtitlesList&SeriesID={}&Season={}&Episode={}".format(
+                id, season, episode
+            )
+        )
         r = self.session.get(url, headers=self.headers, timeout=10)
         r.raise_for_status()
 
@@ -245,24 +311,22 @@ def __init__(self, email=None, hashed_password=None):
 
         for row in sub_rows:
             columns = row.find_all("td")
-            sub = {
-                'id': id
-            }
+            sub = {"id": id}
 
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub['rls'] = column.get_text().strip().split("\n")[0]
+                    sub["rls"] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub['sub_id'] = column.find("input", attrs={"data-sub-id": True})["data-sub-id"]
+                    sub["sub_id"] = column.find("input", attrs={"data-sub-id": True})[
+                        "data-sub-id"
+                    ]
 
             subs.append(sub)
         return subs
 
-
-
     def _search_movie(self, movie_id):
         subs = []
-        url = self.server_url + self.movie_info_url + movie_id;
+        url = self.server_url + self.movie_info_url + movie_id
         r = self.session.get(url, headers=self.headers, timeout=10)
         r.raise_for_status()
 
@@ -271,20 +335,18 @@ def __init__(self, email=None, hashed_password=None):
 
         for row in sub_rows:
             columns = row.find_all("td")
-            sub = {
-                'id': movie_id
-            }
+            sub = {"id": movie_id}
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub['rls'] = column.get_text().strip().split("\n")[0]
+                    sub["rls"] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub['sub_id'] = column.find("a", attrs={"data-subtitle-id": True})["data-subtitle-id"]
+                    sub["sub_id"] = column.find("a", attrs={"data-subtitle-id": True})[
+                        "data-subtitle-id"
+                    ]
 
                 subs.append(sub)
 
         return subs
-
-
 
     def list_subtitles(self, video, languages):
         season = episode = None
@@ -302,8 +364,11 @@ def __init__(self, email=None, hashed_password=None):
             imdb_id = video.imdb_id
 
         for title in titles:
-            subtitles = [s for s in
-                         self.query(title, season, episode, year, filename, imdb_id) if s.language in languages]
+            subtitles = [
+                s
+                for s in self.query(title, season, episode, year, filename, imdb_id)
+                if s.language in languages
+            ]
             if subtitles:
                 return subtitles
 
@@ -316,12 +381,14 @@ def __init__(self, email=None, hashed_password=None):
                 "SubtitleID": subtitle.subtitle_id,
                 "FontSize": 0,
                 "FontColor": "",
-                "PredefinedLayout": -1
-            };
+                "PredefinedLayout": -1,
+            }
 
             # download
             url = self.server_url + self.request_download_id_url
-            r = self.session.post(url, data=downloadIdentifierRequest, headers=self.headers, timeout=10)
+            r = self.session.post(
+                url, data=downloadIdentifierRequest, headers=self.headers, timeout=10
+            )
             r.raise_for_status()
 
             if len(r.content) == 0:
@@ -334,7 +401,9 @@ def __init__(self, email=None, hashed_password=None):
             r.raise_for_status()
 
             if not r.content:
-                logger.debug('Unable to download subtitle. No data returned from provider')
+                logger.debug(
+                    "Unable to download subtitle. No data returned from provider"
+                )
                 return
 
             subtitle.content = fix_line_ending(r.content)
