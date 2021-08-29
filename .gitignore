@@ -21,8 +21,3 @@ VERSION
 # Allow
 !*.dll
 
-# Frontend
-node_modules
-/frontend/dist
-/frontend/*.local
-/frontend/build
