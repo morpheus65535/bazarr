@@ -10,8 +10,9 @@ from ..util import compat
 import time
 import datetime
 from numbers import Number
-from functools import wraps
+from functools import wraps, partial
 import threading
+from decorator import decorate
 
 _backend_loader = PluginLoader("dogpile.cache")
 register_backend = _backend_loader.register
@@ -188,7 +189,7 @@ class DefaultInvalidationStrategy(RegionInvalidationStrategy):
 
 
 class CacheRegion(object):
-    """A front end to a particular cache backend.
+    r"""A front end to a particular cache backend.
 
     :param name: Optional, a string name for the region.
      This isn't used internally
@@ -484,6 +485,26 @@ class CacheRegion(object):
         else:
             return self._LockWrapper()
 
+    # cached value
+    _actual_backend = None
+
+    @property
+    def actual_backend(self):
+        """Return the ultimate backend underneath any proxies.
+
+        The backend might be the result of one or more ``proxy.wrap``
+        applications. If so, derive the actual underlying backend.
+
+        .. versionadded:: 0.6.6
+
+        """
+        if self._actual_backend is None:
+            _backend = self.backend
+            while hasattr(_backend, 'proxied'):
+                _backend = _backend.proxied
+            self._actual_backend = _backend
+        return self._actual_backend
+
     def invalidate(self, hard=True):
         """Invalidate this :class:`.CacheRegion`.
 
@@ -723,7 +744,8 @@ class CacheRegion(object):
         ]
 
     def get_or_create(
-            self, key, creator, expiration_time=None, should_cache_fn=None):
+            self, key, creator, expiration_time=None, should_cache_fn=None,
+            creator_args=None):
         """Return a cached value based on the given key.
 
         If the value does not exist or is considered to be expired
@@ -758,6 +780,11 @@ class CacheRegion(object):
          function, if present.
 
         :param creator: function which creates a new value.
+
+        :param creator_args: optional tuple of (args, kwargs) that will be
+         passed to the creator function if present.
+
+         .. versionadded:: 0.7.0
 
         :param expiration_time: optional expiration time which will overide
          the expiration time already configured on this :class:`.CacheRegion`
@@ -799,7 +826,7 @@ class CacheRegion(object):
             value = self.backend.get(key)
             if (value is NO_VALUE or value.metadata['v'] != value_version or
                     self.region_invalidator.is_hard_invalidated(
-                            value.metadata["ct"])):
+                        value.metadata["ct"])):
                 raise NeedRegenerationException()
             ct = value.metadata["ct"]
             if self.region_invalidator.is_soft_invalidated(ct):
@@ -808,7 +835,10 @@ class CacheRegion(object):
             return value.payload, ct
 
         def gen_value():
-            created_value = creator()
+            if creator_args:
+                created_value = creator(*creator_args[0], **creator_args[1])
+            else:
+                created_value = creator()
             value = self._value(created_value)
 
             if not should_cache_fn or \
@@ -831,8 +861,13 @@ class CacheRegion(object):
 
         if self.async_creation_runner:
             def async_creator(mutex):
-                return self.async_creation_runner(
-                    self, orig_key, creator, mutex)
+                if creator_args:
+                    @wraps(creator)
+                    def go():
+                        return creator(*creator_args[0], **creator_args[1])
+                else:
+                    go = creator
+                return self.async_creation_runner(self, orig_key, go, mutex)
         else:
             async_creator = None
 
@@ -896,7 +931,7 @@ class CacheRegion(object):
 
             if (value is NO_VALUE or value.metadata['v'] != value_version or
                     self.region_invalidator.is_hard_invalidated(
-                            value.metadata['v'])):
+                        value.metadata['ct'])):
                 # dogpile.core understands a 0 here as
                 # "the value is not available", e.g.
                 # _has_value() will return False.
@@ -1228,26 +1263,31 @@ class CacheRegion(object):
         if function_key_generator is None:
             function_key_generator = self.function_key_generator
 
-        def decorator(fn):
+        def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
+            key = key_generator(*arg, **kw)
+
+            timeout = expiration_time() if expiration_time_is_callable \
+                else expiration_time
+            return self.get_or_create(key, user_func, timeout,
+                                      should_cache_fn, (arg, kw))
+
+        def cache_decorator(user_func):
             if to_str is compat.string_type:
                 # backwards compatible
-                key_generator = function_key_generator(namespace, fn)
+                key_generator = function_key_generator(namespace, user_func)
             else:
                 key_generator = function_key_generator(
-                    namespace, fn,
+                    namespace, user_func,
                     to_str=to_str)
 
-            @wraps(fn)
-            def decorate(*arg, **kw):
+            def refresh(*arg, **kw):
+                """
+                Like invalidate, but regenerates the value instead
+                """
                 key = key_generator(*arg, **kw)
-
-                @wraps(fn)
-                def creator():
-                    return fn(*arg, **kw)
-                timeout = expiration_time() if expiration_time_is_callable \
-                    else expiration_time
-                return self.get_or_create(key, creator, timeout,
-                                          should_cache_fn)
+                value = user_func(*arg, **kw)
+                self.set(key, value)
+                return value
 
             def invalidate(*arg, **kw):
                 key = key_generator(*arg, **kw)
@@ -1261,20 +1301,18 @@ class CacheRegion(object):
                 key = key_generator(*arg, **kw)
                 return self.get(key)
 
-            def refresh(*arg, **kw):
-                key = key_generator(*arg, **kw)
-                value = fn(*arg, **kw)
-                self.set(key, value)
-                return value
+            user_func.set = set_
+            user_func.invalidate = invalidate
+            user_func.get = get
+            user_func.refresh = refresh
+            user_func.original = user_func
 
-            decorate.set = set_
-            decorate.invalidate = invalidate
-            decorate.refresh = refresh
-            decorate.get = get
-            decorate.original = fn
+            # Use `decorate` to preserve the signature of :param:`user_func`.
 
-            return decorate
-        return decorator
+            return decorate(user_func, partial(
+                get_or_create_for_user_func, key_generator))
+
+        return cache_decorator
 
     def cache_multi_on_arguments(
             self, namespace=None, expiration_time=None,
@@ -1402,50 +1440,49 @@ class CacheRegion(object):
         if function_multi_key_generator is None:
             function_multi_key_generator = self.function_multi_key_generator
 
-        def decorator(fn):
+        def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
+            cache_keys = arg
+            keys = key_generator(*arg, **kw)
+            key_lookup = dict(zip(keys, cache_keys))
+
+            @wraps(user_func)
+            def creator(*keys_to_create):
+                return user_func(*[key_lookup[k] for k in keys_to_create])
+
+            timeout = expiration_time() if expiration_time_is_callable \
+                else expiration_time
+
+            if asdict:
+                def dict_create(*keys):
+                    d_values = creator(*keys)
+                    return [
+                        d_values.get(key_lookup[k], NO_VALUE)
+                        for k in keys]
+
+                def wrap_cache_fn(value):
+                    if value is NO_VALUE:
+                        return False
+                    elif not should_cache_fn:
+                        return True
+                    else:
+                        return should_cache_fn(value)
+
+                result = self.get_or_create_multi(
+                    keys, dict_create, timeout, wrap_cache_fn)
+                result = dict(
+                    (k, v) for k, v in zip(cache_keys, result)
+                    if v is not NO_VALUE)
+            else:
+                result = self.get_or_create_multi(
+                    keys, creator, timeout,
+                    should_cache_fn)
+
+            return result
+
+        def cache_decorator(user_func):
             key_generator = function_multi_key_generator(
-                namespace, fn,
+                namespace, user_func,
                 to_str=to_str)
-
-            @wraps(fn)
-            def decorate(*arg, **kw):
-                cache_keys = arg
-                keys = key_generator(*arg, **kw)
-                key_lookup = dict(zip(keys, cache_keys))
-
-                @wraps(fn)
-                def creator(*keys_to_create):
-                    return fn(*[key_lookup[k] for k in keys_to_create])
-
-                timeout = expiration_time() if expiration_time_is_callable \
-                    else expiration_time
-
-                if asdict:
-                    def dict_create(*keys):
-                        d_values = creator(*keys)
-                        return [
-                            d_values.get(key_lookup[k], NO_VALUE)
-                            for k in keys]
-
-                    def wrap_cache_fn(value):
-                        if value is NO_VALUE:
-                            return False
-                        elif not should_cache_fn:
-                            return True
-                        else:
-                            return should_cache_fn(value)
-
-                    result = self.get_or_create_multi(
-                        keys, dict_create, timeout, wrap_cache_fn)
-                    result = dict(
-                        (k, v) for k, v in zip(cache_keys, result)
-                        if v is not NO_VALUE)
-                else:
-                    result = self.get_or_create_multi(
-                        keys, creator, timeout,
-                        should_cache_fn)
-
-                return result
 
             def invalidate(*arg):
                 keys = key_generator(*arg)
@@ -1466,7 +1503,7 @@ class CacheRegion(object):
 
             def refresh(*arg):
                 keys = key_generator(*arg)
-                values = fn(*arg)
+                values = user_func(*arg)
                 if asdict:
                     self.set_multi(
                         dict(zip(keys, [values[a] for a in arg]))
@@ -1478,13 +1515,18 @@ class CacheRegion(object):
                     )
                     return values
 
-            decorate.set = set_
-            decorate.invalidate = invalidate
-            decorate.refresh = refresh
-            decorate.get = get
+            user_func.set = set_
+            user_func.invalidate = invalidate
+            user_func.refresh = refresh
+            user_func.get = get
 
-            return decorate
-        return decorator
+            # Use `decorate` to preserve the signature of :param:`user_func`.
+
+            return decorate(user_func, partial(get_or_create_for_user_func, key_generator))
+
+        return cache_decorator
+
+
 
 
 def make_region(*arg, **kw):

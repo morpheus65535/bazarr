@@ -1,6 +1,7 @@
 import os
 import pytz
 import re
+import warnings
 
 from tzlocal import utils
 
@@ -12,7 +13,7 @@ def _tz_from_env(tzenv):
         tzenv = tzenv[1:]
 
     # TZ specifies a file
-    if os.path.exists(tzenv):
+    if os.path.isabs(tzenv) and os.path.exists(tzenv):
         with open(tzenv, 'rb') as tzfile:
             return pytz.tzfile.build_tzinfo('local', tzfile)
 
@@ -51,6 +52,12 @@ def _get_localzone(_root='/'):
     if tzenv:
         return tzenv
 
+    # Are we under Termux on Android?
+    if os.path.exists('/system/bin/getprop'):
+        import subprocess
+        androidtz = subprocess.check_output(['getprop', 'persist.sys.timezone']).strip().decode()
+        return pytz.timezone(androidtz)
+
     # Now look for distribution specific configuration files
     # that contain the timezone name.
     for configfile in ('etc/timezone', 'var/db/zoneinfo'):
@@ -76,7 +83,13 @@ def _get_localzone(_root='/'):
                         etctz, dummy = etctz.split('#', 1)
                     if not etctz:
                         continue
-                    return pytz.timezone(etctz.replace(' ', '_'))
+                    tz = pytz.timezone(etctz.replace(' ', '_'))
+                    if _root == '/':
+                        # We are using a file in etc to name the timezone.
+                        # Verify that the timezone specified there is actually used:
+                        utils.assert_tz_offset(tz)
+                    return tz
+
         except IOError:
             # File doesn't exist or is a directory
             continue
@@ -108,7 +121,13 @@ def _get_localzone(_root='/'):
                     etctz = line[:end_re.search(line).start()]
 
                     # We found a timezone
-                    return pytz.timezone(etctz.replace(' ', '_'))
+                    tz = pytz.timezone(etctz.replace(' ', '_'))
+                    if _root == '/':
+                        # We are using a file in etc to name the timezone.
+                        # Verify that the timezone specified there is actually used:
+                        utils.assert_tz_offset(tz)
+                    return tz
+
         except IOError:
             # File doesn't exist or is a directory
             continue
@@ -119,20 +138,13 @@ def _get_localzone(_root='/'):
     if os.path.exists(tzpath) and os.path.islink(tzpath):
         tzpath = os.path.realpath(tzpath)
         start = tzpath.find("/")+1
-        while start is not 0:
+        while start != 0:
             tzpath = tzpath[start:]
             try:
                 return pytz.timezone(tzpath)
             except pytz.UnknownTimeZoneError:
                 pass
             start = tzpath.find("/")+1
-
-    # Are we under Termux on Android? It's not officially supported, because
-    # there is no reasonable way to run tests for this, but let's make an effort.
-    if os.path.exists('/system/bin/getprop'):
-        import subprocess
-        androidtz = subprocess.check_output(['getprop', 'persist.sys.timezone'])
-        return pytz.timezone(androidtz.strip().decode())
 
     # No explicit setting existed. Use localtime
     for filename in ('etc/localtime', 'usr/local/etc/localtime'):
@@ -143,8 +155,8 @@ def _get_localzone(_root='/'):
         with open(tzpath, 'rb') as tzfile:
             return pytz.tzfile.build_tzinfo('local', tzfile)
 
-    raise pytz.UnknownTimeZoneError('Can not find any timezone configuration')
-
+    warnings.warn('Can not find any timezone configuration, defaulting to UTC.')
+    return pytz.utc
 
 def get_localzone():
     """Get the computers configured local timezone, if any."""
@@ -152,7 +164,6 @@ def get_localzone():
     if _cache_tz is None:
         _cache_tz = _get_localzone()
 
-    utils.assert_tz_offset(_cache_tz)
     return _cache_tz
 
 
@@ -160,5 +171,4 @@ def reload_localzone():
     """Reload the cached localzone. You need to call this if the timezone has changed."""
     global _cache_tz
     _cache_tz = _get_localzone()
-    utils.assert_tz_offset(_cache_tz)
     return _cache_tz

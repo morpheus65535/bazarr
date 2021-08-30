@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
 #
-# Emby Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 # For this plugin to work correct, the Emby server must be set up to allow
 # for remote connections.
@@ -28,9 +35,11 @@ from json import dumps
 from json import loads
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
+from ..URLBase import PrivacyMode
 from ..utils import parse_bool
+from ..common import NotifyType
 from .. import __version__ as VERSION
+from ..AppriseLocale import gettext_lazy as _
 
 
 class NotifyEmby(NotifyBase):
@@ -52,9 +61,6 @@ class NotifyEmby(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_emby'
 
-    # Emby uses the http protocol with JSON requests
-    emby_default_port = 8096
-
     # By default Emby requires you to provide it a device id
     # The following was just a random uuid4 generated one.  There
     # is no real reason to change this, but hey; that's what open
@@ -64,6 +70,47 @@ class NotifyEmby(NotifyBase):
     # The Emby message timeout; basically it is how long should our message be
     # displayed for.  The value is in milli-seconds
     emby_message_timeout_ms = 60000
+
+    # Define object templates
+    templates = (
+        '{schema}://{host}',
+        '{schema}://{host}:{port}',
+        '{schema}://{user}:{password}@{host}',
+        '{schema}://{user}:{password}@{host}:{port}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'host': {
+            'name': _('Hostname'),
+            'type': 'string',
+            'required': True,
+        },
+        'port': {
+            'name': _('Port'),
+            'type': 'int',
+            'min': 1,
+            'max': 65535,
+            'default': 8096
+        },
+        'user': {
+            'name': _('Username'),
+            'type': 'string',
+        },
+        'password': {
+            'name': _('Password'),
+            'type': 'string',
+            'private': True,
+        },
+    })
+
+    template_args = dict(NotifyBase.template_args, **{
+        'modal': {
+            'name': _('Modal'),
+            'type': 'bool',
+            'default': False,
+        },
+    })
 
     def __init__(self, modal=False, **kwargs):
         """
@@ -88,10 +135,15 @@ class NotifyEmby(NotifyBase):
         # or a modal type box (requires an Okay acknowledgement)
         self.modal = modal
 
+        if not self.port:
+            # Assign default port if one isn't otherwise specified:
+            self.port = self.template_tokens['port']['default']
+
         if not self.user:
-            # Token was None
-            self.logger.warning('No Username was specified.')
-            raise TypeError('No Username was specified.')
+            # User was not specified
+            msg = 'No Emby username was specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         return
 
@@ -157,30 +209,30 @@ class NotifyEmby(NotifyBase):
                 headers=headers,
                 data=dumps(payload),
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
-                try:
-                    self.logger.warning(
-                        'Failed to authenticate user %s details: '
-                        '%s (error=%s).' % (
-                            self.user,
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                # We had a problem
+                status_str = \
+                    NotifyEmby.http_response_code_lookup(r.status_code)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to authenticate user %s details: '
-                        '(error=%s).' % (self.user, r.status_code))
+                self.logger.warning(
+                    'Failed to authenticate Emby user {} details: '
+                    '{}{}error={}.'.format(
+                        self.user,
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
 
-                self.logger.debug('Emby Response:\r\n%s' % r.text)
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured authenticating a user with Emby '
+                'A Connection error occurred authenticating a user with Emby '
                 'at %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -191,9 +243,12 @@ class NotifyEmby(NotifyBase):
         try:
             results = loads(r.content)
 
-        except ValueError:
-            # A string like '' would cause this; basicallly the content
-            # that was provided was not a JSON string. We can stop here
+        except (AttributeError, TypeError, ValueError):
+            # ValueError = r.content is Unparsable
+            # TypeError = r.content is None
+            # AttributeError = r is None
+
+            # This is a problem; abort
             return False
 
         # Acquire our Access Token
@@ -318,30 +373,30 @@ class NotifyEmby(NotifyBase):
                 url,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
-                try:
-                    self.logger.warning(
-                        'Failed to acquire session for user %s details: '
-                        '%s (error=%s).' % (
-                            self.user,
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                # We had a problem
+                status_str = \
+                    NotifyEmby.http_response_code_lookup(r.status_code)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to acquire session for user %s details: '
-                        '(error=%s).' % (self.user, r.status_code))
+                self.logger.warning(
+                    'Failed to acquire Emby session for user {}: '
+                    '{}{}error={}.'.format(
+                        self.user,
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
 
-                self.logger.debug('Emby Response:\r\n%s' % r.text)
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return sessions
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured querying Emby '
+                'A Connection error occurred querying Emby '
                 'for session information at %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -352,10 +407,12 @@ class NotifyEmby(NotifyBase):
         try:
             results = loads(r.content)
 
-        except ValueError:
-            # A string like '' would cause this; basicallly the content
-            # that was provided was not a JSON string. There is nothing
-            # more we can do at this point
+        except (AttributeError, TypeError, ValueError):
+            # ValueError = r.content is Unparsable
+            # TypeError = r.content is None
+            # AttributeError = r is None
+
+            # We need to abort at this point
             return sessions
 
         for entry in results:
@@ -396,6 +453,7 @@ class NotifyEmby(NotifyBase):
                 url,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code not in (
@@ -404,27 +462,27 @@ class NotifyEmby(NotifyBase):
                     # The below show up if we were 'just' logged out
                     requests.codes.ok,
                     requests.codes.no_content):
-                try:
-                    self.logger.warning(
-                        'Failed to logoff user %s details: '
-                        '%s (error=%s).' % (
-                            self.user,
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to logoff user %s details: '
-                        '(error=%s).' % (self.user, r.status_code))
+                # We had a problem
+                status_str = \
+                    NotifyEmby.http_response_code_lookup(r.status_code)
 
-                self.logger.debug('Emby Response:\r\n%s' % r.text)
+                self.logger.warning(
+                    'Failed to logoff Emby user {}: '
+                    '{}{}error={}.'.format(
+                        self.user,
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
+
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured querying Emby '
+                'A Connection error occurred querying Emby '
                 'to logoff user %s at %s.' % (self.user, self.host))
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -438,7 +496,7 @@ class NotifyEmby(NotifyBase):
         self.user_id = None
         return True
 
-    def notify(self, title, body, notify_type, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Emby Notification
         """
@@ -487,27 +545,34 @@ class NotifyEmby(NotifyBase):
                 session_url, self.verify_certificate,
             ))
             self.logger.debug('Emby Payload: %s' % str(payload))
+
+            # Always call throttle before the requests are made
+            self.throttle()
+
             try:
                 r = requests.post(
                     session_url,
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
                 if r.status_code not in (
                         requests.codes.ok,
                         requests.codes.no_content):
-                    try:
-                        self.logger.warning(
-                            'Failed to send Emby notification: '
-                            '%s (error=%s).' % (
-                                HTTP_ERROR_MAP[r.status_code],
-                                r.status_code))
+                    # We had a problem
+                    status_str = \
+                        NotifyEmby.http_response_code_lookup(r.status_code)
 
-                    except KeyError:
-                        self.logger.warning(
-                            'Failed to send Emby notification '
-                            '(error=%s).' % (r.status_code))
+                    self.logger.warning(
+                        'Failed to send Emby notification: '
+                        '{}{}error={}.'.format(
+                            status_str,
+                            ', ' if status_str else '',
+                            r.status_code))
+
+                    self.logger.debug(
+                        'Response Details:\r\n{}'.format(r.content))
 
                     # Mark our failure
                     has_error = True
@@ -518,7 +583,7 @@ class NotifyEmby(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Emby '
+                    'A Connection error occurred sending Emby '
                     'notification to %s.' % self.host)
                 self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -527,6 +592,42 @@ class NotifyEmby(NotifyBase):
                 continue
 
         return not has_error
+
+    def url(self, privacy=False, *args, **kwargs):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any URL parameters
+        params = {
+            'modal': 'yes' if self.modal else 'no',
+        }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        # Determine Authentication
+        auth = ''
+        if self.user and self.password:
+            auth = '{user}:{password}@'.format(
+                user=NotifyEmby.quote(self.user, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
+            )
+        else:  # self.user is set
+            auth = '{user}@'.format(
+                user=NotifyEmby.quote(self.user, safe=''),
+            )
+
+        return '{schema}://{auth}{hostname}{port}/?{params}'.format(
+            schema=self.secure_protocol if self.secure else self.protocol,
+            auth=auth,
+            hostname=self.host,
+            port='' if self.port is None
+                 or self.port == self.template_tokens['port']['default']
+                 else ':{}'.format(self.port),
+            params=NotifyEmby.urlencode(params),
+        )
 
     @property
     def is_authenticated(self):
@@ -561,17 +662,13 @@ class NotifyEmby(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
         if not results:
             # We're done early
             return results
-
-        # Assign Default Emby Port
-        if not results['port']:
-            results['port'] = NotifyEmby.emby_default_port
 
         # Modal type popup (default False)
         results['modal'] = parse_bool(results['qsd'].get('modal', False))
@@ -582,4 +679,21 @@ class NotifyEmby(NotifyBase):
         """
         Deconstructor
         """
-        self.logout()
+        try:
+            self.logout()
+
+        except LookupError:  # pragma: no cover
+            # Python v3.5 call to requests can sometimes throw the exception
+            #   "/usr/lib64/python3.7/socket.py", line 748, in getaddrinfo
+            #   LookupError: unknown encoding: idna
+            #
+            # This occurs every time when running unit-tests against Apprise:
+            # LANG=C.UTF-8 PYTHONPATH=$(pwd) py.test-3.7
+            #
+            # There has been an open issue on this since Jan 2017.
+            #   - https://bugs.python.org/issue29288
+            #
+            # A ~similar~ issue can be identified here in the requests
+            # ticket system as unresolved and has provided work-arounds
+            #   - https://github.com/kennethreitz/requests/issues/3578
+            pass

@@ -1,19 +1,20 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import traceback
 import re
 import pysubs2
 import logging
 import time
 
-from mods import EMPTY_TAG_PROCESSOR, EmptyEntryError
-from registry import registry
+from .mods import EMPTY_TAG_PROCESSOR
+from .exc import EmptyEntryError
+from .registry import registry
 from subzero.language import Language
+import six
 
 logger = logging.getLogger(__name__)
 
-
-lowercase_re = re.compile(ur'(?sux)[a-zà-ž]')
 
 
 class SubtitleModifications(object):
@@ -33,12 +34,12 @@ class SubtitleModifications(object):
 
     def load(self, fn=None, content=None, language=None, encoding="utf-8"):
         """
-        
+
         :param encoding: used for decoding the content when fn is given, not used in case content is given
         :param language: babelfish.Language language of the subtitle
         :param fn:  filename
-        :param content: unicode 
-        :return: 
+        :param content: unicode
+        :return:
         """
         if language:
             self.language = Language.rebuild(language, forced=False)
@@ -63,11 +64,14 @@ class SubtitleModifications(object):
     @classmethod
     def parse_identifier(cls, identifier):
         # simple identifier
-        if identifier in registry.mods:
+        # ("=" conditional used to avoid unpack exceptions related to bad 
+        # identifiers from old configs)
+        if identifier in registry.mods or "=" not in identifier:
             return identifier, {}
 
         # identifier with params; identifier(param=value)
         split_args = identifier[identifier.find("(")+1:-1].split(",")
+
         args = dict((key, value) for key, value in [sub.split("=") for sub in split_args])
         return identifier[:identifier.find("(")], args
 
@@ -128,7 +132,7 @@ class SubtitleModifications(object):
             used_mods.append(orig_identifier)
 
         # finalize merged mods into final and used mods
-        for identifier, args in mods_merged.iteritems():
+        for identifier, args in six.iteritems(mods_merged):
             pos_preserve_index = used_mods.index("%s_ORIG_POSITION" % identifier)
 
             # clear empty mods after merging
@@ -143,7 +147,7 @@ class SubtitleModifications(object):
                 continue
 
             # clear empty args
-            final_mod_args = dict(filter(lambda (k, v): bool(v), args.iteritems()))
+            final_mod_args = dict([k_v for k_v in six.iteritems(args) if bool(k_v[1])])
 
             _data = SubtitleModifications.get_mod_signature(identifier, **final_mod_args)
             if _data == mods_merged_log[identifier]["final_identifier"]:
@@ -159,11 +163,11 @@ class SubtitleModifications(object):
             final_mods[identifier] = args
 
         if self.debug:
-            for identifier, data in mods_merged_log.iteritems():
+            for identifier, data in six.iteritems(mods_merged_log):
                 logger.debug("Merged %s to %s", data["identifiers"], data["final_identifier"])
 
         # separate all mods into line and non-line mods
-        for identifier, args in final_mods.iteritems():
+        for identifier, args in six.iteritems(final_mods):
             mod_cls = registry.mods[identifier]
             if mod_cls.modifies_whole_file:
                 non_line_mods.append((identifier, args))
@@ -180,14 +184,14 @@ class SubtitleModifications(object):
         entries_used = 0
         for entry in self.f:
             entry_used = False
-            for sub in entry.text.strip().split("\N"):
+            for sub in entry.text.strip().split(r"\N"):
                 # skip HI bracket entries, those might actually be lowercase
                 sub = sub.strip()
                 for processor in registry.mods["remove_HI"].processors[:4]:
                     sub = processor.process(sub)
 
                 if sub.strip():
-                    if lowercase_re.search(sub):
+                    if not sub.isupper():
                         return False
 
                     entry_used = True
@@ -271,8 +275,13 @@ class SubtitleModifications(object):
                     logger.debug(u"Skipping empty line: %s", index)
                 continue
 
+            line_split = t.split(r"\N")
+            if len(line_split) > 3: # Badly parsed subtitle
+                logger.error("Skipping %d lines for %s mod", len(line_split), mods)
+                continue
+
             skip_entry = False
-            for line in t.split(ur"\N"):
+            for line in line_split:
                 # don't bother the mods with surrounding tags
                 old_line = line
                 line = line.strip()
@@ -293,15 +302,18 @@ class SubtitleModifications(object):
                     end_tag = line[-5:]
                     line = line[:-5]
 
+                last_procs_mods = []
+
+                # fixme: this double loop is ugly
                 for order, identifier, args in mods:
                     mod = self.initialized_mods[identifier]
 
                     try:
-                        line = mod.modify(line.strip(), entry=entry.text, debug=self.debug, parent=self, index=index,
+                        line = mod.modify(line.strip(), entry=t, debug=self.debug, parent=self, index=index,
                                           **args)
                     except EmptyEntryError:
                         if self.debug:
-                            logger.debug(u"%d: %s: %r -> ''", index, identifier, entry.text)
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, t)
                         skip_entry = True
                         break
 
@@ -312,6 +324,33 @@ class SubtitleModifications(object):
                         break
 
                     applied_mods.append(identifier)
+                    if mod.last_processors:
+                        last_procs_mods.append([identifier, args])
+
+                if skip_entry:
+                    lines = []
+                    break
+
+                if skip_line:
+                    continue
+
+                for identifier, args in last_procs_mods:
+                    mod = self.initialized_mods[identifier]
+
+                    try:
+                        line = mod.modify(line.strip(), entry=t, debug=self.debug, parent=self, index=index,
+                                          procs=["last_process"], **args)
+                    except EmptyEntryError:
+                        if self.debug:
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, t)
+                        skip_entry = True
+                        break
+
+                    if not line:
+                        if self.debug:
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, old_line)
+                        skip_line = True
+                        break
 
                 if skip_entry:
                     lines = []
@@ -347,7 +386,7 @@ class SubtitleModifications(object):
                     logger.debug(u"%d: %r -> ''", index, entry.text)
                 continue
 
-            new_text = ur"\N".join(lines)
+            new_text = r"\N".join(lines)
 
             # cheap man's approach to avoid open tags
             add_start_tags = []

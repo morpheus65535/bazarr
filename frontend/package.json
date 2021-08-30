@@ -1,0 +1,79 @@
+{
+  "name": "bazarr",
+  "version": "1.0.0",
+  "description": "Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements. You define your preferences by TV show or movie and Bazarr takes care of everything for you.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morpheus65535/bazarr.git"
+  },
+  "author": "morpheus65535",
+  "license": "GPL-3",
+  "bugs": {
+    "url": "https://github.com/morpheus65535/bazarr/issues"
+  },
+  "private": true,
+  "homepage": "./",
+  "dependencies": {
+    "@fontsource/roboto": "^4.2.2",
+    "@fortawesome/fontawesome-svg-core": "^1.2",
+    "@fortawesome/free-brands-svg-icons": "^5.15",
+    "@fortawesome/free-regular-svg-icons": "^5.15",
+    "@fortawesome/free-solid-svg-icons": "^5.15",
+    "@fortawesome/react-fontawesome": "^0.1.11",
+    "@reduxjs/toolkit": "^1.6",
+    "axios": "^0.21",
+    "bootstrap": "^4",
+    "lodash": "^4",
+    "rc-slider": "^9.7",
+    "react": "^17",
+    "react-bootstrap": "^1",
+    "react-dom": "^17",
+    "react-helmet": "^6.1",
+    "react-redux": "^7.2",
+    "react-router-dom": "^5.2",
+    "react-scripts": "^4",
+    "react-select": "^4",
+    "react-table": "^7",
+    "recharts": "^2.0.8",
+    "rooks": "^5",
+    "sass": "^1",
+    "socket.io-client": "^4",
+    "typescript": "^4"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5",
+    "@types/jest": "~26.0.24",
+    "@types/lodash": "^4",
+    "@types/node": "^15",
+    "@types/react": "^17",
+    "@types/react-dom": "^17",
+    "@types/react-helmet": "^6.1",
+    "@types/react-router-dom": "^5",
+    "@types/react-select": "^4.0.3",
+    "@types/react-table": "^7",
+    "http-proxy-middleware": "^2",
+    "husky": "^7",
+    "prettier": "^2",
+    "prettier-plugin-organize-imports": "^2",
+    "pretty-quick": "^3.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "lint": "prettier --write --ignore-unknown .",
+    "prepare": "cd .. && husky install frontend/.husky"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

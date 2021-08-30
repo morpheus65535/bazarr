@@ -1,0 +1,55 @@
+@import "./global.scss";
+@import "./variable.scss";
+@import "./bazarr.scss";
+
+@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+
+@mixin sidebar-animation {
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+}
+
+@include media-breakpoint-up(sm) {
+  .sidebar-container {
+    position: sticky;
+  }
+
+  .main-router {
+    max-width: calc(100% - #{$sidebar-width});
+  }
+
+  .header-icon {
+    min-width: $sidebar-width;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .sidebar-container {
+    position: fixed !important;
+    transform: translateX(-100%);
+
+    @include sidebar-animation();
+
+    &.open {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .main-router {
+    max-width: 100%;
+  }
+
+  .sidebar-overlay {
+    @include sidebar-animation();
+    &.open {
+      display: block !important;
+      opacity: 0.6;
+    }
+  }
+
+  .header-icon {
+    min-width: 0;
+  }
+}

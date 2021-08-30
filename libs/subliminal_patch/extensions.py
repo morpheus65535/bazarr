@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from collections import OrderedDict
 
 import subliminal
@@ -43,7 +44,7 @@ class ProviderRegistry(object):
         self.providers[name] = cls
 
     def names(self):
-        return self.providers.keys()
+        return list(self.providers.keys())
 
 
 provider_registry = ProviderRegistry()

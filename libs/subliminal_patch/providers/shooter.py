@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 from subliminal.providers.shooter import ShooterProvider as _ShooterProvider, ShooterSubtitle as _ShooterSubtitle
 
 

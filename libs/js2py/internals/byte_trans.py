@@ -1,8 +1,8 @@
-from code import Code
-from simplex import MakeError
-from opcodes import *
-from operations import *
-from trans_utils import *
+from .code import Code
+from .simplex import MakeError
+from .opcodes import *
+from .operations import *
+from .trans_utils import *
 
 SPECIAL_IDENTIFIERS = {'true', 'false', 'this'}
 
@@ -465,10 +465,11 @@ class ByteCodeGenerator:
         self.emit('LOAD_OBJECT', tuple(data))
 
     def Program(self, body, **kwargs):
+        old_tape_len = len(self.exe.tape)
         self.emit('LOAD_UNDEFINED')
         self.emit(body)
         # add function tape !
-        self.exe.tape = self.function_declaration_tape + self.exe.tape
+        self.exe.tape = self.exe.tape[:old_tape_len] + self.function_declaration_tape + self.exe.tape[old_tape_len:]
 
     def Pyimport(self, imp, **kwargs):
         raise NotImplementedError(
@@ -735,17 +736,17 @@ def main():
     #
     # }
     a.emit(d)
-    print a.declared_vars
-    print a.exe.tape
-    print len(a.exe.tape)
+    print(a.declared_vars)
+    print(a.exe.tape)
+    print(len(a.exe.tape))
 
     a.exe.compile()
 
     def log(this, args):
-        print args[0]
+        print(args[0])
         return 999
 
-    print a.exe.run(a.exe.space.GlobalObj)
+    print(a.exe.run(a.exe.space.GlobalObj))
 
 
 if __name__ == '__main__':

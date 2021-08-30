@@ -5,12 +5,11 @@ from pdb import set_trace
 import pickle
 from bs4.testing import SoupTest, HTMLTreeBuilderSmokeTest
 from bs4.builder import HTMLParserTreeBuilder
+from bs4.builder._htmlparser import BeautifulSoupHTMLParser
 
 class HTMLParserTreeBuilderSmokeTest(SoupTest, HTMLTreeBuilderSmokeTest):
 
-    @property
-    def default_builder(self):
-        return HTMLParserTreeBuilder()
+    default_builder = HTMLParserTreeBuilder
 
     def test_namespaced_system_doctype(self):
         # html.parser can't handle namespaced doctypes, so skip this one.
@@ -32,3 +31,17 @@ class HTMLParserTreeBuilderSmokeTest(SoupTest, HTMLTreeBuilderSmokeTest):
     def test_redundant_empty_element_closing_tags(self):
         self.assertSoupEquals('<br></br><br></br><br></br>', "<br/><br/><br/>")
         self.assertSoupEquals('</br></br></br>', "")
+
+    def test_empty_element(self):
+        # This verifies that any buffered data present when the parser
+        # finishes working is handled.
+        self.assertSoupEquals("foo &# bar", "foo &amp;# bar")
+
+
+class TestHTMLParserSubclass(SoupTest):
+    def test_error(self):
+        """Verify that our HTMLParser subclass implements error() in a way
+        that doesn't cause a crash.
+        """
+        parser = BeautifulSoupHTMLParser()
+        parser.error("don't crash")

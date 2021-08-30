@@ -5,11 +5,19 @@ import calendar
 from math import floor
 from pyga.entities import Campaign, CustomVariable, Event, Item, Page, Session, SocialInteraction, Transaction, Visitor
 import pyga.utils as utils
-import six
+from six import itervalues
+try:
+    from urllib import urlencode
+    from urllib2 import Request as urllib_request
+    from urllib2 import urlopen
+except ImportError as e:
+    from urllib.parse import urlencode
+    from urllib.request import Request as urllib_request
+    from urllib.request import urlopen
 
-__author__ = "Arun KR (kra3) <the1.arun@gmail.com>"
+__author__ = "Arun KR (kra3) <the1.arun@gmail.com"
 __license__ = "Simplified BSD"
-__version__ = '2.5.1'
+__version__ = '2.6.1'
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +50,7 @@ class GIFRequest(object):
 
     def build_http_request(self):
         params = self.build_parameters()
-        query_string = six.moves.urllib.parse.urlencode(params.get_parameters())
+        query_string = urlencode(params.get_parameters())
         query_string = query_string.replace('+', '%20')
 
         # Mimic Javascript's encodeURIComponent() encoding for the query
@@ -61,7 +69,7 @@ class GIFRequest(object):
 
         headers = {}
         headers['Host'] = self.config.endpoint.split('/')[2]
-        headers['User-Agent'] = self.user_agent
+        headers['User-Agent'] = self.user_agent or ''
         headers['X-Forwarded-For'] = self.x_forwarded_for and self.x_forwarded_for or ''
 
         if use_post:
@@ -72,7 +80,7 @@ class GIFRequest(object):
         logger.debug(url)
         if post:
             logger.debug(post)
-        return six.moves.urllib.request.Request(url, post, headers)
+        return urllib_request(url, post, headers)
 
     def build_parameters(self):
         '''Marker implementation'''
@@ -84,7 +92,7 @@ class GIFRequest(object):
 
         #  Do not actually send the request if endpoint host is set to null
         if self.config.endpoint:
-            response = six.moves.urllib.request.urlopen(
+            response = urlopen(
                 request, timeout=self.config.request_timeout)
 
         return response
@@ -203,7 +211,7 @@ class Request(GIFRequest):
             x10.clear_key(self.X10_CUSTOMVAR_VALUE_PROJCT_ID)
             x10.clear_key(self.X10_CUSTOMVAR_SCOPE_PROJECT_ID)
 
-            for cvar in custom_vars.itervalues():
+            for cvar in itervalues(custom_vars):
                 name = utils.encode_uri_components(cvar.name)
                 value = utils.encode_uri_components(cvar.value)
                 x10.set_key(
@@ -240,7 +248,7 @@ class Request(GIFRequest):
                 'utmcct': campaign.content,
             }
 
-            for k, v in param_map.iteritems():
+            for k, v in param_map.items():
                 if v:
                     # Only spaces and pluses get escaped in gaforflash and ga.js, so we do the same
                     params._utmz = '%s%s=%s%s' % (params._utmz, k,
@@ -988,7 +996,7 @@ class X10(object):
             except KeyError:
                 return char
 
-        return u''.join(map(_translate, value)).encode('utf-8', 'ignore')
+        return ''.join(map(_translate, str(value)))
 
     def __render_data_type(self, data):
         '''Given a data array for a certain type, render its string encoding.'''
@@ -1032,7 +1040,7 @@ class X10(object):
 
     def render_url_string(self):
         result = ''
-        for project_id, project in self.project_data.iteritems():
+        for project_id, project in self.project_data.items():
             result = '%s%s%s' % (
                 result, project_id, self.__render_project(project))
 

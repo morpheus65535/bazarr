@@ -8,21 +8,31 @@ from rebulk import Rebulk, Rule, AppendMatch, RemoveMatch, AppendTags
 from rebulk.formatters import formatters
 
 from .film import FilmTitleRule
-from .language import SubtitlePrefixLanguageRule, SubtitleSuffixLanguageRule, SubtitleExtensionRule
+from .language import (
+    SubtitlePrefixLanguageRule,
+    SubtitleSuffixLanguageRule,
+    SubtitleExtensionRule,
+    NON_SPECIFIC_LANGUAGES
+)
 from ..common import seps, title_seps
 from ..common.comparators import marker_sorted
 from ..common.expected import build_expected_function
 from ..common.formatters import cleanup, reorder_title
+from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
 
 
-def title():
+def title(config):  # pylint:disable=unused-argument
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk().rules(TitleFromPosition, PreferTitleWithYear)
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'title'))
+    rebulk.rules(TitleFromPosition, PreferTitleWithYear)
 
     expected_title = build_expected_function('expected_title')
 
@@ -43,7 +53,7 @@ class TitleBaseRule(Rule):
     consequence = [AppendMatch, RemoveMatch]
 
     def __init__(self, match_name, match_tags=None, alternative_match_name=None):
-        super(TitleBaseRule, self).__init__()
+        super().__init__()
         self.match_name = match_name
         self.match_tags = match_tags
         self.alternative_match_name = alternative_match_name
@@ -83,18 +93,25 @@ class TitleBaseRule(Rule):
         :rtype:
         """
         cropped_holes = []
+        group_markers = matches.markers.named('group')
+        for group_marker in group_markers:
+            path_marker = matches.markers.at_match(group_marker, predicate=lambda m: m.name == 'path', index=0)
+            if path_marker and path_marker.span == group_marker.span:
+                group_markers.remove(group_marker)
+
         for hole in holes:
-            group_markers = matches.markers.named('group')
             cropped_holes.extend(hole.crop(group_markers))
+
         return cropped_holes
 
-    def is_ignored(self, match):
+    @staticmethod
+    def is_ignored(match):
         """
         Ignore matches when scanning for title (hole).
 
         Full word language and countries won't be ignored if they are uppercase.
         """
-        return not (len(match) > 3 and match.raw.isupper()) and match.name in ['language', 'country', 'episode_details']
+        return not (len(match) > 3 and match.raw.isupper()) and match.name in ('language', 'country', 'episode_details')
 
     def should_keep(self, match, to_keep, matches, filepart, hole, starting):
         """
@@ -114,7 +131,7 @@ class TitleBaseRule(Rule):
         :return:
         :rtype:
         """
-        if match.name in ['language', 'country']:
+        if match.name in ('language', 'country'):
             # Keep language if exactly matching the hole.
             if len(hole.value) == len(match.raw):
                 return True
@@ -125,9 +142,10 @@ class TitleBaseRule(Rule):
             for outside in outside_matches:
                 other_languages.extend(matches.range(outside.start, outside.end,
                                                      lambda c_match: c_match.name == match.name and
-                                                     c_match not in to_keep))
+                                                     c_match not in to_keep and
+                                                     c_match.value not in NON_SPECIFIC_LANGUAGES))
 
-            if not other_languages:
+            if not other_languages and (not starting or len(match.raw) <= 3):
                 return True
 
         return False
@@ -145,7 +163,7 @@ class TitleBaseRule(Rule):
             return match.start >= hole.start and match.end <= hole.end
         return True
 
-    def check_titles_in_filepart(self, filepart, matches, context):
+    def check_titles_in_filepart(self, filepart, matches, context):  # pylint:disable=inconsistent-return-statements
         """
         Find title in filepart (ignoring language)
         """
@@ -154,12 +172,11 @@ class TitleBaseRule(Rule):
 
         holes = matches.holes(start, end + 1, formatter=formatters(cleanup, reorder_title),
                               ignore=self.is_ignored,
-                              predicate=lambda hole: hole.value)
+                              predicate=lambda m: m.value)
 
         holes = self.holes_process(holes, matches)
 
         for hole in holes:
-            # pylint:disable=cell-var-from-loop
             if not hole or (self.hole_filter and not self.hole_filter(hole, matches)):
                 continue
 
@@ -170,8 +187,8 @@ class TitleBaseRule(Rule):
 
             if ignored_matches:
                 for ignored_match in reversed(ignored_matches):
-                    # pylint:disable=undefined-loop-variable
-                    trailing = matches.chain_before(hole.end, seps, predicate=lambda match: match == ignored_match)
+                    # pylint:disable=undefined-loop-variable, cell-var-from-loop
+                    trailing = matches.chain_before(hole.end, seps, predicate=lambda m: m == ignored_match)
                     if trailing:
                         should_keep = self.should_keep(ignored_match, to_keep, matches, filepart, hole, False)
                         if should_keep:
@@ -188,7 +205,7 @@ class TitleBaseRule(Rule):
                 for ignored_match in ignored_matches:
                     if ignored_match not in to_keep:
                         starting = matches.chain_after(hole.start, seps,
-                                                       predicate=lambda match: match == ignored_match)
+                                                       predicate=lambda m: m == ignored_match)
                         if starting:
                             should_keep = self.should_keep(ignored_match, to_keep, matches, filepart, hole, True)
                             if should_keep:
@@ -214,7 +231,7 @@ class TitleBaseRule(Rule):
                 hole.tags = self.match_tags
                 if self.alternative_match_name:
                     # Split and keep values that can be a title
-                    titles = hole.split(title_seps, lambda match: match.value)
+                    titles = hole.split(title_seps, lambda m: m.value)
                     for title_match in list(titles[1:]):
                         previous_title = titles[titles.index(title_match) - 1]
                         separator = matches.input_string[previous_title.end:title_match.start]
@@ -231,13 +248,14 @@ class TitleBaseRule(Rule):
                 return titles, to_remove
 
     def when(self, matches, context):
+        ret = []
+        to_remove = []
+
         if matches.named(self.match_name, lambda match: 'expected' in match.tags):
-            return
+            return False
 
         fileparts = [filepart for filepart in list(marker_sorted(matches.markers.named('path'), matches))
                      if not self.filepart_filter or self.filepart_filter(filepart, matches)]
-
-        to_remove = []
 
         # Priorize fileparts containing the year
         years_fileparts = []
@@ -246,7 +264,6 @@ class TitleBaseRule(Rule):
             if year_match:
                 years_fileparts.append(filepart)
 
-        ret = []
         for filepart in fileparts:
             try:
                 years_fileparts.remove(filepart)
@@ -268,7 +285,9 @@ class TitleBaseRule(Rule):
                 ret.extend(titles)
                 to_remove.extend(to_remove_c)
 
-        return ret, to_remove
+        if ret or to_remove:
+            return ret, to_remove
+        return False
 
 
 class TitleFromPosition(TitleBaseRule):
@@ -280,7 +299,10 @@ class TitleFromPosition(TitleBaseRule):
     properties = {'title': [None], 'alternative_title': [None]}
 
     def __init__(self):
-        super(TitleFromPosition, self).__init__('title', ['title'], 'alternative_title')
+        super().__init__('title', ['title'], 'alternative_title')
+
+    def enabled(self, context):
+        return not is_disabled(context, 'alternative_title')
 
 
 class PreferTitleWithYear(Rule):
@@ -302,7 +324,7 @@ class PreferTitleWithYear(Rule):
             if filepart:
                 year_match = matches.range(filepart.start, filepart.end, lambda match: match.name == 'year', 0)
                 if year_match:
-                    group = matches.markers.at_match(year_match, lambda group: group.name == 'group')
+                    group = matches.markers.at_match(year_match, lambda m: m.name == 'group')
                     if group:
                         with_year_in_group.append(title_match)
                     else:
@@ -310,16 +332,18 @@ class PreferTitleWithYear(Rule):
 
         to_tag = []
         if with_year_in_group:
-            title_values = set([title_match.value for title_match in with_year_in_group])
+            title_values = {title_match.value for title_match in with_year_in_group}
             to_tag.extend(with_year_in_group)
         elif with_year:
-            title_values = set([title_match.value for title_match in with_year])
+            title_values = {title_match.value for title_match in with_year}
             to_tag.extend(with_year)
         else:
-            title_values = set([title_match.value for title_match in titles])
+            title_values = {title_match.value for title_match in titles}
 
         to_remove = []
         for title_match in titles:
             if title_match.value not in title_values:
                 to_remove.append(title_match)
-        return to_remove, to_tag
+        if to_remove or to_tag:
+            return to_remove, to_tag
+        return False

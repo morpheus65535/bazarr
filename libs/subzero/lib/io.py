@@ -1,9 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import sys
 
-from scandir import scandir as _scandir
+try:
+    from os import scandir as _scandir
+except ImportError:
+    from scandir import scandir as _scandir
 
 # thanks @ plex trakt scrobbler: https://github.com/trakt/Plex-Trakt-Scrobbler/blob/master/Trakttv.bundle/Contents/Libraries/Shared/plugin/core/io.py
 

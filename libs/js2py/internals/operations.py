@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
-from simplex import *
-from conversions import *
+from .simplex import *
+from .conversions import *
 
 # ------------------------------------------------------------------------------
 # Unary operations

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import time
 import logging
@@ -9,6 +10,8 @@ from dogpile.cache.api import NO_VALUE
 from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException,\
     Proxy
 from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
+import six
+from six.moves import range
 
 
 logger = logging.getLogger(__name__)
@@ -167,7 +170,7 @@ class AntiCaptchaPitcher(AntiCaptchaProxyLessPitcher):
         self.user_agent = kwargs.pop("user_agent")
         cookies = kwargs.pop("cookies", {})
         if isinstance(cookies, dict):
-            self.cookies = ";".join(["%s=%s" % (k, v) for k, v in cookies.iteritems()])
+            self.cookies = ";".join(["%s=%s" % (k, v) for k, v in six.iteritems(cookies)])
 
         super(AntiCaptchaPitcher, self).__init__(*args, **kwargs)
 

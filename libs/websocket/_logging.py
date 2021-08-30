@@ -1,4 +1,8 @@
 """
+
+"""
+
+"""
 websocket - WebSocket client library for Python
 
 Copyright (C) 2010 Hiroki Ohtani(liris)
@@ -15,30 +19,40 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor,
-    Boston, MA  02110-1335  USA
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
 import logging
 
 _logger = logging.getLogger('websocket')
+try:
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+_logger.addHandler(NullHandler())
+
 _traceEnabled = False
 
 __all__ = ["enableTrace", "dump", "error", "warning", "debug", "trace",
-           "isEnabledForError", "isEnabledForDebug"]
+           "isEnabledForError", "isEnabledForDebug", "isEnabledForTrace"]
 
 
-def enableTrace(traceable):
+def enableTrace(traceable, handler=logging.StreamHandler()):
     """
-    turn on/off the traceability.
+    Turn on/off the traceability.
 
-    traceable: boolean value. if set True, traceability is enabled.
+    Parameters
+    ----------
+    traceable: bool
+        If set to True, traceability is enabled.
     """
     global _traceEnabled
     _traceEnabled = traceable
     if traceable:
-        if not _logger.handlers:
-            _logger.addHandler(logging.StreamHandler())
+        _logger.addHandler(handler)
         _logger.setLevel(logging.DEBUG)
 
 
@@ -72,3 +86,7 @@ def isEnabledForError():
 
 def isEnabledForDebug():
     return _logger.isEnabledFor(logging.DEBUG)
+
+
+def isEnabledForTrace():
+    return _traceEnabled

@@ -1,0 +1,335 @@
+? vorbis
+: options: --exclude audio_codec
+  -audio_codec: Vorbis
+
+? DTS-ES
+: options: --exclude audio_profile
+  audio_codec: DTS
+  -audio_profile: Extended Surround
+
+? DTS.ES
+: options: --include audio_codec
+  audio_codec: DTS
+  -audio_profile: Extended Surround
+
+? 5.1
+? 5ch
+? 6ch
+: options: --exclude audio_channels
+  -audio_channels: '5.1'
+
+? Movie Title-x01-Other Title.mkv
+? Movie Title-x01-Other Title
+? directory/Movie Title-x01-Other Title/file.mkv
+: options: --exclude bonus
+  -bonus: 1
+  -bonus_title: Other Title
+
+? Title-x02-Bonus Title.mkv
+: options: --include bonus
+  bonus: 2
+  -bonus_title: Other Title
+
+? cd 1of3
+: options: --exclude cd
+  -cd: 1
+  -cd_count: 3
+
+? This.is.Us
+: options: --exclude country
+  title: This is Us
+  -country: US
+
+? 2015.01.31
+: options: --exclude date
+  year: 2015
+  -date: 2015-01-31
+
+? Something 2 mar 2013)
+: options: --exclude date
+  -date: 2013-03-02
+
+? 2012 2009 S01E02 2015  # If no year is marked, the second one is guessed.
+: options: --exclude year
+  -year: 2009
+
+? Director's cut
+: options: --exclude edition
+  -edition: Director's Cut
+
+? 2x5
+? 2X5
+? 02x05
+? 2X05
+? 02x5
+? S02E05
+? s02e05
+? s02e5
+? s2e05
+? s02ep05
+? s2EP5
+: options: --exclude season
+  -season: 2
+  -episode: 5
+
+? 2x6
+? 2X6
+? 02x06
+? 2X06
+? 02x6
+? S02E06
+? s02e06
+? s02e6
+? s2e06
+? s02ep06
+? s2EP6
+: options: --exclude episode
+  -season: 2
+  -episode: 6
+
+? serie Season 2 other
+: options: --exclude season
+  -season: 2
+
+? Some Dummy Directory/S02 Some Series/E01-Episode title.mkv
+: options: --exclude episode_title
+  -episode_title: Episode title
+  season: 2
+  episode: 1
+
+? Another Dummy Directory/S02 Some Series/E01-Episode title.mkv
+: options: --include season --include episode
+  -episode_title: Episode title
+  season: 2
+  episode: 1
+
+# pattern contains season and episode: it wont work enabling only one
+? Some Series S03E01E02
+: options: --include episode
+  -season: 3
+  -episode: [1, 2]
+
+# pattern contains season and episode: it wont work enabling only one
+? Another Series S04E01E02
+: options: --include season
+  -season: 4
+  -episode: [1, 2]
+
+? Show.Name.Season.4.Episode.1
+: options: --include episode
+  -season: 4
+  episode: 1
+
+? Another.Show.Name.Season.4.Episode.1
+: options: --include season
+  season: 4
+  -episode: 1
+
+? Some Series S01 02 03
+: options: --exclude season
+  -season: [1, 2, 3]
+
+? Some Series E01 02 04
+: options: --exclude episode
+  -episode: [1, 2, 4]
+
+? A very special episode s06 special
+: options: -t episode --exclude episode_details
+  season: 6
+  -episode_details: Special
+
+? S01D02.3-5-GROUP
+: options: --exclude disc
+  -season: 1
+  -disc: [2, 3, 4, 5]
+  -episode: [2, 3, 4, 5]
+
+? S01D02&4-6&8
+: options: --exclude season
+  -season: 1
+  -disc: [2, 4, 5, 6, 8]
+  -episode: [2, 4, 5, 6, 8]
+
+? Film Title-f01-Series Title.mkv
+: options: --exclude film
+  -film: 1
+  -film_title: Film Title
+
+? Another Film Title-f01-Series Title.mkv
+: options: --exclude film_title
+  film: 1
+  -film_title: Film Title
+
+? English
+? .ENG.
+: options: --exclude language
+  -language: English
+
+? SubFrench
+? SubFr
+? STFr
+: options: --exclude subtitle_language
+  -language: French
+  -subtitle_language: French
+
+? ST.FR
+: options: --exclude subtitle_language
+  language: French
+  -subtitle_language: French
+
+? ENG.-.sub.FR
+? ENG.-.FR Sub
+: options: --include language
+  language: [English, French]
+  -subtitle_language: French
+
+? ENG.-.SubFR
+: options: --include language
+  language: English
+  -subtitle_language: French
+
+? ENG.-.FRSUB
+? ENG.-.FRSUBS
+? ENG.-.FR-SUBS
+: options: --include subtitle_language
+  -language: English
+  subtitle_language: French
+
+? DVD.Real.XViD
+? DVD.fix.XViD
+: options: --exclude other
+  -other: Fix
+  -proper_count: 1
+
+? Part 3
+? Part III
+? Part Three
+? Part Trois
+? Part3
+: options: --exclude part
+  -part: 3
+
+? Some.Title.XViD-by.Artik[SEDG].avi
+: options: --exclude release_group
+  -release_group: Artik[SEDG]
+
+? "[ABC] Some.Title.avi"
+? some/folder/[ABC]Some.Title.avi
+: options: --exclude release_group
+  -release_group: ABC
+
+? 360p
+? 360px
+? "360"
+? +500x360
+: options: --exclude screen_size
+  -screen_size: 360p
+
+? 640x360
+: options: --exclude aspect_ratio
+  screen_size: 360p
+  -aspect_ratio: 1.778
+
+? 8196x4320
+: options: --exclude screen_size
+  -screen_size: 4320p
+  -aspect_ratio: 1.897
+
+? 4.3gb
+: options: --exclude size
+  -size: 4.3GB
+
+? VhS_rip
+? VHS.RIP
+: options: --exclude source
+  -source: VHS
+  -other: Rip
+
+? DVD.RIP
+: options: --include other
+  -source: DVD
+  -other: Rip
+
+? Title Only.avi
+: options: --exclude title
+  -title: Title Only
+
+? h265
+? x265
+? h.265
+? x.265
+? hevc
+: options: --exclude video_codec
+  -video_codec: H.265
+
+? hevc10
+: options: --include color_depth
+  -video_codec: H.265
+  -color_depth: 10-bit
+
+? HEVC-YUV420P10
+: options: --include color_depth
+  -video_codec: H.265
+  color_depth: 10-bit
+
+? h265-HP
+: options: --exclude video_profile
+  video_codec: H.265
+  -video_profile: High
+
+? House.of.Cards.2013.S02E03.1080p.NF.WEBRip.DD5.1.x264-NTb.mkv
+? House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip.DD5.1.x264-NTb.mkv
+: options: --exclude streaming_service
+  -streaming_service: Netflix
+
+? wawa.co.uk
+: options: --exclude website
+  -website: wawa.co.uk
+
+? movie.mp4
+: options: --exclude mimetype
+  -mimetype: video/mp4
+
+? another movie.mkv
+: options: --exclude container
+  -container: mkv
+
+? series s02e01
+: options: --exclude type
+  -type: episode
+
+? series s02e01
+: options: --exclude type
+  -type: episode
+
+? Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS
+: options: --exclude audio_bit_rate
+  -audio_bit_rate: 448Kbps
+
+? Katy Perry - Pepsi & Billboard Summer Beats Concert Series 2012 1080i HDTV 20 Mbps DD2.0 MPEG2-TrollHD.ts
+: options: --exclude video_bit_rate
+  -video_bit_rate: 20Mbps
+
+? "[Figmentos] Monster 34 - At the End of Darkness [781219F1].mkv"
+: options: --exclude crc32
+  -crc32: 781219F1
+
+? 1080p25
+: options: --exclude frame_rate
+  screen_size: 1080p
+  -frame_rate: 25fps
+
+? 1080p25
+: options: --exclude screen_size
+  -screen_size: 1080p
+  -frame_rate: 25fps
+
+? 1080p25
+: options: --include frame_rate
+  -screen_size: 1080p
+  -frame_rate: 25fps
+
+? 1080p 30fps
+: options: --exclude screen_size
+  -screen_size: 1080p
+  frame_rate: 30fps

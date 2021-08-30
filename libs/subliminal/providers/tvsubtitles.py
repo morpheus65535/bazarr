@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import io
 import logging
 import re
@@ -208,7 +209,7 @@ class TVsubtitlesProvider(Provider):
             if subtitles:
                 return subtitles
         else:
-            logger.error('No show id found for %r (%r)', video.series, {'year': video.year})
+            logger.debug('No show id found for %r (%r)', video.series, {'year': video.year})
 
         return []
 
@@ -218,9 +219,17 @@ class TVsubtitlesProvider(Provider):
         r = self.session.get(self.server_url + 'download-%d.html' % subtitle.subtitle_id, timeout=10)
         r.raise_for_status()
 
-        # open the zip
-        with ZipFile(io.BytesIO(r.content)) as zf:
-            if len(zf.namelist()) > 1:
-                raise ProviderError('More than one file to unzip')
+        # generate the download link from the sliced strings in the page source (js)
+        download_link_part = re.findall(r'(?<=s\d=\s\')(.*?)(?=\';\n)', r.text)
+        if len(download_link_part):
+            download = self.session.get(self.server_url + ''.join(download_link_part), timeout=10)
+            download.raise_for_status()
 
-            subtitle.content = fix_line_ending(zf.read(zf.namelist()[0]))
+            # open the zip
+            with ZipFile(io.BytesIO(download.content)) as zf:
+                if len(zf.namelist()) > 1:
+                    raise ProviderError('More than one file to unzip')
+
+                subtitle.content = fix_line_ending(zf.read(zf.namelist()[0]))
+        else:
+            raise ProviderError('Cannot get download link')

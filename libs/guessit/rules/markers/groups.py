@@ -5,18 +5,25 @@ Groups markers (...), [...] and {...}
 """
 from rebulk import Rebulk
 
+from ...options import ConfigurationException
 
-def groups():
+def groups(config):
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
     rebulk = Rebulk()
     rebulk.defaults(name="group", marker=True)
 
-    starting = '([{'
-    ending = ')]}'
+    starting = config['starting']
+    ending = config['ending']
+
+    if len(starting) != len(ending):
+        raise ConfigurationException("Starting and ending groups must have the same length")
 
     def mark_groups(input_string):
         """
@@ -25,7 +32,7 @@ def groups():
         :param input_string:
         :return:
         """
-        openings = ([], [], [])
+        openings = ([], ) * len(starting)
         i = 0
 
         ret = []

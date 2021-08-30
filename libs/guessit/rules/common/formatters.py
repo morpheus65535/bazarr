@@ -25,7 +25,7 @@ def _potential_before(i, input_string):
     :return:
     :rtype: bool
     """
-    return i - 2 >= 0 and input_string[i] == input_string[i - 2] and input_string[i - 1] not in seps
+    return i - 1 >= 0 and input_string[i] in seps and input_string[i - 2] in seps and input_string[i - 1] not in seps
 
 
 def _potential_after(i, input_string):

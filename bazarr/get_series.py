@@ -1,183 +1,346 @@
 # coding=utf-8
 
 import os
-import sqlite3
 import requests
 import logging
-from queueconfig import notifications
-import datetime
+from gevent import sleep
+from peewee import DoesNotExist
 
-from get_args import args
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
+from get_rootfolder import check_sonarr_rootfolder
+from database import TableShows, TableEpisodes
+from get_episodes import sync_episodes
+from utils import get_sonarr_info
+from helper import path_mappings
+from event_handler import event_stream, show_progress, hide_progress
+
+headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
-def update_series():
-    notifications.write(msg="Update series list from Sonarr is running...", queue='get_series')
+def update_series(send_event=True):
+    check_sonarr_rootfolder()
     apikey_sonarr = settings.sonarr.apikey
-    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
-    serie_default_language = settings.general.serie_default_language
-    serie_default_hi = settings.general.serie_default_hi
-    
     if apikey_sonarr is None:
-        pass
+        return
+
+    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+
+    if serie_default_enabled is True:
+        serie_default_profile = settings.general.serie_default_profile
+        if serie_default_profile == '':
+            serie_default_profile = None
     else:
-        get_profile_list()
-        
-        # Get shows data from Sonarr
-        url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
-        try:
-            r = requests.get(url_sonarr_api_series, timeout=60, verify=False)
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as errh:
-            logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
-        except requests.exceptions.ConnectionError as errc:
-            logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
-        except requests.exceptions.Timeout as errt:
-            logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
-        except requests.exceptions.RequestException as err:
-            logging.exception("BAZARR Error trying to get series from Sonarr.")
-        else:
-            # Open database connection
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            
-            # Get current shows in DB
-            current_shows_db = c.execute('SELECT tvdbId FROM table_shows').fetchall()
-            
-            # Close database connection
-            db.close()
-            
-            current_shows_db_list = [x[0] for x in current_shows_db]
-            current_shows_sonarr = []
-            series_to_update = []
-            series_to_add = []
+        serie_default_profile = None
 
-            seriesListLength = len(r.json())
-            for i, show in enumerate(r.json(), 1):
-                notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i, length=seriesListLength)
-                try:
-                    overview = unicode(show['overview'])
-                except:
-                    overview = ""
-                try:
-                    poster_big = show['images'][2]['url'].split('?')[0]
-                    poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
-                except:
-                    poster = ""
-                try:
-                    fanart = show['images'][0]['url'].split('?')[0]
-                except:
-                    fanart = ""
+    audio_profiles = get_profile_list()
+    tagsDict = get_tags()
 
-                if show['alternateTitles'] != None:
-                    alternateTitles = str([item['title'] for item in show['alternateTitles']])
+    # Get shows data from Sonarr
+    series = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=apikey_sonarr)
+    if not series:
+        return
+    else:
+        # Get current shows in DB
+        current_shows_db = TableShows.select(TableShows.sonarrSeriesId).dicts()
 
-                # Add shows in Sonarr to current shows list
-                current_shows_sonarr.append(show['tvdbId'])
-                
-                if show['tvdbId'] in current_shows_db_list:
-                    series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
-                                             fanart, profile_id_to_language(
-                        (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                             show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
-                else:
-                    if serie_default_enabled is True:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
-                                              serie_default_hi, show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
-                    else:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
-                                              show["tvdbId"], show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
-            
-            # Update or insert series in DB
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            
-            updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
-                series_to_update)
-            db.commit()
-            
-            if serie_default_enabled is True:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
+        current_shows_db_list = [x['sonarrSeriesId'] for x in current_shows_db]
+        current_shows_sonarr = []
+        series_to_update = []
+        series_to_add = []
+
+        series_count = len(series)
+        for i, show in enumerate(series):
+            sleep()
+            if send_event:
+                show_progress(id='series_progress',
+                              header='Syncing series...',
+                              name=show['title'],
+                              value=i,
+                              count=series_count)
+
+            # Add shows in Sonarr to current shows list
+            current_shows_sonarr.append(show['id'])
+
+            if show['id'] in current_shows_db_list:
+                series_to_update.append(seriesParser(show, action='update', tags_dict=tagsDict, 
+                                                     serie_default_profile=serie_default_profile,
+                                                     audio_profiles=audio_profiles))
             else:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
-            db.close()
-            
-            for show in series_to_add:
-                list_missing_subtitles(show[5])
-            
-            # Delete shows not in Sonarr anymore
-            deleted_items = []
-            for item in current_shows_db_list:
-                if item not in current_shows_sonarr:
-                    deleted_items.append(tuple([item]))
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
-            db.commit()
-            db.close()
+                series_to_add.append(seriesParser(show, action='insert', tags_dict=tagsDict, 
+                                                  serie_default_profile=serie_default_profile,
+                                                  audio_profiles=audio_profiles))
+
+        if send_event:
+            hide_progress(id='series_progress')
+
+        # Remove old series from DB
+        removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
+
+        for series in removed_series:
+            sleep()
+            TableShows.delete().where(TableShows.sonarrSeriesId == series).execute()
+            if send_event:
+                event_stream(type='series', action='delete', payload=series)
+
+        # Update existing series in DB
+        series_in_db_list = []
+        series_in_db = TableShows.select(TableShows.title,
+                                         TableShows.path,
+                                         TableShows.tvdbId,
+                                         TableShows.sonarrSeriesId,
+                                         TableShows.overview,
+                                         TableShows.poster,
+                                         TableShows.fanart,
+                                         TableShows.audio_language,
+                                         TableShows.sortTitle,
+                                         TableShows.year,
+                                         TableShows.alternateTitles,
+                                         TableShows.tags,
+                                         TableShows.seriesType,
+                                         TableShows.imdbId).dicts()
+
+        for item in series_in_db:
+            series_in_db_list.append(item)
+
+        series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
+
+        for updated_series in series_to_update_list:
+            sleep()
+            TableShows.update(updated_series).where(TableShows.sonarrSeriesId ==
+                                                    updated_series['sonarrSeriesId']).execute()
+            if send_event:
+                event_stream(type='series', payload=updated_series['sonarrSeriesId'])
+
+        # Insert new series in DB
+        for added_series in series_to_add:
+            sleep()
+            result = TableShows.insert(added_series).on_conflict(action='IGNORE').execute()
+            if result:
+                list_missing_subtitles(no=added_series['sonarrSeriesId'])
+            else:
+                logging.debug('BAZARR unable to insert this series into the database:',
+                              path_mappings.path_replace(added_series['path']))
+
+                if send_event:
+                    event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
+
+                logging.debug('BAZARR All series synced from Sonarr into database.')
+
+
+def update_one_series(series_id, action):
+    logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
+
+    # Check if there's a row in database for this series ID
+    try:
+        existing_series = TableShows.select(TableShows.path)\
+            .where(TableShows.sonarrSeriesId == series_id)\
+            .dicts()\
+            .get()
+    except DoesNotExist:
+        existing_series = None
+
+    # Delete series from DB
+    if action == 'deleted' and existing_series:
+        TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
+        TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
+        event_stream(type='series', action='delete', payload=int(series_id))
+        return
+
+    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+
+    if serie_default_enabled is True:
+        serie_default_profile = settings.general.serie_default_profile
+        if serie_default_profile == '':
+            serie_default_profile = None
+    else:
+        serie_default_profile = None
+
+    audio_profiles = get_profile_list()
+    tagsDict = get_tags()
+
+    try:
+        # Get series data from sonarr api
+        series = None
+
+        series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
+                                                 sonarr_series_id=int(series_id))
+
+        if not series_data:
+            return
+        else:
+            if action == 'updated' and existing_series:
+                series = seriesParser(series_data, action='update', tags_dict=tagsDict, 
+                                      serie_default_profile=serie_default_profile,
+                                      audio_profiles=audio_profiles)
+            elif action == 'updated' and not existing_series:
+                series = seriesParser(series_data, action='insert', tags_dict=tagsDict, 
+                                      serie_default_profile=serie_default_profile,
+                                      audio_profiles=audio_profiles)
+    except Exception:
+        logging.debug('BAZARR cannot parse series returned by SignalR feed.')
+        return
+
+    # Update existing series in DB
+    if action == 'updated' and existing_series:
+        TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
+        sync_episodes(series_id=int(series_id), send_event=True)
+        event_stream(type='series', action='update', payload=int(series_id))
+        logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
+            series['path'])))
+
+    # Insert new series in DB
+    elif action == 'updated' and not existing_series:
+        TableShows.insert(series).on_conflict(action='IGNORE').execute()
+        event_stream(type='series', action='update', payload=int(series_id))
+        logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
+            series['path'])))
 
 
 def get_profile_list():
     apikey_sonarr = settings.sonarr.apikey
-    
-    # Get profiles data from Sonarr
-    error = False
-    
-    url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
-    try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)
-    except requests.exceptions.ConnectionError as errc:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
-    except requests.exceptions.Timeout as errt:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
-    except requests.exceptions.RequestException as err:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
-    
-    url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
-    try:
-        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=60, verify=False)
-    except requests.exceptions.ConnectionError as errc:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
-    except requests.exceptions.Timeout as errt:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
-    except requests.exceptions.RequestException as err:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
-    
-    global profiles_list
     profiles_list = []
-    
-    if not error:
-        # Parsing data returned from Sonarr
-        global sonarr_version
-        if type(profiles_json_v3.json()) != list:
-            sonarr_version = 2
-            for profile in profiles_json.json():
-                profiles_list.append([profile['id'], profile['language'].capitalize()])
-        else:
-            sonarr_version = 3
-            for profile in profiles_json_v3.json():
-                profiles_list.append([profile['id'], profile['name'].capitalize()])
+
+    # Get profiles data from Sonarr
+    if get_sonarr_info.is_legacy():
+        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
+    else:
+        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+
+    try:
+        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
+        return None
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
+        return None
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
+        return None
+
+    # Parsing data returned from Sonarr
+    if get_sonarr_info.is_legacy():
+        for profile in profiles_json.json():
+            profiles_list.append([profile['id'], profile['language'].capitalize()])
+    else:
+        for profile in profiles_json.json():
+            profiles_list.append([profile['id'], profile['name'].capitalize()])
+
+    return profiles_list
 
 
-def profile_id_to_language(id):
-    for profile in profiles_list:
-        if id == profile[0]:
-            return profile[1]
+def profile_id_to_language(id_, profiles):
+    profiles_to_return = []
+    for profile in profiles:
+        if id_ == profile[0]:
+            profiles_to_return.append(profile[1])
+    return profiles_to_return
+
+
+def get_tags():
+    apikey_sonarr = settings.sonarr.apikey
+    tagsDict = []
+
+    # Get tags data from Sonarr
+    if get_sonarr_info.is_legacy():
+        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+    else:
+        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
+
+    try:
+        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
+        return []
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get tags from Sonarr. Timeout Error.")
+        return []
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get tags from Sonarr.")
+        return []
+    else:
+        return tagsDict.json()
+
+
+def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
+    overview = show['overview'] if 'overview' in show else ''
+    poster = ''
+    fanart = ''
+    for image in show['images']:
+        if image['coverType'] == 'poster':
+            poster_big = image['url'].split('?')[0]
+            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+
+        if image['coverType'] == 'fanart':
+            fanart = image['url'].split('?')[0]
+
+    alternate_titles = None
+    if show['alternateTitles'] is not None:
+        alternate_titles = str([item['title'] for item in show['alternateTitles']])
+
+    audio_language = []
+    if get_sonarr_info.is_legacy():
+        audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
+    else:
+        audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
+
+    tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
+
+    imdbId = show['imdbId'] if 'imdbId' in show else None
+
+    if action == 'update':
+        return {'title': show["title"],
+                'path': show["path"],
+                'tvdbId': int(show["tvdbId"]),
+                'sonarrSeriesId': int(show["id"]),
+                'overview': overview,
+                'poster': poster,
+                'fanart': fanart,
+                'audio_language': str(audio_language),
+                'sortTitle': show['sortTitle'],
+                'year': str(show['year']),
+                'alternateTitles': alternate_titles,
+                'tags': str(tags),
+                'seriesType': show['seriesType'],
+                'imdbId': imdbId}
+    else:
+        return {'title': show["title"],
+                'path': show["path"],
+                'tvdbId': show["tvdbId"],
+                'sonarrSeriesId': show["id"],
+                'overview': overview,
+                'poster': poster,
+                'fanart': fanart,
+                'audio_language': str(audio_language),
+                'sortTitle': show['sortTitle'],
+                'year': str(show['year']),
+                'alternateTitles': alternate_titles,
+                'tags': str(tags),
+                'seriesType': show['seriesType'],
+                'imdbId': imdbId,
+                'profileId': serie_default_profile}
+
+
+def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
+    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
+        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
+    try:
+        r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code:
+            raise requests.exceptions.HTTPError
+        logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
+        return
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
+        return
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
+        return
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get series from Sonarr.")
+        return
+    else:
+        return r.json()

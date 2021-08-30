@@ -1,0 +1,73 @@
+name: release_dev_to_master
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: "Increment Type (major, minor, patch)"
+        required: true
+        default: "patch"
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      UI_DIRECTORY: ./frontend
+      ASSET_DIRECTORY: ./__builds__
+    steps:
+      - name: Validate branch
+        if: ${{ github.ref != 'refs/heads/development' }}
+        run: |
+          echo This action can only be run on development branch, not ${{ github.ref }}
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Setup Git
+        run: git config --global user.name "github-actions"
+      
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "15.x"
+
+      - name: Install Global Tools
+        run: npm install -g release-it auto-changelog
+
+      - name: Install UI Dependencies
+        run: npm install
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Build UI
+        run: npm run build
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Create Release
+        run: |
+          export RELEASE_MASTER=1
+          release-it --ci --increment ${{ github.event.inputs.increment }}
+  Merge:
+    needs: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Merge development -> master
+        uses: devmasx/merge-branch@v1.3.1
+        with:
+          type: now
+          from_branch: development
+          target_branch: master
+          github_token: ${{ secrets.GITHUB_TOKEN }}

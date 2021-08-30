@@ -1,0 +1,21 @@
+// Override bootstrap primary color
+$theme-colors: (
+  "primary": #911f93,
+  "dark": #4f566f,
+);
+
+body {
+  font-family: "Roboto", "open sans", "Helvetica Neue", "Helvetica", "Arial",
+    sans-serif !important;
+  font-weight: 300 !important;
+}
+
+// Reduce padding of cells in datatables
+.table td,
+.table th {
+  padding: 0.4rem !important;
+}
+
+.progress-bar {
+  cursor: default;
+}

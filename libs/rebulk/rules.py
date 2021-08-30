@@ -8,7 +8,6 @@ import inspect
 from itertools import groupby
 from logging import getLogger
 
-import six
 from .utils import is_iterable
 
 from .toposort import toposort
@@ -18,8 +17,7 @@ from . import debug
 log = getLogger(__name__).log
 
 
-@six.add_metaclass(ABCMeta)
-class Consequence(object):
+class Consequence(metaclass=ABCMeta):
     """
     Definition of a consequence to apply.
     """
@@ -40,8 +38,7 @@ class Consequence(object):
         pass
 
 
-@six.add_metaclass(ABCMeta)
-class Condition(object):
+class Condition(metaclass=ABCMeta):
     """
     Definition of a condition to check.
     """
@@ -60,8 +57,7 @@ class Condition(object):
         pass
 
 
-@six.add_metaclass(ABCMeta)
-class CustomRule(Condition, Consequence):
+class CustomRule(Condition, Consequence, metaclass=ABCMeta):
     """
     Definition of a rule to apply
     """
@@ -140,10 +136,9 @@ class RemoveMatch(Consequence):  # pylint: disable=abstract-method
                     matches.remove(match)
                     ret.append(match)
             return ret
-        else:
-            if when_response in matches:
-                matches.remove(when_response)
-                return when_response
+        if when_response in matches:
+            matches.remove(when_response)
+            return when_response
 
 
 class AppendMatch(Consequence):  # pylint: disable=abstract-method
@@ -164,12 +159,11 @@ class AppendMatch(Consequence):  # pylint: disable=abstract-method
                     matches.append(match)
                     ret.append(match)
             return ret
-        else:
-            if self.match_name:
-                when_response.name = self.match_name
-            if when_response not in matches:
-                matches.append(when_response)
-                return when_response
+        if self.match_name:
+            when_response.name = self.match_name
+        if when_response not in matches:
+            matches.append(when_response)
+            return when_response
 
 
 class RenameMatch(Consequence):  # pylint: disable=abstract-method
@@ -245,7 +239,7 @@ class Rules(list):
     """
 
     def __init__(self, *rules):
-        super(Rules, self).__init__()
+        super().__init__()
         self.load(*rules)
 
     def load(self, *rules):

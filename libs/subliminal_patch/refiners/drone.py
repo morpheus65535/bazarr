@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import logging
 import types
 import os
@@ -10,6 +11,7 @@ from requests.compat import urljoin, quote
 from subliminal import Episode, Movie, region
 from subliminal_patch.core import remove_crap_from_fn
 from subliminal_patch.http import CertifiSession
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +54,11 @@ class DroneAPIClient(object):
         :return:
         """
         out = {}
-        for key, value in params.iteritems():
-            if not isinstance(value, types.StringTypes):
+        for key, value in six.iteritems(params):
+            if not isinstance(value, (str,)):
                 value = str(value)
 
-            elif isinstance(value, unicode):
+            elif isinstance(value, six.text_type):
                 value = value.encode("utf-8")
 
             key = key.split('_')[0] + ''.join(x.capitalize() for x in key.split('_')[1:])

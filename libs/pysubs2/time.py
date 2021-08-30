@@ -1,15 +1,19 @@
-from __future__ import division
-
 from collections import namedtuple
 import re
 
 
 #: Pattern that matches both SubStation and SubRip timestamps.
+from typing import Optional, List, Tuple, Sequence
+
+from pysubs2.common import IntOrFloat
+
 TIMESTAMP = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})[.,](\d{2,3})")
 
 Times = namedtuple("Times", ["h", "m", "s", "ms"])
 
-def make_time(h=0, m=0, s=0, ms=0, frames=None, fps=None):
+
+def make_time(h: IntOrFloat=0, m: IntOrFloat=0, s: IntOrFloat=0, ms: IntOrFloat=0,
+              frames: Optional[int]=None, fps: Optional[float]=None):
     """
     Convert time to milliseconds.
 
@@ -33,7 +37,8 @@ def make_time(h=0, m=0, s=0, ms=0, frames=None, fps=None):
     else:
         raise ValueError("Both fps and frames must be specified")
 
-def timestamp_to_ms(groups):
+
+def timestamp_to_ms(groups: Sequence[str]):
     """
     Convert groups from :data:`pysubs2.time.TIMESTAMP` match to milliseconds.
     
@@ -49,7 +54,24 @@ def timestamp_to_ms(groups):
     ms += h * 3600000
     return ms
 
-def times_to_ms(h=0, m=0, s=0, ms=0):
+
+def tmptimestamp_to_ms(groups: Sequence[str]):
+    """
+    Convert groups from :data:`pysubs2.time.TMPTIMESTAMP` match to milliseconds.
+    
+    Example:
+        >>> timestamp_to_ms(TIMESTAMP.match("0:00:01").groups())
+        1000
+    
+    """
+    h, m, s  = map(int, groups)
+    ms = s * 1000
+    ms += m * 60000
+    ms += h * 3600000
+    return ms
+
+
+def times_to_ms(h: IntOrFloat=0, m: IntOrFloat=0, s: IntOrFloat=0, ms: IntOrFloat=0) -> int:
     """
     Convert hours, minutes, seconds to milliseconds.
     
@@ -65,7 +87,8 @@ def times_to_ms(h=0, m=0, s=0, ms=0):
     ms += h * 3600000
     return int(round(ms))
 
-def frames_to_ms(frames, fps):
+
+def frames_to_ms(frames: int, fps: float) -> int:
     """
     Convert frame-based duration to milliseconds.
     
@@ -85,7 +108,8 @@ def frames_to_ms(frames, fps):
 
     return int(round(frames * (1000 / fps)))
 
-def ms_to_frames(ms, fps):
+
+def ms_to_frames(ms: IntOrFloat, fps: float) -> int:
     """
     Convert milliseconds to number of frames.
     
@@ -105,7 +129,8 @@ def ms_to_frames(ms, fps):
 
     return int(round((ms / 1000) * fps))
 
-def ms_to_times(ms):
+
+def ms_to_times(ms: IntOrFloat) -> Tuple[int, int, int, int]:
     """
     Convert milliseconds to normalized tuple (h, m, s, ms).
     
@@ -124,7 +149,8 @@ def ms_to_times(ms):
     s, ms = divmod(ms, 1000)
     return Times(h, m, s, ms)
 
-def ms_to_str(ms, fractions=False):
+
+def ms_to_str(ms: IntOrFloat, fractions: bool=False) -> str:
     """
     Prettyprint milliseconds to [-]H:MM:SS[.mmm]
     
@@ -142,6 +168,6 @@ def ms_to_str(ms, fractions=False):
     sgn = "-" if ms < 0 else ""
     h, m, s, ms = ms_to_times(abs(ms))
     if fractions:
-        return sgn + "{:01d}:{:02d}:{:02d}.{:03d}".format(h, m, s, ms)
+        return f"{sgn}{h:01d}:{m:02d}:{s:02d}.{ms:03d}"
     else:
-        return sgn + "{:01d}:{:02d}:{:02d}".format(h, m, s)
+        return f"{sgn}{h:01d}:{m:02d}:{s:02d}"

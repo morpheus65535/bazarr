@@ -1,16 +1,17 @@
-from __future__ import print_function, unicode_literals, division
-from collections import MutableSequence, OrderedDict
+from collections import MutableSequence
 import io
 from io import open
-from itertools import starmap, chain
+from itertools import chain
 import os.path
 import logging
+from typing import Optional, List, Dict, Iterable, Any
+
+from .common import IntOrFloat
 from .formats import autodetect_format, get_format_class, get_format_identifier
 from .substation import is_valid_field_content
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
 from .time import make_time, ms_to_str
-from .common import PY3
 
 
 class SSAFile(MutableSequence):
@@ -31,27 +32,36 @@ class SSAFile(MutableSequence):
 
     """
 
-    DEFAULT_INFO = OrderedDict([
-        ("WrapStyle", "0"),
-        ("ScaledBorderAndShadow", "yes"),
-        ("Collisions", "Normal")])
+    DEFAULT_INFO = {
+        "WrapStyle": "0",
+        "ScaledBorderAndShadow": "yes",
+        "Collisions": "Normal"
+    }
 
     def __init__(self):
-        self.events = [] #: List of :class:`SSAEvent` instances, ie. individual subtitles.
-        self.styles = OrderedDict([("Default", SSAStyle.DEFAULT_STYLE.copy())]) #: Dict of :class:`SSAStyle` instances.
-        self.info = self.DEFAULT_INFO.copy() #: Dict with script metadata, ie. ``[Script Info]``.
-        self.aegisub_project = OrderedDict() #: Dict with Aegisub project, ie. ``[Aegisub Project Garbage]``.
-        self.fps = None #: Framerate used when reading the file, if applicable.
-        self.format = None #: Format of source subtitle file, if applicable, eg. ``"srt"``.
+        self.events: List[SSAEvent] = []  #: List of :class:`SSAEvent` instances, ie. individual subtitles.
+        self.styles: Dict[str, SSAStyle] = {"Default": SSAStyle.DEFAULT_STYLE.copy()}  #: Dict of :class:`SSAStyle` instances.
+        self.info: Dict[str, str] = self.DEFAULT_INFO.copy()  #: Dict with script metadata, ie. ``[Script Info]``.
+        self.aegisub_project: Dict[str, str] = {}  #: Dict with Aegisub project, ie. ``[Aegisub Project Garbage]``.
+        self.fonts_opaque: Dict[str, Any] = {}  #: Dict with embedded fonts, ie. ``[Fonts]``.
+        self.fps: Optional[float] = None  #: Framerate used when reading the file, if applicable.
+        self.format: Optional[str] = None  #: Format of source subtitle file, if applicable, eg. ``"srt"``.
 
     # ------------------------------------------------------------------------
     # I/O methods
     # ------------------------------------------------------------------------
 
     @classmethod
-    def load(cls, path, encoding="utf-8", format_=None, fps=None, **kwargs):
+    def load(cls, path: str, encoding: str="utf-8", format_: Optional[str]=None, fps: Optional[float]=None, **kwargs) -> "SSAFile":
         """
         Load subtitle file from given path.
+
+        This method is implemented in terms of :meth:`SSAFile.from_file()`.
+
+        See also:
+            Specific formats may implement additional loading options,
+            please refer to documentation of the implementation classes
+            (eg. :meth:`pysubs2.subrip.SubripFormat.from_file()`)
 
         Arguments:
             path (str): Path to subtitle file.
@@ -66,7 +76,7 @@ class SSAFile(MutableSequence):
                 be detected from the file, in which case you don't need
                 to specify it here (when given, this argument overrides
                 autodetection).
-            kwargs: Extra options for the parser.
+            kwargs: Extra options for the reader.
 
         Returns:
             SSAFile
@@ -86,13 +96,14 @@ class SSAFile(MutableSequence):
         Example:
             >>> subs1 = pysubs2.load("subrip-subtitles.srt")
             >>> subs2 = pysubs2.load("microdvd-subtitles.sub", fps=23.976)
+            >>> subs3 = pysubs2.load("subrip-subtitles-with-fancy-tags.srt", keep_unknown_html_tags=True)
 
         """
         with open(path, encoding=encoding) as fp:
             return cls.from_file(fp, format_, fps=fps, **kwargs)
 
     @classmethod
-    def from_string(cls, string, format_=None, fps=None, **kwargs):
+    def from_string(cls, string: str, format_: Optional[str]=None, fps: Optional[float]=None, **kwargs) -> "SSAFile":
         """
         Load subtitle file from string.
 
@@ -118,7 +129,7 @@ class SSAFile(MutableSequence):
         return cls.from_file(fp, format_, fps=fps, **kwargs)
 
     @classmethod
-    def from_file(cls, fp, format_=None, fps=None, **kwargs):
+    def from_file(cls, fp: io.TextIOBase, format_: Optional[str]=None, fps: Optional[float]=None, **kwargs) -> "SSAFile":
         """
         Read subtitle file from file object.
 
@@ -152,9 +163,16 @@ class SSAFile(MutableSequence):
         impl.from_file(subs, fp, format_, fps=fps, **kwargs)
         return subs
 
-    def save(self, path, encoding="utf-8", format_=None, fps=None, **kwargs):
+    def save(self, path: str, encoding: str="utf-8", format_: Optional[str]=None, fps: Optional[float]=None, **kwargs):
         """
         Save subtitle file to given path.
+
+        This method is implemented in terms of :meth:`SSAFile.to_file()`.
+
+        See also:
+            Specific formats may implement additional saving options,
+            please refer to documentation of the implementation classes
+            (eg. :meth:`pysubs2.subrip.SubripFormat.to_file()`)
 
         Arguments:
             path (str): Path to subtitle file.
@@ -189,7 +207,7 @@ class SSAFile(MutableSequence):
         with open(path, "w", encoding=encoding) as fp:
             self.to_file(fp, format_, fps=fps, **kwargs)
 
-    def to_string(self, format_, fps=None, **kwargs):
+    def to_string(self, format_: str, fps: Optional[float]=None, **kwargs) -> str:
         """
         Get subtitle file as a string.
 
@@ -203,7 +221,7 @@ class SSAFile(MutableSequence):
         self.to_file(fp, format_, fps=fps, **kwargs)
         return fp.getvalue()
 
-    def to_file(self, fp, format_, fps=None, **kwargs):
+    def to_file(self, fp: io.TextIOBase, format_: str, fps: Optional[float]=None, **kwargs):
         """
         Write subtitle file to file object.
 
@@ -225,7 +243,8 @@ class SSAFile(MutableSequence):
     # Retiming subtitles
     # ------------------------------------------------------------------------
 
-    def shift(self, h=0, m=0, s=0, ms=0, frames=None, fps=None):
+    def shift(self, h: IntOrFloat=0, m: IntOrFloat=0, s: IntOrFloat=0, ms: IntOrFloat=0,
+              frames: Optional[int]=None, fps: Optional[float]=None):
         """
         Shift all subtitles by constant time amount.
 
@@ -247,7 +266,7 @@ class SSAFile(MutableSequence):
             line.start += delta
             line.end += delta
 
-    def transform_framerate(self, in_fps, out_fps):
+    def transform_framerate(self, in_fps: float, out_fps: float):
         """
         Rescale all timestamps by ratio of in_fps/out_fps.
 
@@ -274,7 +293,7 @@ class SSAFile(MutableSequence):
     # Working with styles
     # ------------------------------------------------------------------------
 
-    def rename_style(self, old_name, new_name):
+    def rename_style(self, old_name: str, new_name: str):
         """
         Rename a style, including references to it.
 
@@ -303,7 +322,7 @@ class SSAFile(MutableSequence):
             if line.style == old_name:
                 line.style = new_name
 
-    def import_styles(self, subs, overwrite=True):
+    def import_styles(self, subs: "SSAFile", overwrite: bool=True):
         """
         Merge in styles from other SSAFile.
 
@@ -324,7 +343,39 @@ class SSAFile(MutableSequence):
     # Helper methods
     # ------------------------------------------------------------------------
 
-    def equals(self, other):
+    def remove_miscellaneous_events(self):
+        """
+        Remove subtitles which appear to be non-essential (the --clean in CLI)
+
+        Currently, this removes events matching any of these criteria:
+        - SSA event type Comment
+        - SSA drawing tags
+        - Less than two characters of text
+        - Duplicated text with identical time interval (only the first event is kept)
+        """
+        new_events = []
+
+        duplicate_text_ids = set()
+        times_to_texts = {}
+        for i, e in enumerate(self):
+            tmp = times_to_texts.setdefault((e.start, e.end), [])
+            if tmp.count(e.plaintext) > 0:
+                duplicate_text_ids.add(i)
+            tmp.append(e.plaintext)
+
+        for i, e in enumerate(self):
+            if e.is_drawing or e.is_comment:
+                continue
+            if len(e.plaintext.strip()) < 2:
+                continue
+            if i in duplicate_text_ids:
+                continue
+
+            new_events.append(e)
+
+        self.events = new_events
+
+    def equals(self, other: "SSAFile"):
         """
         Equality of two SSAFiles.
 
@@ -347,6 +398,18 @@ class SSAFile(MutableSequence):
                     return False
                 elif sv != ov:
                     logging.debug("info %r differs (self=%r, other=%r)", key, sv, ov)
+                    return False
+
+            for key in set(chain(self.fonts_opaque.keys(), other.fonts_opaque.keys())):
+                sv, ov = self.fonts_opaque.get(key), other.fonts_opaque.get(key)
+                if sv is None:
+                    logging.debug("%r missing in self.fonts_opaque", key)
+                    return False
+                elif ov is None:
+                    logging.debug("%r missing in other.fonts_opaque", key)
+                    return False
+                elif sv != ov:
+                    logging.debug("fonts_opaque %r differs (self=%r, other=%r)", key, sv, ov)
                     return False
 
             for key in set(chain(self.styles.keys(), other.styles.keys())):
@@ -381,12 +444,10 @@ class SSAFile(MutableSequence):
     def __repr__(self):
         if self.events:
             max_time = max(ev.end for ev in self)
-            s = "<SSAFile with %d events and %d styles, last timestamp %s>" % \
-                    (len(self), len(self.styles), ms_to_str(max_time))
+            s = f"<SSAFile with {len(self)} events and {len(self.styles)} styles, last timestamp {ms_to_str(max_time)}>"
         else:
-            s = "<SSAFile with 0 events and %d styles>" % len(self.styles)
+            s = f"<SSAFile with 0 events and {len(self.styles)} styles>"
 
-        if not PY3: s = s.encode("utf-8")
         return s
 
     # ------------------------------------------------------------------------
@@ -397,22 +458,25 @@ class SSAFile(MutableSequence):
         """Sort subtitles time-wise, in-place."""
         self.events.sort()
 
-    def __getitem__(self, item):
+    def __iter__(self) -> Iterable[SSAEvent]:
+        return iter(self.events)
+
+    def __getitem__(self, item: int):
         return self.events[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: int, value: SSAEvent):
         if isinstance(value, SSAEvent):
             self.events[key] = value
         else:
             raise TypeError("SSAFile.events must contain only SSAEvent objects")
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: int):
         del self.events[key]
 
     def __len__(self):
         return len(self.events)
 
-    def insert(self, index, value):
+    def insert(self, index: int, value: SSAEvent):
         if isinstance(value, SSAEvent):
             self.events.insert(index, value)
         else:

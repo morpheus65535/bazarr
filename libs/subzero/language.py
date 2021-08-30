@@ -1,8 +1,11 @@
 # coding=utf-8
+from __future__ import absolute_import
 import types
+import re
 
 from babelfish.exceptions import LanguageError
-from babelfish import Language as Language_, basestr
+from babelfish import Language as Language_, basestr, LANGUAGE_MATRIX
+from six.moves import zip
 
 repl_map = {
     "dk": "da",
@@ -29,6 +32,16 @@ repl_map = {
     "tib": "bo",
 }
 
+CUSTOM_LIST = ["chs", "sc", "zhs", "hans", "gb", u"简", u"双语",
+               "cht", "tc", "zht", "hant", "big5", u"繁", u"雙語",
+               "spl", "ea", "pob", "pb"]
+
+ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)))) + list(repl_map.values())
+ALPHA3b_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha3, LANGUAGE_MATRIX)))) + \
+               list(set(filter(lambda x: len(x) == 3, list(repl_map.keys()))))
+FULL_LANGUAGE_LIST = ALPHA2_LIST + ALPHA3b_LIST
+FULL_LANGUAGE_LIST.extend(CUSTOM_LIST)
+
 
 def language_from_stream(l):
     if not l:
@@ -54,7 +67,8 @@ def wrap_forced(f):
         args = args[1:]
         s = args.pop(0)
         forced = None
-        if isinstance(s, types.StringTypes):
+        hi = None
+        if isinstance(s, (str,)):
             base, forced = s.split(":") if ":" in s else (s, False)
         else:
             base = s
@@ -62,6 +76,7 @@ def wrap_forced(f):
         instance = f(cls, base, *args, **kwargs)
         if isinstance(instance, Language):
             instance.forced = forced == "forced"
+            instance.hi = hi == "hi"
         return instance
 
     return inner
@@ -69,16 +84,21 @@ def wrap_forced(f):
 
 class Language(Language_):
     forced = False
+    hi = False
 
-    def __init__(self, language, country=None, script=None, unknown=None, forced=False):
+    def __init__(self, language, country=None, script=None, unknown=None, forced=False, hi=False):
         self.forced = forced
+        self.hi = hi
         super(Language, self).__init__(language, country=country, script=script, unknown=unknown)
 
     def __getstate__(self):
-        return self.alpha3, self.country, self.script, self.forced
+        return self.alpha3, self.country, self.script, self.hi, self.forced
 
-    def __setstate__(self, state):
-        self.alpha3, self.country, self.script, self.forced = state
+    def __setstate__(self, forced):
+        self.alpha3, self.country, self.script, self.hi, self.forced = forced
+
+    def __hash__(self):
+        return hash(str(self))
 
     def __eq__(self, other):
         if isinstance(other, basestr):
@@ -88,7 +108,8 @@ class Language(Language_):
         return (self.alpha3 == other.alpha3 and
                 self.country == other.country and
                 self.script == other.script and
-                bool(self.forced) == bool(other.forced))
+                bool(self.forced) == bool(other.forced) and
+                bool(self.hi) == bool(other.hi))
 
     def __str__(self):
         return super(Language, self).__str__() + (":forced" if self.forced else "")
@@ -101,14 +122,15 @@ class Language(Language_):
         ret = super(Language, self).__getattr__(name)
         if isinstance(ret, Language):
             ret.forced = self.forced
+            ret.hi = self.hi
         return ret
 
     @classmethod
     def rebuild(cls, instance, **replkw):
         state = instance.__getstate__()
-        attrs = ("country", "script", "forced")
+        attrs = ("country", "script", "hi", "forced")
         language = state[0]
-        kwa = dict(zip(attrs, state[1:]))
+        kwa = dict(list(zip(attrs, state[1:])))
         kwa.update(replkw)
         return cls(language, **kwa)
 
@@ -134,3 +156,16 @@ class Language(Language_):
             return Language(*Language_.fromietf(s).__getstate__())
 
         return Language(*Language_.fromalpha3b(s).__getstate__())
+
+
+IETF_MATCH = ".+\.([^-.]+)(?:-[A-Za-z]+)?$"
+ENDSWITH_LANGUAGECODE_RE = re.compile("\.([^-.]{2,3})(?:-[A-Za-z]{2,})?$")
+
+
+def match_ietf_language(s, ietf=False):
+    language_match = re.match(".+\.([^\.]+)$" if not ietf
+                              else IETF_MATCH, s)
+    if language_match and len(language_match.groups()) == 1:
+        language = language_match.groups()[0]
+        return language
+    return s

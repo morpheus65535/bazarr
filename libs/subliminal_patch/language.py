@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from subliminal.converters.addic7ed import Addic7edConverter
 from babelfish.converters.opensubtitles import OpenSubtitlesConverter
 
@@ -20,10 +21,12 @@ class PatchedOpenSubtitlesConverter(OpenSubtitlesConverter):
         self.to_opensubtitles.update({
             ('srp', None, "Latn"): 'scc',
             ('srp', None, "Cyrl"): 'scc',
-            ('chi', None, 'Hant'): 'zht'
+            ('chi', None, 'Hant'): 'zht',
+            ('spa', 'MX'): 'spl',
         })
         self.from_opensubtitles.update({
-            'zht': ('zho', None, 'Hant')
+            'zht': ('zho', None, 'Hant'),
+            'spl': ('spa', 'MX'),
         })
 
     def convert(self, alpha3, country=None, script=None):

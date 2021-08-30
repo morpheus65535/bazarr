@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from gzip import GzipFile
 
 from json_tricks import TricksEncoder

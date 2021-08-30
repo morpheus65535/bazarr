@@ -5,10 +5,14 @@ Custom exceptions raised by pytz.
 __all__ = [
     'UnknownTimeZoneError', 'InvalidTimeError', 'AmbiguousTimeError',
     'NonExistentTimeError',
-    ]
+]
 
 
-class UnknownTimeZoneError(KeyError):
+class Error(Exception):
+    '''Base class for all exceptions raised by the pytz library'''
+
+
+class UnknownTimeZoneError(KeyError, Error):
     '''Exception raised when pytz is passed an unknown timezone.
 
     >>> isinstance(UnknownTimeZoneError(), LookupError)
@@ -20,11 +24,18 @@ class UnknownTimeZoneError(KeyError):
 
     >>> isinstance(UnknownTimeZoneError(), KeyError)
     True
+
+    And also a subclass of pytz.exceptions.Error, as are other pytz
+    exceptions.
+
+    >>> isinstance(UnknownTimeZoneError(), Error)
+    True
+
     '''
     pass
 
 
-class InvalidTimeError(Exception):
+class InvalidTimeError(Error):
     '''Base class for invalid time exceptions.'''
 
 

@@ -1,154 +1,169 @@
 # Multiple input strings having same expected results can be chained.
 # Use - marker to check inputs that should not match results.
-? +DVDSCR
-? +DVDScreener
-? +DVD-SCR
-? +DVD Screener
-? +DVD AnythingElse Screener
-? -DVD AnythingElse SCR
-: other: Screener
++DVDSCR:
++DVDScreener:
++DVD-SCR:
++DVD Screener:
++DVD AnythingElse Screener:
+-DVD AnythingElse SCR:
+  other: Screener
 
-? +AudioFix
-? +AudioFixed
-? +Audio Fix
-? +Audio Fixed
-: other: AudioFix
++AudioFix:
++AudioFixed:
++Audio Fix:
++Audio Fixed:
+  other: Audio Fixed
 
-? +SyncFix
-? +SyncFixed
-? +Sync Fix
-? +Sync Fixed
-: other: SyncFix
++SyncFix:
++SyncFixed:
++Sync Fix:
++Sync Fixed:
+  other: Sync Fixed
 
-? +DualAudio
-? +Dual Audio
-: other: DualAudio
++DualAudio:
++Dual Audio:
+  other: Dual Audio
 
-? +ws
-? +WideScreen
-? +Wide Screen
-: other: WideScreen
++ws:
++WideScreen:
++Wide Screen:
+  other: Widescreen
 
-# Fix and Real must be surround by others properties to be matched.
-? DVD.Real.XViD
-? DVD.fix.XViD
-? -DVD.Real
-? -DVD.Fix
-? -Real.XViD
-? -Fix.XViD
-: other: Proper
-  proper_count: 1
+# Fix must be surround by others properties to be matched.
+DVD.fix.XViD:
+-DVD.Fix:
+-Fix.XViD:
+  other: Fix
+  -proper_count: 1
 
-? -DVD.BlablaBla.Fix.Blablabla.XVID
-? -DVD.BlablaBla.Fix.XVID
-? -DVD.Fix.Blablabla.XVID
-: other: Proper
-  proper_count: 1
+-DVD.BlablaBla.Fix.Blablabla.XVID:
+-DVD.BlablaBla.Fix.XVID:
+-DVD.Fix.Blablabla.XVID:
+  other: Fix
+  -proper_count: 1
 
-
-? DVD.Real.PROPER.REPACK
-: other: Proper
+DVD.Real.PROPER.REPACK:
+  other: Proper
   proper_count: 3
 
-
-? Proper
-? +Repack
-? +Rerip
-: other: Proper
+Proper.720p:
++Repack:
++Rerip:
+  other: Proper
   proper_count: 1
 
-? XViD.Fansub
-: other: Fansub
+XViD.Fansub:
+  other: Fan Subtitled
 
-? XViD.Fastsub
-: other: Fastsub
+XViD.Fastsub:
+  other: Fast Subtitled
 
-? +Season Complete
-? -Complete
-: other: Complete
++Season Complete:
+-Complete:
+  other: Complete
 
-? R5
-? RC
-: other: R5
+R5:
+  other: Region 5
 
-? PreAir
-? Pre Air
-: other: Preair
+RC:
+  other: Region C
 
-? Screener
-: other: Screener
+PreAir:
+Pre Air:
+  other: Preair
 
-? Remux
-: other: Remux
+Screener:
+  other: Screener
 
-? 3D
-: other: 3D
+Remux:
+  other: Remux
 
-? HD
-: other: HD
+Hybrid:
+  other: Hybrid
 
-? FHD
-? FullHD
-? Full HD
-: other: FullHD
+3D.2019:
+  other: 3D
 
-? UHD
-? Ultra
-? UltraHD
-? Ultra HD
-: other: UltraHD
+HD:
+  other: HD
+
+FHD:
+FullHD:
+Full HD:
+  other: Full HD
+
+UHD:
+Ultra:
+UltraHD:
+Ultra HD:
+  other: Ultra HD
 
 ? mHD # ??
-: other: mHD
+HDLight:
+  other: Micro HD
 
-? HDLight
-: other: HDLight
+HQ:
+  other: High Quality
 
-? HQ
-: other: HQ
+hr:
+  other: High Resolution
 
-? ddc
-: other: DDC
+PAL:
+  other: PAL
 
-? hr
-: other: HR
+SECAM:
+  other: SECAM
 
-? PAL
-: other: PAL
+NTSC:
+  other: NTSC
 
-? SECAM
-: other: SECAM
+LDTV:
+  other: Low Definition
 
-? NTSC
-: other: NTSC
+LD:
+  other: Line Dubbed
 
-? CC
-: other: CC
+MD:
+  other: Mic Dubbed
 
-? LD
-? LDTV
-: other: LD
+-The complete movie:
+  other: Complete
 
-? MD
-: other: MD
++The complete movie:
+  title: The complete movie
 
-? -The complete movie
-: other: Complete
++AC3-HQ:
+  audio_profile: High Quality
 
-? +The complete movie
-: title: The complete movie
+Other-HQ:
+  other: High Quality
 
-? +AC3-HQ
-: audio_profile: HQ
+reenc:
+re-enc:
+re-encoded:
+reencoded:
+  other: Reencoded
 
-? Other-HQ
-: other: HQ
+CONVERT XViD:
+  other: Converted
 
-? reenc
-? re-enc
-? re-encoded
-? reencoded
-: other: ReEncoded
++HDRIP: # it's a Rip from non specified HD source
+  other: [HD, Rip]
 
-? CONVERT XViD
-: other: Converted
+SDR:
+  other: Standard Dynamic Range
+
+HDR:
+HDR10:
+-HDR100:
+  other: HDR10
+
+BT2020:
+BT.2020:
+-BT.20200:
+-BT.2021:
+  other: BT.2020
+
+Upscaled:
+Upscale:
+  other: Upscaled

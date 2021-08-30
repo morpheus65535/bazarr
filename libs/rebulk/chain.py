@@ -6,9 +6,10 @@ Chain patterns and handle repetiting capture group
 # pylint: disable=super-init-not-called
 import itertools
 
-from .loose import call, set_defaults
+from .builder import Builder
+from .loose import call
 from .match import Match, Matches
-from .pattern import Pattern, filter_match_kwargs
+from .pattern import Pattern, filter_match_kwargs, BasePattern
 from .remodule import re
 
 
@@ -19,150 +20,46 @@ class _InvalidChainException(Exception):
     pass
 
 
-class Chain(Pattern):
+class Chain(Pattern, Builder):
     """
     Definition of a pattern chain to search for.
     """
 
-    def __init__(self, rebulk, chain_breaker=None, **kwargs):
-        call(super(Chain, self).__init__, **kwargs)
+    def __init__(self, parent, chain_breaker=None, **kwargs):
+        Builder.__init__(self)
+        call(Pattern.__init__, self, **kwargs)
         self._kwargs = kwargs
         self._match_kwargs = filter_match_kwargs(kwargs)
-        self._defaults = {}
-        self._regex_defaults = {}
-        self._string_defaults = {}
-        self._functional_defaults = {}
         if callable(chain_breaker):
             self.chain_breaker = chain_breaker
         else:
             self.chain_breaker = None
-        self.rebulk = rebulk
+        self.parent = parent
         self.parts = []
 
-    def defaults(self, **kwargs):
+    def pattern(self, *pattern):
         """
-        Define default keyword arguments for all patterns
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        self._defaults = kwargs
-        return self
-
-    def regex_defaults(self, **kwargs):
-        """
-        Define default keyword arguments for functional patterns.
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        self._regex_defaults = kwargs
-        return self
-
-    def string_defaults(self, **kwargs):
-        """
-        Define default keyword arguments for string patterns.
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        self._string_defaults = kwargs
-        return self
-
-    def functional_defaults(self, **kwargs):
-        """
-        Define default keyword arguments for functional patterns.
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        self._functional_defaults = kwargs
-        return self
-
-    def chain(self):
-        """
-        Add patterns chain, using configuration from this chain
-
-        :return:
-        :rtype:
-        """
-        # pylint: disable=protected-access
-        chain = self.rebulk.chain(**self._kwargs)
-        chain._defaults = dict(self._defaults)
-        chain._regex_defaults = dict(self._regex_defaults)
-        chain._functional_defaults = dict(self._functional_defaults)
-        chain._string_defaults = dict(self._string_defaults)
-        return chain
-
-    def regex(self, *pattern, **kwargs):
-        """
-        Add re pattern
 
         :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
         :return:
-        :rtype:
         """
-        set_defaults(self._kwargs, kwargs)
-        set_defaults(self._regex_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
-        pattern = self.rebulk.build_re(*pattern, **kwargs)
-        part = ChainPart(self, pattern)
-        self.parts.append(part)
-        return part
-
-    def functional(self, *pattern, **kwargs):
-        """
-        Add functional pattern
-
-        :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        set_defaults(self._kwargs, kwargs)
-        set_defaults(self._functional_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
-        pattern = self.rebulk.build_functional(*pattern, **kwargs)
-        part = ChainPart(self, pattern)
-        self.parts.append(part)
-        return part
-
-    def string(self, *pattern, **kwargs):
-        """
-        Add string pattern
-
-        :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
-        """
-        set_defaults(self._kwargs, kwargs)
-        set_defaults(self._functional_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
-        pattern = self.rebulk.build_string(*pattern, **kwargs)
-        part = ChainPart(self, pattern)
+        if not pattern:
+            raise ValueError("One pattern should be given to the chain")
+        if len(pattern) > 1:
+            raise ValueError("Only one pattern can be given to the chain")
+        part = ChainPart(self, pattern[0])
         self.parts.append(part)
         return part
 
     def close(self):
         """
-        Close chain builder to continue registering other pattern
-
-        :return:
-        :rtype:
+        Deeply close the chain
+        :return: Rebulk instance
         """
-        return self.rebulk
+        parent = self.parent
+        while isinstance(parent, Chain):
+            parent = parent.parent
+        return parent
 
     def _match(self, pattern, input_string, context=None):
         # pylint: disable=too-many-locals,too-many-nested-blocks
@@ -173,42 +70,20 @@ class Chain(Pattern):
             chain_found = False
             current_chain_matches = []
             valid_chain = True
-            is_chain_start = True
             for chain_part in self.parts:
                 try:
-                    chain_part_matches, raw_chain_part_matches = Chain._match_chain_part(is_chain_start, chain_part,
-                                                                                         chain_input_string,
-                                                                                         context)
+                    chain_part_matches, raw_chain_part_matches = chain_part.matches(chain_input_string,
+                                                                                    context,
+                                                                                    with_raw_matches=True)
 
-                    Chain._fix_matches_offset(chain_part_matches, input_string, offset)
-                    Chain._fix_matches_offset(raw_chain_part_matches, input_string, offset)
-
-                    if raw_chain_part_matches:
-                        grouped_matches_dict = dict()
-                        for match_index, match in itertools.groupby(chain_part_matches,
-                                                                    lambda m: m.match_index):
-                            grouped_matches_dict[match_index] = list(match)
-
-                        grouped_raw_matches_dict = dict()
-                        for match_index, raw_match in itertools.groupby(raw_chain_part_matches,
-                                                                        lambda m: m.match_index):
-                            grouped_raw_matches_dict[match_index] = list(raw_match)
-
-                        for match_index, grouped_raw_matches in grouped_raw_matches_dict.items():
-                            chain_found = True
-                            offset = grouped_raw_matches[-1].raw_end
-                            chain_input_string = input_string[offset:]
-                            if not chain_part.is_hidden:
-                                grouped_matches = grouped_matches_dict.get(match_index, [])
-                                if self._chain_breaker_eval(current_chain_matches + grouped_matches):
-                                    current_chain_matches.extend(grouped_matches)
-
+                    chain_found, chain_input_string, offset = \
+                        self._to_next_chain_part(chain_part, chain_part_matches, raw_chain_part_matches, chain_found,
+                                                 input_string, chain_input_string, offset, current_chain_matches)
                 except _InvalidChainException:
                     valid_chain = False
                     if current_chain_matches:
                         offset = current_chain_matches[0].raw_end
                     break
-                is_chain_start = False
             if not chain_found:
                 break
             if current_chain_matches and valid_chain:
@@ -217,38 +92,66 @@ class Chain(Pattern):
 
         return chain_matches
 
-    def _match_parent(self, match, yield_parent):
+    def _to_next_chain_part(self, chain_part, chain_part_matches, raw_chain_part_matches, chain_found,
+                            input_string, chain_input_string, offset, current_chain_matches):
+        Chain._fix_matches_offset(chain_part_matches, input_string, offset)
+        Chain._fix_matches_offset(raw_chain_part_matches, input_string, offset)
+
+        if raw_chain_part_matches:
+            grouped_matches_dict = self._group_by_match_index(chain_part_matches)
+            grouped_raw_matches_dict = self._group_by_match_index(raw_chain_part_matches)
+
+            for match_index, grouped_raw_matches in grouped_raw_matches_dict.items():
+                chain_found = True
+                offset = grouped_raw_matches[-1].raw_end
+                chain_input_string = input_string[offset:]
+
+                if not chain_part.is_hidden:
+                    grouped_matches = grouped_matches_dict.get(match_index, [])
+                    if self._chain_breaker_eval(current_chain_matches + grouped_matches):
+                        current_chain_matches.extend(grouped_matches)
+        return chain_found, chain_input_string, offset
+
+    def _process_match(self, match, match_index, child=False):
         """
-        Handle a parent match
+        Handle a match
         :param match:
         :type match:
-        :param yield_parent:
-        :type yield_parent:
+        :param match_index:
+        :type match_index:
+        :param child:
+        :type child:
         :return:
         :rtype:
         """
-        ret = super(Chain, self)._match_parent(match, yield_parent)
-        original_children = Matches(match.children)
-        original_end = match.end
-        while not ret and match.children:
-            last_pattern = match.children[-1].pattern
-            last_pattern_children = [child for child in match.children if child.pattern == last_pattern]
-            last_pattern_groups_iter = itertools.groupby(last_pattern_children, lambda child: child.match_index)
-            last_pattern_groups = {}
-            for index, matches in last_pattern_groups_iter:
-                last_pattern_groups[index] = list(matches)
+        # pylint: disable=too-many-locals
+        ret = super()._process_match(match, match_index, child=child)
+        if ret:
+            return True
 
-            for index in reversed(list(last_pattern_groups)):
-                last_matches = list(last_pattern_groups[index])
-                for last_match in last_matches:
-                    match.children.remove(last_match)
-                match.end = match.children[-1].end if match.children else match.start
-                ret = super(Chain, self)._match_parent(match, yield_parent)
-                if ret:
-                    return True
-        match.children = original_children
-        match.end = original_end
-        return ret
+        if match.children:
+            last_pattern = match.children[-1].pattern
+            last_pattern_groups = self._group_by_match_index(
+                [child_ for child_ in match.children if child_.pattern == last_pattern]
+            )
+
+            if last_pattern_groups:
+                original_children = Matches(match.children)
+                original_end = match.end
+
+                for index in reversed(list(last_pattern_groups)):
+                    last_matches = last_pattern_groups[index]
+                    for last_match in last_matches:
+                        match.children.remove(last_match)
+                    match.end = match.children[-1].end if match.children else match.start
+                    ret = super()._process_match(match, match_index, child=child)
+                    if ret:
+                        return True
+
+                match.children = original_children
+                match.end = original_end
+
+        return False
 
     def _build_chain_match(self, current_chain_matches, input_string):
         start = None
@@ -282,46 +185,11 @@ class Chain(Pattern):
                 Chain._fix_matches_offset(chain_part_match.children, input_string, offset)
 
     @staticmethod
-    def _match_chain_part(is_chain_start, chain_part, chain_input_string, context):
-        chain_part_matches, raw_chain_part_matches = chain_part.pattern.matches(chain_input_string, context,
-                                                                                with_raw_matches=True)
-        chain_part_matches = Chain._truncate_chain_part_matches(is_chain_start, chain_part_matches, chain_part,
-                                                                chain_input_string)
-        raw_chain_part_matches = Chain._truncate_chain_part_matches(is_chain_start, raw_chain_part_matches, chain_part,
-                                                                    chain_input_string)
-
-        Chain._validate_chain_part_matches(raw_chain_part_matches, chain_part)
-        return chain_part_matches, raw_chain_part_matches
-
-    @staticmethod
-    def _truncate_chain_part_matches(is_chain_start, chain_part_matches, chain_part, chain_input_string):
-        if not chain_part_matches:
-            return chain_part_matches
-
-        if not is_chain_start:
-            separator = chain_input_string[0:chain_part_matches[0].initiator.raw_start]
-            if separator:
-                return []
-
-        j = 1
-        for i in range(0, len(chain_part_matches) - 1):
-            separator = chain_input_string[chain_part_matches[i].initiator.raw_end:
-                                           chain_part_matches[i + 1].initiator.raw_start]
-            if separator:
-                break
-            j += 1
-        truncated = chain_part_matches[:j]
-        if chain_part.repeater_end is not None:
-            truncated = [m for m in truncated if m.match_index < chain_part.repeater_end]
-        return truncated
-
-    @staticmethod
-    def _validate_chain_part_matches(chain_part_matches, chain_part):
-        max_match_index = -1
-        if chain_part_matches:
-            max_match_index = max([m.match_index for m in chain_part_matches])
-        if max_match_index + 1 < chain_part.repeater_start:
-            raise _InvalidChainException
+    def _group_by_match_index(matches):
+        grouped_matches_dict = dict()
+        for match_index, match in itertools.groupby(matches, lambda m: m.match_index):
+            grouped_matches_dict[match_index] = list(match)
+        return grouped_matches_dict
 
     @property
     def match_options(self):
@@ -338,7 +206,7 @@ class Chain(Pattern):
         return "<%s%s:%s>" % (self.__class__.__name__, defined, self.parts)
 
 
-class ChainPart(object):
+class ChainPart(BasePattern):
     """
     Part of a pattern chain.
     """
@@ -349,6 +217,51 @@ class ChainPart(object):
         self.repeater_start = 1
         self.repeater_end = 1
         self._hidden = False
+
+    @property
+    def _is_chain_start(self):
+        return self._chain.parts[0] == self
+
+    def matches(self, input_string, context=None, with_raw_matches=False):
+        matches, raw_matches = self.pattern.matches(input_string, context=context, with_raw_matches=True)
+
+        matches = self._truncate_repeater(matches, input_string)
+        raw_matches = self._truncate_repeater(raw_matches, input_string)
+
+        self._validate_repeater(raw_matches)
+
+        if with_raw_matches:
+            return matches, raw_matches
+
+        return matches
+
+    def _truncate_repeater(self, matches, input_string):
+        if not matches:
+            return matches
+
+        if not self._is_chain_start:
+            separator = input_string[0:matches[0].initiator.raw_start]
+            if separator:
+                return []
+
+        j = 1
+        for i in range(0, len(matches) - 1):
+            separator = input_string[matches[i].initiator.raw_end:
+                                     matches[i + 1].initiator.raw_start]
+            if separator:
+                break
+            j += 1
+        truncated = matches[:j]
+        if self.repeater_end is not None:
+            truncated = [m for m in truncated if m.match_index < self.repeater_end]
+        return truncated
+
+    def _validate_repeater(self, matches):
+        max_match_index = -1
+        if matches:
+            max_match_index = max([m.match_index for m in matches])
+        if max_match_index + 1 < self.repeater_start:
+            raise _InvalidChainException
 
     def chain(self):
         """

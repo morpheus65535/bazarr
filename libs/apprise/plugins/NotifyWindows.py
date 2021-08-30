@@ -1,28 +1,38 @@
 # -*- coding: utf-8 -*-
 #
-# Windows Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
 from __future__ import absolute_import
 from __future__ import print_function
 
-import re
 from time import sleep
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyImageSize
+from ..common import NotifyType
+from ..utils import parse_bool
+from ..AppriseLocale import gettext_lazy as _
 
 # Default our global support flag
 NOTIFY_WINDOWS_SUPPORT_ENABLED = False
@@ -38,7 +48,7 @@ try:
 
 except ImportError:
     # No problem; we just simply can't support this plugin because we're
-    # either using Linux, or simply do not have pypiwin32 installed.
+    # either using Linux, or simply do not have pywin32 installed.
     pass
 
 
@@ -56,8 +66,19 @@ class NotifyWindows(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_windows'
 
+    # Disable throttle rate for Windows requests since they are normally
+    # local anyway
+    request_rate_per_sec = 0
+
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_128
+
+    # Limit results to just the first 2 line otherwise there is just to much
+    # content to display
+    body_max_line_count = 2
+
+    # The number of seconds to display the popup for
+    default_popup_duration_sec = 12
 
     # This entry is a bit hacky, but it allows us to unit-test this library
     # in an environment that simply doesn't have the windows packages
@@ -68,18 +89,44 @@ class NotifyWindows(NotifyBase):
     # let me know! :)
     _enabled = NOTIFY_WINDOWS_SUPPORT_ENABLED
 
-    def __init__(self, **kwargs):
+    # Define object templates
+    templates = (
+        '{schema}://',
+    )
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'duration': {
+            'name': _('Duration'),
+            'type': 'int',
+            'min': 1,
+            'default': 12,
+        },
+        'image': {
+            'name': _('Include Image'),
+            'type': 'bool',
+            'default': True,
+            'map_to': 'include_image',
+        },
+    })
+
+    def __init__(self, include_image=True, duration=None, **kwargs):
         """
         Initialize Windows Object
         """
 
+        super(NotifyWindows, self).__init__(**kwargs)
+
         # Number of seconds to display notification for
-        self.duration = 12
+        self.duration = self.default_popup_duration_sec \
+            if not (isinstance(duration, int) and duration > 0) else duration
 
         # Define our handler
         self.hwnd = None
 
-        super(NotifyWindows, self).__init__(**kwargs)
+        # Track whether or not we want to send an image with our notification
+        # or not.
+        self.include_image = include_image
 
     def _on_destroy(self, hwnd, msg, wparam, lparam):
         """
@@ -92,21 +139,19 @@ class NotifyWindows(NotifyBase):
 
         return None
 
-    def notify(self, title, body, notify_type, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Windows Notification
         """
 
         if not self._enabled:
             self.logger.warning(
-                "Windows Notifications are not supported by this system.")
+                "Windows Notifications are not supported by this system; "
+                "`pip install pywin32`.")
             return False
 
-        # Limit results to just the first 2 line otherwise
-        # there is just to much content to display
-        body = re.split('[\r\n]+', body)
-        body[0] = body[0].strip('#').strip()
-        body = '\r\n'.join(body[0:2])
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
 
         try:
             # Register destruction callback
@@ -127,20 +172,26 @@ class NotifyWindows(NotifyBase):
                 self.hinst, None)
             win32gui.UpdateWindow(self.hwnd)
 
-            # image path
-            icon_path = self.image_path(notify_type, extension='.ico')
-            icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+            # image path (if configured to acquire)
+            icon_path = None if not self.include_image \
+                else self.image_path(notify_type, extension='.ico')
 
-            try:
-                hicon = win32gui.LoadImage(
-                    self.hinst, icon_path, win32con.IMAGE_ICON, 0, 0,
-                    icon_flags)
+            if icon_path:
+                icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
 
-            except Exception as e:
-                self.logger.warning(
-                    "Could not load windows notification icon ({}): {}"
-                    .format(icon_path, e))
+                try:
+                    hicon = win32gui.LoadImage(
+                        self.hinst, icon_path, win32con.IMAGE_ICON, 0, 0,
+                        icon_flags)
 
+                except Exception as e:
+                    self.logger.warning(
+                        "Could not load windows notification icon ({}): {}"
+                        .format(icon_path, e))
+
+                    # disable icon
+                    hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
+            else:
                 # disable icon
                 hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
 
@@ -160,12 +211,31 @@ class NotifyWindows(NotifyBase):
 
             self.logger.info('Sent Windows notification.')
 
-        except Exception as e:
+        except Exception:
             self.logger.warning('Failed to send Windows notification.')
             self.logger.exception('Windows Exception')
             return False
 
         return True
+
+    def url(self, privacy=False, *args, **kwargs):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any URL parameters
+        params = {
+            'image': 'yes' if self.include_image else 'no',
+            'duration': str(self.duration),
+        }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://?{params}'.format(
+            schema=self.protocol,
+            params=NotifyWindows.urlencode(params),
+        )
 
     @staticmethod
     def parse_url(url):
@@ -176,15 +246,19 @@ class NotifyWindows(NotifyBase):
 
         """
 
-        # return a very basic set of requirements
-        return {
-            'schema': NotifyWindows.protocol,
-            'user': None,
-            'password': None,
-            'port': None,
-            'host': 'localhost',
-            'fullpath': None,
-            'path': None,
-            'url': url,
-            'qsd': {},
-        }
+        results = NotifyBase.parse_url(url, verify_host=False)
+
+        # Include images with our message
+        results['include_image'] = \
+            parse_bool(results['qsd'].get('image', True))
+
+        # Set duration
+        try:
+            results['duration'] = int(results['qsd'].get('duration'))
+
+        except (TypeError, ValueError):
+            # Not a valid integer; ignore entry
+            pass
+
+        # return results
+        return results

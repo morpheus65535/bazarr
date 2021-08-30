@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import io
 import logging
 import os
@@ -8,7 +9,6 @@ import rarfile
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
-from six import text_type
 
 from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup, Provider
@@ -38,6 +38,7 @@ class GreekSubtitlesSubtitle(Subtitle):
 
         # episode
         if isinstance(video, Episode):
+            matches.add("year")
             # other properties
             matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}), partial=True)
         # movie
@@ -75,7 +76,7 @@ class GreekSubtitlesProvider(Provider):
 
         logger.debug('Searching subtitles %r', params)
         subtitles = []
-        search_link = self.server_url + text_type(self.search_url).format(params)
+        search_link = self.server_url + self.search_url.format(params)
         while True:
             r = self.session.get(search_link, timeout=30)
             r.raise_for_status()

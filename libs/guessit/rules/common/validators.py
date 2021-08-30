@@ -28,7 +28,7 @@ def int_coercable(string):
         return False
 
 
-def compose(*validators):
+def and_(*validators):
     """
     Compose validators functions
     :param validators:
@@ -48,4 +48,27 @@ def compose(*validators):
             if not validator(string):
                 return False
         return True
+    return composed
+
+
+def or_(*validators):
+    """
+    Compose validators functions
+    :param validators:
+    :type validators:
+    :return:
+    :rtype:
+    """
+    def composed(string):
+        """
+        Composed validators function
+        :param string:
+        :type string:
+        :return:
+        :rtype:
+        """
+        for validator in validators:
+            if validator(string):
+                return True
+        return False
     return composed

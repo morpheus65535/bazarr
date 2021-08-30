@@ -1,68 +1,108 @@
 # coding=utf-8
 
-import subprocess as sp
-import threading
-import time
 import os
+import platform
+import signal
+import subprocess
 import sys
+import time
+import atexit
 
-from bazarr import libs
 from bazarr.get_args import args
+
+
+def check_python_version():
+    python_version = platform.python_version_tuple()
+    minimum_py3_tuple = (3, 7, 0)
+    minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
+
+    if int(python_version[0]) < minimum_py3_tuple[0]:
+        print("Python " + minimum_py3_str + " or greater required. "
+              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        sys.exit(1)
+    elif int(python_version[0]) == 3 and int(python_version[1]) == 9:
+        print("Python 3.9.x is unsupported. Current version is " + platform.python_version() +
+              ". Keep in mind that even if it works, you're on your own.")
+    elif (int(python_version[0]) == minimum_py3_tuple[0] and int(python_version[1]) < minimum_py3_tuple[1]) or \
+            (int(python_version[0]) != minimum_py3_tuple[0]):
+        print("Python " + minimum_py3_str + " or greater required. "
+              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        sys.exit(1)
+
+
+check_python_version()
 
 dir_name = os.path.dirname(__file__)
 
 
-def start_bazarr():
-    script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
-
-    ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
-    print "Bazarr starting..."
+def end_child_process(ep):
     try:
-        for line in iter(ep.stdout.readline, ''):
-            sys.stdout.write(line)
-    except KeyboardInterrupt:
+        ep.kill()
+    except:
+        pass
+
+def terminate_child_process(ep):
+    try:
+        ep.terminate()
+    except:
         pass
 
 
-if __name__ == '__main__':
-    restartfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.restart'))
-    stopfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.stop'))
+def start_bazarr():
+    script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
+    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    atexit.register(end_child_process, ep=ep)
+    signal.signal(signal.SIGTERM, lambda signal_no, frame: terminate_child_process(ep))
 
+
+def check_status():
+    if os.path.exists(stopfile):
+        try:
+            os.remove(stopfile)
+        except Exception:
+            print('Unable to delete stop file.')
+        finally:
+            print('Bazarr exited.')
+            sys.exit(0)
+
+    if os.path.exists(restartfile):
+        try:
+            os.remove(restartfile)
+        except Exception:
+            print('Unable to delete restart file.')
+        else:
+            print("Bazarr is restarting...")
+            start_bazarr()
+
+
+if __name__ == '__main__':
+    restartfile = os.path.join(args.config_dir, 'bazarr.restart')
+    stopfile = os.path.join(args.config_dir, 'bazarr.stop')
+
+    # Cleanup leftover files
     try:
         os.remove(restartfile)
-    except:
+    except FileNotFoundError:
         pass
 
     try:
         os.remove(stopfile)
-    except:
+    except FileNotFoundError:
         pass
 
-    def daemon():
-        threading.Timer(1.0, daemon).start()
-        if os.path.exists(stopfile):
-            try:
-                os.remove(stopfile)
-            except:
-                print 'Unable to delete stop file.'
-            else:
-                print 'Bazarr exited.'
-                os._exit(0)
-
-        if os.path.exists(restartfile):
-            try:
-                os.remove(restartfile)
-            except:
-                print 'Unable to delete restart file.'
-            else:
-                start_bazarr()
-
-
-    daemon()
-
+    # Initial start of main bazarr process
+    print("Bazarr starting...")
     start_bazarr()
 
-
-    # Keep the script running forever.
+    # Keep the script running forever until stop is requested through term or keyboard interrupt
     while True:
-        time.sleep(0.001)
+        check_status()
+        try:
+            if sys.platform.startswith('win'):
+                time.sleep(5)
+            else:
+                os.wait()
+                time.sleep(1)
+        except (KeyboardInterrupt, SystemExit, ChildProcessError):
+            print('Bazarr exited.')
+            sys.exit(0)

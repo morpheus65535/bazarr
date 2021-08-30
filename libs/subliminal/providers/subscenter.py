@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import bisect
 from collections import defaultdict
 import io
@@ -56,14 +57,6 @@ class SubsCenterSubtitle(Subtitle):
             # episode
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
-            # guess
-            for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'episode'}))
-        # movie
-        elif isinstance(video, Movie):
-            # guess
-            for release in self.releases:
-                matches |= guess_matches(video, guessit(release, {'type': 'movie'}))
 
         # title
         if video.title and sanitize(self.title) == sanitize(video.title):
@@ -121,7 +114,7 @@ class SubsCenterProvider(Provider):
 
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
     def _search_url_titles(self, title):
         """Search the URL titles by kind for the given `title`.
 
@@ -209,7 +202,7 @@ class SubsCenterProvider(Provider):
                         logger.debug('Found subtitle %r', subtitle)
                         subtitles[subtitle_id] = subtitle
 
-        return subtitles.values()
+        return list(subtitles.values())
 
     def list_subtitles(self, video, languages):
         season = episode = None

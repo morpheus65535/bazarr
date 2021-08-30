@@ -3,28 +3,28 @@ Bazarr is a companion application to Sonarr and Radarr. It manages and downloads
 
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
-## Support on Beerpay
-At the request of some, here is a way to demonstrate your appreciation for the efforts made in the development of Bazarr:
-[![Beerpay](https://beerpay.io/morpheus65535/bazarr/badge.svg?style=beer-square)](https://beerpay.io/morpheus65535/bazarr)
+Thanks to the folks at OpenSubtitles for their logo that was an inspiration for ours.
 
-You can also make a wish but keep in mind that we do not commit to make it happen:
-[![Beerpay](https://beerpay.io/morpheus65535/bazarr/make-wish.svg?style=flat-square)](https://beerpay.io/morpheus65535/bazarr?focus=wish)
+## Support on Paypal
+At the request of some, here is a way to demonstrate your appreciation for the efforts made in the development of Bazarr:
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url)
 
 # Status
 [![GitHub issues](https://img.shields.io/github/issues/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/issues)
 [![GitHub stars](https://img.shields.io/github/stars/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/stargazers)
 [![Docker Pulls](https://img.shields.io/docker/pulls/linuxserver/bazarr.svg?style=flat-square)](https://hub.docker.com/r/linuxserver/bazarr/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/hotio/bazarr.svg?style=flat-square)](https://hub.docker.com/r/hotio/bazarr/)
 [![Discord](https://img.shields.io/badge/discord-chat-MH2e2eb.svg?style=flat-square)](https://discord.gg/MH2e2eb)
 
 # Support
-For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
+For installation and configuration instructions, see [wiki](https://wiki.bazarr.media).
 
 You can reach us for support on [Discord](https://discord.gg/MH2e2eb).
 
 If you find a bug, please open an issue on [Github](https://github.com/morpheus65535/bazarr/issues).
 
 # Feature Requests
-If you need something that is not already part of Bazarr, feel free to create a feature request on [Github](https://github.com/morpheus65535/bazarr/issues).
+If you need something that is not already part of Bazarr, feel free to create a feature request on [Feature Upvote](http://features.bazarr.media).
 
 ## Major Features Include:
 
@@ -37,38 +37,52 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Manual search so you can download subtitles on demand
 * Upgrade subtitles previously downloaded when a better one is found
 * Ability to delete external subtitles from disk
-* Currently support 184 subtitles languages
+* Currently support 184 subtitles languages with support for forced/foreign subtitles (depending of providers)
 * And a beautiful UI based on Sonarr
 
 ## Supported subtitles providers:
 * Addic7ed
 * Argenteam
 * Assrt
+* BetaSeries
+* BSplayer
 * GreekSubtitles
 * Hosszupuska
+* LegendasDivx
 * LegendasTV
 * Ktuvit
 * Napiprojekt
-* OpenSubtitles
+* Napisy24
+* Nekur
+* OpenSubtitles.org
 * Podnapisi
+* RegieLive
+* Sous-Titres.eu
+* Subdivx
 * Subs.sab.bz
+* Subs4Free
+* Subs4Series
 * Subscene
 * Subscenter
 * Subsunacs.net
-* Subs4Free
-* Subs4Series
-* SubZ
+* SubSynchro
+* subtitri.id.lv
+* Subtitulamos.tv
+* Sucha
 * Supersubtitles
 * Titlovi
+* Titrari.ro
+* TuSubtitulo
 * TVSubtitles
+* Wizdom
 * XSubs
+* Yavka.net
+* YIFY Subtitles
 * Zimuku
 
 ## Screenshot
 
-You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tree/master/screenshot) directory but it should look familiar:
-
-![Series](/screenshot/1-series/series-2-episodes.png?raw=true "Series")
+![Bazarr](/screenshot/bazarr-screenshot.png?raw=true "Bazarr")
 
 ### License
 

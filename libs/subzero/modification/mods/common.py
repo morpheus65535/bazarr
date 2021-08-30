@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import re
 
 from subzero.language import Language
@@ -7,6 +9,7 @@ from subzero.modification.mods import SubtitleTextModification, empty_line_post_
 from subzero.modification.processors import FuncProcessor
 from subzero.modification.processors.re_processor import NReProcessor
 from subzero.modification import registry
+from tld import get_tld
 
 
 ENGLISH = Language("eng")
@@ -22,13 +25,13 @@ class CommonFixes(SubtitleTextModification):
 
     processors = [
         # normalize hyphens
-        NReProcessor(re.compile(ur'(?u)([‑‐﹘﹣])'), u"-", name="CM_hyphens"),
+        NReProcessor(re.compile(r'(?u)([‑‐﹘﹣])'), u"-", name="CM_hyphens"),
 
         # -- = em dash
-        NReProcessor(re.compile(r'(?u)(\w|\b|\s|^)(-\s?-{1,2})'), ur"\1—", name="CM_multidash"),
+        NReProcessor(re.compile(r'(?u)(\w|\b|\s|^)(-\s?-{1,2})'), r"\1—", name="CM_multidash"),
 
         # line = _/-/\s
-        NReProcessor(re.compile(r'(?u)(^\W*[-_.:>~]+\W*$)'), "", name="CM_non_word_only"),
+        NReProcessor(re.compile(r'(?u)(^\W*[-_.:<>~"\']+\W*$)'), "", name="CM_non_word_only"),
 
         # remove >>
         NReProcessor(re.compile(r'(?u)^\s?>>\s*'), "", name="CM_leading_crocodiles"),
@@ -37,23 +40,23 @@ class CommonFixes(SubtitleTextModification):
         NReProcessor(re.compile(r'(?u)(^\W*:\s*(?=\w+))'), "", name="CM_empty_colon_start"),
 
         # fix music symbols
-        NReProcessor(re.compile(ur'(?u)(^[-\s>~]*[*#¶]+\s*)|(\s*[*#¶]+\s*$)'),
+        NReProcessor(re.compile(r'(?u)(^[-\s>~]*[*#¶]+\s+)|(\s*[*#¶]+\s*$)'),
                      lambda x: u"♪ " if x.group(1) else u" ♪",
                      name="CM_music_symbols"),
 
         # '' = "
-        NReProcessor(re.compile(ur'(?u)([\'’ʼ❜‘‛][\'’ʼ❜‘‛]+)'), u'"', name="CM_double_apostrophe"),
+        NReProcessor(re.compile(r'(?u)([\'’ʼ❜‘‛][\'’ʼ❜‘‛]+)'), u'"', name="CM_double_apostrophe"),
 
         # double quotes instead of single quotes inside words
-        NReProcessor(re.compile(ur'(?u)([A-zÀ-ž])"([A-zÀ-ž])'), ur"\1'\2", name="CM_double_as_single"),
+        NReProcessor(re.compile(r'(?u)([A-zÀ-ž])"([A-zÀ-ž])'), r"\1'\2", name="CM_double_as_single"),
 
         # normalize quotes
-        NReProcessor(re.compile(ur'(?u)(\s*["”“‟„])\s*(["”“‟„]["”“‟„\s]*)'),
+        NReProcessor(re.compile(r'(?u)(\s*["”“‟„])\s*(["”“‟„]["”“‟„\s]*)'),
                      lambda match: '"' + (" " if match.group(2).endswith(" ") else ""),
                      name="CM_normalize_quotes"),
 
         # normalize single quotes
-        NReProcessor(re.compile(ur'(?u)([\'’ʼ❜‘‛])'), u"'", name="CM_normalize_squotes"),
+        NReProcessor(re.compile(r'(?u)([\'’ʼ❜‘‛])'), u"'", name="CM_normalize_squotes"),
 
         # remove leading ...
         NReProcessor(re.compile(r'(?u)^\.\.\.[\s]*'), "", name="CM_leading_ellipsis"),
@@ -89,8 +92,8 @@ class CommonFixes(SubtitleTextModification):
         # space before ending doublequote?
 
         # replace uppercase I with lowercase L in words
-        NReProcessor(re.compile(ur'(?u)([a-zà-ž]+)(I+)'),
-                     lambda match: ur'%s%s' % (match.group(1), "l" * len(match.group(2))),
+        NReProcessor(re.compile(r'(?u)([a-zà-ž]+)(I+)'),
+                     lambda match: r'%s%s' % (match.group(1), "l" * len(match.group(2))),
                      name="CM_uppercase_i_in_word"),
 
         # fix spaces in numbers (allows for punctuation: ,.:' (comma/dot only fixed if after space, those may be
@@ -101,11 +104,11 @@ class CommonFixes(SubtitleTextModification):
             name="CM_spaces_in_numbers"),
 
         # uppercase after dot
-        NReProcessor(re.compile(ur'(?u)((?<!(?=\s*[A-ZÀ-Ž-_0-9.]\s*))(?:[^.\s])+\.\s+)([a-zà-ž])'),
-                     lambda match: ur'%s%s' % (match.group(1), match.group(2).upper()), name="CM_uppercase_after_dot"),
+        NReProcessor(re.compile(r'(?u)((?<!(?=\s*[A-ZÀ-Ž-_0-9.]\s*))(?:[^.\s])+\.\s+)([a-zà-ž])'),
+                     lambda match: r'%s%s' % (match.group(1), match.group(2).upper()), name="CM_uppercase_after_dot"),
 
         # remove double interpunction
-        NReProcessor(re.compile(ur'(?u)(\s*[,!?])\s*([,.!?][,.!?\s]*)'),
+        NReProcessor(re.compile(r'(?u)(\s*[,!?])\s*([,.!?][,.!?\s]*)'),
                      lambda match: match.group(1).strip() + (" " if match.group(2).endswith(" ") else ""),
                      name="CM_double_interpunct"),
 
@@ -113,7 +116,9 @@ class CommonFixes(SubtitleTextModification):
         NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=\w)) +([!?.,](?![!?.,]| \.))'), r"\1", name="CM_punctuation_space"),
 
         # add space after punctuation
-        NReProcessor(re.compile(r'(?u)([!?.,:])([A-zÀ-ž]{2,})'), r"\1 \2", name="CM_punctuation_space2"),
+        NReProcessor(re.compile(r'(?u)(([^\s]*)([!?.,:])([A-zÀ-ž]{2,}))'),
+                     lambda match: u"%s%s %s" % (match.group(2), match.group(3), match.group(4)) if not get_tld(match.group(1), fail_silently=True, fix_protocol=True) else match.group(1),
+                     name="CM_punctuation_space2"),
 
         # fix lowercase I in english
         NReProcessor(re.compile(r'(?u)(\b)i(\b)'), r"\1I\2", name="CM_EN_lowercase_i",
@@ -149,14 +154,14 @@ class ReverseRTL(SubtitleModification):
 
     processors = [
         # new? (?u)(^([\s.!?]*)(.+?)(\s*)(-?\s*)$); \5\4\3\2
-        #NReProcessor(re.compile(ur"(?u)((?=(?<=\b|^)|(?<=\s))([.!?-]+)([^.!?-]+)(?=\b|$|\s))"), r"\3\2",
+        #NReProcessor(re.compile(r"(?u)((?=(?<=\b|^)|(?<=\s))([.!?-]+)([^.!?-]+)(?=\b|$|\s))"), r"\3\2",
         #             name="CM_RTL_reverse")
-        NReProcessor(re.compile(ur"(?u)(^([\s.!?:,'-]*)(.+?)(\s*)(-?\s*)$)"), r"\5\4\3\2",
+        NReProcessor(re.compile(r"(?u)(^([\s.!?:,'-]*)(.+?)(\s*)(-?\s*)$)"), r"\5\4\3\2",
                      name="CM_RTL_reverse")
     ]
 
 
-split_upper_re = re.compile(ur"(\s*[.!?♪\-]\s*)")
+split_upper_re = re.compile(r"(\s*[.!?♪\-]\s*)")
 
 
 class FixUppercase(SubtitleModification):

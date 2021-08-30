@@ -1,8 +1,11 @@
-from __future__ import unicode_literals
-from .common import Color, PY3
+import warnings
+from typing import Dict, Any, ClassVar
+import dataclasses
 
+from .common import Color
 
-class SSAStyle(object):
+@dataclasses.dataclass(repr=False)
+class SSAStyle:
     """
     A SubStation Style.
 
@@ -17,70 +20,57 @@ class SSAStyle(object):
     This class defines equality (equality of all fields).
 
     """
-    DEFAULT_STYLE = None
+    DEFAULT_STYLE: ClassVar["SSAStyle"] = None
 
-    #: All fields in SSAStyle.
-    FIELDS = frozenset([
-        "fontname", "fontsize", "primarycolor", "secondarycolor",
-        "tertiarycolor", "outlinecolor", "backcolor",
-        "bold", "italic", "underline", "strikeout",
-        "scalex", "scaley", "spacing", "angle", "borderstyle",
-        "outline", "shadow", "alignment",
-        "marginl", "marginr", "marginv", "alphalevel", "encoding"
-    ])
+    @property
+    def FIELDS(self):
+        """All fields in SSAStyle."""
+        warnings.warn("Deprecated in 1.2.0 - it's a dataclass now", DeprecationWarning)
+        return frozenset(field.name for field in dataclasses.fields(self))
 
-    def __init__(self, **fields):
-        self.fontname = "Arial" #: Font name
-        self.fontsize = 20.0 #: Font size (in pixels)
-        self.primarycolor = Color(255, 255, 255, 0) #: Primary color (:class:`pysubs2.Color` instance)
-        self.secondarycolor = Color(255, 0, 0, 0) #: Secondary color (:class:`pysubs2.Color` instance)
-        self.tertiarycolor = Color(0, 0, 0, 0) #: Tertiary color (:class:`pysubs2.Color` instance)
-        self.outlinecolor = Color(0, 0, 0, 0) #: Outline color (:class:`pysubs2.Color` instance)
-        self.backcolor = Color(0, 0, 0, 0) #: Back, ie. shadow color (:class:`pysubs2.Color` instance)
-        self.bold = False #: Bold
-        self.italic = False #: Italic
-        self.underline = False #: Underline (ASS only)
-        self.strikeout = False #: Strikeout (ASS only)
-        self.scalex = 100.0 #: Horizontal scaling (ASS only)
-        self.scaley = 100.0 #: Vertical scaling (ASS only)
-        self.spacing = 0.0 #: Letter spacing (ASS only)
-        self.angle = 0.0 #: Rotation (ASS only)
-        self.borderstyle = 1 #: Border style
-        self.outline = 2.0 #: Outline width (in pixels)
-        self.shadow = 2.0 #: Shadow depth (in pixels)
-        self.alignment = 2 #: Numpad-style alignment, eg. 7 is "top left" (that is, ASS alignment semantics)
-        self.marginl = 10 #: Left margin (in pixels)
-        self.marginr = 10 #: Right margin (in pixels)
-        self.marginv = 10 #: Vertical margin (in pixels)
-        self.alphalevel = 0 #: Old, unused SSA-only field
-        self.encoding = 1 #: Charset
+    fontname: str = "Arial"  #: Font name
+    fontsize: float = 20.0  #: Font size (in pixels)
+    primarycolor: Color = Color(255, 255, 255, 0)  #: Primary color (:class:`pysubs2.Color` instance)
+    secondarycolor: Color = Color(255, 0, 0, 0)  #: Secondary color (:class:`pysubs2.Color` instance)
+    tertiarycolor: Color = Color(0, 0, 0, 0)  #: Tertiary color (:class:`pysubs2.Color` instance)
+    outlinecolor: Color = Color(0, 0, 0, 0)  #: Outline color (:class:`pysubs2.Color` instance)
+    backcolor: Color = Color(0, 0, 0, 0)  #: Back, ie. shadow color (:class:`pysubs2.Color` instance)
+    bold: bool = False  #: Bold
+    italic: bool = False  #: Italic
+    underline: bool = False  #: Underline (ASS only)
+    strikeout: bool = False  #: Strikeout (ASS only)
+    scalex: float = 100.0  #: Horizontal scaling (ASS only)
+    scaley: float = 100.0  #: Vertical scaling (ASS only)
+    spacing: float = 0.0  #: Letter spacing (ASS only)
+    angle: float = 0.0  #: Rotation (ASS only)
+    borderstyle: int = 1  #: Border style
+    outline: float = 2.0  #: Outline width (in pixels)
+    shadow: float = 2.0  #: Shadow depth (in pixels)
+    alignment: int = 2  #: Numpad-style alignment, eg. 7 is "top left" (that is, ASS alignment semantics)
+    marginl: int = 10  #: Left margin (in pixels)
+    marginr: int = 10  #: Right margin (in pixels)
+    marginv: int = 10  #: Vertical margin (in pixels)
+    alphalevel: int = 0  #: Old, unused SSA-only field
+    encoding: int = 1  #: Charset
 
-        for k, v in fields.items():
-            if k in self.FIELDS and v is not None:
-                setattr(self, k, v)
-            else:
-                raise ValueError("SSAStyle has no field named %r" % k)
+    # The following attributes cannot be defined for SSA styles themselves,
+    # but can be used in override tags and thus are useful to keep here
+    # for the `pysubs2.substation.parse_tags()` interface which returns
+    # SSAStyles for text fragments.
+    drawing: bool = False  #: Indicates that text span is a SSA vector drawing, see `pysubs2.substation.parse_tags()`
 
-    def copy(self):
+    def copy(self) -> "SSAStyle":
         return SSAStyle(**self.as_dict())
 
-    def as_dict(self):
-        return {field: getattr(self, field) for field in self.FIELDS}
-
-    def __eq__(self, other):
-        return self.as_dict() == other.as_dict()
-
-    def __ne__(self, other):
-        return not self == other
+    def as_dict(self) -> Dict[str, Any]:
+        # dataclasses.asdict() would recursively dictify Color objects, which we don't want
+        return {field.name: getattr(self, field.name) for field in dataclasses.fields(self)}
 
     def __repr__(self):
-        s = "<SSAStyle "
-        s += "%rpx " % self.fontsize
-        if self.bold: s += "bold "
-        if self.italic: s += "italic "
-        s += "'%s'>" % self.fontname
-        if not PY3: s = s.encode("utf-8")
-        return s
+        return f"<SSAStyle {self.fontsize!r}px" \
+               f"{' bold' if self.bold else ''}" \
+               f"{' italic' if self.italic else ''}" \
+               f" {self.fontname!r}>"
 
 
 SSAStyle.DEFAULT_STYLE = SSAStyle()

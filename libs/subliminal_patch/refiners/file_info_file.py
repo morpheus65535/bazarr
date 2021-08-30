@@ -1,10 +1,11 @@
 # coding=utf-8
+from __future__ import absolute_import
 import sys
 import os
 import logging
 import codecs
 
-from common import update_video
+from .common import update_video
 logger = logging.getLogger(__name__)
 
 

@@ -1,0 +1,628 @@
+knowledge:
+  VideoCodec:
+    # https://en.wikipedia.org/wiki/MPEG-1#Part_2:_Video
+    MPEG1:
+      - MPEG-1V
+      - MPEG1VIDEO
+    # https://en.wikipedia.org/wiki/H.262/MPEG-2_Part_2
+    MPEG2:
+      - MPEG2
+      - MPEG-2V
+    # https://wiki.multimedia.cx/index.php/Microsoft_MPEG-4
+    MSMPEG4V1:
+      - MP41
+      - MPG4
+    MSMPEG4V2:
+      - MP42
+      - MSMPEG4V2
+    MSMPEG4V3:
+      - MP43
+      - AP41
+      - COL1
+    WMV1:
+      - WMV1
+      - WMV7
+    WMV2:
+      - WMV2
+      - WMV8
+    # MPEG-4:
+    #  https://wiki.multimedia.cx/index.php/ISO_MPEG-4
+    #  https://en.wikipedia.org/wiki/MPEG-4_Part_2
+    MPEG4:
+      - 3IV2
+      - BLZ0
+      - DIGI
+      - DXGM
+      - EM4A
+      - EPHV
+      - FMP4
+      - FVFW
+      - HDX4
+      - M4CC
+      - M4S2
+      - MP4S
+      - MP4V
+      - MVXM
+      - RMP4
+      - SEDG
+      - SMP4
+      - UMP4
+      - WV1F
+      - MPEG-4V
+      - ASP # V_MPEG-4/ISO/ASP
+      - MPEG4
+    DIVX:
+      - DIV1
+      - DIVX
+      - DX50
+    XVID:
+      - XVID
+      - XVIX
+    # VC-1:
+    #  https://wiki.multimedia.cx/index.php/VC-1
+    #  https://en.wikipedia.org/wiki/VC-1
+    VC1:
+      - WMV3
+      - WMV9
+      - WMVA
+      - WMVC1
+      - WMVP
+      - WVP2
+      - WMVR
+      - VC-1
+      - VC1
+    # H.263:
+    #  https://wiki.multimedia.cx/index.php/H.263
+    #  https://en.wikipedia.org/wiki/Sorenson_Media#Sorenson_Spark
+    H263:
+      - D263
+      - H263
+      - L263
+      - M263
+      - S263
+      - T263
+      - U263
+      - X263
+    # https://wiki.multimedia.cx/index.php/H.264
+    H264:
+      - AVC
+      - AVC1
+      - DAVC
+      - H264
+      - X264
+      - VSSH
+    # https://wiki.multimedia.cx/index.php/H.265
+    H265:
+      - HEVC
+      - H265
+      - X265
+    # https://wiki.multimedia.cx/index.php/On2_VP6 and https://en.wikipedia.org/wiki/VP6
+    VP6:
+      - VP60
+      - VP61
+      - VP62
+    # https://wiki.multimedia.cx/index.php/On2_VP7
+    VP7:
+      - VP70
+      - VP71
+      - VP72
+    # https://en.wikipedia.org/wiki/VP8
+    VP8:
+      - VP8
+    # https://en.wikipedia.org/wiki/VP9
+    # https://wiki.multimedia.cx/index.php/VP9
+    VP9:
+      - VP9
+      - VP90
+    CJPG:
+      - CJPG
+    QUICKTIME:
+      - QUICKTIME
+    __ignored__:
+      - MJPEG
+      - PNG
+
+  VideoEncoder:
+    DIVX:
+      - DIVX
+    X264:
+      - X264
+    X265:
+      - X265
+    XVID:
+      - XVID
+    VIMEO:
+      - VIMEO ENCODER
+
+  VideoProfile:
+    ADVANCED:
+      - ADVANCED
+    ADVANCEDSIMPLE:
+      - ADVANCED SIMPLE
+      - ADVANCED SIMPLE PROFILE
+    SIMPLE:
+      - SIMPLE
+    BASELINE:
+      - BASELINE
+      - CONSTRAINED BASELINE
+    MAIN:
+      - MAIN
+    MAIN10:
+      - MAIN 10
+    HIGH:
+      - HIGH
+
+  VideoProfileLevel:
+    L1:
+      - L1
+      - L1.0
+    L11:
+      - L1.1
+    L13:
+      - L1.3
+    L2:
+      - L2
+    L21:
+      - L2.1
+    L22:
+      - L2.2
+    L3:
+      - L3
+      - L3.0
+    L31:
+      - L3.1
+    L32:
+      - L3.2
+    L4:
+      - L4
+      - L4.0
+    L41:
+      - L4.1
+    L42:
+      - L4.2
+    L5:
+      - L5
+      - L5.0
+    L51:
+      - L5.1
+    LOW:
+      - LOW
+    MAIN:
+      - MAIN
+    HIGH:
+      - HIGH
+    H14:
+      - HIGH 1440
+
+  VideoProfileTier:
+    MAIN:
+      - MAIN
+    HIGH:
+      - HIGH
+
+  ScanType:
+    PROGRESSIVE:
+      - PROGRESSIVE
+    INTERLACED:
+      - INTERLACED
+      - MBAFF
+      - TT
+      - BB
+      - TB
+      - BT
+
+  BitRateMode:
+    VBR:
+      - VBR
+    CBR:
+      - CBR
+
+  AudioCompression:
+    LOSSY:
+      - LOSSY
+    LOSSLESS:
+      - LOSSLESS
+
+  AudioProfile:
+    CORE:
+      - CORE
+    HRA:
+      - HRA
+      - DTS-HD HRA
+    MA:
+      - MA
+      - DTS-HD MA
+    MAIN:
+      - MAIN
+    LC:
+      - LC
+    HEAAC:
+      - HE-AAC
+    HEAACV2:
+      - HE-AACV2
+    # https://www.lifewire.com/dts-96-24-1846848
+    96/24:
+      - 96/24
+      - DTS 96/24
+    # https://www.lifewire.com/what-is-dts-es-1846890
+    ESDISCRETE:
+      - ES DISCRETE
+      - DTS-ES
+    ESMATRIX:
+      - ES MATRIX
+    LAYER2:
+      - LAYER 2
+    LAYER3:
+      - LAYER 3
+    PRO:
+      - PRO
+    __ignored__:
+      - DOLBY DIGITAL
+      - DTS
+
+  # References:
+  #  - https://ffmpeg.org/general.html#Audio-Codecs
+  AudioCodec:
+    AC3:
+      - AC3
+      - BSID9
+      - BSID10
+      - 2000
+    EAC3:
+      - EAC3
+      - AC3+
+    TRUEHD:
+      - TRUEHD
+    ATMOS:
+      - ATMOS
+    DTS:
+      - DTS
+    # DTS-HD used for DTS-HD High Resolution Audio and DTS-HD Master Audio
+    DTSHD:
+      - DTS-HD
+    AAC:
+      - AAC
+    FLAC:
+      - FLAC
+    PCM:
+      - PCM
+      - PCM_S16LE
+    # https://en.wikipedia.org/wiki/MPEG-1_Audio_Layer_II
+    MP2:
+      - MP2
+      - MPA1L2
+      - MPEG/L2
+    # https://en.wikipedia.org/wiki/MP3
+    MP3:
+      - MP3
+      - MPA1L3
+      - MPA2L3
+      - MPEG/L3
+      - 50
+      - 55
+    VORBIS:
+      - VORBIS
+    OPUS:
+      - OPUS
+    # https://wiki.multimedia.cx/index.php?title=Windows_Media_Audio_9
+    WMA1:
+      - 160
+    WMA2:
+      - 161
+      - WMAV2
+    WMAPRO:
+      - 162
+      - WMAPRO
+    # https://answers.microsoft.com/en-us/windows/forum/windows_vista-pictures/how-to-access-codec-voxware-rt29-metasound-75/a6dbea68-ca5c-e011-8dfc-68b599b31bf5
+    RT29:
+      - 75
+
+  SubtitleFormat:
+    PGS:
+      - PGS
+      - 144
+      - HDMV_PGS_SUBTITLE
+    VOBSUB:
+      - VOBSUB
+      - E0
+      - DVD_SUBTITLE
+    SUBRIP:
+      - SUBRIP
+      - UTF8
+      - SRT
+    # https://en.wikipedia.org/wiki/SubStation_Alpha
+    SSA:
+      - SSA
+    ASS:
+      - ASS
+    # https://en.wikipedia.org/wiki/MPEG-4_Part_17
+    TX3G:
+      - TX3G
+    DVBSUB:
+      - 6
+    MOVTEXT:
+      - MOV_TEXT
+
+profiles:
+  VideoCodec:
+    MPEG1:
+      default: MPEG-1
+      human: MPEG-1 Video
+      technical: MPEG-1 Part 2
+    MPEG2:
+      default: MPEG-2
+      human: MPEG-2 Video
+      technical: MPEG-2 Part 2
+      aka: H.262
+    MSMPEG4V1:
+      default: Microsoft MPEG-4 v1
+      human: Microsoft MPEG-4 version 1
+      technical: MPEG-4 Part 2 Microsoft variant version 1
+    MSMPEG4V2:
+      default: Microsoft MPEG-4 v2
+      human: Microsoft MPEG-4 version 2
+      technical: MPEG-4 Part 2 Microsoft variant version 2
+    MSMPEG4V3:
+      default: Microsoft MPEG-4 v3
+      human: Microsoft MPEG-4 version 3
+      technical: MPEG-4 Part 2 Microsoft variant version 3
+    WMV1:
+      default: WMV 7
+      human: Windows Media Video 7
+      technical: Microsoft Windows Media Video v1/v7
+    WMV2:
+      default: WMV 8
+      human: Windows Media Video 8
+      technical: Microsoft Windows Media Video v2/v8
+    MPEG4:
+      default: MPEG-4
+      human: MPEG-4 Visual
+      technical: MPEG-4 Part 2
+    DIVX:
+      default: DivX
+      human: MPEG-4 Visual (DivX)
+      technical: MPEG-4 Part 2 (DivX)
+    XVID:
+      default: Xvid
+      human: MPEG-4 Visual (Xvid)
+      technical: MPEG-4 Part 2 (Xvid)
+    VC1:
+      default: VC-1
+      human: Windows Media Video 9
+      technical: Microsoft SMPTE 421M
+    H263:
+      default: H.263
+    H264:
+      default: H.264
+      human: Advanced Video Coding (H.264)
+      technical: MPEG-4 Part 10 - Advanced Video Coding
+      aka: AVC
+    H265:
+      default: H.265
+      human: High Efficiency Video Coding (H.265)
+      technical: MPEG-H Part 2 - High Efficiency Video Coding
+      aka: HEVC
+    VP6:
+      human: On2 VP6
+      technical: On2 TrueMotion VP6
+    VP7:
+      human: On2 VP7
+      technical: On2 TrueMotion VP7
+    VP8:
+      technical: Google VP8
+    VP9:
+      technical: Google VP9
+    CJPG:
+      default: WebCam JPEG
+    QUICKTIME:
+      default: QuickTime
+
+  VideoEncoder:
+    DIVX:
+      default: DivX
+    X264:
+      default: x264
+    X265:
+      default: x265
+    XVID:
+      default: Xvid
+    VIMEO:
+      default: Vimeo
+
+  VideoProfile:
+    ADVANCED:
+      default: Advanced
+    ADVANCEDSIMPLE:
+      default: Advanced Simple
+    SIMPLE:
+      default: Simple
+    BASELINE:
+      default: Baseline
+    MAIN:
+      default: Main
+    MAIN10:
+      default: Main 10
+    HIGH:
+      default: High
+
+  VideoProfileLevel:
+    L1:
+      default: '1'
+      technical: Level 1
+    L11:
+      default: '1.1'
+      technical: Level 1.1
+    L13:
+      default: '1.3'
+      technical: Level 1.3
+    L2:
+      default: '2'
+      technical: Level 2
+    L21:
+      default: '2.1'
+      technical: Level 2.1
+    L22:
+      default: '2.2'
+      technical: Level 2.2
+    L3:
+      default: '3'
+      technical: Level 3
+    L31:
+      default: '3.1'
+      technical: Level 3.1
+    L32:
+      default: '3.2'
+      technical: Level 3.2
+    L4:
+      default: '4'
+      technical: Level 4
+    L41:
+      default: '4.1'
+      technical: Level 4.1
+    L42:
+      default: '4.2'
+      technical: Level 4.2
+    L5:
+      default: '5'
+      technical: Level 5
+    L51:
+      default: '5.1'
+      technical: Level 5.1
+    LOW:
+      default: Low
+    MAIN:
+      default: Main
+    HIGH:
+      default: High
+    H14:
+      default: High 1440
+
+  VideoProfileTier:
+    MAIN:
+      default: Main
+    HIGH:
+      default: High
+
+  ScanType:
+    PROGRESSIVE:
+      default: Progressive
+      human: Progressive scanning
+    INTERLACED:
+      default: Interlaced
+      human: Interlaced video
+
+  BitRateMode:
+    VBR:
+      default: Variable
+      human: Variable bitrate
+    CBR:
+      default: Constant
+      human: Constant bitrate
+
+  AudioCompression:
+    LOSSY:
+      default: Lossy
+      human: Lossy compression
+    LOSSLESS:
+      default: Lossless
+      human: Lossless compression
+
+  AudioProfile:
+    HRA:
+      default: High Resolution Audio
+    MA:
+      default: Master Audio
+    MAIN:
+      default: Main
+      technical: Main Profile
+    LC:
+      default: Low Complexity
+    HEAAC:
+      default: High Efficiency
+    HEAACV2:
+      default: High Efficiency v2
+      human: High Efficiency version 2
+    96/24:
+      default: 96/24
+      human: 96 kHz 24 bits
+      technical: 96 kHz 24 bits Upscaled
+    ESDISCRETE:
+      default: Extended Surround
+      human: Extended Surround Discrete
+    ESMATRIX:
+      default: Extended Surround
+      human: Extended Surround Matrix
+    LAYER2:
+      default: Layer 2
+    LAYER3:
+      default: Layer 3
+    PRO:
+      default: Pro
+      technical: Professional
+
+  AudioCodec:
+    AC3:
+      default: AC-3
+      human: Dolby Digital
+    EAC3:
+      default: E-AC-3
+      human: Dolby Digital Plus
+      technical: Enhanced AC-3
+    TRUEHD:
+      default: TrueHD
+      human: Dolby TrueHD
+    ATMOS:
+      default: Atmos
+      human: Dolby Atmos
+    DTS:
+    DTSHD:
+      default: DTS-HD
+    AAC:
+      human: Advanced Audio Coding
+    FLAC:
+      human: Free Lossless Audio Codec
+    PCM:
+      human: Pulse-code Modulation
+    MP2:
+      human: MPEG Audio Layer 2
+      technical: MPEG-1/MPEG-2 Audio Layer 2
+    MP3:
+      human: MPEG Audio Layer 3
+      technical: MPEG-1/MPEG-2 Audio Layer 3
+    VORBIS:
+      default: Vorbis
+    OPUS:
+      default: Opus
+    WMA1:
+      default: WMA
+      human: Windows Media Audio 1
+    WMA2:
+      default: WMA 2
+      human: Windows Media Audio 2
+    WMAPRO:
+      default: WMA Pro
+      human: Windows Media Audio Pro
+    RT29:
+      default: RT29 MetaSound
+      human: Voxware RT29 MetaSound
+
+  SubtitleFormat:
+    PGS:
+      human: Presentation Graphic Stream
+    VOBSUB:
+      default: VobSub
+    SUBRIP:
+      default: SubRip
+    SSA:
+      human: SubStation Alpha
+    ASS:
+      human: Advanced SubStation Alpha
+    TX3G:
+      human: MPEG-4 Timed Text
+      technical: MPEG-4 Part 17
+    DVBSUB:
+      default: DVBSub
+      human: DVB Subtitle
+      technical: Digital Video Broadcasting Subtitles
+    MOVTEXT:
+      default: MOV Text

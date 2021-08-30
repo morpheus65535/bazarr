@@ -1,8 +1,10 @@
 # coding=utf-8
+from __future__ import absolute_import
 import re
 import logging
 
 from subzero.modification.processors.re_processor import ReProcessor, NReProcessor
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ class SubtitleModification(object):
     pre_processors = []
     processors = []
     post_processors = []
+    last_processors = []
     languages = []
 
     def __init__(self, parent):
@@ -67,21 +70,22 @@ class SubtitleModification(object):
     def post_process(self, content, debug=False, parent=None, **kwargs):
         return self._process(content, self.post_processors, debug=debug, parent=parent, **kwargs)
 
-    def modify(self, content, debug=False, parent=None, **kwargs):
+    def modify(self, content, debug=False, parent=None, procs=None, **kwargs):
         if not content:
             return
 
         new_content = content
-        for method in ("pre_process", "process", "post_process"):
+        for method in procs or ("pre_process", "process", "post_process"):
             if not new_content:
                 return
-            new_content = getattr(self, method)(new_content, debug=debug, parent=parent, **kwargs)
+            new_content = self._process(new_content, getattr(self, "%sors" % method),
+                                        debug=debug, parent=parent, **kwargs)
 
         return new_content
 
     @classmethod
     def get_signature(cls, **kwargs):
-        string_args = ",".join(["%s=%s" % (key, value) for key, value in kwargs.iteritems()])
+        string_args = ",".join(["%s=%s" % (key, value) for key, value in six.iteritems(kwargs)])
         return "%s(%s)" % (cls.identifier, string_args)
 
     @classmethod
@@ -93,7 +97,7 @@ class SubtitleTextModification(SubtitleModification):
     pass
 
 
-TAG = ur"(?:\s*{\\[iusb][0-1]}\s*)*"
+TAG = r"(?:\s*{\\[iusb][0-1]}\s*)*"
 EMPTY_TAG_PROCESSOR = ReProcessor(re.compile(r'({\\\w1})[\s.,-_!?]*({\\\w0})'), "", name="empty_tag")
 
 empty_line_post_processors = [
@@ -105,5 +109,3 @@ empty_line_post_processors = [
 ]
 
 
-class EmptyEntryError(Exception):
-    pass

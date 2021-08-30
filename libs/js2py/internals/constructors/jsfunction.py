@@ -42,6 +42,7 @@ def executable_code(code_str, space, global_context=True):
     space.byte_generator.emit('LABEL', skip)
     space.byte_generator.emit('NOP')
     space.byte_generator.restore_state()
+
     space.byte_generator.exe.compile(
         start_loc=old_tape_len
     )  # dont read the code from the beginning, dont be stupid!
@@ -71,5 +72,5 @@ def _eval(this, args):
 
 
 def log(this, args):
-    print ' '.join(map(to_string, args))
+    print(' '.join(map(to_string, args)))
     return undefined

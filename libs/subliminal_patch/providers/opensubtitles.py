@@ -1,29 +1,50 @@
 # coding=utf-8
+from __future__ import absolute_import
 import base64
 import logging
 import os
 import traceback
+import re
 import zlib
 import time
 import requests
 
 from babelfish import language_converters
 from dogpile.cache.api import NO_VALUE
+from guessit import guessit
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
     DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
-from mixins import ProviderRetryMixin
+from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.cache import region
 from subliminal_patch.score import framerate_equal
+from subliminal_patch.subtitle import guess_matches
 from subzero.language import Language
 
 from ..exceptions import TooManyRequests, APIThrottled
 
 logger = logging.getLogger(__name__)
+
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Superman & Lois": "Superman and Lois",
+                                           }, True)
+
+
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {
+                                           }, True)
 
 
 class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
@@ -42,21 +63,32 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
         self.release_info = movie_release_name
         self.wrong_fps = False
         self.skip_wrong_fps = skip_wrong_fps
+        self.movie_imdb_id = movie_imdb_id
+
+    def get_fps(self):
+        try:
+            return float(self.fps)
+        except:
+            return None
 
     def get_matches(self, video, hearing_impaired=False):
         matches = super(OpenSubtitlesSubtitle, self).get_matches(video)
 
+        type_ = "episode" if isinstance(video, Episode) else "movie"
+        matches |= guess_matches(video, guessit(self.movie_release_name, {'type': type_}))
+        matches |= guess_matches(video, guessit(self.filename, {'type': type_}))
+
         # episode
-        if isinstance(video, Episode) and self.movie_kind == 'episode':
+        if type_ == "episode" and self.movie_kind == "episode":
             # series
-            if video.series and (sanitize(self.series_name) in (
-                    sanitize(name) for name in [video.series] + video.alternative_series)):
+            if fix_tv_naming(video.series) and (sanitize(self.series_name) in (
+                    sanitize(name) for name in [fix_tv_naming(video.series)] + video.alternative_series)):
                 matches.add('series')
         # movie
-        elif isinstance(video, Movie) and self.movie_kind == 'movie':
+        elif type_ == "movie" and self.movie_kind == "movie":
             # title
-            if video.title and (sanitize(self.movie_name) in (
-                    sanitize(name) for name in [video.title] + video.alternative_titles)):
+            if fix_movie_naming(video.title) and (sanitize(self.movie_name) in (
+                    sanitize(name) for name in [fix_movie_naming(video.title)] + video.alternative_titles)):
                 matches.add('title')
 
         sub_fps = None
@@ -83,6 +115,10 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
                          self.query_parameters.get("tag", None))
             matches.add("hash")
 
+        # imdb_id match so we'll consider year as matching
+        if self.movie_imdb_id and video.imdb_id and (self.movie_imdb_id == video.imdb_id):
+            matches.add("year")
+
         return matches
 
 
@@ -102,6 +138,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     def __init__(self, username=None, password=None, use_tag_search=False, only_foreign=False, also_foreign=False,
                  skip_wrong_fps=True, is_vip=False, use_ssl=True, timeout=15):
@@ -137,11 +174,9 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         return ServerProxy(url, SubZeroRequestsTransport(use_https=self.use_ssl, timeout=timeout or self.timeout,
                                                          user_agent=os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")))
 
-    def log_in(self, server_url=None):
-        if server_url:
-            self.terminate()
-
-            self.server = self.get_server_proxy(server_url)
+    def log_in_url(self, server_url):
+        self.token = None
+        self.server = self.get_server_proxy(server_url)
 
         response = self.retry(
             lambda: checked(
@@ -153,7 +188,26 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         self.token = response['token']
         logger.debug('Logged in with token %r', self.token[:10]+"X"*(len(self.token)-10))
 
-        region.set("os_token", self.token)
+        region.set("os_token", bytearray(self.token, encoding='utf-8'))
+        region.set("os_server_url", bytearray(server_url, encoding='utf-8'))
+
+    def log_in(self):
+        logger.info('Logging in')
+
+        try:
+            self.log_in_url(self.vip_url if self.is_vip else self.default_url)
+
+        except Unauthorized:
+            if self.is_vip:
+                logger.info("VIP server login failed, falling back")
+                try:
+                    self.log_in_url(self.default_url)
+                except Unauthorized:
+                    pass
+
+        if not self.token:
+            logger.error("Login failed, please check your credentials")
+            raise Unauthorized
 
     def use_token_or_login(self, func):
         if not self.token:
@@ -166,45 +220,18 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             return func()
 
     def initialize(self):
-        if self.is_vip:
-            self.server = self.get_server_proxy(self.vip_url)
-            logger.info("Using VIP server")
+        token_cache = region.get("os_token")
+        url_cache = region.get("os_server_url")
+
+        if token_cache is not NO_VALUE and url_cache is not NO_VALUE:
+            self.token = token_cache.decode("utf-8")
+            self.server = self.get_server_proxy(url_cache.decode("utf-8"))
+            logger.debug("Using previous login token: %r", self.token[:10] + "X" * (len(self.token) - 10))
         else:
-            self.server = self.get_server_proxy(self.default_url)
+            self.server = None
+            self.token = None
 
-        logger.info('Logging in')
-
-        token = region.get("os_token")
-        if token is not NO_VALUE:
-            try:
-                logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))
-                checked(lambda: self.server.NoOperation(token))
-                self.token = token
-                logger.debug("Using previous login token: %r", token[:10]+"X"*(len(token)-10))
-                return
-            except (NoSession, Unauthorized):
-                logger.debug('Token not valid.')
-                pass
-
-        try:
-            self.log_in()
-
-        except Unauthorized:
-            if self.is_vip:
-                logger.info("VIP server login failed, falling back")
-                self.log_in(self.default_url)
-                if self.token:
-                    return
-
-            logger.error("Login failed, please check your credentials")
-                
     def terminate(self):
-        if self.token:
-            try:
-                checked(lambda: self.server.LogOut(self.token))
-            except:
-                logger.error("Logout failed: %s", traceback.format_exc())
-
         self.server = None
         self.token = None
 
@@ -233,13 +260,18 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         else:
             query = [video.title] + video.alternative_titles
 
-        return self.query(languages, hash=video.hashes.get('opensubtitles'), size=video.size, imdb_id=video.imdb_id,
-                          query=query, season=season, episode=episode, tag=video.original_name,
+        if isinstance(video, Episode):
+            imdb_id = video.series_imdb_id
+        else:
+            imdb_id = video.imdb_id
+
+        return self.query(video, languages, hash=video.hashes.get('opensubtitles'), size=video.size,
+                          imdb_id=imdb_id, query=query, season=season, episode=episode, tag=video.original_name,
                           use_tag_search=self.use_tag_search, only_foreign=self.only_foreign,
                           also_foreign=self.also_foreign)
 
-    def query(self, languages, hash=None, size=None, imdb_id=None, query=None, season=None, episode=None, tag=None,
-              use_tag_search=False, only_foreign=False, also_foreign=False):
+    def query(self, video, languages, hash=None, size=None, imdb_id=None, query=None, season=None, episode=None,
+              tag=None, use_tag_search=False, only_foreign=False, also_foreign=False):
         # fill the search criteria
         criteria = []
         if hash and size:
@@ -251,12 +283,13 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                 criteria.append({'imdbid': imdb_id[2:], 'season': season, 'episode': episode})
             else:
                 criteria.append({'imdbid': imdb_id[2:]})
-        if query and season and episode:
-            for q in query:
-                criteria.append({'query': q.replace('\'', ''), 'season': season, 'episode': episode})
-        elif query:
-            for q in query:
-                criteria.append({'query': q.replace('\'', '')})
+        # Commented out after the issue with episode released after October 17th 2020.
+        # if query and season and episode:
+        #     for q in query:
+        #         criteria.append({'query': q.replace('\'', ''), 'season': season, 'episode': episode})
+        # elif query:
+        #     for q in query:
+        #         criteria.append({'query': q.replace('\'', '')})
         if not criteria:
             raise ValueError('Not enough information')
 
@@ -296,7 +329,10 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             movie_name = _subtitle_item['MovieName']
             movie_release_name = _subtitle_item['MovieReleaseName']
             movie_year = int(_subtitle_item['MovieYear']) if _subtitle_item['MovieYear'] else None
-            movie_imdb_id = 'tt' + _subtitle_item['IDMovieImdb']
+            if season or episode:
+                movie_imdb_id = 'tt' + _subtitle_item['SeriesIMDBParent']
+            else:
+                movie_imdb_id = 'tt' + _subtitle_item['IDMovieImdb']
             movie_fps = _subtitle_item.get('MovieFPS')
             series_season = int(_subtitle_item['SeriesSeason']) if _subtitle_item['SeriesSeason'] else None
             series_episode = int(_subtitle_item['SeriesEpisode']) if _subtitle_item['SeriesEpisode'] else None
@@ -316,7 +352,14 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             elif (also_foreign or only_foreign) and foreign_parts_only:
                 language = Language.rebuild(language, forced=True)
 
+            # set subtitle language to hi if it's hearing_impaired
+            if hearing_impaired:
+                language = Language.rebuild(language, hi=True)
+
             if language not in languages:
+                continue
+
+            if video.imdb_id and (movie_imdb_id != re.sub("(?<![^a-zA-Z])0+","", video.imdb_id)):
                 continue
 
             query_parameters = _subtitle_item.get("QueryParameters")
@@ -326,6 +369,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                                            hash, movie_name, movie_release_name, movie_year, movie_imdb_id,
                                            series_season, series_episode, query_parameters, filename, encoding,
                                            movie_fps, skip_wrong_fps=self.skip_wrong_fps)
+            subtitle.uploader = _subtitle_item['UserNickName'] if _subtitle_item['UserNickName'] else 'anonymous'
             logger.debug('Found subtitle %r by %s', subtitle, matched_by)
             subtitles.append(subtitle)
 

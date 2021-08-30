@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name, pointless-string-statement
-
+import json
 import os
+from pathlib import Path
 
 import pytest
-import six
 
-from ..api import guessit, properties, GuessitException
+from ..api import guessit, properties, suggested_expected, GuessitException
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -18,13 +18,19 @@ def test_default():
 
 
 def test_forced_unicode():
-    ret = guessit(u'Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
-    assert ret and 'title' in ret and isinstance(ret['title'], six.text_type)
+    ret = guessit('Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
+    assert ret and 'title' in ret and isinstance(ret['title'], str)
 
 
 def test_forced_binary():
     ret = guessit(b'Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
-    assert ret and 'title' in ret and isinstance(ret['title'], six.binary_type)
+    assert ret and 'title' in ret and isinstance(ret['title'], bytes)
+
+
+def test_pathlike_object():
+    path = Path('Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
+    ret = guessit(path)
+    assert ret and 'title' in ret
 
 
 def test_unicode_japanese():
@@ -38,16 +44,8 @@ def test_unicode_japanese_options():
 
 
 def test_forced_unicode_japanese_options():
-    ret = guessit(u"[阿维达].Avida.2006.FRENCH.DVDRiP.XViD-PROD.avi", options={"expected_title": [u"阿维达"]})
-    assert ret and 'title' in ret and ret['title'] == u"阿维达"
-
-# TODO: This doesn't compile on python 3, but should be tested on python 2.
-"""
-if six.PY2:
-    def test_forced_binary_japanese_options():
-        ret = guessit(b"[阿维达].Avida.2006.FRENCH.DVDRiP.XViD-PROD.avi", options={"expected_title": [b"阿维达"]})
-        assert ret and 'title' in ret and ret['title'] == b"阿维达"
-"""
+    ret = guessit("[阿维达].Avida.2006.FRENCH.DVDRiP.XViD-PROD.avi", options={"expected_title": ["阿维达"]})
+    assert ret and 'title' in ret and ret['title'] == "阿维达"
 
 
 def test_properties():
@@ -61,3 +59,10 @@ def test_exception():
     assert "An internal error has occured in guessit" in str(excinfo.value)
     assert "Guessit Exception Report" in str(excinfo.value)
     assert "Please report at https://github.com/guessit-io/guessit/issues" in str(excinfo.value)
+
+
+def test_suggested_expected():
+    with open(os.path.join(__location__, 'suggested.json'), 'r') as f:
+        content = json.load(f)
+    actual = suggested_expected(content['titles'])
+    assert actual == content['suggested']

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import logging
 import re
 
@@ -72,9 +73,9 @@ class Addic7edSubtitle(Subtitle):
         # resolution
         if video.resolution and self.version and video.resolution in self.version.lower():
             matches.add('resolution')
-        # format
-        if video.format and self.version and video.format.lower() in self.version.lower():
-            matches.add('format')
+        # source
+        if video.source and self.version and video.source.lower() in self.version.lower():
+            matches.add('source')
         # other properties
         matches |= guess_matches(video, guessit(self.version), partial=True)
 

@@ -1,9 +1,23 @@
 *.pyc
 cachefile.dbm
-*.log
-*.log.*
-*.db
-*.pyc
-.idea/*
 bazarr.pid
+
 /venv
+/data
+/bin
+
+# IDE
+.idea
+.vscode
+
+# Middleware
+VERSION
+
+# CI
+/__builds__
+/package.json
+/package-lock.json
+
+# Allow
+!*.dll
+

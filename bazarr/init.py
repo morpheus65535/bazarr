@@ -1,186 +1,190 @@
 # coding=utf-8
 
 import os
-import sqlite3
-import logging
-import time
+import io
 import rarfile
+import sys
+import subprocess
 
-from cork import Cork
-from ConfigParser2 import ConfigParser
-from config import settings
-from check_update import check_releases
+from config import settings, configure_captcha_func
 from get_args import args
-from utils import get_binary
+from logger import configure_logging
+from helper import path_mappings
+
+from dogpile.cache.region import register_backend as register_cache_backend
+import subliminal
+import datetime
 
 # set subliminal_patch user agent
-os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
 
 # set anti-captcha provider and key
-if settings.general.anti_captcha_provider == 'anti-captcha':
-    os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
-elif settings.general.anti_captcha_provider == 'death-by-captcha':
-    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join({settings.deathbycaptcha.username, settings.deathbycaptcha.password})
-else:
-    os.environ["ANTICAPTCHA_CLASS"] = ''
+configure_captcha_func()
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
     # Create config_dir directory tree
     try:
         os.mkdir(os.path.join(args.config_dir))
-        logging.debug("BAZARR Created data directory")
     except OSError:
-        logging.exception(
-            "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
+        print("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
 if not os.path.exists(os.path.join(args.config_dir, 'config')):
     os.mkdir(os.path.join(args.config_dir, 'config'))
-    logging.debug("BAZARR Created config folder")
 if not os.path.exists(os.path.join(args.config_dir, 'db')):
     os.mkdir(os.path.join(args.config_dir, 'db'))
-    logging.debug("BAZARR Created db folder")
 if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
-    logging.debug("BAZARR Created log folder")
+if not os.path.exists(os.path.join(args.config_dir, 'cache')):
+    os.mkdir(os.path.join(args.config_dir, 'cache'))
+
+configure_logging(settings.general.getboolean('debug') or args.debug)
+import logging
+
+
+def is_virtualenv():
+    # return True if Bazarr have been start from within a virtualenv or venv
+    base_prefix = getattr(sys, "base_prefix", None) or getattr(sys, "real_prefix", None) or sys.prefix
+    return base_prefix != sys.prefix
+
+
+# deploy requirements.txt
+if not args.no_update:
+    try:
+        import lxml, numpy, webrtcvad, gevent, geventwebsocket, setuptools
+    except ImportError:
+        try:
+            import pip
+        except ImportError:
+            logging.info('BAZARR unable to install requirements (pip not installed).')
+        else:
+            if os.path.expanduser("~") == '/':
+                logging.info('BAZARR unable to install requirements (user without home directory).')
+            else:
+                logging.info('BAZARR installing requirements...')
+                try:
+                    pip_command = [sys.executable, '-m', 'pip', 'install', '-qq', '--disable-pip-version-check',
+                                   '-r', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'requirements.txt')]
+                    if not is_virtualenv():
+                        # --user only make sense if not running under venv
+                        pip_command.insert(4, '--user')
+                    subprocess.check_output(pip_command, stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as e:
+                    logging.exception('BAZARR requirements.txt installation result: {}'.format(e.stdout))
+                    os._exit(1)
+                else:
+                    logging.info('BAZARR requirements installed.')
+
+                try:
+                    restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
+                except Exception as e:
+                    logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+                else:
+                    logging.info('Bazarr is being restarted...')
+                    restart_file.write(str(''))
+                    restart_file.close()
+                    os._exit(0)
+
+# create random api_key if there's none in config.ini
+if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
+    from binascii import hexlify
+    settings.auth.apikey = hexlify(os.urandom(16)).decode()
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+# create random Flask secret_key if there's none in config.ini
+if not settings.general.flask_secret_key:
+    from binascii import hexlify
+    settings.general.flask_secret_key = hexlify(os.urandom(16)).decode()
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+# change default base_url to ''
+settings.general.base_url = settings.general.base_url.rstrip('/')
+with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+    settings.write(handle)
+
+# migrate enabled_providers from comma separated string to list
+if isinstance(settings.general.enabled_providers, str) and not settings.general.enabled_providers.startswith('['):
+    settings.general.enabled_providers = str(settings.general.enabled_providers.split(","))
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+# make sure settings.general.branch is properly set when running inside a docker container
+package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
+if os.path.isfile(package_info_file):
+    try:
+        splitted_lines = []
+        package_info = {}
+        with open(package_info_file) as file:
+            lines = file.readlines()
+            for line in lines:
+                splitted_lines += line.split(r'\n')
+            for line in splitted_lines:
+                splitted_line = line.split('=')
+                if len(splitted_line) == 2:
+                    package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
+                else:
+                    continue
+        if 'branch' in package_info:
+            settings.general.branch = package_info['branch']
+    except:
+        pass
+    else:
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
+
+# Configure dogpile file caching for Subliminal request
+register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
+subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
+                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir})
+subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
+    from check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-cfg = ConfigParser()
-try:
-    # Get SQL script from file
-    fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
-    script = fd.read()
-    
-    # Close SQL script file
-    fd.close()
-    
-    # Open database connection
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    # Execute script and commit change to database
-    c.executescript(script)
-    
-    # Close database connection
-    db.close()
-    
-    logging.info('BAZARR Database created successfully')
-except:
-    pass
-
-# Remove unused settings
-try:
-    with open(config_file, 'r') as f:
-        cfg.read_file(f)
-except Exception:
-    pass
-if cfg.has_section('auth'):
-    if cfg.has_option('auth', 'enabled'):
-        enabled = cfg.getboolean('auth', 'enabled')
-        if enabled:
-            cfg.set('auth', 'type', 'basic')
-        else:
-            cfg.set('auth', 'type', 'None')
-        cfg.remove_option('auth', 'enabled')
-        with open(config_file, 'w+') as configfile:
-            cfg.write(configfile)
-
-if cfg.has_section('general'):
-    if cfg.has_option('general', 'log_level'):
-        cfg.remove_option('general', 'log_level')
-        cfg.set('general', 'debug', 'False')
-        with open(config_file, 'w+') as configfile:
-            cfg.write(configfile)
-    
-    if cfg.has_option('general', 'only_monitored'):
-        only_monitored = cfg.get('general', 'only_monitored')
-        cfg.set('sonarr', 'only_monitored', str(only_monitored))
-        cfg.set('radarr', 'only_monitored', str(only_monitored))
-        cfg.remove_option('general', 'only_monitored')
-        with open(config_file, 'w+') as configfile:
-            cfg.write(configfile)
-
-# Move providers settings from DB to config file
-try:
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
-    settings_providers = c.execute("SELECT * FROM table_settings_providers").fetchall()
-    c.execute("DROP TABLE table_settings_providers")
-    db.close()
-    
-    providers_list = []
-    if enabled_providers:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-    else:
-        providers_list = None
-        
-    if settings_providers:
-        for provider in settings_providers:
-            if provider[0] == 'opensubtitles':
-                settings.opensubtitles.username = provider[2]
-                settings.opensubtitles.password = provider[3]
-            elif provider[0] == 'addic7ed':
-                settings.addic7ed.username = provider[2]
-                settings.addic7ed.password = provider[3]
-            elif provider[0] == 'legendastv':
-                settings.legendastv.username = provider[2]
-                settings.legendastv.password = provider[3]
-
-    settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
-except:
-    pass
-
-if settings.general.throtteled_providers == '' or None:
-    settings.general.throtteled_providers = '{}'
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+# Move GA visitor from config.ini to dedicated file
+if settings.analytics.visitor:
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics.dat')), 'w+') as handle:
+        handle.write(settings.analytics.visitor)
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
+        settings.remove_option('analytics', 'visitor')
         settings.write(handle)
 
-if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-    cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
-    
-    cork._store.roles[''] = 100
-    cork._store.save_roles()
-    
-    tstamp = str(time.time())
-    username = password = ''
-    cork._store.users[username] = {
-        'role': '',
-        'hash': cork._hash(username, password),
-        'email_addr': username,
-        'desc': username,
-        'creation_date': tstamp
-    }
-    cork._store.save_users()
+# Clean unused settings from config.ini
+with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')), 'w+') as handle:
+    settings.remove_option('general', 'throtteled_providers')
+    settings.remove_option('general', 'update_restart')
+    settings.write(handle)
 
 
 def init_binaries():
+    from utils import get_binary
     exe = get_binary("unrar")
-
+    
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
     except:
         logging.debug("custom check failed for: %s", exe)
-
+    
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
-    logging.info("Using UnRAR from: %s", exe)
+    logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-
+    
     return unrar
 
+
+from database import init_db, migrate_db
+init_db()
+migrate_db()
 init_binaries()
+path_mappings.update()

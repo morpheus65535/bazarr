@@ -1,4 +1,5 @@
 # coding=utf-8
+
 import os
 import argparse
 
@@ -9,7 +10,7 @@ parser = argparse.ArgumentParser()
 
 def get_args():
     parser.register('type', bool, strtobool)
-
+    
     config_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'data'))
     parser.add_argument('-c', '--config', default=config_dir, type=str, metavar="DIR",
                         dest="config_dir", help="Directory containing the configuration (default: %s)" % config_dir)
@@ -19,7 +20,13 @@ def get_args():
                         help="Disable update functionality (default: False)")
     parser.add_argument('--debug', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                         help="Enable console debugging (default: False)")
-
+    parser.add_argument('--release-update', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Enable file based updater (default: False)")
+    parser.add_argument('--dev', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Enable developer mode (default: False)")
+    parser.add_argument('--no-tasks', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Disable all tasks (default: False)")
+    
     return parser.parse_args()
 
 

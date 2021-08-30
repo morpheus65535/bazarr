@@ -1,0 +1,17 @@
+name: Schedule Trigger
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  Release-Nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: "release_beta_to_dev"
+          token: ${{ secrets.WF_GITHUB_TOKEN }}
+          ref: "refs/heads/development"

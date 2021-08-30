@@ -4,28 +4,35 @@ import io
 import logging
 import os
 import time
+import traceback
+from urllib import parse
+
+import requests
+
 import inflect
-import cfscrape
+import re
+import json
 
-from random import randint
-from zipfile import ZipFile
+import html
 
+import zipfile
+import rarfile
 from babelfish import language_converters
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal import Episode, ProviderError
-from subliminal.cache import region
+from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.utils import sanitize_release_group
+from subliminal.cache import region
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.converters.subscene import language_ids, supported_languages
-from subscene_api.subscene import search, Subtitle as APISubtitle
+from subscene_api.subscene import search, SearchTypes, Subtitle as APISubtitle, SITE_DOMAIN
 from subzero.language import Language
 
 p = inflect.engine()
-
 
 language_converters.register('subscene = subliminal_patch.converters.subscene:SubsceneConverter')
 logger = logging.getLogger(__name__)
@@ -83,6 +90,10 @@ class SubsceneSubtitle(Subtitle):
                 logger.debug("%r is a pack", self)
                 self.is_pack = True
 
+            if "title" in guess and "year" in matches:
+                if video.series in guess['title']:
+                    matches.add("series")
+
         # movie
         else:
             guess = guessit(self.release_info, {'type': 'movie'})
@@ -112,20 +123,85 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = SubsceneSubtitle
     languages = supported_languages
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     session = None
     skip_wrong_fps = False
     hearing_impaired_verifiable = True
     only_foreign = False
+    username = None
+    password = None
 
-    search_throttle = 2  # seconds
+    search_throttle = 8  # seconds
 
-    def __init__(self, only_foreign=False):
+    def __init__(self, only_foreign=False, username=None, password=None):
+        if not all((username, password)):
+            raise ConfigurationError('Username and password must be specified')
+
         self.only_foreign = only_foreign
+        self.username = username
+        self.password = password
 
     def initialize(self):
         logger.info("Creating session")
         self.session = RetryingCFSession()
+
+        prev_cookies = region.get("subscene_cookies2")
+        if prev_cookies != NO_VALUE:
+            logger.debug("Re-using old subscene cookies: %r", prev_cookies)
+            self.session.cookies.update(prev_cookies)
+
+        else:
+            logger.debug("Logging in")
+            self.login()
+
+    def login(self):
+        r = self.session.get("https://subscene.com/account/login")
+        if "Server Error" in r.text:
+            logger.error("Login unavailable; Maintenance?")
+            raise ServiceUnavailable("Login unavailable; Maintenance?")
+
+        match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.text)
+
+        if match:
+            h = html
+            data = json.loads(h.unescape(match.group(1)))
+            login_url = parse.urljoin(data["siteUrl"], data["loginUrl"])
+            time.sleep(1.0)
+
+            r = self.session.post(login_url,
+                                  {
+                                      "username": self.username,
+                                      "password": self.password,
+                                      data["antiForgery"]["name"]: data["antiForgery"]["value"]
+                                  })
+            pep_content = re.search(r"<form method=\"post\" action=\"https://subscene\.com/\">"
+                                    r".+name=\"id_token\".+?value=\"(?P<id_token>.+?)\".*?"
+                                    r"access_token\".+?value=\"(?P<access_token>.+?)\".+?"
+                                    r"token_type.+?value=\"(?P<token_type>.+?)\".+?"
+                                    r"expires_in.+?value=\"(?P<expires_in>.+?)\".+?"
+                                    r"scope.+?value=\"(?P<scope>.+?)\".+?"
+                                    r"state.+?value=\"(?P<state>.+?)\".+?"
+                                    r"session_state.+?value=\"(?P<session_state>.+?)\"",
+                                    r.text, re.MULTILINE | re.DOTALL)
+
+            if pep_content:
+                r = self.session.post(SITE_DOMAIN, pep_content.groupdict())
+                try:
+                    r.raise_for_status()
+                except Exception:
+                    raise ProviderError("Something went wrong when trying to log in: %s", traceback.format_exc())
+                else:
+                    cj = self.session.cookies.copy()
+                    store_cks = ("scene", "idsrv", "idsrv.xsrf", "idsvr.clients", "idsvr.session", "idsvr.username")
+                    for cn in self.session.cookies.keys():
+                        if cn not in store_cks:
+                            del cj[cn]
+
+                    logger.debug("Storing cookies: %r", cj)
+                    region.set("subscene_cookies2", cj)
+                    return
+        raise ProviderError("Something went wrong when trying to log in #1")
 
     def terminate(self):
         logger.info("Closing session")
@@ -133,12 +209,26 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def _create_filters(self, languages):
         self.filters = dict(HearingImpaired="2")
+        acc_filters = self.filters.copy()
         if self.only_foreign:
             self.filters["ForeignOnly"] = "True"
+            acc_filters["ForeignOnly"] = self.filters["ForeignOnly"].lower()
             logger.info("Only searching for foreign/forced subtitles")
 
-        self.filters["LanguageFilter"] = ",".join((str(language_ids[l.alpha3]) for l in languages
-                                                   if l.alpha3 in language_ids))
+        selected_ids = []
+        for l in languages:
+            lid = language_ids.get(l.basename, language_ids.get(l.alpha3, None))
+            if lid:
+                selected_ids.append(str(lid))
+
+        acc_filters["SelectedIds"] = selected_ids
+        self.filters["LanguageFilter"] = ",".join(acc_filters["SelectedIds"])
+
+        last_filters = region.get("subscene_filters")
+        if last_filters != acc_filters:
+            region.set("subscene_filters", acc_filters)
+            logger.debug("Setting account filters to %r", acc_filters)
+            self.session.post("https://u.subscene.com/filter", acc_filters, allow_redirects=False)
 
         logger.debug("Filter created: '%s'" % self.filters)
 
@@ -158,7 +248,15 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     def download_subtitle(self, subtitle):
         if subtitle.pack_data:
             logger.info("Using previously downloaded pack data")
-            archive = ZipFile(io.BytesIO(subtitle.pack_data))
+            if rarfile.is_rarfile(io.BytesIO(subtitle.pack_data)):
+                logger.debug('Identified rar archive')
+                archive = rarfile.RarFile(io.BytesIO(subtitle.pack_data))
+            elif zipfile.is_zipfile(io.BytesIO(subtitle.pack_data)):
+                logger.debug('Identified zip archive')
+                archive = zipfile.ZipFile(io.BytesIO(subtitle.pack_data))
+            else:
+                logger.error('Unsupported compressed format')
+                return
             subtitle.pack_data = None
 
             try:
@@ -171,7 +269,16 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(subtitle.get_download_link(self.session), timeout=10)
         r.raise_for_status()
         archive_stream = io.BytesIO(r.content)
-        archive = ZipFile(archive_stream)
+
+        if rarfile.is_rarfile(archive_stream):
+            logger.debug('Identified rar archive')
+            archive = rarfile.RarFile(archive_stream)
+        elif zipfile.is_zipfile(archive_stream):
+            logger.debug('Identified zip archive')
+            archive = zipfile.ZipFile(archive_stream)
+        else:
+            logger.error('Unsupported compressed format')
+            return
 
         subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 
@@ -181,7 +288,11 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     def parse_results(self, video, film):
         subtitles = []
         for s in film.subtitles:
-            subtitle = SubsceneSubtitle.from_api(s)
+            try:
+                subtitle = SubsceneSubtitle.from_api(s)
+            except NotImplementedError as e:
+                logger.info(e)
+                continue
             subtitle.asked_for_release_group = video.release_group
             if isinstance(video, Episode):
                 subtitle.asked_for_episode = video.episode
@@ -189,59 +300,51 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             if self.only_foreign:
                 subtitle.language = Language.rebuild(subtitle.language, forced=True)
 
+            # set subtitle language to hi if it's hearing_impaired
+            if subtitle.hearing_impaired:
+                subtitle.language = Language.rebuild(subtitle.language, hi=True)
+
             subtitles.append(subtitle)
             logger.debug('Found subtitle %r', subtitle)
 
         return subtitles
 
+    def do_search(self, *args, **kwargs):
+        try:
+            return search(*args, **kwargs)
+        except requests.HTTPError:
+            region.delete("subscene_cookies2")
+
     def query(self, video):
-        vfn = get_video_filename(video)
         subtitles = []
-        #logger.debug(u"Searching for: %s", vfn)
-        # film = search(vfn, session=self.session)
-        #
-        # if film and film.subtitles:
-        #     logger.debug('Release results found: %s', len(film.subtitles))
-        #     subtitles = self.parse_results(video, film)
-        # else:
-        #     logger.debug('No release results found')
-
-        #time.sleep(self.search_throttle)
-
-        # re-search for episodes without explicit release name
         if isinstance(video, Episode):
-            #term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
-            more_than_one = len([video.series] + video.alternative_series) > 1
-            for series in [video.series] + video.alternative_series:
+            titles = list(set([video.series] + video.alternative_series[:1]))
+            more_than_one = len(titles) > 1
+            for series in titles:
                 term = u"%s - %s Season" % (series, p.number_to_words("%sth" % video.season).capitalize())
-                logger.debug('Searching for alternative results: %s', term)
-                film = search(term, session=self.session, release=False)
+                logger.debug('Searching with series and season: %s', term)
+                film = self.do_search(term, session=self.session, release=False, throttle=self.search_throttle,
+                                      limit_to=SearchTypes.TvSerie)
+                if not film and video.season == 1:
+                    logger.debug('Searching with series name: %s', series)
+                    film = self.do_search(series, session=self.session, release=False, throttle=self.search_throttle,
+                                          limit_to=SearchTypes.TvSerie)
+
                 if film and film.subtitles:
-                    logger.debug('Alternative results found: %s', len(film.subtitles))
+                    logger.debug('Searching found: %s', len(film.subtitles))
                     subtitles += self.parse_results(video, film)
                 else:
-                    logger.debug('No alternative results found')
+                    logger.debug('No results found')
 
-                # packs
-                if video.season_fully_aired:
-                    term = u"%s S%02i" % (series, video.season)
-                    logger.debug('Searching for packs: %s', term)
-                    time.sleep(self.search_throttle)
-                    film = search(term, session=self.session)
-                    if film and film.subtitles:
-                        logger.debug('Pack results found: %s', len(film.subtitles))
-                        subtitles += self.parse_results(video, film)
-                    else:
-                        logger.debug('No pack results found')
-                else:
-                    logger.debug("Not searching for packs, because the season hasn't fully aired")
                 if more_than_one:
                     time.sleep(self.search_throttle)
         else:
-            more_than_one = len([video.title] + video.alternative_titles) > 1
-            for title in [video.title] + video.alternative_titles:
-                logger.debug('Searching for movie results: %s', title)
-                film = search(title, year=video.year, session=self.session, limit_to=None, release=False)
+            titles = list(set([video.title] + video.alternative_titles[:1]))
+            more_than_one = len(titles) > 1
+            for title in titles:
+                logger.debug('Searching for movie results: %r', title)
+                film = self.do_search(title, year=video.year, session=self.session, limit_to=None, release=False,
+                                      throttle=self.search_throttle)
                 if film and film.subtitles:
                     subtitles += self.parse_results(video, film)
                 if more_than_one:

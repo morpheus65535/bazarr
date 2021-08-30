@@ -1,17 +1,18 @@
+# encoding: utf-8
 """Use the HTMLParser library to parse HTML files that aren't too bad."""
 
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Use of this source code is governed by the MIT license.
+__license__ = "MIT"
 
 __all__ = [
     'HTMLParserTreeBuilder',
     ]
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 try:
-    from HTMLParser import HTMLParseError
-except ImportError, e:
+    from html.parser import HTMLParseError
+except ImportError as e:
     # HTMLParseError is removed in Python 3.5. Since it can never be
     # thrown in 3.5, we can just define our own class as a placeholder.
     class HTMLParseError(Exception):
@@ -64,7 +65,18 @@ class BeautifulSoupHTMLParser(HTMLParser):
         # order. It's a list of closing tags we've already handled and
         # will ignore, assuming they ever show up.
         self.already_closed_empty_element = []
-    
+
+    def error(self, msg):
+        """In Python 3, HTMLParser subclasses must implement error(), although this
+        requirement doesn't appear to be documented.
+
+        In Python 2, HTMLParser implements error() as raising an exception.
+
+        In any event, this method is called only on very strange markup and our best strategy
+        is to pretend it didn't happen and keep going.
+        """
+        warnings.warn(msg)
+        
     def handle_startendtag(self, name, attrs):
         # This is only called when the markup looks like
         # <tag/>.
@@ -129,11 +141,26 @@ class BeautifulSoupHTMLParser(HTMLParser):
         else:
             real_name = int(name)
 
-        try:
-            data = unichr(real_name)
-        except (ValueError, OverflowError), e:
-            data = u"\N{REPLACEMENT CHARACTER}"
-
+        data = None
+        if real_name < 256:
+            # HTML numeric entities are supposed to reference Unicode
+            # code points, but sometimes they reference code points in
+            # some other encoding (ahem, Windows-1252). E.g. &#147;
+            # instead of &#201; for LEFT DOUBLE QUOTATION MARK. This
+            # code tries to detect this situation and compensate.
+            for encoding in (self.soup.original_encoding, 'windows-1252'):
+                if not encoding:
+                    continue
+                try:
+                    data = bytearray([real_name]).decode(encoding)
+                except UnicodeDecodeError as e:
+                    pass
+        if not data:
+            try:
+                data = chr(real_name)
+            except (ValueError, OverflowError) as e:
+                pass
+        data = data or "\N{REPLACEMENT CHARACTER}"
         self.handle_data(data)
 
     def handle_entityref(self, name):
@@ -141,7 +168,12 @@ class BeautifulSoupHTMLParser(HTMLParser):
         if character is not None:
             data = character
         else:
-            data = "&%s;" % name
+            # If this were XML, it would be ambiguous whether "&foo"
+            # was an character entity reference with a missing
+            # semicolon or the literal string "&foo". Since this is
+            # HTML, we have a complete list of all character entity references,
+            # and this one wasn't found, so assume it's the literal string "&foo".
+            data = "&%s" % name
         self.handle_data(data)
 
     def handle_comment(self, data):
@@ -182,12 +214,15 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
     NAME = HTMLPARSER
     features = [NAME, HTML, STRICT]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parser_args=None, parser_kwargs=None, **kwargs):
+        super(HTMLParserTreeBuilder, self).__init__(**kwargs)
+        parser_args = parser_args or []
+        parser_kwargs = parser_kwargs or {}
         if CONSTRUCTOR_TAKES_STRICT and not CONSTRUCTOR_STRICT_IS_DEPRECATED:
-            kwargs['strict'] = False
+            parser_kwargs['strict'] = False
         if CONSTRUCTOR_TAKES_CONVERT_CHARREFS:
-            kwargs['convert_charrefs'] = False
-        self.parser_args = (args, kwargs)
+            parser_kwargs['convert_charrefs'] = False
+        self.parser_args = (parser_args, parser_kwargs)
 
     def prepare_markup(self, markup, user_specified_encoding=None,
                        document_declared_encoding=None, exclude_encodings=None):
@@ -196,7 +231,7 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         declared within markup, whether any characters had to be
         replaced with REPLACEMENT CHARACTER).
         """
-        if isinstance(markup, unicode):
+        if isinstance(markup, str):
             yield (markup, None, None, False)
             return
 
@@ -213,7 +248,8 @@ class HTMLParserTreeBuilder(HTMLTreeBuilder):
         parser.soup = self.soup
         try:
             parser.feed(markup)
-        except HTMLParseError, e:
+            parser.close()
+        except HTMLParseError as e:
             warnings.warn(RuntimeWarning(
                 "Python's built-in HTMLParser cannot parse the given document. This is not a bug in Beautiful Soup. The best solution is to install an external parser (lxml or html5lib), and use Beautiful Soup with that parser. See http://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-a-parser for help."))
             raise e

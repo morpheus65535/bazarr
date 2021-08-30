@@ -17,7 +17,7 @@ Available matches:
   * season
   * episode
   * release_group
-  * format
+  * source
   * audio_codec
   * resolution
   * hearing_impaired
@@ -28,6 +28,7 @@ Available matches:
 
 """
 from __future__ import division, print_function
+from __future__ import absolute_import
 import logging
 
 from .video import Episode, Movie
@@ -37,11 +38,11 @@ logger = logging.getLogger(__name__)
 
 #: Scores for episodes
 episode_scores = {'hash': 359, 'series': 180, 'year': 90, 'season': 30, 'episode': 30, 'release_group': 15,
-                  'format': 7, 'audio_codec': 3, 'resolution': 2, 'video_codec': 2, 'hearing_impaired': 1}
+                  'source': 7, 'audio_codec': 3, 'resolution': 2, 'video_codec': 2, 'hearing_impaired': 1}
 
 #: Scores for movies
 movie_scores = {'hash': 119, 'title': 60, 'year': 30, 'release_group': 15,
-                'format': 7, 'audio_codec': 3, 'resolution': 2, 'video_codec': 2, 'hearing_impaired': 1}
+                'source': 7, 'audio_codec': 3, 'resolution': 2, 'video_codec': 2, 'hearing_impaired': 1}
 
 #: Equivalent release groups
 equivalent_release_groups = ({'LOL', 'DIMENSION'}, {'ASAP', 'IMMERSE', 'FLEET'}, {'AVS', 'SVA'})
@@ -152,30 +153,30 @@ def solve_episode_equations():
     from sympy import Eq, solve, symbols
 
     hash, series, year, season, episode, release_group = symbols('hash series year season episode release_group')
-    format, audio_codec, resolution, video_codec = symbols('format audio_codec resolution video_codec')
+    source, audio_codec, resolution, video_codec = symbols('source audio_codec resolution video_codec')
     hearing_impaired = symbols('hearing_impaired')
 
     equations = [
         # hash is best
-        Eq(hash, series + year + season + episode + release_group + format + audio_codec + resolution + video_codec),
+        Eq(hash, series + year + season + episode + release_group + source + audio_codec + resolution + video_codec),
 
         # series counts for the most part in the total score
-        Eq(series, year + season + episode + release_group + format + audio_codec + resolution + video_codec + 1),
+        Eq(series, year + season + episode + release_group + source + audio_codec + resolution + video_codec + 1),
 
         # year is the second most important part
-        Eq(year, season + episode + release_group + format + audio_codec + resolution + video_codec + 1),
+        Eq(year, season + episode + release_group + source + audio_codec + resolution + video_codec + 1),
 
         # season is important too
-        Eq(season, release_group + format + audio_codec + resolution + video_codec + 1),
+        Eq(season, release_group + source + audio_codec + resolution + video_codec + 1),
 
         # episode is equally important to season
         Eq(episode, season),
 
         # release group is the next most wanted match
-        Eq(release_group, format + audio_codec + resolution + video_codec + 1),
+        Eq(release_group, source + audio_codec + resolution + video_codec + 1),
 
-        # format counts as much as audio_codec, resolution and video_codec
-        Eq(format, audio_codec + resolution + video_codec),
+        # source counts as much as audio_codec, resolution and video_codec
+        Eq(source, audio_codec + resolution + video_codec),
 
         # audio_codec is more valuable than video_codec
         Eq(audio_codec, video_codec + 1),
@@ -190,7 +191,7 @@ def solve_episode_equations():
         Eq(hearing_impaired, 1),
     ]
 
-    return solve(equations, [hash, series, year, season, episode, release_group, format, audio_codec, resolution,
+    return solve(equations, [hash, series, year, season, episode, release_group, source, audio_codec, resolution,
                              hearing_impaired, video_codec])
 
 
@@ -198,24 +199,24 @@ def solve_movie_equations():
     from sympy import Eq, solve, symbols
 
     hash, title, year, release_group = symbols('hash title year release_group')
-    format, audio_codec, resolution, video_codec = symbols('format audio_codec resolution video_codec')
+    source, audio_codec, resolution, video_codec = symbols('source audio_codec resolution video_codec')
     hearing_impaired = symbols('hearing_impaired')
 
     equations = [
         # hash is best
-        Eq(hash, title + year + release_group + format + audio_codec + resolution + video_codec),
+        Eq(hash, title + year + release_group + source + audio_codec + resolution + video_codec),
 
         # title counts for the most part in the total score
-        Eq(title, year + release_group + format + audio_codec + resolution + video_codec + 1),
+        Eq(title, year + release_group + source + audio_codec + resolution + video_codec + 1),
 
         # year is the second most important part
-        Eq(year, release_group + format + audio_codec + resolution + video_codec + 1),
+        Eq(year, release_group + source + audio_codec + resolution + video_codec + 1),
 
         # release group is the next most wanted match
-        Eq(release_group, format + audio_codec + resolution + video_codec + 1),
+        Eq(release_group, source + audio_codec + resolution + video_codec + 1),
 
-        # format counts as much as audio_codec, resolution and video_codec
-        Eq(format, audio_codec + resolution + video_codec),
+        # source counts as much as audio_codec, resolution and video_codec
+        Eq(source, audio_codec + resolution + video_codec),
 
         # audio_codec is more valuable than video_codec
         Eq(audio_codec, video_codec + 1),
@@ -230,5 +231,5 @@ def solve_movie_equations():
         Eq(hearing_impaired, 1),
     ]
 
-    return solve(equations, [hash, title, year, release_group, format, audio_codec, resolution, hearing_impaired,
+    return solve(equations, [hash, title, year, release_group, source, audio_codec, resolution, hearing_impaired,
                              video_codec])

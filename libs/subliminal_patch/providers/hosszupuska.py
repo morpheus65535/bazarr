@@ -1,5 +1,6 @@
 # coding: utf-8
 
+from __future__ import absolute_import
 import io
 import six
 import logging
@@ -48,13 +49,11 @@ class HosszupuskaSubtitle(Subtitle):
     provider_name = 'hosszupuska'
 
     def __str__(self):
-        subtit = "Subtitle id: " + str(self.subtitle_id) \
-               + " Series: " + self.series \
-               + " Season: " + str(self.season) \
-               + " Episode: " + str(self.episode) \
-               + " Releases: " + str(self.releases)
+        subtit = (f"Subtitle id: {self.subtitle_id} Series: {self.series} "
+                  f"Season: {self.season} Episode: {self.episode} "
+                  f"Releases: {self.releases}")
         if self.year:
-            subtit = subtit + " Year: " + str(self.year)
+            subtit = f"{subtit} Year: {self.year}"
         if six.PY3:
             return subtit
         return subtit.encode('utf-8')
@@ -103,19 +102,15 @@ class HosszupuskaSubtitle(Subtitle):
            video.year and video.year == self.year):
             matches.add('year')
 
+        logger.debug("Matches: %s", matches)
+
         # release_group
         if (video.release_group and self.version and
                 any(r in sanitize_release_group(self.version)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.version and video.resolution in self.version.lower():
-            matches.add('resolution')
-        # format
-        if video.format and self.version and video.format.lower() in self.version.lower():
-            matches.add('format')
-        # other properties
-        matches |= guess_matches(video, guessit(self.release_info.encode("utf-8")))
+
+        matches |= guess_matches(video, guessit(self.release_info), {"type": "episode"})
 
         return matches
 

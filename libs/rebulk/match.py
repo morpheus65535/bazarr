@@ -5,13 +5,16 @@ Classes and functions related to matches
 """
 import copy
 import itertools
-from collections import defaultdict, MutableSequence
+from collections import defaultdict
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 
 try:
     from collections import OrderedDict  # pylint:disable=ungrouped-imports
 except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict  # pylint:disable=import-error
-import six
 
 from .loose import ensure_list, filter_index
 from .utils import is_iterable
@@ -24,7 +27,7 @@ class MatchesDict(OrderedDict):
     """
 
     def __init__(self):
-        super(MatchesDict, self).__init__()
+        super().__init__()
         self.matches = defaultdict(list)
         self.values_list = defaultdict(list)
 
@@ -63,7 +66,7 @@ class _BaseMatches(MutableSequence):
     def _start_dict(self):
         if self.__start_dict is None:
             self.__start_dict = defaultdict(_BaseMatches._base)
-            for start, values in itertools.groupby([m for m in self._delegate], lambda item: item.start):
+            for start, values in itertools.groupby(list(self._delegate), lambda item: item.start):
                 _BaseMatches._base_extend(self.__start_dict[start], values)
 
         return self.__start_dict
@@ -72,7 +75,7 @@ class _BaseMatches(MutableSequence):
     def _end_dict(self):
         if self.__end_dict is None:
             self.__end_dict = defaultdict(_BaseMatches._base)
-            for start, values in itertools.groupby([m for m in self._delegate], lambda item: item.end):
+            for start, values in itertools.groupby(list(self._delegate), lambda item: item.end):
                 _BaseMatches._base_extend(self.__end_dict[start], values)
 
         return self.__end_dict
@@ -530,13 +533,6 @@ class _BaseMatches(MutableSequence):
                     ret[match.name] = value
         return ret
 
-    if six.PY2:  # pragma: no cover
-        def clear(self):
-            """
-            Python 3 backport
-            """
-            del self[:]
-
     def __len__(self):
         return len(self._delegate)
 
@@ -579,11 +575,11 @@ class Matches(_BaseMatches):
 
     def __init__(self, matches=None, input_string=None):
         self.markers = Markers(input_string=input_string)
-        super(Matches, self).__init__(matches=matches, input_string=input_string)
+        super().__init__(matches=matches, input_string=input_string)
 
     def _add_match(self, match):
         assert not match.marker, "A marker match should not be added to <Matches> object"
-        super(Matches, self)._add_match(match)
+        super()._add_match(match)
 
 
 class Markers(_BaseMatches):
@@ -592,11 +588,11 @@ class Markers(_BaseMatches):
     """
 
     def __init__(self, matches=None, input_string=None):
-        super(Markers, self).__init__(matches=None, input_string=input_string)
+        super().__init__(matches=None, input_string=input_string)
 
     def _add_match(self, match):
         assert match.marker, "A non-marker match should not be added to <Markers> object"
-        super(Markers, self)._add_match(match)
+        super()._add_match(match)
 
 
 class Match(object):
@@ -778,9 +774,9 @@ class Match(object):
                     right.start = end
                     if right:
                         ret.append(right)
-                elif end <= current.end and end > current.start:
+                elif current.end >= end > current.start:
                     current.start = end
-                elif start >= current.start and start < current.end:
+                elif current.start <= start < current.end:
                     current.end = start
         return filter_index(ret, predicate, index)
 
@@ -810,6 +806,24 @@ class Match(object):
                     split_match = None
 
         return filter_index(ret, predicate, index)
+
+    def tagged(self, *tags):
+        """
+        Check if this match has at least one of the provided tags
+
+        :param tags:
+        :return: True if at least one tag is defined, False otherwise.
+        """
+        return any(tag in self.tags for tag in tags)
+
+    def named(self, *names):
+        """
+        Check if one of the children match has one of the provided name
+
+        :param names:
+        :return: True if at least one child is named with a given name is defined, False otherwise.
+        """
+        return any(name in self.names for name in names)
 
     def __len__(self):
         return self.end - self.start

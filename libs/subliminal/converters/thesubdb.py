@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from babelfish import LanguageReverseConverter
 
 from ..exceptions import ConfigurationError

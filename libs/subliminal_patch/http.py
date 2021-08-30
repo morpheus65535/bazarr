@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import json
 from collections import OrderedDict
 
@@ -8,26 +9,36 @@ import os
 import socket
 import logging
 import requests
-import xmlrpclib
+import six.moves.xmlrpc_client
 import dns.resolver
+import ipaddress
+import re
+from six import PY3
 
 from requests import exceptions
 from urllib3.util import connection
 from retry.api import retry_call
-from exceptions import APIThrottled
+from .exceptions import APIThrottled
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
-from cfscrape import CloudflareScraper
+from subliminal_patch.pitcher import pitchers
+from cloudscraper import CloudScraper
+import six
 
 try:
-    from urlparse import urlparse
+    import brotli
+except:
+    pass
+
+try:
+    from six.moves.urllib.parse import urlparse
 except ImportError:
     from urllib.parse import urlparse
 
 from subzero.lib.io import get_viable_encoding
 
 logger = logging.getLogger(__name__)
-pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))), "..", certifi.where()))
+pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", certifi.where()))
 try:
     default_ssl_context = ssl.create_default_context(cafile=pem_file)
 except AttributeError:
@@ -55,43 +66,115 @@ class CertifiSession(TimeoutSession):
         self.verify = pem_file
 
 
-class CFSession(CloudflareScraper):
-    def __init__(self):
-        super(CFSession, self).__init__()
+class NeedsCaptchaException(Exception):
+    pass
+
+
+class CFSession(CloudScraper):
+    def __init__(self, *args, **kwargs):
+        super(CFSession, self).__init__(*args, **kwargs)
         self.debug = os.environ.get("CF_DEBUG", False)
+
+    def _request(self, method, url, *args, **kwargs):
+        ourSuper = super(CloudScraper, self)
+        resp = ourSuper.request(method, url, *args, **kwargs)
+
+        if resp.headers.get('Content-Encoding') == 'br':
+            if self.allow_brotli and resp._content:
+                resp._content = brotli.decompress(resp.content)
+            else:
+                logging.warning('Brotli content detected, But option is disabled, we will not continue.')
+                return resp
+
+        # Debug request
+        if self.debug:
+            self.debugRequest(resp)
+
+        # Check if Cloudflare anti-bot is on
+        try:
+            if self.is_Challenge_Request(resp):
+                if resp.request.method != 'GET':
+                    # Work around if the initial request is not a GET,
+                    # Supersede with a GET then re-request the original METHOD.
+                    CloudScraper.request(self, 'GET', resp.url)
+                    resp = ourSuper.request(method, url, *args, **kwargs)
+                else:
+                    # Solve Challenge
+                    resp = self.sendChallengeResponse(resp, **kwargs)
+
+        except ValueError as e:
+            if PY3:
+                error = str(e)
+            else:
+                error = e.message
+            if error == "Captcha":
+                parsed_url = urlparse(url)
+                domain = parsed_url.netloc
+                # solve the captcha
+                site_key = re.search(r'data-sitekey="(.+?)"', resp.text).group(1)
+                challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.text).group(1)
+                challenge_ray = re.search(r'data-ray="(.+?)"', resp.text).group(1)
+                if not all([site_key, challenge_s, challenge_ray]):
+                    raise Exception("cf: Captcha site-key not found!")
+
+                pitcher = pitchers.get_pitcher()("cf: %s" % domain, resp.request.url, site_key,
+                                                 user_agent=self.headers["User-Agent"],
+                                                 cookies=self.cookies.get_dict(),
+                                                 is_invisible=True)
+
+                parsed_url = urlparse(resp.url)
+                logger.info("cf: %s: Solving captcha", domain)
+                result = pitcher.throw()
+                if not result:
+                    raise Exception("cf: Couldn't solve captcha!")
+
+                submit_url = '{}://{}/cdn-cgi/l/chk_captcha'.format(parsed_url.scheme, domain)
+                method = resp.request.method
+
+                cloudflare_kwargs = {
+                    'allow_redirects': False,
+                    'headers': {'Referer': resp.url},
+                    'params': OrderedDict(
+                        [
+                            ('s', challenge_s),
+                            ('g-recaptcha-response', result)
+                        ]
+                    )
+                }
+
+                return CloudScraper.request(self, method, submit_url, **cloudflare_kwargs)
+
+        return resp
 
     def request(self, method, url, *args, **kwargs):
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
 
-        cache_key = "cf_data2_%s" % domain
+        cache_key = "cf_data3_%s" % domain
 
         if not self.cookies.get("cf_clearance", "", domain=domain):
             cf_data = region.get(cache_key)
             if cf_data is not NO_VALUE:
-                cf_cookies, user_agent, hdrs = cf_data
+                cf_cookies, hdrs = cf_data
                 logger.debug("Trying to use old cf data for %s: %s", domain, cf_data)
-                for cookie, value in cf_cookies.iteritems():
+                for cookie, value in six.iteritems(cf_cookies):
                     self.cookies.set(cookie, value, domain=domain)
 
-                self._hdrs = hdrs
-                self._ua = user_agent
-                self.headers['User-Agent'] = self._ua
+                self.headers = hdrs
 
-        ret = super(CFSession, self).request(method, url, *args, **kwargs)
+        ret = self._request(method, url, *args, **kwargs)
 
-        if self._was_cf:
-            self._was_cf = False
-            logger.debug("We've hit CF, trying to store previous data")
-            try:
-                cf_data = self.get_cf_live_tokens(domain)
-            except:
-                logger.debug("Couldn't get CF live tokens for re-use. Cookies: %r", self.cookies)
-                pass
-            else:
-                if cf_data != region.get(cache_key) and cf_data[0]["cf_clearance"]:
+        try:
+            cf_data = self.get_cf_live_tokens(domain)
+        except:
+            pass
+        else:
+            if cf_data and "cf_clearance" in cf_data[0] and cf_data[0]["cf_clearance"]:
+                if cf_data != region.get(cache_key):
                     logger.debug("Storing cf data for %s: %s", domain, cf_data)
                     region.set(cache_key, cf_data)
+                elif cf_data[0]["cf_clearance"]:
+                    logger.debug("CF Live tokens not updated")
 
         return ret
 
@@ -105,11 +188,11 @@ class CFSession(CloudflareScraper):
                 "Unable to find Cloudflare cookies. Does the site actually have "
                 "Cloudflare IUAM (\"I'm Under Attack Mode\") enabled?")
 
-        return (OrderedDict(filter(lambda x: x[1], [
+        return (OrderedDict([x for x in [
                     ("__cfduid", self.cookies.get("__cfduid", "", domain=cookie_domain)),
                     ("cf_clearance", self.cookies.get("cf_clearance", "", domain=cookie_domain))
-                ])),
-                self._ua, self._hdrs
+                ] if x[1]]),
+                self.headers
         )
 
 
@@ -155,7 +238,7 @@ class RetryingCFSession(RetryingSession, CFSession):
     pass
 
 
-class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
+class SubZeroRequestsTransport(six.moves.xmlrpc_client.SafeTransport):
     """
     Drop in Transport for xmlrpclib that uses Requests instead of httplib
 
@@ -178,7 +261,7 @@ class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
                 "https": proxy
             }
 
-        xmlrpclib.SafeTransport.__init__(self, *args, **kwargs)
+        six.moves.xmlrpc_client.SafeTransport.__init__(self, *args, **kwargs)
 
     def request(self, host, handler, request_body, verbose=0):
         """
@@ -240,42 +323,46 @@ def patch_create_connection():
         global _custom_resolver, _custom_resolver_ips, dns_cache
         host, port = address
 
-        __custom_resolver_ips = os.environ.get("dns_resolvers", None)
+        try:
+            ipaddress.ip_address(six.text_type(host))
+        except (ipaddress.AddressValueError, ValueError):
+            __custom_resolver_ips = os.environ.get("dns_resolvers", None)
 
-        # resolver ips changed in the meantime?
-        if __custom_resolver_ips != _custom_resolver_ips:
-            _custom_resolver = None
-            _custom_resolver_ips = __custom_resolver_ips
-            dns_cache = {}
+            # resolver ips changed in the meantime?
+            if __custom_resolver_ips != _custom_resolver_ips:
+                _custom_resolver = None
+                _custom_resolver_ips = __custom_resolver_ips
+                dns_cache = {}
 
-        custom_resolver = _custom_resolver
+            custom_resolver = _custom_resolver
 
-        if not custom_resolver:
-            if _custom_resolver_ips:
-                logger.debug("DNS: Trying to use custom DNS resolvers: %s", _custom_resolver_ips)
-                custom_resolver = dns.resolver.Resolver(configure=False)
-                custom_resolver.lifetime = 8.0
-                try:
-                    custom_resolver.nameservers = json.loads(_custom_resolver_ips)
-                except:
-                    logger.debug("DNS: Couldn't load custom DNS resolvers: %s", _custom_resolver_ips)
+            if not custom_resolver:
+                if _custom_resolver_ips:
+                    logger.debug("DNS: Trying to use custom DNS resolvers: %s", _custom_resolver_ips)
+                    custom_resolver = dns.resolver.Resolver(configure=False)
+                    custom_resolver.lifetime = os.environ.get("dns_resolvers_timeout", 8.0)
+                    try:
+                        custom_resolver.nameservers = json.loads(_custom_resolver_ips)
+                    except:
+                        logger.debug("DNS: Couldn't load custom DNS resolvers: %s", _custom_resolver_ips)
+                    else:
+                        _custom_resolver = custom_resolver
+
+            if custom_resolver:
+                if host in dns_cache:
+                    ip = dns_cache[host]
+                    logger.debug("DNS: Using %s=%s from cache", host, ip)
+                    return _orig_create_connection((ip, port), *args, **kwargs)
                 else:
-                    _custom_resolver = custom_resolver
+                    try:
+                        ip = custom_resolver.query(host)[0].address
+                        logger.debug("DNS: Resolved %s to %s using %s", host, ip, custom_resolver.nameservers)
+                        dns_cache[host] = ip
+                        return _orig_create_connection((ip, port), *args, **kwargs)
+                    except dns.exception.DNSException:
+                        logger.warning("DNS: Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
 
-        if custom_resolver:
-            if host in dns_cache:
-                ip = dns_cache[host]
-                logger.debug("DNS: Using %s=%s from cache", host, ip)
-                return _orig_create_connection((ip, port), *args, **kwargs)
-            else:
-                try:
-                    ip = custom_resolver.query(host)[0].address
-                    logger.debug("DNS: Resolved %s to %s using %s", host, ip, custom_resolver.nameservers)
-                    dns_cache[host] = ip
-                except dns.exception.DNSException:
-                    logger.warning("DNS: Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
-                    raise
-
+        # logger.debug("DNS: Falling back to default DNS or IP on %s", host) <-- commented because it makes way too much noise in debug logs
         return _orig_create_connection((host, port), *args, **kwargs)
 
     patch_create_connection._sz_patched = True

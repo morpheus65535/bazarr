@@ -1,11 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import logging
 import os
 
 from babelfish.exceptions import LanguageError
 from subzero.language import Language, language_from_stream
 from subliminal_patch import scan_video, refine, search_external_subtitles
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,8 @@ def has_external_subtitle(part_id, stored_subs, language):
 
 
 def set_existing_languages(video, video_info, external_subtitles=False, embedded_subtitles=False, known_embedded=None,
-                           stored_subs=None, languages=None, only_one=False, known_metadata_subs=None):
+                           stored_subs=None, languages=None, only_one=False, known_metadata_subs=None,
+                           match_strictness="strict"):
     logger.debug(u"Determining existing subtitles for %s", video.name)
 
     external_langs_found = set()
@@ -27,7 +30,8 @@ def set_existing_languages(video, video_info, external_subtitles=False, embedded
         external_langs_found = known_metadata_subs
 
     external_langs_found.update(set(search_external_subtitles(video.name, languages=languages,
-                                                              only_one=only_one).values()))
+                                                              only_one=only_one,
+                                                              match_strictness=match_strictness).values()))
 
     # found external subtitles should be considered?
     if external_subtitles:
@@ -52,10 +56,10 @@ def set_existing_languages(video, video_info, external_subtitles=False, embedded
             video.subtitle_languages.add(language)
 
 
-def parse_video(fn, hints, skip_hashing=False, dry_run=False, providers=None):
+def parse_video(fn, hints, skip_hashing=False, dry_run=False, providers=None, hash_from=None):
     logger.debug("Parsing video: %s, hints: %s", os.path.basename(fn), hints)
     return scan_video(fn, hints=hints, dont_use_actual_file=dry_run, providers=providers,
-                      skip_hashing=skip_hashing)
+                      skip_hashing=skip_hashing, hash_from=hash_from)
 
 
 def refine_video(video, no_refining=False, refiner_settings=None):
@@ -98,7 +102,7 @@ def refine_video(video, no_refining=False, refiner_settings=None):
 
     # our own metadata refiner :)
     if "stream" in video_info:
-        for key, value in video_info["stream"].iteritems():
+        for key, value in six.iteritems(video_info["stream"]):
             if hasattr(video, key) and not getattr(video, key):
                 logger.info(u"Adding stream %s info: %s", key, value)
                 setattr(video, key, value)

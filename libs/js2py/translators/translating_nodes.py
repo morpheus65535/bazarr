@@ -345,7 +345,7 @@ def BlockStatement(type, body):
         body)  # never returns empty string! In the worst case returns pass\n
 
 
-def ExpressionStatement(type, expression, **ommit):
+def ExpressionStatement(type, expression):
     return trans(expression) + '\n'  # end expression space with new line
 
 

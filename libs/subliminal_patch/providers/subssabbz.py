@@ -1,45 +1,84 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import logging
 import re
 import io
 import os
+import codecs
+from hashlib import sha1
 from random import randint
 from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from requests import Session
 from guessit import guessit
+from dogpile.cache.api import NO_VALUE
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
-from subliminal.exceptions import ProviderError
-from subliminal.utils import sanitize_release_group
-from subliminal.subtitle import guess_matches
+from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
+from subliminal.cache import region
 from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Marvel's Daredevil": "Daredevil",
+                                           "Marvel's Luke Cage": "Luke Cage",
+                                           "Marvel's Iron Fist": "Iron Fist",
+                                           "Marvel's Jessica Jones": "Jessica Jones",
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow",
+                                           "Doctor Who (2005)": "Doctor Who",
+                                           "Star Trek: Deep Space Nine": "Star Trek DS9",
+                                           "Star Trek: The Next Generation": "Star Trek TNG",
+                                           "Superman & Lois": "Superman and Lois",
+                                           }, True)
+
+
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {"Back to the Future Part": "Back to the Future",
+                                           }, True)
+
+
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
 
-    def __init__(self, langauge, filename, type, video, link):
-        super(SubsSabBzSubtitle, self).__init__(langauge)
-        self.langauge = langauge
+    def __init__(self, language, filename, type, video, link, fps, num_cds):
+        super(SubsSabBzSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
         self.type = type
         self.video = video
+        self.fps = fps
+        self.num_cds = num_cds
+        self.release_info = filename
+        if fps:
+            if video.fps and float(video.fps) == fps:
+                self.release_info += " <b>[{:.3f}]</b>".format(fps)
+            else:
+                self.release_info += " [{:.3f}]".format(fps)
 
     @property
     def id(self):
-        return self.filename
+        return self.page_link + self.filename
+
+    def get_fps(self):
+        return self.fps
 
     def make_picklable(self):
         self.content = None
+        self._is_valid = False
         return self
 
     def get_matches(self, video):
@@ -48,25 +87,39 @@ class SubsSabBzSubtitle(Subtitle):
         video_filename = video.name
         video_filename = os.path.basename(video_filename)
         video_filename, _ = os.path.splitext(video_filename)
-        video_filename = sanitize_release_group(video_filename)
+        video_filename = re.sub(r'\[\w+\]$', '', video_filename).strip().upper()
 
         subtitle_filename = self.filename
         subtitle_filename = os.path.basename(subtitle_filename)
         subtitle_filename, _ = os.path.splitext(subtitle_filename)
-        subtitle_filename = sanitize_release_group(subtitle_filename)
+        subtitle_filename = re.sub(r'\[\w+\]$', '', subtitle_filename).strip().upper()
 
-        if video_filename == subtitle_filename:
-             matches.add('hash')
+        if ((video_filename == subtitle_filename) or
+            (self.single_file is True and video_filename in self.notes.upper())):
+            matches.add('hash')
 
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+        if video.year and self.year == video.year:
+            matches.add('year')
 
-        matches.add(id(self))
+        if isinstance(video, Movie):
+            if video.imdb_id and self.imdb_id == video.imdb_id:
+                matches.add('imdb_id')
+
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
+
+        guess_filename = guessit(self.filename, video.hints)
+        matches |= guess_matches(video, guess_filename)
+
+        if isinstance(video, Movie) and (self.num_cds > 1 or 'cd' in guess_filename):
+            # reduce score of subtitles for multi-disc movie releases
+            return set()
+
         return matches
 
 
 class SubsSabBzProvider(Provider):
     """SubsSabBz Provider."""
-    languages = {Language('por', 'BR')} | {Language(l) for l in [
+    languages = {Language(l) for l in [
         'bul', 'eng'
     ]}
 
@@ -98,10 +151,10 @@ class SubsSabBzProvider(Provider):
         }
 
         if isEpisode:
-            params['movie'] = "%s %02d %02d" % (sanitize(video.series), video.season, video.episode)
+            params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['yr'] = video.year
-            params['movie'] = (video.title)
+            params['movie'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if language == 'en' or language == 'eng':
             params['select-language'] = 1
@@ -117,19 +170,56 @@ class SubsSabBzProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, 'lxml')
         rows = soup.findAll('tr', {'class': 'subs-row'})
 
-        # Search on first 10 rows only
-        for row in rows[:10]:
+        # Search on first 25 rows only
+        for row in rows[:25]:
             a_element_wrapper = row.find('td', { 'class': 'c2field' })
             if a_element_wrapper:
                 element = a_element_wrapper.find('a')
                 if element:
                     link = element.get('href')
-                    logger.info('Found subtitle link %r', link)
-                    subtitles = subtitles + self.download_archive_and_add_subtitle_files(link, language, video)
+                    notes = re.sub(r'ddrivetip\(\'<div.*/></div>(.*)\',\'#[0-9]+\'\)', r'\1', element.get('onmouseover'))
+                    title = element.get_text()
 
+                    try:
+                        year = int(str(element.next_sibling).strip(' ()'))
+                    except:
+                        year = None
+
+                    td = row.findAll('td')
+
+                    try:
+                        num_cds = int(td[6].get_text())
+                    except:
+                        num_cds = None
+
+                    try:
+                        fps = float(td[7].get_text())
+                    except:
+                        fps = None
+
+                    try:
+                        uploader = td[8].get_text()
+                    except:
+                        uploader = None
+
+                    try:
+                        imdb_id = re.findall(r'imdb.com/title/(tt\d+)/?$', td[9].find('a').get('href'))[0]
+                    except:
+                        imdb_id = None
+
+                    logger.info('Found subtitle link %r', link)
+                    sub = self.download_archive_and_add_subtitle_files(link, language, video, fps, num_cds)
+                    for s in sub:
+                        s.title = title
+                        s.notes = notes
+                        s.year = year
+                        s.uploader = uploader
+                        s.imdb_id = imdb_id
+                        s.single_file = True if len(sub) == 1 and num_cds == 1 else False
+                    subtitles = subtitles + sub
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -140,33 +230,45 @@ class SubsSabBzProvider(Provider):
             pass
         else:
             seeking_subtitle_file = subtitle.filename
-            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
+                                                                subtitle.fps, subtitle.num_cds)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link):
+    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps, num_cds):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
-        for file_name in archiveStream.namelist():
+        for file_name in sorted(archiveStream.namelist()):
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link)
-                subtitle.content = archiveStream.read(file_name)
+                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link, fps, num_cds)
+                subtitle.content = fix_line_ending(archiveStream.read(file_name))
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video ):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps, num_cds):
         logger.info('Downloading subtitle %r', link)
-        request = self.session.get(link, headers={
-            'Referer': 'http://subs.sab.bz/index.php?'
-            })
-        request.raise_for_status()
-
-        archive_stream = io.BytesIO(request.content)
-        if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
-        elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
+        cache_key = sha1(link.encode("utf-8")).digest()
+        request = region.get(cache_key)
+        if request is NO_VALUE:
+            request = self.session.get(link, headers={
+                'Referer': 'http://subs.sab.bz/index.php?'
+                })
+            request.raise_for_status()
+            region.set(cache_key, request)
         else:
-            raise ValueError('Not a valid archive')
+            logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
+
+        try:
+            archive_stream = io.BytesIO(request.content)
+            if is_rarfile(archive_stream):
+                return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
+            elif is_zipfile(archive_stream):
+                return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
+        except:
+            pass
+
+        logger.error('Ignore unsupported archive %r', request.headers)
+        region.delete(cache_key)
+        return []

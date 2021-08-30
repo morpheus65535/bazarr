@@ -1,0 +1,20 @@
+.release-container {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  .text-container {
+    max-width: 500px;
+    .release-text {
+      text-overflow: ellipsis;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+
+      &.hidden-item {
+        color: gray;
+      }
+    }
+  }
+  &.release-multi {
+    cursor: zoom-in;
+  }
+}

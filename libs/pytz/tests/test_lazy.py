@@ -1,4 +1,6 @@
-from operator import *
+from operator import (
+    eq, ge, gt, le, lt, ne, add, concat, not_, sub, and_, or_, xor
+)
 import os.path
 import sys
 import unittest
@@ -15,7 +17,7 @@ from pytz.lazy import LazyList, LazySet
 
 
 class LazyListTestCase(unittest.TestCase):
-    initial_data = [3,2,1]
+    initial_data = [3, 2, 1]
 
     def setUp(self):
         self.base = [3, 2, 1]
@@ -185,7 +187,7 @@ class LazyListTestCase(unittest.TestCase):
 
 
 class LazySetTestCase(unittest.TestCase):
-    initial_data = set([3,2,1])
+    initial_data = set([3, 2, 1])
 
     def setUp(self):
         self.base = set([3, 2, 1])
@@ -284,9 +286,9 @@ class LazySetTestCase(unittest.TestCase):
             lazy = LazySet(set(self.base))
             base = set(self.base)
             self.assertEqual(
-                getattr(self.lazy, op)(set([1])),
-                getattr(self.base, op)(set([1])), op)
-            self.assertEqual(self.lazy, self.base, op)
+                getattr(lazy, op)(set([1])),
+                getattr(base, op)(set([1])), op)
+            self.assertEqual(lazy, base, op)
 
     def test_discard(self):
         self.base.discard(1)
@@ -309,5 +311,5 @@ class LazySetTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    warnings.simplefilter("error") # Warnings should be fatal in tests.
+    warnings.simplefilter("error")  # Warnings should be fatal in tests.
     unittest.main()

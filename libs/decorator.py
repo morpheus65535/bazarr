@@ -40,7 +40,7 @@ import operator
 import itertools
 import collections
 
-__version__ = '4.3.0'
+__version__ = '4.4.0'
 
 if sys.version >= '3':
     from inspect import getfullargspec
@@ -64,6 +64,12 @@ try:
 except AttributeError:
     # let's assume there are no coroutine functions in old Python
     def iscoroutinefunction(f):
+        return False
+try:
+    from inspect import isgeneratorfunction
+except ImportError:
+    # assume no generator function in old Python versions
+    def isgeneratorfunction(caller):
         return False
 
 
@@ -173,7 +179,8 @@ class FunctionMaker(object):
         # Ensure each generated function has a unique filename for profilers
         # (such as cProfile) that depend on the tuple of (<filename>,
         # <definition line>, <function name>) being unique.
-        filename = '<decorator-gen-%d>' % (next(self._compile_count),)
+        filename = '<%s:decorator-gen-%d>' % (
+            __file__, next(self._compile_count))
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)
@@ -218,6 +225,8 @@ class FunctionMaker(object):
 def decorate(func, caller, extras=()):
     """
     decorate(func, caller) decorates a function using a caller.
+    If the caller is a generator function, the resulting function
+    will be a generator function.
     """
     evaldict = dict(_call_=caller, _func_=func)
     es = ''
@@ -225,9 +234,23 @@ def decorate(func, caller, extras=()):
         ex = '_e%d_' % i
         evaldict[ex] = extra
         es += ex + ', '
-    fun = FunctionMaker.create(
-        func, "return _call_(_func_, %s%%(shortsignature)s)" % es,
-        evaldict, __wrapped__=func)
+
+    if '3.5' <= sys.version < '3.6':
+        # with Python 3.5 isgeneratorfunction returns True for all coroutines
+        # however we know that it is NOT possible to have a generator
+        # coroutine in python 3.5: PEP525 was not there yet
+        generatorcaller = isgeneratorfunction(
+            caller) and not iscoroutinefunction(caller)
+    else:
+        generatorcaller = isgeneratorfunction(caller)
+    if generatorcaller:
+        fun = FunctionMaker.create(
+            func, "for res in _call_(_func_, %s%%(shortsignature)s):\n"
+                  "    yield res" % es, evaldict, __wrapped__=func)
+    else:
+        fun = FunctionMaker.create(
+            func, "return _call_(_func_, %s%%(shortsignature)s)" % es,
+            evaldict, __wrapped__=func)
     if hasattr(func, '__qualname__'):
         fun.__qualname__ = func.__qualname__
     return fun
@@ -261,12 +284,12 @@ def decorator(caller, _func=None):
         doc = caller.__call__.__doc__
     evaldict = dict(_call=caller, _decorate_=decorate)
     dec = FunctionMaker.create(
-        '%s(%s func)' % (name, defaultargs),
+        '%s(func, %s)' % (name, defaultargs),
         'if func is None: return lambda func:  _decorate_(func, _call, (%s))\n'
         'return _decorate_(func, _call, (%s))' % (defaultargs, defaultargs),
         evaldict, doc=doc, module=caller.__module__, __wrapped__=caller)
     if defaults:
-        dec.__defaults__ = defaults + (None,)
+        dec.__defaults__ = (None,) + defaults
     return dec
 
 

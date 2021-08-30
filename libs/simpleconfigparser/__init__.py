@@ -23,12 +23,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-# Bazarr patch to use custom ConfigParser2:
-from ConfigParser2 import ConfigParser as configparser, NoOptionError, NoSectionError
-#try:
-#    from configparser2 import ConfigParser as configparser, NoOptionError, NoSectionError
-#except ImportError:
-#    from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
+try:
+    from configparser import ConfigParser as configparser, NoOptionError, NoSectionError
+except ImportError:
+    from ConfigParser import RawConfigParser as configparser, NoOptionError, NoSectionError
 
 
 class simpleconfigparser(configparser):
@@ -125,9 +123,9 @@ class simpleconfigparser(configparser):
         except NoSectionError:
             return None
 
-    def get(self, section, option, raw=False, vars=None):
+    def get(self, section, option, raw=False, vars=None, fallback=None):
         try:
             # Strip out quotes from the edges
-            return configparser.get(self, section, option, raw=raw, vars=vars).strip('"\'')
+            return configparser.get(self, section, option).strip('"\'')
         except NoOptionError:
             return None

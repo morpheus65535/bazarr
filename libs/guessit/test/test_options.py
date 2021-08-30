@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from ..options import get_config_file_locations, merge_configurations, load_config_file, ConfigurationException, \
+from ..options import get_options_file_locations, merge_options, load_config_file, ConfigurationException, \
     load_config
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -15,7 +15,7 @@ def test_config_locations():
     homedir = '/root'
     cwd = '/root/cwd'
 
-    locations = get_config_file_locations(homedir, cwd, True)
+    locations = get_options_file_locations(homedir, cwd, True)
     assert len(locations) == 9
 
     assert '/root/.guessit/options.json' in locations
@@ -34,12 +34,12 @@ def test_merge_configurations():
     c2 = {'param1': False, 'param2': True, 'param3': False}
     c3 = {'param1': False, 'param2': True, 'param3': False}
 
-    merged = merge_configurations(c1, c2, c3)
+    merged = merge_options(c1, c2, c3)
     assert not merged['param1']
     assert merged['param2']
     assert not merged['param3']
 
-    merged = merge_configurations(c3, c2, c1)
+    merged = merge_options(c3, c2, c1)
     assert merged['param1']
     assert merged['param2']
     assert not merged['param3']
@@ -50,14 +50,35 @@ def test_merge_configurations_lists():
     c2 = {'param1': [2], 'param2': True, 'param3': False}
     c3 = {'param1': [3], 'param2': True, 'param3': False}
 
-    merged = merge_configurations(c1, c2, c3)
+    merged = merge_options(c1, c2, c3)
     assert merged['param1'] == [1, 2, 3]
     assert merged['param2']
     assert not merged['param3']
 
-    merged = merge_configurations(c3, c2, c1)
+    merged = merge_options(c3, c2, c1)
     assert merged['param1'] == [3, 2, 1]
     assert merged['param2']
+    assert not merged['param3']
+
+
+def test_merge_configurations_deep():
+    c1 = {'param1': [1], 'param2': {'d1': [1]}, 'param3': False}
+    c2 = {'param1': [2], 'param2': {'d1': [2]}, 'param3': False}
+    c3 = {'param1': [3], 'param2': {'d3': [3]}, 'param3': False}
+
+    merged = merge_options(c1, c2, c3)
+    assert merged['param1'] == [1, 2, 3]
+    assert merged['param2']['d1'] == [1, 2]
+    assert merged['param2']['d3'] == [3]
+    assert 'd2' not in merged['param2']
+    assert not merged['param3']
+
+    merged = merge_options(c3, c2, c1)
+    assert merged['param1'] == [3, 2, 1]
+    assert merged['param2']
+    assert merged['param2']['d1'] == [2, 1]
+    assert 'd2' not in merged['param2']
+    assert merged['param2']['d3'] == [3]
     assert not merged['param3']
 
 
@@ -66,12 +87,12 @@ def test_merge_configurations_pristine_all():
     c2 = {'param1': [2], 'param2': True, 'param3': False, 'pristine': True}
     c3 = {'param1': [3], 'param2': True, 'param3': False}
 
-    merged = merge_configurations(c1, c2, c3)
+    merged = merge_options(c1, c2, c3)
     assert merged['param1'] == [2, 3]
     assert merged['param2']
     assert not merged['param3']
 
-    merged = merge_configurations(c3, c2, c1)
+    merged = merge_options(c3, c2, c1)
     assert merged['param1'] == [2, 1]
     assert merged['param2']
     assert not merged['param3']
@@ -82,7 +103,18 @@ def test_merge_configurations_pristine_properties():
     c2 = {'param1': [2], 'param2': True, 'param3': False, 'pristine': ['param2', 'param3']}
     c3 = {'param1': [3], 'param2': True, 'param3': False}
 
-    merged = merge_configurations(c1, c2, c3)
+    merged = merge_options(c1, c2, c3)
+    assert merged['param1'] == [1, 2, 3]
+    assert merged['param2']
+    assert not merged['param3']
+
+
+def test_merge_configurations_pristine_properties_deep():
+    c1 = {'param1': [1], 'param2': {'d1': False}, 'param3': True}
+    c2 = {'param1': [2], 'param2': {'d1': True}, 'param3': False, 'pristine': ['param2', 'param3']}
+    c3 = {'param1': [3], 'param2': {'d1': True}, 'param3': False}
+
+    merged = merge_options(c1, c2, c3)
     assert merged['param1'] == [1, 2, 3]
     assert merged['param2']
     assert not merged['param3']
@@ -93,7 +125,7 @@ def test_merge_configurations_pristine_properties2():
     c2 = {'param1': [2], 'param2': True, 'param3': False, 'pristine': ['param1', 'param2', 'param3']}
     c3 = {'param1': [3], 'param2': True, 'param3': False}
 
-    merged = merge_configurations(c1, c2, c3)
+    merged = merge_options(c1, c2, c3)
     assert merged['param1'] == [2, 3]
     assert merged['param2']
     assert not merged['param3']
@@ -119,24 +151,25 @@ def test_load_config_file():
 
 
 def test_load_config():
-    config = load_config({'no_embedded_config': True, 'param1': 'test',
+    config = load_config({'no_default_config': True, 'param1': 'test',
                           'config': [os.path.join(__location__, 'config', 'test.yml')]})
 
-    assert config['param1'] == 'test'
+    assert not config.get('param1')
 
+    assert config.get('advanced_config')  # advanced_config is still loaded from default
     assert config['expected_title'] == ['The 100', 'OSS 117']
     assert config['yaml'] is True
 
-    config = load_config({'no_embedded_config': True, 'param1': 'test'})
+    config = load_config({'no_default_config': True, 'param1': 'test'})
 
-    assert config['param1'] == 'test'
+    assert not config.get('param1')
 
     assert 'expected_title' not in config
     assert 'yaml' not in config
 
-    config = load_config({'no_embedded_config': True, 'param1': 'test', 'config': ['false']})
+    config = load_config({'no_default_config': True, 'param1': 'test', 'config': ['false']})
 
-    assert config['param1'] == 'test'
+    assert not config.get('param1')
 
     assert 'expected_title' not in config
     assert 'yaml' not in config

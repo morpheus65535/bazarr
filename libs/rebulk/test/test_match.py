@@ -3,7 +3,6 @@
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, unneeded-not, len-as-condition
 
 import pytest
-import six
 
 from ..match import Match, Matches
 from ..pattern import StringPattern, RePattern
@@ -72,23 +71,18 @@ class TestMatchClass(object):
         assert match2 > match1
         assert match2 >= match1
 
-        if six.PY3:
-            with pytest.raises(TypeError):
-                match1 < other
+        with pytest.raises(TypeError):
+            match1 < other
 
-            with pytest.raises(TypeError):
-                match1 <= other
+        with pytest.raises(TypeError):
+            match1 <= other
 
-            with pytest.raises(TypeError):
-                match1 > other
+        with pytest.raises(TypeError):
+            match1 > other
 
-            with pytest.raises(TypeError):
-                match1 >= other
-        else:
-            assert match1 < other
-            assert match1 <= other
-            assert not match1 > other
-            assert not match1 >= other
+        with pytest.raises(TypeError):
+            match1 >= other
+
 
     def test_value(self):
         match1 = Match(1, 3)
@@ -115,6 +109,9 @@ class TestMatchesClass(object):
 
         assert "tag1" in matches.tags
         assert "tag2" in matches.tags
+
+        assert self.match3.tagged("tag1")
+        assert not self.match3.tagged("start")
 
         tag1 = matches.tagged("tag1")
         assert len(tag1) == 2

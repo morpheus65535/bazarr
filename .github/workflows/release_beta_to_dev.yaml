@@ -1,0 +1,72 @@
+name: release_beta_to_dev
+on: workflow_dispatch
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      STATUS_WORKFLOW_NAME: "ci.yml"
+      UI_DIRECTORY: ./frontend
+      ASSET_DIRECTORY: ./__builds__
+      FETCH_DEPTH: 15 # Should be enough
+    steps:
+      - name: Validate branch
+        if: ${{ github.ref != 'refs/heads/development' }}
+        run: |
+          echo This action can only be run on development branch, not ${{ github.ref }}
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: ${{ env.FETCH_DEPTH }}
+          ref: development
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions" &&
+          git fetch --depth ${{ env.FETCH_DEPTH }} --tags
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-modules-
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "15.x"
+
+      - name: Install Global Tools
+        run: npm install -g release-it auto-changelog
+
+      - name: Install UI Dependencies
+        run: npm install
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Build UI
+        run: npm run build
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Validate CI
+        id: check-ci
+        uses: LASER-Yi/workflow-status@v0.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ci.yml
+          event: push
+          branch: development
+
+      - name: Create Release (Conditional)
+        if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
+        run: |
+          revision_count=$(git rev-list --invert-grep --regexp-ignore-case --extended-regexp --grep="^(Release|no log:|Merge.remote-tracking).*" $(git describe --tags --abbrev=0)..HEAD --count)
+          if [[ $revision_count != 0 ]]; then
+            echo "**** Found $revision_count changes! Releasing... ****"
+            release-it --ci --increment prerelease --preRelease=beta
+          else
+            echo "**** Cannot find changes! Skipping... ****"
+          fi

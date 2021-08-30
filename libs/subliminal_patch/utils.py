@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import re
 
 
@@ -13,7 +14,7 @@ def sanitize(string, ignore_characters=None, default_characters={'-', ':', '(', 
 
     """
     # only deal with strings
-    if string is None:
+    if not isinstance(string, str):
         return
 
     ignore_characters = ignore_characters or set()

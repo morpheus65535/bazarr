@@ -6,12 +6,11 @@ necessary. It is heavily based on code from Mark Pilgrim's Universal
 Feed Parser. It works best on XML and HTML, but it does not rewrite the
 XML or HTML to reflect a new encoding; that's the tree builder's job.
 """
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Use of this source code is governed by the MIT license.
 __license__ = "MIT"
 
 import codecs
-from htmlentitydefs import codepoint2name
+from html.entities import codepoint2name
 import re
 import logging
 import string
@@ -46,9 +45,9 @@ except ImportError:
     pass
 
 xml_encoding_re = re.compile(
-    '^<\?.*encoding=[\'"](.*?)[\'"].*\?>'.encode(), re.I)
+    '^<\\?.*encoding=[\'"](.*?)[\'"].*\\?>'.encode(), re.I)
 html_meta_re = re.compile(
-    '<\s*meta[^>]+charset\s*=\s*["\']?([^>]*?)[ /;\'">]'.encode(), re.I)
+    '<\\s*meta[^>]+charset\\s*=\\s*["\']?([^>]*?)[ /;\'">]'.encode(), re.I)
 
 class EntitySubstitution(object):
 
@@ -58,15 +57,24 @@ class EntitySubstitution(object):
         lookup = {}
         reverse_lookup = {}
         characters_for_re = []
-        for codepoint, name in list(codepoint2name.items()):
-            character = unichr(codepoint)
-            if codepoint != 34:
+
+        # &apos is an XHTML entity and an HTML 5, but not an HTML 4
+        # entity. We don't want to use it, but we want to recognize it on the way in.
+        #
+        # TODO: Ideally we would be able to recognize all HTML 5 named
+        # entities, but that's a little tricky.
+        extra = [(39, 'apos')]
+        for codepoint, name in list(codepoint2name.items()) + extra:
+            character = chr(codepoint)
+            if codepoint not in (34, 39):
                 # There's no point in turning the quotation mark into
-                # &quot;, unless it happens within an attribute value, which
-                # is handled elsewhere.
+                # &quot; or the single quote into &apos;, unless it
+                # happens within an attribute value, which is handled
+                # elsewhere.
                 characters_for_re.append(character)
                 lookup[character] = name
-            # But we do want to turn &quot; into the quotation mark.
+            # But we do want to recognize those entities on the way in and
+            # convert them to Unicode characters.
             reverse_lookup[name] = character
         re_definition = "[%s]" % "".join(characters_for_re)
         return lookup, reverse_lookup, re.compile(re_definition)
@@ -82,7 +90,7 @@ class EntitySubstitution(object):
         }
 
     BARE_AMPERSAND_OR_BRACKET = re.compile("([<>]|"
-                                           "&(?!#\d+;|#x[0-9a-fA-F]+;|\w+;)"
+                                           "&(?!#\\d+;|#x[0-9a-fA-F]+;|\\w+;)"
                                            ")")
 
     AMPERSAND_OR_BRACKET = re.compile("([<>&])")
@@ -274,7 +282,7 @@ class EncodingDetector:
     def strip_byte_order_mark(cls, data):
         """If a byte-order mark is present, strip it and return the encoding it implies."""
         encoding = None
-        if isinstance(data, unicode):
+        if isinstance(data, str):
             # Unicode data cannot have a byte-order mark.
             return data, encoding
         if (len(data) >= 4) and (data[:2] == b'\xfe\xff') \
@@ -352,9 +360,9 @@ class UnicodeDammit:
             markup, override_encodings, is_html, exclude_encodings)
 
         # Short-circuit if the data is in Unicode to begin with.
-        if isinstance(markup, unicode) or markup == '':
+        if isinstance(markup, str) or markup == '':
             self.markup = markup
-            self.unicode_markup = unicode(markup)
+            self.unicode_markup = str(markup)
             self.original_encoding = None
             return
 
@@ -438,7 +446,7 @@ class UnicodeDammit:
     def _to_unicode(self, data, encoding, errors="strict"):
         '''Given a string and its encoding, decodes the string into Unicode.
         %encoding is a string recognized by encodings.aliases'''
-        return unicode(data, encoding, errors)
+        return str(data, encoding, errors)
 
     @property
     def declared_html_encoding(self):
