@@ -12,7 +12,6 @@ import {
 } from "@fortawesome/react-fontawesome";
 import React, {
   FunctionComponent,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -27,7 +26,7 @@ import {
 } from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
-import { BuildKey, useIsArrayExtended } from "../utilities";
+import { BuildKey } from "../utilities";
 import "./notification.scss";
 
 enum State {
@@ -66,15 +65,6 @@ const NotificationCenter: FunctionComponent = () => {
   const { progress, notifications, notifier } = useReduxStore((s) => s.site);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [hasNew, setHasNew] = useState(false);
-
-  const hasNewProgress = useIsArrayExtended(progress);
-  const hasNewNotifications = useIsArrayExtended(notifications);
-  useDidUpdate(() => {
-    if (hasNewNotifications || hasNewProgress) {
-      setHasNew(true);
-    }
-  }, [hasNewProgress, hasNewNotifications]);
 
   const [btnState, setBtnState] = useState(State.Idle);
 
@@ -143,10 +133,6 @@ const NotificationCenter: FunctionComponent = () => {
     return nodes;
   }, [progress, notifications]);
 
-  const onToggleClick = useCallback(() => {
-    setHasNew(false);
-  }, []);
-
   // Tooltip Controller
   const [showTooltip, setTooltip] = useState(false);
   useTimeoutWhen(() => setTooltip(false), 3 * 1000, showTooltip);
@@ -158,12 +144,7 @@ const NotificationCenter: FunctionComponent = () => {
 
   return (
     <React.Fragment>
-      <Dropdown
-        onClick={onToggleClick}
-        className={`notification-btn ${hasNew ? "new-item" : ""}`}
-        ref={dropdownRef}
-        alignRight
-      >
+      <Dropdown className="notification-btn" ref={dropdownRef} alignRight>
         <Dropdown.Toggle as={Button} className="dropdown-hidden">
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
         </Dropdown.Toggle>
