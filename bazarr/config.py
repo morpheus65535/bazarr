@@ -305,6 +305,8 @@ def save_settings(settings_items):
     update_path_map = False
     configure_proxy = False
     exclusion_updated = False
+    sonarr_exclusion_updated = False
+    radarr_exclusion_updated = False
 
     # Subzero Mods
     update_subzero = False
@@ -375,6 +377,13 @@ def save_settings(settings_items):
                    'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
                    'settings-radarr-only_monitored']:
             exclusion_updated = True
+
+        if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
+                   'settings-sonarr-excluded_series_types']:
+            sonarr_exclusion_updated = True
+
+        if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
+            radarr_exclusion_updated = True
 
         if key == 'settings-addic7ed-username':
             if key != settings.addic7ed.username:
@@ -467,6 +476,10 @@ def save_settings(settings_items):
     if exclusion_updated:
         from event_handler import event_stream
         event_stream(type='badges')
+        if sonarr_exclusion_updated:
+            event_stream(type='reset-episode-wanted')
+        if radarr_exclusion_updated:
+            event_stream(type='reset-movie-wanted')
 
 
 def url_sonarr():
