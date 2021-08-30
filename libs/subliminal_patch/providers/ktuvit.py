@@ -150,6 +150,19 @@ class KtuvitProvider(Provider):
                 timeout=10,
             )
 
+            logger.debug("Request: " + str(r) );
+
+            logger.debug("Logging in to Ktuvit:")
+            logger.debug("URL: " + self.server_url + self.sign_in_url)
+            logger.debug("Headers: " + json.dumps(headers))
+            logger.debug("Body: " + json.dumps(data))
+
+            logger.debug("Response:")
+            logger.debug("Code: " + str(r.status_code))
+            logger.debug("Headers: " + str(r.headers))
+            logger.debug("Body: " + str(r.content))
+            
+
             if r.content:
                 isSuccess = json.loads(r.json.get("d", "")).get("isSuccess", False)
 
