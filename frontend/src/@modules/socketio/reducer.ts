@@ -3,15 +3,19 @@ import {
   episodesMarkBlacklistDirty,
   episodesMarkDirtyById,
   episodesRemoveById,
+  episodesResetHistory,
   movieMarkBlacklistDirty,
   movieMarkDirtyById,
   movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
+  movieResetHistory,
+  movieResetWanted,
   seriesMarkDirtyById,
   seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
+  seriesResetWanted,
   siteAddNotifications,
   siteAddProgress,
   siteBootstrap,
@@ -124,7 +128,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "movie-history",
-      // any: bindReduxAction(movieMarkHistoryDirty),
+      any: bindReduxAction(movieResetHistory),
     },
     {
       key: "movie-blacklist",
@@ -132,11 +136,19 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "episode-history",
-      // any: bindReduxAction(episodesMarkHistoryDirty),
+      any: bindReduxAction(episodesResetHistory),
     },
     {
       key: "episode-blacklist",
       any: bindReduxAction(episodesMarkBlacklistDirty),
+    },
+    {
+      key: "reset-episode-wanted",
+      any: bindReduxAction(seriesResetWanted),
+    },
+    {
+      key: "reset-movie-wanted",
+      any: bindReduxAction(movieResetWanted),
     },
     {
       key: "task",

@@ -16,6 +16,8 @@ declare namespace SocketIO {
     | "episode-history"
     | "movie-blacklist"
     | "movie-history"
+    | "reset-episode-wanted"
+    | "reset-movie-wanted"
     | "badges"
     | "task"
     | "settings"

@@ -4,6 +4,7 @@ import {
   episodesMarkDirtyById,
   episodesMarkHistoryDirty,
   episodesRemoveById,
+  episodesResetHistory,
   episodesUpdateBlacklist,
   episodesUpdateHistoryByRange,
   episodeUpdateById,
@@ -12,6 +13,7 @@ import {
   seriesMarkWantedDirtyById,
   seriesRemoveById,
   seriesRemoveWantedById,
+  seriesResetWanted,
   seriesUpdateAll,
   seriesUpdateById,
   seriesUpdateByRange,
@@ -70,11 +72,13 @@ const reducer = createReducer(defaultSeries, (builder) => {
     ids: seriesUpdateWantedById,
     removeIds: seriesRemoveWantedById,
     dirty: seriesMarkWantedDirtyById,
+    reset: seriesResetWanted,
   });
 
   createAsyncEntityReducer(builder, (s) => s.historyList, {
     range: episodesUpdateHistoryByRange,
     dirty: episodesMarkHistoryDirty,
+    reset: episodesResetHistory,
   });
 
   createAsyncItemReducer(builder, (s) => s.blacklist, {

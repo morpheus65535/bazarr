@@ -22,6 +22,7 @@ interface ActionParam<T, ID = null> {
   all?: AsyncThunk<T, void, {}>;
   ids?: AsyncThunk<T, ID[], {}>;
   removeIds?: ActionCreatorWithPayload<ID[]>;
+  reset?: ActionCreatorWithoutPayload;
   dirty?: ID extends null
     ? ActionCreatorWithoutPayload
     : ActionCreatorWithPayload<ID[]>;
@@ -154,7 +155,7 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>,
   actions: ActionParam<AsyncDataWrapper<T>, ID>
 ) {
-  const { all, removeIds, ids, range, dirty } = actions;
+  const { all, removeIds, ids, range, dirty, reset } = actions;
 
   const checkSizeUpdate = (entity: Draft<Async.Entity<T>>, newSize: number) => {
     if (entity.content.ids.length !== newSize) {
@@ -323,5 +324,16 @@ export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
     builder.addCase(dirty, (state, action) => {
       const entity = getEntity(state);
       ReducerUtility.markDirty(entity, action.payload.map(String));
+    });
+
+  reset &&
+    builder.addCase(reset, (state) => {
+      const entity = getEntity(state);
+      entity.content.entities = {};
+      entity.content.ids = [];
+      entity.didLoaded = [];
+      entity.dirtyEntities = [];
+      entity.error = null;
+      entity.state = "uninitialized";
     });
 }

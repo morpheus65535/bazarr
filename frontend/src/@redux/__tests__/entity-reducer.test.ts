@@ -124,6 +124,7 @@ const rangeRejected = createAsyncThunk(
 );
 const removeIds = createAction<number[]>("remove/id");
 const dirty = createAction<number[]>("dirty/id");
+const reset = createAction("reset");
 
 const reducer = createReducer(defaultState, (builder) => {
   createAsyncEntityReducer(builder, (s) => s.entities, {
@@ -132,6 +133,7 @@ const reducer = createReducer(defaultState, (builder) => {
     ids: idsResolved,
     dirty,
     removeIds,
+    reset,
   });
   createAsyncEntityReducer(builder, (s) => s.entities, {
     all: allRejected,
@@ -194,6 +196,14 @@ it("entity update all rejected", async () => {
     expect(entities.state).toBe("failed");
     expect(entities.content.ids).toHaveLength(0);
     expect(entities.content.entities).toEqual({});
+  });
+});
+
+it("entity reset", async () => {
+  await store.dispatch(allResolved());
+  store.dispatch(reset());
+  use((entities) => {
+    expect(entities).toEqual(defaultState.entities);
   });
 });
 

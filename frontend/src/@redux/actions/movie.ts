@@ -43,6 +43,8 @@ export const movieRemoveWantedById = createAction<number[]>(
   "movies/wanted/remove/id"
 );
 
+export const movieResetWanted = createAction("movies/wanted/reset");
+
 export const movieMarkWantedDirtyById = createAction<number[]>(
   "movies/wanted/mark_dirty/id"
 );
@@ -66,6 +68,8 @@ export const movieUpdateHistoryByRange = createAsyncThunk(
 export const movieMarkHistoryDirty = createAction<number[]>(
   "movies/history/mark_dirty"
 );
+
+export const movieResetHistory = createAction("movie/history/reset");
 
 export const movieUpdateBlacklist = createAsyncThunk(
   "movies/blacklist/update",

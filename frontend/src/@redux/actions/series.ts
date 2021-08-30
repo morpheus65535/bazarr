@@ -21,6 +21,8 @@ export const seriesRemoveWantedById = createAction<number[]>(
   "series/wanted/remove/id"
 );
 
+export const seriesResetWanted = createAction("series/wanted/reset");
+
 export const seriesMarkWantedDirtyById = createAction<number[]>(
   "series/wanted/mark_dirty/episode_id"
 );
@@ -88,6 +90,8 @@ export const episodesUpdateHistoryByRange = createAsyncThunk(
 export const episodesMarkHistoryDirty = createAction<number[]>(
   "episodes/history/update"
 );
+
+export const episodesResetHistory = createAction("episodes/history/reset");
 
 export const episodesUpdateBlacklist = createAsyncThunk(
   "episodes/blacklist/update",

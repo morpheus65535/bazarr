@@ -6,6 +6,8 @@ import {
   movieMarkWantedDirtyById,
   movieRemoveById,
   movieRemoveWantedById,
+  movieResetHistory,
+  movieResetWanted,
   movieUpdateAll,
   movieUpdateBlacklist,
   movieUpdateById,
@@ -48,11 +50,13 @@ const reducer = createReducer(defaultMovie, (builder) => {
     ids: movieUpdateWantedById,
     removeIds: movieRemoveWantedById,
     dirty: movieMarkWantedDirtyById,
+    reset: movieResetWanted,
   });
 
   createAsyncEntityReducer(builder, (s) => s.historyList, {
     range: movieUpdateHistoryByRange,
     dirty: movieMarkHistoryDirty,
+    reset: movieResetHistory,
   });
 
   createAsyncItemReducer(builder, (s) => s.blacklist, {
