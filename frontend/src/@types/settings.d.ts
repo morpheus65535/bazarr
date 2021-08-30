@@ -21,6 +21,7 @@ interface Settings {
   subscene: Settings.Subscene;
   betaseries: Settings.Betaseries;
   titlovi: Settings.Titlovi;
+  ktuvit: Settings.Ktuvit;
   notifications: Settings.Notifications;
 }
 
@@ -192,6 +193,8 @@ declare namespace Settings {
   interface Subscene extends BaseProvider {}
 
   interface Titlovi extends BaseProvider {}
+
+  interface Ktuvit extends BaseProvider {}
 
   interface Betaseries {
     token?: string;
