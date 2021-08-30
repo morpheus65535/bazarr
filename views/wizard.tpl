@@ -601,7 +601,28 @@
                                 </div>
                             </div>
                         </div>
-
+                        <div id="ktuvit_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Email</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_ktuvit_email" type="text" value="{{settings.ktuvit.email if settings.ktuvit.email != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Hashed Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_ktuvit_hashed_password" type="password" value="{{settings.ktuvit.hashed_password if settings.ktuvit.hashed_password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Napiprojekt</label>
