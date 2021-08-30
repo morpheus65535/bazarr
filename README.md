@@ -50,7 +50,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Hosszupuska
 * LegendasDivx
 * LegendasTV
-* Ktuvit
+* Ktuvit (Get `hashed_password` using method described [here](https://github.com/XBMCil/service.subtitles.ktuvit))
 * Napiprojekt
 * Napisy24
 * Nekur
