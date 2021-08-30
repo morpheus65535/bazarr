@@ -76,6 +76,12 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [hasNewProgress, hasNewNotifications]);
 
+  useDidUpdate(() => {
+    if (progress.length === 0 && notifications.length === 0) {
+      setHasNew(false);
+    }
+  }, [progress.length, notifications.length]);
+
   const [btnState, setBtnState] = useState(State.Idle);
 
   const totalProgress = useTotalProgress(progress);
