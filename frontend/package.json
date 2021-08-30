@@ -41,10 +41,6 @@
     "typescript": "^4"
   },
   "devDependencies": {
-    "husky": "^7",
-    "prettier": "^2",
-    "prettier-plugin-organize-imports": "^2",
-    "pretty-quick": "^3.1",
     "@types/bootstrap": "^5",
     "@types/jest": "~26.0.24",
     "@types/lodash": "^4",
@@ -54,8 +50,12 @@
     "@types/react-helmet": "^6.1",
     "@types/react-router-dom": "^5",
     "@types/react-select": "^4.0.3",
+    "@types/react-table": "^7",
     "http-proxy-middleware": "^2",
-    "@types/react-table": "^7"
+    "husky": "^7",
+    "prettier": "^2",
+    "prettier-plugin-organize-imports": "^2",
+    "pretty-quick": "^3.1"
   },
   "scripts": {
     "start": "react-scripts start",
