@@ -988,7 +988,7 @@ def movies_download_subtitles(no):
     hide_progress(id='movie_search_progress_{}'.format(no))
 
 
-def wanted_download_subtitles(sonarr_series_id):
+def wanted_download_subtitles(sonarr_episode_id):
     episodes_details = TableEpisodes.select(TableEpisodes.path,
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.sonarrEpisodeId,
@@ -998,7 +998,7 @@ def wanted_download_subtitles(sonarr_series_id):
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
         .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
-        .where((TableEpisodes.sonarrSeriesId == sonarr_series_id))\
+        .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))\
         .dicts()
     episodes_details = list(episodes_details)
 
@@ -1162,6 +1162,7 @@ def wanted_search_missing_subtitles_series():
     conditions = [(TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
     episodes = TableEpisodes.select(TableEpisodes.sonarrSeriesId,
+                                    TableEpisodes.sonarrEpisodeId,
                                     TableShows.tags,
                                     TableEpisodes.monitored,
                                     TableShows.title,
@@ -1187,7 +1188,7 @@ def wanted_search_missing_subtitles_series():
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode['sonarrSeriesId'])
+            wanted_download_subtitles(episode['sonarrEpisodeId'])
         else:
             logging.info("BAZARR All providers are throttled")
             return
