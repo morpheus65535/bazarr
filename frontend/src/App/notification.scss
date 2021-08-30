@@ -6,6 +6,19 @@
 }
 
 .notification-btn {
+  &.new-item {
+    &::after {
+      position: absolute;
+      background-color: red;
+      content: "";
+      border-radius: 50%;
+      height: 6px;
+      width: 6px;
+      right: 10%;
+      top: 10%;
+    }
+  }
+
   .dropdown-menu {
     max-height: 85vh;
     overflow-y: auto;
