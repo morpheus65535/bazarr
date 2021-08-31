@@ -137,8 +137,6 @@ class KtuvitProvider(Provider):
             self.session.headers['Cache-Control'] = 'no-cache'
             self.session.headers['Content-Type'] = 'application/json'
             self.session.headers['User-Agent']: os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
-            #self.session.headers['Content-Length': len(str(data))
-                
 
             r = self.session.post(
                 self.server_url + self.sign_in_url,
