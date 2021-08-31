@@ -421,13 +421,7 @@ class KtuvitProvider(Provider):
                 url, data=json.dumps({"request": downloadIdentifierRequest}), timeout=10
             )
             r.raise_for_status()
-
-            if r.content) == 0:
-                return
-
-
-            responseContent = json.loads(r.json()['d'])
-
+            
             if r.content:
                 try:
                     responseContent = r.json()
