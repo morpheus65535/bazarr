@@ -418,7 +418,7 @@ class KtuvitProvider(Provider):
             # download
             url = self.server_url + self.request_download_id_url
             r = self.session.post(
-                url, data={"request": downloadIdentifierRequest}, timeout=10
+                url, json={"request": downloadIdentifierRequest}, timeout=10
             )
             r.raise_for_status()
             
