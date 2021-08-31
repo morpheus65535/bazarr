@@ -71,6 +71,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     },
   },
   {
+    key: "ktuvit",
+    name: "Ktuvit",
+    description: "Hebrew Subtitles Provider",
+    defaultKey: {
+      email: "",
+      hashed_password: ""
+    },
+    keyNameOverride: {
+      hashed_password: "Hashed Password",
+    },
+  },
+  {
     key: "legendastv",
     name: "LegendasTV",
     description: "Brazilian / Portuguese Subtitles Provider",
