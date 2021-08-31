@@ -147,15 +147,20 @@ class KtuvitProvider(Provider):
                 timeout=10,
             )
             
-            
             if r.content:
-                responseContent = json.loads(r.json()['d'])
-                isSuccess = responseContent.get('IsSuccess', False)
-
-                if not isSuccess:
-                    AuthenticationError("ErrorMessage: " + responseContent.get("ErrorMessage", "[None]")) 
-            if r.status_code != 200:
-                raise AuthenticationError(self.email)
+                try:
+                    responseContent = r.json()
+                except json.decoder.JSONDecodeError:
+                    AuthenticationError("Unable to parse JSON return while authenticating to the provider.")
+                else:
+                    isSuccess = False
+                    if 'd' in responseContent:
+                        responseContent = json.loads(r.json()['d'])
+                        isSuccess = responseContent.get('IsSuccess', False)
+                        if not isSuccess:
+                            AuthenticationError("ErrorMessage: " + responseContent['d'].get("ErrorMessage", "[None]"))
+                    else:
+                        AuthenticationError("Incomplete JSON returned while authenticating to the provider.")
 
             logger.debug("Logged in")
             self.loginCookie = (
@@ -262,13 +267,20 @@ class KtuvitProvider(Provider):
         )
         r.raise_for_status()
 
-        try:
-            results = r.json()
-        except ValueError:
-            return {}
-
-        responseContent = json.loads(r.json()['d'])
-        results = responseContent.get("Films", [])
+        if r.content:
+            try:
+                responseContent = r.json()
+            except json.decoder.JSONDecodeError:
+                json.decoder.JSONDecodeError("Unable to parse JSON returned while getting Film/Series Information.")
+            else:
+                isSuccess = False
+                if 'd' in responseContent:
+                    responseContent = json.loads(r.json()['d'])
+                    results = responseContent.get('Films', [])
+                else:
+                    json.decoder.JSONDecodeError("Incomplete JSON returned while getting Film/Series Information.")
+        else:
+            return  {}
 
         # loop over results
         subtitles = {}
@@ -412,12 +424,27 @@ class KtuvitProvider(Provider):
             )
             r.raise_for_status()
 
-            if len(r.content) == 0:
+            if r.content) == 0:
                 return
 
 
             responseContent = json.loads(r.json()['d'])
-            downloadIdentifier = responseContent.get('DownloadIdentifier')
+
+            if r.content:
+                try:
+                    responseContent = r.json()
+                except json.decoder.JSONDecodeError:
+                    json.decoder.JSONDecodeError("Unable to parse JSON returned while getting Download Identifier.")
+                else:
+                    isSuccess = False
+                    if 'd' in responseContent:
+                        responseContent = json.loads(r.json()['d'])
+                        downloadIdentifier = responseContent.get('DownloadIdentifier', None)
+
+                        if not downloadIdentifier:
+                            json.decoder.JSONDecodeError("Missing Download Identifier.")    
+                    else:
+                        json.decoder.JSONDecodeError("Incomplete JSON returned while getting Download Identifier.")
 
             url = self.server_url + self.download_link + downloadIdentifier
 
