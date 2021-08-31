@@ -140,7 +140,7 @@ class KtuvitProvider(Provider):
 
             r = self.session.post(
                 self.server_url + self.sign_in_url,
-                data=json.dumps(data),
+                json=data,
                 allow_redirects=False,
                 timeout=10,
             )
@@ -153,7 +153,7 @@ class KtuvitProvider(Provider):
                 else:
                     isSuccess = False
                     if 'd' in responseContent:
-                        responseContent = json.loads(r.json()['d'])
+                        responseContent = json.loads(responseContent['d'])
                         isSuccess = responseContent.get('IsSuccess', False)
                         if not isSuccess:
                             AuthenticationError("ErrorMessage: " + responseContent['d'].get("ErrorMessage", "[None]"))
@@ -261,7 +261,7 @@ class KtuvitProvider(Provider):
 
         url = self.server_url + self.search_url
         r = self.session.post(
-            url, data=json.dumps({"request": query}), timeout=10
+            url, json={"request": query}, timeout=10
         )
         r.raise_for_status()
 
@@ -273,7 +273,7 @@ class KtuvitProvider(Provider):
             else:
                 isSuccess = False
                 if 'd' in responseContent:
-                    responseContent = json.loads(r.json()['d'])
+                    responseContent = json.loads(responseContent['d'])
                     results = responseContent.get('Films', [])
                 else:
                     json.decoder.JSONDecodeError("Incomplete JSON returned while getting Film/Series Information.")
@@ -418,7 +418,7 @@ class KtuvitProvider(Provider):
             # download
             url = self.server_url + self.request_download_id_url
             r = self.session.post(
-                url, data=json.dumps({"request": downloadIdentifierRequest}), timeout=10
+                url, data={"request": downloadIdentifierRequest}, timeout=10
             )
             r.raise_for_status()
             
@@ -430,7 +430,7 @@ class KtuvitProvider(Provider):
                 else:
                     isSuccess = False
                     if 'd' in responseContent:
-                        responseContent = json.loads(r.json()['d'])
+                        responseContent = json.loads(responseContent['d'])
                         downloadIdentifier = responseContent.get('DownloadIdentifier', None)
 
                         if not downloadIdentifier:
