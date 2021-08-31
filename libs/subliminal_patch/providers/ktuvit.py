@@ -121,53 +121,39 @@ class KtuvitProvider(Provider):
         self.logged_in = False
         self.session = None
         self.loginCookie = None
-        self.headers = None
 
     def initialize(self):
         self.session = Session()
-        self.session.headers["User-Agent"] = "Subliminal/{}".format(__short_version__)
 
         # login
         if self.email and self.hashed_password:
             logger.info("Logging in")
 
             data = {"request": {"Email": self.email, "Password": self.hashed_password}}
-            headers = {
-                'Accept-Encoding': 'gzip',
-                'Accept-Language': 'en-us,en;q=0.5',
-                'Pragma': 'no-cache',
-                'Cache-Control': 'no-cache',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36',
-                'Content-Length': len(str(data))
-                }
+            
+            self.session.headers['Accept-Encoding'] = 'gzip'
+            self.session.headers['Accept-Language'] = 'en-us,en;q=0.5'
+            self.session.headers['Pragma'] = 'no-cache'
+            self.session.headers['Cache-Control'] = 'no-cache'
+            self.session.headers['Content-Type'] = 'application/json'
+            self.session.headers['User-Agent']: os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
+            #self.session.headers['Content-Length': len(str(data))
+                
 
             r = self.session.post(
                 self.server_url + self.sign_in_url,
-                data,
-                headers=headers,
+                data=json.dumps(data),
                 allow_redirects=False,
                 timeout=10,
             )
-
-            logger.debug("Request: " + str(r) );
-
-            logger.debug("Logging in to Ktuvit:")
-            logger.debug("URL: " + self.server_url + self.sign_in_url)
-            logger.debug("Headers: " + json.dumps(headers))
-            logger.debug("Body: " + json.dumps(data))
-
-            logger.debug("Response:")
-            logger.debug("Code: " + str(r.status_code))
-            logger.debug("Headers: " + str(r.headers))
-            logger.debug("Body: " + str(r.content))
             
-
+            
             if r.content:
-                isSuccess = json.loads(r.json.get("d", "")).get("isSuccess", False)
+                responseContent = json.loads(r.json()['d'])
+                isSuccess = responseContent.get('IsSuccess', False)
 
                 if not isSuccess:
-                    AuthenticationError("ErrorMessage: " + str(json.loads(r.get("d", "")).get("ErrorMessage", ""))) 
+                    AuthenticationError("ErrorMessage: " + responseContent.get("ErrorMessage", "[None]")) 
             if r.status_code != 200:
                 raise AuthenticationError(self.email)
 
@@ -176,10 +162,9 @@ class KtuvitProvider(Provider):
                 r.headers["set-cookie"][1].split(";")[0].replace("Login=", "")
             )
 
-            headers["accept"]="application/json, text/javascript, */*; q=0.01"
-            headers["cookie"]= "Login=" + self.loginCookie
-            
-            self.headers = headers            
+            self.session.headers["Accept"]="application/json, text/javascript, */*; q=0.01"
+            self.session.headers["Cookie"]="Login=" + self.loginCookie
+                       
             self.logged_in = True
 
     def terminate(self):
@@ -273,7 +258,7 @@ class KtuvitProvider(Provider):
 
         url = self.server_url + self.search_url
         r = self.session.post(
-            url, data={"request": query}, headers=self.headers, timeout=10
+            url, data=json.dumps({"request": query}), timeout=10
         )
         r.raise_for_status()
 
@@ -282,15 +267,20 @@ class KtuvitProvider(Provider):
         except ValueError:
             return {}
 
-        results = json.loads(r.json.get("d", "")).get("Films", [])
+        responseContent = json.loads(r.json()['d'])
+        results = responseContent.get("Films", [])
 
         # loop over results
         subtitles = {}
         for result in results:
-            if result["ImdbID"] is not imdb_id:
+            imdb_link = result["IMDB_Link"]
+            imdb_link = imdb_link[0: -1] if imdb_link.endswith("/") else imdb_link
+            results_imdb_id = imdb_link.split("/")[-1]
+            
+            if results_imdb_id != imdb_id:
                 logger.debug(
                     "Subtitles is for IMDB %r but actual IMDB ID is %r",
-                    result["ImdbID"],
+                    results_imdb_id,
                     imdb_id,
                 )
                 continue
@@ -301,9 +291,9 @@ class KtuvitProvider(Provider):
             page_link = self.server_url + self.movie_info_url + ktuvit_id
 
             if is_movie:
-                subs = self._search_movie(ktuvit_id, subtitles)
+                subs = self._search_movie(ktuvit_id)
             else:
-                subs = self._search_tvshow(ktuvit_id, season, episode, subtitles)
+                subs = self._search_tvshow(ktuvit_id, season, episode)
 
             for sub in subs:
                 # otherwise create it
@@ -316,11 +306,12 @@ class KtuvitProvider(Provider):
                     episode,
                     title,
                     imdb_id,
+                    ktuvit_id,
                     sub["sub_id"],
                     sub["rls"],
                 )
                 logger.debug("Found subtitle %r", subtitle)
-                sub["sub_id"] = subtitle
+                subtitles[sub["sub_id"]] = subtitle
 
         return subtitles.values()
 
@@ -334,10 +325,10 @@ class KtuvitProvider(Provider):
                 id, season, episode
             )
         )
-        r = self.session.get(url, headers=self.headers, timeout=10)
+        r = self.session.get(url, timeout=10)
         r.raise_for_status()
 
-        sub_list = ParserBeautifulSoup(r.content, "html.parser")
+        sub_list = ParserBeautifulSoup(r.content, ["html.parser"])
         sub_rows = sub_list.find_all("tr")
 
         for row in sub_rows:
@@ -346,11 +337,9 @@ class KtuvitProvider(Provider):
 
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub["rls"] = column.find("div").html().split("<br>")[0].trim()
+                    sub['rls'] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub["sub_id"] = column.find(".fa")[
-                        "data-subtitle-id"
-                    ]
+                    sub['sub_id'] = column.find("input", attrs={"data-sub-id": True})["data-sub-id"]
 
             subs.append(sub)
         return subs
@@ -358,25 +347,24 @@ class KtuvitProvider(Provider):
     def _search_movie(self, movie_id):
         subs = []
         url = self.server_url + self.movie_info_url + movie_id
-        r = self.session.get(url, headers=self.headers, timeout=10)
+        r = self.session.get(url, timeout=10)
         r.raise_for_status()
 
-        html = ParserBeautifulSoup(r.content, "html.parser")
+        html = ParserBeautifulSoup(r.content, ["html.parser"])
         sub_rows = html.select("table#subtitlesList tbody > tr")
 
         for row in sub_rows:
             columns = row.find_all("td")
-            sub = {"id": movie_id}
+            sub = {
+                'id': movie_id
+            }
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub["rls"] = column.get_text().strip().split("\n")[0]
+                    sub['rls'] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub["sub_id"] = column.find("a", attrs={"data-subtitle-id": True})[
-                        "data-subtitle-id"
-                    ]
+                    sub['sub_id'] = column.find("a", attrs={"data-subtitle-id": True})["data-subtitle-id"]
 
-                subs.append(sub)
-
+            subs.append(sub)
         return subs
 
     def list_subtitles(self, video, languages):
@@ -408,27 +396,32 @@ class KtuvitProvider(Provider):
     def download_subtitle(self, subtitle):
         if isinstance(subtitle, KtuvitSubtitle):
             downloadIdentifierRequest = {
-                "FilmID": subtitle.film_id,
+                "FilmID": subtitle.ktuvit_id,
                 "SubtitleID": subtitle.subtitle_id,
                 "FontSize": 0,
                 "FontColor": "",
                 "PredefinedLayout": -1,
             }
 
+            logger.debug("Download Identifier Request data: " + str(json.dumps({"request": downloadIdentifierRequest})))
+
             # download
             url = self.server_url + self.request_download_id_url
             r = self.session.post(
-                url, data=downloadIdentifierRequest, headers=self.headers, timeout=10
+                url, data=json.dumps({"request": downloadIdentifierRequest}), timeout=10
             )
             r.raise_for_status()
 
             if len(r.content) == 0:
                 return
 
-            downloadIdentifier = r.content.d.DownloadIdentifier
+
+            responseContent = json.loads(r.json()['d'])
+            downloadIdentifier = responseContent.get('DownloadIdentifier')
 
             url = self.server_url + self.download_link + downloadIdentifier
-            r = self.session.get(url, headers=self.headers, timeout=10)
+
+            r = self.session.get(url, timeout=10)
             r.raise_for_status()
 
             if not r.content:

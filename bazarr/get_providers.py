@@ -189,8 +189,8 @@ def get_providers_auth():
             'password': settings.titlovi.password,
         },
         'ktuvit'           : {
-            'username': settings.ktuvit.email,
-            'password': settings.ktuvit.hashed_password,
+            'email': settings.ktuvit.email,
+            'hashed_password': settings.ktuvit.hashed_password,
         },
     }
 

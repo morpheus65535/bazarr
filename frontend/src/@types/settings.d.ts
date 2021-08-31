@@ -194,7 +194,10 @@ declare namespace Settings {
 
   interface Titlovi extends BaseProvider {}
 
-  interface Ktuvit extends BaseProvider {}
+  interface Ktuvit {
+    email?: string;
+    hashed_password?: string;
+  }
 
   interface Betaseries {
     token?: string;
