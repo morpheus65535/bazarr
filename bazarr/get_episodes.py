@@ -44,7 +44,7 @@ def sync_episodes(series_id=None, send_event=True):
     seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr,)
 
     series_count = len(seriesIdList)
-    for i, seriesId in enumerate(seriesIdList, 1):
+    for i, seriesId in enumerate(seriesIdList):
         sleep()
         if send_event:
             show_progress(id='episodes_progress',
@@ -85,12 +85,6 @@ def sync_episodes(series_id=None, send_event=True):
                                     episodes_to_add.append(episodeParser(episode))
 
     if send_event:
-        show_progress(id='episodes_progress',
-                      header='Syncing episodes...',
-                      name='Completed successfully',
-                      value=series_count,
-                      count=series_count)
-
         hide_progress(id='episodes_progress')
 
     # Remove old episodes from DB
@@ -183,12 +177,10 @@ def sync_one_episode(episode_id):
 
         else:
             # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if not get_sonarr_info.is_legacy():
-                episodeFile = get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                                episode_file_id=existing_episode['episode_file_id'])
-                if episode_data['hasFile']:
-                    episode_data['episodeFile'] = episodeFile
-
+            if not get_sonarr_info.is_legacy() and existing_episode and episode_data['hasFile']:
+                episode_data['episodeFile'] = \
+                    get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
+                                                      episode_file_id=existing_episode['episode_file_id'])
             episode = episodeParser(episode_data)
     except Exception:
         logging.debug('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')

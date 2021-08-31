@@ -5,144 +5,82 @@ class MovieApi extends BaseApi {
     super("/movies");
   }
 
-  async blacklist(): Promise<Array<Blacklist.Movie>> {
-    return new Promise<Array<Blacklist.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Blacklist.Movie>>>("/blacklist")
-        .then((res) => {
-          resolve(res.data.data);
-        })
-        .catch(reject);
-    });
+  async blacklist() {
+    const response = await this.get<DataWrapper<Blacklist.Movie[]>>(
+      "/blacklist"
+    );
+    return response.data;
   }
 
-  async addBlacklist(
-    radarrid: number,
-    form: FormType.AddBlacklist
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.post<void>("/blacklist", form, { radarrid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async addBlacklist(radarrid: number, form: FormType.AddBlacklist) {
+    await this.post("/blacklist", form, { radarrid });
   }
 
-  async deleteBlacklist(
-    all?: boolean,
-    form?: FormType.DeleteBlacklist
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.delete<void>("/blacklist", form, { all })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
+    await this.delete("/blacklist", form, { all });
   }
 
   async movies(radarrid?: number[]) {
-    return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Movie>>("", { radarrid })
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
+    const response = await this.get<AsyncDataWrapper<Item.Movie>>("", {
+      radarrid,
     });
+    return response;
   }
 
-  async moviesBy(start: number, length: number) {
-    return new Promise<AsyncDataWrapper<Item.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Item.Movie>>("", { start, length })
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+  async moviesBy(params: Parameter.Range) {
+    const response = await this.get<AsyncDataWrapper<Item.Movie>>("", params);
+    return response;
   }
 
   async modify(form: FormType.ModifyItem) {
-    return new Promise<void>((resolve, reject) => {
-      this.post<void>("", { radarrid: form.id, profileid: form.profileid })
-        .then(() => resolve())
-        .catch((err) => reject(err));
-    });
+    await this.post("", { radarrid: form.id, profileid: form.profileid });
   }
 
-  async wanted(start: number, length: number) {
-    return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { start, length })
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+  async wanted(params: Parameter.Range) {
+    const response = await this.get<AsyncDataWrapper<Wanted.Movie>>(
+      "/wanted",
+      params
+    );
+    return response;
   }
 
   async wantedBy(radarrid: number[]) {
-    return new Promise<AsyncDataWrapper<Wanted.Movie>>((resolve, reject) => {
-      this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", { radarrid })
-        .then((result) => {
-          resolve(result.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
+    const response = await this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", {
+      radarrid,
     });
+    return response;
   }
 
-  async history(id?: number): Promise<Array<History.Movie>> {
-    return new Promise<Array<History.Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<History.Movie>>>("/history", {
-        radarrid: id,
-      })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+  async history(params: Parameter.Range) {
+    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+      "/history",
+      params
+    );
+    return response;
+  }
+
+  async historyBy(radarrid: number) {
+    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+      "/history",
+      { radarrid }
+    );
+    return response;
   }
 
   async action(action: FormType.MoviesAction) {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("", action)
-        .then(() => resolve())
-        .catch(reject);
-    });
+    await this.patch("", action);
   }
 
-  async downloadSubtitles(id: number, form: FormType.Subtitle): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.patch("/subtitles", form, { radarrid: id })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async downloadSubtitles(radarrid: number, form: FormType.Subtitle) {
+    await this.patch("/subtitles", form, { radarrid });
   }
 
-  async uploadSubtitles(
-    id: number,
-    form: FormType.UploadSubtitle
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.post("/subtitles", form, { radarrid: id })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async uploadSubtitles(radarrid: number, form: FormType.UploadSubtitle) {
+    await this.post("/subtitles", form, { radarrid });
   }
 
-  async deleteSubtitles(
-    id: number,
-    form: FormType.DeleteSubtitle
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.delete("/subtitles", form, { radarrid: id })
-        .then(() => resolve())
-        .catch(reject);
-    });
+  async deleteSubtitles(radarrid: number, form: FormType.DeleteSubtitle) {
+    await this.delete("/subtitles", form, { radarrid });
   }
 }
 

@@ -15,6 +15,7 @@ import {
   Navbar,
   Row,
 } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { SidebarToggleContext } from ".";
 import { siteRedirectToAuth } from "../@redux/actions";
 import { useSystemSettings } from "../@redux/hooks";
@@ -23,8 +24,9 @@ import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
-import { useGotoHomepage } from "../utilites";
+import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
+import NotificationCenter from "./Notification";
 
 async function SearchItem(text: string) {
   const results = await SystemApi.search(text);
@@ -50,15 +52,17 @@ interface Props {}
 const Header: FunctionComponent<Props> = () => {
   const setNeedAuth = useReduxAction(siteRedirectToAuth);
 
-  const [settings] = useSystemSettings();
+  const settings = useSystemSettings();
 
-  const canLogout = (settings.data?.auth.type ?? "none") === "form";
+  const canLogout = (settings.content?.auth.type ?? "none") === "form";
 
   const toggleSidebar = useContext(SidebarToggleContext);
 
   const offline = useIsOffline();
 
-  const dropdown = useMemo(
+  const isMobile = useIsMobile();
+
+  const serverActions = useMemo(
     () => (
       <Dropdown alignRight>
         <Dropdown.Toggle className="dropdown-hidden" as={Button}>
@@ -98,6 +102,9 @@ const Header: FunctionComponent<Props> = () => {
 
   return (
     <Navbar bg="primary" className="flex-grow-1 px-0">
+      <Helmet>
+        <meta name="theme-color" content="#911f93" />
+      </Helmet>
       <div className="header-icon px-3 m-0 d-none d-md-block">
         <Image
           alt="brand"
@@ -113,10 +120,11 @@ const Header: FunctionComponent<Props> = () => {
       </Button>
       <Container fluid>
         <Row noGutters className="flex-grow-1">
-          <Col xs={6} sm={4} className="d-flex align-items-center">
+          <Col xs={4} sm={6} className="d-flex align-items-center">
             <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
+            <NotificationCenter></NotificationCenter>
             <Button
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
@@ -131,10 +139,10 @@ const Header: FunctionComponent<Props> = () => {
                 variant="warning"
                 icon={faNetworkWired}
               >
-                Connecting...
+                {isMobile ? "" : "Connecting..."}
               </ActionButton>
             ) : (
-              dropdown
+              serverActions
             )}
           </Col>
         </Row>

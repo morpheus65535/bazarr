@@ -10,8 +10,9 @@ import React, { FunctionComponent } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
-import { AsyncStateOverlay } from "../../components";
+import { AsyncOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
+import "./style.scss";
 import Table from "./table";
 
 interface InfoProps {
@@ -65,19 +66,8 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
 interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
-  const [health] = useSystemHealth();
-  const [status] = useSystemStatus();
-
-  let health_table;
-  if (health.data.length) {
-    health_table = (
-      <AsyncStateOverlay state={health}>
-        {({ data }) => <Table health={data}></Table>}
-      </AsyncStateOverlay>
-    );
-  } else {
-    health_table = "No issues with your configuration";
-  }
+  const health = useSystemHealth();
+  const status = useSystemStatus();
 
   return (
     <Container className="p-5">
@@ -85,7 +75,13 @@ const SystemStatusView: FunctionComponent<Props> = () => {
         <title>Status - Bazarr (System)</title>
       </Helmet>
       <Row>
-        <InfoContainer title="Health">{health_table}</InfoContainer>
+        <InfoContainer title="Health">
+          <AsyncOverlay ctx={health}>
+            {({ content }) => {
+              return <Table health={content ?? []}></Table>;
+            }}
+          </AsyncOverlay>
+        </InfoContainer>
       </Row>
       <Row>
         <InfoContainer title="About">

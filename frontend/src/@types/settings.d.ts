@@ -20,11 +20,11 @@ interface Settings {
   napisy24: Settings.Napisy24;
   subscene: Settings.Subscene;
   betaseries: Settings.Betaseries;
-  titlovi: Settings.titlovi;
+  titlovi: Settings.Titlovi;
   notifications: Settings.Notifications;
 }
 
-namespace Settings {
+declare namespace Settings {
   interface General {
     adaptive_searching: boolean;
     anti_captcha_provider?: string;

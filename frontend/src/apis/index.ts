@@ -1,18 +1,15 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth, siteUpdateOffline } from "../@redux/actions";
-import reduxStore from "../@redux/store";
-import { getBaseUrl } from "../utilites";
+import { siteRedirectToAuth } from "../@redux/actions";
+import { AppDispatch } from "../@redux/store";
+import { Environment, isProdEnv } from "../utilities";
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
+  dispatch!: AppDispatch;
 
   constructor() {
-    const baseUrl = `${getBaseUrl()}/api/`;
-    if (process.env.NODE_ENV === "development") {
-      this.initialize(baseUrl, process.env["REACT_APP_APIKEY"]!);
-    } else {
-      this.initialize(baseUrl, window.Bazarr.apiKey);
-    }
+    const baseUrl = `${Environment.baseUrl}/api/`;
+    this.initialize(baseUrl, Environment.apiKey);
   }
 
   initialize(url: string, apikey?: string) {
@@ -51,25 +48,16 @@ class Api {
     );
   }
 
-  danger_resetApi(apikey: string) {
-    this.axios.defaults.headers.common["X-API-KEY"] = apikey;
-  }
-
-  onOnline() {
-    const offline = reduxStore.getState().site.offline;
-    if (offline) {
-      reduxStore.dispatch(siteUpdateOffline(false));
+  _resetApi(apikey: string) {
+    if (!isProdEnv) {
+      this.axios.defaults.headers.common["X-API-KEY"] = apikey;
     }
-  }
-
-  onOffline() {
-    reduxStore.dispatch(siteUpdateOffline(true));
   }
 
   handleError(code: number) {
     switch (code) {
       case 401:
-        reduxStore.dispatch(siteRedirectToAuth());
+        this.dispatch(siteRedirectToAuth());
         break;
       case 500:
         break;

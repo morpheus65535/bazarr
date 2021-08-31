@@ -1,64 +1,87 @@
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ProvidersApi, SystemApi } from "../../apis";
-import {
-  SYSTEM_UPDATE_HEALTH,
-  SYSTEM_UPDATE_LANGUAGES_LIST,
-  SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
-  SYSTEM_UPDATE_LOGS,
-  SYSTEM_UPDATE_PROVIDERS,
-  SYSTEM_UPDATE_RELEASES,
-  SYSTEM_UPDATE_SETTINGS,
-  SYSTEM_UPDATE_STATUS,
-  SYSTEM_UPDATE_TASKS,
-} from "../constants";
-import { createAsyncAction, createAsyncCombineAction } from "./factory";
 
-export const systemUpdateLanguagesAll = createAsyncCombineAction(() => [
-  systemUpdateLanguages(),
-  systemUpdateLanguagesProfiles(),
-]);
-
-export const systemUpdateLanguages = createAsyncAction(
-  SYSTEM_UPDATE_LANGUAGES_LIST,
-  () => SystemApi.languages()
+export const systemUpdateAllSettings = createAsyncThunk(
+  "system/update",
+  async (_: undefined, { dispatch }) => {
+    await Promise.all([
+      dispatch(systemUpdateSettings()),
+      dispatch(systemUpdateLanguages()),
+      dispatch(systemUpdateLanguagesProfiles()),
+    ]);
+  }
 );
 
-export const systemUpdateLanguagesProfiles = createAsyncAction(
-  SYSTEM_UPDATE_LANGUAGES_PROFILE_LIST,
-  () => SystemApi.languagesProfileList()
+export const systemUpdateLanguages = createAsyncThunk(
+  "system/languages/update",
+  async () => {
+    const response = await SystemApi.languages();
+    return response;
+  }
 );
 
-export const systemUpdateStatus = createAsyncAction(SYSTEM_UPDATE_STATUS, () =>
-  SystemApi.status()
+export const systemUpdateLanguagesProfiles = createAsyncThunk(
+  "system/languages/profile/update",
+  async () => {
+    const response = await SystemApi.languagesProfileList();
+    return response;
+  }
 );
 
-export const systemUpdateHealth = createAsyncAction(SYSTEM_UPDATE_HEALTH, () =>
-  SystemApi.health()
+export const systemUpdateStatus = createAsyncThunk(
+  "system/status/update",
+  async () => {
+    const response = await SystemApi.status();
+    return response;
+  }
 );
 
-export const systemUpdateTasks = createAsyncAction(SYSTEM_UPDATE_TASKS, () =>
-  SystemApi.getTasks()
+export const systemUpdateHealth = createAsyncThunk(
+  "system/health/update",
+  async () => {
+    const response = await SystemApi.health();
+    return response;
+  }
 );
 
-export const systemUpdateLogs = createAsyncAction(SYSTEM_UPDATE_LOGS, () =>
-  SystemApi.logs()
+export const systemMarkTasksDirty = createAction("system/tasks/mark_dirty");
+
+export const systemUpdateTasks = createAsyncThunk(
+  "system/tasks/update",
+  async () => {
+    const response = await SystemApi.tasks();
+    return response;
+  }
 );
 
-export const systemUpdateReleases = createAsyncAction(
-  SYSTEM_UPDATE_RELEASES,
-  () => SystemApi.releases()
+export const systemUpdateLogs = createAsyncThunk(
+  "system/logs/update",
+  async () => {
+    const response = await SystemApi.logs();
+    return response;
+  }
 );
 
-export const systemUpdateSettings = createAsyncAction(
-  SYSTEM_UPDATE_SETTINGS,
-  () => SystemApi.settings()
+export const systemUpdateReleases = createAsyncThunk(
+  "system/releases/update",
+  async () => {
+    const response = await SystemApi.releases();
+    return response;
+  }
 );
 
-export const providerUpdateList = createAsyncAction(
-  SYSTEM_UPDATE_PROVIDERS,
-  () => ProvidersApi.providers()
+export const systemUpdateSettings = createAsyncThunk(
+  "system/settings/update",
+  async () => {
+    const response = await SystemApi.settings();
+    return response;
+  }
 );
 
-export const systemUpdateSettingsAll = createAsyncCombineAction(() => [
-  systemUpdateSettings(),
-  systemUpdateLanguagesAll(),
-]);
+export const providerUpdateList = createAsyncThunk(
+  "providers/update",
+  async () => {
+    const response = await ProvidersApi.providers();
+    return response;
+  }
+);

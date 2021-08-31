@@ -2,26 +2,29 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
+import { providerUpdateList } from "../../@redux/actions";
 import { useSystemProviders } from "../../@redux/hooks";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { ProvidersApi } from "../../apis";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { AsyncOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {}
 
 const SystemProvidersView: FunctionComponent<Props> = () => {
-  const [providers, update] = useSystemProviders();
+  const providers = useSystemProviders();
+  const update = useReduxAction(providerUpdateList);
 
   return (
-    <AsyncStateOverlay state={providers}>
-      {({ data }) => (
+    <AsyncOverlay ctx={providers}>
+      {({ content, state }) => (
         <Container fluid>
           <Helmet>
             <title>Providers - Bazarr (System)</title>
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={providers.updating}
+              updating={state === "loading"}
               icon={faSync}
               onClick={update}
             >
@@ -36,11 +39,11 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table providers={data}></Table>
+            <Table providers={content ?? []}></Table>
           </Row>
         </Container>
       )}
-    </AsyncStateOverlay>
+    </AsyncOverlay>
   );
 };
 

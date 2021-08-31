@@ -11,12 +11,11 @@ import {
   BaseModal,
   BaseModalProps,
   Selector,
-  useCloseModal,
+  useModalInformation,
   useOnModalShow,
-  usePayload,
   useShowModal,
 } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
@@ -44,28 +43,29 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     "name"
   );
 
-  const payload = usePayload<Settings.NotificationInfo>(modal.modalKey);
+  const { payload, closeModal } =
+    useModalInformation<Settings.NotificationInfo>(modal.modalKey);
 
-  const [current, setCurrent] = useState<Nullable<Settings.NotificationInfo>>(
-    payload ?? null
+  const [current, setCurrent] =
+    useState<Nullable<Settings.NotificationInfo>>(payload);
+
+  useOnModalShow<Settings.NotificationInfo>(
+    (p) => setCurrent(p),
+    modal.modalKey
   );
 
-  const onShow = useCallback(() => setCurrent(payload ?? null), [payload]);
-
-  useOnModalShow(modal.modalKey, onShow);
-
-  const updateUrl = useCallback(
-    (s: string) => {
+  const updateUrl = useCallback((url: string) => {
+    setCurrent((current) => {
       if (current) {
-        const newCurrent = { ...current };
-        newCurrent.url = s;
-        setCurrent(newCurrent);
+        return {
+          ...current,
+          url,
+        };
+      } else {
+        return current;
       }
-    },
-    [current]
-  );
-
-  const closeModal = useCloseModal();
+    });
+  }, []);
 
   const canSave =
     current !== null && current?.url !== null && current?.url.length !== 0;
@@ -104,8 +104,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           disabled={!canSave}
           onClick={() => {
             if (current) {
-              current.enabled = true;
-              update(current);
+              update({ ...current, enabled: true });
             }
             closeModal();
           }}

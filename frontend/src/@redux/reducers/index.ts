@@ -1,12 +1,13 @@
-import { combineReducers } from "redux";
-import movie from "./movie";
+import movies from "./movie";
 import series from "./series";
 import site from "./site";
 import system from "./system";
 
-export default combineReducers({
-  system,
+const AllReducers = {
+  movies,
   series,
-  movie,
   site,
-});
+  system,
+};
+
+export default AllReducers;

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import logging
 import re
 
@@ -8,6 +10,72 @@ from database import TableCustomScoreProfileConditions as conditions_table
 from database import TableCustomScoreProfiles as profiles_table
 
 logger = logging.getLogger(__name__)
+
+
+class Condition:
+    """Base class for score conditions. Every condition can take the amount
+    of attributes needed from a subtitle object in order to find a match."""
+
+    type = None
+    against = ()
+
+    # {type: provider, value: subdivx, required: False, negate: False}
+    def __init__(self, value: str, required=False, negate=False, **kwargs):
+        self._value = str(value)
+        self._negate = negate
+        self.required = required
+
+    @classmethod
+    def from_dict(cls, item: dict) -> Condition:
+        """A factory method to create a condition object from a database
+        dictionary."""
+        try:
+            new = _registered_conditions[item["type"]]
+        except IndexError:
+            raise NotImplementedError(f"{item} condition doesn't have a class.")
+
+        return new(**item)
+
+    def check(self, subtitle) -> bool:
+        """Check if the condition is met against a Subtitle object. **May be implemented
+        in a subclass**."""
+        to_match = [str(getattr(subtitle, name, None)) for name in self.against]
+        met = any(item == self._value for item in to_match)
+        if met and not self._negate:
+            return True
+
+        return not met and self._negate
+
+    def __repr__(self) -> str:
+        return f"<Condition {self.type}={self._value} (r:{self.required} n:{self._negate})>"
+
+
+class ProviderCondition(Condition):
+    type = "provider"
+    against = ("provider_name",)
+
+
+class UploaderCondition(Condition):
+    type = "uploader"
+    against = ("uploader",)
+
+
+class LanguageCondition(Condition):
+    type = "language"
+    against = ("language",)
+
+
+class RegexCondition(Condition):
+    type = "regex"
+    against = ("release_info", "filename")
+
+    def check(self, subtitle):
+        to_match = [str(getattr(subtitle, name, None)) for name in self.against]
+        met = re.search(rf"{self._value}", "".join(to_match)) is not None
+        if met and not self._negate:
+            return True
+
+        return not met and self._negate
 
 
 class CustomScoreProfile:
@@ -24,11 +92,12 @@ class CustomScoreProfile:
 
     def load_conditions(self):
         try:
-            self._conditions = list(
-                self.conditions_table.select()
+            self._conditions = [
+                Condition.from_dict(item)
+                for item in self.conditions_table.select()
                 .where(self.conditions_table.profile_id == self.id)
                 .dicts()
-            )
+            ]
         except self.conditions_table.DoesNotExist:
             logger.debug("Conditions not found for %s", self)
             self._conditions = []
@@ -42,50 +111,28 @@ class CustomScoreProfile:
 
         # Always return False if no conditions are set
         if not self._conditions:
-            logger.debug("No conditions found in %s profile", self)
+            logger.debug("No conditions found in db for %s", self)
             return False
 
-        logger.debug("Checking conditions for %s profile", self)
-        met = self._check_conditions(subtitle)
-        logger.debug("Profile conditions met? %s", met)
-        return met
+        return self._check_conditions(subtitle)
 
     def _check_conditions(self, subtitle):
-        checkers = {
-            "provider": subtitle.provider_name,
-            "uploader": subtitle.uploader,
-            "language": subtitle.language,
-            "regex": subtitle.release_info,
-        }
+        logger.debug("Checking conditions for %s profile", self)
 
         matches = []
         for condition in self._conditions:
-            # Condition dict example:
-            # {type: provider, value: subdivx, required: False, negate: False}
-            key = condition.get("type")
-            sub_value = checkers.get(key)
-            if sub_value is None:
-                continue
+            matched = condition.check(subtitle)
 
-            cond_value = condition.get("value", "")
-            negate = condition.get("negate", False)
-
-            logger.debug("Checking %s: %s (condition: %s)", key, sub_value, condition)
-
-            if key == "regex" and re.findall(rf"{cond_value}", sub_value):
-                logger.debug("Regex matched: %s -> %s", cond_value, sub_value)
-                matches.append(not negate and True)
-
-            elif cond_value == sub_value:
-                logger.debug("%s condition met: %s -> %s", key, cond_value, sub_value)
-                matches.append(not negate and True)
-
-            # Return False if any required condition is not met
-            elif condition.get("required"):
-                logger.debug("%s required condition not met, discarding profile", key)
+            if matched is True:
+                logger.debug("%s Condition met", condition)
+                matches.append(True)
+            elif condition.required and not matched:
+                logger.debug("%s not met, discarding profile", condition)
                 return False
 
-        return True in matches
+        met = True in matches
+        logger.debug("Profile conditions met? %s", met)
+        return met
 
     def __repr__(self):
         return f"<ScoreProfile {self.name} (score: {self.score})>"
@@ -216,6 +263,13 @@ class MovieScore(Score):
     def update(self, **kwargs):
         self.data.update(kwargs["movie_scores"])
 
+
+_registered_conditions = {
+    "provider": ProviderCondition,
+    "uploader": UploaderCondition,
+    "language": LanguageCondition,
+    "regex": RegexCondition,
+}
 
 series_score = SeriesScore.from_config(**get_settings())
 movie_score = MovieScore.from_config(**get_settings())

@@ -1,4 +1,4 @@
-namespace FormType {
+declare namespace FormType {
   interface ModifyItem {
     id: number[];
     profileid: (number | null)[];
@@ -57,7 +57,7 @@ namespace FormType {
   interface AddBlacklist {
     provider: string;
     subs_id: string;
-    language: LanguageCodeType;
+    language: Language.CodeType;
     subtitles_path: string;
   }
 

@@ -6,7 +6,7 @@ interface Props {
   health: readonly System.Health[];
 }
 
-const Table: FunctionComponent<Props> = (props) => {
+const Table: FunctionComponent<Props> = ({ health }) => {
   const columns: Column<System.Health>[] = useMemo<Column<System.Health>[]>(
     () => [
       {
@@ -16,12 +16,20 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Issue",
         accessor: "issue",
+        className: "status-issue",
       },
     ],
     []
   );
 
-  return <SimpleTable columns={columns} data={props.health}></SimpleTable>;
+  return (
+    <SimpleTable
+      responsive
+      columns={columns}
+      data={health}
+      emptyText="No issues with your configuration"
+    ></SimpleTable>
+  );
 };
 
 export default Table;

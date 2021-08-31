@@ -25,16 +25,17 @@ import {
 } from "react-bootstrap";
 import { Column } from "react-table";
 import {
-  AsyncButton,
   BaseModal,
   BaseModalProps,
   LanguageText,
   LoadingIndicator,
   PageTable,
-  usePayload,
+  useModalPayload,
 } from "..";
+import { dispatchTask } from "../../@modules/task";
+import { createTask } from "../../@modules/task/utilities";
 import { ProvidersApi } from "../../apis";
-import { isMovie } from "../../utilites";
+import { GetItemId, isMovie } from "../../utilities";
 import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -45,20 +46,19 @@ enum SearchState {
   Finished,
 }
 
-interface Props {
-  onSelect: (item: SupportType, result: SearchResultType) => Promise<void>;
-  onDownload?: () => void;
+interface Props<T extends SupportType> {
+  download: (item: T, result: SearchResultType) => Promise<void>;
 }
 
-export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
-  props
-) => {
-  const { onSelect, onDownload, ...modal } = props;
+export function ManualSearchModal<T extends SupportType>(
+  props: Props<T> & BaseModalProps
+) {
+  const { download, ...modal } = props;
 
   const [result, setResult] = useState<SearchResultType[]>([]);
   const [searchState, setSearchState] = useState(SearchState.Ready);
 
-  const item = usePayload<SupportType>(modal.modalKey);
+  const item = useModalPayload<T>(modal.modalKey);
 
   const search = useCallback(async () => {
     if (item) {
@@ -89,7 +89,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       {
         accessor: "language",
         Cell: ({ row: { original }, value }) => {
-          const lang: Language = {
+          const lang: Language.Info = {
             code2: value,
             hi: original.hearing_impaired === "True",
             forced: original.forced === "True",
@@ -186,23 +186,32 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       },
       {
         accessor: "subtitle",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row }) => {
           const result = row.original;
           return (
-            <AsyncButton
+            <Button
               size="sm"
               variant="light"
-              noReset
-              promise={() => onSelect(item!, result)}
-              onSuccess={() => externalUpdate && externalUpdate(row)}
+              disabled={item === null}
+              onClick={() => {
+                if (!item) return;
+
+                const id = GetItemId(item);
+                const task = createTask(item.title, id, download, item, result);
+                dispatchTask(
+                  "Downloading subtitles...",
+                  [task],
+                  "Downloading..."
+                );
+              }}
             >
               <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
-            </AsyncButton>
+            </Button>
           );
         },
       },
     ],
-    [onSelect, item]
+    [download, item]
   );
 
   const content = useMemo<JSX.Element>(() => {
@@ -225,12 +234,11 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
             emptyText="No Result"
             columns={columns}
             data={result}
-            externalUpdate={onDownload}
           ></PageTable>
         </React.Fragment>
       );
     }
-  }, [searchState, columns, result, search, item?.path, onDownload]);
+  }, [searchState, columns, result, search, item?.path]);
 
   const footer = useMemo(
     () => (
@@ -271,7 +279,7 @@ export const ManualSearchModal: FunctionComponent<Props & BaseModalProps> = (
       {content}
     </BaseModal>
   );
-};
+}
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   matches,

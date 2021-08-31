@@ -9,13 +9,13 @@ import { useWantedSeries } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
-import { BuildKey } from "../../utilites";
+import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
 
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
-  const [series] = useWantedSeries();
+  const series = useWantedSeries();
 
   const loader = useReduxAction(seriesUpdateWantedByRange);
 
@@ -48,7 +48,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, externalUpdate: update, value }) => {
+        Cell: ({ row, update, value }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
           const seriesid = wanted.sonarrSeriesId;

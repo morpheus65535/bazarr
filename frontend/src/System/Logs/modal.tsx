@@ -1,10 +1,10 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { BaseModal, BaseModalProps, usePayload } from "../../components";
+import { BaseModal, BaseModalProps, useModalPayload } from "../../components";
 
 interface Props extends BaseModalProps {}
 
 const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
-  const stack = usePayload<string>(modal.modalKey);
+  const stack = useModalPayload<string>(modal.modalKey);
   const result = useMemo(
     () =>
       stack?.split("\\n").map((v, idx) => (

@@ -1,10 +1,10 @@
 import {
   faCheck,
   faCircleNotch,
-  faExclamationTriangle,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { isEmpty } from "lodash";
 import React, {
   FunctionComponent,
   PropsWithChildren,
@@ -13,82 +13,28 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Alert, Button, ButtonProps, Container } from "react-bootstrap";
+import { Button, ButtonProps } from "react-bootstrap";
+import { useTimeoutWhen } from "rooks";
 import { LoadingIndicator } from ".";
-import { useNotification } from "../@redux/hooks/site";
-import { Reload } from "../utilites";
 import { Selector, SelectorProps } from "./inputs";
 
-enum RequestState {
-  Success,
-  Error,
-  Invalid,
+interface Props<T extends Async.Base<any>> {
+  ctx: T;
+  children: FunctionComponent<T>;
 }
 
-interface ChildProps<T> {
-  data: NonNullable<Readonly<T>>;
-  error?: Error;
-}
-
-interface AsyncStateOverlayProps<T> {
-  state: AsyncState<T>;
-  exist?: (item: T) => boolean;
-  children?: FunctionComponent<ChildProps<T>>;
-}
-
-function defaultExist(item: any) {
-  if (item instanceof Array) {
-    return item.length !== 0;
+export function AsyncOverlay<T extends Async.Base<any>>(props: Props<T>) {
+  const { ctx, children } = props;
+  if (
+    ctx.state === "uninitialized" ||
+    (ctx.state === "loading" && isEmpty(ctx.content))
+  ) {
+    return <LoadingIndicator></LoadingIndicator>;
+  } else if (ctx.state === "failed") {
+    return <p>{ctx.error}</p>;
   } else {
-    return item !== null && item !== undefined;
+    return children(ctx);
   }
-}
-
-export function AsyncStateOverlay<T>(props: AsyncStateOverlayProps<T>) {
-  const { exist, state, children } = props;
-  const missing = exist ? !exist(state.data) : !defaultExist(state.data);
-
-  const onError = useNotification("async-loading");
-
-  useEffect(() => {
-    if (!state.updating && state.error !== undefined && !missing) {
-      onError({
-        type: "error",
-        message: state.error.message,
-      });
-    }
-  }, [state, onError, missing]);
-
-  if (state.updating) {
-    if (missing) {
-      return <LoadingIndicator></LoadingIndicator>;
-    }
-  } else {
-    if (state.error && missing) {
-      return (
-        <Container>
-          <Alert variant="danger" className="my-4">
-            <Alert.Heading>
-              <FontAwesomeIcon
-                className="mr-2"
-                icon={faExclamationTriangle}
-              ></FontAwesomeIcon>
-              <span>Ouch! You got an error</span>
-            </Alert.Heading>
-            <p>{state.error.message}</p>
-            <hr></hr>
-            <div className="d-flex justify-content-end">
-              <Button variant="outline-danger" onClick={Reload}>
-                Reload
-              </Button>
-            </div>
-          </Alert>
-        </Container>
-      );
-    }
-  }
-
-  return children ? children({ data: state.data!, error: state.error }) : null;
 }
 
 interface PromiseProps<T> {
@@ -101,7 +47,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
 
   useEffect(() => {
     promise()
-      .then((result) => setItem(result))
+      .then(setItem)
       .catch(() => {});
   }, [promise]);
 
@@ -112,40 +58,43 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   }
 }
 
-type ExtractAS<T extends AsyncState<any[]>> = Unpacked<AsyncPayload<T>>;
-
-type AsyncSelectorProps<T extends AsyncState<any[]>> = {
+type AsyncSelectorProps<V, T extends Async.Item<V[]>> = {
   state: T;
-  label: (item: ExtractAS<T>) => string;
+  update: () => void;
+  label: (item: V) => string;
 };
 
 type RemovedSelectorProps<T, M extends boolean> = Omit<
   SelectorProps<T, M>,
-  "loading" | "options"
+  "loading" | "options" | "onFocus"
 >;
 
 export function AsyncSelector<
-  T extends AsyncState<any[]>,
+  V,
+  T extends Async.Item<V[]>,
   M extends boolean = false
->(
-  props: Override<AsyncSelectorProps<T>, RemovedSelectorProps<ExtractAS<T>, M>>
-) {
-  const { label, state, ...selector } = props;
+>(props: Override<AsyncSelectorProps<V, T>, RemovedSelectorProps<V, M>>) {
+  const { label, state, update, ...selector } = props;
 
-  const options = useMemo<SelectorOption<ExtractAS<T>>[]>(
+  const options = useMemo<SelectorOption<V>[]>(
     () =>
-      state.data.map((v) => ({
+      state.content?.map((v) => ({
         label: label(v),
         value: v,
-      })),
+      })) ?? [],
     [state, label]
   );
 
   return (
     <Selector
-      loading={state.updating}
+      loading={state.state === "loading"}
       options={options}
       label={label}
+      onFocus={() => {
+        if (state.state === "uninitialized") {
+          update();
+        }
+      }}
       {...selector}
     ></Selector>
   );
@@ -168,6 +117,12 @@ interface AsyncButtonProps<T> {
   error?: () => void;
 }
 
+enum RequestState {
+  Success,
+  Error,
+  Invalid,
+}
+
 export function AsyncButton<T>(
   props: PropsWithChildren<AsyncButtonProps<T>>
 ): JSX.Element {
@@ -188,28 +143,15 @@ export function AsyncButton<T>(
 
   const [state, setState] = useState(RequestState.Invalid);
 
-  const [, setHandle] = useState<Nullable<NodeJS.Timeout>>(null);
+  const needFire = state !== RequestState.Invalid && !noReset;
 
-  useEffect(() => {
-    if (noReset) {
-      return;
-    }
-
-    if (state === RequestState.Error || state === RequestState.Success) {
-      const handle = setTimeout(() => setState(RequestState.Invalid), 2 * 1000);
-      setHandle(handle);
-    }
-
-    // Clear timeout handle so we wont leak memory
-    return () => {
-      setHandle((handle) => {
-        if (handle) {
-          clearTimeout(handle);
-        }
-        return null;
-      });
-    };
-  }, [state, noReset]);
+  useTimeoutWhen(
+    () => {
+      setState(RequestState.Invalid);
+    },
+    2 * 1000,
+    needFire
+  );
 
   const click = useCallback(() => {
     if (state !== RequestState.Invalid) {

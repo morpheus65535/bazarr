@@ -856,7 +856,8 @@ class EpisodesSubtitles(Resource):
         if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'on' else False
+        forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -868,6 +869,7 @@ class EpisodesSubtitles(Resource):
             result = manual_upload_subtitle(path=episodePath,
                                             language=language,
                                             forced=forced,
+                                            hi=hi,
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
@@ -878,7 +880,9 @@ class EpisodesSubtitles(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                if forced:
+                if hi:
+                    language_code = language + ":hi"
+                elif forced:
                     language_code = language + ":forced"
                 else:
                     language_code = language
@@ -1086,6 +1090,7 @@ class MoviesSubtitles(Resource):
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'true' else False
+        hi = True if request.form.get('hi') == 'true' else False
         subFile = request.files.get('file')
 
         _, ext = os.path.splitext(subFile.filename)
@@ -1097,6 +1102,7 @@ class MoviesSubtitles(Resource):
             result = manual_upload_subtitle(path=moviePath,
                                             language=language,
                                             forced=forced,
+                                            hi=hi,
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='movie',
@@ -1107,7 +1113,9 @@ class MoviesSubtitles(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                if forced:
+                if hi:
+                    language_code = language + ":hi"
+                elif forced:
                     language_code = language + ":forced"
                 else:
                     language_code = language
@@ -1419,7 +1427,8 @@ class EpisodesHistory(Resource):
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
         query_condition = reduce(operator.and_, query_conditions)
-        episode_history = TableHistory.select(TableShows.title.alias('seriesTitle'),
+        episode_history = TableHistory.select(TableHistory.id,
+                                              TableShows.title.alias('seriesTitle'),
                                               TableEpisodes.monitored,
                                               TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
                                               TableEpisodes.title.alias('episodeTitle'),
@@ -1535,7 +1544,8 @@ class MoviesHistory(Resource):
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
 
-        movie_history = TableHistoryMovie.select(TableHistoryMovie.action,
+        movie_history = TableHistoryMovie.select(TableHistoryMovie.id,
+                                                 TableHistoryMovie.action,
                                                  TableMovies.title,
                                                  TableHistoryMovie.timestamp,
                                                  TableHistoryMovie.description,

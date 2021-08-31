@@ -1,43 +1,31 @@
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import {
-  AsyncStateOverlay,
-  HistoryIcon,
-  LanguageText,
-  PageTable,
-  TextPopover,
-} from "..";
-import { EpisodesApi, MoviesApi } from "../../apis";
-import { BlacklistButton } from "../../generic/blacklist";
-import { updateAsyncState } from "../../utilites";
+import { useDidUpdate } from "rooks";
+import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
+import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
+import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
+import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { usePayload } from "./provider";
+import { useModalPayload } from "./hooks";
 
 export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
-  const movie = usePayload<Item.Movie>(modal.modalKey);
+  const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<History.Movie[]>>({
-    updating: false,
-    data: [],
-  });
+  const [history, updateHistory] = useAsyncRequest(
+    MoviesApi.historyBy.bind(MoviesApi)
+  );
 
   const update = useCallback(() => {
     if (movie) {
-      updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
+      updateHistory(movie.radarrId);
     }
-  }, [movie]);
+  }, [movie, updateHistory]);
 
-  useEffect(() => {
+  useDidUpdate(() => {
     update();
-  }, [update]);
+  }, [movie?.radarrId]);
 
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
@@ -104,15 +92,15 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
-      <AsyncStateOverlay state={history}>
-        {({ data }) => (
+      <AsyncOverlay ctx={history}>
+        {({ content }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={data}
+            data={content?.data ?? []}
           ></PageTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
     </BaseModal>
   );
 };
@@ -122,24 +110,21 @@ interface EpisodeHistoryProps {}
 export const EpisodeHistoryModal: FunctionComponent<
   BaseModalProps & EpisodeHistoryProps
 > = (props) => {
-  const episode = usePayload<Item.Episode>(props.modalKey);
+  const episode = useModalPayload<Item.Episode>(props.modalKey);
 
-  const [history, setHistory] = useState<AsyncState<History.Episode[]>>({
-    updating: false,
-    data: [],
-  });
+  const [history, updateHistory] = useAsyncRequest(
+    EpisodesApi.historyBy.bind(EpisodesApi)
+  );
 
   const update = useCallback(() => {
     if (episode) {
-      updateAsyncState(
-        EpisodesApi.history(episode.sonarrEpisodeId),
-        setHistory,
-        []
-      );
+      updateHistory(episode.sonarrEpisodeId);
     }
-  }, [episode]);
+  }, [episode, updateHistory]);
 
-  useEffect(() => update(), [update]);
+  useDidUpdate(() => {
+    update();
+  }, [episode?.sonarrEpisodeId]);
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [
@@ -207,15 +192,15 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
-      <AsyncStateOverlay state={history}>
-        {({ data }) => (
+      <AsyncOverlay ctx={history}>
+        {({ content }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={data}
+            data={content?.data ?? []}
           ></PageTable>
         )}
-      </AsyncStateOverlay>
+      </AsyncOverlay>
     </BaseModal>
   );
 };

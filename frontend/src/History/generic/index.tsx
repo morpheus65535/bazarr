@@ -1,21 +1,23 @@
 import { capitalize } from "lodash";
-import React, { FunctionComponent } from "react";
+import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { AsyncStateOverlay, PageTable } from "../../components";
+import { AsyncPageTable } from "../../components";
 
-interface Props {
+interface Props<T extends History.Base> {
   type: "movies" | "series";
-  state: Readonly<AsyncState<History.Base[]>>;
-  columns: Column<History.Base>[];
+  state: Readonly<Async.Entity<T>>;
+  loader: (param: Parameter.Range) => void;
+  columns: Column<T>[];
 }
 
-const HistoryGenericView: FunctionComponent<Props> = ({
+function HistoryGenericView<T extends History.Base = History.Base>({
   state,
+  loader,
   columns,
   type,
-}) => {
+}: Props<T>) {
   const typeName = capitalize(type);
   return (
     <Container fluid>
@@ -23,18 +25,16 @@ const HistoryGenericView: FunctionComponent<Props> = ({
         <title>{typeName} History - Bazarr</title>
       </Helmet>
       <Row>
-        <AsyncStateOverlay state={state}>
-          {({ data }) => (
-            <PageTable
-              emptyText={`Nothing Found in ${typeName} History`}
-              columns={columns}
-              data={data}
-            ></PageTable>
-          )}
-        </AsyncStateOverlay>
+        <AsyncPageTable
+          emptyText={`Nothing Found in ${typeName} History`}
+          entity={state}
+          loader={loader}
+          columns={columns}
+          data={[]}
+        ></AsyncPageTable>
       </Row>
     </Container>
   );
-};
+}
 
 export default HistoryGenericView;

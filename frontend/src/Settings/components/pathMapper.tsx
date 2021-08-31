@@ -99,7 +99,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: capitalize(type),
         accessor: "from",
-        Cell: ({ value, row, externalUpdate }) => (
+        Cell: ({ value, row, update }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -107,7 +107,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.from = path;
-              externalUpdate && externalUpdate(row, newItem);
+              update && update(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -122,7 +122,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: "Bazarr",
         accessor: "to",
-        Cell: ({ value, row, externalUpdate }) => (
+        Cell: ({ value, row, update }) => (
           <FileBrowser
             drop="up"
             defaultValue={value}
@@ -130,7 +130,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.to = path;
-              externalUpdate && externalUpdate(row, newItem);
+              update && update(row, newItem);
             }}
           ></FileBrowser>
         ),
@@ -138,11 +138,11 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         id: "action",
         accessor: "to",
-        Cell: ({ row, externalUpdate }) => (
+        Cell: ({ row, update }) => (
           <ActionButton
             icon={faTrash}
             onClick={() => {
-              externalUpdate && externalUpdate(row);
+              update && update(row);
             }}
           ></ActionButton>
         ),
@@ -159,7 +159,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           responsive={false}
           columns={columns}
           data={data}
-          externalUpdate={updateCell}
+          update={updateCell}
         ></SimpleTable>
         <Button block variant="light" onClick={addRow}>
           Add

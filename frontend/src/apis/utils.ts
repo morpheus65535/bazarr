@@ -11,11 +11,7 @@ type UrlTestResponse =
     };
 
 class RequestUtils {
-  async urlTest(
-    protocol: string,
-    url: string,
-    params?: any
-  ): Promise<UrlTestResponse> {
+  async urlTest(protocol: string, url: string, params?: any) {
     try {
       const result = await apis.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/system/status`,

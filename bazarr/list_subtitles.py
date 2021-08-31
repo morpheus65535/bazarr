@@ -446,23 +446,19 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
 
 def series_full_scan_subtitles():
+    use_ffprobe_cache = settings.sonarr.getboolean('use_ffprobe_cache')
+
     episodes = TableEpisodes.select(TableEpisodes.path).dicts()
     
     count_episodes = len(episodes)
-    for i, episode in enumerate(episodes, 1):
+    for i, episode in enumerate(episodes):
         sleep()
         show_progress(id='episodes_disk_scan',
                       header='Full disk scan...',
                       name='Episodes subtitles',
                       value=i,
                       count=count_episodes)
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-
-    show_progress(id='episodes_disk_scan',
-                  header='Full disk scan...',
-                  name='Completed successfully',
-                  value=count_episodes,
-                  count=count_episodes)
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=use_ffprobe_cache)
 
     hide_progress(id='episodes_disk_scan')
     
@@ -470,23 +466,20 @@ def series_full_scan_subtitles():
 
 
 def movies_full_scan_subtitles():
+    use_ffprobe_cache = settings.radarr.getboolean('use_ffprobe_cache')
+
     movies = TableMovies.select(TableMovies.path).dicts()
     
     count_movies = len(movies)
-    for i, movie in enumerate(movies, 1):
+    for i, movie in enumerate(movies):
         sleep()
         show_progress(id='movies_disk_scan',
                       header='Full disk scan...',
                       name='Movies subtitles',
                       value=i,
                       count=count_movies)
-        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-
-    show_progress(id='movies_disk_scan',
-                  header='Full disk scan...',
-                  name='Completed successfully',
-                  value=count_movies,
-                  count=count_movies)
+        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']),
+                              use_cache=use_ffprobe_cache)
 
     hide_progress(id='movies_disk_scan')
 

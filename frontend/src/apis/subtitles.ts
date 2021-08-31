@@ -6,21 +6,14 @@ class SubtitlesApi extends BaseApi {
   }
 
   async info(names: string[]) {
-    return new Promise<SubtitleInfo[]>((resolve, reject) => {
-      this.get<DataWrapper<SubtitleInfo[]>>(`/info`, {
-        filenames: names,
-      })
-        .then((result) => resolve(result.data.data))
-        .catch(reject);
+    const response = await this.get<DataWrapper<SubtitleInfo[]>>(`/info`, {
+      filenames: names,
     });
+    return response.data;
   }
 
   async modify(action: string, form: FormType.ModifySubtitle) {
-    return new Promise<void>((resolve, reject) => {
-      this.patch<void>("", form, { action })
-        .then(() => resolve())
-        .catch(reject);
-    });
+    await this.patch("", form, { action });
   }
 }
 

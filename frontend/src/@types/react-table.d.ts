@@ -1,3 +1,6 @@
+// @ts-nocheck
+// TODO: Fine a better solution for this
+
 import {
   UseColumnOrderInstanceProps,
   UseColumnOrderState,
@@ -48,8 +51,7 @@ declare module "react-table" {
 
   interface CustomTableProps<D extends Record<string, unknown>>
     extends useSelectionProps<D> {
-    externalUpdate?: TableUpdater<D>;
-    loose?: any[];
+    update?: TableUpdater<D>;
   }
 
   interface CustomTableState<D extends Record<string, unknown>>

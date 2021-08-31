@@ -1,17 +1,15 @@
-import { applyMiddleware, createStore } from "redux";
-import logger from "redux-logger";
-import promise from "redux-promise";
-import trunk from "redux-thunk";
-import rootReducer from "../reducers";
+import { configureStore } from "@reduxjs/toolkit";
+import apis from "../../apis";
+import reducer from "../reducers";
 
-const plugins = [promise, trunk];
+const store = configureStore({
+  reducer,
+});
 
-if (
-  process.env.NODE_ENV === "development" &&
-  process.env["REACT_APP_LOG_REDUX_EVENT"] !== "false"
-) {
-  plugins.push(logger);
-}
+// FIXME
+apis.dispatch = store.dispatch;
 
-const store = createStore(rootReducer, applyMiddleware(...plugins));
+export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;
+
 export default store;

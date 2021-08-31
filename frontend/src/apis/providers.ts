@@ -6,47 +6,36 @@ class ProviderApi extends BaseApi {
   }
 
   async providers(history: boolean = false) {
-    return new Promise<Array<System.Provider>>((resolve, reject) => {
-      this.get<DataWrapper<Array<System.Provider>>>("", { history })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch(reject);
+    const response = await this.get<DataWrapper<System.Provider[]>>("", {
+      history,
     });
+    return response.data;
   }
 
   async reset() {
-    return new Promise<void>((resolve, reject) => {
-      this.post<void>("", { action: "reset" })
-        .then(() => resolve())
-        .catch(reject);
-    });
+    await this.post("", { action: "reset" });
   }
 
   async movies(id: number) {
-    return new Promise<SearchResultType[]>((resolve, reject) => {
-      this.get<DataWrapper<SearchResultType[]>>("/movies", { radarrid: id })
-        .then((result) => resolve(result.data.data))
-        .catch(reject);
-    });
+    const response = await this.get<DataWrapper<SearchResultType[]>>(
+      "/movies",
+      { radarrid: id }
+    );
+    return response.data;
   }
 
   async downloadMovieSubtitle(radarrid: number, form: FormType.ManualDownload) {
-    return new Promise<void>((resolve, reject) => {
-      this.post<void>("/movies", form, { radarrid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+    await this.post("/movies", form, { radarrid });
   }
 
-  async episodes(id: number) {
-    return new Promise<SearchResultType[]>((resolve, reject) => {
-      this.get<DataWrapper<SearchResultType[]>>("/episodes", {
-        episodeid: id,
-      })
-        .then((result) => resolve(result.data.data))
-        .catch(reject);
-    });
+  async episodes(episodeid: number) {
+    const response = await this.get<DataWrapper<SearchResultType[]>>(
+      "/episodes",
+      {
+        episodeid,
+      }
+    );
+    return response.data;
   }
 
   async downloadEpisodeSubtitle(
@@ -54,11 +43,7 @@ class ProviderApi extends BaseApi {
     episodeid: number,
     form: FormType.ManualDownload
   ) {
-    return new Promise<void>((resolve, reject) => {
-      this.post<void>("/episodes", form, { seriesid, episodeid })
-        .then(() => resolve())
-        .catch(reject);
-    });
+    await this.post("/episodes", form, { seriesid, episodeid });
   }
 }
 

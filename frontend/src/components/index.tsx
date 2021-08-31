@@ -98,7 +98,7 @@ export const LoadingIndicator: FunctionComponent<{
 };
 
 interface LanguageTextProps {
-  text: Language;
+  text: Language.Info;
   className?: string;
   long?: boolean;
 }
@@ -164,7 +164,7 @@ export const TextPopover: FunctionComponent<TextPopoverProps> = ({
 
 export * from "./async";
 export * from "./buttons";
-export * from "./ContentHeader";
+export * from "./header";
 export * from "./inputs";
 export * from "./LanguageSelector";
 export * from "./modals";

@@ -1,7 +1,4 @@
-import { faQuestionCircle } from "@fortawesome/free-regular-svg-icons";
 import {
-  faCheck,
-  faCircleNotch,
   faClock,
   faCode,
   faDeaf,
@@ -39,56 +36,24 @@ import {
   LanguageText,
   Selector,
   SimpleTable,
-  usePayload,
+  useModalPayload,
   useShowModal,
 } from "..";
-import { useLanguages } from "../../@redux/hooks";
+import { dispatchTask } from "../../@modules/task";
+import { createTask } from "../../@modules/task/utilities";
+import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
-import { isMovie, submodProcessColor } from "../../utilites";
-import { log } from "../../utilites/logger";
+import { isMovie, submodProcessColor } from "../../utilities";
+import { log } from "../../utilities/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModalUntil } from "./provider";
+import { useCloseModal } from "./hooks";
 import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
-  _language: Language;
-};
-
-enum State {
-  Pending,
-  Processing,
-  Done,
-}
-
-type ProcessState = StrictObject<State>;
-
-// TODO: Extract this
-interface StateIconProps {
-  state: State;
-}
-
-const StateIcon: FunctionComponent<StateIconProps> = ({ state }) => {
-  let icon = faQuestionCircle;
-  switch (state) {
-    case State.Pending:
-      icon = faClock;
-      break;
-    case State.Processing:
-      icon = faCircleNotch;
-      break;
-    case State.Done:
-      icon = faCheck;
-      break;
-  }
-  return (
-    <FontAwesomeIcon
-      icon={icon}
-      spin={state === State.Processing}
-    ></FontAwesomeIcon>
-  );
+  _language: Language.Info;
 };
 
 function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
@@ -207,10 +172,7 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
 
   const [isPlus, setPlus] = useState(true);
   const [offset, setOffset] = useState<[number, number, number, number]>([
-    0,
-    0,
-    0,
-    0,
+    0, 0, 0, 0,
   ]);
 
   const updateOffset = useCallback(
@@ -293,14 +255,15 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   process,
   ...modal
 }) => {
-  const [languages] = useLanguages(true);
+  const languages = useEnabledLanguages();
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in availableTranslation),
     [languages]
   );
 
-  const [selectedLanguage, setLanguage] = useState<Nullable<Language>>(null);
+  const [selectedLanguage, setLanguage] =
+    useState<Nullable<Language.Info>>(null);
 
   const submit = useCallback(() => {
     if (selectedLanguage) {
@@ -330,74 +293,45 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   );
 };
 
-interface STMProps {}
+const TaskGroupName = "Modifying Subtitles";
 
-const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
-  const items = usePayload<SupportType[]>(props.modalKey);
-
-  const [updating, setUpdate] = useState<boolean>(false);
-  const [processState, setProcessState] = useState<ProcessState>({});
+const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
+  const payload = useModalPayload<SupportType[]>(props.modalKey);
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const closeUntil = useCloseModalUntil(props.modalKey);
+  const closeModal = useCloseModal();
 
   const process = useCallback(
-    async (action: string, override?: Partial<FormType.ModifySubtitle>) => {
+    (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       log("info", "executing action", action);
-      closeUntil();
-      setUpdate(true);
+      closeModal(props.modalKey);
 
-      let states = selections.reduce<ProcessState>(
-        (v, curr) => ({ [curr.path]: State.Pending, ...v }),
-        {}
-      );
-      setProcessState(states);
-
-      for (const raw of selections) {
-        states = {
-          ...states,
-          [raw.path]: State.Processing,
-        };
-        setProcessState(states);
+      const tasks = selections.map((s) => {
         const form: FormType.ModifySubtitle = {
-          id: raw.id,
-          type: raw.type,
-          language: raw.language,
-          path: raw.path,
+          id: s.id,
+          type: s.type,
+          language: s.language,
+          path: s.path,
           ...override,
         };
-        await SubtitlesApi.modify(action, form);
+        return createTask(
+          s.path,
+          s.id,
+          SubtitlesApi.modify.bind(SubtitlesApi),
+          action,
+          form
+        );
+      });
 
-        states = {
-          ...states,
-          [raw.path]: State.Done,
-        };
-        setProcessState(states);
-      }
-      setUpdate(false);
+      dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");
     },
-    [closeUntil, selections]
+    [closeModal, selections, props.modalKey]
   );
 
   const showModal = useShowModal();
 
   const columns: Column<TableColumnType>[] = useMemo<Column<TableColumnType>[]>(
     () => [
-      {
-        id: "state",
-        accessor: "path",
-        selectHide: true,
-        Cell: ({ value, loose }) => {
-          if (loose) {
-            const stateList = loose[0] as ProcessState;
-            if (value in stateList) {
-              const state = stateList[value];
-              return <StateIcon state={state}></StateIcon>;
-            }
-          }
-          return null;
-        },
-      },
       {
         Header: "Language",
         accessor: "_language",
@@ -433,7 +367,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
 
   const data = useMemo<TableColumnType[]>(
     () =>
-      items?.flatMap((item) => {
+      payload?.flatMap((item) => {
         const [id, type] = getIdAndType(item);
         return item.subtitles.flatMap((v) => {
           if (v.path !== null) {
@@ -451,7 +385,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
           }
         });
       }) ?? [],
-    [items]
+    [payload]
   );
 
   const plugins = [useRowSelect, useCustomSelection];
@@ -461,7 +395,6 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
       <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
         <ActionButton
           size="sm"
-          loading={updating}
           disabled={selections.length === 0}
           icon={faPlay}
           onClick={() => process("sync")}
@@ -469,7 +402,7 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
           Sync
         </ActionButton>
         <Dropdown.Toggle
-          disabled={updating || selections.length === 0}
+          disabled={selections.length === 0}
           split
           variant="light"
           size="sm"
@@ -513,25 +446,19 @@ const STM: FunctionComponent<BaseModalProps & STMProps> = ({ ...props }) => {
         </Dropdown.Menu>
       </Dropdown>
     ),
-    [showModal, updating, selections.length, process]
+    [showModal, selections.length, process]
   );
 
   return (
     <React.Fragment>
-      <BaseModal
-        title={"Subtitle Tools"}
-        footer={footer}
-        closeable={!updating}
-        {...props}
-      >
+      <BaseModal title={"Subtitle Tools"} footer={footer} {...props}>
         <SimpleTable
-          isSelecting={!updating && data.length !== 0}
+          isSelecting={data.length !== 0}
           emptyText="No External Subtitles Found"
           plugins={plugins}
           columns={columns}
           onSelect={setSelections}
           data={data}
-          loose={[processState]}
         ></SimpleTable>
       </BaseModal>
       <AddColorModal process={process} modalKey="add-color"></AddColorModal>

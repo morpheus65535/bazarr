@@ -423,14 +423,25 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </Message>
             <Message>
               <b>{"{{subtitles_language}}"}</b> Language of the subtitles file
+              (may include HI or forced)
             </Message>
             <Message>
               <b>{"{{subtitles_language_code2}}"}</b> 2-letter ISO-639 language
-              code of the subtitles language
+              code of the subtitles language (may include :hi or :forced)
+            </Message>
+            <Message>
+              <b>{"{{subtitles_language_code2_dot}}"}</b> 2-letter ISO-639
+              language code of the subtitles language (same as previous but with
+              dot separator instead of colon)
             </Message>
             <Message>
               <b>{"{{subtitles_language_code3}}"}</b> 3-letter ISO-639 language
-              code of the subtitles language
+              code of the subtitles language (may include :hi or :forced)
+            </Message>
+            <Message>
+              <b>{"{{subtitles_language_code3_dot}}"}</b> 3-letter ISO-639
+              language code of the subtitles language (same as previous but with
+              dot separator instead of colon)
             </Message>
             <Message>
               <b>{"{{episode_language}}"}</b> Audio language of the episode file

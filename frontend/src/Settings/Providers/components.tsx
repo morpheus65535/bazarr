@@ -11,12 +11,11 @@ import { SelectComponents } from "react-select/src/components";
 import {
   BaseModal,
   Selector,
-  useCloseModal,
+  useModalInformation,
   useOnModalShow,
-  usePayload,
   useShowModal,
 } from "../../components";
-import { BuildKey, isReactText } from "../../utilites";
+import { BuildKey, isReactText } from "../../utilities";
 import {
   Check,
   ColCard,
@@ -78,19 +77,15 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 export const ProviderModal: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo>(ModalKey);
+  const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
 
-  const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload ?? null);
+  const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
-  const onShow = useCallback(() => setInfo(payload ?? null), [payload]);
-
-  useOnModalShow(ModalKey, onShow);
+  useOnModalShow<ProviderInfo>((p) => setInfo(p), ModalKey);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
-
-  const closeModal = useCloseModal();
 
   const updateGlobal = useMultiUpdate();
 

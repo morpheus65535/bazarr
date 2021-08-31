@@ -4,16 +4,16 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useBlacklistMovies } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
-import { AsyncStateOverlay, ContentHeader } from "../../components";
+import { AsyncOverlay, ContentHeader } from "../../components";
 import Table from "./table";
 
 interface Props {}
 
 const BlacklistMoviesView: FunctionComponent<Props> = () => {
-  const [blacklist] = useBlacklistMovies();
+  const blacklist = useBlacklistMovies();
   return (
-    <AsyncStateOverlay state={blacklist}>
-      {({ data }) => (
+    <AsyncOverlay ctx={blacklist}>
+      {({ content }) => (
         <Container fluid>
           <Helmet>
             <title>Movies Blacklist - Bazarr</title>
@@ -21,18 +21,18 @@ const BlacklistMoviesView: FunctionComponent<Props> = () => {
           <ContentHeader>
             <ContentHeader.AsyncButton
               icon={faTrash}
-              disabled={data.length === 0}
+              disabled={content?.length === 0}
               promise={() => MoviesApi.deleteBlacklist(true)}
             >
               Remove All
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table blacklist={data}></Table>
+            <Table blacklist={content ?? []}></Table>
           </Row>
         </Container>
       )}
-    </AsyncStateOverlay>
+    </AsyncOverlay>
   );
 };
 

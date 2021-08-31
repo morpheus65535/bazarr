@@ -47,6 +47,10 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
+      - name: Unit Test
+        run: npm test
+        working-directory: ${{ env.UI_DIRECTORY }}
+
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}

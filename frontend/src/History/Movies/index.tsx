@@ -4,16 +4,19 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { movieUpdateHistoryByRange } from "../../@redux/actions";
 import { useMoviesHistory } from "../../@redux/hooks";
+import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
-import { BlacklistButton } from "../../generic/blacklist";
+import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import HistoryGenericView from "../generic";
 
 interface Props {}
 
 const MoviesHistoryView: FunctionComponent<Props> = () => {
-  const [movies] = useMoviesHistory();
+  const movies = useMoviesHistory();
+  const loader = useReduxAction(movieUpdateHistoryByRange);
 
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [
@@ -128,7 +131,8 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
     <HistoryGenericView
       type="movies"
       state={movies}
-      columns={columns as Column<History.Base>[]}
+      loader={loader}
+      columns={columns}
     ></HistoryGenericView>
   );
 };

@@ -7,8 +7,8 @@ export function useNotification(id: string, timeout: number = 5000) {
   const add = useReduxAction(siteAddNotifications);
 
   return useCallback(
-    (msg: Omit<ReduxStore.Notification, "id" | "timeout">) => {
-      const notification: ReduxStore.Notification = {
+    (msg: Omit<Server.Notification, "id" | "timeout">) => {
+      const notification: Server.Notification = {
         ...msg,
         id,
         timeout,
@@ -24,18 +24,18 @@ export function useIsOffline() {
 }
 
 export function useIsSonarrEnabled() {
-  const [settings] = useSystemSettings();
-  return settings.data?.general.use_sonarr ?? true;
+  const settings = useSystemSettings();
+  return settings.content?.general.use_sonarr ?? true;
 }
 
 export function useIsRadarrEnabled() {
-  const [settings] = useSystemSettings();
-  return settings.data?.general.use_radarr ?? true;
+  const settings = useSystemSettings();
+  return settings.content?.general.use_radarr ?? true;
 }
 
 export function useShowOnlyDesired() {
-  const [settings] = useSystemSettings();
-  return settings.data?.general.embedded_subs_show_desired ?? false;
+  const settings = useSystemSettings();
+  return settings.content?.general.embedded_subs_show_desired ?? false;
 }
 
 export function useSetSidebar(key: string) {

@@ -1,110 +1,99 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
-import { Container, Form } from "react-bootstrap";
-import {
-  AsyncButton,
-  FileForm,
-  LanguageSelector,
-  useCloseModal,
-  usePayload,
-} from "..";
-import { useLanguageBy, useLanguages, useProfileBy } from "../../@redux/hooks";
+import React, { FunctionComponent, useCallback } from "react";
+import { dispatchTask } from "../../@modules/task";
+import { createTask } from "../../@modules/task/utilities";
+import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
-import BaseModal, { BaseModalProps } from "./BaseModal";
-interface MovieProps {}
+import { BaseModalProps } from "./BaseModal";
+import { useModalInformation } from "./hooks";
+import SubtitleUploadModal, {
+  PendingSubtitle,
+  Validator,
+} from "./SubtitleUploadModal";
 
-const MovieUploadModal: FunctionComponent<MovieProps & BaseModalProps> = (
-  props
-) => {
+interface Payload {}
+
+export const TaskGroupName = "Uploading Subtitles...";
+
+const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;
 
-  const [availableLanguages] = useLanguages(true);
+  const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
 
-  const movie = usePayload<Item.Movie>(modal.modalKey);
+  const profile = useProfileBy(payload?.profileId);
 
-  const closeModal = useCloseModal();
+  const availableLanguages = useProfileItemsToLanguages(profile);
 
-  const [uploading, setUpload] = useState(false);
+  const update = useCallback(async (list: PendingSubtitle<Payload>[]) => {
+    return list;
+  }, []);
 
-  const [language, setLanguage] = useState<Nullable<Language>>(null);
+  const validate = useCallback<Validator<Payload>>(
+    (item) => {
+      if (item.language === null) {
+        return {
+          state: "error",
+          messages: ["Language is not selected"],
+        };
+      } else if (
+        payload?.subtitles.find((v) => v.code2 === item.language?.code2) !==
+        undefined
+      ) {
+        return {
+          state: "warning",
+          messages: ["Override existing subtitle"],
+        };
+      }
+      return {
+        state: "valid",
+        messages: [],
+      };
+    },
+    [payload?.subtitles]
+  );
 
-  const profile = useProfileBy(movie?.profileId);
+  const upload = useCallback(
+    (items: PendingSubtitle<Payload>[]) => {
+      if (payload === null) {
+        return;
+      }
 
-  const defaultLanguage = useLanguageBy(profile?.items[0]?.language);
+      const { radarrId } = payload;
 
-  useEffect(() => setLanguage(defaultLanguage ?? null), [defaultLanguage]);
+      const tasks = items
+        .filter((v) => v.language !== null)
+        .map((v) => {
+          const { file, language, forced, hi } = v;
 
-  const [file, setFile] = useState<Nullable<File>>(null);
-  const [forced, setForced] = useState(false);
+          return createTask(
+            file.name,
+            radarrId,
+            MoviesApi.uploadSubtitles.bind(MoviesApi),
+            radarrId,
+            {
+              file,
+              forced,
+              hi,
+              language: language!.code2,
+            }
+          );
+        });
 
-  const canUpload = useMemo(() => {
-    return file !== null && language?.code2;
-  }, [language, file]);
-
-  const footer = (
-    <AsyncButton
-      noReset
-      disabled={!canUpload}
-      onChange={setUpload}
-      promise={() => {
-        if (file && movie && language) {
-          return MoviesApi.uploadSubtitles(movie.radarrId, {
-            file: file,
-            forced,
-            hi: false,
-            language: language.code2,
-          });
-        } else {
-          return null;
-        }
-      }}
-      onSuccess={closeModal}
-    >
-      Upload
-    </AsyncButton>
+      dispatchTask(TaskGroupName, tasks, "Uploading...");
+    },
+    [payload]
   );
 
   return (
-    <BaseModal
-      title={`Upload - ${movie?.title}`}
-      closeable={!uploading}
-      footer={footer}
+    <SubtitleUploadModal
+      hideAllLanguages
+      initial={{ forced: false }}
+      availableLanguages={availableLanguages}
+      columns={[]}
+      upload={upload}
+      update={update}
+      validate={validate}
       {...modal}
-    >
-      <Container fluid>
-        <Form>
-          <Form.Group>
-            <Form.Label>Language</Form.Label>
-            <LanguageSelector
-              options={availableLanguages}
-              value={language}
-              onChange={(lang) => {
-                if (lang) {
-                  setLanguage(lang);
-                }
-              }}
-            ></LanguageSelector>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Subtitle File</Form.Label>
-            <FileForm
-              emptyText="Select..."
-              onChange={(list) => {
-                setFile(list[0]);
-              }}
-            ></FileForm>
-          </Form.Group>
-          <Form.Group>
-            <Form.Check
-              custom
-              id="forced-checkbox"
-              defaultChecked={forced}
-              onChange={(e) => setForced(e.target.checked)}
-              label="Forced"
-            ></Form.Check>
-          </Form.Group>
-        </Form>
-      </Container>
-    </BaseModal>
+    ></SubtitleUploadModal>
   );
 };
 

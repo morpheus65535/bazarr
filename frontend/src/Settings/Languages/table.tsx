@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useEnabledLanguages, useProfiles } from ".";
+import { useEnabledLanguagesContext, useProfilesContext } from ".";
 import { ActionButton, SimpleTable, useShowModal } from "../../components";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
@@ -16,9 +16,9 @@ import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
-  const originalProfiles = useProfiles();
+  const originalProfiles = useProfilesContext();
 
-  const languages = useEnabledLanguages();
+  const languages = useEnabledLanguagesContext();
 
   const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
 
@@ -34,7 +34,7 @@ const Table: FunctionComponent = () => {
   const showModal = useShowModal();
 
   const submitProfiles = useCallback(
-    (list: Profile.Languages[]) => {
+    (list: Language.Profile[]) => {
       update(list, languageProfileKey);
       setProfiles(list);
     },
@@ -42,7 +42,7 @@ const Table: FunctionComponent = () => {
   );
 
   const updateProfile = useCallback(
-    (profile: Profile.Languages) => {
+    (profile: Language.Profile) => {
       const list = [...profiles];
       const idx = list.findIndex((v) => v.profileId === profile.profileId);
 
@@ -56,8 +56,8 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const updateRow = useCallback<TableUpdater<Profile.Languages>>(
-    (row, item?: Profile.Languages) => {
+  const updateRow = useCallback<TableUpdater<Language.Profile>>(
+    (row, item?: Language.Profile) => {
       if (item) {
         showModal("profile", cloneDeep(item));
       } else {
@@ -69,7 +69,7 @@ const Table: FunctionComponent = () => {
     [submitProfiles, showModal, profiles]
   );
 
-  const columns = useMemo<Column<Profile.Languages>[]>(
+  const columns = useMemo<Column<Language.Profile>[]>(
     () => [
       {
         Header: "Name",
@@ -96,7 +96,7 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: ({ row, externalUpdate }) => {
+        Cell: ({ row, update }) => {
           const profile = row.original;
 
           return (
@@ -104,12 +104,12 @@ const Table: FunctionComponent = () => {
               <ActionButton
                 icon={faWrench}
                 onClick={() => {
-                  externalUpdate && externalUpdate(row, profile);
+                  update && update(row, profile);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => externalUpdate && externalUpdate(row)}
+                onClick={() => update && update(row)}
               ></ActionButton>
             </ButtonGroup>
           );
@@ -126,7 +126,7 @@ const Table: FunctionComponent = () => {
       <SimpleTable
         columns={columns}
         data={profiles}
-        externalUpdate={updateRow}
+        update={updateRow}
       ></SimpleTable>
       <Button
         block
@@ -151,7 +151,7 @@ const Table: FunctionComponent = () => {
 
 interface ItemProps {
   className?: string;
-  item: Profile.Item;
+  item: Language.ProfileItem;
   cutoff: boolean;
 }
 

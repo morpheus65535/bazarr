@@ -59,12 +59,12 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       },
       {
         accessor: "exception",
-        Cell: ({ row, value, externalUpdate }) => {
+        Cell: ({ row, value, update }) => {
           if (!isUndefined(value)) {
             return (
               <ActionButton
                 icon={faLayerGroup}
-                onClick={() => externalUpdate && externalUpdate(row, value)}
+                onClick={() => update && update(row, value)}
               ></ActionButton>
             );
           } else {
@@ -78,11 +78,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
 
   return (
     <React.Fragment>
-      <PageTable
-        columns={columns}
-        data={logs}
-        externalUpdate={show}
-      ></PageTable>
+      <PageTable columns={columns} data={logs} update={show}></PageTable>
       <SystemLogModal size="xl" modalKey="system-log"></SystemLogModal>
     </React.Fragment>
   );

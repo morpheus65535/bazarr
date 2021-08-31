@@ -5,6 +5,7 @@ import re
 import io
 import os
 import codecs
+import time
 from hashlib import sha1
 from random import randint
 from bs4 import BeautifulSoup
@@ -40,12 +41,11 @@ def fix_movie_naming(title):
                                            }, True)
 
 
-
 class YavkaNetSubtitle(Subtitle):
     """YavkaNet Subtitle."""
     provider_name = 'yavkanet'
 
-    def __init__(self, language, filename, type, video, link, fps):
+    def __init__(self, language, filename, type, video, link, fps, subs_id):
         super(YavkaNetSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
@@ -53,6 +53,9 @@ class YavkaNetSubtitle(Subtitle):
         self.video = video
         self.fps = fps
         self.release_info = filename
+        self.subs_id = subs_id
+        self.content = None
+        self._is_valid = False
         if fps:
             if video.fps and float(video.fps) == fps:
                 self.release_info += " [{:.3f}]".format(fps)
@@ -67,8 +70,6 @@ class YavkaNetSubtitle(Subtitle):
         return self.fps
 
     def make_picklable(self):
-        self.content = None
-        self._is_valid = False
         return self
 
     def get_matches(self, video):
@@ -133,7 +134,7 @@ class YavkaNetProvider(Provider):
             params['y'] = video.year
             params['s'] = sanitize(fix_movie_naming(video.title), {'\''})
 
-        if   language == 'en' or language == 'eng':
+        if language == 'en' or language == 'eng':
             params['l'] = 'EN'
         elif language == 'ru' or language == 'rus':
             params['l'] = 'RU'
@@ -143,10 +144,10 @@ class YavkaNetProvider(Provider):
             params['l'] = 'IT'
 
         logger.info('Searching subtitle %r', params)
-        response = self.session.get('https://yavka.net/subtitles.php', params=params, allow_redirects=False, timeout=10, headers={
-            'Referer': 'https://yavka.net/',
-            })
-
+        response = self.retry(self.session.get('https://yavka.net/subtitles.php', params=params, allow_redirects=False,
+                                               timeout=10, headers={'Referer': 'https://yavka.net/'}))
+        if not response:
+            return subtitles
         response.raise_for_status()
 
         if response.status_code != 200:
@@ -177,7 +178,19 @@ class YavkaNetProvider(Provider):
                 element = row.find('a', {'class': 'click'})
                 uploader = element.get_text() if element else None
                 logger.info('Found subtitle link %r', link)
-                sub = self.download_archive_and_add_subtitle_files('https://yavka.net' + link + '/', language, video, fps)
+                # slow down to prevent being throttled
+                time.sleep(1)
+                response = self.retry(self.session.get('https://yavka.net' + link))
+                if not response:
+                    continue
+                soup = BeautifulSoup(response.content, 'lxml')
+                subs_id = soup.find("input", {"name": "id"})
+                if subs_id:
+                    subs_id = subs_id['value']
+                else:
+                    continue
+                sub = self.download_archive_and_add_subtitle_files('https://yavka.net' + link + '/', language, video,
+                                                                   fps, subs_id)
                 for s in sub:
                     s.title = title
                     s.notes = notes
@@ -188,7 +201,7 @@ class YavkaNetProvider(Provider):
         return subtitles
         
     def list_subtitles(self, video, languages):
-        return [s for l in languages for s in self.query(l, video)]
+        return [s for lang in languages for s in self.query(lang, video)]
 
     def download_subtitle(self, subtitle):
         if subtitle.content:
@@ -196,30 +209,37 @@ class YavkaNetProvider(Provider):
         else:
             seeking_subtitle_file = subtitle.filename
             arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
-                                                                subtitle.fps)
+                                                                subtitle.fps, subtitle.subs_id)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps):
+    @staticmethod
+    def process_archive_subtitle_files(archive_stream, language, video, link, fps, subs_id):
         subtitles = []
-        type = 'episode' if isinstance(video, Episode) else 'movie'
-        for file_name in archiveStream.namelist():
+        media_type = 'episode' if isinstance(video, Episode) else 'movie'
+        for file_name in archive_stream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = YavkaNetSubtitle(language, file_name, type, video, link, fps)
-                subtitle.content = fix_line_ending(archiveStream.read(file_name))
+                subtitle = YavkaNetSubtitle(language, file_name, media_type, video, link, fps, subs_id)
+                subtitle.content = fix_line_ending(archive_stream.read(file_name))
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video, fps):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps, subs_id):
         logger.info('Downloading subtitle %r', link)
         cache_key = sha1(link.encode("utf-8")).digest()
         request = region.get(cache_key)
         if request is NO_VALUE:
-            request = self.session.post(link, headers={
+            time.sleep(1)
+            request = self.retry(self.session.post(link, data={
+                'id': subs_id,
+                'lng': language.basename.upper()
+            }, headers={
                 'referer': link
-                })
+            }, allow_redirects=False))
+            if not request:
+                return []
             request.raise_for_status()
             region.set(cache_key, request)
         else:
@@ -228,12 +248,23 @@ class YavkaNetProvider(Provider):
         try:
             archive_stream = io.BytesIO(request.content)
             if is_rarfile(archive_stream):
-                return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps)
+                return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, subs_id)
             elif is_zipfile(archive_stream):
-                return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps)
+                return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, subs_id)
         except:
             pass
 
         logger.error('Ignore unsupported archive %r', request.headers)
         region.delete(cache_key)
         return []
+
+    @staticmethod
+    def retry(func, limit=5, delay=5):
+        for i in range(limit):
+            response = func
+            if response.content:
+                return response
+            else:
+                logging.debug('Slowing down because we are getting throttled. Iteration {0} of {1}.Waiting {2} seconds '
+                              'to retry...'.format(i + 1, limit, delay))
+                time.sleep(delay)

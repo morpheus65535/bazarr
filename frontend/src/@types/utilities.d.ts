@@ -17,6 +17,14 @@ type Pair<T = string> = {
   value: T;
 };
 
+type EntityStruct<T> = {
+  keyName: keyof T;
+  ids: (string | null)[];
+  entities: {
+    [id: string]: T;
+  };
+};
+
 interface DataWrapper<T> {
   data: T;
 }
@@ -32,13 +40,7 @@ type Override<T, U> = T & Omit<U, keyof T>;
 
 type Comparer<T> = (lhs: T, rhs: T) => boolean;
 
-type KeysOfType<D, T> = NonNullable<
-  ValueOf<{ [P in keyof D]: D[P] extends T ? P : never }>
->;
-
-type ItemIdType<T> = KeysOfType<T, number>;
-
-type OptionalRecord<T, D> = { [P in T]?: D };
+type OptionalRecord<T extends string | number, D> = { [P in T]?: D };
 
 interface IdState<T> {
   [key: number]: Readonly<T>;

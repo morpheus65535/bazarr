@@ -1,61 +1,106 @@
-import { createDeleteAction } from "../../@socketio/reducer";
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { EpisodesApi, SeriesApi } from "../../apis";
-import {
-  SERIES_DELETE_EPISODES,
-  SERIES_DELETE_ITEMS,
-  SERIES_DELETE_WANTED_ITEMS,
-  SERIES_UPDATE_BLACKLIST,
-  SERIES_UPDATE_EPISODE_LIST,
-  SERIES_UPDATE_HISTORY_LIST,
-  SERIES_UPDATE_LIST,
-  SERIES_UPDATE_WANTED_LIST,
-} from "../constants";
-import { createAsyncAction } from "./factory";
 
-export const seriesUpdateWantedList = createAsyncAction(
-  SERIES_UPDATE_WANTED_LIST,
-  (episodeid: number[]) => EpisodesApi.wantedBy(episodeid)
+export const seriesUpdateWantedById = createAsyncThunk(
+  "series/wanted/update/id",
+  async (episodeid: number[]) => {
+    const response = await EpisodesApi.wantedBy(episodeid);
+    return response;
+  }
 );
 
-export const seriesDeleteWantedItems = createDeleteAction(
-  SERIES_DELETE_WANTED_ITEMS
+export const seriesUpdateWantedByRange = createAsyncThunk(
+  "series/wanted/update/range",
+  async (params: Parameter.Range) => {
+    const response = await EpisodesApi.wanted(params);
+    return response;
+  }
 );
 
-export const seriesUpdateWantedByRange = createAsyncAction(
-  SERIES_UPDATE_WANTED_LIST,
-  (start: number, length: number) => EpisodesApi.wanted(start, length)
+export const seriesRemoveWantedById = createAction<number[]>(
+  "series/wanted/remove/id"
 );
 
-export const seriesUpdateList = createAsyncAction(
-  SERIES_UPDATE_LIST,
-  (id?: number[]) => SeriesApi.series(id)
+export const seriesResetWanted = createAction("series/wanted/reset");
+
+export const seriesMarkWantedDirtyById = createAction<number[]>(
+  "series/wanted/mark_dirty/episode_id"
 );
 
-export const seriesDeleteItems = createDeleteAction(SERIES_DELETE_ITEMS);
+export const seriesRemoveById = createAction<number[]>("series/remove");
 
-export const episodeUpdateBy = createAsyncAction(
-  SERIES_UPDATE_EPISODE_LIST,
-  (seriesid: number[]) => EpisodesApi.bySeriesId(seriesid)
+export const seriesMarkDirtyById = createAction<number[]>(
+  "series/mark_dirty/id"
 );
 
-export const episodeDeleteItems = createDeleteAction(SERIES_DELETE_EPISODES);
-
-export const episodeUpdateById = createAsyncAction(
-  SERIES_UPDATE_EPISODE_LIST,
-  (episodeid: number[]) => EpisodesApi.byEpisodeId(episodeid)
+export const seriesUpdateById = createAsyncThunk(
+  "series/update/id",
+  async (ids: number[]) => {
+    const response = await SeriesApi.series(ids);
+    return response;
+  }
 );
 
-export const seriesUpdateByRange = createAsyncAction(
-  SERIES_UPDATE_LIST,
-  (start: number, length: number) => SeriesApi.seriesBy(start, length)
+export const seriesUpdateAll = createAsyncThunk(
+  "series/update/all",
+  async () => {
+    const response = await SeriesApi.series();
+    return response;
+  }
 );
 
-export const seriesUpdateHistoryList = createAsyncAction(
-  SERIES_UPDATE_HISTORY_LIST,
-  () => EpisodesApi.history()
+export const seriesUpdateByRange = createAsyncThunk(
+  "series/update/range",
+  async (params: Parameter.Range) => {
+    const response = await SeriesApi.seriesBy(params);
+    return response;
+  }
 );
 
-export const seriesUpdateBlacklist = createAsyncAction(
-  SERIES_UPDATE_BLACKLIST,
-  () => EpisodesApi.blacklist()
+export const episodesRemoveById = createAction<number[]>("episodes/remove");
+
+export const episodesMarkDirtyById = createAction<number[]>(
+  "episodes/mark_dirty/id"
+);
+
+export const episodeUpdateBySeriesId = createAsyncThunk(
+  "episodes/update/series_id",
+  async (seriesid: number[]) => {
+    const response = await EpisodesApi.bySeriesId(seriesid);
+    return response;
+  }
+);
+
+export const episodeUpdateById = createAsyncThunk(
+  "episodes/update/episodes_id",
+  async (episodeid: number[]) => {
+    const response = await EpisodesApi.byEpisodeId(episodeid);
+    return response;
+  }
+);
+
+export const episodesUpdateHistoryByRange = createAsyncThunk(
+  "episodes/history/update/range",
+  async (param: Parameter.Range) => {
+    const response = await EpisodesApi.history(param);
+    return response;
+  }
+);
+
+export const episodesMarkHistoryDirty = createAction<number[]>(
+  "episodes/history/update"
+);
+
+export const episodesResetHistory = createAction("episodes/history/reset");
+
+export const episodesUpdateBlacklist = createAsyncThunk(
+  "episodes/blacklist/update",
+  async () => {
+    const response = await EpisodesApi.blacklist();
+    return response;
+  }
+);
+
+export const episodesMarkBlacklistDirty = createAction(
+  "episodes/blacklist/update"
 );

@@ -5,16 +5,21 @@ import React, {
   useState,
 } from "react";
 import { Row } from "react-bootstrap";
-import { Redirect } from "react-router-dom";
+import { Provider } from "react-redux";
+import { Route, Switch } from "react-router";
+import { BrowserRouter, Redirect } from "react-router-dom";
+import { useEffectOnceWhen } from "rooks";
+import Socketio from "../@modules/socketio";
 import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
+import store from "../@redux/store";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Sidebar from "../Sidebar";
+import Auth from "../special-pages/AuthPage";
+import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
-import UIError from "../special-pages/UIError";
-import { useHasUpdateInject } from "../utilites";
+import { Environment } from "../utilities";
 import Header from "./Header";
-import NotificationContainer from "./notifications";
 import Router from "./Router";
 
 // Sidebar Toggle
@@ -28,18 +33,15 @@ const App: FunctionComponent<Props> = () => {
   const notify = useNotification("has-update", 10 * 1000);
 
   // Has any update?
-  const hasUpdate = useHasUpdateInject();
-  useEffect(() => {
-    if (initialized) {
-      if (hasUpdate) {
-        notify({
-          type: "info",
-          message: "A new version of Bazarr is ready, restart is required",
-          // TODO: Restart action
-        });
-      }
+  useEffectOnceWhen(() => {
+    if (Environment.hasUpdate) {
+      notify({
+        type: "info",
+        message: "A new version of Bazarr is ready, restart is required",
+        // TODO: Restart action
+      });
     }
-  }, [initialized, hasUpdate, notify]);
+  }, initialized === true);
 
   const [sidebar, setSidebar] = useState(false);
   const toggleSidebar = useCallback(() => setSidebar((s) => !s), []);
@@ -57,8 +59,8 @@ const App: FunctionComponent<Props> = () => {
   } else if (typeof initialized === "string") {
     return <LaunchError>{initialized}</LaunchError>;
   }
-  try {
-    return (
+  return (
+    <ErrorBoundary>
       <SidebarToggleContext.Provider value={toggleSidebar}>
         <Row noGutters className="header-container">
           <Header></Header>
@@ -69,12 +71,39 @@ const App: FunctionComponent<Props> = () => {
             <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
           </ModalProvider>
         </Row>
-        <NotificationContainer></NotificationContainer>
       </SidebarToggleContext.Provider>
-    );
-  } catch (e) {
-    return <UIError error={e}></UIError>;
-  }
+    </ErrorBoundary>
+  );
 };
 
-export default App;
+const MainRouter: FunctionComponent = () => {
+  useEffect(() => {
+    Socketio.initialize();
+  }, []);
+
+  return (
+    <BrowserRouter basename={Environment.baseUrl}>
+      <Switch>
+        <Route exact path="/login">
+          <Auth></Auth>
+        </Route>
+        <Route path="/">
+          <App></App>
+        </Route>
+      </Switch>
+    </BrowserRouter>
+  );
+};
+
+const Main: FunctionComponent = () => {
+  return (
+    <Provider store={store}>
+      {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
+      {/* <React.StrictMode> */}
+      <MainRouter></MainRouter>
+      {/* </React.StrictMode> */}
+    </Provider>
+  );
+};
+
+export default Main;

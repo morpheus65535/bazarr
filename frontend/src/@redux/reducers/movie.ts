@@ -1,81 +1,68 @@
-import { Action, handleActions } from "redux-actions";
+import { createReducer } from "@reduxjs/toolkit";
 import {
-  MOVIES_DELETE_ITEMS,
-  MOVIES_DELETE_WANTED_ITEMS,
-  MOVIES_UPDATE_BLACKLIST,
-  MOVIES_UPDATE_HISTORY_LIST,
-  MOVIES_UPDATE_LIST,
-  MOVIES_UPDATE_WANTED_LIST,
-} from "../constants";
-import { AsyncAction } from "../types";
-import { defaultAOS } from "../utils";
+  movieMarkBlacklistDirty,
+  movieMarkDirtyById,
+  movieMarkHistoryDirty,
+  movieMarkWantedDirtyById,
+  movieRemoveById,
+  movieRemoveWantedById,
+  movieResetHistory,
+  movieResetWanted,
+  movieUpdateAll,
+  movieUpdateBlacklist,
+  movieUpdateById,
+  movieUpdateByRange,
+  movieUpdateHistoryByRange,
+  movieUpdateWantedById,
+  movieUpdateWantedByRange,
+} from "../actions";
+import { AsyncUtility } from "../utils";
 import {
-  deleteOrderListItemBy,
-  updateAsyncState,
-  updateOrderIdState,
-} from "../utils/mapper";
+  createAsyncEntityReducer,
+  createAsyncItemReducer,
+} from "../utils/factory";
 
-const reducer = handleActions<ReduxStore.Movie, any>(
-  {
-    [MOVIES_UPDATE_WANTED_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Wanted.Movie>>
-    ) => {
-      return {
-        ...state,
-        wantedMovieList: updateOrderIdState(
-          action,
-          state.wantedMovieList,
-          "radarrId"
-        ),
-      };
-    },
-    [MOVIES_DELETE_WANTED_ITEMS]: (state, action: Action<number[]>) => {
-      return {
-        ...state,
-        wantedMovieList: deleteOrderListItemBy(action, state.wantedMovieList),
-      };
-    },
-    [MOVIES_UPDATE_HISTORY_LIST]: (
-      state,
-      action: AsyncAction<History.Movie[]>
-    ) => {
-      return {
-        ...state,
-        historyList: updateAsyncState(action, state.historyList.data),
-      };
-    },
-    [MOVIES_UPDATE_LIST]: (
-      state,
-      action: AsyncAction<AsyncDataWrapper<Item.Movie>>
-    ) => {
-      return {
-        ...state,
-        movieList: updateOrderIdState(action, state.movieList, "radarrId"),
-      };
-    },
-    [MOVIES_DELETE_ITEMS]: (state, action: Action<number[]>) => {
-      return {
-        ...state,
-        movieList: deleteOrderListItemBy(action, state.movieList),
-      };
-    },
-    [MOVIES_UPDATE_BLACKLIST]: (
-      state,
-      action: AsyncAction<Blacklist.Movie[]>
-    ) => {
-      return {
-        ...state,
-        blacklist: updateAsyncState(action, state.blacklist.data),
-      };
-    },
-  },
-  {
-    movieList: defaultAOS(),
-    wantedMovieList: defaultAOS(),
-    historyList: { updating: true, data: [] },
-    blacklist: { updating: true, data: [] },
-  }
-);
+interface Movie {
+  movieList: Async.Entity<Item.Movie>;
+  wantedMovieList: Async.Entity<Wanted.Movie>;
+  historyList: Async.Entity<History.Movie>;
+  blacklist: Async.Item<Blacklist.Movie[]>;
+}
+
+const defaultMovie: Movie = {
+  movieList: AsyncUtility.getDefaultEntity("radarrId"),
+  wantedMovieList: AsyncUtility.getDefaultEntity("radarrId"),
+  historyList: AsyncUtility.getDefaultEntity("id"),
+  blacklist: AsyncUtility.getDefaultItem(),
+};
+
+const reducer = createReducer(defaultMovie, (builder) => {
+  createAsyncEntityReducer(builder, (s) => s.movieList, {
+    range: movieUpdateByRange,
+    ids: movieUpdateById,
+    removeIds: movieRemoveById,
+    all: movieUpdateAll,
+    dirty: movieMarkDirtyById,
+  });
+
+  createAsyncEntityReducer(builder, (s) => s.wantedMovieList, {
+    range: movieUpdateWantedByRange,
+    ids: movieUpdateWantedById,
+    removeIds: movieRemoveWantedById,
+    dirty: movieMarkWantedDirtyById,
+    reset: movieResetWanted,
+  });
+
+  createAsyncEntityReducer(builder, (s) => s.historyList, {
+    range: movieUpdateHistoryByRange,
+    dirty: movieMarkHistoryDirty,
+    reset: movieResetHistory,
+  });
+
+  createAsyncItemReducer(builder, (s) => s.blacklist, {
+    all: movieUpdateBlacklist,
+    dirty: movieMarkBlacklistDirty,
+  });
+});
 
 export default reducer;

@@ -3,13 +3,12 @@ import { Redirect, Route, Switch, useHistory } from "react-router-dom";
 import { useDidMount } from "rooks";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
 import BlacklistRouter from "../Blacklist/Router";
+import DisplayItemRouter from "../DisplayItem/Router";
 import HistoryRouter from "../History/Router";
-import MovieRouter from "../Movies/Router";
-import SeriesRouter from "../Series/Router";
 import SettingRouter from "../Settings/Router";
 import EmptyPage, { RouterEmptyPath } from "../special-pages/404";
 import SystemRouter from "../System/Router";
-import { ScrollToTop } from "../utilites";
+import { ScrollToTop } from "../utilities";
 import WantedRouter from "../Wanted/Router";
 
 const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
@@ -40,16 +39,9 @@ const Router: FunctionComponent<{ className?: string }> = ({ className }) => {
         <Route exact path="/">
           <Redirect exact to={redirectPath}></Redirect>
         </Route>
-        {sonarr && (
-          <Route path="/series">
-            <SeriesRouter></SeriesRouter>
-          </Route>
-        )}
-        {radarr && (
-          <Route path="/movies">
-            <MovieRouter></MovieRouter>
-          </Route>
-        )}
+        <Route path={["/series", "/movies"]}>
+          <DisplayItemRouter></DisplayItemRouter>
+        </Route>
         <Route path="/wanted">
           <WantedRouter></WantedRouter>
         </Route>

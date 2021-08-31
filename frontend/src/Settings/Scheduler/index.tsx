@@ -1,8 +1,10 @@
 import React, { FunctionComponent, useMemo } from "react";
 import {
+  Check,
   CollapseBox,
   Group,
   Input,
+  Message,
   Selector,
   SettingsProvider,
 } from "../components";
@@ -73,6 +75,16 @@ const SettingsSchedulerView: FunctionComponent = () => {
               ></Selector>
             </Input>
           </CollapseBox.Content>
+          <Input>
+            <Check
+              label="Use cached ffprobe results"
+              settingKey="settings-sonarr-use_ffprobe_cache"
+            ></Check>
+            <Message>
+              If disabled, Bazarr will use ffprobe to index video file
+              properties on each run. This will result in higher disk I/O.
+            </Message>
+          </Input>
         </CollapseBox>
         <CollapseBox>
           <CollapseBox.Control>
@@ -99,6 +111,16 @@ const SettingsSchedulerView: FunctionComponent = () => {
               ></Selector>
             </Input>
           </CollapseBox.Content>
+          <Input>
+            <Check
+              label="Use cached ffprobe results"
+              settingKey="settings-radarr-use_ffprobe_cache"
+            ></Check>
+            <Message>
+              If disabled, Bazarr will use ffprobe to index video file
+              properties on each run. This will result in higher disk I/O.
+            </Message>
+          </Input>
         </CollapseBox>
       </Group>
       <Group header="Search and Upgrade Subtitles">

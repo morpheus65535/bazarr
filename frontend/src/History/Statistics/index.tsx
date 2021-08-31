@@ -1,5 +1,10 @@
 import { merge } from "lodash";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
@@ -12,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useDidMount } from "rooks";
 import {
   HistoryApi,
   ProvidersApi,
@@ -19,10 +25,10 @@ import {
   useAsyncRequest,
 } from "../../apis";
 import {
+  AsyncOverlay,
   AsyncSelector,
   ContentHeader,
   LanguageSelector,
-  PromiseOverlay,
   Selector,
 } from "../../components";
 import { actionOptions, timeframeOptions } from "./options";
@@ -49,26 +55,32 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const [languages] = useAsyncRequest(() => SystemApi.languages(true), []);
-
-  const [providerList] = useAsyncRequest(
-    () => ProvidersApi.providers(true),
-    []
+  const [languages, updateLanguages] = useAsyncRequest(
+    SystemApi.languages.bind(SystemApi)
   );
+  const [providerList, updateProviderParam] = useAsyncRequest(
+    ProvidersApi.providers.bind(ProvidersApi)
+  );
+
+  const updateProvider = useCallback(
+    () => updateProviderParam(true),
+    [updateProviderParam]
+  );
+
+  useDidMount(() => {
+    updateLanguages(true);
+  });
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
-  const [lang, setLanguage] = useState<Nullable<Language>>(null);
+  const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
-  const promise = useCallback(() => {
-    return HistoryApi.stats(
-      timeframe,
-      action ?? undefined,
-      provider?.name,
-      lang?.code2
-    );
-  }, [timeframe, lang?.code2, action, provider]);
+  const [stats, update] = useAsyncRequest(HistoryApi.stats.bind(HistoryApi));
+
+  useEffect(() => {
+    update(timeframe, action ?? undefined, provider?.name, lang?.code2);
+  }, [timeframe, action, provider?.name, lang?.code2, update]);
 
   return (
     // TODO: Responsive
@@ -76,8 +88,8 @@ const HistoryStats: FunctionComponent = () => {
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
-      <PromiseOverlay promise={promise}>
-        {(data) => (
+      <AsyncOverlay ctx={stats}>
+        {({ content }) => (
           <React.Fragment>
             <ContentHeader scroll={false}>
               <SelectorContainer>
@@ -103,20 +115,21 @@ const HistoryStats: FunctionComponent = () => {
                   clearable
                   state={providerList}
                   label={providerLabel}
+                  update={updateProvider}
                   onChange={setProvider}
                 ></AsyncSelector>
               </SelectorContainer>
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages.data}
+                  options={languages.content ?? []}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>
               </SelectorContainer>
             </ContentHeader>
             <ResponsiveContainer height="100%">
-              <BarChart data={converter(data)}>
+              <BarChart data={content ? converter(content) : []}>
                 <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
                 <XAxis dataKey="date"></XAxis>
                 <YAxis allowDecimals={false}></YAxis>
@@ -128,7 +141,7 @@ const HistoryStats: FunctionComponent = () => {
             </ResponsiveContainer>
           </React.Fragment>
         )}
-      </PromiseOverlay>
+      </AsyncOverlay>
     </Container>
   );
 };

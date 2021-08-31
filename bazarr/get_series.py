@@ -50,7 +50,7 @@ def update_series(send_event=True):
         series_to_add = []
 
         series_count = len(series)
-        for i, show in enumerate(series, 1):
+        for i, show in enumerate(series):
             sleep()
             if send_event:
                 show_progress(id='series_progress',
@@ -72,12 +72,6 @@ def update_series(send_event=True):
                                                   audio_profiles=audio_profiles))
 
         if send_event:
-            show_progress(id='series_progress',
-                          header='Syncing series...',
-                          name='Completed successfully',
-                          value=series_count,
-                          count=series_count)
-
             hide_progress(id='series_progress')
 
         # Remove old series from DB
@@ -170,8 +164,7 @@ def update_one_series(series_id, action):
         series = None
 
         series_data = get_series_from_sonarr_api(url=url_sonarr(), apikey_sonarr=settings.sonarr.apikey,
-                                                 sonarr_series_id=int(series_id),
-                                                 sonarr_version=get_sonarr_info.version())
+                                                 sonarr_series_id=int(series_id))
 
         if not series_data:
             return
