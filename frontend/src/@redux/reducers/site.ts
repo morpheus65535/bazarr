@@ -6,7 +6,7 @@ import {
   siteAddNotifications,
   siteAddProgress,
   siteBootstrap,
-  siteChangeSidebar,
+  siteChangeSidebarVisibility,
   siteRedirectToAuth,
   siteRemoveNotifications,
   siteRemoveProgress,
@@ -28,7 +28,7 @@ interface Site {
     timestamp: string;
   };
   notifications: Server.Notification[];
-  sidebar: string;
+  showSidebar: boolean;
   badges: Badge;
 }
 
@@ -41,7 +41,7 @@ const defaultSite: Site = {
     timestamp: String(Date.now()),
   },
   notifications: [],
-  sidebar: "",
+  showSidebar: false,
   badges: {
     movies: 0,
     episodes: 0,
@@ -116,8 +116,8 @@ const reducer = createReducer(defaultSite, (builder) => {
   });
 
   builder
-    .addCase(siteChangeSidebar, (state, action) => {
-      state.sidebar = action.payload;
+    .addCase(siteChangeSidebarVisibility, (state, action) => {
+      state.showSidebar = action.payload;
     })
     .addCase(siteUpdateOffline, (state, action) => {
       state.offline = action.payload;

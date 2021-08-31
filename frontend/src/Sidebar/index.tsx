@@ -1,86 +1,56 @@
-import React, { FunctionComponent, useContext, useMemo } from "react";
-import { Container, Image, ListGroup } from "react-bootstrap";
-import { useReduxStore } from "../@redux/hooks/base";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks/site";
-import logo from "../@static/logo64.png";
-import { SidebarToggleContext } from "../App";
-import { useGotoHomepage } from "../utilities/hooks";
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, {
+  createContext,
+  FunctionComponent,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import {
-  BadgesContext,
-  CollapseItem,
-  HiddenKeysContext,
-  LinkItem,
-} from "./items";
-import { RadarrDisabledKey, SidebarList, SonarrDisabledKey } from "./list";
+  Badge,
+  Collapse,
+  Container,
+  Image,
+  ListGroup,
+  ListGroupItem,
+} from "react-bootstrap";
+import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
+import { siteChangeSidebarVisibility } from "../@redux/actions";
+import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
+import logo from "../@static/logo64.png";
+import { useNavigationItems } from "../Navigation";
+import { Navigation } from "../Navigation/nav";
+import { BuildKey } from "../utilities";
+import { useGotoHomepage } from "../utilities/hooks";
 import "./style.scss";
-import { BadgeProvider } from "./types";
 
-interface Props {
-  open?: boolean;
-}
+const SelectionContext = createContext<{
+  selection: string | null;
+  select: (selection: string | null) => void;
+}>({ selection: null, select: () => {} });
 
-const Sidebar: FunctionComponent<Props> = ({ open }) => {
-  const toggle = useContext(SidebarToggleContext);
+const Sidebar: FunctionComponent = () => {
+  const open = useReduxStore((s) => s.site.showSidebar);
 
-  const { movies, episodes, providers, status } = useReduxStore(
-    (s) => s.site.badges
-  );
-
-  const sonarrEnabled = useIsSonarrEnabled();
-  const radarrEnabled = useIsRadarrEnabled();
-
-  const badges = useMemo<BadgeProvider>(
-    () => ({
-      Wanted: {
-        Series: sonarrEnabled ? episodes : 0,
-        Movies: radarrEnabled ? movies : 0,
-      },
-      System: {
-        Providers: providers,
-        Status: status,
-      },
-    }),
-    [movies, episodes, providers, sonarrEnabled, radarrEnabled, status]
-  );
-
-  const hiddenKeys = useMemo<string[]>(() => {
-    const list = [];
-    if (!sonarrEnabled) {
-      list.push(SonarrDisabledKey);
-    }
-    if (!radarrEnabled) {
-      list.push(RadarrDisabledKey);
-    }
-    return list;
-  }, [sonarrEnabled, radarrEnabled]);
+  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];
 
-  if (open === true) {
+  if (open) {
     cls.push("open");
     overlay.push("open");
   }
 
-  const sidebarItems = useMemo(
-    () =>
-      SidebarList.map((v) => {
-        if (hiddenKeys.includes(v.hiddenKey ?? "")) {
-          return null;
-        }
-        if ("children" in v) {
-          return <CollapseItem key={v.name} {...v}></CollapseItem>;
-        } else {
-          return <LinkItem key={v.link} {...v}></LinkItem>;
-        }
-      }),
-    [hiddenKeys]
-  );
-
   const goHome = useGotoHomepage();
 
+  const [selection, setSelection] = useState<string | null>(null);
+
   return (
-    <React.Fragment>
+    <SelectionContext.Provider
+      value={{ selection: selection, select: setSelection }}
+    >
       <aside className={cls.join(" ")}>
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image
@@ -92,13 +62,184 @@ const Sidebar: FunctionComponent<Props> = ({ open }) => {
             className="cursor-pointer"
           ></Image>
         </Container>
-        <HiddenKeysContext.Provider value={hiddenKeys}>
-          <BadgesContext.Provider value={badges}>
-            <ListGroup variant="flush">{sidebarItems}</ListGroup>
-          </BadgesContext.Provider>
-        </HiddenKeysContext.Provider>
+        <SidebarNavigation></SidebarNavigation>
       </aside>
-      <div className={overlay.join(" ")} onClick={toggle}></div>
+      <div
+        className={overlay.join(" ")}
+        onClick={() => changeSidebar(false)}
+      ></div>
+    </SelectionContext.Provider>
+  );
+};
+
+const SidebarNavigation: FunctionComponent = () => {
+  const navItems = useNavigationItems();
+
+  return (
+    <ListGroup variant="flush">
+      {navItems.map((v, idx) => {
+        if ("routes" in v) {
+          return (
+            <SidebarParent key={BuildKey(idx, v.name)} {...v}></SidebarParent>
+          );
+        } else {
+          return (
+            <SidebarChild
+              parent=""
+              key={BuildKey(idx, v.name)}
+              {...v}
+            ></SidebarChild>
+          );
+        }
+      })}
+    </ListGroup>
+  );
+};
+
+const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
+  icon,
+  badge,
+  name,
+  path,
+  routes,
+  enabled,
+  component,
+}) => {
+  const computedBadge = useMemo(() => {
+    let computed = badge ?? 0;
+
+    computed += routes.reduce((prev, curr) => {
+      return prev + (curr.badge ?? 0);
+    }, 0);
+
+    return computed !== 0 ? computed : undefined;
+  }, [badge, routes]);
+
+  const enabledRoutes = useMemo(
+    () => routes.filter((v) => v.enabled !== false && v.routeOnly !== true),
+    [routes]
+  );
+
+  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+
+  const { selection, select } = useContext(SelectionContext);
+
+  const match = useRouteMatch({ path });
+  const open = match !== null || selection === path;
+
+  const collapseBoxClass = useMemo(
+    () => `sidebar-collapse-box ${open ? "active" : ""}`,
+    [open]
+  );
+
+  const history = useHistory();
+
+  if (enabled === false) {
+    return null;
+  } else if (enabledRoutes.length === 0) {
+    if (component) {
+      return (
+        <NavLink
+          activeClassName="sb-active"
+          className="list-group-item list-group-item-action sidebar-button"
+          to={path}
+          onClick={() => changeSidebar(false)}
+        >
+          <SidebarContent
+            icon={icon}
+            name={name}
+            badge={computedBadge}
+          ></SidebarContent>
+        </NavLink>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  return (
+    <div className={collapseBoxClass}>
+      <ListGroupItem
+        action
+        className="sidebar-button"
+        onClick={() => {
+          if (open) {
+            select(null);
+          } else {
+            select(path);
+          }
+          if (component !== undefined) {
+            history.push(path);
+          }
+        }}
+      >
+        <SidebarContent
+          icon={icon}
+          name={name}
+          badge={computedBadge}
+        ></SidebarContent>
+      </ListGroupItem>
+      <Collapse in={open}>
+        <div className="sidebar-collapse">
+          {enabledRoutes.map((v, idx) => (
+            <SidebarChild
+              key={BuildKey(idx, v.name, "child")}
+              parent={path}
+              {...v}
+            ></SidebarChild>
+          ))}
+        </div>
+      </Collapse>
+    </div>
+  );
+};
+
+interface SidebarChildProps {
+  parent: string;
+}
+
+const SidebarChild: FunctionComponent<
+  SidebarChildProps & Navigation.RouteWithoutChild
+> = ({ icon, name, path, badge, enabled, routeOnly, parent }) => {
+  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const { select } = useContext(SelectionContext);
+
+  if (enabled === false || routeOnly === true) {
+    return null;
+  }
+
+  return (
+    <NavLink
+      activeClassName="sb-active"
+      className="list-group-item list-group-item-action sidebar-button sb-collapse"
+      to={parent + path}
+      onClick={() => {
+        select(null);
+        changeSidebar(false);
+      }}
+    >
+      <SidebarContent icon={icon} name={name} badge={badge}></SidebarContent>
+    </NavLink>
+  );
+};
+
+const SidebarContent: FunctionComponent<{
+  icon?: IconDefinition;
+  name: string;
+  badge?: number;
+}> = ({ icon, name, badge }) => {
+  return (
+    <React.Fragment>
+      {icon && (
+        <FontAwesomeIcon
+          size="1x"
+          className="icon"
+          icon={icon}
+        ></FontAwesomeIcon>
+      )}
+      <span className="d-flex flex-grow-1 justify-content-between">
+        {name} <Badge variant="secondary">{badge !== 0 ? badge : null}</Badge>
+      </span>
     </React.Fragment>
   );
 };
