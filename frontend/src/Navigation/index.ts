@@ -163,7 +163,6 @@ export function useNavigationItems() {
           {
             name: "Providers",
             path: "/providers",
-            badge: providers,
             component: SettingsProvidersView,
           },
           {
@@ -216,6 +215,7 @@ export function useNavigationItems() {
           {
             name: "Providers",
             path: "/providers",
+            badge: providers,
             component: SystemProvidersView,
           },
           {
