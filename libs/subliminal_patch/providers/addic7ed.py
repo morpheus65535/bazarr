@@ -6,10 +6,12 @@ import subliminal
 import time
 
 from random import randint
+from urllib.parse import quote_plus
 
 from dogpile.cache.api import NO_VALUE
 from requests import Session
 from subliminal.cache import region
+from subliminal.video import Episode, Movie
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
@@ -25,16 +27,18 @@ logger = logging.getLogger(__name__)
 series_year_re = re.compile(r'^(?P<series>[ \w\'.:(),*&!?-]+?)(?: \((?P<year>\d{4})\))?$')
 
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
+MOVIE_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
 
 
 class Addic7edSubtitle(_Addic7edSubtitle):
     hearing_impaired_verifiable = True
 
     def __init__(self, language, hearing_impaired, page_link, series, season, episode, title, year, version,
-                 download_link):
+                 download_link, uploader=None):
         super(Addic7edSubtitle, self).__init__(language, hearing_impaired, page_link, series, season, episode,
                                                title, year, version, download_link)
         self.release_info = version.replace('+', ',')
+        self.uploader = uploader
 
     def get_matches(self, video):
         matches = super(Addic7edSubtitle, self).get_matches(video)
@@ -63,6 +67,7 @@ class Addic7edProvider(_Addic7edProvider):
     ]} | {Language.fromietf(l) for l in ["sr-Latn", "sr-Cyrl"]}
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
+    video_types = (Episode, Movie)
     USE_ADDICTED_RANDOM_AGENTS = False
     hearing_impaired_verifiable = True
     subtitle_class = Addic7edSubtitle
@@ -217,6 +222,51 @@ class Addic7edProvider(_Addic7edProvider):
             #     show_id = self._search_show_id(series)
 
         return show_id
+
+    @region.cache_on_arguments(expiration_time=MOVIE_EXPIRATION_TIME)
+    def get_movie_id(self, movie, year=None):
+        """Get the best matching movie id for `movie`, `year`.
+
+        :param str movie: movie.
+        :param year: year of the movie, if any.
+        :type year: int
+        :return: the movie id, if found.
+        :rtype: int
+        """
+        movie_id = None
+
+        # get the movie id
+        logger.info('Getting movie id')
+
+        r = self.session.get(self.server_url + 'search.php?search=' + quote_plus(movie), timeout=60)
+        r.raise_for_status()
+
+        soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+
+        # populate the movie id
+        movies_table = soup.find('table', {'class': 'tabel'})
+        movies = movies_table.find_all('tr')
+        for item in movies:
+            link = item.find('a', href=True)
+            if link:
+                type, media_id = link['href'].split('/')
+                if type == 'movie':
+                    media_title = link.text
+                    if match := re.search(r'(.+)\s\((\d{4})\)$', media_title):
+                        media_name = match.group(1)
+                        media_year = match.group(2)
+                        if sanitize(media_name.lower()) == sanitize(movie.lower()) and media_year == str(year):
+                            movie_id = media_id
+
+        soup.decompose()
+        soup = None
+
+        logger.debug(f'Found this movie id: {movie_id}')
+
+        if not movie_id:
+            logging.debug(f"Addic7ed: Cannot find this movie with guessed year {year}: {movie}")
+
+        return movie_id
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def _get_show_ids(self):
@@ -389,6 +439,110 @@ class Addic7edProvider(_Addic7edProvider):
         soup = None
 
         return subtitles
+
+    def query_movie(self, movie_id, title, year=None):
+        # get the page of the movie
+        logger.info('Getting the page of movie id %d', movie_id)
+        r = self.session.get(self.server_url + 'movie/' + movie_id,
+                             timeout=60,
+                             headers={
+                                 "referer": self.server_url,
+                                 "X-Requested-With": "XMLHttpRequest"
+                             }
+                             )
+
+        r.raise_for_status()
+
+        if r.status_code == 304:
+            raise TooManyRequests()
+
+        if not r.text:
+            # Provider wrongful return a status of 304 Not Modified with an empty content
+            # raise_for_status won't raise exception for that status code
+            logger.error('No data returned from provider')
+            return []
+
+        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
+
+        # loop over subtitle rows
+        tables = []
+        subtitles = []
+        for table in soup.find_all('table', {'align': 'center',
+                                             'border': '0',
+                                             'class': 'tabel95',
+                                             'width': '100%'}):
+            if table.find_all('td', {'class': 'NewsTitle'}):
+                tables.append(table)
+        for table in tables:
+            row1 = table.contents[1]
+            row2 = table.contents[4]
+            row3 = table.contents[6]
+            # other rows are useless
+
+            # ignore incomplete subtitles
+            status = row2.contents[6].text
+            if "%" in status:
+                logger.debug('Ignoring subtitle with status %s', status)
+                continue
+
+            # read the item
+            language = Language.fromaddic7ed(row2.contents[4].text.strip('\n'))
+            hearing_impaired = bool(row3.contents[1].contents[1].attrs['src'].endswith('hi.jpg'))
+            page_link = self.server_url + 'movie/' + movie_id
+            version_matches = re.search(r'Version\s(.+),.+', str(row1.contents[1].contents[1]))
+            version = version_matches.group(1) if version_matches else None
+            download_link = row2.contents[8].contents[2].attrs['href'][1:]
+            uploader = row1.contents[2].contents[8].text.strip()
+
+            # set subtitle language to hi if it's hearing_impaired
+            if hearing_impaired:
+                language = Language.rebuild(language, hi=True)
+
+            subtitle = self.subtitle_class(language, hearing_impaired, page_link, None, None, None, title, year,
+                                           version, download_link, uploader)
+            logger.debug('Found subtitle %r', subtitle)
+            subtitles.append(subtitle)
+
+        soup.decompose()
+        soup = None
+
+        return subtitles
+
+    def list_subtitles(self, video, languages):
+        if isinstance(video, Episode):
+            # lookup show_id
+            titles = [video.series] + video.alternative_series[5:]
+            show_id = None
+            for title in titles:
+                show_id = self.get_show_id(title, video.year)
+                if show_id is not None:
+                    break
+
+            # query for subtitles with the show_id
+            if show_id is not None:
+                subtitles = [s for s in self.query(show_id, title, video.season, video.year)
+                             if s.language in languages and s.episode == video.episode]
+                if subtitles:
+                    return subtitles
+            else:
+                logger.error('No show id found for %r (%r)', video.series, {'year': video.year})
+        else:
+            titles = [video.title] + video.alternative_titles[5:]
+
+            for title in titles:
+                movie_id = self.get_movie_id(title, video.year)
+                if movie_id is not None:
+                    break
+
+            # query for subtitles with the movie_id
+            if movie_id is not None:
+                subtitles = [s for s in self.query_movie(movie_id, title, video.year) if s.language in languages]
+                if subtitles:
+                    return subtitles
+            else:
+                logger.error('No movie id found for %r (%r)', video.title, {'year': video.year})
+
+        return []
 
     def download_subtitle(self, subtitle):
         # download the subtitle

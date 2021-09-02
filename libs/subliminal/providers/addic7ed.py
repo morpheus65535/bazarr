@@ -49,22 +49,27 @@ class Addic7edSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
 
-        # series name
-        if video.series and sanitize(self.series) in (
-                sanitize(name) for name in [video.series] + video.alternative_series):
-            matches.add('series')
-        # season
-        if video.season and self.season == video.season:
-            matches.add('season')
-        # episode
-        if video.episode and self.episode == video.episode:
-            matches.add('episode')
+        if isinstance(video, Episode):
+            # series name
+            if video.series and sanitize(self.series) in (
+                    sanitize(name) for name in [video.series] + video.alternative_series):
+                matches.add('series')
+            # season
+            if video.season and self.season == video.season:
+                matches.add('season')
+            # episode
+            if video.episode and self.episode == video.episode:
+                matches.add('episode')
+            # year
+            if video.original_series and self.year is None or video.year and video.year == self.year:
+                matches.add('year')
+        else:
+            # year
+            if video.year and video.year == self.year:
+                matches.add('year')
         # title of the episode
         if video.title and sanitize(self.title) == sanitize(video.title):
             matches.add('title')
-        # year
-        if video.original_series and self.year is None or video.year and video.year == self.year:
-            matches.add('year')
         # release_group
         if (video.release_group and self.version and
                 any(r in sanitize_release_group(self.version)
