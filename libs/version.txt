@@ -41,6 +41,7 @@ socketio=5.1.0
 sseclient=0.0.27 <-- Modified to work with Sonarr
 stevedore=1.28.0
 subliminal=2.1.0dev
+tmdbsimple=2.4.2
 tzlocal=2.1b1
 twine=3.4.1
 urllib3=1.23
