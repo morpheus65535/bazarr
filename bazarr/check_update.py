@@ -16,7 +16,7 @@ from config import settings
 
 def check_releases():
     releases = []
-    url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases?per_page=100'
+    url_releases = 'https://api.github.com/repos/Bazarr/Bazarr2/releases?per_page=100'
     try:
         logging.debug('BAZARR getting releases from Github: {}'.format(url_releases))
         r = requests.get(url_releases, allow_redirects=True)

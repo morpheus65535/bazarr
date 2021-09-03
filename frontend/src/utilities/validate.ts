@@ -14,11 +14,11 @@ export function isNonNullable(v: any): v is NonNullable<any> {
 }
 
 export function isMovie(v: any): v is Item.Movie {
-  return "radarrId" in v;
+  return "movieId" in v;
 }
 
 export function isEpisode(v: any): v is Item.Episode {
-  return "sonarrEpisodeId" in v;
+  return "episodeId" in v;
 }
 
 export function isSeries(v: any): v is Item.Series {

@@ -14,7 +14,7 @@ from custom_lang import CustomLanguage
 from database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
 from get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
 from config import settings
-from helper import path_mappings, get_subtitle_destination_folder
+from helper import get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
@@ -26,18 +26,18 @@ global hi_regex
 hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
 
-def store_subtitles(original_path, reversed_path, use_cache=True):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
+def store_subtitles(path, use_cache=True):
+    logging.debug('BAZARR started subtitles indexing for this file: ' + path)
     actual_subtitles = []
-    if os.path.exists(reversed_path):
+    if os.path.exists(path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-                    .where(TableEpisodes.path == original_path)\
+                    .where(TableEpisodes.path == path)\
                     .dicts()\
                     .get()
-                subtitle_languages = embedded_subs_reader(reversed_path,
+                subtitle_languages = embedded_subs_reader(path,
                                                           file_size=item['file_size'],
                                                           episode_file_id=item['episode_file_id'],
                                                           use_cache=use_cache)
@@ -64,19 +64,19 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                         pass
             except Exception as e:
                 logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(path)[1], path))
                 pass
         try:
             dest_folder = get_subtitle_destination_folder()
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
-            subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
+            subtitles = search_external_subtitles(path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
-            full_dest_folder_path = os.path.dirname(reversed_path)
+            full_dest_folder_path = os.path.dirname(path)
             if dest_folder:
                 if settings.general.subfolder == "absolute":
                     full_dest_folder_path = dest_folder
                 elif settings.general.subfolder == "relative":
-                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+                    full_dest_folder_path = os.path.join(os.path.dirname(path), dest_folder)
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception:
             logging.exception("BAZARR unable to index external subtitles.")
@@ -85,11 +85,11 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                 if not language:
                     continue
 
-                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
+                subtitle_path = get_external_subtitles_path(path, subtitle)
 
                 custom = CustomLanguage.found_external(subtitle, subtitle_path)
                 if custom is not None:
-                    actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path)])
+                    actual_subtitles.append([custom, subtitle_path])
 
                 elif str(language) != 'und':
                     if language.forced:
@@ -99,41 +99,41 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                     else:
                         language_str = str(language)
                     logging.debug("BAZARR external subtitles detected: " + language_str)
-                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path)])
+                    actual_subtitles.append([language_str, subtitle_path])
 
         TableEpisodes.update({TableEpisodes.subtitles: str(actual_subtitles)})\
-            .where(TableEpisodes.path == original_path)\
+            .where(TableEpisodes.path == path)\
             .execute()
-        matching_episodes = TableEpisodes.select(TableEpisodes.sonarrEpisodeId, TableEpisodes.sonarrSeriesId)\
-            .where(TableEpisodes.path == original_path)\
+        matching_episodes = TableEpisodes.select(TableEpisodes.episodeId, TableEpisodes.seriesId)\
+            .where(TableEpisodes.path == path)\
             .dicts()
 
         for episode in matching_episodes:
             if episode:
                 logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-                list_missing_subtitles(epno=episode['sonarrEpisodeId'])
+                list_missing_subtitles(epno=episode['episodeId'])
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+    logging.debug('BAZARR ended subtitles indexing for this file: ' + path)
 
     return actual_subtitles
 
 
-def store_subtitles_movie(original_path, reversed_path, use_cache=True):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
+def store_subtitles_movie(path, use_cache=True):
+    logging.debug('BAZARR started subtitles indexing for this file: ' + path)
     actual_subtitles = []
-    if os.path.exists(reversed_path):
+    if os.path.exists(path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
-                    .where(TableMovies.path == original_path)\
+                    .where(TableMovies.path == path)\
                     .dicts()\
                     .get()
-                subtitle_languages = embedded_subs_reader(reversed_path,
+                subtitle_languages = embedded_subs_reader(path,
                                                           file_size=item['file_size'],
                                                           movie_file_id=item['movie_file_id'],
                                                           use_cache=use_cache)
@@ -160,19 +160,19 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                         pass
             except Exception:
                 logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(path)[1], path))
                 pass
 
         try:
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
-            subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
-            full_dest_folder_path = os.path.dirname(reversed_path)
+            subtitles = search_external_subtitles(path, languages=get_language_set())
+            full_dest_folder_path = os.path.dirname(path)
             if dest_folder:
                 if settings.general.subfolder == "absolute":
                     full_dest_folder_path = dest_folder
                 elif settings.general.subfolder == "relative":
-                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+                    full_dest_folder_path = os.path.join(os.path.dirname(path), dest_folder)
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
@@ -182,11 +182,11 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                 if not language:
                     continue
 
-                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
+                subtitle_path = get_external_subtitles_path(path, subtitle)
                 custom = CustomLanguage.found_external(subtitle, subtitle_path)
 
                 if custom is not None:
-                    actual_subtitles.append([custom, path_mappings.path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([custom, subtitle_path])
 
                 elif str(language.basename) != 'und':
                     if language.forced:
@@ -196,12 +196,12 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                     else:
                         language_str = str(language)
                     logging.debug("BAZARR external subtitles detected: " + language_str)
-                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([language_str, subtitle_path])
         
         TableMovies.update({TableMovies.subtitles: str(actual_subtitles)})\
-            .where(TableMovies.path == original_path)\
+            .where(TableMovies.path == path)\
             .execute()
-        matching_movies = TableMovies.select(TableMovies.radarrId).where(TableMovies.path == original_path).dicts()
+        matching_movies = TableMovies.select(TableMovies.radarrId).where(TableMovies.path == path).dicts()
 
         for movie in matching_movies:
             if movie:
@@ -212,24 +212,24 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+    logging.debug('BAZARR ended subtitles indexing for this file: ' + path)
 
     return actual_subtitles
 
 
 def list_missing_subtitles(no=None, epno=None, send_event=True):
     if epno is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarrEpisodeId == epno)
+        episodes_subtitles_clause = (TableEpisodes.episodeId == epno)
     elif no is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarrSeriesId == no)
+        episodes_subtitles_clause = (TableEpisodes.seriesId == no)
     else:
         episodes_subtitles_clause = None
-    episodes_subtitles = TableEpisodes.select(TableShows.sonarrSeriesId,
-                                              TableEpisodes.sonarrEpisodeId,
+    episodes_subtitles = TableEpisodes.select(TableShows.seriesId,
+                                              TableEpisodes.episodeId,
                                               TableEpisodes.subtitles,
                                               TableShows.profileId,
                                               TableEpisodes.audio_language)\
-        .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
         .where(episodes_subtitles_clause)\
         .dicts()
     if isinstance(episodes_subtitles, str):
@@ -328,11 +328,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
         TableEpisodes.update({TableEpisodes.missing_subtitles: missing_subtitles_text})\
-            .where(TableEpisodes.sonarrEpisodeId == episode_subtitles['sonarrEpisodeId'])\
+            .where(TableEpisodes.episodeId == episode_subtitles['episodeId'])\
             .execute()
 
         if send_event:
-            event_stream(type='episode', payload=episode_subtitles['sonarrEpisodeId'])
+            event_stream(type='episode', payload=episode_subtitles['episodeId'])
             event_stream(type='badges')
 
 
@@ -458,7 +458,7 @@ def series_full_scan_subtitles():
                       name='Episodes subtitles',
                       value=i,
                       count=count_episodes)
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=use_ffprobe_cache)
+        store_subtitles(episode['path'], use_cache=use_ffprobe_cache)
 
     hide_progress(id='episodes_disk_scan')
     
@@ -478,8 +478,7 @@ def movies_full_scan_subtitles():
                       name='Movies subtitles',
                       value=i,
                       count=count_movies)
-        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']),
-                              use_cache=use_ffprobe_cache)
+        store_subtitles_movie(movie['path'], use_cache=use_ffprobe_cache)
 
     hide_progress(id='movies_disk_scan')
 
@@ -488,13 +487,13 @@ def movies_full_scan_subtitles():
 
 def series_scan_subtitles(no):
     episodes = TableEpisodes.select(TableEpisodes.path)\
-        .where(TableEpisodes.sonarrSeriesId == no)\
-        .order_by(TableEpisodes.sonarrEpisodeId)\
+        .where(TableEpisodes.seriesId == no)\
+        .order_by(TableEpisodes.episodeId)\
         .dicts()
     
     for episode in episodes:
         sleep()
-        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=False)
+        store_subtitles(episode['path'], use_cache=False)
 
 
 def movies_scan_subtitles(no):
@@ -505,7 +504,7 @@ def movies_scan_subtitles(no):
     
     for movie in movies:
         sleep()
-        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']), use_cache=False)
+        store_subtitles_movie(movie['path'], use_cache=False)
 
 
 def get_external_subtitles_path(file, subtitle):

@@ -57,7 +57,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
         return;
       }
 
-      const { radarrId } = payload;
+      const { movieId } = payload;
 
       const tasks = items
         .filter((v) => v.language !== null)
@@ -66,9 +66,9 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
 
           return createTask(
             file.name,
-            radarrId,
+            movieId,
             MoviesApi.uploadSubtitles.bind(MoviesApi),
-            radarrId,
+            movieId,
             {
               file,
               forced,

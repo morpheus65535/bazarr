@@ -12,13 +12,12 @@ import stat
 
 from whichcraft import which
 from get_args import args
-from config import settings, url_sonarr, url_radarr
+from config import settings
 from custom_lang import CustomLanguage
 from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
     TableMoviesRootfolder
 from event_handler import event_stream
 from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
-from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.core import get_subtitle_path
@@ -37,12 +36,12 @@ class BinaryNotFound(Exception):
     pass
 
 
-def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
+def history_log(action, series_id, episode_id, description, video_path=None, language=None, provider=None,
                 score=None, subs_id=None, subtitles_path=None):
     TableHistory.insert({
         TableHistory.action: action,
-        TableHistory.sonarrSeriesId: sonarr_series_id,
-        TableHistory.sonarrEpisodeId: sonarr_episode_id,
+        TableHistory.seriesId: series_id,
+        TableHistory.episodeId: episode_id,
         TableHistory.timestamp: time.time(),
         TableHistory.description: description,
         TableHistory.video_path: video_path,
@@ -55,10 +54,10 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_
     event_stream(type='episode-history')
 
 
-def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
+def blacklist_log(series_id, episode_id, provider, subs_id, language):
     TableBlacklist.insert({
-        TableBlacklist.sonarr_series_id: sonarr_series_id,
-        TableBlacklist.sonarr_episode_id: sonarr_episode_id,
+        TableBlacklist.series_id: series_id,
+        TableBlacklist.episode_id: episode_id,
         TableBlacklist.timestamp: time.time(),
         TableBlacklist.provider: provider,
         TableBlacklist.subs_id: subs_id,
@@ -79,11 +78,11 @@ def blacklist_delete_all():
     event_stream(type='episode-blacklist', action='delete')
 
 
-def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
+def history_log_movie(action, movie_id, description, video_path=None, language=None, provider=None, score=None,
                       subs_id=None, subtitles_path=None):
     TableHistoryMovie.insert({
         TableHistoryMovie.action: action,
-        TableHistoryMovie.radarrId: radarr_id,
+        TableHistoryMovie.movieId: movie_id,
         TableHistoryMovie.timestamp: time.time(),
         TableHistoryMovie.description: description,
         TableHistoryMovie.video_path: video_path,
@@ -96,9 +95,9 @@ def history_log_movie(action, radarr_id, description, video_path=None, language=
     event_stream(type='movie-history')
 
 
-def blacklist_log_movie(radarr_id, provider, subs_id, language):
+def blacklist_log_movie(movie_id, provider, subs_id, language):
     TableBlacklistMovie.insert({
-        TableBlacklistMovie.radarr_id: radarr_id,
+        TableBlacklistMovie.movie_id: movie_id,
         TableBlacklistMovie.timestamp: time.time(),
         TableBlacklistMovie.provider: provider,
         TableBlacklistMovie.subs_id: subs_id,
@@ -236,126 +235,8 @@ def cache_maintenance():
         remove_expired(fn, pack_cache_validity)
 
 
-class GetSonarrInfo:
-    @staticmethod
-    def version():
-        """
-        Call system/status API endpoint and get the Sonarr version
-        @return: str
-        """
-        sonarr_version = region.get("sonarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if sonarr_version:
-            region.set("sonarr_version", sonarr_version)
-            return sonarr_version
-        else:
-            sonarr_version = ''
-        if settings.general.getboolean('use_sonarr'):
-            try:
-                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
-                if 'version' in sonarr_json:
-                    sonarr_version = sonarr_json['version']
-                else:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                    sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception:
-                logging.debug('BAZARR cannot get Sonarr version')
-                sonarr_version = 'unknown'
-        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
-        region.set("sonarr_version", sonarr_version)
-        return sonarr_version
-
-    def is_legacy(self):
-        """
-        Call self.version() and parse the result to determine if it's a legacy version of Sonarr API
-        @return: bool
-        """
-        sonarr_version = self.version()
-        if sonarr_version.startswith(('0.', '2.')):
-            return True
-        else:
-            return False
-
-
-get_sonarr_info = GetSonarrInfo()
-
-
-def notify_sonarr(sonarr_series_id):
-    try:
-        if get_sonarr_info.is_legacy():
-            url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
-        else:
-            url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
-        data = {
-            'name': 'RescanSeries',
-            'seriesId': int(sonarr_series_id)
-        }
-        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
-        logging.exception('BAZARR cannot notify Sonarr')
-
-
-class GetRadarrInfo:
-    @staticmethod
-    def version():
-        """
-        Call system/status API endpoint and get the Radarr version
-        @return: str
-        """
-        radarr_version = region.get("radarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if radarr_version:
-            region.set("radarr_version", radarr_version)
-            return radarr_version
-        else:
-            radarr_version = ''
-        if settings.general.getboolean('use_radarr'):
-            try:
-                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-                radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
-                if 'version' in radarr_json:
-                    radarr_version = radarr_json['version']
-                else:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception as e:
-                logging.debug('BAZARR cannot get Radarr version')
-                radarr_version = 'unknown'
-        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
-        region.set("radarr_version", radarr_version)
-        return radarr_version
-
-    def is_legacy(self):
-        """
-        Call self.version() and parse the result to determine if it's a legacy version of Radarr
-        @return: bool
-        """
-        radarr_version = self.version()
-        if radarr_version.startswith('0.'):
-            return True
-        else:
-            return False
-
-
-get_radarr_info = GetRadarrInfo()
-
-
-def notify_radarr(radarr_id):
-    try:
-        if get_radarr_info.is_legacy():
-            url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
-        else:
-            url = url_radarr() + "/api/v3/command?apikey=" + settings.radarr.apikey
-        data = {
-            'name': 'RescanMovie',
-            'movieId': int(radarr_id)
-        }
-        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
-        logging.exception('BAZARR cannot notify Radarr')
-
-
-def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
-                     sonarr_episode_id=None, radarr_id=None):
+def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, series_id=None,
+                     episode_id=None, movie_id=None):
     if not subtitles_path.endswith('.srt'):
         logging.error('BAZARR can only delete .srt files.')
         return False
@@ -373,33 +254,29 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
 
     if media_type == 'series':
         try:
-            os.remove(path_mappings.path_replace(subtitles_path))
+            os.remove(subtitles_path)
         except OSError:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            store_subtitles(media_path)
             return False
         else:
-            history_log(0, sonarr_series_id, sonarr_episode_id, result, language=language_log,
-                        video_path=path_mappings.path_replace_reverse(media_path),
-                        subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
-            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
-            notify_sonarr(sonarr_series_id)
-            event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+            history_log(0, series_id, episode_id, result, language=language_log,
+                        video_path=media_path, subtitles_path=subtitles_path)
+            store_subtitles(media_path)
+            event_stream(type='episode-wanted', action='update', payload=episode_id)
             return True
     else:
         try:
-            os.remove(path_mappings.path_replace_movie(subtitles_path))
+            os.remove(subtitles_path)
         except OSError:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            store_subtitles_movie(media_path)
             return False
         else:
-            history_log_movie(0, radarr_id, result, language=language_log,
-                              video_path=path_mappings.path_replace_reverse_movie(media_path),
-                              subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
-            notify_radarr(radarr_id)
-            event_stream(type='movie-wanted', action='update', payload=radarr_id)
+            history_log_movie(0, movie_id, result, language=language_log, video_path=media_path,
+                              subtitles_path=subtitles_path)
+            store_subtitles_movie(media_path)
+            event_stream(type='movie-wanted', action='update', payload=movie_id)
             return True
 
 
@@ -492,38 +369,16 @@ def check_credentials(user, pw):
 
 
 def check_health():
-    from get_rootfolder import check_sonarr_rootfolder, check_radarr_rootfolder
-    if settings.general.getboolean('use_sonarr'):
-        check_sonarr_rootfolder()
-    if settings.general.getboolean('use_radarr'):
-        check_radarr_rootfolder()
+    from get_rootfolder import check_series_rootfolder, check_movies_rootfolder
+    if settings.general.getboolean('use_series'):
+        check_series_rootfolder()
+    if settings.general.getboolean('use_movies'):
+        check_movies_rootfolder()
     event_stream(type='badges')
 
 
 def get_health_issues():
     # this function must return a list of dictionaries consisting of to keys: object and issue
     health_issues = []
-
-    # get Sonarr rootfolder issues
-    if settings.general.getboolean('use_sonarr'):
-        rootfolder = TableShowsRootfolder.select(TableShowsRootfolder.path,
-                                                 TableShowsRootfolder.accessible,
-                                                 TableShowsRootfolder.error)\
-            .where(TableShowsRootfolder.accessible == 0)\
-            .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace(item['path']),
-                                  'issue': item['error']})
-
-    # get Radarr rootfolder issues
-    if settings.general.getboolean('use_radarr'):
-        rootfolder = TableMoviesRootfolder.select(TableMoviesRootfolder.path,
-                                                  TableMoviesRootfolder.accessible,
-                                                  TableMoviesRootfolder.error)\
-            .where(TableMoviesRootfolder.accessible == 0)\
-            .dicts()
-        for item in rootfolder:
-            health_issues.append({'object': path_mappings.path_replace_movie(item['path']),
-                                  'issue': item['error']})
 
     return health_issues

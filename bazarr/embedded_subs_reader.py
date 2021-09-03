@@ -9,7 +9,6 @@ from enzyme.exceptions import MalformedMKVError
 from enzyme.exceptions import MalformedMKVError
 from custom_lang import CustomLanguage
 from database import TableEpisodes, TableMovies
-from helper import path_mappings
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +77,12 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         # Get the actual cache value form database
         if episode_file_id:
             cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
-                .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
+                .where(TableEpisodes.path == file)\
                 .dicts()\
                 .get()
         elif movie_file_id:
             cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
-                .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
+                .where(TableMovies.path == file)\
                 .dicts()\
                 .get()
         else:
@@ -126,10 +125,10 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     # we write to db the result and return the newly cached ffprobe dict
     if episode_file_id:
         TableEpisodes.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
+            .where(TableEpisodes.path == file)\
             .execute()
     elif movie_file_id:
         TableMovies.update({TableEpisodes.ffprobe_cache: pickle.dumps(data, pickle.HIGHEST_PROTOCOL)})\
-            .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
+            .where(TableMovies.path == file)\
             .execute()
     return data

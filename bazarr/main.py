@@ -23,7 +23,7 @@ os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 import libs
 
 from get_args import args
-from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
+from config import settings, configure_proxy_func, base_url
 
 from init import *
 from database import System
@@ -38,12 +38,11 @@ from flask import make_response, request, redirect, abort, render_template, Resp
 from get_series import *
 from get_episodes import *
 from get_movies import *
-from signalr_client import sonarr_signalr_client, radarr_signalr_client
 
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
-from utils import check_credentials, get_sonarr_info, get_radarr_info
+from utils import check_credentials
 
 # Install downloaded update
 if bazarr_version != '':
@@ -127,48 +126,14 @@ def download_log():
 
 @check_login
 @app.route('/images/series/<path:url>', methods=['GET'])
-def series_images(url):
-    url = url.strip("/")
-    apikey = settings.sonarr.apikey
-    baseUrl = settings.sonarr.base_url
-    if get_sonarr_info.is_legacy():
-        url_image = (url_sonarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
-    else:
-        url_image = (url_sonarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' +
-                     apikey).replace('poster-250', 'poster-500')
-    try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
-        return '', 404
-    else:
-        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
+def series_images(seriesId):
+    pass
 
 
 @check_login
 @app.route('/images/movies/<path:url>', methods=['GET'])
-def movies_images(url):
-    apikey = settings.radarr.apikey
-    baseUrl = settings.radarr.base_url
-    if get_radarr_info.is_legacy():
-        url_image = url_radarr() + '/api/' + url.lstrip(baseUrl) + '?apikey=' + apikey
-    else:
-        url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
-    try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
-        return '', 404
-    else:
-        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
-
-
-# @app.route('/check_update')
-# @authenticate
-# def check_update():
-#     if not args.no_update:
-#         check_and_apply_update()
-
-#     return '', 200
+def movies_images(movieId):
+    pass
 
 
 def configured():
@@ -200,13 +165,6 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.')
         else:
             return dict(status=False, error=result.raise_for_status())
-
-
-greenlets = []
-if settings.general.getboolean('use_sonarr'):
-    greenlets.append(Greenlet.spawn(sonarr_signalr_client.start))
-if settings.general.getboolean('use_radarr'):
-    greenlets.append(Greenlet.spawn(radarr_signalr_client.start))
 
 
 if __name__ == "__main__":

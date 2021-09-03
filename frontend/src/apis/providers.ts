@@ -19,13 +19,13 @@ class ProviderApi extends BaseApi {
   async movies(id: number) {
     const response = await this.get<DataWrapper<SearchResultType[]>>(
       "/movies",
-      { radarrid: id }
+      { movieid: id }
     );
     return response.data;
   }
 
-  async downloadMovieSubtitle(radarrid: number, form: FormType.ManualDownload) {
-    await this.post("/movies", form, { radarrid });
+  async downloadMovieSubtitle(movieid: number, form: FormType.ManualDownload) {
+    await this.post("/movies", form, { movieid });
   }
 
   async episodes(episodeid: number) {

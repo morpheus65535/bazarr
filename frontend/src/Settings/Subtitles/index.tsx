@@ -461,10 +461,10 @@ const SettingsSubtitlesView: FunctionComponent = () => {
               <b>{"{{subtitle_id}}"}</b> Provider ID of the subtitle file
             </Message>
             <Message>
-              <b>{"{{series_id}}"}</b> Sonarr series ID (Empty if movie)
+              <b>{"{{series_id}}"}</b> Series ID (Empty if movie)
             </Message>
             <Message>
-              <b>{"{{episode_id}}"}</b> Sonarr episode ID or Radarr movie ID
+              <b>{"{{episode_id}}"}</b> Episode ID or movie ID
             </Message>
           </CollapseBox.Content>
         </CollapseBox>

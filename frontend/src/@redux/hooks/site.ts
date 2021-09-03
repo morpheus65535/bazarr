@@ -23,14 +23,14 @@ export function useIsOffline() {
   return useReduxStore((s) => s.site.offline);
 }
 
-export function useIsSonarrEnabled() {
+export function useIsSeriesEnabled() {
   const settings = useSystemSettings();
-  return settings.content?.general.use_sonarr ?? true;
+  return settings.content?.general.use_series ?? true;
 }
 
-export function useIsRadarrEnabled() {
+export function useIsMoviesEnabled() {
   const settings = useSystemSettings();
-  return settings.content?.general.use_radarr ?? true;
+  return settings.content?.general.use_movies ?? true;
 }
 
 export function useShowOnlyDesired() {

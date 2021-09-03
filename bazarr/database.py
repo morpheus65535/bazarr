@@ -8,9 +8,7 @@ from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import *
-from playhouse.sqlite_ext import RowIDField
 
-from helper import path_mappings
 from config import settings, get_array_from
 from get_args import args
 
@@ -47,8 +45,8 @@ class System(BaseModel):
 class TableBlacklist(BaseModel):
     language = TextField(null=True)
     provider = TextField(null=True)
-    sonarr_episode_id = IntegerField(null=True)
-    sonarr_series_id = IntegerField(null=True)
+    episode_id = IntegerField(null=True)
+    series_id = IntegerField(null=True)
     subs_id = TextField(null=True)
     timestamp = IntegerField(null=True)
 
@@ -60,7 +58,7 @@ class TableBlacklist(BaseModel):
 class TableBlacklistMovie(BaseModel):
     language = TextField(null=True)
     provider = TextField(null=True)
-    radarr_id = IntegerField(null=True)
+    movie_id = IntegerField(null=True)
     subs_id = TextField(null=True)
     timestamp = IntegerField(null=True)
 
@@ -70,7 +68,6 @@ class TableBlacklistMovie(BaseModel):
 
 
 class TableEpisodes(BaseModel):
-    rowid = RowIDField()
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
     episode = IntegerField()
@@ -83,17 +80,15 @@ class TableEpisodes(BaseModel):
     monitored = TextField(null=True)
     path = TextField()
     resolution = TextField(null=True)
-    scene_name = TextField(null=True)
     season = IntegerField()
-    sonarrEpisodeId = IntegerField(unique=True)
-    sonarrSeriesId = IntegerField()
+    episodeId = AutoField()
+    seriesId = IntegerField()
     subtitles = TextField(null=True)
     title = TextField()
     video_codec = TextField(null=True)
 
     class Meta:
         table_name = 'table_episodes'
-        primary_key = False
 
 
 class TableHistory(BaseModel):
@@ -103,8 +98,8 @@ class TableHistory(BaseModel):
     language = TextField(null=True)
     provider = TextField(null=True)
     score = TextField(null=True)
-    sonarrEpisodeId = IntegerField()
-    sonarrSeriesId = IntegerField()
+    episodeId = IntegerField()
+    seriesId = IntegerField()
     subs_id = TextField(null=True)
     subtitles_path = TextField(null=True)
     timestamp = IntegerField()
@@ -120,7 +115,7 @@ class TableHistoryMovie(BaseModel):
     id = AutoField()
     language = TextField(null=True)
     provider = TextField(null=True)
-    radarrId = IntegerField()
+    movieId = IntegerField()
     score = TextField(null=True)
     subs_id = TextField(null=True)
     subtitles_path = TextField(null=True)
@@ -142,7 +137,6 @@ class TableLanguagesProfiles(BaseModel):
 
 
 class TableMovies(BaseModel):
-    rowid = RowIDField()
     alternativeTitles = TextField(null=True)
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
@@ -159,9 +153,8 @@ class TableMovies(BaseModel):
     path = TextField(unique=True)
     poster = TextField(null=True)
     profileId = IntegerField(null=True)
-    radarrId = IntegerField(unique=True)
+    movieId = AutoField()
     resolution = TextField(null=True)
-    sceneName = TextField(null=True)
     sortTitle = TextField(null=True)
     subtitles = TextField(null=True)
     tags = TextField(null=True)
@@ -215,11 +208,11 @@ class TableShows(BaseModel):
     poster = TextField(null=True)
     profileId = IntegerField(null=True)
     seriesType = TextField(null=True)
-    sonarrSeriesId = IntegerField(unique=True)
+    seriesId = AutoField()
     sortTitle = TextField(null=True)
     tags = TextField(null=True)
     title = TextField()
-    tvdbId = AutoField()
+    tvdbId = TextField(unique=True)
     year = TextField(null=True)
 
     class Meta:
@@ -290,99 +283,34 @@ def init_db():
 
 
 def migrate_db():
-    migrate(
-        migrator.add_column('table_shows', 'year', TextField(null=True)),
-        migrator.add_column('table_shows', 'alternateTitles', TextField(null=True)),
-        migrator.add_column('table_shows', 'tags', TextField(default='[]', null=True)),
-        migrator.add_column('table_shows', 'seriesType', TextField(default='""', null=True)),
-        migrator.add_column('table_shows', 'imdbId', TextField(default='""', null=True)),
-        migrator.add_column('table_shows', 'profileId', IntegerField(null=True)),
-        migrator.add_column('table_episodes', 'format', TextField(null=True)),
-        migrator.add_column('table_episodes', 'resolution', TextField(null=True)),
-        migrator.add_column('table_episodes', 'video_codec', TextField(null=True)),
-        migrator.add_column('table_episodes', 'audio_codec', TextField(null=True)),
-        migrator.add_column('table_episodes', 'episode_file_id', IntegerField(null=True)),
-        migrator.add_column('table_episodes', 'audio_language', TextField(null=True)),
-        migrator.add_column('table_episodes', 'file_size', IntegerField(default=0, null=True)),
-        migrator.add_column('table_episodes', 'ffprobe_cache', BlobField(null=True)),
-        migrator.add_column('table_movies', 'sortTitle', TextField(null=True)),
-        migrator.add_column('table_movies', 'year', TextField(null=True)),
-        migrator.add_column('table_movies', 'alternativeTitles', TextField(null=True)),
-        migrator.add_column('table_movies', 'format', TextField(null=True)),
-        migrator.add_column('table_movies', 'resolution', TextField(null=True)),
-        migrator.add_column('table_movies', 'video_codec', TextField(null=True)),
-        migrator.add_column('table_movies', 'audio_codec', TextField(null=True)),
-        migrator.add_column('table_movies', 'imdbId', TextField(null=True)),
-        migrator.add_column('table_movies', 'movie_file_id', IntegerField(null=True)),
-        migrator.add_column('table_movies', 'tags', TextField(default='[]', null=True)),
-        migrator.add_column('table_movies', 'profileId', IntegerField(null=True)),
-        migrator.add_column('table_movies', 'file_size', IntegerField(default=0, null=True)),
-        migrator.add_column('table_movies', 'ffprobe_cache', BlobField(null=True)),
-        migrator.add_column('table_history', 'video_path', TextField(null=True)),
-        migrator.add_column('table_history', 'language', TextField(null=True)),
-        migrator.add_column('table_history', 'provider', TextField(null=True)),
-        migrator.add_column('table_history', 'score', TextField(null=True)),
-        migrator.add_column('table_history', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history', 'subtitles_path', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'video_path', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'language', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'provider', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'score', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True))
-    )
-
-
-class SqliteDictPathMapper:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def path_replace(values_dict):
-        if type(values_dict) is list:
-            for item in values_dict:
-                item['path'] = path_mappings.path_replace(item['path'])
-        elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace(values_dict['path'])
-        else:
-            return path_mappings.path_replace(values_dict)
-
-    @staticmethod
-    def path_replace_movie(values_dict):
-        if type(values_dict) is list:
-            for item in values_dict:
-                item['path'] = path_mappings.path_replace_movie(item['path'])
-        elif type(values_dict) is dict:
-            values_dict['path'] = path_mappings.path_replace_movie(values_dict['path'])
-        else:
-            return path_mappings.path_replace_movie(values_dict)
-
-
-dict_mapper = SqliteDictPathMapper()
+    pass
+    # migrate(
+    #     migrator.add_column('table_shows', 'year', TextField(null=True))
+    # )
 
 
 def get_exclusion_clause(exclusion_type):
     where_clause = []
     if exclusion_type == 'series':
-        tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
+        tagsList = ast.literal_eval(settings.series.excluded_tags)
         for tag in tagsList:
             where_clause.append(~(TableShows.tags.contains("\'"+tag+"\'")))
     else:
-        tagsList = ast.literal_eval(settings.radarr.excluded_tags)
+        tagsList = ast.literal_eval(settings.movies.excluded_tags)
         for tag in tagsList:
             where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
 
     if exclusion_type == 'series':
-        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+        monitoredOnly = settings.series.getboolean('only_monitored')
         if monitoredOnly:
             where_clause.append((TableEpisodes.monitored == 'True'))
     else:
-        monitoredOnly = settings.radarr.getboolean('only_monitored')
+        monitoredOnly = settings.movies.getboolean('only_monitored')
         if monitoredOnly:
             where_clause.append((TableMovies.monitored == 'True'))
 
     if exclusion_type == 'series':
-        typesList = get_array_from(settings.sonarr.excluded_series_types)
+        typesList = get_array_from(settings.series.excluded_series_types)
         for item in typesList:
             where_clause.append((TableShows.seriesType != item))
 
@@ -475,11 +403,11 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
     audio_languages = []
 
     if series_id:
-        audio_languages_list_str = TableShows.get(TableShows.sonarrSeriesId == series_id).audio_language
+        audio_languages_list_str = TableShows.get(TableShows.seriesId == series_id).audio_language
     elif episode_id:
-        audio_languages_list_str = TableEpisodes.get(TableEpisodes.sonarrEpisodeId == episode_id).audio_language
+        audio_languages_list_str = TableEpisodes.get(TableEpisodes.episodeId == episode_id).audio_language
     elif movie_id:
-        audio_languages_list_str = TableMovies.get(TableMovies.radarrId == movie_id).audio_language
+        audio_languages_list_str = TableMovies.get(TableMovies.movieId == movie_id).audio_language
     else:
         return audio_languages
 

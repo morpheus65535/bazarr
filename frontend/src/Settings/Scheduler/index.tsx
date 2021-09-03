@@ -8,14 +8,7 @@ import {
   Selector,
   SettingsProvider,
 } from "../components";
-import {
-  dayOptions,
-  diskUpdateOptions,
-  episodesSyncOptions,
-  moviesSyncOptions,
-  seriesSyncOptions,
-  upgradeOptions,
-} from "./options";
+import { dayOptions, diskUpdateOptions, upgradeOptions } from "./options";
 
 const SettingsSchedulerView: FunctionComponent = () => {
   const timeOptions = useMemo(() => {
@@ -29,32 +22,12 @@ const SettingsSchedulerView: FunctionComponent = () => {
 
   return (
     <SettingsProvider title="Scheduler - Bazarr (Settings)">
-      <Group header="Sonarr/Radarr Sync">
-        <Input name="Update Series List from Sonarr">
-          <Selector
-            options={seriesSyncOptions}
-            settingKey="settings-sonarr-series_sync"
-          ></Selector>
-        </Input>
-        <Input name="Update Episodes List from Sonarr">
-          <Selector
-            options={episodesSyncOptions}
-            settingKey="settings-sonarr-episodes_sync"
-          ></Selector>
-        </Input>
-        <Input name="Update Movies List from Radarr">
-          <Selector
-            options={moviesSyncOptions}
-            settingKey="settings-radarr-movies_sync"
-          ></Selector>
-        </Input>
-      </Group>
       <Group header="Disk Indexing">
         <CollapseBox>
           <CollapseBox.Control>
             <Input name="Update all Episode Subtitles from Disk">
               <Selector
-                settingKey="settings-sonarr-full_update"
+                settingKey="settings-series-full_update"
                 options={diskUpdateOptions}
               ></Selector>
             </Input>
@@ -62,7 +35,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <CollapseBox.Content on={(k) => k === "Weekly"}>
             <Input name="Day of The Week">
               <Selector
-                settingKey="settings-sonarr-full_update_day"
+                settingKey="settings-series-full_update_day"
                 options={dayOptions}
               ></Selector>
             </Input>
@@ -70,7 +43,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
             <Input name="Time of The Day">
               <Selector
-                settingKey="settings-sonarr-full_update_hour"
+                settingKey="settings-series-full_update_hour"
                 options={timeOptions}
               ></Selector>
             </Input>
@@ -78,7 +51,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <Input>
             <Check
               label="Use cached ffprobe results"
-              settingKey="settings-sonarr-use_ffprobe_cache"
+              settingKey="settings-series-use_ffprobe_cache"
             ></Check>
             <Message>
               If disabled, Bazarr will use ffprobe to index video file
@@ -90,7 +63,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <CollapseBox.Control>
             <Input name="Update all Movie Subtitles from Disk">
               <Selector
-                settingKey="settings-radarr-full_update"
+                settingKey="settings-movies-full_update"
                 options={diskUpdateOptions}
               ></Selector>
             </Input>
@@ -98,7 +71,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <CollapseBox.Content on={(k) => k === "Weekly"}>
             <Input name="Day of The Week">
               <Selector
-                settingKey="settings-radarr-full_update_day"
+                settingKey="settings-movies-full_update_day"
                 options={dayOptions}
               ></Selector>
             </Input>
@@ -106,7 +79,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
             <Input name="Time of The Day">
               <Selector
-                settingKey="settings-radarr-full_update_hour"
+                settingKey="settings-movies-full_update_hour"
                 options={timeOptions}
               ></Selector>
             </Input>
@@ -114,7 +87,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           <Input>
             <Check
               label="Use cached ffprobe results"
-              settingKey="settings-radarr-use_ffprobe_cache"
+              settingKey="settings-movies-use_ffprobe_cache"
             ></Check>
             <Message>
               If disabled, Bazarr will use ffprobe to index video file

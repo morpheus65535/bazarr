@@ -4,8 +4,8 @@ interface Settings {
   auth: Settings.Auth;
   subsync: Settings.Subsync;
   analytics: Settings.Analytic;
-  sonarr: Settings.Sonarr;
-  radarr: Settings.Radarr;
+  series: Settings.Series;
+  movies: Settings.Movies;
   // Anitcaptcha
   anticaptcha: Settings.Anticaptcha;
   deathbycaptcha: Settings.DeathByCaptche;
@@ -49,8 +49,6 @@ declare namespace Settings {
     movie_default_profile?: number;
     serie_default_enabled: boolean;
     serie_default_profile?: number;
-    path_mappings: [string, string][];
-    path_mappings_movie: [string, string][];
     port: number;
     upgrade_subs: boolean;
     postprocessing_cmd?: string;
@@ -68,9 +66,8 @@ declare namespace Settings {
     use_postprocessing: boolean;
     use_postprocessing_threshold: boolean;
     use_postprocessing_threshold_movie: boolean;
-    use_radarr: boolean;
-    use_scenename: boolean;
-    use_sonarr: boolean;
+    use_movies: boolean;
+    use_series: boolean;
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
@@ -115,36 +112,23 @@ declare namespace Settings {
     url: string | null;
   }
 
-  // Sonarr / Radarr
+  // Series / Movies
   type FullUpdateOptions = "Manually" | "Daily" | "Weekly";
 
-  interface Sonarr {
-    ip: string;
-    port: number;
-    base_url?: string;
-    ssl: boolean;
-    apikey?: string;
+  interface Series {
     full_update: FullUpdateOptions;
     full_update_day: number;
     full_update_hour: number;
     only_monitored: boolean;
-    series_sync: number;
-    episodes_sync: number;
     excluded_tags: string[];
-    excluded_series_types: SonarrSeriesType[];
+    excluded_series_types: SeriesType[];
   }
 
-  interface Radarr {
-    ip: string;
-    port: number;
-    base_url?: string;
-    ssl: boolean;
-    apikey?: string;
+  interface Movies {
     full_update: FullUpdateOptions;
     full_update_day: number;
     full_update_hour: number;
     only_monitored: boolean;
-    movies_sync: number;
     excluded_tags: string[];
   }
 

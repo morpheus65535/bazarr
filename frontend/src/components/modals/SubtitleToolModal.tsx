@@ -58,9 +58,9 @@ type TableColumnType = FormType.ModifySubtitle & {
 
 function getIdAndType(item: SupportType): [number, "episode" | "movie"] {
   if (isMovie(item)) {
-    return [item.radarrId, "movie"];
+    return [item.movieId, "movie"];
   } else {
-    return [item.sonarrEpisodeId, "episode"];
+    return [item.episodeId, "episode"];
   }
 }
 

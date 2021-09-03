@@ -27,22 +27,19 @@ defaults = {
         'ip': '0.0.0.0',
         'port': '6767',
         'base_url': '',
-        'path_mappings': '[]',
         'debug': 'False',
         'branch': 'master',
         'auto_update': 'True',
         'single_language': 'False',
         'minimum_score': '90',
-        'use_scenename': 'True',
         'use_postprocessing': 'False',
         'postprocessing_cmd': '',
         'postprocessing_threshold': '90',
         'use_postprocessing_threshold': 'False',
         'postprocessing_threshold_movie': '70',
         'use_postprocessing_threshold_movie': 'False',
-        'use_sonarr': 'False',
-        'use_radarr': 'False',
-        'path_mappings_movie': '[]',
+        'use_series': 'False',
+        'use_movies': 'False',
         'serie_default_enabled': 'False',
         'serie_default_profile': '',
         'movie_default_enabled': 'False',
@@ -78,33 +75,20 @@ defaults = {
         'username': '',
         'password': ''
     },
-    'sonarr': {
-        'ip': '127.0.0.1',
-        'port': '8989',
-        'base_url': '/',
-        'ssl': 'False',
-        'apikey': '',
+    'series': {
         'full_update': 'Daily',
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-        'series_sync': '60',
-        'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
         'use_ffprobe_cache': 'True'
     },
-    'radarr': {
-        'ip': '127.0.0.1',
-        'port': '7878',
-        'base_url': '/',
-        'ssl': 'False',
-        'apikey': '',
+    'movies': {
         'full_update': 'Daily',
         'full_update_day': '6',
         'full_update_hour': '5',
         'only_monitored': 'False',
-        'movies_sync': '60',
         'excluded_tags': '[]',
         'use_ffprobe_cache': 'True'
     },
@@ -115,6 +99,52 @@ defaults = {
         'username': '',
         'password': '',
         'exclude': '["localhost","127.0.0.1"]'
+    },
+    'anticaptcha': {
+        'anti_captcha_key': ''
+    },
+    'deathbycaptcha': {
+        'username': '',
+        'password': ''
+    },
+    'analytics': {
+        'enabled': 'True'
+    },
+    'subsync': {
+        'use_subsync': 'False',
+        'use_subsync_threshold': 'False',
+        'subsync_threshold': '90',
+        'use_subsync_movie_threshold': 'False',
+        'subsync_movie_threshold': '70',
+        'debug': 'False'
+    },
+    'series_scores': {
+        "hash": 359,
+        "series": 180,
+        "year": 90,
+        "season": 30,
+        "episode": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
+    },
+    'movie_scores': {
+        "hash": 119,
+        "title": 60,
+        "year": 30,
+        "release_group": 15,
+        "source": 7,
+        "audio_codec": 3,
+        "resolution": 2,
+        "video_codec": 2,
+        "hearing_impaired": 1,
+        "streaming_service": 0,
+        "edition": 0,
     },
     'opensubtitles': {
         'username': '',
@@ -155,13 +185,6 @@ defaults = {
     'assrt': {
         'token': ''
     },
-    'anticaptcha': {
-        'anti_captcha_key': ''
-    },
-    'deathbycaptcha': {
-        'username': '',
-        'password': ''
-    },
     'napisy24': {
         'username': '',
         'password': ''
@@ -173,48 +196,9 @@ defaults = {
     'betaseries': {
         'token': ''
     },
-    'analytics': {
-        'enabled': 'True'
-    },
     'titlovi': {
         'username': '',
         'password': ''
-    },
-    'subsync': {
-        'use_subsync': 'False',
-        'use_subsync_threshold': 'False',
-        'subsync_threshold': '90',
-        'use_subsync_movie_threshold': 'False',
-        'subsync_movie_threshold': '70',
-        'debug': 'False'
-    },
-    'series_scores': {
-        "hash": 359,
-        "series": 180,
-        "year": 90,
-        "season": 30,
-        "episode": 30,
-        "release_group": 15,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
-    },
-    'movie_scores': {
-        "hash": 119,
-        "title": 60,
-        "year": 30,
-        "release_group": 15,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "hearing_impaired": 1,
-        "streaming_service": 0,
-        "edition": 0,
     }
 }
 
@@ -235,21 +219,11 @@ array_keys = ['excluded_tags',
                 'exclude',
                 'subzero_mods',
                 'excluded_series_types',
-                'enabled_providers',
-                'path_mappings',
-                'path_mappings_movie']
+                'enabled_providers']
 
 str_keys = ['chmod']
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
-
-# Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
-if int(settings.sonarr.series_sync) < 15:
-    settings.sonarr.series_sync = "60"
-if int(settings.sonarr.episodes_sync) < 15:
-    settings.sonarr.episodes_sync = "60"
-if int(settings.radarr.movies_sync) < 15:
-    settings.radarr.movies_sync = "60"
 
 if os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -304,13 +278,11 @@ def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
     update_schedule = False
-    sonarr_changed = False
-    radarr_changed = False
     update_path_map = False
     configure_proxy = False
     exclusion_updated = False
-    sonarr_exclusion_updated = False
-    radarr_exclusion_updated = False
+    series_exclusion_updated = False
+    movies_exclusion_updated = False
 
     # Subzero Mods
     update_subzero = False
@@ -333,10 +305,6 @@ def save_settings(settings_items):
         if settings_keys[-1] in array_keys and value[0] in empty_values :
             value = []
 
-        # Handle path mappings settings since they are array in array
-        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
-            value = [v.split(',') for v in value]
-
         if value == 'true':
             value = 'True'
         elif value == 'false':
@@ -353,41 +321,26 @@ def save_settings(settings_items):
                    'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
             configure_captcha = True
 
-        if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
-                   'settings-general-auto_update', 'settings-general-upgrade_subs',
-                   'settings-sonarr-series_sync', 'settings-sonarr-episodes_sync', 'settings-radarr-movies_sync',
-                   'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
-                   'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
+        if key in ['update_schedule', 'settings-general-auto_update', 'settings-general-upgrade_subs',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
                    'settings-general-upgrade_frequency']:
             update_schedule = True
-
-        if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
-                   'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
-            sonarr_changed = True
-
-        if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
-                   'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
-            radarr_changed = True
-
-        if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
-            update_path_map = True
 
         if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
                    'settings-proxy-password']:
             configure_proxy = True
 
-        if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
-                   'settings-radarr-only_monitored']:
+        if key in ['settings-series-excluded_tags', 'settings-series-only_monitored',
+                   'settings-series-excluded_series_types', 'settings.movies.excluded_tags',
+                   'settings-movies-only_monitored']:
             exclusion_updated = True
 
-        if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types']:
-            sonarr_exclusion_updated = True
+        if key in ['settings-series-excluded_tags', 'settings-series-only_monitored',
+                   'settings-series-excluded_series_types']:
+            series_exclusion_updated = True
 
-        if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
-            radarr_exclusion_updated = True
+        if key in ['settings-movies-excluded_tags', 'settings-movies-only_monitored']:
+            movies_exclusion_updated = True
 
         if key == 'settings-addic7ed-username':
             if key != settings.addic7ed.username:
@@ -456,104 +409,16 @@ def save_settings(settings_items):
         from api import scheduler
         scheduler.update_configurable_tasks()
 
-    if sonarr_changed:
-        from signalr_client import sonarr_signalr_client
-        try:
-            sonarr_signalr_client.restart()
-        except:
-            pass
-
-    if radarr_changed:
-        from signalr_client import radarr_signalr_client
-        try:
-            radarr_signalr_client.restart()
-        except:
-            pass
-
-    if update_path_map:
-        from helper import path_mappings
-        path_mappings.update()
-
     if configure_proxy:
         configure_proxy_func()
 
     if exclusion_updated:
         from event_handler import event_stream
         event_stream(type='badges')
-        if sonarr_exclusion_updated:
+        if series_exclusion_updated:
             event_stream(type='reset-episode-wanted')
-        if radarr_exclusion_updated:
+        if movies_exclusion_updated:
             event_stream(type='reset-movie-wanted')
-
-
-def url_sonarr():
-    if settings.sonarr.getboolean('ssl'):
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-
-    if settings.sonarr.base_url == '':
-        settings.sonarr.base_url = "/"
-    if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
-    if settings.sonarr.base_url.endswith("/"):
-        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
-
-    if settings.sonarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.sonarr.port}"
-
-    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
-
-
-def url_sonarr_short():
-    if settings.sonarr.getboolean('ssl'):
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-
-    if settings.sonarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.sonarr.port}"
-
-    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
-
-
-def url_radarr():
-    if settings.radarr.getboolean('ssl'):
-        protocol_radarr = "https"
-    else:
-        protocol_radarr = "http"
-
-    if settings.radarr.base_url == '':
-        settings.radarr.base_url = "/"
-    if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
-    if settings.radarr.base_url.endswith("/"):
-        settings.radarr.base_url = settings.radarr.base_url[:-1]
-
-    if settings.radarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.radarr.port}"
-
-    return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
-
-
-def url_radarr_short():
-    if settings.radarr.getboolean('ssl'):
-        protocol_radarr = "https"
-    else:
-        protocol_radarr = "http"
-
-    if settings.radarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.radarr.port}"
-
-    return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
 
 def get_array_from(property):

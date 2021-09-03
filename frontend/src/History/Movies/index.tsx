@@ -30,7 +30,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
         accessor: "title",
         className: "text-nowrap",
         Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
+          const target = `/movies/${row.row.original.movieId}`;
 
           return (
             <Link to={target}>
@@ -116,9 +116,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
           return (
             <BlacklistButton
               history={original}
-              promise={(form) =>
-                MoviesApi.addBlacklist(original.radarrId, form)
-              }
+              promise={(form) => MoviesApi.addBlacklist(original.movieId, form)}
             ></BlacklistButton>
           );
         },

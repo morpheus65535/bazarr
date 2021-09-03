@@ -36,9 +36,9 @@ interface Series {
 }
 
 const defaultSeries: Series = {
-  seriesList: AsyncUtility.getDefaultEntity("sonarrSeriesId"),
-  wantedEpisodesList: AsyncUtility.getDefaultEntity("sonarrEpisodeId"),
-  episodeList: AsyncUtility.getDefaultList("sonarrEpisodeId"),
+  seriesList: AsyncUtility.getDefaultEntity("seriesId"),
+  wantedEpisodesList: AsyncUtility.getDefaultEntity("episodeId"),
+  episodeList: AsyncUtility.getDefaultList("episodeId"),
   historyList: AsyncUtility.getDefaultEntity("id"),
   blacklist: AsyncUtility.getDefaultItem(),
 };
@@ -61,8 +61,8 @@ const reducer = createReducer(defaultSeries, (builder) => {
     const episodes = state.episodeList;
     const dirtyIdsSet = new Set(dirtyIds);
     const dirtyEpisodeIds = episodes.content
-      .filter((v) => dirtyIdsSet.has(v.sonarrSeriesId.toString()))
-      .map((v) => String(v.sonarrEpisodeId));
+      .filter((v) => dirtyIdsSet.has(v.seriesId.toString()))
+      .map((v) => String(v.episodeId));
 
     ReducerUtility.markDirty(episodes, dirtyEpisodeIds);
   });

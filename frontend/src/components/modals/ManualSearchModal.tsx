@@ -65,9 +65,9 @@ export function ManualSearchModal<T extends SupportType>(
       setSearchState(SearchState.Searching);
       let results: SearchResultType[] = [];
       if (isMovie(item)) {
-        results = await ProvidersApi.movies(item.radarrId);
+        results = await ProvidersApi.movies(item.movieId);
       } else {
-        results = await ProvidersApi.episodes(item.sonarrEpisodeId);
+        results = await ProvidersApi.episodes(item.episodeId);
       }
       setResult(results);
       setSearchState(SearchState.Finished);

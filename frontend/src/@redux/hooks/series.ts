@@ -56,7 +56,7 @@ export function useEpisodesBy(seriesId: number) {
   const episodes = useReduxStore((d) => d.series.episodeList);
 
   const newContent = useMemo(() => {
-    return episodes.content.filter((v) => v.sonarrSeriesId === seriesId);
+    return episodes.content.filter((v) => v.seriesId === seriesId);
   }, [seriesId, episodes.content]);
 
   const newList: Async.List<Item.Episode> = useMemo(

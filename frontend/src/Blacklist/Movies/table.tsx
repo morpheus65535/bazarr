@@ -23,7 +23,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessor: "title",
         className: "text-nowrap",
         Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
+          const target = `/movies/${row.row.original.movieId}`;
           return (
             <Link to={target}>
               <span>{row.value}</span>

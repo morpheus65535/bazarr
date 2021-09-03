@@ -29,7 +29,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
+          const target = `/series/${row.row.original.seriesId}`;
 
           return (
             <Link to={target}>
@@ -121,12 +121,12 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Cell: ({ row }) => {
           const original = row.original;
 
-          const { sonarrEpisodeId, sonarrSeriesId } = original;
+          const { episodeId, seriesId } = original;
           return (
             <BlacklistButton
               history={original}
               promise={(form) =>
-                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                EpisodesApi.addBlacklist(seriesId, episodeId, form)
               }
             ></BlacklistButton>
           );

@@ -35,10 +35,10 @@ async function SearchItem(text: string) {
 
   return results.map<SearchResult>((v) => {
     let link: string;
-    if (v.sonarrSeriesId) {
-      link = `/series/${v.sonarrSeriesId}`;
-    } else if (v.radarrId) {
-      link = `/movies/${v.radarrId}`;
+    if (v.seriesId) {
+      link = `/series/${v.seriesId}`;
+    } else if (v.movieId) {
+      link = `/movies/${v.movieId}`;
     } else {
       link = "";
     }

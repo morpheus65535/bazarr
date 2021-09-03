@@ -12,10 +12,6 @@ from pyga.entities import CustomVariable
 
 from get_args import args
 from config import settings
-from utils import get_sonarr_info, get_radarr_info
-
-sonarr_version = get_sonarr_info.version()
-radarr_version = get_radarr_info.version()
 
 
 def track_event(category=None, action=None, label=None):
@@ -49,15 +45,7 @@ def track_event(category=None, action=None, label=None):
     tracker.add_custom_variable(CustomVariable(index=1, name='BazarrVersion',
                                                value=os.environ["BAZARR_VERSION"].lstrip('v'), scope=1))
     tracker.add_custom_variable(CustomVariable(index=2, name='PythonVersion', value=platform.python_version(), scope=1))
-    if settings.general.getboolean('use_sonarr'):
-        tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value=sonarr_version, scope=1))
-    else:
-        tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value='unused', scope=1))
-    if settings.general.getboolean('use_radarr'):
-        tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value=radarr_version, scope=1))
-    else:
-        tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value='unused', scope=1))
-    tracker.add_custom_variable(CustomVariable(index=5, name='OSVersion', value=platform.platform(), scope=1))
+    tracker.add_custom_variable(CustomVariable(index=3, name='OSVersion', value=platform.platform(), scope=1))
 
     try:
         tracker.track_event(event, session, visitor)

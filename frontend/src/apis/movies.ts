@@ -12,17 +12,17 @@ class MovieApi extends BaseApi {
     return response.data;
   }
 
-  async addBlacklist(radarrid: number, form: FormType.AddBlacklist) {
-    await this.post("/blacklist", form, { radarrid });
+  async addBlacklist(movieid: number, form: FormType.AddBlacklist) {
+    await this.post("/blacklist", form, { movieid });
   }
 
   async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
     await this.delete("/blacklist", form, { all });
   }
 
-  async movies(radarrid?: number[]) {
+  async movies(movieid?: number[]) {
     const response = await this.get<AsyncDataWrapper<Item.Movie>>("", {
-      radarrid,
+      movieid,
     });
     return response;
   }
@@ -33,7 +33,7 @@ class MovieApi extends BaseApi {
   }
 
   async modify(form: FormType.ModifyItem) {
-    await this.post("", { radarrid: form.id, profileid: form.profileid });
+    await this.post("", { movieid: form.id, profileid: form.profileid });
   }
 
   async wanted(params: Parameter.Range) {
@@ -44,9 +44,9 @@ class MovieApi extends BaseApi {
     return response;
   }
 
-  async wantedBy(radarrid: number[]) {
+  async wantedBy(movieid: number[]) {
     const response = await this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", {
-      radarrid,
+      movieid,
     });
     return response;
   }
@@ -59,10 +59,10 @@ class MovieApi extends BaseApi {
     return response;
   }
 
-  async historyBy(radarrid: number) {
+  async historyBy(movieid: number) {
     const response = await this.get<AsyncDataWrapper<History.Movie>>(
       "/history",
-      { radarrid }
+      { movieid }
     );
     return response;
   }
@@ -71,16 +71,16 @@ class MovieApi extends BaseApi {
     await this.patch("", action);
   }
 
-  async downloadSubtitles(radarrid: number, form: FormType.Subtitle) {
-    await this.patch("/subtitles", form, { radarrid });
+  async downloadSubtitles(movieid: number, form: FormType.Subtitle) {
+    await this.patch("/subtitles", form, { movieid });
   }
 
-  async uploadSubtitles(radarrid: number, form: FormType.UploadSubtitle) {
-    await this.post("/subtitles", form, { radarrid });
+  async uploadSubtitles(movieid: number, form: FormType.UploadSubtitle) {
+    await this.post("/subtitles", form, { movieid });
   }
 
-  async deleteSubtitles(radarrid: number, form: FormType.DeleteSubtitle) {
-    await this.delete("/subtitles", form, { radarrid });
+  async deleteSubtitles(movieid: number, form: FormType.DeleteSubtitle) {
+    await this.delete("/subtitles", form, { movieid });
   }
 }
 

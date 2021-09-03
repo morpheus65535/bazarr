@@ -88,12 +88,6 @@ const SystemStatusView: FunctionComponent<Props> = () => {
           <CRow title="Bazarr Version">
             <span>{status?.bazarr_version}</span>
           </CRow>
-          <CRow title="Sonarr Version">
-            <span>{status?.sonarr_version}</span>
-          </CRow>
-          <CRow title="Radarr Version">
-            <span>{status?.radarr_version}</span>
-          </CRow>
           <CRow title="Operating System">
             <span>{status?.operating_system}</span>
           </CRow>

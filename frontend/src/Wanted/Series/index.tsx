@@ -30,7 +30,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
         Header: "Name",
         accessor: "seriesTitle",
         Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
+          const target = `/series/${row.row.original.seriesId}`;
           return (
             <Link to={target}>
               <span>{row.value}</span>
@@ -51,8 +51,8 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
         Cell: ({ row, update, value }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
-          const seriesid = wanted.sonarrSeriesId;
-          const episodeid = wanted.sonarrEpisodeId;
+          const seriesid = wanted.seriesId;
+          const episodeid = wanted.episodeId;
 
           return value.map((item, idx) => (
             <AsyncButton

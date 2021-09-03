@@ -1,5 +1,5 @@
-// Sonarr
-type SonarrSeriesType = "Standard" | "Daily" | "Anime";
+// Series
+type SeriesType = "Standard" | "Daily" | "Anime";
 
 type PythonBoolean = "True" | "False";
 

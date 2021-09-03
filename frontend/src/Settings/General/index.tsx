@@ -177,10 +177,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>
             Send anonymous usage information, nothing that can identify you.
             This includes information on which providers you use, what languages
-            you search for, Bazarr, Python, Sonarr, Radarr and what OS version
-            you are using. We will use this information to prioritize features
-            and bug fixes. Please, keep this enabled as this is the only way we
-            have to better understand how you use Bazarr.
+            you search for, Bazarr, Python and what OS version you are using. We
+            will use this information to prioritize features and bug fixes.
+            Please, keep this enabled as this is the only way we have to better
+            understand how you use Bazarr.
           </Message>
         </Input>
       </Group>

@@ -67,7 +67,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               <AsyncButton
                 disabled={disabled}
                 promise={() =>
-                  MoviesApi.downloadSubtitles(movie.radarrId, {
+                  MoviesApi.downloadSubtitles(movie.movieId, {
                     language: original.code2,
                     hi: original.hi,
                     forced: original.forced,
@@ -86,7 +86,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 variant="light"
                 size="sm"
                 promise={() =>
-                  MoviesApi.deleteSubtitles(movie.radarrId, {
+                  MoviesApi.deleteSubtitles(movie.movieId, {
                     language: original.code2,
                     hi: original.hi,
                     forced: original.forced,

@@ -9,7 +9,6 @@ import subprocess
 from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
-from helper import path_mappings
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -187,4 +186,3 @@ from database import init_db, migrate_db
 init_db()
 migrate_db()
 init_binaries()
-path_mappings.update()

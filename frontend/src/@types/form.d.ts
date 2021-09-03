@@ -10,7 +10,7 @@ declare namespace FormType {
 
   interface OneMovieAction {
     action: "search-missing" | "scan-disk";
-    radarrid: number;
+    movieid: number;
   }
 
   interface OneSerieAction {
@@ -49,8 +49,8 @@ declare namespace FormType {
     language: string;
     hi: boolean;
     forced: boolean;
-    sonarrSeriesId: number;
-    sonarrEpisodeId: number;
+    seriesId: number;
+    episodeId: number;
     title: string;
   }
 

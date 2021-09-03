@@ -27,11 +27,11 @@ export function submodProcessColor(s: string) {
 
 export function GetItemId<T extends object>(item: T): number {
   if (isMovie(item)) {
-    return item.radarrId;
+    return item.movieId;
   } else if (isEpisode(item)) {
-    return item.sonarrEpisodeId;
+    return item.episodeId;
   } else if (isSeries(item)) {
-    return item.sonarrSeriesId;
+    return item.seriesId;
   } else {
     return -1;
   }

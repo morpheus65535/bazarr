@@ -46,43 +46,43 @@ def get_notifier_providers():
     return providers
 
 
-def get_series(sonarr_series_id):
+def get_series(series_id):
     data = TableShows.select(TableShows.title, TableShows.year)\
-        .where(TableShows.sonarrSeriesId == sonarr_series_id)\
+        .where(TableShows.seriesId == series_id)\
         .dicts()\
         .get()
 
     return {'title': data['title'], 'year': data['year']}
 
 
-def get_episode_name(sonarr_episode_id):
+def get_episode_name(episode_id):
     data = TableEpisodes.select(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)\
-        .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
+        .where(TableEpisodes.episodeId == episode_id)\
         .dicts()\
         .get()
 
     return data['title'], data['season'], data['episode']
 
 
-def get_movie(radarr_id):
+def get_movie(movie_id):
     data = TableMovies.select(TableMovies.title, TableMovies.year)\
-        .where(TableMovies.radarrId == radarr_id)\
+        .where(TableMovies.movieId == movie_id)\
         .dicts()\
         .get()
 
     return {'title': data['title'], 'year': data['year']}
 
 
-def send_notifications(sonarr_series_id, sonarr_episode_id, message):
+def send_notifications(series_id, episode_id, message):
     providers = get_notifier_providers()
-    series = get_series(sonarr_series_id)
+    series = get_series(series_id)
     series_title = series['title']
     series_year = series['year']
     if series_year not in [None, '', '0']:
         series_year = ' ({})'.format(series_year)
     else:
         series_year = ''
-    episode = get_episode_name(sonarr_episode_id)
+    episode = get_episode_name(episode_id)
 
     asset = apprise.AppriseAsset(async_mode=False)
 
@@ -99,9 +99,9 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     )
 
 
-def send_notifications_movie(radarr_id, message):
+def send_notifications_movie(movie_id, message):
     providers = get_notifier_providers()
-    movie = get_movie(radarr_id)
+    movie = get_movie(movie_id)
     movie_title = movie['title']
     movie_year = movie['year']
     if movie_year not in [None, '', '0']:

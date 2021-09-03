@@ -27,7 +27,7 @@ const SeriesView: FunctionComponent<Props> = () => {
           if (select) {
             return value;
           } else {
-            const target = `/series/${row.original.sonarrSeriesId}`;
+            const target = `/series/${row.original.seriesId}`;
             return (
               <Link to={target}>
                 <span>{value}</span>
@@ -91,7 +91,7 @@ const SeriesView: FunctionComponent<Props> = () => {
         },
       },
       {
-        accessor: "sonarrSeriesId",
+        accessor: "seriesId",
         selectHide: true,
         Cell: ({ row, update }) => (
           <ActionBadge

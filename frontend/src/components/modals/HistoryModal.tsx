@@ -19,13 +19,13 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const update = useCallback(() => {
     if (movie) {
-      updateHistory(movie.radarrId);
+      updateHistory(movie.movieId);
     }
   }, [movie, updateHistory]);
 
   useDidUpdate(() => {
     update();
-  }, [movie?.radarrId]);
+  }, [movie?.movieId]);
 
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
@@ -78,9 +78,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
           return (
             <BlacklistButton
               update={update}
-              promise={(form) =>
-                MoviesApi.addBlacklist(original.radarrId, form)
-              }
+              promise={(form) => MoviesApi.addBlacklist(original.movieId, form)}
               history={original}
             ></BlacklistButton>
           );
@@ -118,13 +116,13 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   const update = useCallback(() => {
     if (episode) {
-      updateHistory(episode.sonarrEpisodeId);
+      updateHistory(episode.episodeId);
     }
   }, [episode, updateHistory]);
 
   useDidUpdate(() => {
     update();
-  }, [episode?.sonarrEpisodeId]);
+  }, [episode?.episodeId]);
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [
@@ -174,13 +172,13 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "blacklisted",
         Cell: ({ row }) => {
           const original = row.original;
-          const { sonarrSeriesId, sonarrEpisodeId } = original;
+          const { seriesId, episodeId } = original;
           return (
             <BlacklistButton
               history={original}
               update={update}
               promise={(form) =>
-                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                EpisodesApi.addBlacklist(seriesId, episodeId, form)
               }
             ></BlacklistButton>
           );

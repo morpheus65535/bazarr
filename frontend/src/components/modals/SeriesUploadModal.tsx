@@ -85,14 +85,14 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
         return;
       }
 
-      const { sonarrSeriesId: seriesid } = payload;
+      const { seriesId: seriesid } = payload;
 
       const tasks = items
         .filter((v) => v.payload.instance !== undefined)
         .map((v) => {
           const { hi, forced, payload, language } = v;
           const { code2 } = language!;
-          const { sonarrEpisodeId: episodeid } = payload.instance!;
+          const { episodeId: episodeid } = payload.instance!;
 
           const form: FormType.UploadSubtitle = {
             file: v.file,

@@ -4,7 +4,6 @@ from ffsubsync.ffsubsync import run, make_parser
 from utils import get_binary
 from utils import history_log, history_log_movie
 from get_languages import language_from_alpha2
-from helper import path_mappings
 from config import settings
 from get_args import args
 
@@ -24,8 +23,8 @@ class SubSyncer:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
-    def sync(self, video_path, srt_path, srt_lang, media_type, sonarr_series_id=None, sonarr_episode_id=None,
-             radarr_id=None):
+    def sync(self, video_path, srt_path, srt_lang, media_type, series_id=None, episode_id=None,
+             movie_id=None):
         self.reference = video_path
         self.srtin = srt_path
         self.srtout = '{}.synced.srt'.format(os.path.splitext(self.srtin)[0])
@@ -72,13 +71,12 @@ class SubSyncer:
                                                             "{:.2f}".format(framerate_scale_factor))
 
                     if media_type == 'series':
-                        history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
-                                    description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                                    language=srt_lang, subtitles_path=srt_path)
+                        history_log(action=5, series_id=series_id, episode_id=episode_id,
+                                    description=message, video_path=self.reference, language=srt_lang,
+                                    subtitles_path=srt_path)
                     else:
-                        history_log_movie(action=5, radarr_id=radarr_id, description=message,
-                                          video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                          language=srt_lang, subtitles_path=srt_path)
+                        history_log_movie(action=5, movie_id=movie_id, description=message,
+                                          video_path=self.reference, language=srt_lang, subtitles_path=srt_path)
             else:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
 

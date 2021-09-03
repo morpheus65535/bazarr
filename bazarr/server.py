@@ -22,7 +22,7 @@ class Server:
     def __init__(self):
         # Mute DeprecationWarning
         warnings.simplefilter("ignore", DeprecationWarning)
-        # Mute Insecure HTTPS requests made to Sonarr and Radarr
+        # Mute Insecure outgoing HTTPS requests
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
         # Mute Python3 BrokenPipeError
         warnings.simplefilter("ignore", BrokenPipeError)

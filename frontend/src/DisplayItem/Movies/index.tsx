@@ -40,7 +40,7 @@ const MovieView: FunctionComponent<Props> = () => {
           if (select) {
             return value;
           } else {
-            const target = `/movies/${row.original.radarrId}`;
+            const target = `/movies/${row.original.movieId}`;
             return (
               <TextPopover text={row.original.sceneName} delay={1}>
                 <Link to={target}>
@@ -91,7 +91,7 @@ const MovieView: FunctionComponent<Props> = () => {
         },
       },
       {
-        accessor: "radarrId",
+        accessor: "movieId",
         selectHide: true,
         Cell: ({ row, update }) => {
           return (

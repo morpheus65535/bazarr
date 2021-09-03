@@ -33,7 +33,7 @@ import Table from "./table";
 
 const download = (item: Item.Movie, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
+  return ProvidersApi.downloadMovieSubtitle(item.movieId, {
     language,
     hi: hearing_impaired,
     forced,
@@ -92,7 +92,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 item.title,
                 id,
                 MoviesApi.action.bind(MoviesApi),
-                { action: "scan-disk", radarrid: id }
+                { action: "scan-disk", movieid: id }
               );
               dispatchTask("Scaning Disk...", [task], "Scaning...");
             }}
@@ -109,7 +109,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 MoviesApi.action.bind(MoviesApi),
                 {
                   action: "search-missing",
-                  radarrid: id,
+                  movieid: id,
                 }
               );
               dispatchTask("Searching subtitles...", [task], "Searching...");

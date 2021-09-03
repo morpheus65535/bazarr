@@ -70,7 +70,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const profile = useProfileBy(series.content?.profileId);
 
   const hasTask = useIsAnyTaskRunningWithId([
-    ...episodes.content.map((v) => v.sonarrEpisodeId),
+    ...episodes.content.map((v) => v.episodeId),
     id,
   ]);
 

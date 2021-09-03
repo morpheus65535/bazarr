@@ -34,17 +34,13 @@ interface Props {
 
 const download = (item: Item.Episode, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return ProvidersApi.downloadEpisodeSubtitle(
-    item.sonarrSeriesId,
-    item.sonarrEpisodeId,
-    {
-      language,
-      hi: hearing_impaired,
-      forced,
-      provider,
-      subtitle,
-    }
-  );
+  return ProvidersApi.downloadEpisodeSubtitle(item.seriesId, item.episodeId, {
+    language,
+    hi: hearing_impaired,
+    forced,
+    provider,
+    subtitle,
+  });
 };
 
 const Table: FunctionComponent<Props> = ({
@@ -109,10 +105,10 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const episode = row.original;
 
-          const seriesid = episode.sonarrSeriesId;
+          const seriesid = episode.seriesId;
 
           const elements = useMemo(() => {
-            const episodeid = episode.sonarrEpisodeId;
+            const episodeid = episode.episodeId;
 
             const missing = episode.missing_subtitles.map((val, idx) => (
               <SubtitleAction
@@ -146,7 +142,7 @@ const Table: FunctionComponent<Props> = ({
       },
       {
         Header: "Actions",
-        accessor: "sonarrEpisodeId",
+        accessor: "episodeId",
         Cell: ({ row, update }) => {
           return (
             <ButtonGroup>

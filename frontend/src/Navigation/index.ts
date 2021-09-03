@@ -8,7 +8,7 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { useMemo } from "react";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks";
+import { useIsMoviesEnabled, useIsSeriesEnabled } from "../@redux/hooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import BlacklistMoviesView from "../Blacklist/Movies";
 import BlacklistSeriesView from "../Blacklist/Series";
@@ -21,11 +21,11 @@ import SeriesHistoryView from "../History/Series";
 import HistoryStats from "../History/Statistics";
 import SettingsGeneralView from "../Settings/General";
 import SettingsLanguagesView from "../Settings/Languages";
+import SettingsMoviesView from "../Settings/Movies";
 import SettingsNotificationsView from "../Settings/Notifications";
 import SettingsProvidersView from "../Settings/Providers";
-import SettingsRadarrView from "../Settings/Radarr";
 import SettingsSchedulerView from "../Settings/Scheduler";
-import SettingsSonarrView from "../Settings/Sonarr";
+import SettingsSeriesView from "../Settings/Series";
 import SettingsSubtitlesView from "../Settings/Subtitles";
 import SettingsUIView from "../Settings/UI";
 import EmptyPage, { RouterEmptyPath } from "../special-pages/404";
@@ -39,8 +39,8 @@ import WantedSeriesView from "../Wanted/Series";
 import { Navigation } from "./nav";
 
 export function useNavigationItems() {
-  const sonarr = useIsSonarrEnabled();
-  const radarr = useIsRadarrEnabled();
+  const seriesEnabled = useIsSeriesEnabled();
+  const moviesEnabled = useIsMoviesEnabled();
   const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
 
   const items = useMemo<Navigation.RouteItem[]>(
@@ -56,7 +56,7 @@ export function useNavigationItems() {
         name: "Series",
         path: "/series",
         component: SeriesView,
-        enabled: sonarr,
+        enabled: seriesEnabled,
         routes: [
           {
             name: "Episode",
@@ -71,7 +71,7 @@ export function useNavigationItems() {
         name: "Movies",
         path: "/movies",
         component: MovieView,
-        enabled: radarr,
+        enabled: moviesEnabled,
         routes: [
           {
             name: "Movie Details",
@@ -89,13 +89,13 @@ export function useNavigationItems() {
           {
             name: "Series",
             path: "/series",
-            enabled: sonarr,
+            enabled: seriesEnabled,
             component: SeriesHistoryView,
           },
           {
             name: "Movies",
             path: "/movies",
-            enabled: radarr,
+            enabled: moviesEnabled,
             component: MoviesHistoryView,
           },
           {
@@ -113,13 +113,13 @@ export function useNavigationItems() {
           {
             name: "Series",
             path: "/series",
-            enabled: sonarr,
+            enabled: seriesEnabled,
             component: BlacklistSeriesView,
           },
           {
             name: "Movies",
             path: "/movies",
-            enabled: radarr,
+            enabled: moviesEnabled,
             component: BlacklistMoviesView,
           },
         ],
@@ -133,14 +133,14 @@ export function useNavigationItems() {
             name: "Series",
             path: "/series",
             badge: episodes,
-            enabled: sonarr,
+            enabled: seriesEnabled,
             component: WantedSeriesView,
           },
           {
             name: "Movies",
             path: "/movies",
             badge: movies,
-            enabled: radarr,
+            enabled: moviesEnabled,
             component: WantedMoviesView,
           },
         ],
@@ -171,14 +171,14 @@ export function useNavigationItems() {
             component: SettingsSubtitlesView,
           },
           {
-            name: "Sonarr",
-            path: "/sonarr",
-            component: SettingsSonarrView,
+            name: "Series",
+            path: "/series",
+            component: SettingsSeriesView,
           },
           {
-            name: "Radarr",
-            path: "/radarr",
-            component: SettingsRadarrView,
+            name: "Movies",
+            path: "/movies",
+            component: SettingsMoviesView,
           },
           {
             name: "Notifications",
@@ -231,7 +231,7 @@ export function useNavigationItems() {
         ],
       },
     ],
-    [episodes, movies, providers, radarr, sonarr]
+    [episodes, movies, providers, moviesEnabled, seriesEnabled]
   );
 
   return items;

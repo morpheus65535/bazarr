@@ -30,8 +30,8 @@ interface Movie {
 }
 
 const defaultMovie: Movie = {
-  movieList: AsyncUtility.getDefaultEntity("radarrId"),
-  wantedMovieList: AsyncUtility.getDefaultEntity("radarrId"),
+  movieList: AsyncUtility.getDefaultEntity("movieId"),
+  wantedMovieList: AsyncUtility.getDefaultEntity("movieId"),
   historyList: AsyncUtility.getDefaultEntity("id"),
   blacklist: AsyncUtility.getDefaultItem(),
 };

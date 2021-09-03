@@ -73,11 +73,11 @@ interface TagType {
 }
 
 interface SeriesIdType {
-  sonarrSeriesId: number;
+  seriesId: number;
 }
 
 type EpisodeIdType = SeriesIdType & {
-  sonarrEpisodeId: number;
+  episodeId: number;
 };
 
 interface EpisodeTitleType {
@@ -86,7 +86,7 @@ interface EpisodeTitleType {
 }
 
 interface MovieIdType {
-  radarrId: number;
+  movieId: number;
 }
 
 interface TitleType {
@@ -121,7 +121,7 @@ declare namespace Item {
       hearing_impaired: boolean;
       episodeFileCount: number;
       episodeMissingCount: number;
-      seriesType: SonarrSeriesType;
+      seriesType: SeriesType;
       tvdbId: number;
     };
 
@@ -168,7 +168,7 @@ declare namespace Wanted {
     EpisodeIdType &
     EpisodeTitleType & {
       episode_number: string;
-      seriesType: SonarrSeriesType;
+      seriesType: SeriesType;
     };
 
   type Movie = Base & MovieIdType & TitleType;

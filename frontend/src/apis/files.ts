@@ -13,14 +13,6 @@ class FilesApi extends BaseApi {
   async bazarr(path?: string) {
     return this.browse("", path);
   }
-
-  async sonarr(path?: string) {
-    return this.browse("/sonarr", path);
-  }
-
-  async radarr(path?: string) {
-    return this.browse("/radarr", path);
-  }
 }
 
 export default new FilesApi();
