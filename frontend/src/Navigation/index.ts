@@ -37,6 +37,7 @@ import SystemTasksView from "../System/Tasks";
 import WantedMoviesView from "../Wanted/Movies";
 import WantedSeriesView from "../Wanted/Series";
 import { Navigation } from "./nav";
+import RootRedirect from "./RootRedirect";
 
 export function useNavigationItems() {
   const sonarr = useIsSonarrEnabled();
@@ -49,6 +50,12 @@ export function useNavigationItems() {
         name: "404",
         path: RouterEmptyPath,
         component: EmptyPage,
+        routeOnly: true,
+      },
+      {
+        name: "Redirect",
+        path: "/",
+        component: RootRedirect,
         routeOnly: true,
       },
       {
