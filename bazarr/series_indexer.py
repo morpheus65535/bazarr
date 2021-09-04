@@ -71,9 +71,9 @@ def get_series_metadata(tmdbid):
             alternative_titles = tmdbSeries.alternative_titles()
             external_ids = tmdbSeries.external_ids()
         except Exception as e:
-            logging.exception('BAZARR is facing issues index series: {0}'.format(repr(e)))
+            logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
         else:
-            images_url = 'https://image.tmdb.org/t/p/original{0}'
+            images_url = 'https://image.tmdb.org/t/p/w500{0}'
 
             series_metadata = {
                 'title': series_info['original_name'],
@@ -84,7 +84,7 @@ def get_series_metadata(tmdbid):
                 'poster': images_url.format(series_info['poster_path']),
                 'fanart': images_url.format(series_info['backdrop_path']),
                 'alternateTitles': [x['title'] for x in alternative_titles['results']],
-                'tvdbId': external_ids['tvdb_id']
+                'imdbId': external_ids['imdb_id']
             }
 
         return series_metadata
