@@ -43,6 +43,7 @@ from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps
 from utils import check_credentials
+import requests
 
 # Install downloaded update
 if bazarr_version != '':
@@ -122,22 +123,6 @@ def catch_all(path):
 @app.route('/bazarr.log')
 def download_log():
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0, as_attachment=True)
-
-
-@check_login
-@app.route('/images/series/<path:url>', methods=['GET'])
-def series_images(seriesId):
-    pass
-
-
-@check_login
-@app.route('/images/movies/<path:url>', methods=['GET'])
-def movies_images(movieId):
-    pass
-
-
-def configured():
-    System.update({System.configured: '1'}).execute()
 
 
 @check_login

@@ -71,7 +71,6 @@ class TableEpisodes(BaseModel):
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
     episode = IntegerField()
-    episode_file_id = IntegerField(null=True)
     failedAttempts = TextField(null=True)
     ffprobe_cache = BlobField(null=True)
     file_size = IntegerField(default=0, null=True)
@@ -148,7 +147,6 @@ class TableMovies(BaseModel):
     imdbId = TextField(null=True)
     missing_subtitles = TextField(null=True)
     monitored = TextField(null=True)
-    movie_file_id = IntegerField(null=True)
     overview = TextField(null=True)
     path = TextField(unique=True)
     poster = TextField(null=True)
@@ -200,7 +198,6 @@ class TableSettingsNotifier(BaseModel):
 
 class TableShows(BaseModel):
     alternateTitles = TextField(null=True)
-    audio_language = TextField(null=True)
     fanart = TextField(null=True)
     imdbId = TextField(default='""', null=True)
     overview = TextField(null=True)
@@ -212,7 +209,7 @@ class TableShows(BaseModel):
     sortTitle = TextField(null=True)
     tags = TextField(null=True)
     title = TextField()
-    tvdbId = TextField(unique=True)
+    tmdbId = TextField(unique=True)
     year = TextField(null=True)
 
     class Meta:

@@ -6,6 +6,9 @@ from config import settings
 from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     upgrade_subtitles
 from utils import cache_maintenance, check_health
+from series_indexer import index_all_series
+from episodes_indexer import index_all_episodes
+from movies_indexer import index_all_movies
 from get_args import args
 if not args.no_update:
     from check_update import check_if_new_update, check_releases
@@ -53,6 +56,9 @@ class Scheduler:
         self.aps_scheduler.start()
 
     def update_configurable_tasks(self):
+        self.__series_full_reindex_temp()
+        self.__episodes_full_reindex_temp()
+        self.__movies_full_reindex_temp()
         self.__update_bazarr_task()
         self.__search_wanted_subtitles_task()
         self.__upgrade_subtitles_task()
@@ -142,6 +148,21 @@ class Scheduler:
     def __check_health_task(self):
         self.aps_scheduler.add_job(check_health, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                                    misfire_grace_time=15, id='check_health', name='Check health')
+
+    def __series_full_reindex_temp(self):
+        if settings.general.getboolean('use_series'):
+            self.aps_scheduler.add_job(index_all_series, CronTrigger(year='2100'), max_instances=1,
+                                       id='series_full_reindex_temp', name='TEMP Reindex all series from disk')
+
+    def __episodes_full_reindex_temp(self):
+        if settings.general.getboolean('use_series'):
+            self.aps_scheduler.add_job(index_all_episodes, CronTrigger(year='2100'), max_instances=1,
+                                       id='episodes_full_reindex_temp', name='TEMP Reindex all episodes from disk')
+
+    def __movies_full_reindex_temp(self):
+        if settings.general.getboolean('use_movies'):
+            self.aps_scheduler.add_job(index_all_movies, CronTrigger(year='2100'), max_instances=1,
+                                       id='movies_full_reindex_temp', name='TEMP Reindex all movies from disk')
 
     def __update_bazarr_task(self):
         if not args.no_update and os.environ["BAZARR_VERSION"] != '':

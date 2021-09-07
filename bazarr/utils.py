@@ -29,7 +29,7 @@ import datetime
 import glob
 
 region = make_region().configure('dogpile.cache.memory')
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+#headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):

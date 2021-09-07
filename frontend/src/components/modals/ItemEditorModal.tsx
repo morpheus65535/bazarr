@@ -69,16 +69,18 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     >
       <Container fluid>
         <Form>
-          <Form.Group>
-            <Form.Label>Audio</Form.Label>
-            <Form.Control
-              type="text"
-              disabled
-              defaultValue={payload?.audio_language
-                .map((v) => v.name)
-                .join(", ")}
-            ></Form.Control>
-          </Form.Group>
+          {payload?.audio_language ? (
+            <Form.Group>
+              <Form.Label>Audio</Form.Label>
+              <Form.Control
+                type="text"
+                disabled
+                defaultValue={payload?.audio_language
+                  .map((v) => v.name)
+                  .join(", ")}
+              ></Form.Control>
+            </Form.Group>
+          ) : null}
           <Form.Group>
             <Form.Label>Languages Profiles</Form.Label>
             <Selector

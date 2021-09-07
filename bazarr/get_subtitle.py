@@ -45,31 +45,22 @@ from locale import getpreferredencoding
 from score import movie_score, series_score
 
 
-def get_video(path, title, sceneName, providers=None, media_type="movie"):
+def get_video(path, title, providers=None, media_type="movie"):
     """
     Construct `Video` instance
     :param path: path to video
     :param title: series/movie title
-    :param sceneName: sceneName
     :param providers: provider list for selective hashing
     :param media_type: movie/series
     :return: `Video` instance
     """
     hints = {"title": title, "type": "movie" if media_type == "movie" else "episode"}
-    used_scene_name = False
     original_path = path
     original_name = os.path.basename(path)
     hash_from = None
-    if sceneName != "None":
-        # use the sceneName but keep the folder structure for better guessing
-        path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
-        used_scene_name = True
-        hash_from = original_path
 
     try:
-        video = parse_video(path, hints=hints, providers=providers, dry_run=used_scene_name,
-                            hash_from=hash_from)
-        video.used_scene_name = used_scene_name
+        video = parse_video(path, hints=hints, providers=providers, hash_from=hash_from)
         video.original_name = original_name
         video.original_path = original_path
 
@@ -83,7 +74,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
-def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, sceneName, title,
+def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, title,
                       media_type, forced_minimum_score=None, is_upgrade=False):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
@@ -142,8 +133,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         post_download_hook=None,
         language_hook=None
     """
-    video = get_video(force_unicode(path), title, sceneName, providers=providers,
-                      media_type=media_type)
+    video = get_video(force_unicode(path), title, providers=providers, media_type=media_type)
     if video:
         handler = series_score if media_type == "series" else movie_score
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
@@ -287,7 +277,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
 
 
-def manual_search(path, profileId, providers, providers_auth, sceneName, title, media_type):
+def manual_search(path, profileId, providers, providers_auth, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
     final_subtitles = []
@@ -335,8 +325,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     if providers:
-        video = get_video(force_unicode(path), title, sceneName, providers=providers,
-                          media_type=media_type)
+        video = get_video(force_unicode(path), title, providers=providers, media_type=media_type)
     else:
         logging.info("BAZARR All providers are throttled")
         return None
@@ -453,8 +442,8 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     return final_subtitles
 
 
-def manual_download_subtitle(path, language, audio_language, hi, forced, subtitle, provider, providers_auth, sceneName,
-                             title, media_type):
+def manual_download_subtitle(path, language, audio_language, hi, forced, subtitle, provider, providers_auth, title,
+                             media_type):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
 
     if settings.general.getboolean('utf8_encode'):
@@ -475,8 +464,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(force_unicode(path), title, sceneName, providers={provider},
-                      media_type=media_type)
+    video = get_video(force_unicode(path), title, providers={provider}, media_type=media_type)
     if video:
         min_score, max_score, scores = _get_scores(media_type)
         try:
@@ -597,7 +585,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
     logging.debug('BAZARR Ended manually downloading Subtitles for file: ' + path)
 
 
-def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_type, subtitle, audio_language):
+def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtitle, audio_language):
     logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
 
     single = settings.general.getboolean('single_language')
@@ -709,7 +697,6 @@ def series_download_subtitles(no):
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.monitored,
                                             TableEpisodes.episodeId,
-                                            TableEpisodes.scene_name,
                                             TableShows.tags,
                                             TableShows.seriesType,
                                             TableEpisodes.audio_language,
@@ -764,7 +751,6 @@ def series_download_subtitles(no):
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
-                                               str(episode['scene_name']),
                                                episode['title'],
                                                'series')
                     if result is not None:
@@ -799,7 +785,6 @@ def episode_download_subtitles(no, send_progress=False):
                                             TableEpisodes.missing_subtitles,
                                             TableEpisodes.monitored,
                                             TableEpisodes.episodeId,
-                                            TableEpisodes.scene_name,
                                             TableShows.tags,
                                             TableShows.title,
                                             TableShows.seriesId,
@@ -852,7 +837,6 @@ def episode_download_subtitles(no, send_progress=False):
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
-                                               str(episode['scene_name']),
                                                episode['title'],
                                                'series')
                     if result is not None:
@@ -887,7 +871,6 @@ def movies_download_subtitles(no):
                                 TableMovies.missing_subtitles,
                                 TableMovies.audio_language,
                                 TableMovies.movieId,
-                                TableMovies.sceneName,
                                 TableMovies.title,
                                 TableMovies.tags,
                                 TableMovies.monitored)\
@@ -937,7 +920,6 @@ def movies_download_subtitles(no):
                                            "True" if language.endswith(':forced') else "False",
                                            providers_list,
                                            providers_auth,
-                                           str(movie['sceneName']),
                                            movie['title'],
                                            'movie')
                 if result is not None:
@@ -970,7 +952,6 @@ def wanted_download_subtitles(episode_id):
                                             TableEpisodes.episodeId,
                                             TableEpisodes.seriesId,
                                             TableEpisodes.audio_language,
-                                            TableEpisodes.scene_name,
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
         .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
@@ -1022,7 +1003,6 @@ def wanted_download_subtitles(episode_id):
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
-                                                   str(episode['scene_name']),
                                                    episode['title'],
                                                    'series')
                         if result is not None:
@@ -1055,7 +1035,6 @@ def wanted_download_subtitles_movie(movie_id):
                                         TableMovies.missing_subtitles,
                                         TableMovies.movieId,
                                         TableMovies.audio_language,
-                                        TableMovies.sceneName,
                                         TableMovies.failedAttempts,
                                         TableMovies.title)\
         .where((TableMovies.movieId == movie_id))\
@@ -1106,7 +1085,6 @@ def wanted_download_subtitles_movie(movie_id):
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
-                                                   str(movie['sceneName']),
                                                    movie['title'],
                                                    'movie')
                         if result is not None:
@@ -1238,7 +1216,6 @@ def refine_from_db(path, video):
                                     TableEpisodes.episode,
                                     TableEpisodes.title.alias('episodeTitle'),
                                     TableShows.year,
-                                    TableShows.tvdbId,
                                     TableShows.alternateTitles,
                                     TableEpisodes.format,
                                     TableEpisodes.resolution,
@@ -1258,7 +1235,6 @@ def refine_from_db(path, video):
             video.title = data['episodeTitle']
             if data['year']:
                 if int(data['year']) > 0: video.year = int(data['year'])
-            video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if data['imdbId'] and not video.series_imdb_id:
                 video.series_imdb_id = data['imdbId']
@@ -1304,12 +1280,12 @@ def refine_from_db(path, video):
 
 def refine_from_ffprobe(path, video):
     if isinstance(video, Movie):
-        file_id = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
+        file_id = TableMovies.select(TableMovies.file_size)\
             .where(TableMovies.path == path)\
             .dicts()\
             .get()
     else:
-        file_id = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
+        file_id = TableEpisodes.select(TableEpisodes.file_size)\
             .where(TableEpisodes.path == path)\
             .dicts()\
             .get()
@@ -1318,11 +1294,9 @@ def refine_from_ffprobe(path, video):
         return video
 
     if isinstance(video, Movie):
-        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
-                                    movie_file_id=file_id['movie_file_id'])
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'], media_type='movie')
     else:
-        data = parse_video_metadata(file=path, file_size=file_id['file_size'],
-                                    episode_file_id=file_id['episode_file_id'])
+        data = parse_video_metadata(file=path, file_size=file_id['file_size'], media_type='episode')
 
     if not data['ffprobe']:
         logging.debug("No FFprobe available in cache for this file: {}".format(path))
@@ -1380,7 +1354,6 @@ def upgrade_subtitles():
                                                   TableShows.tags,
                                                   TableShows.profileId,
                                                   TableEpisodes.audio_language,
-                                                  TableEpisodes.scene_name,
                                                   TableEpisodes.title,
                                                   TableEpisodes.seriesId,
                                                   TableHistory.action,
@@ -1428,7 +1401,6 @@ def upgrade_subtitles():
                                                      TableHistoryMovie.action,
                                                      TableHistoryMovie.subtitles_path,
                                                      TableMovies.audio_language,
-                                                     TableMovies.sceneName,
                                                      fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
                                                      TableMovies.monitored,
                                                      TableMovies.tags,
@@ -1501,7 +1473,6 @@ def upgrade_subtitles():
                                        is_forced,
                                        providers_list,
                                        providers_auth,
-                                       str(episode['scene_name']),
                                        episode['title'],
                                        'series',
                                        forced_minimum_score=int(episode['score']),
@@ -1568,7 +1539,6 @@ def upgrade_subtitles():
                                        is_forced,
                                        providers_list,
                                        providers_auth,
-                                       str(movie['sceneName']),
                                        movie['title'],
                                        'movie',
                                        forced_minimum_score=int(movie['score']),

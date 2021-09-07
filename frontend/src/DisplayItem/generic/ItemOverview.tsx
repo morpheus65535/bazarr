@@ -63,15 +63,17 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
   const audioBadges = useMemo(
     () =>
-      item.audio_language.map((v, idx) => (
-        <DetailBadge
-          key={BuildKey(idx, "audio", v.code2)}
-          icon={faMusic}
-          desc="Audio Language"
-        >
-          {v.name}
-        </DetailBadge>
-      )),
+      item.audio_language
+        ? item.audio_language.map((v, idx) => (
+            <DetailBadge
+              key={BuildKey(idx, "audio", v.code2)}
+              icon={faMusic}
+              desc="Audio Language"
+            >
+              {v.name}
+            </DetailBadge>
+          ))
+        : null,
     [item.audio_language]
   );
 
@@ -169,7 +171,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
               </span>
             </Row>
             <Row>{detailBadges}</Row>
-            <Row>{audioBadges}</Row>
+            {isMovie(item) ? <Row>{audioBadges}</Row> : null}
             <Row>{languageBadges}</Row>
             <Row>
               <span>{item.overview}</span>

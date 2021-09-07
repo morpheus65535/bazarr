@@ -1,6 +1,6 @@
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
-import { Badge, ProgressBar } from "react-bootstrap";
+import { ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateAll, seriesUpdateByRange } from "../../@redux/actions";
@@ -8,7 +8,6 @@ import { useLanguageProfiles, useSerieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { SeriesApi } from "../../apis";
 import { ActionBadge } from "../../components";
-import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
 
 interface Props {}
@@ -34,21 +33,6 @@ const SeriesView: FunctionComponent<Props> = () => {
               </Link>
             );
           }
-        },
-      },
-      {
-        Header: "Audio",
-        accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge
-              variant="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.forced, v.hi)}
-            >
-              {v.name}
-            </Badge>
-          ));
         },
       },
       {

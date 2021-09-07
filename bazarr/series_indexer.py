@@ -1,13 +1,10 @@
-from json import dumps
-import os
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
+# coding=utf-8
 
 import os
 import re
 import logging
 import tmdbsimple as tmdb
-from database import TableShowsRootfolder, TableMoviesRootfolder
+from database import TableShowsRootfolder, TableShows
 
 tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'
 
@@ -72,7 +69,7 @@ def get_series_match(directory):
         return matching_series
 
 
-def get_series_metadata(tmdbid):
+def get_series_metadata(tmdbid, root_dir_path, dir_name):
     series_metadata = {}
     if tmdbid:
         try:
@@ -87,6 +84,7 @@ def get_series_metadata(tmdbid):
 
             series_metadata = {
                 'title': series_info['original_name'],
+                'path': os.path.join(root_dir_path, dir_name),
                 'sortTitle': normalize_title(series_info['original_name']),
                 'year': series_info['first_air_date'][:4] if series_info['first_air_date'] else None,
                 'tmdbId': tmdbid,
@@ -117,17 +115,17 @@ def normalize_title(title):
 
 
 def index_all_series():
-    directories_metadata = []
-
-    root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.id).dicts()
+    TableShows.delete().execute()
+    root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
     for root_dir_id in root_dir_ids:
         root_dir_subdirectories = list_series_directories(root_dir_id['id'])
         for root_dir_subdirectory in root_dir_subdirectories:
             root_dir_match = get_series_match(root_dir_subdirectory['directory'])
             if root_dir_match:
-                directories_metadata.append(get_series_metadata(root_dir_match[0]['tmdbId']))
-
-    return dumps(directories_metadata)
-
-
-print(index_all_series())
+                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['path'],
+                                                         root_dir_subdirectory['directory'])
+                if directory_metadata:
+                    try:
+                        TableShows.insert(directory_metadata).execute()
+                    except Exception as e:
+                        pass

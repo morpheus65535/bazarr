@@ -33,13 +33,19 @@ def store_subtitles(path, use_cache=True):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-                    .where(TableEpisodes.path == path)\
-                    .dicts()\
-                    .get()
+                try:
+                    item = TableEpisodes.select(TableEpisodes.file_size)\
+                        .where(TableEpisodes.path == path)\
+                        .dicts()\
+                        .get()
+                except:
+                    file_size = None
+                    use_cache = False
+                else:
+                    file_size = item['file_size']
                 subtitle_languages = embedded_subs_reader(path,
-                                                          file_size=item['file_size'],
-                                                          episode_file_id=item['episode_file_id'],
+                                                          file_size=file_size,
+                                                          media_type='episode',
                                                           use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
@@ -129,13 +135,19 @@ def store_subtitles_movie(path, use_cache=True):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
-                    .where(TableMovies.path == path)\
-                    .dicts()\
-                    .get()
+                try:
+                    item = TableMovies.select(TableMovies.file_size)\
+                        .where(TableMovies.path == path)\
+                        .dicts()\
+                        .get()
+                except:
+                    file_size = None
+                    use_cache = False
+                else:
+                    file_size = item['file_size']
                 subtitle_languages = embedded_subs_reader(path,
-                                                          file_size=item['file_size'],
-                                                          movie_file_id=item['movie_file_id'],
+                                                          file_size=file_size,
+                                                          media_type='movie',
                                                           use_cache=use_cache)
                 for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
@@ -201,12 +213,12 @@ def store_subtitles_movie(path, use_cache=True):
         TableMovies.update({TableMovies.subtitles: str(actual_subtitles)})\
             .where(TableMovies.path == path)\
             .execute()
-        matching_movies = TableMovies.select(TableMovies.radarrId).where(TableMovies.path == path).dicts()
+        matching_movies = TableMovies.select(TableMovies.movieId).where(TableMovies.path == path).dicts()
 
         for movie in matching_movies:
             if movie:
                 logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-                list_missing_subtitles_movies(no=movie['radarrId'])
+                list_missing_subtitles_movies(no=movie['movieId'])
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
@@ -337,11 +349,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
 
 
 def list_missing_subtitles_movies(no=None, send_event=True):
-    movies_subtitles = TableMovies.select(TableMovies.radarrId,
+    movies_subtitles = TableMovies.select(TableMovies.movieId,
                                           TableMovies.subtitles,
                                           TableMovies.profileId,
                                           TableMovies.audio_language)\
-        .where((TableMovies.radarrId == no) if no else None)\
+        .where((TableMovies.movieId == no) if no else None)\
         .dicts()
     if isinstance(movies_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
@@ -437,16 +449,16 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
         TableMovies.update({TableMovies.missing_subtitles: missing_subtitles_text})\
-            .where(TableMovies.radarrId == movie_subtitles['radarrId'])\
+            .where(TableMovies.movieId == movie_subtitles['movieId'])\
             .execute()
 
         if send_event:
-            event_stream(type='movie', payload=movie_subtitles['radarrId'])
+            event_stream(type='movie', payload=movie_subtitles['movieId'])
             event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
-    use_ffprobe_cache = settings.sonarr.getboolean('use_ffprobe_cache')
+    use_ffprobe_cache = settings.series.getboolean('use_ffprobe_cache')
 
     episodes = TableEpisodes.select(TableEpisodes.path).dicts()
     
@@ -466,7 +478,7 @@ def series_full_scan_subtitles():
 
 
 def movies_full_scan_subtitles():
-    use_ffprobe_cache = settings.radarr.getboolean('use_ffprobe_cache')
+    use_ffprobe_cache = settings.movies.getboolean('use_ffprobe_cache')
 
     movies = TableMovies.select(TableMovies.path).dicts()
     
@@ -498,8 +510,8 @@ def series_scan_subtitles(no):
 
 def movies_scan_subtitles(no):
     movies = TableMovies.select(TableMovies.path)\
-        .where(TableMovies.radarrId == no)\
-        .order_by(TableMovies.radarrId)\
+        .where(TableMovies.movieId == no)\
+        .order_by(TableMovies.movieId)\
         .dicts()
     
     for movie in movies:

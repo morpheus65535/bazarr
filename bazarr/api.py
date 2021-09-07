@@ -133,15 +133,6 @@ def postprocessSeries(item):
     if 'seriesType' in item and item['seriesType'] is not None:
         item['seriesType'] = item['seriesType'].capitalize()
 
-    # map poster and fanart to server proxy
-    if 'poster' in item:
-        poster = item['poster']
-        item['poster'] = f"{base_url}/images/series{poster}"
-
-    if 'fanart' in item:
-        fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/series{fanart}"
-
 
 def postprocessEpisode(item):
     postprocess(item)
@@ -189,10 +180,6 @@ def postprocessEpisode(item):
                     "forced": True if subtitle[1] == 'forced' else False,
                     "hi": True if subtitle[1] == 'hi' else False
                 })
-
-    if 'scene_name' in item:
-        item["sceneName"] = item["scene_name"]
-        del item["scene_name"]
 
 
 # TODO: Move
@@ -258,15 +245,6 @@ def postprocessMovie(item):
                     "forced": True if language[1] == 'forced' else False,
                     "hi": True if language[1] == 'hi' else False
                 })
-
-    # map poster and fanart to server proxy
-    if 'poster' in item:
-        poster = item['poster']
-        item['poster'] = f"{base_url}/images/movies{poster}"
-
-    if 'fanart' in item:
-        fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/movies{fanart}"
 
 
 class SystemAccount(Resource):
@@ -764,7 +742,6 @@ class EpisodesSubtitles(Resource):
         episodeId = request.args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
                                            TableEpisodes.audio_language)\
             .where(TableEpisodes.episodeId == episodeId)\
             .dicts()\
@@ -772,9 +749,6 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
-        sceneName = episodeInfo['scene_name']
-        audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -791,7 +765,7 @@ class EpisodesSubtitles(Resource):
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'series')
+                                       providers_auth, title, 'series')
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -824,7 +798,6 @@ class EpisodesSubtitles(Resource):
         episodeId = request.args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
                                            TableEpisodes.audio_language)\
             .where(TableEpisodes.episodeId == episodeId)\
             .dicts()\
@@ -832,9 +805,7 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
-        sceneName = episodeInfo['scene_name']
         audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'true' else False
@@ -852,7 +823,6 @@ class EpisodesSubtitles(Resource):
                                             forced=forced,
                                             hi=hi,
                                             title=title,
-                                            scene_name=sceneName,
                                             media_type='series',
                                             subtitle=subFile,
                                             audio_language=audio_language)
@@ -886,7 +856,6 @@ class EpisodesSubtitles(Resource):
         episodeId = request.args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
                                            TableEpisodes.audio_language)\
             .where(TableEpisodes.episodeId == episodeId)\
             .dicts()\
@@ -994,15 +963,12 @@ class MoviesSubtitles(Resource):
 
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.audio_language)\
             .where(TableMovies.movieId == movieId)\
             .dicts()\
             .get()
 
         moviePath = movieInfo['path']
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
 
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
@@ -1022,7 +988,7 @@ class MoviesSubtitles(Resource):
 
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'movie')
+                                       providers_auth, title, 'movie')
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -1054,15 +1020,12 @@ class MoviesSubtitles(Resource):
         movieId = request.args.get('movieid')
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.audio_language) \
             .where(TableMovies.movieId == movieId) \
             .dicts() \
             .get()
 
         moviePath = movieInfo['path']
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
 
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']
@@ -1083,7 +1046,6 @@ class MoviesSubtitles(Resource):
                                             forced=forced,
                                             hi=hi,
                                             title=title,
-                                            scene_name=sceneName,
                                             media_type='movie',
                                             subtitle=subFile,
                                             audio_language=audioLanguage)
@@ -1188,7 +1150,6 @@ class ProviderMovies(Resource):
         movieId = request.args.get('movieid')
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.profileId) \
             .where(TableMovies.movieId == movieId) \
             .dicts() \
@@ -1196,15 +1157,12 @@ class ProviderMovies(Resource):
 
         title = movieInfo['title']
         moviePath = movieInfo['path']
-        sceneName = movieInfo['sceneName']
         profileId = movieInfo['profileId']
-        if sceneName is None: sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(moviePath, profileId, providers_list, providers_auth, sceneName, title,
-                             'movie')
+        data = manual_search(moviePath, profileId, providers_list, providers_auth, title, 'movie')
         if not data:
             data = []
         return jsonify(data=data)
@@ -1215,7 +1173,6 @@ class ProviderMovies(Resource):
         movieId = request.args.get('movieid')
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.audio_language) \
             .where(TableMovies.movieId == movieId) \
             .dicts() \
@@ -1223,8 +1180,6 @@ class ProviderMovies(Resource):
 
         title = movieInfo['title']
         moviePath = movieInfo['path']
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = "None"
         audio_language = movieInfo['audio_language']
 
         language = request.form.get('language')
@@ -1243,7 +1198,7 @@ class ProviderMovies(Resource):
 
         try:
             result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'movie')
+                                              selected_provider, providers_auth, title, 'movie')
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -1275,7 +1230,6 @@ class ProviderEpisodes(Resource):
         episodeId = request.args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
-                                           TableEpisodes.scene_name,
                                            TableShows.profileId) \
             .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
             .where(TableEpisodes.episodeId == episodeId) \
@@ -1284,14 +1238,12 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
-        sceneName = episodeInfo['scene_name']
         profileId = episodeInfo['profileId']
-        if sceneName is None: sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
+        data = manual_search(episodePath, profileId, providers_list, providers_auth, title,
                              'series')
         if not data:
             data = []
@@ -1303,16 +1255,13 @@ class ProviderEpisodes(Resource):
         seriesId = request.args.get('seriesid')
         episodeId = request.args.get('episodeid')
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
-                                           TableEpisodes.scene_name) \
+                                           TableEpisodes.path) \
             .where(TableEpisodes.episodeId == episodeId) \
             .dicts() \
             .get()
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
-        sceneName = episodeInfo['scene_name']
-        if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -1329,7 +1278,7 @@ class ProviderEpisodes(Resource):
 
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'series')
+                                              selected_provider, providers_auth, title, 'series')
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -1674,7 +1623,6 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.seriesId,
                                         TableEpisodes.episodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
@@ -1691,7 +1639,6 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.missing_subtitles,
                                         TableEpisodes.seriesId,
                                         TableEpisodes.episodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
@@ -1734,7 +1681,6 @@ class MoviesWanted(Resource):
             result = TableMovies.select(TableMovies.title,
                                         TableMovies.missing_subtitles,
                                         TableMovies.movieId,
-                                        TableMovies.sceneName,
                                         TableMovies.failedAttempts,
                                         TableMovies.tags,
                                         TableMovies.monitored)\
@@ -1746,7 +1692,6 @@ class MoviesWanted(Resource):
             result = TableMovies.select(TableMovies.title,
                                         TableMovies.missing_subtitles,
                                         TableMovies.movieId,
-                                        TableMovies.sceneName,
                                         TableMovies.failedAttempts,
                                         TableMovies.tags,
                                         TableMovies.monitored)\
