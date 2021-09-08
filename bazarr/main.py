@@ -35,10 +35,6 @@ from get_languages import load_language_in_db
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
-from get_series import *
-from get_episodes import *
-from get_movies import *
-
 from check_update import apply_update, check_if_new_update, check_releases
 from server import app, webserver
 from functools import wraps

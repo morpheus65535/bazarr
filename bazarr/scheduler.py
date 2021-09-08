@@ -1,14 +1,12 @@
 # coding=utf-8
 
-from get_episodes import update_all_episodes
-from get_movies import update_all_movies
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     upgrade_subtitles
 from utils import cache_maintenance, check_health
-from series_indexer import index_all_series
-from episodes_indexer import index_all_episodes
-from movies_indexer import index_all_movies
+from indexer.series.local.series_indexer import index_all_series
+from indexer.series.local.episodes_indexer import index_all_episodes
+from indexer.movies.local.movies_indexer import index_all_movies
 from get_args import args
 if not args.no_update:
     from check_update import check_if_new_update, check_releases

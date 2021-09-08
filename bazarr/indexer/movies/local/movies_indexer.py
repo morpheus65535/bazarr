@@ -5,7 +5,7 @@ import re
 import logging
 import tmdbsimple as tmdb
 from database import TableMoviesRootfolder, TableMovies
-from video_prop_reader import VIDEO_EXTENSION, video_prop_reader
+from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
 from list_subtitles import store_subtitles_movie
 
 tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'

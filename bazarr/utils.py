@@ -369,12 +369,11 @@ def check_credentials(user, pw):
 
 
 def check_health():
-    from get_rootfolder import check_series_rootfolder, check_movies_rootfolder
     if settings.general.getboolean('use_series'):
-        check_series_rootfolder()
+        pass
     if settings.general.getboolean('use_movies'):
         check_movies_rootfolder()
-    event_stream(type='badges')
+    pass
 
 
 def get_health_issues():

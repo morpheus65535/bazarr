@@ -7,7 +7,7 @@ import tmdbsimple as tmdb
 from guessit import guessit
 from requests.exceptions import HTTPError
 from database import TableShowsRootfolder, TableShows, TableEpisodes
-from video_prop_reader import VIDEO_EXTENSION, video_prop_reader
+from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
 from list_subtitles import store_subtitles
 
 tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'
