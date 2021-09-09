@@ -252,7 +252,8 @@ class Addic7edProvider(_Addic7edProvider):
                 type, media_id = link['href'].split('/')
                 if type == 'movie':
                     media_title = link.text
-                    if match := re.search(r'(.+)\s\((\d{4})\)$', media_title):
+                    match = re.search(r'(.+)\s\((\d{4})\)$', media_title)
+                    if match:
                         media_name = match.group(1)
                         media_year = match.group(2)
                         if sanitize(media_name.lower()) == sanitize(movie.lower()) and media_year == str(year):
