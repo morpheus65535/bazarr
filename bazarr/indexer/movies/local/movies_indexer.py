@@ -3,12 +3,10 @@
 import os
 import re
 import logging
-import tmdbsimple as tmdb
+from indexer.tmdb_caching_proxy import tmdb
 from database import TableMoviesRootfolder, TableMovies
 from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
 from list_subtitles import store_subtitles_movie
-
-tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'
 
 
 def list_movies_directories(root_dir):
@@ -53,7 +51,7 @@ def get_movies_match(directory):
     try:
         movies_temp = search.movie(query=directory)
     except Exception as e:
-        logging.exception('BAZARR is facing issues index movies: {0}'.format(repr(e)))
+        logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
     else:
         matching_movies = []
         if movies_temp['total_results']:

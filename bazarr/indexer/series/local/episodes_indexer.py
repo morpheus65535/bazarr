@@ -3,14 +3,12 @@
 import os
 import re
 import logging
-import tmdbsimple as tmdb
+from indexer.tmdb_caching_proxy import tmdb
 from guessit import guessit
 from requests.exceptions import HTTPError
 from database import TableShowsRootfolder, TableShows, TableEpisodes
 from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
 from list_subtitles import store_subtitles
-
-tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'
 
 
 def get_series_episodes(series_directory):

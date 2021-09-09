@@ -3,10 +3,8 @@
 import os
 import re
 import logging
-import tmdbsimple as tmdb
+from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
-
-tmdb.API_KEY = 'e5577e69d409c601acb98d5bfcee31c7'
 
 
 def list_series_directories(root_dir):
@@ -51,7 +49,7 @@ def get_series_match(directory):
     try:
         series_temp = search.tv(query=directory)
     except Exception as e:
-        logging.exception('BAZARR is facing issues index series: {0}'.format(repr(e)))
+        logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
     else:
         matching_series = []
         if series_temp['total_results']:
