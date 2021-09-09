@@ -69,8 +69,12 @@ def get_series_match(directory):
         return matching_series
 
 
-def get_series_metadata(tmdbid, root_dir_path, dir_name):
+def get_series_metadata(tmdbid, root_dir_id, dir_name):
     series_metadata = {}
+    root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
+        .where(TableShowsRootfolder.id == root_dir_id)\
+        .dicts()\
+        .get()
     if tmdbid:
         try:
             tmdbSeries = tmdb.TV(id=tmdbid)
@@ -84,7 +88,7 @@ def get_series_metadata(tmdbid, root_dir_path, dir_name):
 
             series_metadata = {
                 'title': series_info['original_name'],
-                'path': os.path.join(root_dir_path, dir_name),
+                'path': os.path.join(root_dir_path['path'], dir_name),
                 'sortTitle': normalize_title(series_info['original_name']),
                 'year': series_info['first_air_date'][:4] if series_info['first_air_date'] else None,
                 'tmdbId': tmdbid,
@@ -122,7 +126,7 @@ def index_all_series():
         for root_dir_subdirectory in root_dir_subdirectories:
             root_dir_match = get_series_match(root_dir_subdirectory['directory'])
             if root_dir_match:
-                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['path'],
+                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['id'],
                                                          root_dir_subdirectory['directory'])
                 if directory_metadata:
                     try:

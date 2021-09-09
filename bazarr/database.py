@@ -168,12 +168,11 @@ class TableMovies(BaseModel):
 class TableMoviesRootfolder(BaseModel):
     accessible = IntegerField(null=True)
     error = TextField(null=True)
-    id = IntegerField(null=True)
+    id = AutoField()
     path = TextField(null=True)
 
     class Meta:
         table_name = 'table_movies_rootfolder'
-        primary_key = False
 
 
 class TableSettingsLanguages(BaseModel):
@@ -219,12 +218,11 @@ class TableShows(BaseModel):
 class TableShowsRootfolder(BaseModel):
     accessible = IntegerField(null=True)
     error = TextField(null=True)
-    id = IntegerField(null=True)
+    id = AutoField()
     path = TextField(null=True)
 
     class Meta:
         table_name = 'table_shows_rootfolder'
-        primary_key = False
 
 
 class TableCustomScoreProfiles(BaseModel):

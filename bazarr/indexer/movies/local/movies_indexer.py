@@ -72,7 +72,6 @@ def get_movies_match(directory):
 
 
 def get_movie_file_from_list(path):
-    size = 0
     max_size = 0
     max_file = None
 
@@ -80,8 +79,6 @@ def get_movie_file_from_list(path):
         for file in files:
             if os.path.splitext(file)[1] in VIDEO_EXTENSION:
                 size = os.stat(os.path.join(folder, file)).st_size
-
-                # updating maximum size
                 if size > max_size:
                     max_size = size
                     max_file = file
@@ -89,8 +86,12 @@ def get_movie_file_from_list(path):
     return max_file
 
 
-def get_movies_metadata(tmdbid, root_dir_path, dir_name):
+def get_movies_metadata(tmdbid, root_dir_id, dir_name):
     movies_metadata = {}
+    root_dir_path = TableMoviesRootfolder.select(TableMoviesRootfolder.path)\
+        .where(TableMoviesRootfolder.id == root_dir_id)\
+        .dicts()\
+        .get()
     if tmdbid:
         try:
             tmdbMovies = tmdb.Movies(id=tmdbid)
@@ -101,7 +102,7 @@ def get_movies_metadata(tmdbid, root_dir_path, dir_name):
             logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
         else:
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
-            movie_dir = os.path.join(root_dir_path, dir_name)
+            movie_dir = os.path.join(root_dir_path['path'], dir_name)
             movie_file = get_movie_file_from_list(movie_dir)
             movies_metadata = {
                 'title': movies_info['title'],
@@ -145,7 +146,7 @@ def index_all_movies():
         for root_dir_subdirectory in root_dir_subdirectories:
             root_dir_match = get_movies_match(root_dir_subdirectory['directory'])
             if root_dir_match:
-                directory_metadata = get_movies_metadata(root_dir_match[0]['tmdbId'], root_dir_id['path'],
+                directory_metadata = get_movies_metadata(root_dir_match[0]['tmdbId'], root_dir_id['id'],
                                                          root_dir_subdirectory['directory'])
                 if directory_metadata and directory_metadata['path']:
                     try:
