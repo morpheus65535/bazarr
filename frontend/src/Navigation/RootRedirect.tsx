@@ -1,10 +1,10 @@
 import { FunctionComponent } from "react";
 import { Redirect } from "react-router-dom";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks";
+import { useIsMoviesEnabled, useIsSeriesEnabled } from "../@redux/hooks";
 
 const RootRedirect: FunctionComponent = () => {
-  const sonarr = useIsSonarrEnabled();
-  const radarr = useIsRadarrEnabled();
+  const sonarr = useIsSeriesEnabled();
+  const radarr = useIsMoviesEnabled();
 
   let path = "/settings";
   if (sonarr) {
