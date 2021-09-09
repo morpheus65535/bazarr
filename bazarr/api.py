@@ -29,7 +29,7 @@ import logging
 from database import get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
     get_audio_profile_languages, update_profile_id_list, convert_list_to_clause, TableEpisodes, TableShows, \
     TableMovies, TableSettingsLanguages, TableSettingsNotifier, TableLanguagesProfiles, TableHistory, \
-    TableHistoryMovie, TableBlacklist, TableBlacklistMovie
+    TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, TableMoviesRootfolder
 from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
     manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
@@ -46,6 +46,8 @@ from event_handler import event_stream
 from scheduler import scheduler
 from subsyncer import subsync
 from filesystem import browse_bazarr_filesystem
+from indexer.series.local.series_indexer import list_series_directories, get_series_match, get_series_metadata
+from indexer.movies.local.movies_indexer import list_movies_directories, get_movies_match, get_movies_metadata
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS, guessit
 
@@ -880,6 +882,68 @@ class EpisodesSubtitles(Resource):
         return '', 204
 
 
+class SeriesRootfolders(Resource):
+    @authenticate
+    def get(self):
+        # list existing series root folders
+        root_folders = TableShowsRootfolder.select().dicts()
+        root_folders = list(root_folders)
+        return jsonify(data=root_folders)
+
+    @authenticate
+    def post(self):
+        # add a new series root folder
+        path = request.form.get('path')
+        result = TableShowsRootfolder.insert({
+            TableShowsRootfolder.path: path,
+            TableShowsRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableShowsRootfolder.error: ''
+        }).execute()
+        return jsonify(data=list(TableShowsRootfolder.select().where(TableShowsRootfolder.id == result).dicts()))
+
+
+class SeriesDirectories(Resource):
+    @authenticate
+    def get(self):
+        # list series directories inside a specific root folder
+        root_folder_id = request.args.get('id')
+        return jsonify(data=list_series_directories(root_dir=root_folder_id))
+
+
+class SeriesLookup(Resource):
+    @authenticate
+    def get(self):
+        # return possible matches from TMDB for a specific series directory
+        dir_name = request.args.get('dir_name')
+        matches = get_series_match(directory=dir_name)
+        return jsonify(data=matches)
+
+
+class SeriesAdd(Resource):
+    @authenticate
+    def post(self):
+        # add a new series to database
+        tmdbId = request.args.get('tmdbid')
+        rootdir_id = request.args.get('rootdir_id')
+        directory = request.args.get('directory')
+        series_metadata = get_series_metadata(tmdbid=tmdbId, root_dir_id=rootdir_id, dir_name=directory)
+        if series_metadata and series_metadata['path']:
+            try:
+                result = TableShows.insert(series_metadata).execute()
+            except Exception as e:
+                pass
+            else:
+                if result:
+                    store_subtitles(series_metadata['path'])
+
+
+class SeriesModify(Resource):
+    @authenticate
+    def patch(self):
+        # modify an existing series in database
+        pass
+
+
 class Movies(Resource):
     @authenticate
     def get(self):
@@ -1098,6 +1162,69 @@ class MoviesSubtitles(Resource):
             return '', 202
         else:
             return '', 204
+
+
+class MoviesRootfolders(Resource):
+    @authenticate
+    def get(self):
+        # list existing movies root folders
+        root_folders = TableMoviesRootfolder.select().dicts()
+        root_folders = list(root_folders)
+        return jsonify(data=root_folders)
+
+
+    @authenticate
+    def post(self):
+        # add a new movies root folder
+        path = request.form.get('path')
+        result = TableMoviesRootfolder.insert({
+            TableMoviesRootfolder.path: path,
+            TableMoviesRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableMoviesRootfolder.error: ''
+        }).execute()
+        return jsonify(data=list(TableMoviesRootfolder.select().where(TableMoviesRootfolder.id == result).dicts()))
+
+
+class MoviesDirectories(Resource):
+    @authenticate
+    def get(self):
+        # list movies directories inside a specific root folder
+        root_folder_id = request.args.get('id')
+        return jsonify(data=list_movies_directories(root_dir=root_folder_id))
+
+
+class MoviesLookup(Resource):
+    @authenticate
+    def get(self):
+        # return possible matches from TMDB for a specific movie directory
+        dir_name = request.args.get('dir_name')
+        matches = get_movies_match(directory=dir_name)
+        return jsonify(data=matches)
+
+
+class MoviesAdd(Resource):
+    @authenticate
+    def post(self):
+        # add a new movie to database
+        tmdbId = request.args.get('tmdbid')
+        rootdir_id = request.args.get('rootdir_id')
+        directory = request.args.get('directory')
+        movies_metadata = get_movies_metadata(tmdbid=tmdbId, root_dir_id=rootdir_id, dir_name=directory)
+        if movies_metadata and movies_metadata['path']:
+            try:
+                result = TableMovies.insert(movies_metadata).execute()
+            except Exception as e:
+                pass
+            else:
+                if result:
+                    store_subtitles_movie(movies_metadata['path'])
+
+
+class MoviesModify(Resource):
+    @authenticate
+    def patch(self):
+        # modify an existing movie in database
+        pass
 
 
 class Providers(Resource):
@@ -2049,6 +2176,11 @@ api.add_resource(Subtitles, '/subtitles')
 api.add_resource(SubtitleNameInfo, '/subtitles/info')
 
 api.add_resource(Series, '/series')
+api.add_resource(SeriesRootfolders, '/series/rootfolders')
+api.add_resource(SeriesDirectories, '/series/directories')
+api.add_resource(SeriesLookup, '/series/lookup')
+api.add_resource(SeriesAdd, '/series/add')
+api.add_resource(SeriesModify, '/series/modify')
 
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesWanted, '/episodes/wanted')
@@ -2061,6 +2193,11 @@ api.add_resource(MoviesWanted, '/movies/wanted')
 api.add_resource(MoviesSubtitles, '/movies/subtitles')
 api.add_resource(MoviesHistory, '/movies/history')
 api.add_resource(MoviesBlacklist, '/movies/blacklist')
+api.add_resource(MoviesRootfolders, '/movies/rootfolders')
+api.add_resource(MoviesDirectories, '/movies/directories')
+api.add_resource(MoviesLookup, '/movies/lookup')
+api.add_resource(MoviesAdd, '/movies/add')
+api.add_resource(MoviesModify, '/movies/modify')
 
 api.add_resource(HistoryStats, '/history/stats')
 
