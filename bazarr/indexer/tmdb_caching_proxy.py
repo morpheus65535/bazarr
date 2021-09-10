@@ -41,4 +41,5 @@ def _cached_request(self, method, path, params=None, payload=None):
 
 
 tmdbsimple.base.TMDB._request = _cached_request
+tmdbsimple.base.TMDB.session = None
 tmdb.API_KEY = "e5577e69d409c601acb98d5bfcee31c7"

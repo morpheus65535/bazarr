@@ -5,6 +5,7 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
+import subliminal
 
 
 def list_series_directories(root_dir):
@@ -51,6 +52,7 @@ def get_series_match(directory):
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
     else:
+        subliminal.region.backend.sync()
         matching_series = []
         if series_temp['total_results']:
             for item in series_temp['results']:
@@ -82,6 +84,7 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name):
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
         else:
+            subliminal.region.backend.sync()
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
 
             series_metadata = {

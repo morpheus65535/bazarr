@@ -9,6 +9,7 @@ from requests.exceptions import HTTPError
 from database import TableShowsRootfolder, TableShows, TableEpisodes
 from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
 from list_subtitles import store_subtitles
+import subliminal
 
 
 def get_series_episodes(series_directory):
@@ -39,15 +40,17 @@ def get_episode_metadata(file, tmdbid, series_id):
         except Exception as e:
             logging.exception(f'BAZARR is facing issues indexing this episodes: {file}')
             return False
+        else:
+            subliminal.region.backend.sync()
 
-        episode_metadata = {
-            'seriesId': series_id,
-            'title': episode_info['name'],
-            'season': guessed['season'],
-            'episode': episode_number,
-            'path': file
-        }
-        episode_metadata.update(video_prop_reader(file))
+            episode_metadata = {
+                'seriesId': series_id,
+                'title': episode_info['name'],
+                'season': guessed['season'],
+                'episode': episode_number,
+                'path': file
+            }
+            episode_metadata.update(video_prop_reader(file))
 
     return episode_metadata
 
