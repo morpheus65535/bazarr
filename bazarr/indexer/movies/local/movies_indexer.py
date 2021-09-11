@@ -6,8 +6,13 @@ import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableMoviesRootfolder, TableMovies
 from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
+from indexer.tmdb_caching_proxy import tmdb_func_cache
 from list_subtitles import store_subtitles_movie
-import subliminal
+
+WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
+PunctuationRegex = re.compile(r"[^\w\s]")
+CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
+DuplicateSpacesRegex = re.compile(r"\s{2,}")
 
 
 def list_movies_directories(root_dir):
@@ -48,13 +53,11 @@ def get_movies_match(directory):
     directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
     directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
 
-    search = tmdb.Search()
     try:
-        movies_temp = search.movie(query=directory)
+        movies_temp = tmdb_func_cache(tmdb.Search().movie, query=directory)
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
     else:
-        subliminal.region.backend.sync()
         matching_movies = []
         if movies_temp['total_results']:
             for item in movies_temp['results']:
@@ -94,14 +97,12 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name):
         .get()
     if tmdbid:
         try:
-            tmdbMovies = tmdb.Movies(id=tmdbid)
-            movies_info = tmdbMovies.info()
-            alternative_titles = tmdbMovies.alternative_titles()
-            external_ids = tmdbMovies.external_ids()
+            movies_info = tmdb_func_cache(tmdb.Movies(tmdbid).info)
+            alternative_titles = tmdb_func_cache(tmdb.Movies(tmdbid).alternative_titles)
+            external_ids = tmdb_func_cache(tmdb.Movies(tmdbid).external_ids)
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
         else:
-            subliminal.region.backend.sync()
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
             movie_dir = os.path.join(root_dir_path['path'], dir_name)
             movie_file = get_movie_file_from_list(movie_dir)
@@ -124,11 +125,6 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name):
 
 
 def normalize_title(title):
-    WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
-    PunctuationRegex = re.compile(r"[^\w\s]")
-    CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
-    DuplicateSpacesRegex = re.compile(r"\s{2,}")
-
     title = title.lower()
 
     title = re.sub(WordDelimiterRegex, " ", title)

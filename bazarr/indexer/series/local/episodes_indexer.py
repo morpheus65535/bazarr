@@ -8,8 +8,8 @@ from guessit import guessit
 from requests.exceptions import HTTPError
 from database import TableShowsRootfolder, TableShows, TableEpisodes
 from indexer.video_prop_reader import VIDEO_EXTENSION, video_prop_reader
+from indexer.tmdb_caching_proxy import tmdb_func_cache
 from list_subtitles import store_subtitles
-import subliminal
 
 
 def get_series_episodes(series_directory):
@@ -32,8 +32,8 @@ def get_episode_metadata(file, tmdbid, series_id):
         else:
             episode_number = guessed['episode'][0]
         try:
-            tmdbEpisode = tmdb.TV_Episodes(tv_id=tmdbid, season_number=guessed['season'], episode_number=episode_number)
-            episode_info = tmdbEpisode.info()
+            episode_info = tmdb_func_cache(tmdb.TV_Episodes(tv_id=tmdbid, season_number=guessed['season'],
+                                                            episode_number=episode_number).info)
         except HTTPError:
             logging.debug(f"BAZARR can't find this episode on TMDB: {file}")
             episode_info['name'] = 'TBA'
@@ -41,8 +41,6 @@ def get_episode_metadata(file, tmdbid, series_id):
             logging.exception(f'BAZARR is facing issues indexing this episodes: {file}')
             return False
         else:
-            subliminal.region.backend.sync()
-
             episode_metadata = {
                 'seriesId': series_id,
                 'title': episode_info['name'],

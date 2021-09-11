@@ -246,6 +246,17 @@ class TableCustomScoreProfileConditions(BaseModel):
         table_name = 'table_custom_score_profile_conditions'
 
 
+class TableTmdbCache(BaseModel):
+    id = AutoField()
+    timestamp = IntegerField(null=False)
+    function = BlobField(null=False)
+    arguments = BlobField(null=True)
+    result = BlobField(null=False)
+
+    class Meta:
+        table_name = 'table_tmdb_cache'
+
+
 def init_db():
     # Create tables if they don't exists.
     database.create_tables([System,

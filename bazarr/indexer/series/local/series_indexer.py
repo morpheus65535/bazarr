@@ -5,7 +5,12 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
-import subliminal
+from indexer.tmdb_caching_proxy import tmdb_func_cache
+
+WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
+PunctuationRegex = re.compile(r"[^\w\s]")
+CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
+DuplicateSpacesRegex = re.compile(r"\s{2,}")
 
 
 def list_series_directories(root_dir):
@@ -46,13 +51,11 @@ def get_series_match(directory):
     directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
     directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
 
-    search = tmdb.Search()
     try:
-        series_temp = search.tv(query=directory)
+        series_temp = tmdb_func_cache(tmdb.Search().tv, query=directory)
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
     else:
-        subliminal.region.backend.sync()
         matching_series = []
         if series_temp['total_results']:
             for item in series_temp['results']:
@@ -77,14 +80,12 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name):
         .get()
     if tmdbid:
         try:
-            tmdbSeries = tmdb.TV(id=tmdbid)
-            series_info = tmdbSeries.info()
-            alternative_titles = tmdbSeries.alternative_titles()
-            external_ids = tmdbSeries.external_ids()
+            series_info = tmdb_func_cache(tmdb.TV(tmdbid).info)
+            alternative_titles = tmdb_func_cache(tmdb.TV(tmdbid).alternative_titles)
+            external_ids = tmdb_func_cache(tmdb.TV(tmdbid).external_ids)
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
         else:
-            subliminal.region.backend.sync()
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
 
             series_metadata = {
@@ -104,11 +105,6 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name):
 
 
 def normalize_title(title):
-    WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
-    PunctuationRegex = re.compile(r"[^\w\s]")
-    CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
-    DuplicateSpacesRegex = re.compile(r"\s{2,}")
-
     title = title.lower()
 
     title = re.sub(WordDelimiterRegex, " ", title)
