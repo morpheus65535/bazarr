@@ -5,13 +5,13 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateAll, movieUpdateByRange } from "../../@redux/actions";
-import { useLanguageProfiles, useMovieEntities } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
-import { MoviesApi } from "../../apis";
-import { ActionBadge, LanguageText, TextPopover } from "../../components";
-import { BuildKey } from "../../utilities";
-import BaseItemView from "../generic/BaseItemView";
+import { movieUpdateAll, movieUpdateByRange } from "../@redux/actions";
+import { useLanguageProfiles, useMovieEntities } from "../@redux/hooks";
+import { useReduxAction } from "../@redux/hooks/base";
+import { MoviesApi } from "../apis";
+import { ActionBadge, LanguageText, TextPopover } from "../components";
+import BaseItemView from "../Generic/BaseItemView";
+import { BuildKey } from "../utilities";
 
 interface Props {}
 
