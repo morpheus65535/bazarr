@@ -139,6 +139,10 @@ defaults = {
         'password': '',
         'skip_wrong_fps': 'False'
     },
+    'ktuvit': {
+        'email': '',
+        'hashed_password': ''
+    },
     'legendastv': {
         'username': '',
         'password': '',

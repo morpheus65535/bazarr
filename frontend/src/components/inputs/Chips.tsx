@@ -26,17 +26,15 @@ export const Chips: FunctionComponent<ChipsProps> = ({
 
   const input = useRef<HTMLInputElement>(null);
 
-  const changeRef = useRef(onChange);
-
   const addChip = useCallback(
     (value: string) => {
       setChips((cp) => {
         const newChips = [...cp, value];
-        changeRef.current && changeRef.current(newChips);
+        onChange && onChange(newChips);
         return newChips;
       });
     },
-    [changeRef]
+    [onChange]
   );
 
   const removeChip = useCallback(
@@ -46,14 +44,14 @@ export const Chips: FunctionComponent<ChipsProps> = ({
         if (index !== -1) {
           const newChips = [...cp];
           newChips.splice(index, 1);
-          changeRef.current && changeRef.current(newChips);
+          onChange && onChange(newChips);
           return newChips;
         } else {
           return cp;
         }
       });
     },
-    [changeRef]
+    [onChange]
   );
 
   const clearInput = useCallback(() => {

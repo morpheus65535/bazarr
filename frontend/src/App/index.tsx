@@ -1,9 +1,4 @@
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { Provider } from "react-redux";
 import { Route, Switch } from "react-router";
@@ -14,16 +9,15 @@ import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
 import store from "../@redux/store";
 import { LoadingIndicator, ModalProvider } from "../components";
+import Router from "../Router";
 import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";
 import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
 import { Environment } from "../utilities";
 import Header from "./Header";
-import Router from "./Router";
 
 // Sidebar Toggle
-export const SidebarToggleContext = React.createContext<() => void>(() => {});
 
 interface Props {}
 
@@ -43,9 +37,6 @@ const App: FunctionComponent<Props> = () => {
     }
   }, initialized === true);
 
-  const [sidebar, setSidebar] = useState(false);
-  const toggleSidebar = useCallback(() => setSidebar((s) => !s), []);
-
   if (!auth) {
     return <Redirect to="/login"></Redirect>;
   }
@@ -61,17 +52,15 @@ const App: FunctionComponent<Props> = () => {
   }
   return (
     <ErrorBoundary>
-      <SidebarToggleContext.Provider value={toggleSidebar}>
-        <Row noGutters className="header-container">
-          <Header></Header>
-        </Row>
-        <Row noGutters className="flex-nowrap">
-          <Sidebar open={sidebar}></Sidebar>
-          <ModalProvider>
-            <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
-          </ModalProvider>
-        </Row>
-      </SidebarToggleContext.Provider>
+      <Row noGutters className="header-container">
+        <Header></Header>
+      </Row>
+      <Row noGutters className="flex-nowrap">
+        <Sidebar></Sidebar>
+        <ModalProvider>
+          <Router></Router>
+        </ModalProvider>
+      </Row>
     </ErrorBoundary>
   );
 };

@@ -5,7 +5,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useContext, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import {
   Button,
   Col,
@@ -16,8 +16,10 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { SidebarToggleContext } from ".";
-import { siteRedirectToAuth } from "../@redux/actions";
+import {
+  siteChangeSidebarVisibility,
+  siteRedirectToAuth,
+} from "../@redux/actions";
 import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
@@ -56,7 +58,7 @@ const Header: FunctionComponent<Props> = () => {
 
   const canLogout = (settings.content?.auth.type ?? "none") === "form";
 
-  const toggleSidebar = useContext(SidebarToggleContext);
+  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 
   const offline = useIsOffline();
 
@@ -115,7 +117,10 @@ const Header: FunctionComponent<Props> = () => {
           className="cursor-pointer"
         ></Image>
       </div>
-      <Button className="mx-2 m-0 d-md-none" onClick={toggleSidebar}>
+      <Button
+        className="mx-2 m-0 d-md-none"
+        onClick={() => changeSidebar(true)}
+      >
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
       </Button>
       <Container fluid>

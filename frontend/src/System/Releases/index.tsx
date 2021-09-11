@@ -7,7 +7,7 @@ import { BuildKey } from "../../utilities";
 
 interface Props {}
 
-const ReleasesView: FunctionComponent<Props> = () => {
+const SystemReleasesView: FunctionComponent<Props> = () => {
   const releases = useSystemReleases();
 
   return (
@@ -32,25 +32,6 @@ const ReleasesView: FunctionComponent<Props> = () => {
       </Row>
     </Container>
   );
-
-  // return (
-  //   <AsyncStateOverlay state={releases}>
-  //     {({ data }) => (
-  //       <Container fluid className="px-5 py-4 bg-light">
-  //         <Helmet>
-  //           <title>Releases - Bazarr (System)</title>
-  //         </Helmet>
-  //         <Row>
-  //           {data.map((v, idx) => (
-  //             <Col xs={12} key={BuildKey(idx, v.date)}>
-  //               <InfoElement {...v}></InfoElement>
-  //             </Col>
-  //           ))}
-  //         </Row>
-  //       </Container>
-  //     )}
-  //   </AsyncStateOverlay>
-  // );
 };
 
 const headerBadgeCls = "mr-2";
@@ -95,4 +76,4 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
   );
 };
 
-export default ReleasesView;
+export default SystemReleasesView;

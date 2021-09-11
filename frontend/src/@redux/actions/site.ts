@@ -47,7 +47,9 @@ export const siteUpdateNotifier = createAction<string>(
   "site/progress/update_notifier"
 );
 
-export const siteChangeSidebar = createAction<string>("site/sidebar/update");
+export const siteChangeSidebarVisibility = createAction<boolean>(
+  "site/sidebar/visibility"
+);
 
 export const siteUpdateOffline = createAction<boolean>("site/offline/update");
 

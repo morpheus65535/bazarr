@@ -1,6 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useSystemSettings } from ".";
-import { siteAddNotifications, siteChangeSidebar } from "../actions";
+import { siteAddNotifications } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
 export function useNotification(id: string, timeout: number = 5000) {
@@ -36,11 +36,4 @@ export function useIsRadarrEnabled() {
 export function useShowOnlyDesired() {
   const settings = useSystemSettings();
   return settings.content?.general.embedded_subs_show_desired ?? false;
-}
-
-export function useSetSidebar(key: string) {
-  const update = useReduxAction(siteChangeSidebar);
-  useEffect(() => {
-    update(key);
-  }, [update, key]);
 }

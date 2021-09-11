@@ -102,7 +102,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
                   seriesid: id,
                 }
               );
-              dispatchTask("Scaning disk...", [task], "Scaning...");
+              dispatchTask("Scanning disk...", [task], "Scanning...");
             }}
           >
             Scan Disk
