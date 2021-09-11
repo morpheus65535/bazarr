@@ -160,13 +160,10 @@ class KtuvitProvider(Provider):
                     else:
                         AuthenticationError("Incomplete JSON returned while authenticating to the provider.")
 
-            logger.debug("Logged in")
             self.loginCookie = (
                 r.headers["set-cookie"][1].split(";")[0].replace("Login=", "")
             )
-
-            self.session.headers["Accept"]="application/json, text/javascript, */*; q=0.01"
-            self.session.headers["Cookie"]="Login=" + self.loginCookie
+            logger.debug("Logged in with cookie: " + self.loginCookie)
                        
             self.logged_in = True
 
