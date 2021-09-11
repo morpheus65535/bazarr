@@ -51,6 +51,11 @@ class KtuvitSubtitle(Subtitle):
         self.subtitle_id = subtitle_id
         self.release = release
 
+    def __repr__(self):
+        return '<%s [%s] %r [%s:%s]>' % (
+            self.__class__.__name__, self.subtitle_id, self.page_link, self.language, self._guessed_encoding)
+
+
     @property
     def id(self):
         return str(self.subtitle_id)
@@ -160,13 +165,13 @@ class KtuvitProvider(Provider):
                     else:
                         AuthenticationError("Incomplete JSON returned while authenticating to the provider.")
 
-            logger.debug("Logged in")
-            self.loginCookie = (
-                r.headers["set-cookie"][1].split(";")[0].replace("Login=", "")
-            )
-
-            self.session.headers["Accept"]="application/json, text/javascript, */*; q=0.01"
-            self.session.headers["Cookie"]="Login=" + self.loginCookie
+            cookieSplit = r.headers["set-cookie"].split("Login=")
+            if len(cookieSplit) != 2:
+                self.logged_in = False
+                AuthenticationError("Login Failed, didn't receive valid cookie in response")
+            
+            self.loginCookie = cookieSplit[1].split(";")[0]
+            logger.debug("Logged in with cookie: " + self.loginCookie)
                        
             self.logged_in = True
 
