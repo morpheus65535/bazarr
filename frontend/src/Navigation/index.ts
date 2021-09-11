@@ -12,13 +12,13 @@ import { useIsMoviesEnabled, useIsSeriesEnabled } from "../@redux/hooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import BlacklistMoviesView from "../Blacklist/Movies";
 import BlacklistSeriesView from "../Blacklist/Series";
-import Episodes from "../DisplayItem/Episodes";
-import MovieDetail from "../DisplayItem/MovieDetail";
-import MovieView from "../DisplayItem/Movies";
-import SeriesView from "../DisplayItem/Series";
 import MoviesHistoryView from "../History/Movies";
 import SeriesHistoryView from "../History/Series";
 import HistoryStats from "../History/Statistics";
+import MovieView from "../Movies";
+import MovieDetail from "../Movies/Detail";
+import SeriesView from "../Series";
+import Episodes from "../Series/Episodes";
 import SettingsGeneralView from "../Settings/General";
 import SettingsLanguagesView from "../Settings/Languages";
 import SettingsMoviesView from "../Settings/Movies";
@@ -70,6 +70,10 @@ export function useNavigationItems() {
             path: "/:id",
             component: Episodes,
             routeOnly: true,
+          },
+          {
+            name: "Library Import",
+            path: "/import",
           },
         ],
       },

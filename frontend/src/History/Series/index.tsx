@@ -9,7 +9,7 @@ import { useSeriesHistory } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
+import { BlacklistButton } from "../../Generic/blacklist";
 import HistoryGenericView from "../generic";
 
 interface Props {}

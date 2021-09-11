@@ -3,12 +3,12 @@ import React, { FunctionComponent, useMemo } from "react";
 import { ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateAll, seriesUpdateByRange } from "../../@redux/actions";
-import { useLanguageProfiles, useSerieEntities } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
-import { SeriesApi } from "../../apis";
-import { ActionBadge } from "../../components";
-import BaseItemView from "../generic/BaseItemView";
+import { seriesUpdateAll, seriesUpdateByRange } from "../@redux/actions";
+import { useLanguageProfiles, useSerieEntities } from "../@redux/hooks";
+import { useReduxAction } from "../@redux/hooks/base";
+import { SeriesApi } from "../apis";
+import { ActionBadge } from "../components";
+import BaseItemView from "../Generic/BaseItemView";
 
 interface Props {}
 

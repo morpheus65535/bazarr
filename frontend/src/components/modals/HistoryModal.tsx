@@ -3,7 +3,7 @@ import { Column } from "react-table";
 import { useDidUpdate } from "rooks";
 import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
 import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
+import { BlacklistButton } from "../../Generic/blacklist";
 import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";

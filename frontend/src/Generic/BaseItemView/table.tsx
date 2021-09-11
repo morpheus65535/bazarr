@@ -7,10 +7,10 @@ import {
   ItemEditorModal,
   SimpleTable,
   useShowModal,
-} from "../../../components";
-import { TableStyleProps } from "../../../components/tables/BaseTable";
-import { useCustomSelection } from "../../../components/tables/plugins";
-import { GetItemId, useEntityToList } from "../../../utilities";
+} from "../../components";
+import { TableStyleProps } from "../../components/tables/BaseTable";
+import { useCustomSelection } from "../../components/tables/plugins";
+import { GetItemId, useEntityToList } from "../../utilities";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];
