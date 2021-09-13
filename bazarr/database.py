@@ -72,7 +72,7 @@ class TableShows(BaseModel):
     overview = TextField(null=True)
     path = TextField(unique=True, null=False)
     poster = TextField(null=True)
-    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True)
+    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True, on_delete='CASCADE')
     seriesType = TextField(null=True)
     seriesId = AutoIncrementField()
     sortTitle = TextField(null=True)
@@ -80,7 +80,7 @@ class TableShows(BaseModel):
     title = TextField(null=False)
     tmdbId = TextField(unique=True, null=False)
     year = TextField(null=True)
-    rootdir = ForeignKeyField(TableShowsRootfolder, db_column="rootId")
+    rootdir = ForeignKeyField(TableShowsRootfolder, db_column="rootId", on_delete='CASCADE')
 
     class Meta:
         table_name = 'table_shows'
@@ -100,7 +100,7 @@ class TableEpisodes(BaseModel):
     resolution = TextField(null=True)
     season = IntegerField(null=False)
     episodeId = AutoIncrementField()
-    seriesId = ForeignKeyField(TableShows, db_column="seriesId")
+    seriesId = ForeignKeyField(TableShows, db_column="seriesId", on_delete='CASCADE')
     subtitles = TextField(null=True)
     title = TextField(null=False)
     video_codec = TextField(null=True)
@@ -116,8 +116,8 @@ class TableHistory(BaseModel):
     language = TextField(null=True)
     provider = TextField(null=True)
     score = TextField(null=True)
-    episodeId = ForeignKeyField(TableEpisodes, db_column="episodeId")
-    seriesId = ForeignKeyField(TableShows, db_column="seriesId")
+    episodeId = ForeignKeyField(TableEpisodes, db_column="episodeId", on_delete='CASCADE')
+    seriesId = ForeignKeyField(TableShows, db_column="seriesId", on_delete='CASCADE')
     subs_id = TextField(null=True)
     subtitles_path = TextField(null=True)
     timestamp = IntegerField(null=False)
@@ -130,8 +130,8 @@ class TableHistory(BaseModel):
 class TableBlacklist(BaseModel):
     language = TextField(null=False)
     provider = TextField(null=False)
-    episode_id = ForeignKeyField(TableEpisodes, db_column="episodeId")
-    series_id = ForeignKeyField(TableShows, db_column="seriesId")
+    episode_id = ForeignKeyField(TableEpisodes, db_column="episodeId", on_delete='CASCADE')
+    series_id = ForeignKeyField(TableShows, db_column="seriesId", on_delete='CASCADE')
     subs_id = TextField(null=False)
     timestamp = IntegerField(null=False)
 
@@ -164,7 +164,7 @@ class TableMovies(BaseModel):
     overview = TextField(null=True)
     path = TextField(unique=True, null=False)
     poster = TextField(null=True)
-    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True)
+    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True, on_delete='CASCADE')
     movieId = AutoIncrementField()
     resolution = TextField(null=True)
     sortTitle = TextField(null=True)
@@ -174,7 +174,7 @@ class TableMovies(BaseModel):
     tmdbId = TextField(unique=True, null=False)
     video_codec = TextField(null=True)
     year = TextField(null=True)
-    rootdir = ForeignKeyField(TableMoviesRootfolder, db_column="rootId")
+    rootdir = ForeignKeyField(TableMoviesRootfolder, db_column="rootId", on_delete='CASCADE')
 
     class Meta:
         table_name = 'table_movies'
@@ -186,7 +186,7 @@ class TableHistoryMovie(BaseModel):
     id = AutoIncrementField()
     language = TextField(null=True)
     provider = TextField(null=True)
-    movieId = ForeignKeyField(TableMovies, db_column="movieId")
+    movieId = ForeignKeyField(TableMovies, db_column="movieId", on_delete='CASCADE')
     score = TextField(null=True)
     subs_id = TextField(null=True)
     subtitles_path = TextField(null=True)
@@ -200,7 +200,7 @@ class TableHistoryMovie(BaseModel):
 class TableBlacklistMovie(BaseModel):
     language = TextField(null=False)
     provider = TextField(null=False)
-    movie_id = ForeignKeyField(TableMovies, db_column="movieId")
+    movie_id = ForeignKeyField(TableMovies, db_column="movieId", on_delete='CASCADE')
     subs_id = TextField(null=False)
     timestamp = IntegerField(null=False)
 
