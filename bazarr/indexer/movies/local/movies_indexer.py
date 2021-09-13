@@ -20,7 +20,7 @@ def list_movies_directories(root_dir):
 
     try:
         root_dir_path = TableMoviesRootfolder.select(TableMoviesRootfolder.path)\
-            .where(TableMoviesRootfolder.id == root_dir)\
+            .where(TableMoviesRootfolder.rootId == root_dir)\
             .dicts()\
             .get()
     except:
@@ -92,7 +92,7 @@ def get_movie_file_from_list(path):
 def get_movies_metadata(tmdbid, root_dir_id, dir_name):
     movies_metadata = {}
     root_dir_path = TableMoviesRootfolder.select(TableMoviesRootfolder.path)\
-        .where(TableMoviesRootfolder.id == root_dir_id)\
+        .where(TableMoviesRootfolder.rootId == root_dir_id)\
         .dicts()\
         .get()
     if tmdbid:
@@ -107,6 +107,7 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name):
             movie_dir = os.path.join(root_dir_path['path'], dir_name)
             movie_file = get_movie_file_from_list(movie_dir)
             movies_metadata = {
+                'rootdir': root_dir_id,
                 'title': movies_info['title'],
                 'path': os.path.join(movie_dir, movie_file) if movie_file else None,
                 'sortTitle': normalize_title(movies_info['title']),
@@ -137,19 +138,20 @@ def normalize_title(title):
 
 def index_all_movies():
     TableMovies.delete().execute()
-    root_dir_ids = TableMoviesRootfolder.select(TableMoviesRootfolder.id, TableMoviesRootfolder.path).dicts()
+    root_dir_ids = TableMoviesRootfolder.select(TableMoviesRootfolder.rootId, TableMoviesRootfolder.path).dicts()
     for root_dir_id in root_dir_ids:
-        root_dir_subdirectories = list_movies_directories(root_dir_id['id'])
+        root_dir_subdirectories = list_movies_directories(root_dir_id['rootId'])
         for root_dir_subdirectory in root_dir_subdirectories:
             root_dir_match = get_movies_match(root_dir_subdirectory['directory'])
             if root_dir_match:
-                directory_metadata = get_movies_metadata(root_dir_match[0]['tmdbId'], root_dir_id['id'],
+                directory_metadata = get_movies_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
                                                          root_dir_subdirectory['directory'])
                 if directory_metadata and directory_metadata['path']:
                     try:
                         result = TableMovies.insert(directory_metadata).execute()
                     except Exception as e:
-                        pass
+                        logging.error(f'BAZARR is unable to insert this movie to the database: '
+                                      f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
                     else:
                         if result:
                             store_subtitles_movie(directory_metadata['path'])

@@ -899,7 +899,7 @@ class SeriesRootfolders(Resource):
             TableShowsRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
             TableShowsRootfolder.error: ''
         }).execute()
-        return jsonify(data=list(TableShowsRootfolder.select().where(TableShowsRootfolder.id == result).dicts()))
+        return jsonify(data=list(TableShowsRootfolder.select().where(TableShowsRootfolder.rootId == result).dicts()))
 
 
 class SeriesDirectories(Resource):
@@ -1182,7 +1182,7 @@ class MoviesRootfolders(Resource):
             TableMoviesRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
             TableMoviesRootfolder.error: ''
         }).execute()
-        return jsonify(data=list(TableMoviesRootfolder.select().where(TableMoviesRootfolder.id == result).dicts()))
+        return jsonify(data=list(TableMoviesRootfolder.select().where(TableMoviesRootfolder.rootId == result).dicts()))
 
 
 class MoviesDirectories(Resource):

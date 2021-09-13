@@ -7,6 +7,7 @@ import gevent
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.shortcuts import model_to_dict
+from playhouse.sqlite_ext import AutoIncrementField
 from playhouse.migrate import *
 
 from config import settings, get_array_from
@@ -16,6 +17,8 @@ database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
                                use_gevent=True,
                                autostart=True,
                                queue_max_size=256)
+database.pragma('foreign_keys', 'on')  # Enable foreign keys enforcement
+database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
 migrator = SqliteMigrator(database)
 
 
@@ -42,48 +45,64 @@ class System(BaseModel):
         primary_key = False
 
 
-class TableBlacklist(BaseModel):
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    episode_id = IntegerField(null=True)
-    series_id = IntegerField(null=True)
-    subs_id = TextField(null=True)
-    timestamp = IntegerField(null=True)
+class TableLanguagesProfiles(BaseModel):
+    cutoff = IntegerField(null=True)
+    items = TextField(null=False)
+    name = TextField(null=False)
+    profileId = AutoIncrementField()
 
     class Meta:
-        table_name = 'table_blacklist'
-        primary_key = False
+        table_name = 'table_languages_profiles'
 
 
-class TableBlacklistMovie(BaseModel):
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    movie_id = IntegerField(null=True)
-    subs_id = TextField(null=True)
-    timestamp = IntegerField(null=True)
+class TableShowsRootfolder(BaseModel):
+    accessible = IntegerField(null=True)
+    error = TextField(null=True)
+    rootId = AutoIncrementField()
+    path = TextField(null=False)
 
     class Meta:
-        table_name = 'table_blacklist_movie'
-        primary_key = False
+        table_name = 'table_shows_rootfolder'
+
+
+class TableShows(BaseModel):
+    alternateTitles = TextField(null=True)
+    fanart = TextField(null=True)
+    imdbId = TextField(null=True)
+    overview = TextField(null=True)
+    path = TextField(unique=True, null=False)
+    poster = TextField(null=True)
+    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True)
+    seriesType = TextField(null=True)
+    seriesId = AutoIncrementField()
+    sortTitle = TextField(null=True)
+    tags = TextField(null=True)
+    title = TextField(null=False)
+    tmdbId = TextField(unique=True, null=False)
+    year = TextField(null=True)
+    rootdir = ForeignKeyField(TableShowsRootfolder, db_column="rootId")
+
+    class Meta:
+        table_name = 'table_shows'
 
 
 class TableEpisodes(BaseModel):
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
-    episode = IntegerField()
+    episode = IntegerField(null=False)
     failedAttempts = TextField(null=True)
     ffprobe_cache = BlobField(null=True)
     file_size = IntegerField(default=0, null=True)
     format = TextField(null=True)
     missing_subtitles = TextField(null=True)
     monitored = TextField(null=True)
-    path = TextField()
+    path = TextField(null=False)
     resolution = TextField(null=True)
-    season = IntegerField()
-    episodeId = AutoField()
-    seriesId = IntegerField()
+    season = IntegerField(null=False)
+    episodeId = AutoIncrementField()
+    seriesId = ForeignKeyField(TableShows, db_column="seriesId")
     subtitles = TextField(null=True)
-    title = TextField()
+    title = TextField(null=False)
     video_codec = TextField(null=True)
 
     class Meta:
@@ -91,48 +110,43 @@ class TableEpisodes(BaseModel):
 
 
 class TableHistory(BaseModel):
-    action = IntegerField()
-    description = TextField()
-    id = AutoField()
+    action = IntegerField(null=False)
+    description = TextField(null=False)
+    id = AutoIncrementField()
     language = TextField(null=True)
     provider = TextField(null=True)
     score = TextField(null=True)
-    episodeId = IntegerField()
-    seriesId = IntegerField()
+    episodeId = ForeignKeyField(TableEpisodes, db_column="episodeId")
+    seriesId = ForeignKeyField(TableShows, db_column="seriesId")
     subs_id = TextField(null=True)
     subtitles_path = TextField(null=True)
-    timestamp = IntegerField()
+    timestamp = IntegerField(null=False)
     video_path = TextField(null=True)
 
     class Meta:
         table_name = 'table_history'
 
 
-class TableHistoryMovie(BaseModel):
-    action = IntegerField()
-    description = TextField()
-    id = AutoField()
-    language = TextField(null=True)
-    provider = TextField(null=True)
-    movieId = IntegerField()
-    score = TextField(null=True)
-    subs_id = TextField(null=True)
-    subtitles_path = TextField(null=True)
-    timestamp = IntegerField()
-    video_path = TextField(null=True)
+class TableBlacklist(BaseModel):
+    language = TextField(null=False)
+    provider = TextField(null=False)
+    episode_id = ForeignKeyField(TableEpisodes, db_column="episodeId")
+    series_id = ForeignKeyField(TableShows, db_column="seriesId")
+    subs_id = TextField(null=False)
+    timestamp = IntegerField(null=False)
 
     class Meta:
-        table_name = 'table_history_movie'
+        table_name = 'table_blacklist'
 
 
-class TableLanguagesProfiles(BaseModel):
-    cutoff = IntegerField(null=True)
-    items = TextField()
-    name = TextField()
-    profileId = AutoField()
+class TableMoviesRootfolder(BaseModel):
+    accessible = IntegerField(null=True)
+    error = TextField(null=True)
+    rootId = AutoIncrementField()
+    path = TextField(null=False)
 
     class Meta:
-        table_name = 'table_languages_profiles'
+        table_name = 'table_movies_rootfolder'
 
 
 class TableMovies(BaseModel):
@@ -142,45 +156,64 @@ class TableMovies(BaseModel):
     failedAttempts = TextField(null=True)
     fanart = TextField(null=True)
     ffprobe_cache = BlobField(null=True)
-    file_size = IntegerField(default=0, null=True)
+    file_size = IntegerField(default=0, null=False)
     format = TextField(null=True)
     imdbId = TextField(null=True)
     missing_subtitles = TextField(null=True)
     monitored = TextField(null=True)
     overview = TextField(null=True)
-    path = TextField(unique=True)
+    path = TextField(unique=True, null=False)
     poster = TextField(null=True)
-    profileId = IntegerField(null=True)
-    movieId = AutoField()
+    profileId = ForeignKeyField(TableLanguagesProfiles, db_column="profileId", null=True)
+    movieId = AutoIncrementField()
     resolution = TextField(null=True)
     sortTitle = TextField(null=True)
     subtitles = TextField(null=True)
     tags = TextField(null=True)
-    title = TextField()
-    tmdbId = TextField(unique=True)
+    title = TextField(null=False)
+    tmdbId = TextField(unique=True, null=False)
     video_codec = TextField(null=True)
     year = TextField(null=True)
+    rootdir = ForeignKeyField(TableMoviesRootfolder, db_column="rootId")
 
     class Meta:
         table_name = 'table_movies'
 
 
-class TableMoviesRootfolder(BaseModel):
-    accessible = IntegerField(null=True)
-    error = TextField(null=True)
-    id = AutoField()
-    path = TextField(null=True)
+class TableHistoryMovie(BaseModel):
+    action = IntegerField(null=False)
+    description = TextField(null=False)
+    id = AutoIncrementField()
+    language = TextField(null=True)
+    provider = TextField(null=True)
+    movieId = ForeignKeyField(TableMovies, db_column="movieId")
+    score = TextField(null=True)
+    subs_id = TextField(null=True)
+    subtitles_path = TextField(null=True)
+    timestamp = IntegerField(null=False)
+    video_path = TextField(null=True)
 
     class Meta:
-        table_name = 'table_movies_rootfolder'
+        table_name = 'table_history_movie'
+
+
+class TableBlacklistMovie(BaseModel):
+    language = TextField(null=False)
+    provider = TextField(null=False)
+    movie_id = ForeignKeyField(TableMovies, db_column="movieId")
+    subs_id = TextField(null=False)
+    timestamp = IntegerField(null=False)
+
+    class Meta:
+        table_name = 'table_blacklist_movie'
 
 
 class TableSettingsLanguages(BaseModel):
-    code2 = TextField(null=True)
-    code3 = TextField(primary_key=True)
+    code2 = TextField(null=False)
+    code3 = TextField(primary_key=True, null=False)
     code3b = TextField(null=True)
     enabled = IntegerField(null=True)
-    name = TextField()
+    name = TextField(null=False)
 
     class Meta:
         table_name = 'table_settings_languages'
@@ -195,38 +228,8 @@ class TableSettingsNotifier(BaseModel):
         table_name = 'table_settings_notifier'
 
 
-class TableShows(BaseModel):
-    alternateTitles = TextField(null=True)
-    fanart = TextField(null=True)
-    imdbId = TextField(default='""', null=True)
-    overview = TextField(null=True)
-    path = TextField(unique=True)
-    poster = TextField(null=True)
-    profileId = IntegerField(null=True)
-    seriesType = TextField(null=True)
-    seriesId = AutoField()
-    sortTitle = TextField(null=True)
-    tags = TextField(null=True)
-    title = TextField()
-    tmdbId = TextField(unique=True)
-    year = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_shows'
-
-
-class TableShowsRootfolder(BaseModel):
-    accessible = IntegerField(null=True)
-    error = TextField(null=True)
-    id = AutoField()
-    path = TextField(null=True)
-
-    class Meta:
-        table_name = 'table_shows_rootfolder'
-
-
 class TableCustomScoreProfiles(BaseModel):
-    id = AutoField()
+    id = AutoIncrementField()
     name = TextField(null=True)
     media = TextField(null=True)
     score = IntegerField(null=True)
@@ -247,7 +250,7 @@ class TableCustomScoreProfileConditions(BaseModel):
 
 
 class TableTmdbCache(BaseModel):
-    id = AutoField()
+    id = AutoIncrementField()
     timestamp = IntegerField(null=False)
     function = BlobField(null=False)
     arguments = BlobField(null=True)
@@ -273,7 +276,8 @@ def init_db():
                             TableShows,
                             TableShowsRootfolder,
                             TableCustomScoreProfiles,
-                            TableCustomScoreProfileConditions])
+                            TableCustomScoreProfileConditions,
+                            TableTmdbCache])
 
     # add the system table single row if it's not existing
     # we must retry until the tables are created

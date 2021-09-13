@@ -64,7 +64,8 @@ def index_all_episodes():
                 try:
                     result = TableEpisodes.insert(episode_metadata).execute()
                 except Exception as e:
-                    pass
+                    logging.error(f'BAZARR is unable to insert this episode to the database: '
+                                  f'"{episode_metadata["path"]}". The exception encountered is "{e}".')
                 else:
                     if result:
                         store_subtitles(episode)

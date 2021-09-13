@@ -18,7 +18,7 @@ def list_series_directories(root_dir):
 
     try:
         root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
-            .where(TableShowsRootfolder.id == root_dir)\
+            .where(TableShowsRootfolder.rootId == root_dir)\
             .dicts()\
             .get()
     except:
@@ -75,7 +75,7 @@ def get_series_match(directory):
 def get_series_metadata(tmdbid, root_dir_id, dir_name):
     series_metadata = {}
     root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
-        .where(TableShowsRootfolder.id == root_dir_id)\
+        .where(TableShowsRootfolder.rootId == root_dir_id)\
         .dicts()\
         .get()
     if tmdbid:
@@ -89,6 +89,7 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name):
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
 
             series_metadata = {
+                'rootdir': root_dir_id,
                 'title': series_info['original_name'],
                 'path': os.path.join(root_dir_path['path'], dir_name),
                 'sortTitle': normalize_title(series_info['original_name']),
@@ -117,16 +118,17 @@ def normalize_title(title):
 
 def index_all_series():
     TableShows.delete().execute()
-    root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.id, TableShowsRootfolder.path).dicts()
+    root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.rootId, TableShowsRootfolder.path).dicts()
     for root_dir_id in root_dir_ids:
-        root_dir_subdirectories = list_series_directories(root_dir_id['id'])
+        root_dir_subdirectories = list_series_directories(root_dir_id['rootId'])
         for root_dir_subdirectory in root_dir_subdirectories:
             root_dir_match = get_series_match(root_dir_subdirectory['directory'])
             if root_dir_match:
-                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['id'],
+                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
                                                          root_dir_subdirectory['directory'])
                 if directory_metadata:
                     try:
                         TableShows.insert(directory_metadata).execute()
                     except Exception as e:
-                        pass
+                        logging.error(f'BAZARR is unable to insert this series to the database: '
+                                      f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
