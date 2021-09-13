@@ -704,7 +704,7 @@ def series_download_subtitles(no):
                                             TableEpisodes.season,
                                             TableEpisodes.episode,
                                             TableEpisodes.title.alias('episodeTitle'))\
-        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+        .join(TableShows)\
         .where(reduce(operator.and_, conditions))\
         .dicts()
     if not episodes_details:
@@ -793,7 +793,7 @@ def episode_download_subtitles(no, send_progress=False):
                                             TableEpisodes.title.alias('episodeTitle'),
                                             TableEpisodes.season,
                                             TableEpisodes.episode)\
-        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+        .join(TableShows)\
         .where(reduce(operator.and_, conditions))\
         .dicts()
     if not episodes_details:
@@ -954,7 +954,7 @@ def wanted_download_subtitles(episode_id):
                                             TableEpisodes.audio_language,
                                             TableEpisodes.failedAttempts,
                                             TableShows.title)\
-        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+        .join(TableShows)\
         .where((TableEpisodes.episodeId == episode_id))\
         .dicts()
     episodes_details = list(episodes_details)
@@ -1124,7 +1124,7 @@ def wanted_search_missing_subtitles_series():
                                     TableEpisodes.episode,
                                     TableEpisodes.title.alias('episodeTitle'),
                                     TableShows.seriesType)\
-        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+        .join(TableShows)\
         .where(reduce(operator.and_, conditions))\
         .dicts()
     episodes = list(episodes)
@@ -1223,7 +1223,7 @@ def refine_from_db(path, video):
                                     TableEpisodes.audio_codec,
                                     TableEpisodes.path,
                                     TableShows.imdbId)\
-            .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+            .join(TableShows)\
             .where((TableEpisodes.path == path))\
             .dicts()
 
@@ -1365,8 +1365,8 @@ def upgrade_subtitles():
                                                   TableEpisodes.episode,
                                                   TableShows.title.alias('seriesTitle'),
                                                   TableShows.seriesType)\
-            .join(TableShows, on=(TableHistory.seriesId == TableShows.seriesId))\
-            .join(TableEpisodes, on=(TableHistory.episodeId == TableEpisodes.episodeId))\
+            .join(TableEpisodes) \
+            .join(TableShows) \
             .where(reduce(operator.and_, upgradable_episodes_conditions))\
             .group_by(TableHistory.video_path, TableHistory.language)\
             .dicts()
@@ -1406,7 +1406,7 @@ def upgrade_subtitles():
                                                      TableMovies.tags,
                                                      TableMovies.movieId,
                                                      TableMovies.title)\
-            .join(TableMovies, on=(TableHistoryMovie.movieId == TableMovies.movieId))\
+            .join(TableMovies)\
             .where(reduce(operator.and_, upgradable_movies_conditions))\
             .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language)\
             .dicts()

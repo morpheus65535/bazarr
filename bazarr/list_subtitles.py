@@ -241,7 +241,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                                               TableEpisodes.subtitles,
                                               TableShows.profileId,
                                               TableEpisodes.audio_language)\
-        .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+        .join(TableShows)\
         .where(episodes_subtitles_clause)\
         .dicts()
     if isinstance(episodes_subtitles, str):

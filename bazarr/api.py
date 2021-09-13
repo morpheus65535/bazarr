@@ -290,7 +290,7 @@ class Badges(Resource):
         missing_episodes = TableEpisodes.select(TableShows.tags,
                                                 TableShows.seriesType,
                                                 TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+            .join(TableShows)\
             .where(reduce(operator.and_, episodes_conditions))\
             .count()
 
@@ -639,7 +639,7 @@ class Series(Resource):
             episodeMissingCount = TableEpisodes.select(TableShows.tags,
                                                        TableEpisodes.monitored,
                                                        TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+                .join(TableShows)\
                 .where(reduce(operator.and_, episodes_missing_conditions))\
                 .count()
             item.update({"episodeMissingCount": episodeMissingCount})
@@ -648,7 +648,7 @@ class Series(Resource):
             episodeFileCount = TableEpisodes.select(TableShows.tags,
                                                     TableEpisodes.monitored,
                                                     TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+                .join(TableShows)\
                 .where(TableEpisodes.seriesId == item['seriesId'])\
                 .count()
             item.update({"episodeFileCount": episodeFileCount})
@@ -1358,7 +1358,7 @@ class ProviderEpisodes(Resource):
         episodeInfo = TableEpisodes.select(TableEpisodes.title,
                                            TableEpisodes.path,
                                            TableShows.profileId) \
-            .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+            .join(TableShows)\
             .where(TableEpisodes.episodeId == episodeId) \
             .dicts() \
             .get()
@@ -1460,8 +1460,8 @@ class EpisodesHistory(Resource):
                                                       TableShows.tags,
                                                       TableEpisodes.monitored,
                                                       TableShows.seriesType)\
-                .join(TableEpisodes, on=(TableHistory.episodeId == TableEpisodes.episodeId))\
-                .join(TableShows, on=(TableHistory.seriesId == TableShows.seriesId))\
+                .join(TableEpisodes) \
+                .join(TableShows) \
                 .where(reduce(operator.and_, upgradable_episodes_conditions))\
                 .group_by(TableHistory.video_path)\
                 .dicts()
@@ -1498,8 +1498,8 @@ class EpisodesHistory(Resource):
                                               TableHistory.episodeId,
                                               TableHistory.provider,
                                               TableShows.seriesType)\
-            .join(TableShows, on=(TableHistory.seriesId == TableShows.seriesId))\
-            .join(TableEpisodes, on=(TableHistory.episodeId == TableEpisodes.episodeId))\
+            .join(TableEpisodes) \
+            .join(TableShows) \
             .where(query_condition)\
             .order_by(TableHistory.timestamp.desc())\
             .limit(length)\
@@ -1542,7 +1542,7 @@ class EpisodesHistory(Resource):
                         break
 
         count = TableHistory.select()\
-            .join(TableEpisodes, on=(TableHistory.episodeId == TableEpisodes.episodeId))\
+            .join(TableEpisodes)\
             .where(TableEpisodes.title is not None).count()
 
         return jsonify(data=episode_history, total=count)
@@ -1576,7 +1576,7 @@ class MoviesHistory(Resource):
                                                          TableHistoryMovie.score,
                                                          TableMovies.tags,
                                                          TableMovies.monitored)\
-                .join(TableMovies, on=(TableHistoryMovie.movieId == TableMovies.movieId))\
+                .join(TableMovies)\
                 .where(reduce(operator.and_, upgradable_movies_conditions))\
                 .group_by(TableHistoryMovie.video_path)\
                 .dicts()
@@ -1611,7 +1611,7 @@ class MoviesHistory(Resource):
                                                  TableHistoryMovie.subs_id,
                                                  TableHistoryMovie.provider,
                                                  TableHistoryMovie.subtitles_path)\
-            .join(TableMovies, on=(TableHistoryMovie.movieId == TableMovies.movieId))\
+            .join(TableMovies)\
             .where(query_condition)\
             .order_by(TableHistoryMovie.timestamp.desc())\
             .limit(length)\
@@ -1653,7 +1653,7 @@ class MoviesHistory(Resource):
                         break
 
         count = TableHistoryMovie.select()\
-            .join(TableMovies, on=(TableHistoryMovie.movieId == TableMovies.movieId))\
+            .join(TableMovies)\
             .where(TableMovies.title is not None)\
             .count()
 
@@ -1753,7 +1753,7 @@ class EpisodesWanted(Resource):
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+                .join(TableShows)\
                 .where(wanted_condition)\
                 .dicts()
         else:
@@ -1769,7 +1769,7 @@ class EpisodesWanted(Resource):
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+                .join(TableShows)\
                 .where(wanted_condition)\
                 .order_by(TableEpisodes.episodeId.desc())\
                 .limit(length)\
@@ -1785,7 +1785,7 @@ class EpisodesWanted(Resource):
         count = TableEpisodes.select(TableShows.tags,
                                      TableShows.seriesType,
                                      TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId))\
+            .join(TableShows)\
             .where(reduce(operator.and_, count_conditions))\
             .count()
 
@@ -1859,8 +1859,8 @@ class EpisodesBlacklist(Resource):
                                      TableBlacklist.subs_id,
                                      TableBlacklist.language,
                                      TableBlacklist.timestamp)\
-            .join(TableEpisodes, on=(TableBlacklist.episode_id == TableEpisodes.episodeId))\
-            .join(TableShows, on=(TableBlacklist.series_id == TableShows.seriesId))\
+            .join(TableEpisodes)\
+            .join(TableShows)\
             .order_by(TableBlacklist.timestamp.desc())\
             .limit(length)\
             .offset(start)\
@@ -1935,7 +1935,7 @@ class MoviesBlacklist(Resource):
                                           TableBlacklistMovie.subs_id,
                                           TableBlacklistMovie.language,
                                           TableBlacklistMovie.timestamp)\
-            .join(TableMovies, on=(TableBlacklistMovie.movie_id == TableMovies.movieId))\
+            .join(TableMovies)\
             .order_by(TableBlacklistMovie.timestamp.desc())\
             .limit(length)\
             .offset(start)\
@@ -2128,7 +2128,7 @@ class WebHooksPlex(Resource):
                 return '', 404
             else:
                 episodeId = TableEpisodes.select(TableEpisodes.episodeId) \
-                    .join(TableShows, on=(TableEpisodes.seriesId == TableShows.seriesId)) \
+                    .join(TableShows) \
                     .where(TableShows.imdbId == series_imdb_id,
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode) \
