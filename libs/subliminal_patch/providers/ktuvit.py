@@ -157,33 +157,36 @@ class KtuvitProvider(Provider):
             )
 
             if r.content:
+                is_success = False
                 try:
                     is_success = self.parse_d_response(
                         r, "IsSuccess", False, "Authentication to the provider"
                     )
                 except json.decoder.JSONDecodeError:
-                    AuthenticationError(
-                        "Unable to parse JSON return while authenticating to the provider."
-                    )
+                    logger.info("Failed to Login to Ktuvit")
                 if not is_success:
+                    error_message = ''
                     try:
-                        self.parse_d_response(r, "ErrorMessage", "[None]")
+                        error_message = self.parse_d_response(r, "ErrorMessage", "[None]")
                     except json.decode.JSONDecoderError:
-                        AuthenticationError(
-                            "Unable to parse JSON return while authenticating to the provider."
+                        raise AuthenticationError(
+                            "Error Logging in to Ktuvit Provider: " + str(r.content)
+                        )
+                    raise AuthenticationError(
+                        "Error Logging in to Ktuvit Provider: " + error_message
+                    )
+                else:
+                    cookie_split = r.headers["set-cookie"].split("Login=")
+                    if len(cookie_split) != 2:
+                        self.logged_in = False
+                        raise AuthenticationError(
+                            "Login Failed, didn't receive valid cookie in response"
                         )
 
-            cookie_split = r.headers["set-cookie"].split("Login=")
-            if len(cookie_split) != 2:
-                self.logged_in = False
-                AuthenticationError(
-                    "Login Failed, didn't receive valid cookie in response"
-                )
+                    self.login_cookie = cookie_split[1].split(";")[0]
+                    logger.debug("Logged in with cookie: " + self.login_cookie)
 
-            self.login_cookie = cookie_split[1].split(";")[0]
-            logger.debug("Logged in with cookie: " + self.login_cookie)
-
-            self.logged_in = True
+                    self.logged_in = True
 
     def terminate(self):
         self.session.close()
@@ -241,6 +244,10 @@ class KtuvitProvider(Provider):
     def query(
         self, title, season=None, episode=None, year=None, filename=None, imdb_id=None
     ):
+        if not self.logged_in:
+            logger.info("Not logged in to Ktuvit. Returning 0 results")
+            return {}
+
         # search for the IMDB ID if needed.
         is_movie = not (season and episode)
         imdb_id = imdb_id or self._search_imdb_id(title, year, is_movie)
@@ -450,9 +457,9 @@ class KtuvitProvider(Provider):
 
         try:
             response_content = response.json()
-        except json.decoder.JSONDecodeError:
-            json.decoder.JSONDecodeError(
-                "Unable to parse JSON returned while getting " + message
+        except json.decoder.JSONDecodeError as ex:
+            raise json.decoder.JSONDecodeError(
+                "Unable to parse JSON returned while getting " + message, ex.doc, ex.pos
             )
         else:
             if "d" in response_content:
@@ -460,9 +467,13 @@ class KtuvitProvider(Provider):
                 value = response_content.get(field, default_value)
 
                 if not value:
-                    json.decoder.JSONDecodeError("Missing " + message)
+                    raise json.decoder.JSONDecodeError(
+                        "Missing " + message, str(response_content), 0
+                    )
             else:
-                json.decoder.JSONDecodeError(
-                    "Incomplete JSON returned while getting " + message
+                raise json.decoder.JSONDecodeError(
+                    "Incomplete JSON returned while getting " + message,
+                    str(response_content),
+                    0
                 )
             return value
