@@ -91,21 +91,21 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ContentHeader.Group pos="start">
           <ContentHeader.Button
             icon={faSync}
-            disabled={!available || hasTask}
+            disabled={hasTask}
             onClick={() => {
               const task = createTask(
                 serie.title,
                 id,
                 SeriesApi.action.bind(SeriesApi),
                 {
-                  action: "scan-disk",
+                  action: "refresh",
                   seriesid: id,
                 }
               );
-              dispatchTask("Scanning disk...", [task], "Scanning...");
+              dispatchTask("Refreshing series...", [task], "Refreshing...");
             }}
           >
-            Scan Disk
+            Refresh
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faSearch}
@@ -124,7 +124,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={
               serie.episodeFileCount === 0 ||
               serie.profileId === null ||
-              !available
+              !available ||
+              hasTask
             }
           >
             Search
@@ -142,7 +143,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={
               serie.episodeFileCount === 0 ||
               serie.profileId === null ||
-              !available
+              !available ||
+              hasTask
             }
             icon={faCloudUploadAlt}
             onClick={() => showModal("upload", serie)}

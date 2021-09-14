@@ -698,7 +698,7 @@ class Series(Resource):
     def patch(self):
         seriesid = request.form.get('seriesid')
         action = request.form.get('action')
-        if action == "scan-disk":
+        if action == "refresh":
             series_scan_subtitles(seriesid)
             return '', 204
         elif action == "search-missing":
@@ -1001,7 +1001,7 @@ class Movies(Resource):
     def patch(self):
         movieid = request.form.get('movieid')
         action = request.form.get('action')
-        if action == "scan-disk":
+        if action == "refresh":
             movies_scan_subtitles(movieid)
             return '', 204
         elif action == "search-missing":

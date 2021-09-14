@@ -9,12 +9,12 @@ declare namespace FormType {
   type MoviesAction = OneMovieAction | SearchWantedAction;
 
   interface OneMovieAction {
-    action: "search-missing" | "scan-disk";
+    action: "search-missing" | "refresh";
     movieid: number;
   }
 
   interface OneSerieAction {
-    action: "search-missing" | "scan-disk";
+    action: "search-missing" | "refresh";
     seriesid: number;
   }
 

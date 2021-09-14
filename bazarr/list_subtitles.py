@@ -498,25 +498,15 @@ def movies_full_scan_subtitles():
 
 
 def series_scan_subtitles(no):
-    episodes = TableEpisodes.select(TableEpisodes.path)\
-        .where(TableEpisodes.seriesId == no)\
-        .order_by(TableEpisodes.episodeId)\
-        .dicts()
-    
-    for episode in episodes:
-        sleep()
-        store_subtitles(episode['path'], use_cache=False)
+    from indexer.series.local.series_indexer import update_specific_series
+    from indexer.series.local.episodes_indexer import update_series_episodes
+    update_specific_series(no)
+    update_series_episodes(no, use_cache=False)
 
 
 def movies_scan_subtitles(no):
-    movies = TableMovies.select(TableMovies.path)\
-        .where(TableMovies.movieId == no)\
-        .order_by(TableMovies.movieId)\
-        .dicts()
-    
-    for movie in movies:
-        sleep()
-        store_subtitles_movie(movie['path'], use_cache=False)
+    from indexer.movies.local.movies_indexer import update_specific_movie
+    update_specific_movie(no, use_cache=False)
 
 
 def get_external_subtitles_path(file, subtitle):

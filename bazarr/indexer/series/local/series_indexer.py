@@ -6,6 +6,8 @@ import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
 from indexer.tmdb_caching_proxy import tmdb_func_cache
+from .episodes_indexer import update_series_episodes
+from event_handler import show_progress, hide_progress
 
 WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
 PunctuationRegex = re.compile(r"[^\w\s]")
@@ -72,7 +74,7 @@ def get_series_match(directory):
         return matching_series
 
 
-def get_series_metadata(tmdbid, root_dir_id, dir_name):
+def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
     series_metadata = {}
     root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
         .where(TableShowsRootfolder.rootId == root_dir_id)\
@@ -89,18 +91,21 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name):
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
 
             series_metadata = {
-                'rootdir': root_dir_id,
                 'title': series_info['original_name'],
-                'path': os.path.join(root_dir_path['path'], dir_name),
                 'sortTitle': normalize_title(series_info['original_name']),
                 'year': series_info['first_air_date'][:4] if series_info['first_air_date'] else None,
-                'tmdbId': tmdbid,
                 'overview': series_info['overview'],
                 'poster': images_url.format(series_info['poster_path']) if series_info['poster_path'] else None,
                 'fanart': images_url.format(series_info['backdrop_path'])if series_info['backdrop_path'] else None,
                 'alternateTitles': [x['title'] for x in alternative_titles['results']],
                 'imdbId': external_ids['imdb_id']
             }
+
+            # only for initial import and not update
+            if dir_name:
+                series_metadata['rootdir'] = root_dir_id
+                series_metadata['path'] = os.path.join(root_dir_path['path'], dir_name)
+                series_metadata['tmdbId'] = tmdbid
 
         return series_metadata
 
@@ -116,19 +121,56 @@ def normalize_title(title):
     return title.strip()
 
 
-def index_all_series():
-    TableShows.delete().execute()
+def update_indexed_series():
     root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.rootId, TableShowsRootfolder.path).dicts()
     for root_dir_id in root_dir_ids:
         root_dir_subdirectories = list_series_directories(root_dir_id['rootId'])
-        for root_dir_subdirectory in root_dir_subdirectories:
-            root_dir_match = get_series_match(root_dir_subdirectory['directory'])
-            if root_dir_match:
-                directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
-                                                         root_dir_subdirectory['directory'])
+        existing_subdirectories = [x['path'] for x in
+                                   TableShows.select(TableShows.path)
+                                   .where(TableShows.rootdir == root_dir_id['rootId'])
+                                   .dicts()]
+
+        for existing_subdirectory in existing_subdirectories:
+            # delete removed series from database
+            if not os.path.exists(existing_subdirectory):
+                TableShows.delete().where(TableShows.path == existing_subdirectory).execute()
+            # update existing series metadata
+            else:
+                show_metadata = TableShows.select().where(TableShows.path == existing_subdirectory).dicts().get()
+                directory_metadata = get_series_metadata(show_metadata['tmdbId'], root_dir_id['rootId'])
                 if directory_metadata:
-                    try:
-                        TableShows.insert(directory_metadata).execute()
-                    except Exception as e:
-                        logging.error(f'BAZARR is unable to insert this series to the database: '
-                                      f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
+                    result = TableShows.update(directory_metadata)\
+                        .where(TableShows.tmdbId == show_metadata['tmdbId'])\
+                        .execute()
+                    if result:
+                        update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=True)
+
+        # add missing series to database
+        for root_dir_subdirectory in root_dir_subdirectories:
+            if os.path.join(root_dir_id['path'], root_dir_subdirectory['directory']) in existing_subdirectories:
+                continue
+            else:
+                root_dir_match = get_series_match(root_dir_subdirectory['directory'])
+                if root_dir_match:
+                    directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
+                                                             root_dir_subdirectory['directory'])
+                    if directory_metadata:
+                        try:
+                            series_id = TableShows.insert(directory_metadata).execute()
+                        except Exception as e:
+                            logging.error(f'BAZARR is unable to insert this series to the database: '
+                                          f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
+                        else:
+                            if series_id:
+                                update_series_episodes(seriesId=series_id, use_cache=False)
+
+
+def update_specific_series(seriesId):
+    show_metadata = TableShows.select().where(TableShows.seriesId == seriesId).dicts().get()
+    directory_metadata = get_series_metadata(show_metadata['tmdbId'], show_metadata['rootdir'])
+    if directory_metadata:
+        result = TableShows.update(directory_metadata) \
+            .where(TableShows.tmdbId == show_metadata['tmdbId']) \
+            .execute()
+        if result:
+            update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=True)

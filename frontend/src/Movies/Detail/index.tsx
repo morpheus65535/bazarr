@@ -92,16 +92,16 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 item.title,
                 id,
                 MoviesApi.action.bind(MoviesApi),
-                { action: "scan-disk", movieid: id }
+                { action: "refresh", movieid: id }
               );
-              dispatchTask("Scaning Disk...", [task], "Scaning...");
+              dispatchTask("Refreshing movie...", [task], "Refreshing...");
             }}
           >
-            Scan Disk
+            Refresh
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faSearch}
-            disabled={item.profileId === null}
+            disabled={item.profileId === null || hasTask}
             onClick={() => {
               const task = createTask(
                 item.title,
