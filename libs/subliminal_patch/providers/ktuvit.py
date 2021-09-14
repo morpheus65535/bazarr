@@ -52,9 +52,13 @@ class KtuvitSubtitle(Subtitle):
         self.release = release
 
     def __repr__(self):
-        return '<%s [%s] %r [%s:%s]>' % (
-            self.__class__.__name__, self.subtitle_id, self.page_link, self.language, self._guessed_encoding)
-
+        return "<%s [%s] %r [%s:%s]>" % (
+            self.__class__.__name__,
+            self.subtitle_id,
+            self.page_link,
+            self.language,
+            self._guessed_encoding,
+        )
 
     @property
     def id(self):
@@ -125,7 +129,7 @@ class KtuvitProvider(Provider):
         self.hashed_password = hashed_password
         self.logged_in = False
         self.session = None
-        self.loginCookie = None
+        self.login_cookie = None
 
     def initialize(self):
         self.session = Session()
@@ -135,13 +139,15 @@ class KtuvitProvider(Provider):
             logger.info("Logging in")
 
             data = {"request": {"Email": self.email, "Password": self.hashed_password}}
-            
-            self.session.headers['Accept-Encoding'] = 'gzip'
-            self.session.headers['Accept-Language'] = 'en-us,en;q=0.5'
-            self.session.headers['Pragma'] = 'no-cache'
-            self.session.headers['Cache-Control'] = 'no-cache'
-            self.session.headers['Content-Type'] = 'application/json'
-            self.session.headers['User-Agent']: os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
+
+            self.session.headers["Accept-Encoding"] = "gzip"
+            self.session.headers["Accept-Language"] = "en-us,en;q=0.5"
+            self.session.headers["Pragma"] = "no-cache"
+            self.session.headers["Cache-Control"] = "no-cache"
+            self.session.headers["Content-Type"] = "application/json"
+            self.session.headers["User-Agent"]: os.environ.get(
+                "SZ_USER_AGENT", "Sub-Zero/2"
+            )
 
             r = self.session.post(
                 self.server_url + self.sign_in_url,
@@ -149,30 +155,34 @@ class KtuvitProvider(Provider):
                 allow_redirects=False,
                 timeout=10,
             )
-            
+
             if r.content:
                 try:
-                    responseContent = r.json()
+                    is_success = self.parse_d_response(
+                        r, "IsSuccess", False, "Authentication to the provider"
+                    )
                 except json.decoder.JSONDecodeError:
-                    AuthenticationError("Unable to parse JSON return while authenticating to the provider.")
-                else:
-                    isSuccess = False
-                    if 'd' in responseContent:
-                        responseContent = json.loads(responseContent['d'])
-                        isSuccess = responseContent.get('IsSuccess', False)
-                        if not isSuccess:
-                            AuthenticationError("ErrorMessage: " + responseContent['d'].get("ErrorMessage", "[None]"))
-                    else:
-                        AuthenticationError("Incomplete JSON returned while authenticating to the provider.")
+                    AuthenticationError(
+                        "Unable to parse JSON return while authenticating to the provider."
+                    )
+                if not is_success:
+                    try:
+                        self.parse_d_response(r, "ErrorMessage", "[None]")
+                    except json.decode.JSONDecoderError:
+                        AuthenticationError(
+                            "Unable to parse JSON return while authenticating to the provider."
+                        )
 
-            cookieSplit = r.headers["set-cookie"].split("Login=")
-            if len(cookieSplit) != 2:
+            cookie_split = r.headers["set-cookie"].split("Login=")
+            if len(cookie_split) != 2:
                 self.logged_in = False
-                AuthenticationError("Login Failed, didn't receive valid cookie in response")
-            
-            self.loginCookie = cookieSplit[1].split(";")[0]
-            logger.debug("Logged in with cookie: " + self.loginCookie)
-                       
+                AuthenticationError(
+                    "Login Failed, didn't receive valid cookie in response"
+                )
+
+            self.login_cookie = cookie_split[1].split(";")[0]
+            logger.debug("Logged in with cookie: " + self.login_cookie)
+
             self.logged_in = True
 
     def terminate(self):
@@ -265,33 +275,21 @@ class KtuvitProvider(Provider):
         logger.debug("Getting the list of subtitles")
 
         url = self.server_url + self.search_url
-        r = self.session.post(
-            url, json={"request": query}, timeout=10
-        )
+        r = self.session.post(url, json={"request": query}, timeout=10)
         r.raise_for_status()
 
         if r.content:
-            try:
-                responseContent = r.json()
-            except json.decoder.JSONDecodeError:
-                json.decoder.JSONDecodeError("Unable to parse JSON returned while getting Film/Series Information.")
-            else:
-                isSuccess = False
-                if 'd' in responseContent:
-                    responseContent = json.loads(responseContent['d'])
-                    results = responseContent.get('Films', [])
-                else:
-                    json.decoder.JSONDecodeError("Incomplete JSON returned while getting Film/Series Information.")
+            results = self.parse_d_response(r, "Films", [], "Films/Series Information")
         else:
-            return  {}
+            return {}
 
         # loop over results
         subtitles = {}
         for result in results:
             imdb_link = result["IMDB_Link"]
-            imdb_link = imdb_link[0: -1] if imdb_link.endswith("/") else imdb_link
+            imdb_link = imdb_link[0:-1] if imdb_link.endswith("/") else imdb_link
             results_imdb_id = imdb_link.split("/")[-1]
-            
+
             if results_imdb_id != imdb_id:
                 logger.debug(
                     "Subtitles is for IMDB %r but actual IMDB ID is %r",
@@ -352,9 +350,11 @@ class KtuvitProvider(Provider):
 
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub['rls'] = column.get_text().strip().split("\n")[0]
+                    sub["rls"] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub['sub_id'] = column.find("input", attrs={"data-sub-id": True})["data-sub-id"]
+                    sub["sub_id"] = column.find("input", attrs={"data-sub-id": True})[
+                        "data-sub-id"
+                    ]
 
             subs.append(sub)
         return subs
@@ -370,14 +370,14 @@ class KtuvitProvider(Provider):
 
         for row in sub_rows:
             columns = row.find_all("td")
-            sub = {
-                'id': movie_id
-            }
+            sub = {"id": movie_id}
             for index, column in enumerate(columns):
                 if index == 0:
-                    sub['rls'] = column.get_text().strip().split("\n")[0]
+                    sub["rls"] = column.get_text().strip().split("\n")[0]
                 if index == 5:
-                    sub['sub_id'] = column.find("a", attrs={"data-subtitle-id": True})["data-subtitle-id"]
+                    sub["sub_id"] = column.find("a", attrs={"data-subtitle-id": True})[
+                        "data-subtitle-id"
+                    ]
 
             subs.append(sub)
         return subs
@@ -386,7 +386,6 @@ class KtuvitProvider(Provider):
         season = episode = None
         year = video.year
         filename = video.name
-        imdb_id = video.imdb_id
 
         if isinstance(video, Episode):
             titles = [video.series] + video.alternative_series
@@ -410,7 +409,7 @@ class KtuvitProvider(Provider):
 
     def download_subtitle(self, subtitle):
         if isinstance(subtitle, KtuvitSubtitle):
-            downloadIdentifierRequest = {
+            download_identifier_request = {
                 "FilmID": subtitle.ktuvit_id,
                 "SubtitleID": subtitle.subtitle_id,
                 "FontSize": 0,
@@ -418,32 +417,22 @@ class KtuvitProvider(Provider):
                 "PredefinedLayout": -1,
             }
 
-            logger.debug("Download Identifier Request data: " + str(json.dumps({"request": downloadIdentifierRequest})))
+            logger.debug(
+                "Download Identifier Request data: "
+                + str(json.dumps({"request": download_identifier_request}))
+            )
 
             # download
             url = self.server_url + self.request_download_id_url
             r = self.session.post(
-                url, json={"request": downloadIdentifierRequest}, timeout=10
+                url, json={"request": download_identifier_request}, timeout=10
             )
             r.raise_for_status()
-            
+
             if r.content:
-                try:
-                    responseContent = r.json()
-                except json.decoder.JSONDecodeError:
-                    json.decoder.JSONDecodeError("Unable to parse JSON returned while getting Download Identifier.")
-                else:
-                    isSuccess = False
-                    if 'd' in responseContent:
-                        responseContent = json.loads(responseContent['d'])
-                        downloadIdentifier = responseContent.get('DownloadIdentifier', None)
+                download_identifier = self.parse_d_response(r, "DownloadIdentifier")
 
-                        if not downloadIdentifier:
-                            json.decoder.JSONDecodeError("Missing Download Identifier.")    
-                    else:
-                        json.decoder.JSONDecodeError("Incomplete JSON returned while getting Download Identifier.")
-
-            url = self.server_url + self.download_link + downloadIdentifier
+            url = self.server_url + self.download_link + download_identifier
 
             r = self.session.get(url, timeout=10)
             r.raise_for_status()
@@ -455,3 +444,25 @@ class KtuvitProvider(Provider):
                 return
 
             subtitle.content = fix_line_ending(r.content)
+
+    def parse_d_response(self, response, field, default_value=None, message=None):
+        message = message if message else field
+
+        try:
+            response_content = response.json()
+        except json.decoder.JSONDecodeError:
+            json.decoder.JSONDecodeError(
+                "Unable to parse JSON returned while getting " + message
+            )
+        else:
+            if "d" in response_content:
+                response_content = json.loads(response_content["d"])
+                value = response_content.get(field, default_value)
+
+                if not value:
+                    json.decoder.JSONDecodeError("Missing " + message)
+            else:
+                json.decoder.JSONDecodeError(
+                    "Incomplete JSON returned while getting " + message
+                )
+            return value
