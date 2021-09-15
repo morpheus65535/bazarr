@@ -7,7 +7,8 @@
 set -e
 
 # Get version from tag
-git describe --abbrev=0 > VERSION
+VERSION=$(git describe --abbrev=0)
+echo "$VERSION" > VERSION
 
 # Copy files based on files_to_copy
 to_dist=__builds__/bazarr
@@ -23,6 +24,6 @@ done
 cp VERSION $to_dist
 
 pushd __builds__/bazarr
-zip -r ../bazarr.zip . -b $(mktemp -d)
+zip -r "../bazarr-${VERSION}.zip" . -b $(mktemp -d)
 popd
 rm -rf $to_dist

@@ -32,8 +32,11 @@ def check_releases():
     else:
         for release in r.json():
             download_link = None
+            release_filename = 'bazarr.zip'
+            if release['tag_name']:
+                release_filename = f"bazarr-{release['tag_name']}.zip"
             for asset in release['assets']:
-                if asset['name'] == 'bazarr.zip':
+                if asset['name'] == release_filename:
                     download_link = asset['browser_download_url']
             if not download_link:
                 download_link = release['zipball_url']
