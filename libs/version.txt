@@ -45,6 +45,8 @@ tmdbsimple=2.4.2
 tzlocal=2.1b1
 twine=3.4.1
 urllib3=1.23
+watchdog=2.1.5
+watchdog-gevent=0.1.1
 websocket-client=1.0.0
 
 ## indirect dependencies

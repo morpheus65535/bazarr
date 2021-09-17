@@ -6,7 +6,7 @@ try:
 except ImportError:
     pass
 else:
-    monkey.patch_all()
+    monkey.patch_all(aggressive=False)
 
 import os
 
@@ -40,6 +40,7 @@ from server import app, webserver
 from functools import wraps
 from utils import check_credentials
 import requests
+from indexer.file_watcher import *
 
 # Install downloaded update
 if bazarr_version != '':
