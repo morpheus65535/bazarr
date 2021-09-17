@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import time
+import logging
+import gevent
 from watchdog_gevent import Observer
 from watchdog.events import PatternMatchingEventHandler
+from watchdog.utils import WatchdogShutdown
 
 from config import settings
 from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder
@@ -24,23 +27,21 @@ class FileWatcher:
         self.series_directories = None
         self.movies_directories = None
 
-        self.config()
-
     @staticmethod
     def on_created(event):
-        print(f"Created: {event.src_path}")
+        logging.info(f"Created: {event.src_path}")
 
     @staticmethod
     def on_deleted(event):
-        print(f"Deleted: {event.src_path}")
+        logging.info(f"Deleted: {event.src_path}")
 
     @staticmethod
     def on_modified(event):
-        print(f"Modified: {event.src_path}")
+        logging.info(f"Modified: {event.src_path}")
 
     @staticmethod
     def on_moved(event):
-        print(f"Moved: from {event.src_path} to {event.dest_path}")
+        logging.info(f"Moved: from {event.src_path} to {event.dest_path}")
 
     def config(self):
         self.fs_event_handler.on_created = self.on_created
@@ -62,12 +63,10 @@ class FileWatcher:
                 self.movies_observer.schedule(self.fs_event_handler, movies_directory, recursive=True)
 
     def start(self):
+        self.config()
         self.series_observer.start()
         self.movies_observer.start()
-
-    def stop(self):
-        self.series_observer.unschedule_all()
-        self.movies_observer.unschedule_all()
+        logging.info('BAZARR is watching file system changes.')
 
 
 fileWatcher = FileWatcher()

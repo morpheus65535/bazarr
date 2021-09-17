@@ -40,7 +40,7 @@ from server import app, webserver
 from functools import wraps
 from utils import check_credentials
 import requests
-from indexer.file_watcher import *
+from indexer.file_watcher import fileWatcher
 
 # Install downloaded update
 if bazarr_version != '':
@@ -150,4 +150,5 @@ def proxy(protocol, url):
 
 
 if __name__ == "__main__":
+    Greenlet.spawn(fileWatcher.start)
     webserver.start()
