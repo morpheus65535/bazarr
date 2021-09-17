@@ -50,8 +50,10 @@ class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
     hash_verifiable = False
 
-    def __init__(self, language, hearing_impaired, page_link, file_id, releases, uploader, title, year,
+    def __init__(self, language, forced, hearing_impaired, page_link, file_id, releases, uploader, title, year,
                  hash_matched, hash=None, season=None, episode=None):
+        language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
+
         self.title = title
         self.year = year
         self.season = season
@@ -60,6 +62,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         self.release_info = releases
         self.language = language
         self.hearing_impaired = hearing_impaired
+        self.forced = forced
         self.file_id = file_id
         self.page_link = page_link
         self.download_link = None
@@ -248,24 +251,35 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         title_id = self.search_titles(title)
         if not title_id:
             return []
-        lang_strings = [str(lang) for lang in languages]
+        lang_strings = [str(lang.basename) for lang in languages]
+        only_foreign = all([lang.forced for lang in languages])
+        also_foreign = any([lang.forced for lang in languages])
+        if only_foreign:
+            forced = 'only'
+        elif also_foreign:
+            forced = 'include'
+        else:
+            forced = 'exclude'
+
         langs = ','.join(lang_strings)
         logging.debug('Searching for this languages: {}'.format(lang_strings))
 
         # query the server
         if isinstance(self.video, Episode):
             res = self.session.get(self.server_url + 'subtitles',
-                                   params={'parent_feature_id': title_id,
-                                           'languages': langs,
-                                           'episode_number': self.video.episode,
-                                           'season_number': self.video.season,
-                                           'moviehash': hash},
+                                   params=(('episode_number', self.video.episode),
+                                           ('foreign_parts_only', forced),
+                                           ('languages', langs),
+                                           ('moviehash', hash),
+                                           ('parent_feature_id', title_id),
+                                           ('season_number', self.video.season)),
                                    timeout=30)
         else:
             res = self.session.get(self.server_url + 'subtitles',
-                                   params={'id': title_id,
-                                           'languages': langs,
-                                           'moviehash': hash},
+                                   params=(('foreign_parts_only', forced),
+                                           ('id', title_id),
+                                           ('languages', langs),
+                                           ('moviehash', hash)),
                                    timeout=30)
 
         if res.status_code == 429:
@@ -303,6 +317,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     if len(item['attributes']['files']):
                         subtitle = OpenSubtitlesComSubtitle(
                                 language=Language.fromietf(item['attributes']['language']),
+                                forced=item['attributes']['foreign_parts_only'],
                                 hearing_impaired=item['attributes']['hearing_impaired'],
                                 page_link=item['attributes']['url'],
                                 file_id=item['attributes']['files'][0]['file_id'],
