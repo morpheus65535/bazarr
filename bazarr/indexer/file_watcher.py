@@ -22,8 +22,17 @@ class FileWatcher:
                                                             self.ignore_patterns,
                                                             self.ignore_directories,
                                                             self.case_sensitive)
-        self.series_observer = Observer()
-        self.movies_observer = Observer()
+
+        try:
+            self.timeout = int(settings.general.filewatcher_timeout)
+        except:
+            self.timeout = 60
+            logging.info(f'BAZARR file watcher is using the default interval of {self.timeout} seconds.')
+        else:
+            logging.info(f'BAZARR file watcher is using the configured interval of {self.timeout} seconds.')
+
+        self.series_observer = Observer(timeout=self.timeout)
+        self.movies_observer = Observer(timeout=self.timeout)
         self.series_directories = None
         self.movies_directories = None
 
@@ -63,10 +72,11 @@ class FileWatcher:
                 self.movies_observer.schedule(self.fs_event_handler, movies_directory, recursive=True)
 
     def start(self):
+        logging.info('BAZARR is starting file system watchers...')
         self.config()
         self.series_observer.start()
         self.movies_observer.start()
-        logging.info('BAZARR is watching file system changes.')
+        logging.info('BAZARR is watching for file system changes.')
 
 
 fileWatcher = FileWatcher()
