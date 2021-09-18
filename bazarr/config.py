@@ -68,7 +68,8 @@ defaults = {
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False'
+        'dont_notify_manual_actions': 'False',
+        'filewatcher_timeout': '60'  # file watcher interval in seconds
     },
     'auth': {
         'type': 'None',
