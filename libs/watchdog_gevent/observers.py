@@ -68,6 +68,7 @@ class GeventEmitter(EventEmitter):
         if os.path.isdir(path):
             if recursive:
                 for filename in os.listdir(path):
+                    gevent.sleep(0.00001)
                     self._add(os.path.join(path, filename))
 
             self._workers.spawn(self._watch_dir, path)
