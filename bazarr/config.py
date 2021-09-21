@@ -180,6 +180,10 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'titulky': {
+        'username': '',
+        'password': ''
+    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',
