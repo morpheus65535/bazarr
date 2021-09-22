@@ -351,6 +351,9 @@ class KtuvitProvider(Provider):
         sub_list = ParserBeautifulSoup(r.content, ["html.parser"])
         sub_rows = sub_list.find_all("tr")
 
+        if sub_list.find_next("tr").find_next("td").get_text() == "אין כתוביות":
+            return subs
+
         for row in sub_rows:
             columns = row.find_all("td")
             sub = {"id": id}
@@ -362,8 +365,9 @@ class KtuvitProvider(Provider):
                     sub["sub_id"] = column.find("input", attrs={"data-sub-id": True})[
                         "data-sub-id"
                     ]
-
-            subs.append(sub)
+            
+            if sub["sub_id"]:
+                subs.append(sub)
         return subs
 
     def _search_movie(self, movie_id):
@@ -386,7 +390,8 @@ class KtuvitProvider(Provider):
                         "data-subtitle-id"
                     ]
 
-            subs.append(sub)
+            if sub["sub_id"]:
+                subs.append(sub)
         return subs
 
     def list_subtitles(self, video, languages):
