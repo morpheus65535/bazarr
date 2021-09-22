@@ -191,10 +191,10 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             imdb_id = self.video.imdb_id
 
         if imdb_id:
-            parameters = {'imdb_id': imdb_id}
+            parameters = {'imdb_id': imdb_id.lower()}
             logging.debug('Searching using this IMDB id: {}'.format(imdb_id))
         else:
-            parameters = {'query': title}
+            parameters = {'query': title.lower()}
             logging.debug('Searching using this title: {}'.format(title))
 
         results = self.session.get(self.server_url + 'features', params=parameters, timeout=30)
@@ -269,7 +269,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.session.get(self.server_url + 'subtitles',
                                    params=(('episode_number', self.video.episode),
                                            ('foreign_parts_only', forced),
-                                           ('languages', langs),
+                                           ('languages', langs.lower()),
                                            ('moviehash', hash),
                                            ('parent_feature_id', title_id),
                                            ('season_number', self.video.season)),
@@ -278,7 +278,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             res = self.session.get(self.server_url + 'subtitles',
                                    params=(('foreign_parts_only', forced),
                                            ('id', title_id),
-                                           ('languages', langs),
+                                           ('languages', langs.lower()),
                                            ('moviehash', hash)),
                                    timeout=30)
 
