@@ -76,7 +76,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Hebrew Subtitles Provider",
     defaultKey: {
       email: "",
-      hashed_password: ""
+      hashed_password: "",
     },
     keyNameOverride: {
       hashed_password: "Hashed Password",
@@ -202,6 +202,15 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Tusubtitulo.com",
     description:
       "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
+  },
+  {
+    key: "titulky",
+    name: "Titulky.com",
+    description: "CZ/SK Subtitles Provider. Available only with VIP",
+    defaultKey: {
+      username: "",
+      password: "",
+    },
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   { key: "wizdom", description: "Wizdom.xyz Subtitles Provider." },

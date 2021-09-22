@@ -37,7 +37,7 @@ class Addic7edSubtitle(_Addic7edSubtitle):
                  download_link, uploader=None):
         super(Addic7edSubtitle, self).__init__(language, hearing_impaired, page_link, series, season, episode,
                                                title, year, version, download_link)
-        self.release_info = version.replace('+', ',')
+        self.release_info = version.replace('+', ',') if version else None
         self.uploader = uploader
 
     def get_matches(self, video):
@@ -249,8 +249,12 @@ class Addic7edProvider(_Addic7edProvider):
         for item in movies:
             link = item.find('a', href=True)
             if link:
-                type, media_id = link['href'].split('/')
-                if type == 'movie':
+                if link['href'].startswith('movie/'):
+                    splitted_uri = link['href'].split('/')
+                    if len(splitted_uri) == 2:
+                        media_id = splitted_uri[1]
+                    else:
+                        continue
                     media_title = link.text
                     match = re.search(r'(.+)\s\((\d{4})\)$', media_title)
                     if match:
@@ -492,7 +496,10 @@ class Addic7edProvider(_Addic7edProvider):
             page_link = self.server_url + 'movie/' + movie_id
             version_matches = re.search(r'Version\s(.+),.+', str(row1.contents[1].contents[1]))
             version = version_matches.group(1) if version_matches else None
-            download_link = row2.contents[8].contents[2].attrs['href'][1:]
+            try:
+                download_link = row2.contents[8].contents[3].attrs['href'][1:]
+            except IndexError:
+                download_link = row2.contents[8].contents[2].attrs['href'][1:]
             uploader = row1.contents[2].contents[8].text.strip()
 
             # set subtitle language to hi if it's hearing_impaired

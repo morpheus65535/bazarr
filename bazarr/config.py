@@ -200,6 +200,10 @@ defaults = {
     'titlovi': {
         'username': '',
         'password': ''
+    },
+    'titulky': {
+        'username': '',
+        'password': ''
     }
 }
 
