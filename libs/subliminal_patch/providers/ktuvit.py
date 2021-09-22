@@ -118,6 +118,7 @@ class KtuvitProvider(Provider):
     request_download_id_url = "Services/ContentProvider.svc/RequestSubtitleDownload"
     download_link = "Services/DownloadFile.ashx?DownloadIdentifier="
     subtitle_class = KtuvitSubtitle
+    no_subtitle_str = 'אין כתוביות'
 
     _tmdb_api_key = "a51ee051bcd762543373903de296e0a3"
 
@@ -315,6 +316,7 @@ class KtuvitProvider(Provider):
             else:
                 subs = self._search_tvshow(ktuvit_id, season, episode)
 
+            logger.debug('Got {} Subs from Ktuvit'.format(len(subs)))
             for sub in subs:
                 # otherwise create it
                 subtitle = KtuvitSubtitle(
@@ -349,9 +351,10 @@ class KtuvitProvider(Provider):
         r.raise_for_status()
 
         sub_list = ParserBeautifulSoup(r.content, ["html.parser"])
-        sub_rows = sub_list.find_all("tr")
+        sub_rows = sub_list("tr")
 
-        if sub_list.find_next("tr").find_next("td").get_text() == "אין כתוביות":
+        if sub_list.find("tr") and sub_list.find("tr").find("td") and sub_list.find("tr").find("td").get_text() == self.no_subtitle_str:
+            logger.debug("No Subtitles Found. URL " + url)
             return subs
 
         for row in sub_rows:
@@ -366,7 +369,7 @@ class KtuvitProvider(Provider):
                         "data-sub-id"
                     ]
             
-            if sub["sub_id"]:
+            if 'sub_id' in sub:
                 subs.append(sub)
         return subs
 
@@ -390,7 +393,7 @@ class KtuvitProvider(Provider):
                         "data-subtitle-id"
                     ]
 
-            if sub["sub_id"]:
+            if 'sub_id' in sub:
                 subs.append(sub)
         return subs
 
