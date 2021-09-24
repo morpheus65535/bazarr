@@ -3,7 +3,7 @@
 import six
 try:
     import numpy
-except:
+except Exception:
     pass
 
 if six.PY3:

@@ -33,7 +33,7 @@ class MathFunctions:
             return NaN
         try:
             return math.acos(a)
-        except:
+        except Exception:
             return NaN
 
     def asin(this, args):
@@ -43,7 +43,7 @@ class MathFunctions:
             return NaN
         try:
             return math.asin(a)
-        except:
+        except Exception:
             return NaN
 
     def atan(this, args):
@@ -111,7 +111,7 @@ class MathFunctions:
             return NaN
         try:
             return math.log(a)
-        except:
+        except Exception:
             return NaN
 
     def exp(this, args):
@@ -130,7 +130,7 @@ class MathFunctions:
             return NaN
         try:
             return a**b
-        except:
+        except Exception:
             return NaN
 
     def sqrt(this, args):
@@ -140,7 +140,7 @@ class MathFunctions:
             return NaN
         try:
             return a**0.5
-        except:
+        except Exception:
             return NaN
 
     def min(this, args):

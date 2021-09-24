@@ -167,12 +167,12 @@ class YavkaNetProvider(Provider):
 
                 try:
                     year = int(element.find_next_sibling('span').text.strip('()'))
-                except:
+                except Exception:
                     year = None
 
                 try:
                     fps = float(row.find('span', {'title': 'Кадри в секунда'}).text.strip())
-                except:
+                except Exception:
                     fps = None
 
                 element = row.find('a', {'class': 'click'})
@@ -251,7 +251,7 @@ class YavkaNetProvider(Provider):
                 return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, subs_id)
             elif is_zipfile(archive_stream):
                 return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, subs_id)
-        except:
+        except Exception:
             pass
 
         logger.error('Ignore unsupported archive %r', request.headers)

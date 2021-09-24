@@ -3417,7 +3417,7 @@ class SqliteDatabase(Database):
                                isolation_level=None, **self.connect_params)
         try:
             self._add_conn_hooks(conn)
-        except:
+        except Exception:
             conn.close()
             raise
         return conn
@@ -4207,7 +4207,7 @@ class _transaction(_callable_context_manager):
             elif self.db.transaction_depth() == 1:
                 try:
                     self.commit(False)
-                except:
+                except Exception:
                     self.rollback(False)
                     raise
         finally:
@@ -4240,7 +4240,7 @@ class _savepoint(_callable_context_manager):
         else:
             try:
                 self.commit(begin=False)
-            except:
+            except Exception:
                 self.rollback()
                 raise
 
@@ -4876,7 +4876,7 @@ class UUIDField(Field):
             return value.hex
         try:
             return uuid.UUID(value).hex
-        except:
+        except Exception:
             return value
 
     def python_value(self, value):

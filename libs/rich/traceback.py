@@ -216,7 +216,7 @@ class Traceback:
             exc_type, exc_value, traceback = sys.exc_info()
             if exc_type is None or exc_value is None or traceback is None:
                 raise ValueError(
-                    "Value for 'trace' required if not called in except: block"
+                    "Value for 'trace' required if not called in except Exception: block"
                 )
             trace = self.extract(
                 exc_type, exc_value, traceback, show_locals=show_locals
@@ -613,9 +613,9 @@ if __name__ == "__main__":  # pragma: no cover
         try:
             try:
                 foo(0)
-            except:
+            except Exception:
                 slfkjsldkfj  # type: ignore
-        except:
+        except Exception:
             console.print_exception(show_locals=True)
 
     error()

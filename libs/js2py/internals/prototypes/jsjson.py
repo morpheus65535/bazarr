@@ -19,7 +19,7 @@ def parse(this, args):
     s = to_string(text)
     try:
         unfiltered = json.loads(s)
-    except:
+    except Exception:
         raise MakeError(
             'SyntaxError',
             'JSON.parse could not parse JSON string - Invalid syntax')

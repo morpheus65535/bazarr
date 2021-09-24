@@ -69,7 +69,7 @@ MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 
 def _warn_unhandled_exception():
-    # There are a few catch-all except: statements in this module, for
+    # There are a few catch-all except Exception: statements in this module, for
     # catching input that's bad in unexpected ways.  Warn if any
     # exceptions are caught there.
     import io, warnings, traceback
@@ -1765,7 +1765,7 @@ class FileCookieJar(CookieJar):
         if filename is not None:
             try:
                 filename+""
-            except:
+            except Exception:
                 raise ValueError("filename must be string-like")
         self.filename = filename
         self.delayload = bool(delayload)

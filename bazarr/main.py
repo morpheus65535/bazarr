@@ -101,7 +101,7 @@ def catch_all(path):
 
     try:
         updated = System.get().updated
-    except:
+    except Exception:
         updated = '0'
 
     inject = dict()
@@ -139,7 +139,7 @@ def series_images(url):
                      apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
+    except Exception:
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
@@ -156,7 +156,7 @@ def movies_images(url):
         url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
+    except Exception:
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])

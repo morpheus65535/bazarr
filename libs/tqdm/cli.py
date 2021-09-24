@@ -27,7 +27,7 @@ def cast(val, typ):
             raise TqdmTypeError(val + ' : ' + typ)
     try:
         return eval(typ + '("' + val + '")')
-    except:
+    except Exception:
         if typ == 'chr':
             return chr(ord(eval('"' + val + '"')))
         else:
@@ -192,7 +192,7 @@ Options:
             except KeyError as e:
                 raise TqdmKeyError(str(e))
         log.debug('args:' + str(tqdm_args))
-    except:
+    except Exception:
         fp.write('\nError:\nUsage:\n  tqdm [--help | options]\n')
         for i in sys.stdin:
             sys.stdout.write(i)

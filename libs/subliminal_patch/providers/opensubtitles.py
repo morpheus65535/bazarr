@@ -68,7 +68,7 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
     def get_fps(self):
         try:
             return float(self.fps)
-        except:
+        except Exception:
             return None
 
     def get_matches(self, video, hearing_impaired=False):
@@ -408,7 +408,7 @@ def checked(fn, raise_api_limit=False):
             status_code = e.response.status_code
         else:
             status_code = int(response['status'][:3])
-    except:
+    except Exception:
         status_code = None
 
     if status_code == 401:

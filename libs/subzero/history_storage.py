@@ -106,7 +106,7 @@ class SubtitleHistory(object):
     def items(self):
         try:
             items = self.storage.LoadObject("subtitle_history") or []
-        except:
+        except Exception:
             items = []
             logger.error("Failed to load history storage: %s" % traceback.format_exc())
 

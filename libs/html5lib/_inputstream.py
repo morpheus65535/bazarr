@@ -449,7 +449,7 @@ class HTMLBinaryInputStream(HTMLUnicodeInputStream):
 
         try:
             stream.seek(stream.tell())
-        except:  # pylint:disable=bare-except
+        except Exception:  # pylint:disable=bare-except
             stream = BufferedStream(stream)
 
         return stream

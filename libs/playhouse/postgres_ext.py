@@ -28,7 +28,7 @@ except ImportError:
         pass
 try:
     from psycopg2.extras import Json
-except:
+except Exception:
     Json = None
 
 

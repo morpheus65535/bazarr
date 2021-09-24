@@ -114,7 +114,7 @@ class ADS():
             os.remove(self.full_filename(stream))
             self.streams.remove(stream)
             return True
-        except:
+        except Exception:
             return False
 
     def get_stream_content(self, stream):

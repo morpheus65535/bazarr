@@ -415,7 +415,7 @@ class Server(object):
                     if sid in self.sockets:  # pragma: no cover
                         self.disconnect(sid)
                     r = self._bad_request()
-                except:  # pragma: no cover
+                except Exception:  # pragma: no cover
                     # for any other unexpected errors, we log the error
                     # and keep going
                     self.logger.exception('post request handler error')
@@ -594,7 +594,7 @@ class Server(object):
             else:
                 try:
                     return self.handlers[event](*args)
-                except:
+                except Exception:
                     self.logger.exception(event + ' handler error')
                     if event == 'connect':
                         # if connect handler raised error we reject the
@@ -734,6 +734,6 @@ class Server(object):
             except (SystemExit, KeyboardInterrupt):
                 self.logger.info('service task canceled')
                 break
-            except:
+            except Exception:
                 # an unexpected exception has occurred, log it and continue
                 self.logger.exception('service task exception')

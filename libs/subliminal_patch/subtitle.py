@@ -151,7 +151,7 @@ class Subtitle(Subtitle_):
                 self.content.decode(self.encoding)
                 self._guessed_encoding = self.encoding
                 return self._guessed_encoding
-            except:
+            except Exception:
                 # provider specified encoding is invalid, fallback to guessing
                 pass
 
@@ -301,7 +301,7 @@ class Subtitle(Subtitle_):
 
             unicontent = self.pysubs2_to_unicode(subs)
             self.content = unicontent.encode(self.get_encoding())
-        except:
+        except Exception:
             logger.exception("Couldn't convert subtitle %s to .srt format: %s", self, traceback.format_exc())
             return False
 

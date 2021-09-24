@@ -113,7 +113,7 @@ class newbytes(with_metaclass(BaseNewBytes, _builtin_bytes)):
                 # anyway.
                 try:
                     value = bytearray([_newchr(x) for x in args[0]])
-                except:
+                except Exception:
                     raise ValueError('bytes must be in range(0, 256)')
         elif isinstance(args[0], Integral):
             if args[0] < 0:

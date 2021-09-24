@@ -15,7 +15,7 @@ def parse(text):
     s = text.to_string().value
     try:
         unfiltered = json.loads(s)
-    except:
+    except Exception:
         raise this.MakeError('SyntaxError',
                              'Could not parse JSON string - Invalid syntax')
     unfiltered = to_js(this, unfiltered)

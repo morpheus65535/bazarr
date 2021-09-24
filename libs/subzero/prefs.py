@@ -14,7 +14,7 @@ def get_user_prefs(Prefs, Logger):
 
     try:
         prefs_set = Prefs._sandbox.preferences._sets[PLUGIN_IDENTIFIER]
-    except:
+    except Exception:
         Logger.Error("Loading user prefs failed: %s", traceback.format_exc())
         return {}
 
@@ -27,7 +27,7 @@ def get_user_prefs(Prefs, Logger):
         prefs_xml = Prefs._core.data.xml.from_string(prefs_str)
         for el in prefs_xml:
             user_prefs[str(el.tag)] = str(el.text)
-    except:
+    except Exception:
         Logger.Error("Loading user prefs failed: %s", traceback.format_exc())
     else:
         return user_prefs

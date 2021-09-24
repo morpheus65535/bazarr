@@ -10,7 +10,7 @@ import traceback
 try:
     import numpy
     NUMPY_AVAILABLE = True
-except:
+except Exception:
     NUMPY_AVAILABLE = False
 
 # python 3 support
@@ -45,7 +45,7 @@ def to_python(val):
         try:
             i = int(v) if v == v else v  # nan...
             return v if i != v else i
-        except:
+        except Exception:
             return v
     elif isinstance(val, (PyJsString, PyJsBoolean)):
         return val.value
@@ -96,7 +96,7 @@ def to_list(js_obj, known=None):
     for k in js_obj:
         try:
             name = int(k.value)
-        except:
+        except Exception:
             continue
         input = js_obj.get(str(name))
         output = to_python(input)
@@ -127,14 +127,14 @@ def HJs(val):
                 message = 'your Python function failed!  '
                 try:
                     message += e.message
-                except:
+                except Exception:
                     pass
                 raise MakeError('Error', message)
             return py_wrap(py_res)
 
         try:
             PyWrapper.func_name = val.__name__
-        except:
+        except Exception:
             pass
         return PyWrapper
     if isinstance(val, tuple):
@@ -224,14 +224,14 @@ def Js(val, Clamped=False):
         #            continue
         #        obj[name] = HJs(value)
         #    return Js(obj)
-        #except:
+        #except Exception:
         #    raise RuntimeError('Cant convert python type to js (%s)' % repr(val))
 
 
 def Type(val):
     try:
         return val.TYPE
-    except:
+    except Exception:
         raise RuntimeError('Invalid type: ' + str(val))
 
 
@@ -692,7 +692,7 @@ class PyJs(object):
     def __len__(self):
         try:
             return self.get('length').to_uint32()
-        except:
+        except Exception:
             raise TypeError(
                 'This object (%s) does not have length property' % self.Class)
 
@@ -1280,7 +1280,7 @@ class PyObjectWrapper(PyJs):
             if prop.isdigit():
                 return py_wrap(self.obj[int(prop)])
             return py_wrap(getattr(self.obj, prop))
-        except:
+        except Exception:
             return undefined
 
     def put(self, prop, val, op=None, throw=False):
@@ -1305,7 +1305,7 @@ class PyObjectWrapper(PyJs):
             message = 'your Python function failed!  '
             try:
                 message += e.message
-            except:
+            except Exception:
                 pass
             raise MakeError('Error', message)
         return py_wrap(py_res)
@@ -1325,7 +1325,7 @@ class PyObjectWrapper(PyJs):
             else:
                 delattr(self.obj, prop)
             return true
-        except:
+        except Exception:
             return false
 
     def __repr__(self):
@@ -2852,13 +2852,13 @@ class PyJsRegExp(PyJs):
                             comp, self.ignore_case | self.multiline)
                         #print reg, '->', comp
                         break
-                    except:
+                    except Exception:
                         reg = reg.replace(fix, rep)
                     # print 'Fix', fix, '->', rep, '=', reg
                 else:
                     raise
                 REGEXP_DB[regexp] = self.pat
-        except:
+        except Exception:
             #print 'Invalid pattern but fuck it', self.value, comp
             raise MakeError(
                 'SyntaxError',
@@ -3168,7 +3168,7 @@ def RegExp(pattern, flags):
         pattern = pattern.to_string().value
         # try:
         #     pattern = REGEXP_CONVERTER._unescape_string(pattern.to_string().value)
-        # except:
+        # except Exception:
         #     raise MakeError('SyntaxError', 'Invalid regexp')
     flags = flags.to_string().value if not flags.is_undefined() else ''
     for flag in flags:
@@ -3237,7 +3237,7 @@ Boolean.create = boolean_constructor
 def appengine(code):
     try:
         return translator.translate_js(code.decode('utf-8'))
-    except:
+    except Exception:
         return traceback.format_exc()
 
 

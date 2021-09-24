@@ -187,29 +187,29 @@ class SubsUnacsProvider(Provider):
 
                     try:
                         year = int(element.find_next_sibling('span', {'class' : 'smGray'}).text.strip('\xa0()'))
-                    except:
+                    except Exception:
                         year = None
 
                     td = row.findAll('td')
 
                     try:
                         num_cds = int(td[1].get_text())
-                    except:
+                    except Exception:
                         num_cds = None
 
                     try:
                         fps = float(td[2].get_text())
-                    except:
+                    except Exception:
                         fps = None
 
                     try:
                         rating = float(td[3].find('img').get('title'))
-                    except:
+                    except Exception:
                         rating = None
 
                     try:
                         uploader = td[5].get_text()
-                    except:
+                    except Exception:
                         uploader = None
 
                     logger.info('Found subtitle link %r', link)
@@ -287,7 +287,7 @@ class SubsUnacsProvider(Provider):
                 return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
             elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream):
                 return self.process_archive_subtitle_files(SevenZipFile(archive_stream), language, video, link, fps, num_cds)
-        except:
+        except Exception:
             pass
 
         logger.error('Ignore unsupported archive %r', request.headers)

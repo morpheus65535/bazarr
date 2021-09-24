@@ -27,7 +27,7 @@ import six
 
 try:
     import brotli
-except:
+except Exception:
     pass
 
 try:
@@ -166,7 +166,7 @@ class CFSession(CloudScraper):
 
         try:
             cf_data = self.get_cf_live_tokens(domain)
-        except:
+        except Exception:
             pass
         else:
             if cf_data and "cf_clearance" in cf_data[0] and cf_data[0]["cf_clearance"]:
@@ -289,7 +289,7 @@ class SubZeroRequestsTransport(six.moves.xmlrpc_client.SafeTransport):
             self.verbose = verbose
             try:
                 return self.parse_response(resp.raw)
-            except:
+            except Exception:
                 logger.debug("Bad response data: %r", resp.raw)
 
     def _build_url(self, host, handler):
@@ -343,7 +343,7 @@ def patch_create_connection():
                     custom_resolver.lifetime = os.environ.get("dns_resolvers_timeout", 8.0)
                     try:
                         custom_resolver.nameservers = json.loads(_custom_resolver_ips)
-                    except:
+                    except Exception:
                         logger.debug("DNS: Couldn't load custom DNS resolvers: %s", _custom_resolver_ips)
                     else:
                         _custom_resolver = custom_resolver

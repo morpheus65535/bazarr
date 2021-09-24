@@ -50,7 +50,7 @@ class APSWDatabase(SqliteExtDatabase):
             conn.setbusytimeout(self._timeout * 1000)
         try:
             self._add_conn_hooks(conn)
-        except:
+        except Exception:
             conn.close()
             raise
         return conn

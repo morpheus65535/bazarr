@@ -287,7 +287,7 @@ def fake_exc_info(exc_info, filename, lineno):
     # execute the code and catch the new traceback
     try:
         exec(code, globals, locals)
-    except:
+    except Exception:
         exc_info = sys.exc_info()
         new_tb = exc_info[2].tb_next
 

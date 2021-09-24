@@ -14,11 +14,11 @@ class RegExpPrototype:
                 flags += u'i'
             if this.multiline:
                 flags += u'm'
-        except:
+        except Exception:
             pass
         try:
             v = this.value if this.value else u'(?:)'
-        except:
+        except Exception:
             v = u'(?:)'
         return u'/%s/' % v + flags
 

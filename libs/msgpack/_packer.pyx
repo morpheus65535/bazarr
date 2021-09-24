@@ -293,7 +293,7 @@ cdef class Packer(object):
         cdef int ret
         try:
             ret = self._pack(obj, DEFAULT_RECURSE_LIMIT)
-        except:
+        except Exception:
             self.pk.length = 0
             raise
         if ret:  # should not happen.

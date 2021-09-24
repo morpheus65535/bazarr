@@ -94,7 +94,7 @@ class _backends(object):
                 except (InvalidCacheBackendError, SyntaxError):
                     # Ignore invalid backends
                     pass
-                except:
+                except Exception:
                     import sys
                     from pkg_resources import DistributionNotFound
                     # Warn when there's a problem loading a NamespaceManager

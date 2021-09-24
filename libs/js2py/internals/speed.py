@@ -65,5 +65,5 @@ t.pop()
 """,
         "from __main__ import X,Y,namedtuple,array,t,add,Type, zip",
         number=1000000))
-except:
+except Exception:
     raise

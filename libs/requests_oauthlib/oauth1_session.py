@@ -24,7 +24,7 @@ def urldecode(body):
     """Parse query or json to python dictionary"""
     try:
         return _urldecode(body)
-    except:
+    except Exception:
         import json
         return json.loads(body)
 

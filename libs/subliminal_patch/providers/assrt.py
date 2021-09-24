@@ -166,7 +166,7 @@ class AssrtProvider(Provider):
                     output_language = search_language_in_list(language, languages)
                     if output_language:
                         subtitles.append(AssrtSubtitle(output_language, sub['id'], sub['videoname'], self.session, self.token))
-                except:
+                except Exception:
                     pass
 
         return subtitles

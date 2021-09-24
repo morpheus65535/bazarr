@@ -431,7 +431,7 @@ class AsyncClient(client.Client):
                         ret = await self.handlers[event](*args)
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
-                    except:
+                    except Exception:
                         self.logger.exception(event + ' async handler error')
                         if event == 'connect':
                             # if connect handler raised error we reject the
@@ -446,7 +446,7 @@ class AsyncClient(client.Client):
                 else:
                     try:
                         ret = self.handlers[event](*args)
-                    except:
+                    except Exception:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
                             # if connect handler raised error we reject the

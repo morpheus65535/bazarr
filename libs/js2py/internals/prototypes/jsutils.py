@@ -124,7 +124,7 @@ def parseFloat(this, args):
             num = float(string[:length])
             max_len = length
             failed = 0
-        except:
+        except Exception:
             failed += 1
             if failed > 4:  # cant be a number anymore
                 break

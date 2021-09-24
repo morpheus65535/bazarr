@@ -137,7 +137,7 @@ SANDBOX = '''
 import traceback
 try:
 %s
-except:
+except Exception:
     print traceback.format_exc()
 print
 raw_input('Press Enter to quit')

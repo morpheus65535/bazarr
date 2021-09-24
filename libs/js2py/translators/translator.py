@@ -139,7 +139,7 @@ def translate_js_with_compilation_plan(js, HEADER=DEFAULT_HEADER):
     cp_hash = hashlib.md5(compilation_plan.encode('utf-8')).digest()
     try:
         python_code = cache[cp_hash]['proto_python_code']
-    except:
+    except Exception:
         parser = pyjsparser.PyJsParser()
         parsed = parser.parse(compilation_plan)  # js to esprima syntax tree
         # Another way of doing that would be with my auto esprima translation but its much slower and causes import problems:

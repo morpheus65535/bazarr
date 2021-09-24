@@ -96,7 +96,7 @@ if hasattr(sys, "pypy_version_info"):
         try:
             with _Mgr():
                 raise AssertionError()
-        except:  # noqa: B001
+        except Exception:  # noqa: B001
             # We intentionally use a bare except here. See the comment above
             # regarding a pypy bug as to why.
             raise

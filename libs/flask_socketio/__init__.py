@@ -750,7 +750,7 @@ class SocketIO(object):
                     ret = handler()
                 else:
                     ret = handler(*args)
-            except:
+            except Exception:
                 err_handler = self.exception_handlers.get(
                     namespace, self.default_exception_handler)
                 if err_handler is None:

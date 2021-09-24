@@ -8,7 +8,7 @@ class RegExpPrototype:
                 flags += u'i'
             if this.multiline:
                 flags += u'm'
-        except:
+        except Exception:
             pass
         v = this.value if this.value else '(?:)'
         return u'/%s/' % v + flags

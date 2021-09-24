@@ -119,7 +119,7 @@ def trans(ele, standard=False):
             node = node.__dict__[
                 'standard'] if 'standard' in node.__dict__ else node
         return node(**ele)
-    except:
+    except Exception:
         #print ele
         raise
 
@@ -407,7 +407,7 @@ def ForInStatement(type, left, right, body, each):
         # now extract the name
         try:
             name = left['declarations'][0]['id']['name']
-        except:
+        except Exception:
             raise RuntimeError('Unusual ForIn loop')
     elif left['type'] == 'Identifier':
         name = left['name']
@@ -463,7 +463,7 @@ def PyimportStatement(type, imp):
     #check whether valid lib name...
     try:
         compile(code, '', 'exec')
-    except:
+    except Exception:
         raise SyntaxError(
             'Invalid Python module name (%s) in pyimport statement' % lib)
     # var.pyimport will handle module conversion to PyJs object

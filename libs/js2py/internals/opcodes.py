@@ -800,6 +800,6 @@ for g in globals():
     try:
         if not issubclass(globals()[g], OP_CODE) or g is 'OP_CODE':
             continue
-    except:
+    except Exception:
         continue
     OP_CODES[g] = globals()[g]

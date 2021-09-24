@@ -429,7 +429,7 @@ cdef int pwOpen(sqlite3_vtab *pBase, sqlite3_vtab_cursor **ppCursor) with gil:
     pCur.idx = 0
     try:
         table_func = table_func_cls()
-    except:
+    except Exception:
         if table_func_cls.print_tracebacks:
             traceback.print_exc()
         sqlite3_free(pCur)
@@ -466,7 +466,7 @@ cdef int pwNext(sqlite3_vtab_cursor *pBase) with gil:
         result = tuple(table_func.iterate(pCur.idx))
     except StopIteration:
         pCur.stopped = True
-    except:
+    except Exception:
         if table_func.print_tracebacks:
             traceback.print_exc()
         return SQLITE_ERROR
@@ -546,7 +546,7 @@ cdef int pwFilter(sqlite3_vtab_cursor *pBase, int idxNum,
 
     try:
         table_func.initialize(**query)
-    except:
+    except Exception:
         if table_func.print_tracebacks:
             traceback.print_exc()
         return SQLITE_ERROR
@@ -556,7 +556,7 @@ cdef int pwFilter(sqlite3_vtab_cursor *pBase, int idxNum,
         row_data = tuple(table_func.iterate(0))
     except StopIteration:
         pCur.stopped = True
-    except:
+    except Exception:
         if table_func.print_tracebacks:
             traceback.print_exc()
         return SQLITE_ERROR
@@ -1543,7 +1543,7 @@ def backup(src_conn, dest_conn, pages=None, name=None, progress=None):
             page_count = sqlite3_backup_pagecount(backup)
             try:
                 progress(remaining, page_count, rc == SQLITE_DONE)
-            except:
+            except Exception:
                 sqlite3_backup_finish(backup)
                 raise
         if rc == SQLITE_BUSY or rc == SQLITE_LOCKED:

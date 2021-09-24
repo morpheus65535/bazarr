@@ -217,7 +217,7 @@ class DBCProxyLessPitcher(Pitcher):
                 if data and data["is_correct"] and data["text"]:
                     self.success = True
                     return data["text"]
-            except:
+            except Exception:
                 raise
 
 
@@ -251,7 +251,7 @@ def load_verification(site_name, session, callback=lambda x: None):
         try:
             session.cookies._cookies.update(cookies)
             return callback(region)
-        except:
+        except Exception:
             return False
     return False
 

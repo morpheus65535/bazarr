@@ -1425,7 +1425,7 @@ def datetime_ambiguous(dt, tz=None):
     if is_ambiguous_fn is not None:
         try:
             return tz.is_ambiguous(dt)
-        except:
+        except Exception:
             pass
 
     # If it doesn't come out and tell us it's ambiguous, we'll just check if

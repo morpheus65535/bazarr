@@ -39,7 +39,7 @@ class MathFunctions:
             return NaN
         try:
             return math.acos(a)
-        except:
+        except Exception:
             return NaN
 
     def asin(x):
@@ -48,7 +48,7 @@ class MathFunctions:
             return NaN
         try:
             return math.asin(a)
-        except:
+        except Exception:
             return NaN
 
     def atan(x):
@@ -106,7 +106,7 @@ class MathFunctions:
             return NaN
         try:
             return math.log(a)
-        except:
+        except Exception:
             return NaN
 
     def exp(x):
@@ -122,7 +122,7 @@ class MathFunctions:
             return NaN
         try:
             return a**b
-        except:
+        except Exception:
             return NaN
 
     def sqrt(x):
@@ -131,7 +131,7 @@ class MathFunctions:
             return NaN
         try:
             return a**0.5
-        except:
+        except Exception:
             return NaN
 
     def min():

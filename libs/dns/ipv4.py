@@ -55,5 +55,5 @@ def inet_aton(text):
     try:
         bytes = [int(part) for part in parts]
         return struct.pack('BBBB', *bytes)
-    except:
+    except Exception:
         raise dns.exception.SyntaxError

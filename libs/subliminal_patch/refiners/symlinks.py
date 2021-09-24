@@ -14,7 +14,7 @@ def refine(video, **kwargs):
     """
     try:
         orig_fn = os.path.basename(os.path.realpath(video.name))
-    except:
+    except Exception:
         return
 
     if orig_fn:

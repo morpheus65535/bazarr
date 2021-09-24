@@ -1240,7 +1240,7 @@ def _getaddrinfo(host=None, service=None, family=socket.AF_UNSPEC, socktype=0,
                                 v4addrs.append(rdata.address)
                 except dns.resolver.NXDOMAIN:
                     raise socket.gaierror(socket.EAI_NONAME)
-                except:
+                except Exception:
                     raise socket.gaierror(socket.EAI_SYSTEM)
     port = None
     try:

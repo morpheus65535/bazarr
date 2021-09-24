@@ -150,12 +150,12 @@ class PubSubManager(BaseManager):
                 if isinstance(message, bytes):  # pragma: no cover
                     try:
                         data = pickle.loads(message)
-                    except:
+                    except Exception:
                         pass
                 if data is None:
                     try:
                         data = json.loads(message)
-                    except:
+                    except Exception:
                         pass
             if data and 'method' in data:
                 self._get_logger().info('pubsub message: {}'.format(

@@ -19,7 +19,7 @@ except ImportError:
 try:
     sys.getwindowsversion()
     has_flock = False
-except:
+except Exception:
     try:
         import fcntl
         has_flock = True

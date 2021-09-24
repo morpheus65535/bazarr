@@ -89,7 +89,7 @@ def af_for_address(text):
         try:
             dns.ipv6.inet_aton(text)
             return AF_INET6
-        except:
+        except Exception:
             raise ValueError
 
 

@@ -283,7 +283,7 @@ class AsyncServer(server.Server):
                     if sid in self.sockets:  # pragma: no cover
                         await self.disconnect(sid)
                     r = self._bad_request()
-                except:  # pragma: no cover
+                except Exception:  # pragma: no cover
                     # for any other unexpected errors, we log the error
                     # and keep going
                     self.logger.exception('post request handler error')
@@ -447,7 +447,7 @@ class AsyncServer(server.Server):
                         ret = await self.handlers[event](*args)
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
-                    except:
+                    except Exception:
                         self.logger.exception(event + ' async handler error')
                         if event == 'connect':
                             # if connect handler raised error we reject the
@@ -462,7 +462,7 @@ class AsyncServer(server.Server):
                 else:
                     try:
                         ret = self.handlers[event](*args)
-                    except:
+                    except Exception:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
                             # if connect handler raised error we reject the
@@ -495,7 +495,7 @@ class AsyncServer(server.Server):
             ):
                 self.logger.info('service task canceled')
                 break
-            except:
+            except Exception:
                 if asyncio.get_event_loop().is_closed():
                     self.logger.info('event loop is closed, exiting service '
                                      'task')

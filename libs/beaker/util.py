@@ -88,7 +88,7 @@ def verify_directory(dir):
         try:
             tries += 1
             os.makedirs(dir)
-        except:
+        except Exception:
             if tries > 5:
                 raise
 
@@ -273,7 +273,7 @@ def verify_options(opt, types, error):
                             raise Exception("%s requires a timedelta type", typ)
                     opt = typ(opt)
                 coerced = True
-            except:
+            except Exception:
                 pass
             if coerced:
                 break

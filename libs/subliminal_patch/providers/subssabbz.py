@@ -185,29 +185,29 @@ class SubsSabBzProvider(Provider):
 
                     try:
                         year = int(str(element.next_sibling).strip(' ()'))
-                    except:
+                    except Exception:
                         year = None
 
                     td = row.findAll('td')
 
                     try:
                         num_cds = int(td[6].get_text())
-                    except:
+                    except Exception:
                         num_cds = None
 
                     try:
                         fps = float(td[7].get_text())
-                    except:
+                    except Exception:
                         fps = None
 
                     try:
                         uploader = td[8].get_text()
-                    except:
+                    except Exception:
                         uploader = None
 
                     try:
                         imdb_id = re.findall(r'imdb.com/title/(tt\d+)/?$', td[9].find('a').get('href'))[0]
-                    except:
+                    except Exception:
                         imdb_id = None
 
                     logger.info('Found subtitle link %r', link)
@@ -266,7 +266,7 @@ class SubsSabBzProvider(Provider):
                 return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
             elif is_zipfile(archive_stream):
                 return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
-        except:
+        except Exception:
             pass
 
         logger.error('Ignore unsupported archive %r', request.headers)

@@ -206,7 +206,7 @@ class OpenResourceNamespaceManager(NamespaceManager):
         self.access_lock.acquire_read_lock()
         try:
             self.open('r', checkcount=True)
-        except:
+        except Exception:
             self.access_lock.release_read_lock()
             raise
 
@@ -222,7 +222,7 @@ class OpenResourceNamespaceManager(NamespaceManager):
             if (wait or r):
                 self.open('c', checkcount=True, replace=replace)
             return r
-        except:
+        except Exception:
             self.access_lock.release_write_lock()
             raise
 
@@ -580,7 +580,7 @@ class DBMNamespaceManager(OpenResourceNamespaceManager):
         debug("opening dbm file %s", self.file)
         try:
             self.dbm = self.dbmmodule.open(self.file, flags)
-        except:
+        except Exception:
             self._checkfile()
             self.dbm = self.dbmmodule.open(self.file, flags)
 

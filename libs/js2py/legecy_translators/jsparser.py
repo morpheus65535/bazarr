@@ -67,7 +67,7 @@ def dbg(source):
     try:
         with open(r'C:\Users\Piotrek\Desktop\dbg.py', 'w') as f:
             f.write(source)
-    except:
+    except Exception:
         pass
 
 

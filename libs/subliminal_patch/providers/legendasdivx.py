@@ -238,7 +238,7 @@ class LegendasdivxProvider(Provider):
             try:
                 download_link = self.download_link.format(link=download.get('href'))
                 logger.debug("Legendasdivx.pt :: Found subtitle link on: %s ", download_link)
-            except:
+            except Exception:
                 logger.debug("Legendasdivx.pt :: Couldn't find download link. Trying next...")
                 continue
 

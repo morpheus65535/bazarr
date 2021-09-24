@@ -316,7 +316,7 @@ def download(obj, provider, refiner, language, age, directory, encoding, single,
             if not os.path.exists(p):
                 try:
                     video = Video.fromname(p)
-                except:
+                except Exception:
                     logger.exception('Unexpected error while collecting non-existing path %s', p)
                     errored_paths.append(p)
                     continue
@@ -330,7 +330,7 @@ def download(obj, provider, refiner, language, age, directory, encoding, single,
             if os.path.isdir(p):
                 try:
                     scanned_videos = scan_videos(p, age=age, archives=archives)
-                except:
+                except Exception:
                     logger.exception('Unexpected error while collecting directory path %s', p)
                     errored_paths.append(p)
                     continue
@@ -348,7 +348,7 @@ def download(obj, provider, refiner, language, age, directory, encoding, single,
             # other inputs
             try:
                 video = scan_video(p)
-            except:
+            except Exception:
                 logger.exception('Unexpected error while collecting path %s', p)
                 errored_paths.append(p)
                 continue

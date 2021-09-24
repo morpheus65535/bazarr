@@ -306,7 +306,7 @@ class BaseServer(object):
         if self.verify_request(request, client_address):
             try:
                 self.process_request(request, client_address)
-            except:
+            except Exception:
                 self.handle_error(request, client_address)
                 self.shutdown_request(request)
 
@@ -587,7 +587,7 @@ class ForkingMixIn(object):
                 self.finish_request(request, client_address)
                 self.shutdown_request(request)
                 os._exit(0)
-            except:
+            except Exception:
                 try:
                     self.handle_error(request, client_address)
                     self.shutdown_request(request)
@@ -611,7 +611,7 @@ class ThreadingMixIn(object):
         try:
             self.finish_request(request, client_address)
             self.shutdown_request(request)
-        except:
+        except Exception:
             self.handle_error(request, client_address)
             self.shutdown_request(request)
 

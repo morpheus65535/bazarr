@@ -730,7 +730,7 @@ class Scanner:
 
     def check_plain(self):
 
-        # A plain scalar may start with any non-space character except:
+        # A plain scalar may start with any non-space character except Exception:
         #   '-', '?', ':', ',', '[', ']', '{', '}',
         #   '#', '&', '*', '!', '|', '>', '\'', '\"',
         #   '%', '@', '`'.

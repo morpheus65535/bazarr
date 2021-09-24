@@ -22,5 +22,5 @@ def refine(video, **kwargs):
             update_video(video, orig_fn)
         else:
             logger.info(u"%s: Filebot didn't return an original filename", video.name)
-    except:
+    except Exception:
         logger.exception(u"%s: Something went wrong when retrieving filebot attributes:", video.name)

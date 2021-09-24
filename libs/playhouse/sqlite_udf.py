@@ -196,7 +196,7 @@ def file_read(filename):
     try:
         with open(filename) as fh:
             return fh.read()
-    except:
+    except Exception:
         pass
 
 if sys.version_info[0] == 2:
@@ -275,7 +275,7 @@ def tonumber(s):
     except ValueError:
         try:
             return float(s)
-        except:
+        except Exception:
             return None
 
 @udf(STRING)

@@ -267,7 +267,7 @@ class BSPlayerProvider(Provider):
             try:
                 logging.debug("Testing BSplayer sub-domain {}".format(TEST_URL))
                 res = self.session.get(TEST_URL, timeout=3)
-            except:
+            except Exception:
                 continue
             else:
                 res.raise_for_status()

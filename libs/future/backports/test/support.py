@@ -1342,7 +1342,7 @@ def run_with_locale(catstr, *locales):
             except AttributeError:
                 # if the test author gives us an invalid category string
                 raise
-            except:
+            except Exception:
                 # cannot retrieve original locale, so do nothing
                 locale = orig_locale = None
             else:
@@ -1350,7 +1350,7 @@ def run_with_locale(catstr, *locales):
                     try:
                         locale.setlocale(category, loc)
                         break
-                    except:
+                    except Exception:
                         pass
 
             # now run the function, resetting the locale on exceptions
@@ -1796,7 +1796,7 @@ def reap_children():
                 pid, status = os.waitpid(any_process, os.WNOHANG)
                 if pid == 0:
                     break
-            except:
+            except Exception:
                 break
 
 @contextlib.contextmanager

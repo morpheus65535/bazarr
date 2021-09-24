@@ -125,7 +125,7 @@ def _make_webrtcvad_detector(sample_rate, frame_rate, non_speech_label):
                 is_speech = vad.is_speech(
                     asegment[start * bytes_per_frame: stop * bytes_per_frame],
                     sample_rate=frame_rate)
-            except:
+            except Exception:
                 is_speech = False
                 failures += 1
             # webrtcvad has low recall on mode 3, so treat non-speech as "not sure"

@@ -338,7 +338,7 @@ class LockedFD(object):
             # we could specify exlusive here, as we obtained the lock anyway
             try:
                 self._fd = os.open(self._filepath, os.O_RDONLY | binary)
-            except:
+            except Exception:
                 # assure we release our lockfile
                 remove(self._lockfilepath())
                 raise

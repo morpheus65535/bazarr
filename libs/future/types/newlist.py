@@ -67,7 +67,7 @@ class newlist(with_metaclass(BaseNewList, _builtin_list)):
         " left + self "
         try:
             return newlist(left) + self
-        except:
+        except Exception:
             return NotImplemented
 
     def __getitem__(self, y):

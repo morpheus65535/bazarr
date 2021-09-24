@@ -211,7 +211,7 @@ class Socket(object):
                 try:
                     for pkt in packets:
                         ws.send(pkt.encode())
-                except:
+                except Exception:
                     break
         writer_task = self.server.start_background_task(writer)
 
@@ -241,7 +241,7 @@ class Socket(object):
             except exceptions.SocketIsClosedError:  # pragma: no cover
                 self.server.logger.info('Receive error -- socket is closed')
                 break
-            except:  # pragma: no cover
+            except Exception:  # pragma: no cover
                 # if we get an unexpected exception we log the error and exit
                 # the connection properly
                 self.server.logger.exception('Unknown receive error')

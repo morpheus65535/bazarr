@@ -219,7 +219,7 @@ class tqdm_notebook(std_tqdm):
                 # return super(tqdm...) will not catch exception
                 yield obj
         # NB: except ... [ as ...] breaks IPython async KeyboardInterrupt
-        except:  # NOQA
+        except Exception:  # NOQA
             self.sp(bar_style='danger')
             raise
         # NB: don't `finally: close()`
@@ -229,7 +229,7 @@ class tqdm_notebook(std_tqdm):
         try:
             super(tqdm_notebook, self).update(*args, **kwargs)
         # NB: except ... [ as ...] breaks IPython async KeyboardInterrupt
-        except:  # NOQA
+        except Exception:  # NOQA
             # cannot catch KeyboardInterrupt when using manual tqdm
             # as the interrupt will most likely happen on another statement
             self.sp(bar_style='danger')

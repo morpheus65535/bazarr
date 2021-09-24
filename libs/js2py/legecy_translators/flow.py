@@ -431,7 +431,7 @@ def do_pyimport(source, start):
     #check whether valid lib name...
     try:
         compile(code, '', 'exec')
-    except:
+    except Exception:
         raise SyntaxError(
             'Invalid Python module name (%s) in pyimport statement' % lib)
     # var.pyimport will handle module conversion to PyJs object

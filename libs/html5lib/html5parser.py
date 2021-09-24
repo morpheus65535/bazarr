@@ -421,7 +421,7 @@ def getPhases(debug):
                 token = args[0]
                 try:
                     info = {"type": type_names[token['type']]}
-                except:
+                except Exception:
                     raise
                 if token['type'] in tagTokenTypes:
                     info["name"] = token['name']

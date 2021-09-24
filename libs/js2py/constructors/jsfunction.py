@@ -1,7 +1,7 @@
 from ..base import *
 try:
     from ..translators.translator import translate_js
-except:
+except Exception:
     pass
 
 

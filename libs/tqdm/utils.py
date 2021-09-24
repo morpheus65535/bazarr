@@ -243,7 +243,7 @@ def _is_utf(encoding):
     except Exception:  # pragma: no cover
         try:
             return encoding.lower().startswith('utf-') or ('U8' == encoding)
-        except:
+        except Exception:
             return False
     else:
         return True
@@ -299,7 +299,7 @@ def _screen_shape_windows(fp):  # pragma: no cover
             (_bufx, _bufy, _curx, _cury, _wattr, left, top, right, bottom,
              _maxx, _maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
             return right - left, bottom - top  # +1
-    except:
+    except Exception:
         pass
     return None, None
 
@@ -310,7 +310,7 @@ def _screen_shape_tput(*_):  # pragma: no cover
         import shlex
         return [int(subprocess.check_call(shlex.split('tput ' + i))) - 1
                 for i in ('cols', 'lines')]
-    except:
+    except Exception:
         pass
     return None, None
 
@@ -327,7 +327,7 @@ def _screen_shape_linux(fp):  # pragma: no cover
         try:
             rows, cols = array('h', ioctl(fp, TIOCGWINSZ, '\0' * 8))[:2]
             return cols, rows
-        except:
+        except Exception:
             try:
                 return [int(os.environ[i]) - 1 for i in ("COLUMNS", "LINES")]
             except KeyError:

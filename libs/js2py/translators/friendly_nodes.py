@@ -51,7 +51,7 @@ def get_break_label(label):
 def is_valid_py_name(name):
     try:
         compile(name + ' =  11', 'a', 'exec')
-    except:
+    except Exception:
         return False
     return True
 

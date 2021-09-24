@@ -259,7 +259,7 @@ class WebSocket(object):
                                                options.pop('socket', None))
                     self.handshake_response = handshake(self.sock, *addrs, **options)
             self.connected = True
-        except:
+        except Exception:
             if self.sock:
                 self.sock.close()
                 self.sock = None
@@ -486,13 +486,13 @@ class WebSocket(object):
                             elif recv_status != STATUS_NORMAL:
                                 error("close status: " + repr(recv_status))
                         break
-                    except:
+                    except Exception:
                         break
                 self.sock.settimeout(sock_timeout)
                 self.sock.shutdown(socket.SHUT_RDWR)
             except OSError:  # This happens often on Mac
                 pass
-            except:
+            except Exception:
                 raise
 
             self.shutdown()

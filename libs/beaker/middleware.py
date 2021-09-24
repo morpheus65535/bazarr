@@ -4,7 +4,7 @@ try:
     from paste.registry import StackedObjectProxy
     beaker_session = StackedObjectProxy(name="Beaker Session")
     beaker_cache = StackedObjectProxy(name="Cache Manager")
-except:
+except Exception:
     beaker_cache = None
     beaker_session = None
 

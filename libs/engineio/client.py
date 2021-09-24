@@ -538,7 +538,7 @@ class Client(object):
             else:
                 try:
                     return self.handlers[event](*args)
-                except:
+                except Exception:
                     self.logger.exception(event + ' handler error')
 
     def _get_engineio_url(self, url, engineio_path, transport):

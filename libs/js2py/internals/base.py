@@ -528,13 +528,13 @@ class PyJsRegExp(PyJs):
                             comp, self.ignore_case | self.multiline)
                         #print reg, '->', comp
                         break
-                    except:
+                    except Exception:
                         reg = reg.replace(fix, rep)
                     # print 'Fix', fix, '->', rep, '=', reg
                 else:
                     raise Exception()
                 REGEXP_DB[body, flags] = self.pat
-            except:
+            except Exception:
                 #print 'Invalid pattern...', self.value, comp
                 raise MakeError(
                     'SyntaxError',
@@ -613,13 +613,13 @@ class PyJsDate(PyJs):
             return 'Invalid Date'
         try:
             dt = self.to_local_dt()
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'unsupported date range. Will fix in future versions')
         try:
             return dt.strftime(pattern)
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'Could not generate date string from this date (limitations of python.datetime)'
@@ -630,13 +630,13 @@ class PyJsDate(PyJs):
             return 'Invalid Date'
         try:
             dt = self.to_utc_dt()
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'unsupported date range. Will fix in future versions')
         try:
             return dt.strftime(pattern)
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'Could not generate date string from this date (limitations of python.datetime)'

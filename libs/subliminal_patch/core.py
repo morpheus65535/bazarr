@@ -174,7 +174,7 @@ class SZProviderPool(ProviderPool):
                     self[provider].terminate()
                     self[provider].initialize()
                     results = self[provider].list_subtitles(video, provider_languages)
-                except:
+                except Exception:
                     logger.error('Provider %r reinitialization error: %s', provider, traceback.format_exc())
 
             seen = []
@@ -281,7 +281,7 @@ class SZProviderPool(ProviderPool):
                 try:
                     self[subtitle.provider_name].terminate()
                     self[subtitle.provider_name].initialize()
-                except:
+                except Exception:
                     logger.error('Provider %r reinitialization error: %s', subtitle.provider_name,
                                  traceback.format_exc())
                     self.throttle_callback(subtitle.provider_name, e)
@@ -962,5 +962,5 @@ def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
         logger.info('Refining video with %s', refiner)
         try:
             refiner_manager[refiner].plugin(video, **kwargs)
-        except:
+        except Exception:
             logger.error('Failed to refine video: %s', traceback.format_exc())

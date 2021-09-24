@@ -2697,7 +2697,7 @@ def get_parameter(value):
         else:
             try:
                 token, rest = get_extended_attrtext(inner_value)
-            except:
+            except Exception:
                 pass
             else:
                 if not rest:

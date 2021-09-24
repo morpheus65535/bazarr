@@ -2,7 +2,7 @@ from ..base import *
 import inspect
 try:
     from js2py.translators.translator import translate_js
-except:
+except Exception:
     pass
 
 

@@ -55,7 +55,7 @@ class Connection:
             try:
                 listener()
                 gevent.sleep()
-            except:
+            except Exception:
                 self.exception.fire(*sys.exc_info())
 
         self.__greenlet = gevent.spawn(wrapped_listener)

@@ -1160,7 +1160,7 @@ class CommonParser(object):
             tmpf.write(suffix)
             tmpf.close()
             rf.close()
-        except:
+        except Exception:
             rf.close()
             tmpf.close()
             os.unlink(tmpname)
@@ -2885,7 +2885,7 @@ def membuf_tempfile(memfile):
                 break
             tmpf.write(buf)
         tmpf.close()
-    except:
+    except Exception:
         tmpf.close()
         os.unlink(tmpname)
         raise

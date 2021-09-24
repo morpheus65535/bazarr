@@ -137,7 +137,7 @@ class RethinkDBJobStore(BaseJobStore):
         for document in query.run(self.conn):
             try:
                 jobs.append(self._reconstitute_job(document['job_state']))
-            except:
+            except Exception:
                 self._logger.exception('Unable to restore job "%s" -- removing it', document['id'])
                 failed_job_ids.append(document['id'])
 

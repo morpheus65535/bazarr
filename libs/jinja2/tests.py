@@ -98,7 +98,7 @@ def test_sequence(value):
     try:
         len(value)
         value.__getitem__
-    except:
+    except Exception:
         return False
     return True
 

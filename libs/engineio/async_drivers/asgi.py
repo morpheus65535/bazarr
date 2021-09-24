@@ -89,7 +89,7 @@ class ASGIApp:
                         await self.on_startup() \
                             if asyncio.iscoroutinefunction(self.on_startup) \
                             else self.on_startup()
-                    except:
+                    except Exception:
                         await send({'type': 'lifespan.startup.failed'})
                         return
                 await send({'type': 'lifespan.startup.complete'})
@@ -99,7 +99,7 @@ class ASGIApp:
                         await self.on_shutdown() \
                             if asyncio.iscoroutinefunction(self.on_shutdown) \
                             else self.on_shutdown()
-                    except:
+                    except Exception:
                         await send({'type': 'lifespan.shutdown.failed'})
                         return
                 await send({'type': 'lifespan.shutdown.complete'})

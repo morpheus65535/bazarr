@@ -879,7 +879,7 @@ class Packer(object):
     def pack(self, obj):
         try:
             self._pack(obj)
-        except:
+        except Exception:
             self._buffer = StringIO()  # force reset
             raise
         if self._autoreset:

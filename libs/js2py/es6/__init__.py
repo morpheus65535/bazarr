@@ -29,7 +29,7 @@ def js6_to_js5(code):
             }).code
             for n in range(3):
                 time.sleep(1)
-        except:
+        except Exception:
             print("Initialised babel!")
         INITIALISED = True
     return babel.transform(code, {'presets': babelPresetEs2015}).code

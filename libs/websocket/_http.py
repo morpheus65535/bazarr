@@ -37,7 +37,7 @@ try:
     import socks
     ProxyConnectionError = socks.ProxyConnectionError
     HAS_PYSOCKS = True
-except:
+except Exception:
     class ProxyConnectionError(BaseException):
         pass
     HAS_PYSOCKS = False
@@ -123,7 +123,7 @@ def connect(url, options, proxy, socket):
                 raise WebSocketException("SSL not available.")
 
         return sock, (hostname, port, resource)
-    except:
+    except Exception:
         if sock:
             sock.close()
         raise
@@ -176,7 +176,7 @@ def _open_socket(addrinfo_list, sockopt, timeout):
                 error.remote_ip = str(address[0])
                 try:
                     eConnRefused = (errno.ECONNREFUSED, errno.WSAECONNREFUSED)
-                except:
+                except Exception:
                     eConnRefused = (errno.ECONNREFUSED, )
                 if error.errno == errno.EINTR:
                     continue

@@ -118,7 +118,7 @@ def get_filebot_attrs(fn):
 
             output = output.decode()
 
-        except:
+        except Exception:
             logger.error(u"%s: Unexpected error while getting filebot original filename: %s", fn,
                              traceback.format_exc())
             return
@@ -128,7 +128,7 @@ def get_filebot_attrs(fn):
     try:
         orig_fn = match_func(output)
         return orig_fn.strip()
-    except:
+    except Exception:
         logger.info(u"%s: Couldn't get filebot original filename" % fn)
         logger.debug(u"%s: Result: %r" % (fn, output))
 

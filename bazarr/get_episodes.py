@@ -300,11 +300,11 @@ def episodeParser(episode):
 
                     try:
                         video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
-                    except:
+                    except Exception:
                         video_format = episode['episodeFile']['quality']['quality']['name']
                         try:
                             video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
-                        except:
+                        except Exception:
                             video_resolution = None
 
                     return {'sonarrSeriesId': episode['seriesId'],

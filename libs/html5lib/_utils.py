@@ -27,7 +27,7 @@ try:
         # We need this with u"" because of http://bugs.jython.org/issue2039
         _x = eval('u"\\uD800"')  # pylint:disable=eval-used
         assert isinstance(_x, text_type)
-except:  # pylint:disable=bare-except
+except Exception:  # pylint:disable=bare-except
     supports_lone_surrogates = False
 else:
     supports_lone_surrogates = True

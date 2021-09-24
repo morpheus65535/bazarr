@@ -87,13 +87,13 @@ class PyJsDate(PyJs):
             return 'Invalid Date'
         try:
             dt = self.to_local_dt()
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'unsupported date range. Will fix in future versions')
         try:
             return dt.strftime(pattern)
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'Could not generate date string from this date (limitations of python.datetime)'
@@ -104,13 +104,13 @@ class PyJsDate(PyJs):
             return 'Invalid Date'
         try:
             dt = self.to_utc_dt()
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'unsupported date range. Will fix in future versions')
         try:
             return dt.strftime(pattern)
-        except:
+        except Exception:
             raise MakeError(
                 'TypeError',
                 'Could not generate date string from this date (limitations of python.datetime)'
@@ -121,14 +121,14 @@ def parse_date(py_string):  # todo support all date string formats
     try:
         try:
             dt = datetime.datetime.strptime(py_string, "%Y-%m-%dT%H:%M:%S.%fZ")
-        except:
+        except Exception:
             dt = datetime.datetime.strptime(py_string, "%Y-%m-%dT%H:%M:%SZ")
         return MakeDate(
             MakeDay(Js(dt.year), Js(dt.month - 1), Js(dt.day)),
             MakeTime(
                 Js(dt.hour), Js(dt.minute), Js(dt.second),
                 Js(dt.microsecond // 1000)))
-    except:
+    except Exception:
         raise MakeError(
             'TypeError',
             'Could not parse date %s - unsupported date format. Currently only supported format is RFC3339 utc. Sorry!'

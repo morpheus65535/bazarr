@@ -254,7 +254,7 @@ class TitulkyProvider(Provider):
                     # r2 = td.find("td", "img")
                     langs = [x.text.encode('utf-8') for x in r]
                     pass
-                except:
+                except Exception:
                     langs = 'CZ'
                 name = '%s (%s)' % (version, langs)
                 

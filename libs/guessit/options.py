@@ -261,7 +261,7 @@ def load_config_file(filepath):
     try:
         # Try to load input as JSON
         return json.loads(filepath)
-    except:  # pylint: disable=bare-except
+    except Exception:  # pylint: disable=bare-except
         pass
 
     raise ConfigurationException('Configuration file extension is not supported for "%s" file.' % (filepath,))

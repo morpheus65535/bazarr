@@ -30,7 +30,7 @@ if not PY2:  # pragma: no cover
 
     try:
         import dbm as anydbm
-    except:
+    except Exception:
         import dumbdbm as anydbm
 
     def b64decode(b):

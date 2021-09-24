@@ -138,7 +138,7 @@ class newstr(with_metaclass(BaseNewStr, unicode)):
         " left + self "
         try:
             return newstr(left) + self
-        except:
+        except Exception:
             return NotImplemented
 
     def __mul__(self, other):

@@ -137,19 +137,19 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             #Get title
             try:
                 title = fullTitle.split("(")[0]
-            except:
+            except Exception:
                 logger.error("[#### Provider: titrari.ro] Error parsing title.")
 
             # Get downloads count
             try:
                 downloads = int(row.parent.parent.select("span")[index].text[12:])
-            except:
+            except Exception:
                 logger.error("[#### Provider: titrari.ro] Error parsing downloads.")
 
             # Get year
             try:
                 year = int(fullTitle.split("(")[1].split(")")[0])
-            except:
+            except Exception:
                 year = None
                 logger.error("[#### Provider: titrari.ro] Error parsing year.")
 
@@ -158,7 +158,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             try:
                 comments = row.parent.parent.find_all("td", class_=re.compile("comment"))[index*2+1].text
-            except:
+            except Exception:
                 logger.error("Error parsing comments.")
 
             subtitle = self.subtitle_class(next(iter(languages)), download_link, index, None, title, sub_imdb_id, year, downloads, comments)
@@ -177,7 +177,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     def getImdbIdFromSubtitle(self, row):
         try:
             imdbId = row.parent.parent.find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
-        except:
+        except Exception:
             logger.error("[#### Provider: titrari.ro] Error parsing imdbId.")
         if imdbId is not None:
             return "tt" + imdbId
@@ -202,7 +202,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         imdb_id = None
         try:
             imdb_id = video.imdb_id[2:]
-        except:
+        except Exception:
             logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
 
         return [s for s in

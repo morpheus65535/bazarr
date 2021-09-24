@@ -52,7 +52,7 @@ class TempIntent(object):
                         if timed_out:
                             try:
                                 del self.store[kind][key]
-                            except:
+                            except Exception:
                                 continue
 
                     if hit:

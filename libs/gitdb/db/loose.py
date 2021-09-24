@@ -206,7 +206,7 @@ class LooseObjectDB(FileDBBase, ObjectDBR, ObjectDBW):
                 if tmp_path:
                     writer.close()
             # END assure target stream is closed
-        except:
+        except Exception:
             if tmp_path:
                 os.remove(tmp_path)
             raise

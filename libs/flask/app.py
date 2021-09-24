@@ -2447,7 +2447,7 @@ class Flask(_PackageBoundObject):
             except Exception as e:
                 error = e
                 response = self.handle_exception(e)
-            except:  # noqa: B001
+            except Exception:  # noqa: B001
                 error = sys.exc_info()[1]
                 raise
             return response(environ, start_response)

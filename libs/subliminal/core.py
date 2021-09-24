@@ -112,7 +112,7 @@ class ProviderPool(object):
                 logger.error('Provider %r unavailable, improperly terminated', name)
             else:
                 logger.exception('Provider %r SSL error %r, improperly terminated', name, e.args[0])
-        except:
+        except Exception:
             logger.exception('Provider %r terminated unexpectedly', name)
 
         del self.initialized_providers[name]
@@ -163,7 +163,7 @@ class ProviderPool(object):
                 logger.error('Provider %r unavailable', provider)
             else:
                 logger.exception('Provider %r SSL error %r', provider, e.args[0])
-        except:
+        except Exception:
             logger.exception('Unexpected error in provider %r', provider)
 
     def list_subtitles(self, video, languages):
@@ -240,7 +240,7 @@ class ProviderPool(object):
         except (BadRarFile, BadZipfile):
             logger.error('Bad archive for %r', subtitle)
             return False
-        except:
+        except Exception:
             logger.exception('Unexpected error in provider %r, discarding it', subtitle.provider_name)
             self.discarded_providers.add(subtitle.provider_name)
             return False
@@ -613,7 +613,7 @@ def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
         logger.info('Refining video with %s', refiner)
         try:
             refiner_manager[refiner].plugin(video, **kwargs)
-        except:
+        except Exception:
             logger.error('Failed to refine video %r', video.name)
             logger.debug('Refiner exception:', exc_info=True)
 

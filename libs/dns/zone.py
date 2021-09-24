@@ -679,7 +679,7 @@ class _MasterReader(object):
         # Type
         try:
             rdtype = dns.rdatatype.from_text(token.value)
-        except:
+        except Exception:
             raise dns.exception.SyntaxError(
                 "unknown rdatatype '%s'" % token.value)
         n = self.zone.nodes.get(name)
@@ -693,7 +693,7 @@ class _MasterReader(object):
             # Catch and reraise.
             (ty, va) = sys.exc_info()[:2]
             raise va
-        except:
+        except Exception:
             # All exceptions that occur in the processing of rdata
             # are treated as syntax errors.  This is not strictly
             # correct, but it is correct almost all of the time.
@@ -763,7 +763,7 @@ class _MasterReader(object):
             token = self.tok.get()
             if not token.is_identifier():
                 raise dns.exception.SyntaxError
-        except:
+        except Exception:
             raise dns.exception.SyntaxError
 
         # lhs (required)
@@ -772,7 +772,7 @@ class _MasterReader(object):
             token = self.tok.get()
             if not token.is_identifier():
                 raise dns.exception.SyntaxError
-        except:
+        except Exception:
             raise dns.exception.SyntaxError
 
         # TTL
@@ -808,7 +808,7 @@ class _MasterReader(object):
         # lhs (required)
         try:
             rhs = token.value
-        except:
+        except Exception:
             raise dns.exception.SyntaxError
 
         lmod, lsign, loffset, lwidth, lbase = self._parse_modify(lhs)
@@ -851,7 +851,7 @@ class _MasterReader(object):
                 # Catch and reraise.
                 (ty, va) = sys.exc_info()[:2]
                 raise va
-            except:
+            except Exception:
                 # All exceptions that occur in the processing of rdata
                 # are treated as syntax errors.  This is not strictly
                 # correct, but it is correct almost all of the time.

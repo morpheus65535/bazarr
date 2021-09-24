@@ -280,14 +280,14 @@ class IniFile:
         # float() ValueError
         try:
             float(value)
-        except:
+        except Exception:
             return 1
 
     def checkInteger(self, value):
         # int() ValueError
         try:
             int(value)
-        except:
+        except Exception:
             return 1
 
     def checkPoint(self, value):
@@ -300,7 +300,7 @@ class IniFile:
     def checkRegex(self, value):
         try:
             re.compile(value)
-        except:
+        except Exception:
             return 1
 
     # write support

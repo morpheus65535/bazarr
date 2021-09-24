@@ -82,7 +82,7 @@ class newint(with_metaclass(BaseNewInt, long)):
             # Py2: long(bytearray(b'10'), 2) == 2 raises TypeError
             try:
                 return super(newint, cls).__new__(cls, newbytes(val))
-            except:
+            except Exception:
                 raise TypeError("newint argument must be a string or a number,"
                                 "not '{0}'".format(type(val)))
 

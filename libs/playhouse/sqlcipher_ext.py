@@ -73,7 +73,7 @@ class _SqlCipherDatabase(object):
             if passphrase:
                 conn.execute("PRAGMA key='%s'" % passphrase)
             self._add_conn_hooks(conn)
-        except:
+        except Exception:
             conn.close()
             raise
         return conn

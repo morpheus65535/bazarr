@@ -274,7 +274,7 @@ class MagicDB:
 
                 try:
                     ents = self.types[pri]
-                except:
+                except Exception:
                     ents = []
                     self.types[pri] = ents
 
@@ -315,7 +315,7 @@ class MagicDB:
             with open(path, 'rb') as f:
                 buf = f.read(self.maxlen)
             return self.match_data(buf, max_pri, min_pri)
-        except:
+        except Exception:
             pass
     
     def __repr__(self):
@@ -458,7 +458,7 @@ def get_type(path, follow=True, name_pri=100):
             st = os.stat(path)
         else:
             st = os.lstat(path)
-    except:
+    except Exception:
         t = get_type_by_name(path)
         return t or text
 
@@ -495,7 +495,7 @@ def install_mime_info(application, package_file):
     for x in BaseDirectory.load_data_paths(resource):
         try:
             old_data = open(x).read()
-        except:
+        except Exception:
             continue
         if old_data == new_data:
             return  # Already installed

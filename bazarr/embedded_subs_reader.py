@@ -93,7 +93,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         try:
             # Unpickle ffprobe cache
             cached_value = pickle.loads(cache_key['ffprobe_cache'])
-        except:
+        except Exception:
             pass
         else:
             # Check if file size and file id matches and if so, we return the cached value

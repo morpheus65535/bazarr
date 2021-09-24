@@ -6,7 +6,7 @@ import warnings
 try:
     from tzlocal import get_localzone
     LOCAL_ZONE = get_localzone()
-except:  # except all problems...
+except Exception:  # except all problems...
     warnings.warn(
         'Please install or fix tzlocal library (pip install tzlocal) in order to make Date object work better. Otherwise I will assume DST is in effect all the time'
     )
@@ -38,7 +38,7 @@ def DaylightSavingTA(t):
         return int(
             LOCAL_ZONE.dst(datetime.datetime.utcfromtimestamp(
                 t // 1000)).seconds) * 1000
-    except:
+    except Exception:
         warnings.warn(
             'Invalid datetime date, assumed DST time, may be inaccurate...',
             Warning)

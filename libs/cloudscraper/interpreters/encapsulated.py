@@ -42,7 +42,7 @@ def template(body, domain):
             subVars = '{}\n\t\t{}{}: {},\n'.format(subVars, k, m.group('id'), m.group('jsfuck'))
         subVars = subVars[:-2]
 
-    except:  # noqa
+    except Exception:  # noqa
         logging.error('Error extracting Cloudflare IUAM Javascript. {}'.format(BUG_REPORT))
         raise
 

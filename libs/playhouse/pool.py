@@ -246,7 +246,7 @@ class PooledMySQLDatabase(PooledDatabase, MySQLDatabase):
     def _is_closed(self, conn):
         try:
             conn.ping(False)
-        except:
+        except Exception:
             return True
         else:
             return False
@@ -293,7 +293,7 @@ class _PooledSqliteDatabase(PooledDatabase):
     def _is_closed(self, conn):
         try:
             conn.total_changes
-        except:
+        except Exception:
             return True
         else:
             return False

@@ -181,7 +181,7 @@ def translate_object(obj, lval, obj_count=1, arr_count=1):
                 raise SyntaxError('Invalid Object literal: ' + e)
             try:
                 key, value = spl
-            except:  #len(spl)> 2
+            except Exception:  #len(spl)> 2
                 print('Unusual case ' + repr(e))
                 key = spl[0]
                 value = ':'.join(spl[1:])
@@ -220,7 +220,7 @@ def translate_setter(lval, setter):
         _, data, _ = functions.remove_functions(func)
         if not data or len(data) > 1:
             raise Exception()
-    except:
+    except Exception:
         raise SyntaxError('Could not parse setter: ' + setter)
     prop = data.keys()[0]
     body, args = data[prop]
@@ -238,7 +238,7 @@ def translate_getter(lval, getter):
         _, data, _ = functions.remove_functions(func)
         if not data or len(data) > 1:
             raise Exception()
-    except:
+    except Exception:
         raise SyntaxError('Could not parse getter: ' + getter)
     prop = data.keys()[0]
     body, args = data[prop]

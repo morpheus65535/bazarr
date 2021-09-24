@@ -382,7 +382,7 @@ class Languages(Resource):
                             # Compatibility: Use false temporarily
                             'enabled': False
                         })
-                    except:
+                    except Exception:
                         continue
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
 
@@ -2109,7 +2109,7 @@ class WebHooksPlex(Resource):
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
                 series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
-            except:
+            except Exception:
                 return '', 404
             else:
                 sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
@@ -2125,7 +2125,7 @@ class WebHooksPlex(Resource):
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-            except:
+            except Exception:
                 return '', 404
             else:
                 radarrId = TableMovies.select(TableMovies.radarrId)\

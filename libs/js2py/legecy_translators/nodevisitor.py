@@ -549,7 +549,7 @@ def exp_translator(code):
     #    return 'var.get("undefined")'
     try:
         return trans(code)
-    except:
+    except Exception:
         #print '\n\ntrans failed on \n\n' + code
         #raw_input('\n\npress enter')
         raise

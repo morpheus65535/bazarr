@@ -47,7 +47,7 @@ def typeof(t):
 def list_indexOf(l, v):
     try:
         return l.index(v)
-    except:
+    except Exception:
         return -1
 
 
@@ -72,7 +72,7 @@ class jsdict(object):
     def __getattr__(self, name):
         try:
             return getattr(self, name)
-        except:
+        except Exception:
             return None
 
     def __setattr__(self, name, value):

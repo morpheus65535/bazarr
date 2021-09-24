@@ -151,7 +151,7 @@ class EvalJs(object):
         if not isinstance(context, dict):
             try:
                 context = context.__dict__
-            except:
+            except Exception:
                 raise TypeError(
                     'context has to be either a dict or have __dict__ attr')
         for k, v in six.iteritems(context):
@@ -212,7 +212,7 @@ class EvalJs(object):
             os.remove(filename)
             try:
                 os.remove(filename + 'c')
-            except:
+            except Exception:
                 pass
 
     def eval_debug(self, expression):

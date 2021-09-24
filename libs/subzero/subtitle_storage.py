@@ -401,7 +401,7 @@ class StoredSubtitlesManager(object):
                             try:
                                 del stored_subs.parts[missing_part]
                                 changed_any = True
-                            except:
+                            except Exception:
                                 pass
 
                 # remove known info about non-existing languages
@@ -413,7 +413,7 @@ class StoredSubtitlesManager(object):
                             try:
                                 del stored_subs.parts[part_id][missing_language]
                                 changed_any = True
-                            except:
+                            except Exception:
                                 pass
 
                 if changed_any:
@@ -464,7 +464,7 @@ class StoredSubtitlesManager(object):
                             s = f.read()
 
                 data = loads(s)
-            except:
+            except Exception:
                 logger.error("Couldn't load JSON data for %s: %s", bare_fn, traceback.format_exc())
                 return
 
@@ -527,11 +527,11 @@ class StoredSubtitlesManager(object):
                         f.seek(0, os.SEEK_CUR)
                         f.write(zlib.compress(json_data, 6))
                         f.flush()
-                    except:
+                    except Exception:
                         logger.error("Something went wrong when writing to: %s: %s", basename, traceback.format_exc())
                     finally:
                         f.close()
-                except:
+                except Exception:
                     logger.error("Something went REALLY wrong when writing to: %s: %s", basename,
                                  traceback.format_exc())
             else:
@@ -546,5 +546,5 @@ class StoredSubtitlesManager(object):
     def legacy_delete(self, filename):
         try:
             self.storage.Remove(filename)
-        except:
+        except Exception:
             logger.error("Failed to delete item %s: %s" % (filename, traceback.format_exc()))
