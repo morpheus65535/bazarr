@@ -1292,9 +1292,11 @@ def refine_from_db(path, video):
             if not video.resolution:
                 video.resolution = str(data['resolution'])
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
     elif isinstance(video, Movie):
         data = TableMovies.select(TableMovies.title,
                                   TableMovies.year,
@@ -1317,13 +1319,17 @@ def refine_from_db(path, video):
                 video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
-                if data['format']: video.source = convert_to_guessit('source', data['format'])
+                if data['format']:
+                    video.source = convert_to_guessit('source', data['format'])
             if not video.resolution:
-                if data['resolution']: video.resolution = data['resolution']
+                if data['resolution']:
+                    video.resolution = data['resolution']
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
 
     return video
 

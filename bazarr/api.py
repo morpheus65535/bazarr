@@ -359,10 +359,10 @@ class Languages(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             languages = list(TableHistory.select(TableHistory.language)
-                             .where(TableHistory.language != None)
+                             .where(TableHistory.language is not None)
                              .dicts())
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
-                             .where(TableHistoryMovie.language != None)
+                              .where(TableHistoryMovie.language is not None)
                               .dicts())
             languages_list = list(set([l['language'].split(':')[0] for l in languages]))
             languages_dicts = []
@@ -794,7 +794,8 @@ class EpisodesSubtitles(Resource):
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -854,7 +855,8 @@ class EpisodesSubtitles(Resource):
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'true' else False
@@ -1024,7 +1026,8 @@ class MoviesSubtitles(Resource):
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        if sceneName is None:
+            sceneName = 'None'
 
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
@@ -1084,7 +1087,8 @@ class MoviesSubtitles(Resource):
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        if sceneName is None:
+            sceneName = 'None'
 
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']
@@ -1168,10 +1172,10 @@ class Providers(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
-                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
+                             .where(TableHistory.provider is not None and TableHistory.provider != "manual")
                              .dicts())
             providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
-                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
+                              .where(TableHistoryMovie.provider is not None and TableHistoryMovie.provider != "manual")
                               .dicts())
             providers_list = list(set([x['provider'] for x in providers]))
             providers_dicts = []
@@ -1222,7 +1226,8 @@ class ProviderMovies(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
         profileId = movieInfo['profileId']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
@@ -1248,7 +1253,8 @@ class ProviderMovies(Resource):
         title = movieInfo['title']
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
         audio_language = movieInfo['audio_language']
 
         language = request.form.get('language')
@@ -1310,7 +1316,8 @@ class ProviderEpisodes(Resource):
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
         profileId = episodeInfo['profileId']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
@@ -1336,7 +1343,8 @@ class ProviderEpisodes(Resource):
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name']
-        if sceneName is None: sceneName = "None"
+        if sceneName is None:
+            sceneName = "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -1605,8 +1613,10 @@ class MoviesHistory(Resource):
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
                 for blacklisted_item in blacklist_db:
-                    if (blacklisted_item['provider'] == item['provider']
-                        and blacklisted_item['subs_id'] == item['subs_id']):
+                    if (
+                        blacklisted_item["provider"] == item["provider"]
+                        and blacklisted_item["subs_id"] == item["subs_id"]
+                    ):
                         item.update({"blacklisted": True})
                         break
 

@@ -288,17 +288,22 @@ def profile_id_to_language(id, profiles):
 
 
 def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):
-    if audioFormat == "AC-3": return "AC3"
-    if audioFormat == "E-AC-3": return "EAC3"
+    if audioFormat == "AC-3":
+        return "AC3"
+    if audioFormat == "E-AC-3":
+        return "EAC3"
     if audioFormat == "AAC":
         if audioCodecID == "A_AAC/MPEG4/LC/SBR":
             return "HE-AAC"
         else:
             return "AAC"
-    if audioFormat.strip() == "mp3": return "MP3"
+    if audioFormat.strip() == "mp3":
+        return "MP3"
     if audioFormat == "MPEG Audio":
-        if audioCodecID == "55" or audioCodecID == "A_MPEG/L3" or audioProfile == "Layer 3": return "MP3"
-        if audioCodecID == "A_MPEG/L2" or audioProfile == "Layer 2": return "MP2"
+        if audioCodecID == "55" or audioCodecID == "A_MPEG/L3" or audioProfile == "Layer 3":
+            return "MP3"
+        if audioCodecID == "A_MPEG/L2" or audioProfile == "Layer 2":
+            return "MP2"
     if audioFormat == "MLP FBA":
         if audioAdditionalFeatures == "16-ch":
             return "TrueHD Atmos"
@@ -309,22 +314,30 @@ def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditio
 
 
 def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
-    if videoFormat == "x264": return "h264"
-    if videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC": return "h264"
+    if videoFormat == "x264":
+        return "h264"
+    if videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC":
+        return "h264"
     if videoCodecLibrary and (videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC"):
-        if videoCodecLibrary.startswith("x265"): return "h265"
+        if videoCodecLibrary.startswith("x265"):
+            return "h265"
     if videoCodecID and videoFormat == "MPEG Video":
         if videoCodecID == "2" or videoCodecID == "V_MPEG2":
             return "Mpeg2"
         else:
             return "Mpeg"
-    if videoFormat == "MPEG-1 Video": return "Mpeg"
-    if videoFormat == "MPEG-2 Video": return "Mpeg2"
+    if videoFormat == "MPEG-1 Video":
+        return "Mpeg"
+    if videoFormat == "MPEG-2 Video":
+        return "Mpeg2"
     if videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
-        if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"): return "XviD"
+        if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"):
+            return "XviD"
         if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
-            "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
-    if videoFormat == "VC-1": return "VC1"
+            "DX50") or videoCodecLibrary.startswith("DivX"):
+            return "DivX"
+    if videoFormat == "VC-1":
+        return "VC1"
     if videoFormat == "WMV2":
         return "WMV"
     if videoFormat == "DivX" or videoFormat == "div3":
@@ -410,32 +423,32 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         if 'mediaInfo' in movie['movieFile']:
             videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
             if get_radarr_info.is_legacy():
-                if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = \
-                    movie['movieFile']['mediaInfo']['videoFormat']
+                if 'videoFormat' in movie['movieFile']['mediaInfo']:
+                    videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
             else:
-                if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = \
-                    movie['movieFile']['mediaInfo']['videoCodec']
-            if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = \
-                movie['movieFile']['mediaInfo']['videoCodecID']
-            if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = \
-                movie['movieFile']['mediaInfo']['videoProfile']
-            if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = \
-                movie['movieFile']['mediaInfo']['videoCodecLibrary']
+                if 'videoCodec' in movie['movieFile']['mediaInfo']:
+                    videoFormat = movie['movieFile']['mediaInfo']['videoCodec']
+            if 'videoCodecID' in movie['movieFile']['mediaInfo']:
+                videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
+            if 'videoProfile' in movie['movieFile']['mediaInfo']:
+                videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
+            if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']:
+                videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
             videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
             audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
             if get_radarr_info.is_legacy():
-                if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = \
-                    movie['movieFile']['mediaInfo']['audioFormat']
+                if 'audioFormat' in movie['movieFile']['mediaInfo']:
+                    audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
             else:
-                if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = \
-                    movie['movieFile']['mediaInfo']['audioCodec']
-            if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = \
-                movie['movieFile']['mediaInfo']['audioCodecID']
-            if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = \
-                movie['movieFile']['mediaInfo']['audioProfile']
-            if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = \
-                movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+                if 'audioCodec' in movie['movieFile']['mediaInfo']:
+                    audioFormat = movie['movieFile']['mediaInfo']['audioCodec']
+            if 'audioCodecID' in movie['movieFile']['mediaInfo']:
+                audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
+            if 'audioProfile' in movie['movieFile']['mediaInfo']:
+                audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
+            if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']:
+                audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
             audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile,
                                                 audioAdditionalFeatures)
         else:
