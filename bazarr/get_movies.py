@@ -45,7 +45,7 @@ def update_movies(send_event=True):
     else:
         audio_profiles = get_profile_list()
         tagsDict = get_tags()
-        
+
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
         if not movies:
@@ -53,7 +53,7 @@ def update_movies(send_event=True):
         else:
             # Get current movies in DB
             current_movies_db = TableMovies.select(TableMovies.tmdbId, TableMovies.path, TableMovies.radarrId).dicts()
-            
+
             current_movies_db_list = [x['tmdbId'] for x in current_movies_db]
 
             current_movies_radarr = []
@@ -88,7 +88,7 @@ def update_movies(send_event=True):
                                                                  tags_dict=tagsDict,
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
- 
+
             if send_event:
                 hide_progress(id='movies_progress')
 
@@ -201,10 +201,10 @@ def update_one_movie(movie_id, action):
             return
         else:
             if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, 
+                movie = movieParser(movie_data, action='update', tags_dict=tagsDict,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, 
+                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')

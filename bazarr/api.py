@@ -725,7 +725,7 @@ class Series(Resource):
                 .select(TableEpisodes.sonarrEpisodeId)\
                 .where(TableEpisodes.sonarrSeriesId == seriesId)\
                 .dicts()
-            
+
             for item in episode_id_list:
                 event_stream(type='episode-wanted', payload=item['sonarrEpisodeId'])
 

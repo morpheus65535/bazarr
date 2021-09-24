@@ -41,6 +41,7 @@ def end_child_process(ep):
     except Exception:
         pass
 
+
 def terminate_child_process(ep):
     try:
         ep.terminate()

@@ -132,7 +132,6 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
 
-
     # todo:
     """
     AsyncProviderPool:
@@ -624,7 +623,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         'win') and settings.general.getboolean('chmod_enabled') else None
 
     language = alpha3_from_alpha2(language)
-    
+
     custom = CustomLanguage.from_value(language, "alpha3")
     if custom is None:
         lang_obj = Language(language)
@@ -706,7 +705,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
-    if use_postprocessing :
+    if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
                              audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id,
@@ -1225,7 +1224,7 @@ def wanted_search_missing_subtitles_movies():
             return
 
     hide_progress(id='wanted_movies_progress')
-    
+
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
@@ -1686,6 +1685,7 @@ def _get_lang_obj(alpha3):
         return Language(alpha3)
 
     return sub.subzero_language()
+
 
 def _get_scores(media_type, min_movie=None, min_ep=None):
     series = "series" == media_type

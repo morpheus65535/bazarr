@@ -116,7 +116,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
-    
+
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
 
     return actual_subtitles
@@ -197,7 +197,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                         language_str = str(language)
                     logging.debug("BAZARR external subtitles detected: " + language_str)
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
-        
+
         TableMovies.update({TableMovies.subtitles: str(actual_subtitles)})\
             .where(TableMovies.path == original_path)\
             .execute()
@@ -211,7 +211,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
-    
+
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
 
     return actual_subtitles
@@ -449,7 +449,7 @@ def series_full_scan_subtitles():
     use_ffprobe_cache = settings.sonarr.getboolean('use_ffprobe_cache')
 
     episodes = TableEpisodes.select(TableEpisodes.path).dicts()
-    
+
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes):
         sleep()
@@ -461,7 +461,7 @@ def series_full_scan_subtitles():
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=use_ffprobe_cache)
 
     hide_progress(id='episodes_disk_scan')
-    
+
     gc.collect()
 
 
@@ -469,7 +469,7 @@ def movies_full_scan_subtitles():
     use_ffprobe_cache = settings.radarr.getboolean('use_ffprobe_cache')
 
     movies = TableMovies.select(TableMovies.path).dicts()
-    
+
     count_movies = len(movies)
     for i, movie in enumerate(movies):
         sleep()
@@ -491,7 +491,7 @@ def series_scan_subtitles(no):
         .where(TableEpisodes.sonarrSeriesId == no)\
         .order_by(TableEpisodes.sonarrEpisodeId)\
         .dicts()
-    
+
     for episode in episodes:
         sleep()
         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']), use_cache=False)
@@ -502,7 +502,7 @@ def movies_scan_subtitles(no):
         .where(TableMovies.radarrId == no)\
         .order_by(TableMovies.radarrId)\
         .dicts()
-    
+
     for movie in movies:
         sleep()
         store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']), use_cache=False)
@@ -510,7 +510,7 @@ def movies_scan_subtitles(no):
 
 def get_external_subtitles_path(file, subtitle):
     fld = os.path.dirname(file)
-    
+
     if settings.general.subfolder == "current":
         path = os.path.join(fld, subtitle)
     elif settings.general.subfolder == "absolute":
@@ -531,7 +531,7 @@ def get_external_subtitles_path(file, subtitle):
             path = None
     else:
         path = None
-    
+
     return path
 
 
@@ -558,7 +558,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                     #add simplified and traditional chinese detection
                     if detected_language == 'zh':
                         traditional_chinese_fuzzy = [u"繁", u"雙語"]
-                        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht",".zh-hant",".zhhant",".zh_hant",".hant", ".big5", ".traditional"]
+                        traditional_chinese = [".cht", ".tc", ".zh-tw", ".zht", ".zh-hant", ".zhhant", ".zh_hant", ".hant", ".big5", ".traditional"]
                         if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(traditional_chinese)) or (str(subtitle_path).lower())[:-5] in traditional_chinese_fuzzy:
                             detected_language == 'zt'
                 except UnicodeDecodeError:

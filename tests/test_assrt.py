@@ -11,6 +11,7 @@ from urllib import urlencode
 from subliminal_patch.providers.assrt import AssrtSubtitle, AssrtProvider, \
 language_contains, search_language_in_list, supported_languages
 
+
 def remove_auth_token(request):
     parsed_uri = urlparse(request.uri)
     parsed_query = parse_qs(parsed_uri.query)
@@ -20,19 +21,23 @@ def remove_auth_token(request):
     request.uri = parsed_uri.geturl()
     return request
 
+
 vcr = VCR(path_transformer=lambda path: path + '.yaml',
           before_record_request=remove_auth_token,
           record_mode=os.environ.get('VCR_RECORD_MODE', 'once'),
           match_on=['method', 'scheme', 'host', 'port', 'path', 'body'],
           cassette_library_dir=os.path.realpath(os.path.join('cassettes', 'assrt')))
 
+
 TOKEN=os.environ.get('ASSRT_TOKEN', 'NO_TOKEN_PROVIDED')
+
 
 def test_supported_languages():
     assert set(supported_languages) == set([('zho', None, None),
                                             ('eng', None, None),
                                             ('zho', None, 'Hans'),
                                             ('zho', None, 'Hant')])
+
 
 def test_language_contains():
     assert language_contains(Language('zho'), Language('zho'))
@@ -89,6 +94,7 @@ def test_converter_reverse():
     assert language_converters['assrt'].reverse(u'简体') == ('zho', None, 'Hans')
     assert language_converters['assrt'].reverse(u'繁体') == ('zho', None, 'Hant')
 
+
 @pytest.mark.integration
 @vcr.use_cassette
 def test_query_movie_zh_Hans(movies):
@@ -97,6 +103,7 @@ def test_query_movie_zh_Hans(movies):
     with AssrtProvider(TOKEN) as provider:
         subtitles = provider.query(languages, video)
         assert len(subtitles) == 8
+
 
 @pytest.mark.integration
 @vcr.use_cassette
@@ -107,6 +114,7 @@ def test_query_movie_zh_Hant(movies):
         subtitles = provider.query(languages, video)
         assert len(subtitles) == 8
 
+
 @pytest.mark.integration
 @vcr.use_cassette
 def test_query_movie_zh(movies):
@@ -115,6 +123,7 @@ def test_query_movie_zh(movies):
     with AssrtProvider(TOKEN) as provider:
         subtitles = provider.query(languages, video)
         assert len(subtitles) == 16
+
 
 @pytest.mark.integration
 @vcr.use_cassette

@@ -63,11 +63,11 @@ def update_series(send_event=True):
             current_shows_sonarr.append(show['id'])
 
             if show['id'] in current_shows_db_list:
-                series_to_update.append(seriesParser(show, action='update', tags_dict=tagsDict, 
+                series_to_update.append(seriesParser(show, action='update', tags_dict=tagsDict,
                                                      serie_default_profile=serie_default_profile,
                                                      audio_profiles=audio_profiles))
             else:
-                series_to_add.append(seriesParser(show, action='insert', tags_dict=tagsDict, 
+                series_to_add.append(seriesParser(show, action='insert', tags_dict=tagsDict,
                                                   serie_default_profile=serie_default_profile,
                                                   audio_profiles=audio_profiles))
 
@@ -170,11 +170,11 @@ def update_one_series(series_id, action):
             return
         else:
             if action == 'updated' and existing_series:
-                series = seriesParser(series_data, action='update', tags_dict=tagsDict, 
+                series = seriesParser(series_data, action='update', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_series:
-                series = seriesParser(series_data, action='insert', tags_dict=tagsDict, 
+                series = seriesParser(series_data, action='insert', tags_dict=tagsDict,
                                       serie_default_profile=serie_default_profile,
                                       audio_profiles=audio_profiles)
     except Exception:
