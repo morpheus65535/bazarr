@@ -1,4 +1,5 @@
 # coding=utf-8
+# pylama:ignore=W0611,E402
 
 import os
 import io
@@ -54,7 +55,12 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, gevent, geventwebsocket, setuptools
+        import lxml
+        import numpy
+        import webrtcvad
+        import gevent
+        import geventwebsocket
+        import setuptools
     except ImportError:
         try:
             import pip

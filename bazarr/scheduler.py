@@ -1,4 +1,5 @@
 # coding=utf-8
+# pylama:ignore=E402
 
 from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies

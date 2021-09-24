@@ -1,3 +1,5 @@
+# pylama:ignore=W0611,W0401
+
 import os
 import atexit
 import json

@@ -1,4 +1,5 @@
 # coding=utf-8
+# pylama:ignore=W0611,W0401
 
 import sys
 import os
