@@ -62,7 +62,7 @@ class SonarrSignalrClient:
     def stop(self, log=True):
         try:
             self.connection.close()
-        except Exception as e:
+        except Exception:
             pass
         if log:
             logging.info('BAZARR SignalR client for Sonarr is now disconnected.')

@@ -103,7 +103,7 @@ def download_release(url):
     update_dir = os.path.join(args.config_dir, 'update')
     try:
         os.makedirs(update_dir, exist_ok=True)
-    except Exception as e:
+    except Exception:
         logging.debug('BAZARR unable to create update directory {}'.format(update_dir))
     else:
         logging.debug('BAZARR downloading release from Github: {}'.format(url))
@@ -112,7 +112,7 @@ def download_release(url):
         try:
             with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
                 f.write(r.content)
-        except Exception as e:
+        except Exception:
             logging.exception('BAZARR unable to download new release and save it to disk')
         else:
             apply_update()
@@ -137,7 +137,7 @@ def apply_update():
                     if os.path.isdir(build_dir):
                         try:
                             rmtree(build_dir, ignore_errors=True)
-                        except Exception as e:
+                        except Exception:
                             logging.exception(
                                 'BAZARR was unable to delete the previous build directory during upgrade process.')
 
@@ -150,7 +150,7 @@ def apply_update():
                             if not os.path.isdir(file_path):
                                 with open(file_path, 'wb+') as f:
                                     f.write(archive.read(file))
-            except Exception as e:
+            except Exception:
                 logging.exception('BAZARR unable to unzip release')
             else:
                 is_updated = True
@@ -243,5 +243,5 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                 rmtree(filepath, ignore_errors=True)
             else:
                 os.remove(filepath)
-        except Exception as e:
+        except Exception:
             logging.debug('BAZARR upgrade leftover cleaner cannot delete {}'.format(filepath))

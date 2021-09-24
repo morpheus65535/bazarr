@@ -80,7 +80,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         logging.debug('BAZARR is using these video object properties: %s', vars(copy.deepcopy(video)))
         return video
 
-    except Exception as e:
+    except Exception:
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
@@ -114,11 +114,11 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     if not isinstance(language, list):
         language = [language]
 
-    for l in language:
+    for lang in language:
         # Always use alpha2 in API Request
-        l = alpha3_from_alpha2(l)
+        lang = alpha3_from_alpha2(lang)
 
-        lang_obj = _get_lang_obj(l)
+        lang_obj = _get_lang_obj(lang)
 
         if forced == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
@@ -307,7 +307,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     for language in language_items:
         forced = language['forced']
         hi = language['hi']
-        audio_exclude = language['audio_exclude']
+        # audio_exclude = language['audio_exclude']
         language = language['language']
 
         lang = alpha3_from_alpha2(language)
@@ -338,8 +338,8 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
-    postprocessing_cmd = settings.general.postprocessing_cmd
+    # use_postprocessing = settings.general.getboolean('use_postprocessing')
+    # postprocessing_cmd = settings.general.postprocessing_cmd
     if providers:
         video = get_video(force_unicode(path), title, sceneName, providers=providers,
                           media_type=media_type)
@@ -378,7 +378,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
@@ -497,7 +497,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
             else:
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception('BAZARR Error downloading Subtitles for this file ' + path)
             return None
         else:
@@ -516,7 +516,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                                  # formats=("srt", "vtt")
                                                  path_decoder=force_unicode)
 
-            except Exception as e:
+            except Exception:
                 logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
                 return
             else:

@@ -292,7 +292,7 @@ def notify_sonarr(sonarr_series_id):
             'seriesId': int(sonarr_series_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Sonarr')
 
 
@@ -318,7 +318,7 @@ class GetRadarrInfo:
                 else:
                     rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
                     radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception as e:
+            except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
         logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
@@ -351,7 +351,7 @@ def notify_radarr(radarr_id):
             'movieId': int(radarr_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Radarr')
 
 

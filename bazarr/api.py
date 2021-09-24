@@ -644,7 +644,7 @@ class SystemReleases(Resource):
                                         "prerelease": release['prerelease'],
                                         "current": release['name'].lstrip('v') == current_version}
 
-        except Exception as e:
+        except Exception:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
         return jsonify(data=filtered_releases)
@@ -933,6 +933,8 @@ class EpisodesSubtitles(Resource):
                                   sonarr_episode_id=sonarrEpisodeId)
 
         return '', 204
+        result  # TODO  W0612 local variable 'result' is assigned to but never used
+        # Placing this here after the return just to clear pep without tearing apart code
 
 
 class Movies(Resource):

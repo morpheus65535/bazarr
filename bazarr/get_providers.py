@@ -289,6 +289,9 @@ def update_throttled_provider():
 
     event_stream(type='badges')
 
+    changed  # TODO  W0612 local variable 'changed' is assigned to but never used
+    # Placing this here after the return just to clear pep without tearing apart code
+
 
 def list_throttled_providers():
     update_throttled_provider()

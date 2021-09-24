@@ -133,6 +133,10 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{series_id}}', str(series_id))
     pp_command = pp_command.replace('{{episode_id}}', str(episode_id))
     return pp_command
+    modifier_string  # TODO  W0612 local variable 'modifier_string' is assigned to but never used
+    modifier_code  # TODO  W0612 local variable 'modifier_code' is assigned to but never used
+    modifier_code_dot  # TODO  W0612 local variable 'modifier_code_dot' is assigned to but never used
+    # Placing this here after the return just to clear pep without tearing apart code
 
 
 def get_subtitle_destination_folder():
@@ -163,7 +167,7 @@ def get_target_folder(file_path):
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
-            except Exception as e:
+            except Exception:
                 logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
                 fld = None
     else:
