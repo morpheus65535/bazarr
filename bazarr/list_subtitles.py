@@ -62,7 +62,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                     except Exception:
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
                         pass
-            except Exception as e:
+            except Exception:
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
@@ -174,7 +174,7 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                 elif settings.general.subfolder == "relative":
                     full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
-        except Exception as e:
+        except Exception:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:

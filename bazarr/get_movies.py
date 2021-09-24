@@ -259,11 +259,11 @@ def get_profile_list():
 
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
-    except requests.exceptions.ConnectionError as errc:
+    except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
-    except requests.exceptions.Timeout as errt:
+    except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Timeout Error.")
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
@@ -333,8 +333,8 @@ def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
     if videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
         if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"):
             return "XviD"
-        if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
-            "DX50") or videoCodecLibrary.startswith("DivX"):
+        if (videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX")
+           or videoCodecID.endswith("DX50") or videoCodecLibrary.startswith("DivX")):
             return "DivX"
     if videoFormat == "VC-1":
         return "VC1"
@@ -521,6 +521,9 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
                     'profileId': movie_default_profile,
                     'file_size': movie['movieFile']['size']}
 
+            videoProfile  # TODO  W0612 local variable 'videoProfile' is assigned to but never used
+            # Placing this here after the return just to clear pep without tearing apart code
+
 
 def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
     if get_radarr_info.is_legacy():
@@ -535,16 +538,16 @@ def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
         if r.status_code == 404:
             return
         r.raise_for_status()
-    except requests.exceptions.HTTPError as errh:
+    except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
         return
-    except requests.exceptions.ConnectionError as errc:
+    except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
         return
-    except requests.exceptions.Timeout as errt:
+    except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
         return
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get movies from Radarr.")
         return
     else:
