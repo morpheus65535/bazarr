@@ -410,31 +410,31 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
             videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
             if get_radarr_info.is_legacy():
                 if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = \
-                movie['movieFile']['mediaInfo']['videoFormat']
+                    movie['movieFile']['mediaInfo']['videoFormat']
             else:
                 if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = \
-                movie['movieFile']['mediaInfo']['videoCodec']
+                    movie['movieFile']['mediaInfo']['videoCodec']
             if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = \
-            movie['movieFile']['mediaInfo']['videoCodecID']
+                movie['movieFile']['mediaInfo']['videoCodecID']
             if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = \
-            movie['movieFile']['mediaInfo']['videoProfile']
+                movie['movieFile']['mediaInfo']['videoProfile']
             if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = \
-            movie['movieFile']['mediaInfo']['videoCodecLibrary']
+                movie['movieFile']['mediaInfo']['videoCodecLibrary']
             videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
             audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
             if get_radarr_info.is_legacy():
                 if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = \
-                movie['movieFile']['mediaInfo']['audioFormat']
+                    movie['movieFile']['mediaInfo']['audioFormat']
             else:
                 if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = \
-                movie['movieFile']['mediaInfo']['audioCodec']
+                    movie['movieFile']['mediaInfo']['audioCodec']
             if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = \
-            movie['movieFile']['mediaInfo']['audioCodecID']
+                movie['movieFile']['mediaInfo']['audioCodecID']
             if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = \
-            movie['movieFile']['mediaInfo']['audioProfile']
+                movie['movieFile']['mediaInfo']['audioProfile']
             if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = \
-            movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+                movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
             audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile,
                                                 audioAdditionalFeatures)
         else:
@@ -461,27 +461,27 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
         if action == 'update':
-             return {'radarrId': int(movie["id"]),
-                     'title': movie["title"],
-                     'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                     'tmdbId': str(movie["tmdbId"]),
-                     'poster': poster,
-                     'fanart': fanart,
-                     'audio_language': str(audio_language),
-                     'sceneName': sceneName,
-                     'monitored': str(bool(movie['monitored'])),
-                     'year': str(movie['year']),
-                     'sortTitle': movie['sortTitle'],
-                     'alternativeTitles': alternativeTitles,
-                     'format': format,
-                     'resolution': resolution,
-                     'video_codec': videoCodec,
-                     'audio_codec': audioCodec,
-                     'overview': overview,
-                     'imdbId': imdbId,
-                     'movie_file_id': int(movie['movieFile']['id']),
-                     'tags': str(tags),
-                     'file_size': movie['movieFile']['size']}
+            return {'radarrId': int(movie["id"]),
+                    'title': movie["title"],
+                    'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                    'tmdbId': str(movie["tmdbId"]),
+                    'poster': poster,
+                    'fanart': fanart,
+                    'audio_language': str(audio_language),
+                    'sceneName': sceneName,
+                    'monitored': str(bool(movie['monitored'])),
+                    'year': str(movie['year']),
+                    'sortTitle': movie['sortTitle'],
+                    'alternativeTitles': alternativeTitles,
+                    'format': format,
+                    'resolution': resolution,
+                    'video_codec': videoCodec,
+                    'audio_codec': audioCodec,
+                    'overview': overview,
+                    'imdbId': imdbId,
+                    'movie_file_id': int(movie['movieFile']['id']),
+                    'tags': str(tags),
+                    'file_size': movie['movieFile']['size']}
         else:
             return {'radarrId': int(movie["id"]),
                     'title': movie["title"],

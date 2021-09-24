@@ -225,19 +225,19 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
-                'page_size',
-                'page_size_manual_search',
-                'throtteled_providers']
+               'page_size',
+               'page_size_manual_search',
+               'throtteled_providers']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
-                'exclude',
-                'subzero_mods',
-                'excluded_series_types',
-                'enabled_providers',
-                'path_mappings',
-                'path_mappings_movie']
+              'exclude',
+              'subzero_mods',
+              'excluded_series_types',
+              'enabled_providers',
+              'path_mappings',
+              'path_mappings_movie']
 
 str_keys = ['chmod']
 
