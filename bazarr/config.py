@@ -290,9 +290,9 @@ def get_settings():
                             value = int(value)
                         except ValueError:
                             pass
-            
+
             values_dict[key] = value
-        
+
         result[sec] = values_dict
 
     return result
@@ -322,7 +322,7 @@ def save_settings(settings_items):
     for key, value in settings_items:
 
         settings_keys = key.split('-')
-        
+
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
@@ -330,7 +330,7 @@ def save_settings(settings_items):
                 value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values :
+        if settings_keys[-1] in array_keys and value[0] in empty_values:
             value = []
 
         # Handle path mappings settings since they are array in array

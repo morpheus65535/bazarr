@@ -144,11 +144,11 @@ def get_target_folder(file_path):
     subfolder = settings.general.subfolder
     fld_custom = str(settings.general.subfolder_custom).strip() \
         if settings.general.subfolder_custom else None
-    
+
     if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
         fld_base = os.path.split(file_path)[0]
-        
+
         if subfolder == "absolute":
             # absolute folder
             fld = fld_custom
@@ -156,9 +156,9 @@ def get_target_folder(file_path):
             fld = os.path.join(fld_base, fld_custom)
         else:
             fld = None
-        
+
         fld = force_unicode(fld)
-        
+
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
@@ -167,7 +167,7 @@ def get_target_folder(file_path):
                 fld = None
     else:
         fld = None
-    
+
     return fld
 
 

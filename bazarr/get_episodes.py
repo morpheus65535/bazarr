@@ -25,7 +25,7 @@ def update_all_episodes():
 def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
-    
+
     # Get current episodes id in DB
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
                                                TableEpisodes.path,
@@ -39,7 +39,7 @@ def sync_episodes(series_id=None, send_event=True):
     episodes_to_update = []
     episodes_to_add = []
     altered_episodes = []
-    
+
     # Get sonarrId for each series from database
     seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr,)
 
