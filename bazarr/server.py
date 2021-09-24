@@ -1,4 +1,5 @@
 # coding=utf-8
+# pylama:ignore=E402
 
 import warnings
 import logging

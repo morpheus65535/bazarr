@@ -1,4 +1,5 @@
 # coding=utf-8
+# pylama:ignore=W0611,W0401,E402
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:

@@ -1,3 +1,5 @@
+# pylama:ignore=W0611
+
 import logging
 import os
 from ffsubsync.ffsubsync import run, make_parser
