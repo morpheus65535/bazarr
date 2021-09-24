@@ -657,7 +657,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                                          chmod=chmod,
                                          # formats=("srt", "vtt")
                                          path_decoder=force_unicode)
-    except:
+    except Exception:
         pass
 
     if len(saved_subtitles) < 1:

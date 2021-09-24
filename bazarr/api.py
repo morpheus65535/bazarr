@@ -382,7 +382,7 @@ class Languages(Resource):
                             # Compatibility: Use false temporarily
                             'enabled': False
                         })
-                    except:
+                    except Exception:
                         continue
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
 
@@ -2008,19 +2008,18 @@ class SubtitleNameInfo(Resource):
         for name in names:
             opts = dict()
             opts['type'] = 'episode'
-            guessit_result = guessit(name, options=opts)
-            result = {}
+            result = guessit(name, options=opts)
             result['filename'] = name
-            if 'subtitle_language' in guessit_result:
-                result['subtitle_language'] = str(guessit_result['subtitle_language'])
+            if 'subtitle_language' in result:
+                result['subtitle_language'] = str(result['subtitle_language'])
 
-            if 'episode' in guessit_result:
-                result['episode'] = int(guessit_result['episode'])
+            if 'episode' in result:
+                result['episode'] = result['episode']
             else:
                 result['episode'] = 0
 
-            if 'season' in guessit_result:
-                result['season'] = int(guessit_result['season'])
+            if 'season' in result:
+                result['season'] = result['season']
             else:
                 result['season'] = 0
 
@@ -2110,7 +2109,7 @@ class WebHooksPlex(Resource):
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
                 series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
-            except:
+            except Exception:
                 return '', 404
             else:
                 sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
@@ -2126,7 +2125,7 @@ class WebHooksPlex(Resource):
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-            except:
+            except Exception:
                 return '', 404
             else:
                 radarrId = TableMovies.select(TableMovies.radarrId)\

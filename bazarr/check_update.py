@@ -36,7 +36,7 @@ def check_releases():
                 if asset['name'] == 'bazarr.zip':
                     download_link = asset['browser_download_url']
             if not download_link:
-                continue
+                download_link = release['zipball_url']
             releases.append({'name': release['name'],
                              'body': release['body'],
                              'date': release['published_at'],
@@ -157,7 +157,7 @@ def apply_update():
                     logging.debug('BAZARR successfully unzipped new release and will now try to delete the leftover '
                                   'files.')
                     update_cleaner(zipfile=bazarr_zip, bazarr_dir=bazarr_dir, config_dir=args.config_dir)
-                except:
+                except Exception:
                     logging.exception('BAZARR unable to cleanup leftover files after upgrade.')
                 else:
                     logging.debug('BAZARR successfully deleted leftover files.')

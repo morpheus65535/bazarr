@@ -367,16 +367,16 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         try:
             overview = str(movie['overview'])
-        except:
+        except Exception:
             overview = ""
         try:
             poster_big = movie['images'][0]['url']
             poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
-        except:
+        except Exception:
             poster = ""
         try:
             fanart = movie['images'][1]['url']
-        except:
+        except Exception:
             fanart = ""
 
         if 'sceneName' in movie['movieFile']:
@@ -399,11 +399,11 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         try:
             format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
-        except:
+        except Exception:
             format = movie['movieFile']['quality']['quality']['name']
             try:
                 resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
-            except:
+            except Exception:
                 resolution = None
 
         if 'mediaInfo' in movie['movieFile']:

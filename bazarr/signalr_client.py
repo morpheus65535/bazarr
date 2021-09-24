@@ -72,7 +72,7 @@ class SonarrSignalrClient:
             if self.connection.started:
                 try:
                     self.stop(log=False)
-                except:
+                except Exception:
                     self.connection.started = False
         if settings.general.getboolean('use_sonarr'):
             self.start()

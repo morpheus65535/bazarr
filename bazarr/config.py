@@ -180,10 +180,6 @@ defaults = {
         'username': '',
         'password': ''
     },
-    'titulky': {
-        'username': '',
-        'password': ''
-    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',
@@ -464,14 +460,14 @@ def save_settings(settings_items):
         from signalr_client import sonarr_signalr_client
         try:
             sonarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if radarr_changed:
         from signalr_client import radarr_signalr_client
         try:
             radarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if update_path_map:
