@@ -31,7 +31,7 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     subtitles_list = []
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
         for detected_language in data["ffprobe"]["subtitle"]:
-            if not "language" in detected_language:
+            if "language" not in detected_language:
                 continue
 
             # Avoid commentary subtitles
