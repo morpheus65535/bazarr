@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
+
 import libs
 from io import BytesIO
 import os

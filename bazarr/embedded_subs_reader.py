@@ -6,7 +6,6 @@ import pickle
 from knowit import api
 import enzyme
 from enzyme.exceptions import MalformedMKVError
-from enzyme.exceptions import MalformedMKVError
 from custom_lang import CustomLanguage
 from database import TableEpisodes, TableMovies
 

@@ -1,6 +1,6 @@
 # coding=utf-8
-# pylama:ignore=E203
-# TODO unignore and fix E203
+# pylama:ignore=E203,W0611
+# TODO unignore and fix E203,W0611
 
 import os
 import datetime

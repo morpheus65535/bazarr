@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=E402,W0401,W0611
+# TODO unignore and fix W0401,E402,W0611
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:

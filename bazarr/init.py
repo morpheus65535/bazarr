@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=E401,E402,W0611
+# TODO unignore and fix E401,E402,W0611
 
 import os
 import io
