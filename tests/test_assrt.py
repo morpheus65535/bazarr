@@ -8,8 +8,9 @@ from vcr import VCR
 from urlparse import urlparse, parse_qs
 from urllib import urlencode
 
-from subliminal_patch.providers.assrt import AssrtSubtitle, AssrtProvider, \
-language_contains, search_language_in_list, supported_languages
+from subliminal_patch.providers.assrt import (
+    AssrtSubtitle, AssrtProvider, language_contains,
+    search_language_in_list, supported_languages)
 
 
 def remove_auth_token(request):

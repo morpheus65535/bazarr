@@ -61,7 +61,7 @@ PROVIDER_THROTTLE_MAP = {
     "opensubtitlescom": {
         TooManyRequests      : (datetime.timedelta(minutes=1), "1 minute"),
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     },
     "addic7ed"        : {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
@@ -70,14 +70,14 @@ PROVIDER_THROTTLE_MAP = {
     },
     "titulky"         : {
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day)))
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day)))
     },
     "legendasdivx"    : {
         TooManyRequests      : (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
         IPAddressBlocked     : (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     }
 }
 
@@ -105,7 +105,7 @@ def get_providers():
             now = datetime.datetime.now()
             if now < until:
                 logging.debug("Not using %s until %s, because of: %s", provider,
-                                until.strftime("%y/%m/%d %H:%M"), reason)
+                              until.strftime("%y/%m/%d %H:%M"), reason)
                 providers_list.remove(provider)
             else:
                 logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
@@ -206,8 +206,9 @@ def provider_throttle(name, exception):
             if isinstance(cls, valid_cls):
                 cls = valid_cls
 
-    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
-                    PROVIDER_THROTTLE_MAP["default"].get(cls, None)
+    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(
+        cls, None
+    ) or PROVIDER_THROTTLE_MAP["default"].get(cls, None)
 
     if throttle_data:
         throttle_delta, throttle_description = throttle_data

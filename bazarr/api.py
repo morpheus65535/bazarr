@@ -326,7 +326,7 @@ class Languages(Resource):
                              .where(TableHistory.language is not None)
                              .dicts())
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
-                             .where(TableHistoryMovie.language is not None)
+                              .where(TableHistoryMovie.language is not None)
                               .dicts())
             languages_list = list(set([l['language'].split(':')[0] for l in languages]))
             languages_dicts = []
@@ -1516,13 +1516,18 @@ class EpisodesHistory(Resource):
         for item in episode_history:
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                if os.path.isfile(item['subtitles_path']):
+            if {
+                "video_path": str(item["path"]),
+                "timestamp": float(item["timestamp"]),
+                "score": str(item["score"]),
+                "tags": str(item["tags"]),
+                "monitored": str(item["monitored"]),
+                "seriesType": str(item["seriesType"]),
+            } in upgradable_episodes_not_perfect:
+                if os.path.isfile(item["subtitles_path"]):
                     item.update({"upgradable": True})
 
-            del item['path']
+            del item["path"]
 
             postprocessEpisode(item)
 
@@ -1628,12 +1633,17 @@ class MoviesHistory(Resource):
         for item in movie_history:
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
-                if os.path.isfile(item['subtitles_path']):
+            if {
+                "video_path": str(item["path"]),
+                "timestamp": float(item["timestamp"]),
+                "score": str(item["score"]),
+                "tags": str(item["tags"]),
+                "monitored": str(item["monitored"]),
+            } in upgradable_movies_not_perfect:
+                if os.path.isfile(item["subtitles_path"]):
                     item.update({"upgradable": True})
 
-            del item['path']
+            del item["path"]
 
             postprocessMovie(item)
 
@@ -1650,8 +1660,7 @@ class MoviesHistory(Resource):
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
                 for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item[
-                        'subs_id']:
+                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 

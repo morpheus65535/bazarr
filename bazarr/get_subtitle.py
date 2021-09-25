@@ -266,8 +266,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
-                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
+                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score,
+                        subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
@@ -527,8 +527,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             modifier_string = " forced"
                         else:
                             modifier_string = ""
-                        message = downloaded_language + modifier_string + " subtitles downloaded from " + \
-                                  downloaded_provider + " with a score of " + str(score) + "% using manual search."
+                        message = (downloaded_language + modifier_string + " subtitles downloaded from " +
+                                   downloaded_provider + " with a score of " + str(score) + "% using manual search.")
 
                         if media_type == 'series':
                             episode_metadata = TableEpisodes.select(TableEpisodes.seriesId,
@@ -579,8 +579,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         track_event(category=downloaded_provider, action="manually_downloaded",
                                     label=downloaded_language)
 
-                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
+                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score,
+                        subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
