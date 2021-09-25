@@ -20,6 +20,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
         modifier_string = " forced"
     else:
         modifier_string = ""
+    modifier_string  # TODO W0612 local variable 'modifier_string' is assigned to but never used
 
     if hi:
         modifier_code = ":hi"
@@ -30,6 +31,8 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     else:
         modifier_code = ""
         modifier_code_dot = ""
+    modifier_code  # TODO W0612 local variable 'modifier_code' is assigned to but never used
+    modifier_code_dot  # TODO W0612 local variable 'modifier_code_dot' is assigned to but never used
 
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
@@ -79,7 +82,7 @@ def get_target_folder(file_path):
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
-            except Exception as e:
+            except Exception:
                 logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
                 fld = None
     else:

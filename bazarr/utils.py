@@ -350,7 +350,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                                            target=language_code_convert_dict.get(lang_obj.basename,
                                                                                                  lang_obj.basename)
                                                            ).translate(text=block_str)
-        except:
+        except Exception:
             return False
         else:
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
@@ -374,7 +374,7 @@ def check_health():
     if settings.general.getboolean('use_series'):
         pass
     if settings.general.getboolean('use_movies'):
-        check_movies_rootfolder()
+        check_movies_rootfolder()  # TODO E0602 undefined name 'check_movies_rootfolder'
     pass
 
 

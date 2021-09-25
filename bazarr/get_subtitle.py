@@ -72,7 +72,7 @@ def get_video(path, title, providers=None, media_type="movie"):
         logging.debug('BAZARR is using these video object properties: %s', vars(copy.deepcopy(video)))
         return video
 
-    except Exception as e:
+    except Exception:
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
@@ -106,11 +106,11 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     if not isinstance(language, list):
         language = [language]
 
-    for l in language:
+    for lang in language:
         # Always use alpha2 in API Request
-        l = alpha3_from_alpha2(l)
+        lang = alpha3_from_alpha2(lang)
 
-        lang_obj = _get_lang_obj(l)
+        lang_obj = _get_lang_obj(lang)
 
         if forced == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
@@ -292,7 +292,8 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
     for language in language_items:
         forced = language['forced']
         hi = language['hi']
-        audio_exclude = language['audio_exclude']
+        # audio_exclude = language['audio_exclude']
+        # TODO W0612 local variable 'audio_exclude' is assigned to but never used
         language = language['language']
 
         lang = alpha3_from_alpha2(language)
@@ -323,8 +324,13 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
-    postprocessing_cmd = settings.general.postprocessing_cmd
+
+    # use_postprocessing = settings.general.getboolean('use_postprocessing')
+    # TODO W0612 local variable 'use_postprocessing' is assigned to but never used
+
+    # postprocessing_cmd = settings.general.postprocessing_cmd
+    # TODO W0612 local variable 'postprocessing_cmd' is assigned to but never used
+
     if providers:
         video = get_video(force_unicode(path), title, providers=providers, media_type=media_type)
     else:
@@ -362,7 +368,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
@@ -480,7 +486,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
             else:
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception('BAZARR Error downloading Subtitles for this file ' + path)
             return None
         else:
@@ -499,7 +505,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                                  # formats=("srt", "vtt")
                                                  path_decoder=force_unicode)
 
-            except Exception as e:
+            except Exception:
                 logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
                 return
             else:
@@ -631,7 +637,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
                                          chmod=chmod,
                                          # formats=("srt", "vtt")
                                          path_decoder=force_unicode)
-    except:
+    except Exception:
         pass
 
     if len(saved_subtitles) < 1:
@@ -687,7 +693,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
                              episode_id, hi=hi)
         postprocessing(command, path)
 
-    return message, path, subtitles_path
+    return message, path, subtitles_path  # TODO E0602 undefined name 'subtitles_path'
 
 
 def series_download_subtitles(no):
@@ -1235,7 +1241,8 @@ def refine_from_db(path, video):
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
             if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if data['imdbId'] and not video.series_imdb_id:
                 video.series_imdb_id = data['imdbId']
@@ -1244,9 +1251,11 @@ def refine_from_db(path, video):
             if not video.resolution:
                 video.resolution = str(data['resolution'])
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
     elif isinstance(video, Movie):
         data = TableMovies.select(TableMovies.title,
                                   TableMovies.year,
@@ -1263,18 +1272,23 @@ def refine_from_db(path, video):
             data = data[0]
             video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
             if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
             if data['imdbId'] and not video.imdb_id:
                 video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
-                if data['format']: video.source = convert_to_guessit('source', data['format'])
+                if data['format']:
+                    video.source = convert_to_guessit('source', data['format'])
             if not video.resolution:
-                if data['resolution']: video.resolution = data['resolution']
+                if data['resolution']:
+                    video.resolution = data['resolution']
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
 
     return video
 

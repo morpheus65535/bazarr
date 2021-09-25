@@ -281,7 +281,8 @@ def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
     update_schedule = False
-    update_path_map = False
+    # update_path_map = False
+    # TODO W0612 local variable 'update_path_map' is assigned to but never used
     configure_proxy = False
     exclusion_updated = False
     series_exclusion_updated = False
@@ -314,7 +315,7 @@ def save_settings(settings_items):
             value = 'False'
 
         if key == 'settings-auth-password':
-            if value != settings.auth.password and value != None:
+            if value != settings.auth.password and value is not None:
                 value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':

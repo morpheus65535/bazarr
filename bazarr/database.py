@@ -289,7 +289,7 @@ def init_db():
         try:
             if not System.select().count():
                 System.insert({System.configured: '0', System.updated: '0'}).execute()
-        except:
+        except Exception:
             gevent.sleep(0.1)
         else:
             tables_created = True

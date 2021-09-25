@@ -38,14 +38,14 @@ dir_name = os.path.dirname(__file__)
 def end_child_process(ep):
     try:
         ep.kill()
-    except:
+    except Exception:
         pass
 
 
 def terminate_child_process(ep):
     try:
         ep.terminate()
-    except:
+    except Exception:
         pass
 
 

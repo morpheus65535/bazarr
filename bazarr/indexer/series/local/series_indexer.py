@@ -25,7 +25,7 @@ def list_series_directories(root_dir):
             .where(TableShowsRootfolder.rootId == root_dir)\
             .dicts()\
             .get()
-    except:
+    except Exception:
         pass
     else:
         if not root_dir_path:

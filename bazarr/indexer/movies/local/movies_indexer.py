@@ -23,7 +23,7 @@ def list_movies_directories(root_dir):
             .where(TableMoviesRootfolder.rootId == root_dir)\
             .dicts()\
             .get()
-    except:
+    except Exception:
         pass
     else:
         if not root_dir_path:

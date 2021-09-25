@@ -258,7 +258,8 @@ def throttled_count(name):
 
 
 def update_throttled_provider():
-    changed = False
+    # changed = False
+    # TODO W0612 local variable 'changed' is assigned to but never used
     existing_providers = provider_registry.names()
     providers_list = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
 
@@ -266,7 +267,8 @@ def update_throttled_provider():
         if provider not in providers_list:
             del tp[provider]
             settings.general.throtteled_providers = str(tp)
-            changed = True
+            # changed = True
+            # TODO W0612 local variable 'changed' is assigned to but never used
 
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
 

@@ -40,7 +40,7 @@ def get_episode_metadata(file, tmdbid, series_id, update=False):
         except HTTPError:
             logging.debug(f"BAZARR can't find this episode on TMDB: {file}")
             episode_info['name'] = 'TBA'
-        except Exception as e:
+        except Exception:
             logging.exception(f'BAZARR is facing issues indexing this episodes: {file}')
             return False
         else:

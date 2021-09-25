@@ -56,7 +56,7 @@ class SubSyncer:
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
             result = run(self.args)
-        except Exception as e:
+        except Exception:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
                               '{0}'.format(self.srtin))
         else:

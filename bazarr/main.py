@@ -100,7 +100,7 @@ def catch_all(path):
 
     try:
         updated = System.get().updated
-    except:
+    except Exception:
         updated = '0'
 
     inject = dict()

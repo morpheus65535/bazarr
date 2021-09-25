@@ -130,7 +130,7 @@ if os.path.isfile(package_info_file):
                     continue
         if 'branch' in package_info:
             settings.general.branch = package_info['branch']
-    except:
+    except Exception:
         pass
     else:
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -172,7 +172,7 @@ def init_binaries():
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
-    except:
+    except Exception:
         logging.debug("custom check failed for: %s", exe)
 
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS

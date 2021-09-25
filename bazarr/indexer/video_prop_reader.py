@@ -87,7 +87,7 @@ def video_prop_reader(file):
                 try:
                     mkv = enzyme.MKV(f)
                 except MalformedMKVError:
-                    logger.error(
+                    logger.error(  # TODO E0602 undefined name 'logger'
                         "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
                         "ffmpeg/ffprobe: " + file
                     )

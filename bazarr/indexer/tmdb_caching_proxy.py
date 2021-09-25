@@ -19,7 +19,7 @@ def tmdb_func_cache(func, *args, **kwargs):
     try:
         pickled_func = pickle.dumps(func, pickle.HIGHEST_PROTOCOL)
         pickled_kwargs = pickle.dumps(kwargs, pickle.HIGHEST_PROTOCOL)
-    except:
+    except Exception:
         return func(**kwargs)
     else:
         try:
@@ -34,7 +34,7 @@ def tmdb_func_cache(func, *args, **kwargs):
         if cached_result:
             try:
                 pickled_result = pickle.loads(cached_result['result'])
-            except:
+            except Exception:
                 return renew_cache(func, pickled_func, pickled_kwargs, **kwargs)
             else:
                 return pickled_result
