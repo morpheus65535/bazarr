@@ -240,8 +240,8 @@ class TableCustomScoreProfiles(BaseModel):
 
 class TableCustomScoreProfileConditions(BaseModel):
     profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
-    type = TextField(null=True) # provider, uploader, regex, etc
-    value = TextField(null=True) # opensubtitles, jane_doe, [a-z], etc
+    type = TextField(null=True)  # provider, uploader, regex, etc
+    value = TextField(null=True)  # opensubtitles, jane_doe, [a-z], etc
     required = BooleanField(default=False)
     negate = BooleanField(default=False)
 

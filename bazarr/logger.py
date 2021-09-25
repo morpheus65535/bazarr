@@ -48,7 +48,7 @@ class NoExceptionFormatter(logging.Formatter):
     def format(self, record):
         record.exc_text = ''  # ensure formatException gets called
         return super(NoExceptionFormatter, self).format(record)
-    
+
     def formatException(self, record):
         return ''
 
@@ -60,20 +60,20 @@ def configure_logging(debug=False):
         log_level = "INFO"
     else:
         log_level = "DEBUG"
-    
+
     logger.handlers = []
-    
+
     logger.setLevel(log_level)
-    
+
     # Console logging
     ch = logging.StreamHandler()
     cf = (debug and logging.Formatter or NoExceptionFormatter)(
         '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
-    
+
     ch.setLevel(log_level)
     logger.addHandler(ch)
-    
+
     # File Logging
     global fh
     fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
@@ -83,7 +83,7 @@ def configure_logging(debug=False):
     fh.setFormatter(f)
     fh.setLevel(log_level)
     logger.addHandler(fh)
-    
+
     if debug:
         logging.getLogger("peewee").setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)

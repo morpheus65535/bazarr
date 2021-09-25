@@ -686,7 +686,7 @@ class Series(Resource):
                 .select(TableEpisodes.episodeId)\
                 .where(TableEpisodes.seriesId == seriesId)\
                 .dicts()
-            
+
             for item in episode_id_list:
                 event_stream(type='episode-wanted', payload=item['episodeId'])
 
@@ -1171,7 +1171,6 @@ class MoviesRootfolders(Resource):
         root_folders = TableMoviesRootfolder.select().dicts()
         root_folders = list(root_folders)
         return jsonify(data=root_folders)
-
 
     @authenticate
     def post(self):

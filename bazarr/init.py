@@ -165,20 +165,20 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
-    
+
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
     except:
         logging.debug("custom check failed for: %s", exe)
-    
+
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-    
+
     return unrar
 
 
