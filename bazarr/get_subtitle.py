@@ -78,7 +78,7 @@ def get_video(path, title, providers=None, media_type="movie"):
 
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, title,
                       media_type, forced_minimum_score=None, is_upgrade=False):
-    # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
+    # TODO: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
     if settings.general.getboolean('utf8_encode'):
@@ -93,9 +93,9 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         hi = "force non-HI"
 
     if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True  # fixme: This is also in get_providers_auth()
-        providers_auth['subscene']['only_foreign'] = True  # fixme: This is also in get_providers_auth()
-        providers_auth['opensubtitles']['only_foreign'] = True  # fixme: This is also in get_providers_auth()
+        providers_auth['podnapisi']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
+        providers_auth['subscene']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
+        providers_auth['opensubtitles']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
     else:
         providers_auth['podnapisi']['only_foreign'] = False
         providers_auth['subscene']['only_foreign'] = False
@@ -125,7 +125,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
 
-    # todo:
+    # TODO:
     """
     AsyncProviderPool:
     implement:
@@ -147,13 +147,13 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            provider_configs=providers_auth,
                                                            pool_class=provider_pool(),
                                                            compute_score=compute_score,
-                                                           throttle_time=None,  # fixme
+                                                           throttle_time=None,  # TODO
                                                            blacklist=get_blacklist(media_type=media_type),
                                                            throttle_callback=provider_throttle,
                                                            score_obj=handler,
-                                                           pre_download_hook=None,  # fixme
-                                                           post_download_hook=None,  # fixme
-                                                           language_hook=None)  # fixme
+                                                           pre_download_hook=None,  # TODO
+                                                           post_download_hook=None,  # TODO
+                                                           language_hook=None)  # TODO
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
@@ -174,7 +174,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                         'win') and settings.general.getboolean('chmod_enabled') else None
                     saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
-                                                     tags=None,  # fixme
+                                                     tags=None,  # TODO
                                                      directory=fld,
                                                      chmod=chmod,
                                                      # formats=("srt", "vtt")
@@ -257,7 +257,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                 logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
                                               "threshold value: " + str(pp_threshold) + "%")
 
-                        # fixme: support multiple languages at once
+                        # TODO: support multiple languages at once
                         if media_type == 'series':
                             event_stream(type='episode-wanted', action='delete', payload=episode_metadata['episodeId'])
 
@@ -347,7 +347,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                provider_configs=providers_auth,
                                                blacklist=get_blacklist(media_type=media_type),
                                                throttle_callback=provider_throttle,
-                                               language_hook=None)  # fixme
+                                               language_hook=None)  # TODO
 
                 if 'subscene' in providers:
                     subscene_language_set = set()
@@ -361,7 +361,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                                 provider_configs=providers_auth,
                                                                 blacklist=get_blacklist(media_type=media_type),
                                                                 throttle_callback=provider_throttle,
-                                                                language_hook=None)  # fixme
+                                                                language_hook=None)  # TODO
                         providers_auth['subscene']['only_foreign'] = False
                         subtitles[video] += subtitles_subscene[video]
             else:
@@ -499,7 +499,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.getboolean('chmod_enabled') else None
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
-                                                 tags=None,  # fixme
+                                                 tags=None,  # TODO
                                                  directory=fld,
                                                  chmod=chmod,
                                                  # formats=("srt", "vtt")
@@ -632,7 +632,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         saved_subtitles = save_subtitles(path,
                                          [sub],
                                          single=single,
-                                         tags=None,  # fixme
+                                         tags=None,  # TODO
                                          directory=get_target_folder(path),
                                          chmod=chmod,
                                          # formats=("srt", "vtt")

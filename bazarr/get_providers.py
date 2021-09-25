@@ -111,7 +111,7 @@ def get_providers():
                 logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                 del tp[provider]
                 set_throttled_providers(str(tp))
-        # if forced only is enabled: # fixme: Prepared for forced only implementation to remove providers with don't support forced only subtitles
+        # if forced only is enabled: # TODO: Prepared for forced only implementation to remove providers with don't support forced only subtitles
         #     for provider in providers_list:
         #         if provider in PROVIDERS_FORCED_OFF:
         #             providers_list.remove(provider)
@@ -134,8 +134,8 @@ def get_providers_auth():
             'use_tag_search': settings.opensubtitles.getboolean(
                     'use_tag_search'
             ),
-            'only_foreign'  : False,  # fixme
-            'also_foreign'  : False,  # fixme
+            'only_foreign'  : False,  # TODO
+            'also_foreign'  : False,  # TODO
             'is_vip'        : settings.opensubtitles.getboolean('vip'),
             'use_ssl'       : settings.opensubtitles.getboolean('ssl'),
             'timeout'       : int(settings.opensubtitles.timeout) or 15,
@@ -149,13 +149,13 @@ def get_providers_auth():
                              'api_key' : 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
         'podnapisi'       : {
-            'only_foreign': False,  # fixme
-            'also_foreign': False,  # fixme
+            'only_foreign': False,  # TODO
+            'also_foreign': False,  # TODO
         },
         'subscene'        : {
             'username'    : settings.subscene.username,
             'password'    : settings.subscene.password,
-            'only_foreign': False,  # fixme
+            'only_foreign': False,  # TODO
         },
         'legendasdivx'    : {
             'username'      : settings.legendasdivx.username,

@@ -900,7 +900,7 @@ class SeriesRootfolders(Resource):
         path = request.form.get('path')
         result = TableShowsRootfolder.insert({
             TableShowsRootfolder.path: path,
-            TableShowsRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableShowsRootfolder.accessible: 1,  # TODO: test it instead of assuming it's accessible
             TableShowsRootfolder.error: ''
         }).execute()
         return jsonify(data=list(TableShowsRootfolder.select().where(TableShowsRootfolder.rootId == result).dicts()))
@@ -1182,7 +1182,7 @@ class MoviesRootfolders(Resource):
         path = request.form.get('path')
         result = TableMoviesRootfolder.insert({
             TableMoviesRootfolder.path: path,
-            TableMoviesRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableMoviesRootfolder.accessible: 1,  # TODO: test it instead of assuming it's accessible
             TableMoviesRootfolder.error: ''
         }).execute()
         return jsonify(data=list(TableMoviesRootfolder.select().where(TableMoviesRootfolder.rootId == result).dicts()))
