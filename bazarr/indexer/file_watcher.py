@@ -3,7 +3,6 @@ import os
 import time
 import logging
 import gevent
-from watchdog_gevent import Observer
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.utils import WatchdogShutdown
 
@@ -13,6 +12,11 @@ from indexer.utils import VIDEO_EXTENSION
 from .series.local.series_indexer import get_series_match, get_series_metadata
 from .series.local.episodes_indexer import get_episode_metadata
 from list_subtitles import store_subtitles
+
+if settings.general.filewatcher_type == 'local':
+    from watchdog_gevent import Observer
+else:
+    from watchdog.observers.polling import PollingObserverVFS as Observer
 
 
 class FileWatcher:
@@ -39,10 +43,16 @@ class FileWatcher:
 
         # start
         if settings.general.getboolean('use_series'):
-            self.series_observer = Observer(timeout=self.timeout)
+            if settings.general.filewatcher_type == 'local':
+                self.series_observer = Observer(timeout=self.timeout)
+            else:
+                self.series_observer = Observer(stat=os.stat, listdir=os.scandir, polling_interval=self.timeout)
             self.series_directories = None
         if settings.general.getboolean('use_movies'):
-            self.movies_observer = Observer(timeout=self.timeout)
+            if settings.general.filewatcher_type == 'local':
+                self.movies_observer = Observer(timeout=self.timeout)
+            else:
+                self.movies_observer = Observer(stat=os.stat, listdir=os.scandir, polling_interval=self.timeout)
             self.movies_directories = None
 
         # get all root folders path

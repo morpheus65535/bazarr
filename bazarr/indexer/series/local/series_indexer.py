@@ -182,4 +182,4 @@ def update_specific_series(seriesId):
             .execute()
         if result:
             # if db updated, we check for episodes for this series
-            update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=True)
+            update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=False)
