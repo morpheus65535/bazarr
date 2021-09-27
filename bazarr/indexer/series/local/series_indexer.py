@@ -8,19 +8,17 @@ import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
 from indexer.tmdb_caching_proxy import tmdb_func_cache
+from indexer.utils import normalize_title
 from .episodes_indexer import update_series_episodes
 from event_handler import show_progress, hide_progress
 
-WordDelimiterRegex = re.compile(r"(\s|\.|,|_|-|=|\|)+")
-PunctuationRegex = re.compile(r"[^\w\s]")
-CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
-DuplicateSpacesRegex = re.compile(r"\s{2,}")
-
 
 def list_series_directories(root_dir):
+    # get the series directories for a specific root folder id
     series_directories = []
 
     try:
+        # get root folder row
         root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
             .where(TableShowsRootfolder.rootId == root_dir)\
             .dicts()\
@@ -32,12 +30,15 @@ def list_series_directories(root_dir):
             logging.debug(f'BAZARR cannot find the specified series root folder: {root_dir}')
             return series_directories
         for i, directory_temp in enumerate(os.listdir(root_dir_path['path'])):
+            # iterate over each directories under the root folder path and strip year if present
             directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
             directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
+            # deal with trailing article
             if directory.endswith(', The'):
                 directory = 'The ' + directory.rstrip(', The')
             elif directory.endswith(', A'):
                 directory = 'A ' + directory.rstrip(', A')
+            # exclude invisible directories and append the directory to the list that will be returned
             if not directory.startswith('.'):
                 series_directories.append(
                     {
@@ -51,16 +52,20 @@ def list_series_directories(root_dir):
 
 
 def get_series_match(directory):
+    # get matching series from tmdb using the directory name
     directory_temp = directory
+    # remove year fo directory name if found
     directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
     directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
 
     try:
+        # get matches from tmdb (potentially from cache)
         series_temp = tmdb_func_cache(tmdb.Search().tv, query=directory)
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
     else:
         matching_series = []
+        # if there's results, parse them to return matching titles
         if series_temp['total_results']:
             for item in series_temp['results']:
                 year = None
@@ -77,21 +82,24 @@ def get_series_match(directory):
 
 
 def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
+    # get the metadata from tmdb for a specific tmdbid
     series_metadata = {}
+    # get root folder row
     root_dir_path = TableShowsRootfolder.select(TableShowsRootfolder.path)\
         .where(TableShowsRootfolder.rootId == root_dir_id)\
         .dicts()\
         .get()
     if tmdbid:
         try:
+            # get series info, alternative titles and external ids from tmdb using cache if available
             series_info = tmdb_func_cache(tmdb.TV(tmdbid).info)
             alternative_titles = tmdb_func_cache(tmdb.TV(tmdbid).alternative_titles)
             external_ids = tmdb_func_cache(tmdb.TV(tmdbid).external_ids)
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
         else:
+            # parse metadata returned by tmdb
             images_url = 'https://image.tmdb.org/t/p/w500{0}'
-
             series_metadata = {
                 'title': series_info['original_name'],
                 'sortTitle': normalize_title(series_info['original_name']),
@@ -112,20 +120,11 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
         return series_metadata
 
 
-def normalize_title(title):
-    title = title.lower()
-
-    title = re.sub(WordDelimiterRegex, " ", title)
-    title = re.sub(PunctuationRegex, "", title)
-    title = re.sub(CommonWordRegex, "", title)
-    title = re.sub(DuplicateSpacesRegex, " ", title)
-
-    return title.strip()
-
-
 def update_indexed_series():
+    # update all series in db, insert new ones and remove old ones
     root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.rootId, TableShowsRootfolder.path).dicts()
     for root_dir_id in root_dir_ids:
+        # for each root folder, get the existing series rows
         root_dir_subdirectories = list_series_directories(root_dir_id['rootId'])
         existing_subdirectories = [x['path'] for x in
                                    TableShows.select(TableShows.path)
@@ -150,29 +149,39 @@ def update_indexed_series():
         # add missing series to database
         for root_dir_subdirectory in root_dir_subdirectories:
             if os.path.join(root_dir_id['path'], root_dir_subdirectory['directory']) in existing_subdirectories:
+                # series is already in db so we'll skip it
                 continue
             else:
+                # new series, let's get matches for it
                 root_dir_match = get_series_match(root_dir_subdirectory['directory'])
                 if root_dir_match:
+                    # now that we have at least a match, we'll assume the first one is the good one and get metadata
                     directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
                                                              root_dir_subdirectory['directory'])
                     if directory_metadata:
                         try:
+                            # let's insert this series into the db
                             series_id = TableShows.insert(directory_metadata).execute()
                         except Exception as e:
                             logging.error(f'BAZARR is unable to insert this series to the database: '
                                           f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
                         else:
                             if series_id:
+                                # once added to the db, we'll check for episodes for this series
                                 update_series_episodes(seriesId=series_id, use_cache=False)
 
 
 def update_specific_series(seriesId):
+    # update a specific series in db
+    # get series row
     show_metadata = TableShows.select().where(TableShows.seriesId == seriesId).dicts().get()
+    # get metadata for this series
     directory_metadata = get_series_metadata(show_metadata['tmdbId'], show_metadata['rootdir'])
     if directory_metadata:
+        # if we get metadata, we update the db
         result = TableShows.update(directory_metadata) \
             .where(TableShows.tmdbId == show_metadata['tmdbId']) \
             .execute()
         if result:
-            update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=True)
+            # if db updated, we check for episodes for this series
+            update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=False)

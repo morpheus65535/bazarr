@@ -50,6 +50,7 @@ Classes
 
 import errno
 import os
+import time
 from stat import S_ISDIR
 
 
@@ -269,6 +270,7 @@ class DirectorySnapshot:
 
         entries = []
         for p in paths:
+            time.sleep(0.0001)
             try:
                 entry = (p, self.stat(p))
                 entries.append(entry)

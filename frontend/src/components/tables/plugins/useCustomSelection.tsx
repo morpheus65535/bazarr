@@ -18,22 +18,37 @@ const checkboxId = "---selection---";
 
 interface CheckboxProps {
   idIn: string;
+  disabled?: boolean;
 }
 
 const Checkbox = forwardRef<
   HTMLInputElement,
   TableToggleCommonProps & CheckboxProps
->(({ indeterminate, idIn, ...rest }, ref) => {
+>(({ indeterminate, checked, disabled, idIn, ...rest }, ref) => {
   const defaultRef = useRef<HTMLInputElement>(null);
   const resolvedRef = ref || defaultRef;
 
   useEffect(() => {
     if (typeof resolvedRef === "object" && resolvedRef.current) {
       resolvedRef.current.indeterminate = indeterminate ?? false;
-    }
-  }, [resolvedRef, indeterminate]);
 
-  return <Form.Check custom id={idIn} ref={resolvedRef} {...rest}></Form.Check>;
+      if (disabled) {
+        resolvedRef.current.checked = false;
+      } else {
+        resolvedRef.current.checked = checked ?? false;
+      }
+    }
+  }, [resolvedRef, indeterminate, checked, disabled]);
+
+  return (
+    <Form.Check
+      custom
+      disabled={disabled}
+      id={idIn}
+      ref={resolvedRef}
+      {...rest}
+    ></Form.Check>
+  );
 });
 
 function useCustomSelection<T extends object>(hooks: Hooks<T>) {
@@ -52,6 +67,7 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
     plugins,
     rows,
     onSelect,
+    canSelect,
     isSelecting,
     state: { selectedRowIds },
   } = instance;
@@ -61,12 +77,17 @@ function useInstance<T extends object>(instance: TableInstance<T>) {
   useEffect(() => {
     // Performance
     if (isSelecting) {
-      const items = Object.keys(selectedRowIds).flatMap(
+      let items = Object.keys(selectedRowIds).flatMap(
         (v) => rows.find((n) => n.id === v)?.original ?? []
       );
+
+      if (canSelect) {
+        items = items.filter((v) => canSelect(v));
+      }
+
       onSelect && onSelect(items);
     }
-  }, [selectedRowIds, onSelect, rows, isSelecting]);
+  }, [selectedRowIds, onSelect, rows, isSelecting, canSelect]);
 }
 
 function visibleColumns<T extends object>(
@@ -83,12 +104,17 @@ function visibleColumns<T extends object>(
           {...getToggleAllRowsSelectedProps()}
         ></Checkbox>
       ),
-      Cell: ({ row }: CellProps<any>) => (
-        <Checkbox
-          idIn={`table-cell-${row.index}`}
-          {...row.getToggleRowSelectedProps()}
-        ></Checkbox>
-      ),
+      Cell: ({ row }: CellProps<any>) => {
+        const canSelect = instance.canSelect;
+        const disabled = (canSelect && !canSelect(row.original)) ?? false;
+        return (
+          <Checkbox
+            idIn={`table-cell-${row.index}`}
+            disabled={disabled}
+            {...row.getToggleRowSelectedProps()}
+          ></Checkbox>
+        );
+      },
     };
     return [checkbox, ...columns.filter((v) => v.selectHide !== true)];
   } else {

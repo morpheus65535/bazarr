@@ -295,6 +295,10 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
 
 const TaskGroupName = "Modifying Subtitles";
 
+const CanSelectSubtitle = (item: TableColumnType) => {
+  return item.path.endsWith(".srt");
+};
+
 const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
   const payload = useModalPayload<SupportType[]>(props.modalKey);
   const [selections, setSelections] = useState<TableColumnType[]>([]);
@@ -458,6 +462,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
           plugins={plugins}
           columns={columns}
           onSelect={setSelections}
+          canSelect={CanSelectSubtitle}
           data={data}
         ></SimpleTable>
       </BaseModal>

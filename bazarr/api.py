@@ -2067,18 +2067,19 @@ class SubtitleNameInfo(Resource):
         for name in names:
             opts = dict()
             opts['type'] = 'episode'
-            result = guessit(name, options=opts)
+            guessit_result = guessit(name, options=opts)
+            result = {}
             result['filename'] = name
-            if 'subtitle_language' in result:
-                result['subtitle_language'] = str(result['subtitle_language'])
+            if 'subtitle_language' in guessit_result:
+                result['subtitle_language'] = str(guessit_result['subtitle_language'])
 
-            if 'episode' in result:
-                result['episode'] = result['episode']
+            if 'episode' in guessit_result:
+                result['episode'] = int(guessit_result['episode'])
             else:
                 result['episode'] = 0
 
-            if 'season' in result:
-                result['season'] = result['season']
+            if 'season' in guessit_result:
+                result['season'] = int(guessit_result['season'])
             else:
                 result['season'] = 0
 

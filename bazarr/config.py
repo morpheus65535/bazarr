@@ -71,7 +71,8 @@ defaults = {
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False',
-        'filewatcher_timeout': '60'  # file watcher interval in seconds
+        'filewatcher_timeout': '60',  # file watcher interval in seconds
+        'filewatcher_type': 'local'  # file watcher mode: local or remote
     },
     'auth': {
         'type': 'None',
@@ -200,6 +201,10 @@ defaults = {
         'token': ''
     },
     'titlovi': {
+        'username': '',
+        'password': ''
+    },
+    'titulky': {
         'username': '',
         'password': ''
     }

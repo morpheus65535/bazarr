@@ -11,69 +11,19 @@ from enzyme.exceptions import MalformedMKVError
 from utils import get_binary
 from database import TableEpisodes, TableMovies
 from get_languages import create_languages_dict, language_from_alpha3
-
-VIDEO_EXTENSION = [
-    # Unknown
-    ".webm",
-
-    # SDTV
-    ".m4v",
-    ".3gp",
-    ".nsv",
-    ".ty",
-    ".strm",
-    ".rm",
-    ".rmvb",
-    ".m3u",
-    ".ifo",
-    ".mov",
-    ".qt",
-    ".divx",
-    ".xvid",
-    ".bivx",
-    ".nrg",
-    ".pva",
-    ".wmv",
-    ".asf",
-    ".asx",
-    ".ogm",
-    ".ogv",
-    ".m2v",
-    ".avi",
-    ".bin",
-    ".dat",
-    ".dvr-ms",
-    ".mpg",
-    ".mpeg",
-    ".mp4",
-    ".avc",
-    ".vp3",
-    ".svq3",
-    ".nuv",
-    ".viv",
-    ".dv",
-    ".fli",
-    ".flv",
-    ".wpl",
-
-    # HD
-    ".mkv",
-    ".mk3d",
-    ".ts",
-    ".wtv",
-
-    # Bluray
-    ".m2ts",
-]
+from indexer.utils import VIDEO_EXTENSION
 
 
 def video_prop_reader(file):
+    # function to get video properties from a media file
     video_prop = {}
 
     if os.path.splitext(file)[1] not in VIDEO_EXTENSION:
+        # unsupported file extension so we don't care about it and return an empty dict
         logging.debug(f'Unsupported file extension: {file}')
         return video_prop
 
+    # get the ffprobe path
     ffprobe_path = get_binary("ffprobe")
 
     # if we have ffprobe available
@@ -105,6 +55,7 @@ def video_prop_reader(file):
         file_size = None
 
         if ffprobe_path:
+            # if ffprobe has been used, we populate our dict using returned values
             file_size = data['size']
             if 'video' in data and len(data['video']):
                 video_resolution = data['video'][0]['resolution']
@@ -124,6 +75,7 @@ def video_prop_reader(file):
                             else:
                                 pass
         elif not ffprobe_path and os.path.splitext(file)[1] == "mkv":
+            # if we didn't found ffprobe but the file is an mkv, we parse enzyme metadata and populate our dict wit it.
             file_size = os.path.getsize(file)
             if len(data.video_tracks):
                 for video_track in data.video_tracks:
