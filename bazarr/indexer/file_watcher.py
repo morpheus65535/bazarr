@@ -9,7 +9,7 @@ from watchdog.utils import WatchdogShutdown
 
 from config import settings
 from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder, TableShows, TableEpisodes, TableMovies
-from .video_prop_reader import VIDEO_EXTENSION
+from indexer.utils import VIDEO_EXTENSION
 from .series.local.series_indexer import get_series_match, get_series_metadata
 from .series.local.episodes_indexer import get_episode_metadata
 from list_subtitles import store_subtitles
@@ -33,9 +33,9 @@ class FileWatcher:
             self.timeout = int(settings.general.filewatcher_timeout)
         except TypeError:
             self.timeout = 60
-            logging.info(f'BAZARR file watcher is using the default interval of {self.timeout} seconds.')
+            logging.debug(f'BAZARR file watcher is using the default interval of {self.timeout} seconds.')
         else:
-            logging.info(f'BAZARR file watcher is using the configured interval of {self.timeout} seconds.')
+            logging.debug(f'BAZARR file watcher is using the configured interval of {self.timeout} seconds.')
 
         # start
         if settings.general.getboolean('use_series'):
@@ -135,17 +135,25 @@ class FileWatcher:
         if settings.general.getboolean('use_series'):
             self.series_directories = [x['path'] for x in TableShowsRootfolder.select().dicts()]
             for series_directory in self.series_directories:
-                self.series_observer.schedule(self.fs_event_handler, series_directory, recursive=True)
+                if os.path.exists(series_directory):
+                    self.series_observer.schedule(self.fs_event_handler, series_directory, recursive=True)
+                    logging.debug(f'BAZARR is watching this series root directory: {series_directory}')
+                else:
+                    logging.error(f'BAZARR cannot access this series root directory: {series_directory}')
         if settings.general.getboolean('use_movies'):
             self.movies_directories = [x['path'] for x in TableMoviesRootfolder.select().dicts()]
             for movies_directory in self.movies_directories:
-                self.movies_observer.schedule(self.fs_event_handler, movies_directory, recursive=True)
+                if os.path.exists(movies_directory):
+                    self.movies_observer.schedule(self.fs_event_handler, movies_directory, recursive=True)
+                    logging.debug(f'BAZARR is watching this movies root directory: {movies_directory}')
+                else:
+                    logging.error(f'BAZARR cannot access this movies root directory: {movies_directory}')
 
     def start(self):
         logging.info('BAZARR is starting file system watchers...')
-        self.config()
         self.series_observer.start()
         self.movies_observer.start()
+        self.config()
         logging.info('BAZARR is watching for file system changes.')
 
 
