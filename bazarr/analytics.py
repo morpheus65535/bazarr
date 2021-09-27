@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import pickle
 import random
@@ -35,7 +37,7 @@ def track_event(category=None, action=None, label=None):
         else:
             visitor = Visitor()
             visitor.unique_id = random.randint(0, 0x7fffffff)
-    except:
+    except Exception:
         visitor = Visitor()
         visitor.unique_id = random.randint(0, 0x7fffffff)
 
@@ -49,7 +51,7 @@ def track_event(category=None, action=None, label=None):
 
     try:
         tracker.track_event(event, session, visitor)
-    except:
+    except Exception:
         logging.debug("BAZARR unable to track event.")
         pass
     else:

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import datetime
 import time
@@ -20,7 +22,7 @@ def tmdb_func_cache(func, *args, **kwargs):
         # try to pickle both func and kwargs
         pickled_func = pickle.dumps(func, pickle.HIGHEST_PROTOCOL)
         pickled_kwargs = pickle.dumps(kwargs, pickle.HIGHEST_PROTOCOL)
-    except:
+    except Exception:
         # if we can't pickle them, we run the function and return the result directly without caching it
         return func(**kwargs)
     else:
@@ -39,7 +41,7 @@ def tmdb_func_cache(func, *args, **kwargs):
             try:
                 # we try to unpickle the matching cache result
                 pickled_result = pickle.loads(cached_result['result'])
-            except:
+            except Exception:
                 # if we fail we renew the cache
                 return renew_cache(func, pickled_func, pickled_kwargs, **kwargs)
             else:

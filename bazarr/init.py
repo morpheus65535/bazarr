@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=E401,E402,W0611
+# TODO unignore and fix E401,E402,W0611
 
 import os
 import io
@@ -130,7 +132,7 @@ if os.path.isfile(package_info_file):
                     continue
         if 'branch' in package_info:
             settings.general.branch = package_info['branch']
-    except:
+    except Exception:
         pass
     else:
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -167,20 +169,20 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
-    
+
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
-    except:
+    except Exception:
         logging.debug("custom check failed for: %s", exe)
-    
+
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-    
+
     return unrar
 
 

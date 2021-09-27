@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import os
 import time
@@ -29,7 +31,7 @@ import datetime
 import glob
 
 region = make_region().configure('dogpile.cache.memory')
-#headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+# headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):
@@ -249,7 +251,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-        
+
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -348,7 +350,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                                            target=language_code_convert_dict.get(lang_obj.basename,
                                                                                                  lang_obj.basename)
                                                            ).translate(text=block_str)
-        except:
+        except Exception:
             return False
         else:
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
@@ -372,7 +374,7 @@ def check_health():
     if settings.general.getboolean('use_series'):
         pass
     if settings.general.getboolean('use_movies'):
-        check_movies_rootfolder()
+        check_movies_rootfolder()  # TODO E0602 undefined name 'check_movies_rootfolder'
     pass
 
 

@@ -1,4 +1,7 @@
 # coding=utf-8
+# pylama:ignore=E203,W0611
+# TODO unignore and fix E203,W0611
+
 import os
 import datetime
 import logging
@@ -58,7 +61,7 @@ PROVIDER_THROTTLE_MAP = {
     "opensubtitlescom": {
         TooManyRequests      : (datetime.timedelta(minutes=1), "1 minute"),
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     },
     "addic7ed"        : {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
@@ -67,14 +70,14 @@ PROVIDER_THROTTLE_MAP = {
     },
     "titulky"         : {
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day)))
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day)))
     },
     "legendasdivx"    : {
         TooManyRequests      : (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
         IPAddressBlocked     : (
-        datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     }
 }
 
@@ -102,13 +105,13 @@ def get_providers():
             now = datetime.datetime.now()
             if now < until:
                 logging.debug("Not using %s until %s, because of: %s", provider,
-                                until.strftime("%y/%m/%d %H:%M"), reason)
+                              until.strftime("%y/%m/%d %H:%M"), reason)
                 providers_list.remove(provider)
             else:
                 logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
                 del tp[provider]
                 set_throttled_providers(str(tp))
-        # if forced only is enabled: # fixme: Prepared for forced only implementation to remove providers with don't support forced only subtitles
+        # if forced only is enabled: # TODO: Prepared for forced only implementation to remove providers with don't support forced only subtitles
         #     for provider in providers_list:
         #         if provider in PROVIDERS_FORCED_OFF:
         #             providers_list.remove(provider)
@@ -131,8 +134,8 @@ def get_providers_auth():
             'use_tag_search': settings.opensubtitles.getboolean(
                     'use_tag_search'
             ),
-            'only_foreign'  : False,  # fixme
-            'also_foreign'  : False,  # fixme
+            'only_foreign'  : False,  # TODO
+            'also_foreign'  : False,  # TODO
             'is_vip'        : settings.opensubtitles.getboolean('vip'),
             'use_ssl'       : settings.opensubtitles.getboolean('ssl'),
             'timeout'       : int(settings.opensubtitles.timeout) or 15,
@@ -146,13 +149,13 @@ def get_providers_auth():
                              'api_key' : 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
         'podnapisi'       : {
-            'only_foreign': False,  # fixme
-            'also_foreign': False,  # fixme
+            'only_foreign': False,  # TODO
+            'also_foreign': False,  # TODO
         },
         'subscene'        : {
             'username'    : settings.subscene.username,
             'password'    : settings.subscene.password,
-            'only_foreign': False,  # fixme
+            'only_foreign': False,  # TODO
         },
         'legendasdivx'    : {
             'username'      : settings.legendasdivx.username,
@@ -203,8 +206,9 @@ def provider_throttle(name, exception):
             if isinstance(cls, valid_cls):
                 cls = valid_cls
 
-    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
-                    PROVIDER_THROTTLE_MAP["default"].get(cls, None)
+    throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(
+        cls, None
+    ) or PROVIDER_THROTTLE_MAP["default"].get(cls, None)
 
     if throttle_data:
         throttle_delta, throttle_description = throttle_data
@@ -255,7 +259,8 @@ def throttled_count(name):
 
 
 def update_throttled_provider():
-    changed = False
+    # changed = False
+    # TODO W0612 local variable 'changed' is assigned to but never used
     existing_providers = provider_registry.names()
     providers_list = [x for x in get_array_from(settings.general.enabled_providers) if x in existing_providers]
 
@@ -263,7 +268,8 @@ def update_throttled_provider():
         if provider not in providers_list:
             del tp[provider]
             settings.general.throtteled_providers = str(tp)
-            changed = True
+            # changed = True
+            # TODO W0612 local variable 'changed' is assigned to but never used
 
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
 

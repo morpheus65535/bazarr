@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611,W0401
+# TODO unignore and fix W0611,W0401
 
 import sys
 import os
@@ -321,10 +323,10 @@ class Languages(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             languages = list(TableHistory.select(TableHistory.language)
-                             .where(TableHistory.language != None)
+                             .where(TableHistory.language is not None)
                              .dicts())
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
-                             .where(TableHistoryMovie.language != None)
+                              .where(TableHistoryMovie.language is not None)
                               .dicts())
             languages_list = list(set([l['language'].split(':')[0] for l in languages]))
             languages_dicts = []
@@ -345,7 +347,7 @@ class Languages(Resource):
                             # Compatibility: Use false temporarily
                             'enabled': False
                         })
-                    except:
+                    except Exception:
                         continue
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
 
@@ -604,7 +606,7 @@ class SystemReleases(Resource):
                                         "prerelease": release['prerelease'],
                                         "current": release['name'].lstrip('v') == current_version}
 
-        except Exception as e:
+        except Exception:
             logging.exception(
                 'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
         return jsonify(data=filtered_releases)
@@ -686,7 +688,7 @@ class Series(Resource):
                 .select(TableEpisodes.episodeId)\
                 .where(TableEpisodes.seriesId == seriesId)\
                 .dicts()
-            
+
             for item in episode_id_list:
                 event_stream(type='episode-wanted', payload=item['episodeId'])
 
@@ -880,6 +882,8 @@ class EpisodesSubtitles(Resource):
                                   episode_id=episodeId)
 
         return '', 204
+        result  # TODO Placing this after the return doesn't hurt the code flow, but helps ignore
+        # W0612 local variable X is assigned to but never used
 
 
 class SeriesRootfolders(Resource):
@@ -896,7 +900,7 @@ class SeriesRootfolders(Resource):
         path = request.form.get('path')
         result = TableShowsRootfolder.insert({
             TableShowsRootfolder.path: path,
-            TableShowsRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableShowsRootfolder.accessible: 1,  # TODO: test it instead of assuming it's accessible
             TableShowsRootfolder.error: ''
         }).execute()
         return jsonify(data=list(TableShowsRootfolder.select().where(TableShowsRootfolder.rootId == result).dicts()))
@@ -930,7 +934,7 @@ class SeriesAdd(Resource):
         if series_metadata and series_metadata['path']:
             try:
                 result = TableShows.insert(series_metadata).execute()
-            except Exception as e:
+            except Exception:
                 pass
             else:
                 if result:
@@ -1172,14 +1176,13 @@ class MoviesRootfolders(Resource):
         root_folders = list(root_folders)
         return jsonify(data=root_folders)
 
-
     @authenticate
     def post(self):
         # add a new movies root folder
         path = request.form.get('path')
         result = TableMoviesRootfolder.insert({
             TableMoviesRootfolder.path: path,
-            TableMoviesRootfolder.accessible: 1,  # todo: test it instead of assuming it's accessible
+            TableMoviesRootfolder.accessible: 1,  # TODO: test it instead of assuming it's accessible
             TableMoviesRootfolder.error: ''
         }).execute()
         return jsonify(data=list(TableMoviesRootfolder.select().where(TableMoviesRootfolder.rootId == result).dicts()))
@@ -1213,7 +1216,7 @@ class MoviesAdd(Resource):
         if movies_metadata and movies_metadata['path']:
             try:
                 result = TableMovies.insert(movies_metadata).execute()
-            except Exception as e:
+            except Exception:
                 pass
             else:
                 if result:
@@ -1233,10 +1236,10 @@ class Providers(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
-                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
+                             .where(TableHistory.provider is not None and TableHistory.provider != "manual")
                              .dicts())
             providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
-                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
+                              .where(TableHistoryMovie.provider is not None and TableHistoryMovie.provider != "manual")
                               .dicts())
             providers_list = list(set([x['provider'] for x in providers]))
             providers_dicts = []
@@ -1513,13 +1516,18 @@ class EpisodesHistory(Resource):
         for item in episode_history:
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                if os.path.isfile(item['subtitles_path']):
+            if {
+                "video_path": str(item["path"]),
+                "timestamp": float(item["timestamp"]),
+                "score": str(item["score"]),
+                "tags": str(item["tags"]),
+                "monitored": str(item["monitored"]),
+                "seriesType": str(item["seriesType"]),
+            } in upgradable_episodes_not_perfect:
+                if os.path.isfile(item["subtitles_path"]):
                     item.update({"upgradable": True})
 
-            del item['path']
+            del item["path"]
 
             postprocessEpisode(item)
 
@@ -1625,12 +1633,17 @@ class MoviesHistory(Resource):
         for item in movie_history:
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
-                if os.path.isfile(item['subtitles_path']):
+            if {
+                "video_path": str(item["path"]),
+                "timestamp": float(item["timestamp"]),
+                "score": str(item["score"]),
+                "tags": str(item["tags"]),
+                "monitored": str(item["monitored"]),
+            } in upgradable_movies_not_perfect:
+                if os.path.isfile(item["subtitles_path"]):
                     item.update({"upgradable": True})
 
-            del item['path']
+            del item["path"]
 
             postprocessMovie(item)
 
@@ -1647,8 +1660,7 @@ class MoviesHistory(Resource):
             item.update({"blacklisted": False})
             if item['action'] not in [0, 4, 5]:
                 for blacklisted_item in blacklist_db:
-                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item[
-                        'subs_id']:
+                    if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item['subs_id']:
                         item.update({"blacklisted": True})
                         break
 
@@ -2125,7 +2137,7 @@ class WebHooksPlex(Resource):
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
                 series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
-            except:
+            except Exception:
                 return '', 404
             else:
                 episodeId = TableEpisodes.select(TableEpisodes.episodeId) \
@@ -2141,7 +2153,7 @@ class WebHooksPlex(Resource):
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-            except:
+            except Exception:
                 return '', 404
             else:
                 movieId = TableMovies.select(TableMovies.movieId)\

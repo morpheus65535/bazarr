@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import os
 import sys
@@ -70,13 +72,13 @@ def get_video(path, title, providers=None, media_type="movie"):
         logging.debug('BAZARR is using these video object properties: %s', vars(copy.deepcopy(video)))
         return video
 
-    except Exception as e:
+    except Exception:
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, title,
                       media_type, forced_minimum_score=None, is_upgrade=False):
-    # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
+    # TODO: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
     if settings.general.getboolean('utf8_encode'):
@@ -91,9 +93,9 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         hi = "force non-HI"
 
     if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
-        providers_auth['subscene']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
-        providers_auth['opensubtitles']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
+        providers_auth['podnapisi']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
+        providers_auth['subscene']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
+        providers_auth['opensubtitles']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
     else:
         providers_auth['podnapisi']['only_foreign'] = False
         providers_auth['subscene']['only_foreign'] = False
@@ -104,11 +106,11 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     if not isinstance(language, list):
         language = [language]
 
-    for l in language:
+    for lang in language:
         # Always use alpha2 in API Request
-        l = alpha3_from_alpha2(l)
+        lang = alpha3_from_alpha2(lang)
 
-        lang_obj = _get_lang_obj(l)
+        lang_obj = _get_lang_obj(lang)
 
         if forced == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
@@ -123,8 +125,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
 
-
-    # todo:
+    # TODO:
     """
     AsyncProviderPool:
     implement:
@@ -146,13 +147,13 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            provider_configs=providers_auth,
                                                            pool_class=provider_pool(),
                                                            compute_score=compute_score,
-                                                           throttle_time=None,  # fixme
+                                                           throttle_time=None,  # TODO
                                                            blacklist=get_blacklist(media_type=media_type),
                                                            throttle_callback=provider_throttle,
                                                            score_obj=handler,
-                                                           pre_download_hook=None,  # fixme
-                                                           post_download_hook=None,  # fixme
-                                                           language_hook=None)  # fixme
+                                                           pre_download_hook=None,  # TODO
+                                                           post_download_hook=None,  # TODO
+                                                           language_hook=None)  # TODO
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
@@ -173,7 +174,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                         'win') and settings.general.getboolean('chmod_enabled') else None
                     saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
-                                                     tags=None,  # fixme
+                                                     tags=None,  # TODO
                                                      directory=fld,
                                                      chmod=chmod,
                                                      # formats=("srt", "vtt")
@@ -256,7 +257,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                 logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
                                               "threshold value: " + str(pp_threshold) + "%")
 
-                        # fixme: support multiple languages at once
+                        # TODO: support multiple languages at once
                         if media_type == 'series':
                             event_stream(type='episode-wanted', action='delete', payload=episode_metadata['episodeId'])
 
@@ -265,8 +266,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
-                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
+                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score,
+                        subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
@@ -291,7 +292,8 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
     for language in language_items:
         forced = language['forced']
         hi = language['hi']
-        audio_exclude = language['audio_exclude']
+        # audio_exclude = language['audio_exclude']
+        # TODO W0612 local variable 'audio_exclude' is assigned to but never used
         language = language['language']
 
         lang = alpha3_from_alpha2(language)
@@ -322,8 +324,13 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
-    use_postprocessing = settings.general.getboolean('use_postprocessing')
-    postprocessing_cmd = settings.general.postprocessing_cmd
+
+    # use_postprocessing = settings.general.getboolean('use_postprocessing')
+    # TODO W0612 local variable 'use_postprocessing' is assigned to but never used
+
+    # postprocessing_cmd = settings.general.postprocessing_cmd
+    # TODO W0612 local variable 'postprocessing_cmd' is assigned to but never used
+
     if providers:
         video = get_video(force_unicode(path), title, providers=providers, media_type=media_type)
     else:
@@ -340,7 +347,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                provider_configs=providers_auth,
                                                blacklist=get_blacklist(media_type=media_type),
                                                throttle_callback=provider_throttle,
-                                               language_hook=None)  # fixme
+                                               language_hook=None)  # TODO
 
                 if 'subscene' in providers:
                     subscene_language_set = set()
@@ -354,14 +361,14 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                                 provider_configs=providers_auth,
                                                                 blacklist=get_blacklist(media_type=media_type),
                                                                 throttle_callback=provider_throttle,
-                                                                language_hook=None)  # fixme
+                                                                language_hook=None)  # TODO
                         providers_auth['subscene']['only_foreign'] = False
                         subtitles[video] += subtitles_subscene[video]
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception("BAZARR Error trying to get Subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
@@ -479,7 +486,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
             else:
                 logging.info("BAZARR All providers are throttled")
                 return None
-        except Exception as e:
+        except Exception:
             logging.exception('BAZARR Error downloading Subtitles for this file ' + path)
             return None
         else:
@@ -492,13 +499,13 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.getboolean('chmod_enabled') else None
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
-                                                 tags=None,  # fixme
+                                                 tags=None,  # TODO
                                                  directory=fld,
                                                  chmod=chmod,
                                                  # formats=("srt", "vtt")
                                                  path_decoder=force_unicode)
 
-            except Exception as e:
+            except Exception:
                 logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
                 return
             else:
@@ -520,8 +527,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             modifier_string = " forced"
                         else:
                             modifier_string = ""
-                        message = downloaded_language + modifier_string + " subtitles downloaded from " + \
-                                  downloaded_provider + " with a score of " + str(score) + "% using manual search."
+                        message = (downloaded_language + modifier_string + " subtitles downloaded from " +
+                                   downloaded_provider + " with a score of " + str(score) + "% using manual search.")
 
                         if media_type == 'series':
                             episode_metadata = TableEpisodes.select(TableEpisodes.seriesId,
@@ -572,8 +579,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         track_event(category=downloaded_provider, action="manually_downloaded",
                                     label=downloaded_language)
 
-                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
+                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score,
+                        subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -597,7 +604,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         'win') and settings.general.getboolean('chmod_enabled') else None
 
     language = alpha3_from_alpha2(language)
-    
+
     custom = CustomLanguage.from_value(language, "alpha3")
     if custom is None:
         lang_obj = Language(language)
@@ -609,7 +616,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
 
     sub = Subtitle(
         lang_obj,
-        mods = get_array_from(settings.general.subzero_mods)
+        mods=get_array_from(settings.general.subzero_mods)
     )
 
     sub.content = subtitle.read()
@@ -625,12 +632,12 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         saved_subtitles = save_subtitles(path,
                                          [sub],
                                          single=single,
-                                         tags=None,  # fixme
+                                         tags=None,  # TODO
                                          directory=get_target_folder(path),
                                          chmod=chmod,
                                          # formats=("srt", "vtt")
                                          path_decoder=force_unicode)
-    except:
+    except Exception:
         pass
 
     if len(saved_subtitles) < 1:
@@ -679,14 +686,14 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
                        percent_score=100, movie_id=movie_metadata['movieId'])
 
-    if use_postprocessing :
+    if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
                              audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id,
                              episode_id, hi=hi)
         postprocessing(command, path)
 
-    return message, path, subtitles_path
+    return message, path, subtitles_path  # TODO E0602 undefined name 'subtitles_path'
 
 
 def series_download_subtitles(no):
@@ -1179,7 +1186,7 @@ def wanted_search_missing_subtitles_movies():
             return
 
     hide_progress(id='wanted_movies_progress')
-    
+
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
@@ -1234,7 +1241,8 @@ def refine_from_db(path, video):
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
             if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if data['imdbId'] and not video.series_imdb_id:
                 video.series_imdb_id = data['imdbId']
@@ -1243,9 +1251,11 @@ def refine_from_db(path, video):
             if not video.resolution:
                 video.resolution = str(data['resolution'])
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
     elif isinstance(video, Movie):
         data = TableMovies.select(TableMovies.title,
                                   TableMovies.year,
@@ -1262,18 +1272,23 @@ def refine_from_db(path, video):
             data = data[0]
             video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
             if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+                if int(data['year']) > 0:
+                    video.year = int(data['year'])
             if data['imdbId'] and not video.imdb_id:
                 video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
-                if data['format']: video.source = convert_to_guessit('source', data['format'])
+                if data['format']:
+                    video.source = convert_to_guessit('source', data['format'])
             if not video.resolution:
-                if data['resolution']: video.resolution = data['resolution']
+                if data['resolution']:
+                    video.resolution = data['resolution']
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
+                if data['video_codec']:
+                    video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
+                if data['audio_codec']:
+                    video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
 
     return video
 
@@ -1629,6 +1644,7 @@ def _get_lang_obj(alpha3):
         return Language(alpha3)
 
     return sub.subzero_language()
+
 
 def _get_scores(media_type, min_movie=None, min_ep=None):
     series = "series" == media_type

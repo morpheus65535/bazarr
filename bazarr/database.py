@@ -1,3 +1,6 @@
+# pylama:ignore=W0611,W0401
+# TODO unignore and fix W0611,W0401
+
 import os
 import atexit
 import json
@@ -240,8 +243,8 @@ class TableCustomScoreProfiles(BaseModel):
 
 class TableCustomScoreProfileConditions(BaseModel):
     profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
-    type = TextField(null=True) # provider, uploader, regex, etc
-    value = TextField(null=True) # opensubtitles, jane_doe, [a-z], etc
+    type = TextField(null=True)  # provider, uploader, regex, etc
+    value = TextField(null=True)  # opensubtitles, jane_doe, [a-z], etc
     required = BooleanField(default=False)
     negate = BooleanField(default=False)
 
@@ -286,7 +289,7 @@ def init_db():
         try:
             if not System.select().count():
                 System.insert({System.configured: '0', System.updated: '0'}).execute()
-        except:
+        except Exception:
             gevent.sleep(0.1)
         else:
             tables_created = True

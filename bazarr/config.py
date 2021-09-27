@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import hashlib
 import os
@@ -215,17 +217,17 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
-                'page_size',
-                'page_size_manual_search',
-                'throtteled_providers']
+               'page_size',
+               'page_size_manual_search',
+               'throtteled_providers']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
-                'exclude',
-                'subzero_mods',
-                'excluded_series_types',
-                'enabled_providers']
+              'exclude',
+              'subzero_mods',
+              'excluded_series_types',
+              'enabled_providers']
 
 str_keys = ['chmod']
 
@@ -270,9 +272,9 @@ def get_settings():
                             value = int(value)
                         except ValueError:
                             pass
-            
+
             values_dict[key] = value
-        
+
         result[sec] = values_dict
 
     return result
@@ -284,7 +286,8 @@ def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
     update_schedule = False
-    update_path_map = False
+    # update_path_map = False
+    # TODO W0612 local variable 'update_path_map' is assigned to but never used
     configure_proxy = False
     exclusion_updated = False
     series_exclusion_updated = False
@@ -300,7 +303,7 @@ def save_settings(settings_items):
     for key, value in settings_items:
 
         settings_keys = key.split('-')
-        
+
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
@@ -308,7 +311,7 @@ def save_settings(settings_items):
                 value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values :
+        if settings_keys[-1] in array_keys and value[0] in empty_values:
             value = []
 
         if value == 'true':
@@ -317,7 +320,7 @@ def save_settings(settings_items):
             value = 'False'
 
         if key == 'settings-auth-password':
-            if value != settings.auth.password and value != None:
+            if value != settings.auth.password and value is not None:
                 value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':

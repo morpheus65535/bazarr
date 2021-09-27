@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=E402,W0401,W0611
+# TODO unignore and fix W0401,E402,W0611
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:
@@ -98,7 +100,7 @@ def catch_all(path):
 
     try:
         updated = System.get().updated
-    except:
+    except Exception:
         updated = '0'
 
     inject = dict()

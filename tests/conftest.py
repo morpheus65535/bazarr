@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
+
 import libs
 from io import BytesIO
 import os
@@ -13,6 +16,7 @@ except ImportError:
 
 from subliminal import Episode, Movie
 from subliminal.cache import region
+
 
 @pytest.fixture(autouse=True, scope='session')
 def configure_region():

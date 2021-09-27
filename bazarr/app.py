@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_socketio import SocketIO

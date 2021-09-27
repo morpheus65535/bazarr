@@ -1,4 +1,6 @@
 # coding=utf-8
+# pylama:ignore=W0611
+# TODO unignore and fix W0611
 
 import ast
 import os
@@ -18,6 +20,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
         modifier_string = " forced"
     else:
         modifier_string = ""
+    modifier_string  # TODO W0612 local variable 'modifier_string' is assigned to but never used
 
     if hi:
         modifier_code = ":hi"
@@ -28,6 +31,8 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     else:
         modifier_code = ""
         modifier_code_dot = ""
+    modifier_code  # TODO W0612 local variable 'modifier_code' is assigned to but never used
+    modifier_code_dot  # TODO W0612 local variable 'modifier_code_dot' is assigned to but never used
 
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
@@ -59,11 +64,11 @@ def get_target_folder(file_path):
     subfolder = settings.general.subfolder
     fld_custom = str(settings.general.subfolder_custom).strip() \
         if settings.general.subfolder_custom else None
-    
+
     if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
         fld_base = os.path.split(file_path)[0]
-        
+
         if subfolder == "absolute":
             # absolute folder
             fld = fld_custom
@@ -71,18 +76,18 @@ def get_target_folder(file_path):
             fld = os.path.join(fld_base, fld_custom)
         else:
             fld = None
-        
+
         fld = force_unicode(fld)
-        
+
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
-            except Exception as e:
+            except Exception:
                 logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
                 fld = None
     else:
         fld = None
-    
+
     return fld
 
 
