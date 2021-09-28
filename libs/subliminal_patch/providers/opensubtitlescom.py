@@ -180,18 +180,25 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
 
+    @staticmethod
+    def sanitize_external_ids(external_id):
+        if isinstance(external_id, str):
+            external_id = external_id.lower().lstrip('tt')
+        sanitized_id = external_id[:-1].lstrip('0') + external_id[-1]
+        return int(sanitized_id)
+
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def search_titles(self, title):
         title_id = None
         imdb_id = None
 
         if isinstance(self.video, Episode) and self.video.series_imdb_id:
-            imdb_id = self.video.series_imdb_id
+            imdb_id = self.sanitize_external_ids(self.video.series_imdb_id)
         elif isinstance(self.video, Movie) and self.video.imdb_id:
-            imdb_id = self.video.imdb_id
+            imdb_id = self.sanitize_external_ids(self.video.imdb_id)
 
         if imdb_id:
-            parameters = {'imdb_id': imdb_id.lower()}
+            parameters = {'imdb_id': imdb_id}
             logging.debug('Searching using this IMDB id: {}'.format(imdb_id))
         else:
             parameters = {'query': title.lower()}
@@ -230,7 +237,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             if title_id:
                 logging.debug('Found this title ID: {}'.format(title_id))
-                return title_id
+                return self.sanitize_external_ids(title_id)
         finally:
             if not title_id:
                 logger.debug('No match found for {}'.format(title))
