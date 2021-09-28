@@ -1,16 +1,5 @@
 # coding=utf-8
 
-from config import settings
-from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
-    upgrade_subtitles
-from utils import cache_maintenance, check_health
-from indexer.series.local.series_indexer import update_indexed_series
-from indexer.movies.local.movies_indexer import update_indexed_movies
-from get_args import args
-if not args.no_update:
-    from check_update import check_if_new_update, check_releases
-else:
-    from check_update import check_releases
 from apscheduler.schedulers.gevent import GeventScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -22,6 +11,18 @@ import pretty
 from random import randrange
 from event_handler import event_stream
 import os
+
+from config import settings
+from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    upgrade_subtitles
+from utils import cache_maintenance, check_health
+from indexer.series.local.series_indexer import update_indexed_series
+from indexer.movies.local.movies_indexer import update_indexed_movies
+from get_args import args
+if not args.no_update:
+    from check_update import check_if_new_update, check_releases
+else:
+    from check_update import check_releases
 
 
 class Scheduler:
