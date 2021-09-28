@@ -1,14 +1,11 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
-import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from guessit import guessit
 from requests.exceptions import HTTPError
-from database import TableShowsRootfolder, TableShows, TableEpisodes
+from database import TableShows, TableEpisodes
 from indexer.video_prop_reader import video_prop_reader
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import VIDEO_EXTENSION

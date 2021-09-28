@@ -1,10 +1,9 @@
 # coding=utf-8
-# pylama:ignore=E402,W0401,W0611
-# TODO unignore and fix W0401,E402,W0611
+# pylama:ignore=E402
 
 # Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
 try:
-    from gevent import monkey, Greenlet, joinall
+    from gevent import monkey, Greenlet
 except ImportError:
     pass
 else:
@@ -22,22 +21,24 @@ if os.path.isfile(version_file):
 
 os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
-import libs
+from libs import clean_libs, set_libs
+clean_libs()
+set_libs()
 
 from get_args import args
 from config import settings, configure_proxy_func, base_url
 
-from init import *
+from init import init
+init()
 from database import System
 
 from notifier import update_notifier
 
 from urllib.parse import unquote
 from get_languages import load_language_in_db
-from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
-    send_file, stream_with_context
+from flask import request, redirect, abort, render_template, session, send_file
 
-from check_update import apply_update, check_if_new_update, check_releases
+from check_update import apply_update, check_releases
 from server import app, webserver
 from functools import wraps
 from utils import check_credentials

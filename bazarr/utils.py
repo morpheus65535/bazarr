@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
 import time
@@ -16,10 +14,9 @@ from whichcraft import which
 from get_args import args
 from config import settings
 from custom_lang import CustomLanguage
-from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
-    TableMoviesRootfolder
+from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie
 from event_handler import event_stream
-from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, alpha3_from_alpha2
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.core import get_subtitle_path
@@ -31,7 +28,6 @@ import datetime
 import glob
 
 region = make_region().configure('dogpile.cache.memory')
-# headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):
@@ -374,8 +370,7 @@ def check_health():
     if settings.general.getboolean('use_series'):
         pass
     if settings.general.getboolean('use_movies'):
-        check_movies_rootfolder()  # TODO E0602 undefined name 'check_movies_rootfolder'
-    pass
+        pass
 
 
 def get_health_issues():

@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=E402
-# TODO unignore and fix E402
 
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \

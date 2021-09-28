@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
 import re
@@ -10,7 +8,6 @@ from database import TableShowsRootfolder, TableShows
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import normalize_title
 from .episodes_indexer import update_series_episodes
-from event_handler import show_progress, hide_progress
 
 
 def list_series_directories(root_dir):

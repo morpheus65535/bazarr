@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import logging
 import os
@@ -9,8 +7,7 @@ import enzyme
 from enzyme.exceptions import MalformedMKVError
 
 from utils import get_binary
-from database import TableEpisodes, TableMovies
-from get_languages import create_languages_dict, language_from_alpha3
+from get_languages import language_from_alpha3
 from indexer.utils import VIDEO_EXTENSION
 
 
@@ -37,7 +34,7 @@ def video_prop_reader(file):
                 try:
                     mkv = enzyme.MKV(f)
                 except MalformedMKVError:
-                    logger.error(  # TODO E0602 undefined name 'logger'
+                    logging.error(
                         "BAZARR cannot analyze this MKV with our built-in MKV parser, you should install "
                         "ffmpeg/ffprobe: " + file
                     )

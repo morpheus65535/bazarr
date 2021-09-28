@@ -18,7 +18,3 @@ def clean_libs():
 
 def set_libs():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
-
-
-clean_libs()
-set_libs()

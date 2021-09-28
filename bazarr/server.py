@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=E402
-# TODO unignore and fix E402
 
 import warnings
 import logging
@@ -16,7 +14,7 @@ from database import database
 from app import create_app
 app = create_app()
 
-from api import api_bp
+from api import api_bp  # noqa
 app.register_blueprint(api_bp)
 
 

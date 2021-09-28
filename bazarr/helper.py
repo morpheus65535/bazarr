@@ -1,39 +1,15 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
-import ast
 import os
-import re
 import logging
 
 from charamel import Detector
 from bs4 import UnicodeDammit
 
-from config import settings, get_array_from
+from config import settings
 
 
 def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced, score, subtitle_id, provider, series_id, episode_id, hi):
-    if hi:
-        modifier_string = " HI"
-    elif forced:
-        modifier_string = " forced"
-    else:
-        modifier_string = ""
-    modifier_string  # TODO W0612 local variable 'modifier_string' is assigned to but never used
-
-    if hi:
-        modifier_code = ":hi"
-        modifier_code_dot = ".hi"
-    elif forced:
-        modifier_code = ":forced"
-        modifier_code_dot = ".forced"
-    else:
-        modifier_code = ""
-        modifier_code_dot = ""
-    modifier_code  # TODO W0612 local variable 'modifier_code' is assigned to but never used
-    modifier_code_dot  # TODO W0612 local variable 'modifier_code_dot' is assigned to but never used
-
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
     pp_command = pp_command.replace('{{episode_name}}', os.path.splitext(os.path.basename(episode))[0])

@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import datetime
 import time
 import pickle
 import tmdbsimple as tmdb
 
-from subliminal.cache import region
 from database import TableTmdbCache
 
 # the cache is marked to expire after 1 day. This could be fine tuned in the future.

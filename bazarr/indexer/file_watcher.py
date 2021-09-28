@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
-import time
 import logging
-import gevent
 from watchdog.events import PatternMatchingEventHandler
-from watchdog.utils import WatchdogShutdown
 
 from config import settings
 from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder, TableShows, TableEpisodes, TableMovies
@@ -120,8 +115,9 @@ class FileWatcher:
                             TableEpisodes.update(episode_metadata).where(TableEpisodes.path == event.src_path).execute()
                             store_subtitles(event.src_path, use_cache=False)
             else:
-                # here we'll deal with movies
+                # TODO: here we'll deal with movies
                 pass
+                TableMovies.select()  # prevent unused import until I deal with this part of code
 
     def find_root_dir(self, path):
         # return the parent root folder for that episode/movie path

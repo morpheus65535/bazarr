@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
 import sys
@@ -11,7 +9,6 @@ import time
 import pickle
 import codecs
 import re
-import subliminal
 import copy
 import operator
 from functools import reduce
@@ -19,26 +16,23 @@ from peewee import fn
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
-from subliminal import region, score as subliminal_scores, \
-    list_subtitles, Episode, Movie
-from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
-    list_all_subtitles, get_subtitle_path
+from subliminal import region, Episode, Movie
+from subliminal_patch.core import download_best_subtitles, save_subtitles, download_subtitles, list_all_subtitles
 from subliminal_patch.score import compute_score
 from subliminal_patch.subtitle import Subtitle
-from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
-    alpha2_from_language, alpha3_from_language
+from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, alpha2_from_language, \
+    alpha3_from_language
 from config import settings, get_array_from
 from helper import pp_replace, get_target_folder, force_unicode
-from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
-from utils import history_log, history_log_movie, get_binary, get_blacklist
+from list_subtitles import store_subtitles, store_subtitles_movie
+from utils import history_log, history_log_movie, get_blacklist
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
-from knowit import api
 from subsyncer import subsync
 from guessit import guessit
 from custom_lang import CustomLanguage
-from database import get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
-    get_desired_languages, TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
+from database import get_exclusion_clause, get_profiles_list, get_audio_profile_languages, TableShows, TableEpisodes, \
+    TableMovies, TableHistory, TableHistoryMovie
 from event_handler import event_stream, show_progress, hide_progress
 from embedded_subs_reader import parse_video_metadata
 
@@ -92,11 +86,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     else:
         hi = "force non-HI"
 
-    if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
-        providers_auth['subscene']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
-        providers_auth['opensubtitles']['only_foreign'] = True  # TODO: This is also in get_providers_auth()
-    else:
+    if forced != "True":
         providers_auth['podnapisi']['only_foreign'] = False
         providers_auth['subscene']['only_foreign'] = False
         providers_auth['opensubtitles']['only_foreign'] = False
@@ -273,7 +263,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
             return None
 
-    subliminal.region.backend.sync()
+    region.backend.sync()
 
     logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
 
@@ -292,8 +282,6 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
     for language in language_items:
         forced = language['forced']
         hi = language['hi']
-        # audio_exclude = language['audio_exclude']
-        # TODO W0612 local variable 'audio_exclude' is assigned to but never used
         language = language['language']
 
         lang = alpha3_from_alpha2(language)
@@ -324,12 +312,6 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
-
-    # use_postprocessing = settings.general.getboolean('use_postprocessing')
-    # TODO W0612 local variable 'use_postprocessing' is assigned to but never used
-
-    # postprocessing_cmd = settings.general.postprocessing_cmd
-    # TODO W0612 local variable 'postprocessing_cmd' is assigned to but never used
 
     if providers:
         video = get_video(force_unicode(path), title, providers=providers, media_type=media_type)
@@ -444,7 +426,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching Subtitles for this file: ' + path)
 
-    subliminal.region.backend.sync()
+    region.backend.sync()
 
     return final_subtitles
 
@@ -587,7 +569,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             subtitle.provider_name) + ". Please retry later or select a Subtitles from another provider.")
                     return None
 
-    subliminal.region.backend.sync()
+    region.backend.sync()
 
     logging.debug('BAZARR Ended manually downloading Subtitles for file: ' + path)
 
@@ -693,7 +675,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
                              episode_id, hi=hi)
         postprocessing(command, path)
 
-    return message, path, subtitles_path  # TODO E0602 undefined name 'subtitles_path'
+    return message, path, subtitle_path
 
 
 def series_download_subtitles(no):

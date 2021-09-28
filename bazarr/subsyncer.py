@@ -1,6 +1,3 @@
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
-
 import logging
 import os
 from ffsubsync.ffsubsync import run, make_parser
@@ -19,7 +16,7 @@ class SubSyncer:
         self.ffmpeg_path = None
         self.args = None
         try:
-            import webrtcvad
+            import webrtcvad  # noqa
         except ImportError:
             self.vad = 'subs_then_auditok'
         else:

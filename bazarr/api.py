@@ -1,11 +1,10 @@
 # coding=utf-8
-# pylama:ignore=W0611,W0401
-# TODO unignore and fix W0611,W0401
 
 import sys
 import os
+import io
 import ast
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dateutil import rrule
 import pretty
 import time
@@ -15,10 +14,9 @@ from functools import reduce
 import platform
 import re
 import json
-import hashlib
 import apprise
 import gc
-from peewee import fn, Value
+from peewee import fn
 import requests
 from bs4 import BeautifulSoup as bso
 
@@ -26,13 +24,12 @@ from get_args import args
 from config import settings, base_url, save_settings, get_settings
 from logger import empty_log
 
-from init import *
 import logging
-from database import get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
-    get_audio_profile_languages, update_profile_id_list, convert_list_to_clause, TableEpisodes, TableShows, \
-    TableMovies, TableSettingsLanguages, TableSettingsNotifier, TableLanguagesProfiles, TableHistory, \
-    TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, TableMoviesRootfolder
-from get_languages import language_from_alpha2, language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
+from database import get_exclusion_clause, get_profiles_list, get_desired_languages, get_audio_profile_languages, \
+    update_profile_id_list, TableEpisodes, TableShows, TableMovies, TableSettingsLanguages, TableSettingsNotifier, \
+    TableLanguagesProfiles, TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, \
+    TableShowsRootfolder, TableMoviesRootfolder
+from get_languages import language_from_alpha2, alpha2_from_alpha3, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
     manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
     episode_download_subtitles, movies_download_subtitles
@@ -43,7 +40,7 @@ from utils import history_log, history_log_movie, blacklist_log, blacklist_delet
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, delete_subtitles, subtitles_apply_mods, \
     translate_subtitles_file, check_credentials, get_health_issues
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers, \
-    get_throttled_providers, set_throttled_providers
+    get_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
 from subsyncer import subsync
@@ -53,7 +50,7 @@ from indexer.movies.local.movies_indexer import list_movies_directories, get_mov
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS, guessit
 
-from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response, session
+from flask import jsonify, request, Blueprint, session
 
 from flask_restful import Resource, Api, abort
 from functools import wraps
@@ -328,7 +325,7 @@ class Languages(Resource):
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
                               .where(TableHistoryMovie.language is not None)
                               .dicts())
-            languages_list = list(set([l['language'].split(':')[0] for l in languages]))
+            languages_list = list(set([lang['language'].split(':')[0] for lang in languages]))
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -872,18 +869,16 @@ class EpisodesSubtitles(Resource):
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
 
-        result = delete_subtitles(media_type='series',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=episodePath,
-                                  subtitles_path=subtitlesPath,
-                                  series_id=seriesId,
-                                  episode_id=episodeId)
+        delete_subtitles(media_type='series',
+                         language=language,
+                         forced=forced,
+                         hi=hi,
+                         media_path=episodePath,
+                         subtitles_path=subtitlesPath,
+                         series_id=seriesId,
+                         episode_id=episodeId)
 
         return '', 204
-        result  # TODO Placing this after the return doesn't hurt the code flow, but helps ignore
-        # W0612 local variable X is assigned to but never used
 
 
 class SeriesRootfolders(Resource):

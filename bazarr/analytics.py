@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import pickle
 import random
@@ -9,7 +7,7 @@ import os
 import logging
 import codecs
 
-from pyga.requests import Event, Page, Tracker, Session, Visitor, Config
+from pyga.requests import Event, Tracker, Session, Visitor, Config
 from pyga.entities import CustomVariable
 
 from get_args import args

@@ -1,17 +1,12 @@
-# pylama:ignore=W0611,W0401
-# TODO unignore and fix W0611,W0401
-
 import os
 import atexit
 import json
 import ast
-import logging
 import gevent
-from peewee import *
+from peewee import Model, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
 from playhouse.sqliteq import SqliteQueueDatabase
-from playhouse.shortcuts import model_to_dict
 from playhouse.sqlite_ext import AutoIncrementField
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator
 
 from config import settings, get_array_from
 from get_args import args

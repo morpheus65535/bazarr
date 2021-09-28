@@ -1,13 +1,7 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import os
-import requests
-import logging
 import string
-
-from config import settings
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 

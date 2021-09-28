@@ -1,6 +1,4 @@
 # coding=utf-8
-# pylama:ignore=W0611
-# TODO unignore and fix W0611
 
 import hashlib
 import os
@@ -281,13 +279,9 @@ def get_settings():
 
 
 def save_settings(settings_items):
-    from database import database
-
     configure_debug = False
     configure_captcha = False
     update_schedule = False
-    # update_path_map = False
-    # TODO W0612 local variable 'update_path_map' is assigned to but never used
     configure_proxy = False
     exclusion_updated = False
     series_exclusion_updated = False
