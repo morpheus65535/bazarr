@@ -26,6 +26,7 @@ from deep_translator import GoogleTranslator
 from dogpile.cache import make_region
 import datetime
 import glob
+from indexer.tmdb_caching_proxy import clean_cache
 
 region = make_region().configure('dogpile.cache.memory')
 
@@ -231,6 +232,9 @@ def cache_maintenance():
     # archive cache
     for fn in glob.iglob(os.path.join(args.config_dir, "*.archive")):
         remove_expired(fn, pack_cache_validity)
+
+    # tmdb cache
+    clean_cache()
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, series_id=None,

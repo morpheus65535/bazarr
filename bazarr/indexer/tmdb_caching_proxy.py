@@ -61,4 +61,6 @@ def renew_cache(func, pickled_func, pickled_kwargs, **kwargs):
     return result
 
 
-# TODO: implement expired cache cleanup process
+def clean_cache():
+    # delete expired entries from the tmdb cache
+    TableTmdbCache.delete().where(TableTmdbCache.timestamp < (time.time() - CACHE_EXPIRATION_TIME)).execute()
