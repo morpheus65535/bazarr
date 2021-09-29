@@ -2,6 +2,7 @@
 
 import os
 import logging
+import warnings
 from watchdog.events import PatternMatchingEventHandler
 
 from config import settings
@@ -9,12 +10,17 @@ from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder, TableSh
 from indexer.utils import VIDEO_EXTENSION
 from .series.local.series_indexer import get_series_match, get_series_metadata
 from .series.local.episodes_indexer import get_episode_metadata
-from list_subtitles import store_subtitles
+from .movies.local.movies_indexer import get_movies_match, get_movies_metadata
+from list_subtitles import store_subtitles, store_subtitles_movie
 
+# temporarily disable warning for mac users
+warnings.simplefilter('ignore', category=UserWarning)
 if settings.general.filewatcher_type == 'local':
     from watchdog_gevent import Observer
 else:
     from watchdog.observers.polling import PollingObserverVFS as Observer
+# then we enable it again just in case some other module would use this type of warnings
+warnings.simplefilter('default', category=UserWarning)
 
 
 class FileWatcher:
@@ -105,7 +111,7 @@ class FileWatcher:
                             store_subtitles(event.src_path, use_cache=False)
                 elif event.event_type in 'moved':
                     # get the series metadata using the episode source path
-                    series_metadata = self.get_series_from_episode_path(event.dest_path)
+                    series_metadata = self.get_series_from_episode_path(event.src_path)
                     if series_metadata:
                         # get episode metadata using the destination path
                         episode_metadata = get_episode_metadata(event.dest_path, series_metadata['tmdbId'],
@@ -113,11 +119,68 @@ class FileWatcher:
                         if episode_metadata:
                             # update the episode in database and store subtitles in database
                             TableEpisodes.update(episode_metadata).where(TableEpisodes.path == event.src_path).execute()
-                            store_subtitles(event.src_path, use_cache=False)
+                            store_subtitles(event.dest_path, use_cache=False)
             else:
-                # TODO: here we'll deal with movies
-                pass
-                TableMovies.select()  # prevent unused import until I deal with this part of code
+                if event.event_type == 'deleted':
+                    # remove deleted movie
+                    TableMovies.delete().where(TableMovies.path == event.src_path).execute()
+                elif event.event_type in ['created', 'modified']:
+                    # add or update existing movie
+                    try:
+                        # get the movie metadata using the source path
+                        movie_metadata = TableMovies.select().where(TableMovies.path == event.src_path).dicts().get()
+                    except TableMovies.DoesNotExist:
+                        # we can't find this movie in database
+                        if event.event_type == 'created':
+                            # adding the the movie
+                            movie_dir = os.path.basename(os.path.dirname(event.src_path))
+                            # get matches from tmdb using the movie directory name
+                            movie_matches = get_movies_match(movie_dir)
+                            if movie_matches:
+                                # get movie metadata for the first match
+                                directory_metadata = get_movies_metadata(movie_matches[0]['tmdbId'], root_dir.rootId,
+                                                                         dir_name=movie_dir)
+                                if directory_metadata:
+                                    try:
+                                        # insert the movie in database
+                                        TableMovies.insert(directory_metadata).execute()
+                                    except Exception as e:
+                                        logging.error(f'BAZARR is unable to insert this movie to the database: '
+                                                      f'"{directory_metadata["path"]}". The exception encountered is '
+                                                      f'"{e}".')
+                                    else:
+                                        # store the embedded and external subtitles for that movie in database
+                                        store_subtitles_movie(event.src_path, use_cache=False)
+
+                    else:
+                        # we found an existing movie in database and will get the movie metadata from tmdb
+                        movie_metadata = get_movies_metadata(movie_metadata['tmdbId'], root_dir.rootId,
+                                                             movie_path=event.src_path)
+                        if movie_metadata:
+                            # we update the existing movie
+                            TableMovies.update(movie_metadata) \
+                                .where(TableMovies.path == event.src_path) \
+                                .execute()
+                            # store the embedded and external subtitles for that movie in database
+                            store_subtitles_movie(event.src_path, use_cache=False)
+                elif event.event_type in 'moved':
+                    try:
+                        # get the movie metadata using the source path
+                        movie_metadata = TableMovies.select().where(TableMovies.path == event.src_path).dicts().get()
+                    except TableMovies.DoesNotExist:
+                        # we can't find this movie in database
+                        pass
+                    else:
+                        # we found an existing movie in database and will get the movie metadata from tmdb
+                        movie_metadata = get_movies_metadata(movie_metadata['tmdbId'], root_dir.rootId,
+                                                             movie_path=event.dest_path)
+                        if movie_metadata:
+                            # we update the existing movie
+                            TableMovies.update(movie_metadata) \
+                                .where(TableMovies.path == event.src_path) \
+                                .execute()
+                            # store the embedded and external subtitles for that movie in database
+                            store_subtitles_movie(event.dest_path, use_cache=False)
 
     def find_root_dir(self, path):
         # return the parent root folder for that episode/movie path
