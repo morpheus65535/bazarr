@@ -1440,8 +1440,8 @@ class EpisodesHistory(Resource):
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime.datetime(1970, 1, 1)).total_seconds()
+            minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                                 datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
@@ -1532,7 +1532,7 @@ class EpisodesHistory(Resource):
             # Make timestamp pretty
             if item['timestamp']:
                 item["raw_timestamp"] = int(item['timestamp'])
-                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
+                item["parsed_timestamp"] = datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1562,8 +1562,8 @@ class MoviesHistory(Resource):
         upgradable_movies_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime.datetime(1970, 1, 1)).total_seconds()
+            minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                                 datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
@@ -1648,7 +1648,7 @@ class MoviesHistory(Resource):
             # Make timestamp pretty
             if item['timestamp']:
                 item["raw_timestamp"] = int(item['timestamp'])
-                item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
+                item["parsed_timestamp"] = datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
                 item['timestamp'] = pretty.date(item["raw_timestamp"])
 
             # Check if subtitles is blacklisted
@@ -1723,9 +1723,7 @@ class HistoryStats(Resource):
             .dicts()
         data_movies = list(data_movies)
 
-        for dt in rrule.rrule(rrule.DAILY,
-                              dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
-                              until=datetime.datetime.now()):
+        for dt in rrule.rrule(rrule.DAILY, dtstart=datetime.now() - timedelta(seconds=delay), until=datetime.now()):
             if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
                 data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
             if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_movies):
@@ -1876,8 +1874,8 @@ class EpisodesBlacklist(Resource):
 
         for item in data:
             # Make timestamp pretty
-            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+            item["parsed_timestamp"] = datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
+            item.update({'timestamp': pretty.date(datetime.fromtimestamp(item['timestamp']))})
 
             postprocessEpisode(item)
 
@@ -1953,8 +1951,8 @@ class MoviesBlacklist(Resource):
             postprocessMovie(item)
 
             # Make timestamp pretty
-            item["parsed_timestamp"] = datetime.datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
-            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+            item["parsed_timestamp"] = datetime.fromtimestamp(int(item['timestamp'])).strftime('%x %X')
+            item.update({'timestamp': pretty.date(datetime.fromtimestamp(item['timestamp']))})
 
         return jsonify(data=data)
 
