@@ -97,7 +97,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = {Language(l) for l in ['ron', 'eng']}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     api_url = 'https://www.titrari.ro/'
-    query_advanced_search = 'cautarenedevansata'
+    query_advanced_search = 'cautarepreaavansata'
 
     def __init__(self):
         self.session = None
