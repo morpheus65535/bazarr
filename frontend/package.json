@@ -35,7 +35,7 @@
     "react-select": "^4",
     "react-table": "^7",
     "recharts": "^2.0.8",
-    "rooks": "^5",
+    "rooks": "^5.7.1",
     "sass": "^1",
     "socket.io-client": "^4",
     "typescript": "^4"
