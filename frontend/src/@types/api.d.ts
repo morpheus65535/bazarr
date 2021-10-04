@@ -106,6 +106,7 @@ declare namespace Item {
   type Base = PathType &
     TitleType &
     TagType &
+    MonitoredType &
     AudioLanguageType & {
       profileId: number | null;
       fanart: string;
@@ -127,7 +128,6 @@ declare namespace Item {
 
   type Movie = Base &
     MovieIdType &
-    MonitoredType &
     SubtitleType &
     MissingSubtitleType &
     SceneNameType & {

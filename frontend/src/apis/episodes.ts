@@ -93,6 +93,10 @@ class EpisodeApi extends BaseApi {
   async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
     await this.delete("/blacklist", form, { all });
   }
+
+  async action(form: FormType.EpisodesAction) {
+    await this.patch("", form);
+  }
 }
 
 export default new EpisodeApi();

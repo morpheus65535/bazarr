@@ -11,7 +11,7 @@ import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useProfileItemsToLanguages } from "../../@redux/hooks";
 import { useShowOnlyDesired } from "../../@redux/hooks/site";
-import { ProvidersApi } from "../../apis";
+import { EpisodesApi, ProvidersApi } from "../../apis";
 import {
   ActionButton,
   AsyncOverlay,
@@ -60,10 +60,23 @@ const Table: FunctionComponent<Props> = ({
       {
         accessor: "monitored",
         Cell: (row) => {
+          const toggleMonitored = useCallback(() => {
+            EpisodesApi.action({
+              episodeid: row.row.original.episodeId,
+              action: "monitored",
+              value: row.row.original.monitored,
+            });
+          }, [row]);
+
           return (
             <FontAwesomeIcon
-              title={row.value ? "monitored" : "unmonitored"}
+              title={
+                row.value
+                  ? "Monitored, click to unmonitor"
+                  : "Unmonitored, click to monitor"
+              }
               icon={row.value ? faBookmark : farBookmark}
+              onClick={toggleMonitored}
             ></FontAwesomeIcon>
           );
         },

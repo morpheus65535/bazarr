@@ -57,6 +57,17 @@ def get_episode_metadata(file, tmdbid, series_id, update=False):
             if not update:
                 episode_metadata['seriesId'] = series_id
                 episode_metadata['path'] = file
+                episode_metadata['monitored'] = "False"
+                # we make sure the episode reflect it's series monitored state
+                try:
+                    series_monitored_state = TableShows.select(TableShows.monitored)\
+                        .where(TableShows.seriesId == series_id)\
+                        .dicts()\
+                        .get()
+                except TableShows.DoesNotExist:
+                    pass
+                else:
+                    episode_metadata['monitored'] = series_monitored_state['monitored']
             # we now get the video file metadata using ffprobe
             episode_metadata.update(video_prop_reader(file))
 

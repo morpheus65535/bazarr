@@ -12,7 +12,7 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import {
   Badge,
   Col,
@@ -23,11 +23,12 @@ import {
   Row,
 } from "react-bootstrap";
 import { useProfileBy, useProfileItemsToLanguages } from "../@redux/hooks";
+import { MoviesApi, SeriesApi } from "../apis";
 import { LanguageText } from "../components";
 import { BuildKey, isMovie } from "../utilities";
 
 interface Props {
-  item: Item.Base;
+  item: Item.Movie | Item.Series;
   details?: { icon: IconDefinition; text: string }[];
 }
 
@@ -124,6 +125,22 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     [item.alternativeTitles]
   );
 
+  const toggleMonitored = useCallback(() => {
+    if (isMovie(item)) {
+      MoviesApi.action({
+        movieid: item.movieId,
+        action: "monitored",
+        value: item.monitored,
+      });
+    } else {
+      SeriesApi.action({
+        seriesid: item.seriesId,
+        action: "monitored",
+        value: item.monitored,
+      });
+    }
+  }, [item]);
+
   return (
     <Container
       fluid
@@ -152,14 +169,17 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         <Col>
           <Container fluid className="text-white">
             <Row>
-              {isMovie(item) ? (
-                <FontAwesomeIcon
-                  className="mx-2 mt-2"
-                  title={item.monitored ? "monitored" : "unmonitored"}
-                  icon={item.monitored ? faBookmark : farBookmark}
-                  size="2x"
-                ></FontAwesomeIcon>
-              ) : null}
+              <FontAwesomeIcon
+                className="mx-2 mt-2"
+                title={
+                  item.monitored
+                    ? "Monitored, click to unmonitor"
+                    : "Unmonitored, click to monitor"
+                }
+                icon={item.monitored ? faBookmark : farBookmark}
+                size="2x"
+                onClick={toggleMonitored}
+              ></FontAwesomeIcon>
               <h1>{item.title}</h1>
               <span hidden={item.alternativeTitles.length === 0}>
                 <OverlayTrigger overlay={alternativePopover}>

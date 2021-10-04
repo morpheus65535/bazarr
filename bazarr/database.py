@@ -6,7 +6,7 @@ import gevent
 from peewee import Model, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.sqlite_ext import AutoIncrementField
-from playhouse.migrate import SqliteMigrator
+from playhouse.migrate import SqliteMigrator, migrate
 
 from config import settings, get_array_from
 from get_args import args
@@ -67,6 +67,7 @@ class TableShows(BaseModel):
     alternateTitles = TextField(null=True)
     fanart = TextField(null=True)
     imdbId = TextField(null=True)
+    monitored = TextField(null=True)
     overview = TextField(null=True)
     path = TextField(unique=True, null=False)
     poster = TextField(null=True)
@@ -291,10 +292,9 @@ def init_db():
 
 
 def migrate_db():
-    pass
-    # migrate(
-    #     migrator.add_column('table_shows', 'year', TextField(null=True))
-    # )
+    migrate(
+        migrator.add_column('table_shows', 'monitored', TextField(null=True))
+    )
 
 
 def get_exclusion_clause(exclusion_type):
@@ -308,14 +308,11 @@ def get_exclusion_clause(exclusion_type):
         for tag in tagsList:
             where_clause.append(~(TableMovies.tags.contains("\'"+tag+"\'")))
 
+    # we always exclude unmonitored episodes and movies
     if exclusion_type == 'series':
-        monitoredOnly = settings.series.getboolean('only_monitored')
-        if monitoredOnly:
-            where_clause.append((TableEpisodes.monitored == 'True'))
+        where_clause.append((TableEpisodes.monitored == 'True'))
     else:
-        monitoredOnly = settings.movies.getboolean('only_monitored')
-        if monitoredOnly:
-            where_clause.append((TableMovies.monitored == 'True'))
+        where_clause.append((TableMovies.monitored == 'True'))
 
     if exclusion_type == 'series':
         typesList = get_array_from(settings.series.excluded_series_types)

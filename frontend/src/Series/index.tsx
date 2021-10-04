@@ -1,4 +1,6 @@
-import { faWrench } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -18,6 +20,16 @@ const SeriesView: FunctionComponent<Props> = () => {
   const profiles = useLanguageProfiles();
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
+      {
+        accessor: "monitored",
+        selectHide: true,
+        Cell: ({ value }) => (
+          <FontAwesomeIcon
+            title={value ? "Monitored" : "Unmonitored"}
+            icon={value ? faBookmark : farBookmark}
+          ></FontAwesomeIcon>
+        ),
+      },
       {
         Header: "Name",
         accessor: "title",

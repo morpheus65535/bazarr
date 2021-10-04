@@ -4,9 +4,17 @@ declare namespace FormType {
     profileid: (number | null)[];
   }
 
-  type SeriesAction = OneSerieAction | SearchWantedAction;
+  type SeriesAction =
+    | OneSerieAction
+    | SearchWantedAction
+    | SeriesMonitoredAction;
 
-  type MoviesAction = OneMovieAction | SearchWantedAction;
+  type EpisodesAction = EpisodeMonitoredAction;
+
+  type MoviesAction =
+    | OneMovieAction
+    | SearchWantedAction
+    | MovieMonitoredAction;
 
   interface OneMovieAction {
     action: "search-missing" | "refresh";
@@ -20,6 +28,24 @@ declare namespace FormType {
 
   interface SearchWantedAction {
     action: "search-wanted";
+  }
+
+  interface SeriesMonitoredAction {
+    seriesid: number;
+    action: "monitored";
+    value: boolean;
+  }
+
+  interface EpisodeMonitoredAction {
+    episodeid: number;
+    action: "monitored";
+    value: boolean;
+  }
+
+  interface MovieMonitoredAction {
+    movieid: number;
+    action: "monitored";
+    value: boolean;
   }
 
   interface Subtitle {

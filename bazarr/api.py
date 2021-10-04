@@ -697,6 +697,7 @@ class Series(Resource):
     def patch(self):
         seriesid = request.form.get('seriesid')
         action = request.form.get('action')
+        value = request.form.get('value')
         if action == "refresh":
             series_scan_subtitles(seriesid)
             return '', 204
@@ -705,6 +706,37 @@ class Series(Resource):
             return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
+            return '', 204
+        elif action == "monitored":
+            if value == 'false':
+                new_monitored_value = 'True'
+            else:
+                new_monitored_value = 'False'
+
+            # update series monitored status
+            TableShows.update({
+                TableShows.monitored: new_monitored_value
+            }) \
+                .where(TableShows.seriesId == seriesid) \
+                .execute()
+
+            event_stream(type='series', payload=seriesid)
+
+            # update each series episode monitored status
+            series_episodes = TableEpisodes.select(TableEpisodes.episodeId)\
+                .where(TableEpisodes.seriesId == seriesid)\
+                .dicts()
+
+            TableEpisodes.update({
+                TableEpisodes.monitored: new_monitored_value
+            }) \
+                .where(TableEpisodes.seriesId == seriesid) \
+                .execute()
+
+            for episodeid in series_episodes:
+                event_stream(type='badges')
+                event_stream(type='episode-wanted', payload=episodeid['episodeId'])
+
             return '', 204
 
         return '', 400
@@ -731,6 +763,31 @@ class Episodes(Resource):
             postprocessEpisode(item)
 
         return jsonify(data=result)
+
+    def patch(self):
+        episodeid = request.form.get('episodeid')
+        action = request.form.get('action')
+        value = request.form.get('value')
+        if action == "monitored":
+            if value == 'false':
+                new_monitored_value = 'True'
+            else:
+                new_monitored_value = 'False'
+
+            # update episode monitored status
+            TableEpisodes.update({
+                TableEpisodes.monitored: new_monitored_value
+            }) \
+                .where(TableEpisodes.episodeId == episodeid) \
+                .execute()
+
+            event_stream(type='episode', payload=episodeid)
+            event_stream(type='badges')
+            event_stream(type='episode-wanted', payload=episodeid)
+
+            return '', 204
+
+        return '', 400
 
 
 # PATCH: Download Subtitles
@@ -1000,6 +1057,7 @@ class Movies(Resource):
     def patch(self):
         movieid = request.form.get('movieid')
         action = request.form.get('action')
+        value = request.form.get('value')
         if action == "refresh":
             movies_scan_subtitles(movieid)
             return '', 204
@@ -1008,6 +1066,23 @@ class Movies(Resource):
             return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_movies()
+            return '', 204
+        elif action == "monitored":
+            if value == 'false':
+                new_monitored_value = 'True'
+            else:
+                new_monitored_value = 'False'
+
+            TableMovies.update({
+                TableMovies.monitored: new_monitored_value
+            }) \
+                .where(TableMovies.movieId == movieid) \
+                .execute()
+
+            event_stream(type='movie', payload=movieid)
+            event_stream(type='badges')
+            event_stream(type='movie-wanted')
+
             return '', 204
 
         return '', 400

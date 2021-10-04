@@ -27,7 +27,7 @@ const MovieView: FunctionComponent<Props> = () => {
         selectHide: true,
         Cell: ({ value }) => (
           <FontAwesomeIcon
-            title={value ? "monitored" : "unmonitored"}
+            title={value ? "Monitored" : "Unmonitored"}
             icon={value ? faBookmark : farBookmark}
           ></FontAwesomeIcon>
         ),
