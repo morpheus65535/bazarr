@@ -59,13 +59,11 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                                 lang = lang + ":hi"
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
-                    except:
-                        logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
-                        pass
+                    except Exception as error:
+                        logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language, error)
             except Exception as e:
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
-                pass
         try:
             dest_folder = get_subtitle_destination_folder()
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
