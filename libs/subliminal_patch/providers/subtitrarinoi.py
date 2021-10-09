@@ -45,7 +45,7 @@ rarfile.PATH_SEP = '/'
 
 class SubtitrarinoiSubtitle(Subtitle):
 
-    provider_name = 'subtitrari-noi'
+    provider_name = 'subtitrarinoi'
 
     def __init__(self, language, download_link, sid, releases, title, imdb_id, uploader, page_link, year=None, download_count=None, comments=None):
         super(SubtitrarinoiSubtitle, self).__init__(language)
@@ -109,6 +109,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4535.2 Safari/537.36'
         self.session.headers['X-Requested-With'] = 'XMLHttpRequest'
+        self.session.headers['Referer'] = self.server_url
 
     def terminate(self):
         self.session.close()
