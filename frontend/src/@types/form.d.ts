@@ -4,6 +4,11 @@ declare namespace FormType {
     profileid: (number | null)[];
   }
 
+  interface FixMatchItem {
+    id: number[];
+    tmdbid: string[];
+  }
+
   type SeriesAction =
     | OneSerieAction
     | SearchWantedAction

@@ -2,6 +2,7 @@ import {
   faAdjust,
   faBriefcase,
   faCloudUploadAlt,
+  faCodeBranch,
   faHdd,
   faSearch,
   faSync,
@@ -18,6 +19,7 @@ import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import {
   ContentHeader,
+  FixMatchModal,
   ItemEditorModal,
   LoadingIndicator,
   SeriesUploadModal,
@@ -90,24 +92,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       <ContentHeader>
         <ContentHeader.Group pos="start">
           <ContentHeader.Button
-            icon={faSync}
-            disabled={hasTask}
-            onClick={() => {
-              const task = createTask(
-                serie.title,
-                id,
-                SeriesApi.action.bind(SeriesApi),
-                {
-                  action: "refresh",
-                  seriesid: id,
-                }
-              );
-              dispatchTask("Refreshing series...", [task], "Refreshing...");
-            }}
-          >
-            Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
               const task = createTask(
@@ -130,15 +114,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           >
             Search
           </ContentHeader.Button>
-        </ContentHeader.Group>
-        <ContentHeader.Group pos="end">
-          <ContentHeader.Button
-            disabled={serie.episodeFileCount === 0 || !available || hasTask}
-            icon={faBriefcase}
-            onClick={() => showModal("tools", episodes.content)}
-          >
-            Tools
-          </ContentHeader.Button>
           <ContentHeader.Button
             disabled={
               serie.episodeFileCount === 0 ||
@@ -150,6 +125,40 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             onClick={() => showModal("upload", serie)}
           >
             Upload
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            disabled={serie.episodeFileCount === 0 || !available || hasTask}
+            icon={faBriefcase}
+            onClick={() => showModal("tools", episodes.content)}
+          >
+            Tools
+          </ContentHeader.Button>
+        </ContentHeader.Group>
+        <ContentHeader.Group pos="end">
+          <ContentHeader.Button
+            icon={faSync}
+            disabled={hasTask}
+            onClick={() => {
+              const task = createTask(
+                serie.title,
+                id,
+                SeriesApi.action.bind(SeriesApi),
+                {
+                  action: "refresh",
+                  seriesid: id,
+                }
+              );
+              dispatchTask("Refreshing series...", [task], "Refreshing...");
+            }}
+          >
+            Refresh
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            icon={faCodeBranch}
+            disabled={hasTask}
+            onClick={() => showModal("match", serie)}
+          >
+            Fix Match
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
@@ -185,6 +194,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         modalKey="edit"
         submit={(form) => SeriesApi.modify(form)}
       ></ItemEditorModal>
+      <FixMatchModal
+        modalKey="match"
+        submit={(form) => SeriesApi.fixmatch(form)}
+      ></FixMatchModal>
       <SeriesUploadModal
         modalKey="upload"
         episodes={episodes.content}

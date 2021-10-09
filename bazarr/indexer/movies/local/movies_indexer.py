@@ -5,10 +5,12 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableMoviesRootfolder, TableMovies
+from event_handler import show_progress, hide_progress
 from indexer.video_prop_reader import video_prop_reader
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import normalize_title, VIDEO_EXTENSION
 from list_subtitles import store_subtitles_movie
+from config import settings
 
 
 def list_movies_directories(root_dir_id):
@@ -30,8 +32,7 @@ def list_movies_directories(root_dir_id):
         # get root folder subdirectories (first level). They should be movies parent directories.
         for i, directory_temp in enumerate(os.listdir(root_dir_path['path'])):
             # remove year fo directory name if found
-            directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
-            directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
+            directory = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
             # deal with trailing article
             if directory.endswith(', The'):
                 directory = 'The ' + directory.rstrip(', The')
@@ -53,19 +54,28 @@ def list_movies_directories(root_dir_id):
 def get_movies_match(directory):
     # get matching movies from tmdb using the directory name
     directory_temp = directory
+    # get year from directory name if available
+    year_match = re.search(r"\((\b(19|20)\d{2}\b)\)", directory_temp)
+    if year_match:
+        year = year_match.group(1)
+    else:
+        year = None
     # remove year fo directory name if found
-    directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
-    directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
+    directory = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
+    if directory.endswith(', The'):
+        directory = 'The ' + directory.rstrip(', The')
+    elif directory.endswith(', A'):
+        directory = 'A ' + directory.rstrip(', A')
 
     try:
         # get matches from tmdb (potentially from cache)
-        movies_temp = tmdb_func_cache(tmdb.Search().movie, query=directory)
+        movies_temp = tmdb_func_cache(tmdb.Search().movie, query=directory, year=year)
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
     else:
         matching_movies = []
         # if there's results, parse them to return matching titles
-        if movies_temp['total_results']:
+        if len(movies_temp['results']):
             for item in movies_temp['results']:
                 year = None
                 if 'release_date' in item:
@@ -77,6 +87,8 @@ def get_movies_match(directory):
                         'tmdbId': item['id']
                     }
                 )
+        else:
+            logging.debug(f'BAZARR cannot match {directory} with TMDB.')
         return matching_movies
 
 
@@ -86,6 +98,7 @@ def get_movie_file_from_list(path):
     max_file = None
 
     for folder, subfolders, files in os.walk(path):
+        files.sort()
         for file in files:
             if os.path.splitext(file)[1] in VIDEO_EXTENSION:
                 if os.path.exists(os.path.join(folder, file)):
@@ -108,9 +121,8 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name=None, movie_path=None):
     if tmdbid:
         try:
             # get movie info, alternative titles and external ids from tmdb using cache if available
-            movies_info = tmdb_func_cache(tmdb.Movies(tmdbid).info)
-            alternative_titles = tmdb_func_cache(tmdb.Movies(tmdbid).alternative_titles)
-            external_ids = tmdb_func_cache(tmdb.Movies(tmdbid).external_ids)
+            movies_info = tmdb_func_cache(tmdb.Movies(tmdbid).info,
+                                          append_to_response='alternative_titles,external_ids')
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing movies: {0}'.format(repr(e)))
         else:
@@ -123,8 +135,8 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name=None, movie_path=None):
                 'overview': movies_info['overview'],
                 'poster': images_url.format(movies_info['poster_path']) if movies_info['poster_path'] else None,
                 'fanart': images_url.format(movies_info['backdrop_path']) if movies_info['backdrop_path'] else None,
-                'alternativeTitles': [x['title'] for x in alternative_titles['titles']],
-                'imdbId': external_ids['imdb_id']
+                'alternativeTitles': [x['title'] for x in movies_info['alternative_titles']['titles']],
+                'imdbId': movies_info['external_ids']['imdb_id']
             }
 
             if dir_name:
@@ -137,10 +149,14 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name=None, movie_path=None):
                 movies_metadata['tmdbId'] = tmdbid
 
                 if movie_file:
-                    movies_metadata.update(video_prop_reader(os.path.join(movie_dir, movie_file)))
+                    movies_metadata.update(video_prop_reader(file=os.path.join(movie_dir, movie_file),
+                                                             media_type='movie',
+                                                             use_cache=False))
             else:
                 # otherwise we use only what's required to update the db row
-                movies_metadata.update(video_prop_reader(movie_path))
+                movies_metadata.update(video_prop_reader(file=movie_path,
+                                                         media_type='movie',
+                                                         use_cache=settings.movies.getboolean('use_ffprobe_cache')))
 
         return movies_metadata
 
@@ -148,14 +164,26 @@ def get_movies_metadata(tmdbid, root_dir_id, dir_name=None, movie_path=None):
 def update_indexed_movies():
     # update all movies in db, insert new ones and remove old ones
     root_dir_ids = TableMoviesRootfolder.select(TableMoviesRootfolder.rootId, TableMoviesRootfolder.path).dicts()
-    for root_dir_id in root_dir_ids:
+    root_dir_ids_len = len(root_dir_ids)
+    for i, root_dir_id in enumerate(root_dir_ids):
+        show_progress(
+            id="m1_indexing_root_dirs",
+            header="Indexing movies root folders...",
+            name=root_dir_id['path'],
+            value=i,
+            count=root_dir_ids_len
+        )
+
         # for each root folder, get the existing movies rows
         existing_movies = TableMovies.select(TableMovies.path,
                                              TableMovies.movieId,
                                              TableMovies.tmdbId)\
             .where(TableMovies.rootdir == root_dir_id['rootId'])\
+            .order_by(TableMovies.title)\
             .dicts()
 
+        existing_movies_len = len(existing_movies)
+        existing_movies_iteration_number = 0
         for existing_movie in existing_movies:
             # delete removed movie form database
             if not os.path.exists(existing_movie['path']):
@@ -166,17 +194,32 @@ def update_indexed_movies():
                                                      root_dir_id=root_dir_id['rootId'],
                                                      movie_path=existing_movie['path'])
                 if movie_metadata:
+                    show_progress(
+                        id="m2_updating_existing_subdirectories_movies",
+                        header="Updating existing movies...",
+                        name=movie_metadata['title'],
+                        value=existing_movies_iteration_number,
+                        count=existing_movies_len
+                    )
+
                     TableMovies.update(movie_metadata).where(TableMovies.movieId ==
                                                              existing_movie['movieId']).execute()
-                    store_subtitles_movie(existing_movie['path'], use_cache=True)
+                    store_subtitles_movie(existing_movie['path'],
+                                          use_cache=settings.movies.getboolean('use_ffprobe_cache'))
+            existing_movies_iteration_number += 1
+        hide_progress(id="m2_updating_existing_subdirectories_movies")
 
         # add missing movies to database
         root_dir_subdirectories = list_movies_directories(root_dir_id['rootId'])
         # get existing movies paths
         existing_movies_paths = [os.path.dirname(x['path']) for x in existing_movies]
+        root_dir_subdirectories_len = len(root_dir_subdirectories) - \
+            len(TableMovies.select().where(TableMovies.rootdir == root_dir_id['rootId']))
+        root_dir_subdirectories_iteration_number = 0
         for root_dir_subdirectory in root_dir_subdirectories:
             if os.path.join(root_dir_id['path'], root_dir_subdirectory['directory']) in existing_movies_paths:
                 # movie is already in db so we'll skip it
+                root_dir_subdirectories_iteration_number += 1
                 continue
             else:
                 # new movie, let's get matches for it
@@ -186,6 +229,14 @@ def update_indexed_movies():
                     directory_metadata = get_movies_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
                                                              root_dir_subdirectory['directory'])
                     if directory_metadata and directory_metadata['path']:
+                        show_progress(
+                            id="m2_adding_new_subdirectories_movies",
+                            header="Adding new movies...",
+                            name=directory_metadata['title'],
+                            value=root_dir_subdirectories_iteration_number,
+                            count=root_dir_subdirectories_len
+                        )
+
                         try:
                             # let's insert this movie into the db
                             result = TableMovies.insert(directory_metadata).execute()
@@ -196,6 +247,9 @@ def update_indexed_movies():
                             if result:
                                 # once added to the db, we'll index existing subtitles and calculate the missing ones
                                 store_subtitles_movie(directory_metadata['path'], use_cache=False)
+            root_dir_subdirectories_iteration_number += 1
+        hide_progress(id="m2_adding_new_subdirectories_movies")
+    hide_progress(id="m1_indexing_root_dirs")
 
 
 def update_specific_movie(movieId, use_cache=True):
@@ -213,5 +267,5 @@ def update_specific_movie(movieId, use_cache=True):
                           f'"{movie_metadata["path"]}". The exception encountered is "{e}".')
         else:
             if result:
-                # index existign subtitles and calculate missing ones
+                # index existing subtitles and calculate missing ones
                 store_subtitles_movie(movie_metadata['path'], use_cache=use_cache)

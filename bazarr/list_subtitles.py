@@ -499,9 +499,7 @@ def movies_full_scan_subtitles():
 
 def series_scan_subtitles(no):
     from indexer.series.local.series_indexer import update_specific_series
-    from indexer.series.local.episodes_indexer import update_series_episodes
     update_specific_series(no)
-    update_series_episodes(no, use_cache=False)
 
 
 def movies_scan_subtitles(no):

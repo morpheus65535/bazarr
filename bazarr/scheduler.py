@@ -148,13 +148,42 @@ class Scheduler:
 
     def __series_indexer(self):
         if settings.general.getboolean('use_series'):
-            self.aps_scheduler.add_job(update_indexed_series, CronTrigger(year='2100'), max_instances=1,
-                                       id='update_indexed_series', name='Refresh Series')
+            full_update = settings.series.full_update
+            if full_update == "Daily":
+                self.aps_scheduler.add_job(
+                    update_indexed_series, CronTrigger(hour=settings.series.full_update_hour), max_instances=1,
+                    coalesce=True, misfire_grace_time=15, id='update_indexed_series', name='Refresh Series from disk',
+                    replace_existing=True)
+            elif full_update == "Weekly":
+                self.aps_scheduler.add_job(
+                    update_indexed_series,
+                    CronTrigger(day_of_week=settings.series.full_update_day, hour=settings.series.full_update_hour),
+                    max_instances=1, coalesce=True, misfire_grace_time=15, id='update_indexed_series',
+                    name='Refresh Series from disk', replace_existing=True)
+            elif full_update == "Manually":
+                self.aps_scheduler.add_job(update_indexed_series, CronTrigger(year='2100'), max_instances=1,
+                                           coalesce=True, misfire_grace_time=15, id='update_indexed_series',
+                                           name='Refresh Series from disk', replace_existing=True)
 
     def __movies_indexer(self):
         if settings.general.getboolean('use_movies'):
-            self.aps_scheduler.add_job(update_indexed_movies, CronTrigger(year='2100'), max_instances=1,
-                                       id='update_indexed_movies', name='Refresh Movies')
+            full_update = settings.movies.full_update
+            if full_update == "Daily":
+                self.aps_scheduler.add_job(
+                    update_indexed_movies, CronTrigger(hour=settings.movies.full_update_hour), max_instances=1,
+                    coalesce=True, misfire_grace_time=15, id='update_indexed_movies', name='Refresh Movies from disk',
+                    replace_existing=True)
+            elif full_update == "Weekly":
+                self.aps_scheduler.add_job(
+                    update_indexed_movies,
+                    CronTrigger(day_of_week=settings.movies.full_update_day, hour=settings.movies.full_update_hour),
+                    max_instances=1, coalesce=True, misfire_grace_time=15, id='update_indexed_movies',
+                    name='Refresh Movies from disk', replace_existing=True)
+            elif full_update == "Manually":
+                self.aps_scheduler.add_job(
+                    update_indexed_movies, CronTrigger(year='2100'), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='update_indexed_movies', name='Refresh Movies from disk',
+                    replace_existing=True)
 
     def __update_bazarr_task(self):
         if not args.no_update and os.environ["BAZARR_VERSION"] != '':

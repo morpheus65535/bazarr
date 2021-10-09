@@ -93,7 +93,7 @@ def parse_video_metadata(file, file_size, media_type, use_cache=True):
         except Exception:
             pass
         else:
-            # Check if file size and file id matches and if so, we return the cached value
+            # Check if file size match and if so, we return the cached value
             if cached_value['file_size'] == file_size:
                 return cached_value
 

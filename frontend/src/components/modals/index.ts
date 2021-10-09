@@ -1,4 +1,5 @@
 export * from "./BaseModal";
+export { default as FixMatchModal } from "./FixMatchModal";
 export * from "./HistoryModal";
 export * from "./hooks";
 export { default as ItemEditorModal } from "./ItemEditorModal";

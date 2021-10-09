@@ -5,9 +5,11 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
+from event_handler import show_progress, hide_progress
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import normalize_title
 from .episodes_indexer import update_series_episodes
+from config import settings
 
 
 def list_series_directories(root_dir):
@@ -28,8 +30,7 @@ def list_series_directories(root_dir):
             return series_directories
         for i, directory_temp in enumerate(os.listdir(root_dir_path['path'])):
             # iterate over each directories under the root folder path and strip year if present
-            directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
-            directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
+            directory = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
             # deal with trailing article
             if directory.endswith(', The'):
                 directory = 'The ' + directory.rstrip(', The')
@@ -51,19 +52,28 @@ def list_series_directories(root_dir):
 def get_series_match(directory):
     # get matching series from tmdb using the directory name
     directory_temp = directory
+    # get year from directory name if available
+    year_match = re.search(r"\((\b(19|20)\d{2}\b)\)", directory_temp)
+    if year_match:
+        year = year_match.group(1)
+    else:
+        year = None
     # remove year fo directory name if found
-    directory_original = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
-    directory = re.sub(r"\s\b(19|20)\d{2}\b", '', directory_original).rstrip()
+    directory = re.sub(r"\(\b(19|20)\d{2}\b\)", '', directory_temp).rstrip()
+    if directory.endswith(', The'):
+        directory = 'The ' + directory.rstrip(', The')
+    elif directory.endswith(', A'):
+        directory = 'A ' + directory.rstrip(', A')
 
     try:
         # get matches from tmdb (potentially from cache)
-        series_temp = tmdb_func_cache(tmdb.Search().tv, query=directory)
+        series_temp = tmdb_func_cache(tmdb.Search().tv, query=directory, year=year)
     except Exception as e:
         logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
     else:
         matching_series = []
         # if there's results, parse them to return matching titles
-        if series_temp['total_results']:
+        if len(series_temp['results']):
             for item in series_temp['results']:
                 year = None
                 if 'first_air_date' in item:
@@ -75,6 +85,8 @@ def get_series_match(directory):
                         'tmdbId': item['id']
                     }
                 )
+        else:
+            logging.debug(f'BAZARR cannot match {directory} with TMDB.')
         return matching_series
 
 
@@ -89,9 +101,7 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
     if tmdbid:
         try:
             # get series info, alternative titles and external ids from tmdb using cache if available
-            series_info = tmdb_func_cache(tmdb.TV(tmdbid).info)
-            alternative_titles = tmdb_func_cache(tmdb.TV(tmdbid).alternative_titles)
-            external_ids = tmdb_func_cache(tmdb.TV(tmdbid).external_ids)
+            series_info = tmdb_func_cache(tmdb.TV(tmdbid).info, append_to_response='alternative_titles,external_ids')
         except Exception as e:
             logging.exception('BAZARR is facing issues indexing series: {0}'.format(repr(e)))
         else:
@@ -104,8 +114,8 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
                 'overview': series_info['overview'],
                 'poster': images_url.format(series_info['poster_path']) if series_info['poster_path'] else None,
                 'fanart': images_url.format(series_info['backdrop_path'])if series_info['backdrop_path'] else None,
-                'alternateTitles': [x['title'] for x in alternative_titles['results']],
-                'imdbId': external_ids['imdb_id']
+                'alternateTitles': [x['title'] for x in series_info['alternative_titles']['results']],
+                'imdbId': series_info['external_ids']['imdb_id']
             }
 
             # only for initial import and not update
@@ -120,14 +130,25 @@ def get_series_metadata(tmdbid, root_dir_id, dir_name=None):
 def update_indexed_series():
     # update all series in db, insert new ones and remove old ones
     root_dir_ids = TableShowsRootfolder.select(TableShowsRootfolder.rootId, TableShowsRootfolder.path).dicts()
-    for root_dir_id in root_dir_ids:
+    root_dir_ids_len = len(root_dir_ids)
+    for i, root_dir_id in enumerate(root_dir_ids):
+        show_progress(
+            id="s1_indexing_root_dirs",
+            header="Indexing series root folders...",
+            name=root_dir_id['path'],
+            value=i,
+            count=root_dir_ids_len
+        )
         # for each root folder, get the existing series rows
         root_dir_subdirectories = list_series_directories(root_dir_id['rootId'])
         existing_subdirectories = [x['path'] for x in
                                    TableShows.select(TableShows.path)
                                    .where(TableShows.rootdir == root_dir_id['rootId'])
+                                   .order_by(TableShows.title)
                                    .dicts()]
 
+        existing_subdirectories_len = len(existing_subdirectories)
+        existing_subdirectories_iteration_number = 0
         for existing_subdirectory in existing_subdirectories:
             # delete removed series from database
             if not os.path.exists(existing_subdirectory):
@@ -137,16 +158,31 @@ def update_indexed_series():
                 show_metadata = TableShows.select().where(TableShows.path == existing_subdirectory).dicts().get()
                 directory_metadata = get_series_metadata(show_metadata['tmdbId'], root_dir_id['rootId'])
                 if directory_metadata:
+                    show_progress(
+                        id="s2_updating_existing_subdirectories",
+                        header="Updating existing series...",
+                        name=directory_metadata['title'],
+                        value=existing_subdirectories_iteration_number,
+                        count=existing_subdirectories_len
+                    )
+
                     result = TableShows.update(directory_metadata)\
                         .where(TableShows.tmdbId == show_metadata['tmdbId'])\
                         .execute()
                     if result:
-                        update_series_episodes(seriesId=show_metadata['seriesId'], use_cache=True)
+                        update_series_episodes(seriesId=show_metadata['seriesId'],
+                                               use_cache=settings.series.getboolean('use_ffprobe_cache'))
+            existing_subdirectories_iteration_number += 1
+        hide_progress(id="s2_updating_existing_subdirectories")
 
         # add missing series to database
+        new_subdirectories_len = len(root_dir_subdirectories) - len(TableShows.select(TableShows.path)
+                                                                    .where(TableShows.rootdir == root_dir_id['rootId']))
+        new_directories_iteration_number = 0
         for root_dir_subdirectory in root_dir_subdirectories:
             if os.path.join(root_dir_id['path'], root_dir_subdirectory['directory']) in existing_subdirectories:
                 # series is already in db so we'll skip it
+                new_directories_iteration_number += 1
                 continue
             else:
                 # new series, let's get matches for it
@@ -155,6 +191,13 @@ def update_indexed_series():
                     # now that we have at least a match, we'll assume the first one is the good one and get metadata
                     directory_metadata = get_series_metadata(root_dir_match[0]['tmdbId'], root_dir_id['rootId'],
                                                              root_dir_subdirectory['directory'])
+                    show_progress(
+                        id="s2_adding_new_subdirectories",
+                        header="Adding new series...",
+                        name=directory_metadata['title'],
+                        value=new_directories_iteration_number,
+                        count=new_subdirectories_len
+                    )
                     if directory_metadata:
                         try:
                             # let's insert this series into the db
@@ -166,6 +209,9 @@ def update_indexed_series():
                             if series_id:
                                 # once added to the db, we'll check for episodes for this series
                                 update_series_episodes(seriesId=series_id, use_cache=False)
+            new_directories_iteration_number += 1
+        hide_progress(id="s2_adding_new_subdirectories")
+    hide_progress(id="s1_indexing_root_dirs")
 
 
 def update_specific_series(seriesId):

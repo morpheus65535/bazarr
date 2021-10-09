@@ -67,6 +67,10 @@ class MovieApi extends BaseApi {
     return response;
   }
 
+  async fixmatch(form: FormType.FixMatchItem) {
+    await this.patch("", { movieid: form.id, tmdbid: form.tmdbid });
+  }
+
   async action(action: FormType.MoviesAction) {
     await this.patch("", action);
   }

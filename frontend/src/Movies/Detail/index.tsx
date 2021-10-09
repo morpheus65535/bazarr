@@ -1,5 +1,6 @@
 import {
   faCloudUploadAlt,
+  faCodeBranch,
   faHistory,
   faSearch,
   faSync,
@@ -18,6 +19,7 @@ import { useMovieBy, useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import {
   ContentHeader,
+  FixMatchModal,
   ItemEditorModal,
   LoadingIndicator,
   MovieHistoryModal,
@@ -85,21 +87,6 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <ContentHeader>
         <ContentHeader.Group pos="start">
           <ContentHeader.Button
-            icon={faSync}
-            disabled={hasTask}
-            onClick={() => {
-              const task = createTask(
-                item.title,
-                id,
-                MoviesApi.action.bind(MoviesApi),
-                { action: "refresh", movieid: id }
-              );
-              dispatchTask("Refreshing movie...", [task], "Refreshing...");
-            }}
-          >
-            Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button
             icon={faSearch}
             disabled={item.profileId === null || hasTask}
             onClick={() => {
@@ -125,6 +112,13 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             Manual
           </ContentHeader.Button>
           <ContentHeader.Button
+            disabled={!allowEdit || item.profileId === null || hasTask}
+            icon={faCloudUploadAlt}
+            onClick={() => showModal("upload", item)}
+          >
+            Upload
+          </ContentHeader.Button>
+          <ContentHeader.Button
             icon={faHistory}
             onClick={() => showModal("history", item)}
           >
@@ -141,11 +135,26 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={!allowEdit || item.profileId === null || hasTask}
-            icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", item)}
+            icon={faSync}
+            disabled={hasTask}
+            onClick={() => {
+              const task = createTask(
+                item.title,
+                id,
+                MoviesApi.action.bind(MoviesApi),
+                { action: "refresh", movieid: id }
+              );
+              dispatchTask("Refreshing movie...", [task], "Refreshing...");
+            }}
           >
-            Upload
+            Refresh
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            icon={faCodeBranch}
+            disabled={hasTask}
+            onClick={() => showModal("match", item)}
+          >
+            Fix Match
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
@@ -178,6 +187,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       ></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
+      <FixMatchModal
+        modalKey="match"
+        submit={(form) => MoviesApi.fixmatch(form)}
+      ></FixMatchModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
       <ManualSearchModal
         modalKey="manual-search"

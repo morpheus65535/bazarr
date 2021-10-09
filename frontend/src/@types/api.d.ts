@@ -112,6 +112,7 @@ declare namespace Item {
       fanart: string;
       overview: string;
       imdbId: string;
+      tmdbId: string;
       alternativeTitles: string[];
       poster: string;
       year: string;

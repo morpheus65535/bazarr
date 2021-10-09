@@ -8,17 +8,6 @@ CommonWordRegex = re.compile(r"\b(a|an|the|and|or|of)\b\s?")
 DuplicateSpacesRegex = re.compile(r"\s{2,}")
 
 
-def normalize_title(title):
-    title = title.lower()
-
-    title = re.sub(WordDelimiterRegex, " ", title)
-    title = re.sub(PunctuationRegex, "", title)
-    title = re.sub(CommonWordRegex, "", title)
-    title = re.sub(DuplicateSpacesRegex, " ", title)
-
-    return title.strip()
-
-
 VIDEO_EXTENSION = [
     # Unknown
     ".webm",
@@ -72,3 +61,14 @@ VIDEO_EXTENSION = [
     # Bluray
     ".m2ts",
 ]
+
+
+def normalize_title(title):
+    title = title.lower()
+
+    title = re.sub(WordDelimiterRegex, " ", title)
+    title = re.sub(PunctuationRegex, "", title)
+    title = re.sub(CommonWordRegex, "", title)
+    title = re.sub(DuplicateSpacesRegex, " ", title)
+
+    return title.strip()
