@@ -197,6 +197,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     },
   },
   { key: "titrari", name: "Titrari.ro" },
+  { key: "subtitrarinoi", name: "Subtitrari-noi.ro" },
   {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
