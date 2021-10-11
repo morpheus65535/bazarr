@@ -144,7 +144,11 @@ const SettingsGeneralView: FunctionComponent = () => {
             </Input>
             <Input name="Ignored Addresses">
               <Chips settingKey="settings-proxy-exclude"></Chips>
-              <Message>'*.' as a wildcard for subdomains</Message>
+              <Message>
+                List of excluded domains or IP addresses. Asterisk(wildcard),
+                regex and CIDR are unsupported. You can use '.domain.com' to
+                include all subdomains.
+              </Message>
             </Input>
           </CollapseBox.Content>
         </CollapseBox>

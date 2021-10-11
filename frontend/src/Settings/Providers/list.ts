@@ -135,7 +135,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       use_hash: "Use Hash",
     },
   },
-  { key: "podnapisi" },
+  {
+    key: "podnapisi",
+    name: "Podnapisi",
+    defaultKey: {
+      verify_ssl: true,
+    },
+    keyNameOverride: {
+      verify_ssl:
+        "Verify SSL certificate (disabling introduce a MitM attack risk)",
+    },
+  },
   {
     key: "regielive",
     name: "RegieLive",
