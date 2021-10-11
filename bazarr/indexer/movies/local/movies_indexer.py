@@ -5,7 +5,7 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableMoviesRootfolder, TableMovies
-from event_handler import show_progress, hide_progress
+from event_handler import event_stream, show_progress, hide_progress
 from indexer.video_prop_reader import video_prop_reader
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import normalize_title, VIDEO_EXTENSION
@@ -48,7 +48,7 @@ def list_movies_directories(root_dir_id):
                     }
                 )
     finally:
-        return movies_directories
+        return sorted(movies_directories, key=lambda d: d['directory'])
 
 
 def get_movies_match(directory):
@@ -188,7 +188,10 @@ def update_indexed_movies():
             # delete removed movie form database
             if not os.path.exists(existing_movie['path']):
                 TableMovies.delete().where(TableMovies.path == existing_movie['path']).execute()
-            # update existing episodes metadata
+                event_stream(type='movie', action='delete', payload=existing_movie['movieId'])
+                event_stream(type='movie-wanted', action='delete', payload=existing_movie['movieId'])
+                event_stream(type='badges')
+            # update existing movies metadata
             else:
                 movie_metadata = get_movies_metadata(tmdbid=existing_movie['tmdbId'],
                                                      root_dir_id=root_dir_id['rootId'],
@@ -206,6 +209,9 @@ def update_indexed_movies():
                                                              existing_movie['movieId']).execute()
                     store_subtitles_movie(existing_movie['path'],
                                           use_cache=settings.movies.getboolean('use_ffprobe_cache'))
+                    event_stream(type='movie', action='update', payload=existing_movie['movieId'])
+                    event_stream(type='movie-wanted', action='update', payload=existing_movie['movieId'])
+                    event_stream(type='badges')
             existing_movies_iteration_number += 1
         hide_progress(id="m2_updating_existing_subdirectories_movies")
 
@@ -247,6 +253,15 @@ def update_indexed_movies():
                             if result:
                                 # once added to the db, we'll index existing subtitles and calculate the missing ones
                                 store_subtitles_movie(directory_metadata['path'], use_cache=False)
+
+                                movie_id = TableMovies.select(TableMovies.movieId)\
+                                    .where(TableMovies.path == directory_metadata['path'])\
+                                    .dicts()\
+                                    .get()
+
+                                event_stream(type='movie', action='update', payload=movie_id['movieId'])
+                                event_stream(type='movie-wanted', action='update', payload=movie_id['movieId'])
+                                event_stream(type='badges')
             root_dir_subdirectories_iteration_number += 1
         hide_progress(id="m2_adding_new_subdirectories_movies")
     hide_progress(id="m1_indexing_root_dirs")

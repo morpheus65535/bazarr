@@ -68,7 +68,7 @@ def store_subtitles(path, use_cache=True):
                     except Exception as error:
                         logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language,
                                       error)
-            except Exception as e:
+            except Exception:
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(path)[1], path))
         try:

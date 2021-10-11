@@ -223,8 +223,10 @@ class FileWatcher:
 
     def start(self):
         logging.info('BAZARR is starting file system watchers...')
-        self.series_observer.start()
-        self.movies_observer.start()
+        if settings.general.getboolean('use_series'):
+            self.series_observer.start()
+        if settings.general.getboolean('use_movies'):
+            self.movies_observer.start()
         self.config()
         logging.info('BAZARR is watching for file system changes.')
 

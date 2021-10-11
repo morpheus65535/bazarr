@@ -5,7 +5,7 @@ import re
 import logging
 from indexer.tmdb_caching_proxy import tmdb
 from database import TableShowsRootfolder, TableShows
-from event_handler import show_progress, hide_progress
+from event_handler import event_stream, show_progress, hide_progress
 from indexer.tmdb_caching_proxy import tmdb_func_cache
 from indexer.utils import normalize_title
 from .episodes_indexer import update_series_episodes
@@ -46,7 +46,7 @@ def list_series_directories(root_dir):
                     }
                 )
     finally:
-        return series_directories
+        return sorted(series_directories, key=lambda d: d['directory'])
 
 
 def get_series_match(directory):
@@ -150,12 +150,14 @@ def update_indexed_series():
         existing_subdirectories_len = len(existing_subdirectories)
         existing_subdirectories_iteration_number = 0
         for existing_subdirectory in existing_subdirectories:
+            show_metadata = TableShows.select().where(TableShows.path == existing_subdirectory).dicts().get()
+
             # delete removed series from database
             if not os.path.exists(existing_subdirectory):
                 TableShows.delete().where(TableShows.path == existing_subdirectory).execute()
+                event_stream(type='series', action='delete', payload=show_metadata['seriesId'])
             # update existing series metadata
             else:
-                show_metadata = TableShows.select().where(TableShows.path == existing_subdirectory).dicts().get()
                 directory_metadata = get_series_metadata(show_metadata['tmdbId'], root_dir_id['rootId'])
                 if directory_metadata:
                     show_progress(
@@ -170,6 +172,7 @@ def update_indexed_series():
                         .where(TableShows.tmdbId == show_metadata['tmdbId'])\
                         .execute()
                     if result:
+                        event_stream(type='series', action='update', payload=show_metadata['seriesId'])
                         update_series_episodes(seriesId=show_metadata['seriesId'],
                                                use_cache=settings.series.getboolean('use_ffprobe_cache'))
             existing_subdirectories_iteration_number += 1
@@ -207,6 +210,7 @@ def update_indexed_series():
                                           f'"{directory_metadata["path"]}". The exception encountered is "{e}".')
                         else:
                             if series_id:
+                                event_stream(type='series', action='update', payload=series_id)
                                 # once added to the db, we'll check for episodes for this series
                                 update_series_episodes(seriesId=series_id, use_cache=False)
             new_directories_iteration_number += 1
