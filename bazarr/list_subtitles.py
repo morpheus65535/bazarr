@@ -305,9 +305,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                     if item not in actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # remove missing that have forced or hi subtitles for this language in existing
+                # remove missing that have hi subtitles for this language in existing
                 for item in actual_subtitles_list:
-                    if item[1] == 'True' or item[2] == 'True':
+                    if item[2] == 'True':
                         try:
                             missing_subtitles_list.remove([item[0], 'False', 'False'])
                         except ValueError:
