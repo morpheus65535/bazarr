@@ -147,6 +147,7 @@ def get_providers_auth():
         'podnapisi'       : {
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
+            'verify_ssl': settings.podnapisi.getboolean('verify_ssl')
         },
         'subscene'        : {
             'username'    : settings.subscene.username,
