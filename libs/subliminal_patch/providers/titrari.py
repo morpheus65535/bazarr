@@ -86,6 +86,24 @@ class TitrariSubtitle(Subtitle):
                 matches.add('release_group')
 
             matches |= guess_matches(video, guessit(self.comments, {"type": "movie"}))
+        else:
+            # title
+            if video.series and fix_inconsistent_naming(video.series) in sanitize(self.title):
+                matches.add('series')
+
+            if video.year and self.year == video.year:
+                matches.add('year')
+
+            if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
+                matches.add('imdb_id')
+
+            if video.release_group and video.release_group in self.comments:
+                matches.add('release_group')
+
+            if f"Sezonul {video.season}" in self.title:
+                matches.add('season')
+
+            matches |= guess_matches(video, guessit(self.comments, {"type": "episode"}))
 
         self.matches = matches
 
@@ -220,7 +238,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         title = fix_inconsistent_naming(video.title)
         imdb_id = None
         try:
-            imdb_id = video.imdb_id[2:]
+            if isinstance(video, Episode):
+                imdb_id = video.series_imdb_id[2:]
+            else:
+                imdb_id = video.imdb_id[2:]
         except:
             logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
 
