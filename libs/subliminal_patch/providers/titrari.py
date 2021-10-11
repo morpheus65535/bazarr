@@ -97,14 +97,16 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = {Language(l) for l in ['ron', 'eng']}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     api_url = 'https://www.titrari.ro/'
-    query_advanced_search = 'cautarenedevansata'
+    query_advanced_search = 'cautarepreaavansata'
 
     def __init__(self):
         self.session = None
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        # Hardcoding the UA to bypass the 30s throttle that titrari.ro uses for IP/UA pair
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4535.2 Safari/537.36'
+        # self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
@@ -184,11 +186,28 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             return None
 
-
+    # titrari.ro seems to require all parameters now
+    #  z2 = comment (empty)
+    #  z3 = fps (-1: any, 0: N/A, 1: 23.97 FPS etc.)
+    #  z4 = CD count (-1: any)
+    #  z5 = imdb_id (empty or integer)
+    #  z6 = sort order (0: unsorted, 1: by date, 2: by name)
+    #  z7 = title (empty or string)
+    #  z8 = language (-1: all, 1: ron, 2: eng)
+    #  z9 = genre (All: all, Action: action etc.)
+    # z11 = type (0: any, 1: movie, 2: series)
     def getQueryParams(self, imdb_id, title):
         queryParams = {
             'page': self.query_advanced_search,
-            'z8': '1'
+            'z7': '',
+            'z2': '',
+            'z5': '',
+            'z3': '-1',
+            'z4': '-1',
+            'z8': '-1',
+            'z9': 'All',
+            'z11': '0',
+            'z6': '0'
         }
         if imdb_id is not None:
             queryParams["z5"] = imdb_id

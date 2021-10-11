@@ -43,7 +43,7 @@ def fix_tv_naming(title):
 
 def fix_movie_naming(title):
     return fix_inconsistent_naming(title, {
-                                           }, True)
+    }, True)
 
 
 class OpenSubtitlesComSubtitle(Subtitle):
@@ -279,14 +279,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                            ('languages', langs.lower()),
                                            ('moviehash', hash),
                                            ('parent_feature_id', title_id),
-                                           ('season_number', self.video.season)),
+                                           ('season_number', self.video.season),
+                                           ('query', os.path.basename(self.video.name))),
                                    timeout=30)
         else:
             res = self.session.get(self.server_url + 'subtitles',
                                    params=(('foreign_parts_only', forced),
                                            ('id', title_id),
                                            ('languages', langs.lower()),
-                                           ('moviehash', hash)),
+                                           ('moviehash', hash),
+                                           ('query', os.path.basename(self.video.name))),
                                    timeout=30)
 
         if res.status_code == 429:
@@ -299,6 +301,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         try:
             result = res.json()
+            if 'data' not in result:
+                raise ValueError
         except ValueError:
             raise ProviderError('Invalid JSON returned by provider')
         else:
@@ -323,19 +327,19 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
                     if len(item['attributes']['files']):
                         subtitle = OpenSubtitlesComSubtitle(
-                                language=Language.fromietf(item['attributes']['language']),
-                                forced=item['attributes']['foreign_parts_only'],
-                                hearing_impaired=item['attributes']['hearing_impaired'],
-                                page_link=item['attributes']['url'],
-                                file_id=item['attributes']['files'][0]['file_id'],
-                                releases=item['attributes']['release'],
-                                uploader=item['attributes']['uploader']['name'],
-                                title=item['attributes']['feature_details']['movie_name'],
-                                year=item['attributes']['feature_details']['year'],
-                                season=season_number,
-                                episode=episode_number,
-                                hash_matched=moviehash_match
-                            )
+                            language=Language.fromietf(item['attributes']['language']),
+                            forced=item['attributes']['foreign_parts_only'],
+                            hearing_impaired=item['attributes']['hearing_impaired'],
+                            page_link=item['attributes']['url'],
+                            file_id=item['attributes']['files'][0]['file_id'],
+                            releases=item['attributes']['release'],
+                            uploader=item['attributes']['uploader']['name'],
+                            title=item['attributes']['feature_details']['movie_name'],
+                            year=item['attributes']['feature_details']['year'],
+                            season=season_number,
+                            episode=episode_number,
+                            hash_matched=moviehash_match
+                        )
                         subtitle.get_matches(self.video)
                         subtitles.append(subtitle)
 
