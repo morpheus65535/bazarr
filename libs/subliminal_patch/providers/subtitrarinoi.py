@@ -6,6 +6,7 @@ import io
 import logging
 import re
 import rarfile
+import json
 from random import randint
 
 from zipfile import ZipFile, is_zipfile
@@ -24,6 +25,11 @@ from subzero.language import Language
 
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
+
+class Object:
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
 
 
 def fix_inconsistent_naming(title):
@@ -127,7 +133,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         rows = soup.select('div[id="round"]')
 
         if len(rows) == 0:
-            logger.debug('No data returned from provider (subtitrari-noi.ro)')
+            logger.debug('No data returned from provider')
             return []
 
         # release comments are outside of the parent for the sub details itself, so we just map it to another list
@@ -146,26 +152,26 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
             try:
                 title = fullTitle.split("(")[0]
             except:
-                logger.error("Error parsing title. (subtitrari-noi.ro)")
+                logger.error("Error parsing title")
 
             # Get Uploader
             try:
                 uploader = row.select('#content-main p')[4].text[10:]
             except:
-                logger.error("Error parsing uploader. (subtitrari-noi.ro)")
+                logger.error("Error parsing uploader")
 
             # Get downloads count
             try:
                 downloads = int(row.select_one('#content-right p').text[12:])
             except:
-                logger.error("Error parsing downloads. (subtitrari-noi.ro)")
+                logger.error("Error parsing downloads")
 
             # Get year
             try:
                 year = int(fullTitle.split("(")[1].split(")")[0])
             except:
                 year = None
-                logger.error("Error parsing year. (subtitrari-noi.ro)")
+                logger.error("Error parsing year")
 
             # Get imdbId
             sub_imdb_id = self.getImdbIdFromSubtitle(row)
@@ -174,24 +180,24 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
                 comments = comment_rows[index].text
                 logger.debug('Comments: {}'.format(comments))
             except:
-                logger.error("Error parsing comments.")
+                logger.error("Error parsing comments")
 
             # Get Page Link
             try:
                 page_link = row.select_one('#content-main a')['href']
             except:
-                logger.error("Error parsing page_link. (subtitrari-noi.ro)")
+                logger.error("Error parsing page_link")
 
             subtitle = self.subtitle_class(next(iter(languages)), download_link, index, None, title, sub_imdb_id, uploader, page_link, year, downloads, comments)
-            logger.debug('Found subtitle %r .(subtitrari-noi.ro)', str(subtitle))
+            logger.debug('Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
         ordered_subs = self.order(subtitles, video)
-
+        
         return ordered_subs
 
     def order(self, subtitles, video):
-        logger.debug("Sorting by download count... (subtitrari-noi.ro)")
+        logger.debug("Sorting by download count...")
         sorted_subs = sorted(subtitles, key=lambda s: s.download_count, reverse=True)
         return sorted_subs
 
@@ -199,7 +205,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         try:
             imdbId = row.select('div[id=content-right] a')[-1].find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
         except:
-            logger.error("Error parsing imdbId. (subtitrari-noi.ro)")
+            logger.error("Error parsing imdb id")
         if imdbId is not None:
             return "tt" + imdbId
         else:
@@ -216,7 +222,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def getQueryParams(self, imdb_id, title):
         queryParams = {
-	    'search_q': '1',
+        'search_q': '1',
             'tip': '2',
             'an': 'Toti anii',
             'gen': 'Toate',
@@ -233,10 +239,14 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
     def list_subtitles(self, video, languages):
         title = fix_inconsistent_naming(video.title)
         imdb_id = None
+
         try:
-            imdb_id = video.imdb_id[2:]
+            if isinstance(video, Episode):
+                imdb_id = video.series_imdb_id[2:]
+            else:
+                imdb_id = video.imdb_id[2:]
         except:
-            logger.error("Error parsing video.imdb_id. (subtitrari-noi.ro)")
+            logger.error('Error parsing imdb_id from video object {}'.format(str(video)))
 
         return [s for s in
                 self.query(languages, title, imdb_id, video)]
@@ -248,10 +258,10 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         # open the archive
         archive_stream = io.BytesIO(r.content)
         if is_rarfile(archive_stream):
-            logger.debug('Archive identified as rar. (subtitrari-noi.ro)')
+            logger.debug('Archive identified as rar')
             archive = RarFile(archive_stream)
         elif is_zipfile(archive_stream):
-            logger.debug('Archive identified as zip. (subtitrari-noi.ro)')
+            logger.debug('Archive identified as zip')
             archive = ZipFile(archive_stream)
         else:
             subtitle.content = r.content
@@ -259,7 +269,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
                 return
             subtitle.content = None
 
-            raise ProviderError('Unidentified archive type. (subtitrari-noi.ro)')
+            raise ProviderError('Unidentified archive type')
 
         subtitle.releases = _get_releases_from_archive(archive)
         subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
