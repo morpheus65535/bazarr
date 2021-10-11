@@ -279,14 +279,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                            ('languages', langs.lower()),
                                            ('moviehash', hash),
                                            ('parent_feature_id', title_id),
-                                           ('season_number', self.video.season)),
+                                           ('season_number', self.video.season),
+                                           ('query', os.path.basename(self.video.name))),
                                    timeout=30)
         else:
             res = self.session.get(self.server_url + 'subtitles',
                                    params=(('foreign_parts_only', forced),
                                            ('id', title_id),
                                            ('languages', langs.lower()),
-                                           ('moviehash', hash)),
+                                           ('moviehash', hash),
+                                           ('query', os.path.basename(self.video.name))),
                                    timeout=30)
 
         if res.status_code == 429:
