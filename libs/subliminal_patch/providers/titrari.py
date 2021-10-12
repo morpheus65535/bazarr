@@ -139,10 +139,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     def terminate(self):
         self.session.close()
 
-    def query(self, languages=None, title=None, imdb_id=None, video=None):
+    def query(self, language=None, title=None, imdb_id=None, video=None):
         subtitles = []
 
-        params = self.getQueryParams(imdb_id, title)
+        params = self.getQueryParams(imdb_id, title, language)
 
         search_response = self.session.get(self.api_url, params=params, timeout=15)
         search_response.raise_for_status()
@@ -194,7 +194,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
                 logger.error("Error parsing comments.")
 
             episode_number = video.episode if isinstance(video, Episode) else None
-            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, comments, title, sub_imdb_id,
+            subtitle = self.subtitle_class(language, download_link, index, comments, title, sub_imdb_id,
                                            year, downloads, isinstance(video, Episode), episode_number)
             logger.debug('[#### Provider: titrari.ro] Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
@@ -231,7 +231,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     #  z8 = language (-1: all, 1: ron, 2: eng)
     #  z9 = genre (All: all, Action: action etc.)
     # z11 = type (0: any, 1: movie, 2: series)
-    def getQueryParams(self, imdb_id, title):
+    def getQueryParams(self, imdb_id, title, language):
         queryParams = {
             'page': self.query_advanced_search,
             'z7': '',
@@ -249,6 +249,11 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         elif title is not None:
             queryParams["z7"] = title
 
+        if language == 'ro':
+            queryParams["z8"] = '1'
+        elif language == 'en':
+            queryParams["z8"] = '2'
+
         return queryParams
 
     def list_subtitles(self, video, languages):
@@ -262,8 +267,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         except:
             logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
 
-        subtitles = [s for s in
-                     self.query(languages, title, imdb_id, video)]
+        subtitles = [s for lang in languages for s in
+                     self.query(lang, title, imdb_id, video)]
         return subtitles
 
     def download_subtitle(self, subtitle):

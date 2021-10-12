@@ -283,6 +283,8 @@ class KtuvitProvider(Provider):
         logger.debug("Getting the list of subtitles")
 
         url = self.server_url + self.search_url
+        logger.debug("Calling URL: {} with request: {}".format(url, str({"request": query})))
+
         r = self.session.post(url, json={"request": query}, timeout=10)
         r.raise_for_status()
 
@@ -349,6 +351,10 @@ class KtuvitProvider(Provider):
         )
         r = self.session.get(url, timeout=10)
         r.raise_for_status()
+        
+        if len(r.content) < 10:
+            logger.debug("Too short content-length in response: [{}]. Treating as No Subtitles Found ".format(str(r.content)))
+            return []
 
         sub_list = ParserBeautifulSoup(r.content, ["html.parser"])
         sub_rows = sub_list("tr")
@@ -378,6 +384,10 @@ class KtuvitProvider(Provider):
         url = self.server_url + self.movie_info_url + movie_id
         r = self.session.get(url, timeout=10)
         r.raise_for_status()
+
+        if len(r.content) < 10:
+            logger.debug("Too short content-length in response: [{}]. Treating as No Subtitles Found ".format(str(r.content)))
+            return []
 
         html = ParserBeautifulSoup(r.content, ["html.parser"])
         sub_rows = html.select("table#subtitlesList tbody > tr")
@@ -470,11 +480,14 @@ class KtuvitProvider(Provider):
                 "Unable to parse JSON returned while getting " + message, ex.doc, ex.pos
             )
         else:
+            # kept for manual debugging when needed:
+            # logger.debug("Parsing d response_content: " + str(response_content))
+
             if "d" in response_content:
                 response_content = json.loads(response_content["d"])
                 value = response_content.get(field, default_value)
 
-                if not value:
+                if not value and value != default_value:
                     raise json.decoder.JSONDecodeError(
                         "Missing " + message, str(response_content), 0
                     )
