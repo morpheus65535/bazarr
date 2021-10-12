@@ -48,8 +48,8 @@ class TitrariSubtitle(Subtitle):
 
     provider_name = 'titrari'
 
-    def __init__(self, language, download_link, sid, releases, title, imdb_id, year=None, download_count=None,
-                 comments=None, is_episode=False, desired_episode=None):
+    def __init__(self, language, download_link, sid, comments, title, imdb_id, year=None, download_count=None,
+                 is_episode=False, desired_episode=None):
         super(TitrariSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
@@ -57,8 +57,7 @@ class TitrariSubtitle(Subtitle):
         self.download_link = download_link
         self.year = year
         self.download_count = download_count
-        self.releases = self.release_info = releases
-        self.comments = comments
+        self.comments = self.releases = self.release_info = " /".join(comments.split(","))
         self.matches = None
         self.is_episode = is_episode
         self.desired_episode = desired_episode
@@ -195,8 +194,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
                 logger.error("Error parsing comments.")
 
             episode_number = video.episode if isinstance(video, Episode) else None
-            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, None, title, sub_imdb_id,
-                                           year, downloads, comments, isinstance(video, Episode), episode_number)
+            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, comments, title, sub_imdb_id,
+                                           year, downloads, isinstance(video, Episode), episode_number)
             logger.debug('[#### Provider: titrari.ro] Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
@@ -287,7 +286,6 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             raise ProviderError('[#### Provider: titrari.ro] Unidentified archive type')
 
-        subtitle.releases = _get_releases_from_archive(archive)
         if subtitle.is_episode:
             subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
         else:
@@ -309,19 +307,3 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
                 return archive.read(name)
 
         return None
-
-
-def _get_releases_from_archive(archive):
-    releases = []
-    for name in archive.namelist():
-        # discard hidden files
-        if os.path.split(name)[-1].startswith('.'):
-            continue
-
-        # discard non-subtitle files
-        if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-            continue
-
-        releases.append(os.path.splitext(os.path.split(name)[1])[0])
-
-    return releases
