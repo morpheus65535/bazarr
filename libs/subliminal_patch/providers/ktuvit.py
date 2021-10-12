@@ -480,8 +480,8 @@ class KtuvitProvider(Provider):
                 "Unable to parse JSON returned while getting " + message, ex.doc, ex.pos
             )
         else:
-            logger.debug("Parsing d response: " + str(response.content))
-            logger.debug("Parsing d response_content: " + str(response_content))
+            # kept for manual debugging when needed:
+            # logger.debug("Parsing d response_content: " + str(response_content))
 
             if "d" in response_content:
                 response_content = json.loads(response_content["d"])
