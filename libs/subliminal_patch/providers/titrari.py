@@ -164,7 +164,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             href = result_anchor_el.get('href')
             download_link = self.api_url + href
 
-            fullTitle = row.parent.select('h1 a').text
+            fullTitle = row.parent.select('h1 a')[0].text
 
             # Get title
             try:
