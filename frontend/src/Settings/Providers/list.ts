@@ -188,6 +188,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "subsynchro", description: "French Subtitles Provider" },
   {
+    key: "subtitrarinoi",
+    name: "Subtitrari-noi.ro",
+    description: "Romanian Subtitles Provider",
+  },
+  {
     key: "subtitriid",
     name: "subtitri.id.lv",
     description: "Latvian Subtitles Provider",
@@ -206,7 +211,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       password: "",
     },
   },
-  { key: "titrari", name: "Titrari.ro" },
+  {
+    key: "titrari",
+    name: "Titrari.ro",
+    description: "Mostly Romanian Subtitles Provider",
+  },
   {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
