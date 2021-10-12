@@ -43,11 +43,13 @@ logger = logging.getLogger(__name__)
 # Configure :mod:`rarfile` to use the same path separator as :mod:`zipfile`
 rarfile.PATH_SEP = '/'
 
+
 class TitrariSubtitle(Subtitle):
 
     provider_name = 'titrari'
 
-    def __init__(self, language, download_link, sid, releases, title, imdb_id, year=None, download_count=None, comments=None):
+    def __init__(self, language, download_link, sid, comments, title, imdb_id, year=None, download_count=None,
+                 is_episode=False, desired_episode=None):
         super(TitrariSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
@@ -55,8 +57,10 @@ class TitrariSubtitle(Subtitle):
         self.download_link = download_link
         self.year = year
         self.download_count = download_count
-        self.releases = self.release_info = releases
-        self.comments = comments
+        self.comments = self.releases = self.release_info = " /".join(comments.split(","))
+        self.matches = None
+        self.is_episode = is_episode
+        self.desired_episode = desired_episode
 
     @property
     def id(self):
@@ -71,21 +75,44 @@ class TitrariSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
 
+        if video.year and self.year == video.year:
+            matches.add('year')
+
+        if video.release_group and video.release_group in self.comments:
+            matches.add('release_group')
+
         if isinstance(video, Movie):
             # title
             if video.title and sanitize(self.title) == fix_inconsistent_naming(video.title):
                 matches.add('title')
 
-            if video.year and self.year == video.year:
-                matches.add('year')
-
+            # imdb
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 matches.add('imdb_id')
 
-            if video.release_group and video.release_group in self.comments:
-                matches.add('release_group')
-
+            # guess match others
             matches |= guess_matches(video, guessit(self.comments, {"type": "movie"}))
+
+        else:
+            # title
+            seasonless_title = re.sub(r'\s-\sSezonul\s\d+$', '', self.title.rstrip())
+            if video.series and fix_inconsistent_naming(video.series) == sanitize(seasonless_title):
+                matches.add('series')
+
+            # imdb
+            if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
+                matches.add('imdb_id')
+
+            # season
+            if f"Sezonul {video.season}" in self.title:
+                matches.add('season')
+
+            # episode
+            if {"imdb_id", "season"}.issubset(matches):
+                matches.add('episode')
+
+            # guess match others
+            matches |= guess_matches(video, guessit(self.comments, {"type": "episode"}))
 
         self.matches = matches
 
@@ -94,8 +121,8 @@ class TitrariSubtitle(Subtitle):
 
 class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = TitrariSubtitle
-    languages = {Language(l) for l in ['ron', 'eng']}
-    languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages = {Language(lang) for lang in ['ron', 'eng']}
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     api_url = 'https://www.titrari.ro/'
     query_advanced_search = 'cautarepreaavansata'
 
@@ -105,7 +132,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     def initialize(self):
         self.session = Session()
         # Hardcoding the UA to bypass the 30s throttle that titrari.ro uses for IP/UA pair
-        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4535.2 Safari/537.36'
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
+                                             'like Gecko) Chrome/93.0.4535.2 Safari/537.36'
         # self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
@@ -136,13 +164,14 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             fullTitle = row.parent.find("h1").find("a").text
 
-            #Get title
+            # Get title
             try:
                 title = fullTitle.split("(")[0]
             except:
                 logger.error("[#### Provider: titrari.ro] Error parsing title.")
 
             # Get downloads count
+            downloads = 0
             try:
                 downloads = int(row.parent.parent.select("span")[index].text[12:])
             except:
@@ -158,25 +187,31 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             # Get imdbId
             sub_imdb_id = self.getImdbIdFromSubtitle(row)
 
+            comments = ''
             try:
                 comments = row.parent.parent.find_all("td", class_=re.compile("comment"))[index*2+1].text
             except:
                 logger.error("Error parsing comments.")
 
-            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, None, title, sub_imdb_id, year, downloads, comments)
+            episode_number = video.episode if isinstance(video, Episode) else None
+            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, comments, title, sub_imdb_id,
+                                           year, downloads, isinstance(video, Episode), episode_number)
             logger.debug('[#### Provider: titrari.ro] Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
-        ordered_subs = self.order(subtitles, video)
+        ordered_subs = self.order(subtitles)
 
         return ordered_subs
 
-    def order(self, subtitles, video):
+    @staticmethod
+    def order(subtitles):
         logger.debug("[#### Provider: titrari.ro] Sorting by download count...")
         sorted_subs = sorted(subtitles, key=lambda s: s.download_count, reverse=True)
         return sorted_subs
 
-    def getImdbIdFromSubtitle(self, row):
+    @staticmethod
+    def getImdbIdFromSubtitle(row):
+        imdbId = None
         try:
             imdbId = row.parent.parent.find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
         except:
@@ -220,12 +255,16 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         title = fix_inconsistent_naming(video.title)
         imdb_id = None
         try:
-            imdb_id = video.imdb_id[2:]
+            if isinstance(video, Episode):
+                imdb_id = video.series_imdb_id[2:]
+            else:
+                imdb_id = video.imdb_id[2:]
         except:
             logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
 
-        return [s for s in
-                self.query(languages, title, imdb_id, video)]
+        subtitles = [s for s in
+                     self.query(languages, title, imdb_id, video)]
+        return subtitles
 
     def download_subtitle(self, subtitle):
         r = self.session.get(subtitle.download_link, headers={'Referer': self.api_url}, timeout=10)
@@ -247,21 +286,24 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             raise ProviderError('[#### Provider: titrari.ro] Unidentified archive type')
 
-        subtitle.releases = _get_releases_from_archive(archive)
-        subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
+        if subtitle.is_episode:
+            subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
+        else:
+            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 
+    @staticmethod
+    def _get_subtitle_from_archive(subtitle, archive):
+        for name in archive.namelist():
+            # discard hidden files
+            if os.path.split(name)[-1].startswith('.'):
+                continue
 
-def _get_releases_from_archive(archive):
-    releases = []
-    for name in archive.namelist():
-        # discard hidden files
-        if os.path.split(name)[-1].startswith('.'):
-            continue
+            # discard non-subtitle files
+            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
+                continue
 
-        # discard non-subtitle files
-        if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-            continue
+            _guess = guessit(name)
+            if subtitle.desired_episode == _guess['episode']:
+                return archive.read(name)
 
-        releases.append(os.path.splitext(os.path.split(name)[1])[0])
-
-    return releases
+        return None
