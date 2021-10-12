@@ -357,9 +357,6 @@ class KtuvitProvider(Provider):
             logger.debug("No Subtitles Found. URL " + url)
             return subs
 
-        if sub_list.find_next("tr").find_next("td").get_text() == "אין כתוביות":
-            return subs
-
         for row in sub_rows:
             columns = row.find_all("td")
             sub = {"id": id}
