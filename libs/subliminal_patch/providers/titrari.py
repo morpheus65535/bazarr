@@ -293,7 +293,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 
-    def _get_subtitle_from_archive(self, subtitle, archive):
+    @staticmethod
+    def _get_subtitle_from_archive(subtitle, archive):
         for name in archive.namelist():
             # discard hidden files
             if os.path.split(name)[-1].startswith('.'):
