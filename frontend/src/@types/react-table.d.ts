@@ -45,6 +45,7 @@ declare module "react-table" {
   interface useSelectionProps<D extends Record<string, unknown>> {
     isSelecting?: boolean;
     onSelect?: (items: D[]) => void;
+    canSelect?: (item: D) => boolean;
   }
 
   interface useSelectionState<D extends Record<string, unknown>> {}

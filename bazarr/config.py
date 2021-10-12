@@ -134,6 +134,9 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'podnapisi': {
+        'verify_ssl': 'True'
+    },
     'legendasdivx': {
         'username': '',
         'password': '',
@@ -177,6 +180,10 @@ defaults = {
         'enabled': 'True'
     },
     'titlovi': {
+        'username': '',
+        'password': ''
+    },
+    'titulky': {
         'username': '',
         'password': ''
     },

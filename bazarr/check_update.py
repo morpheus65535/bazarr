@@ -36,7 +36,7 @@ def check_releases():
                 if asset['name'] == 'bazarr.zip':
                     download_link = asset['browser_download_url']
             if not download_link:
-                download_link = release['zipball_url']
+                continue
             releases.append({'name': release['name'],
                              'body': release['body'],
                              'date': release['published_at'],
