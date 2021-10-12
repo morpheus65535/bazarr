@@ -48,13 +48,15 @@ class TitrariSubtitle(Subtitle):
 
     provider_name = 'titrari'
 
-    def __init__(self, language, download_link, sid, comments, title, imdb_id, year=None, download_count=None,
-                 is_episode=False, desired_episode=None):
+    def __init__(self, language, download_link, sid, comments, title, imdb_id, page_link, uploader, year=None,
+            download_count=None, is_episode=False, desired_episode=None):
         super(TitrariSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
         self.imdb_id = imdb_id
         self.download_link = download_link
+        self.page_link = page_link
+        self.uploader = uploader
         self.year = year
         self.download_count = download_count
         self.comments = self.releases = self.release_info = " /".join(comments.split(","))
@@ -148,13 +150,13 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         search_response.raise_for_status()
 
         if not search_response.content:
-            logger.debug('[#### Provider: titrari.ro] No data returned from provider')
+            logger.debug('No data returned from provider')
             return []
 
         soup = ParserBeautifulSoup(search_response.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
 
         # loop over subtitle cells
-        rows = soup.select('td[rowspan=\'5\']')
+        rows = soup.select('td[rowspan="5"]')
         for index, row in enumerate(rows):
             result_anchor_el = row.select_one('a')
 
@@ -162,41 +164,53 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             href = result_anchor_el.get('href')
             download_link = self.api_url + href
 
-            fullTitle = row.parent.find("h1").find("a").text
+            fullTitle = row.parent.find('h1').find('a').text
 
             # Get title
             try:
                 title = fullTitle.split("(")[0]
             except:
-                logger.error("[#### Provider: titrari.ro] Error parsing title.")
+                logger.error("Error parsing title")
 
             # Get downloads count
             downloads = 0
             try:
-                downloads = int(row.parent.parent.select("span")[index].text[12:])
+                downloads = int(row.parent.parent.select('span')[index].text[12:])
             except:
-                logger.error("[#### Provider: titrari.ro] Error parsing downloads.")
+                logger.error("Error parsing downloads")
 
             # Get year
             try:
                 year = int(fullTitle.split("(")[1].split(")")[0])
             except:
                 year = None
-                logger.error("[#### Provider: titrari.ro] Error parsing year.")
+                logger.error("Error parsing year")
 
             # Get imdbId
             sub_imdb_id = self.getImdbIdFromSubtitle(row)
 
             comments = ''
             try:
-                comments = row.parent.parent.find_all("td", class_=re.compile("comment"))[index*2+1].text
+                comments = row.parent.parent.select('.comment')[1].text
             except:
-                logger.error("Error parsing comments.")
+                logger.error("Error parsing comments")
+
+            # Get page_link
+            try:
+                page_link = self.api_url + row.parent.select('h1 a')[0].get('href')
+            except:
+                logger.error("Error parsing page_link")
+
+            # Get uploader
+            try:
+                uploader = row.parent.select('td.row1.stanga a')[-1].text
+            except:
+                logger.error("Error parsing uploader")
 
             episode_number = video.episode if isinstance(video, Episode) else None
-            subtitle = self.subtitle_class(language, download_link, index, comments, title, sub_imdb_id,
+            subtitle = self.subtitle_class(language, download_link, index, comments, title, sub_imdb_id, page_link, uploader,
                                            year, downloads, isinstance(video, Episode), episode_number)
-            logger.debug('[#### Provider: titrari.ro] Found subtitle %r', str(subtitle))
+            logger.debug('Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
         ordered_subs = self.order(subtitles)
@@ -205,7 +219,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
     @staticmethod
     def order(subtitles):
-        logger.debug("[#### Provider: titrari.ro] Sorting by download count...")
+        logger.debug("Sorting by download count...")
         sorted_subs = sorted(subtitles, key=lambda s: s.download_count, reverse=True)
         return sorted_subs
 
@@ -215,7 +229,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         try:
             imdbId = row.parent.parent.find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
         except:
-            logger.error("[#### Provider: titrari.ro] Error parsing imdbId.")
+            logger.error("Error parsing imdb id")
         if imdbId is not None:
             return "tt" + imdbId
         else:
@@ -265,7 +279,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             else:
                 imdb_id = video.imdb_id[2:]
         except:
-            logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
+            logger.error('Error parsing imdb_id from video object {}'.format(str(video)))
 
         subtitles = [s for lang in languages for s in
                      self.query(lang, title, imdb_id, video)]
@@ -278,10 +292,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         # open the archive
         archive_stream = io.BytesIO(r.content)
         if is_rarfile(archive_stream):
-            logger.debug('[#### Provider: titrari.ro] Archive identified as rar')
+            logger.debug('Archive identified as RAR')
             archive = RarFile(archive_stream)
         elif is_zipfile(archive_stream):
-            logger.debug('[#### Provider: titrari.ro] Archive identified as zip')
+            logger.debug('Archive identified as ZIP')
             archive = ZipFile(archive_stream)
         else:
             subtitle.content = r.content
@@ -289,7 +303,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
                 return
             subtitle.content = None
 
-            raise ProviderError('[#### Provider: titrari.ro] Unidentified archive type')
+            raise ProviderError('Unidentified archive type')
 
         if subtitle.is_episode:
             subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
@@ -312,3 +326,5 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
                 return archive.read(name)
 
         return None
+
+# vim: set expandtab ts=4 sw=4:
