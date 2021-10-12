@@ -109,10 +109,12 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
 
         return matches
 
+
 class PodnapisiAdapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False):
         ctx = ssl.create_default_context()
         ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+        ctx.check_hostname = False
         self.poolmanager = poolmanager.PoolManager(
                 num_pools=connections,
                 maxsize=maxsize,
@@ -120,6 +122,7 @@ class PodnapisiAdapter(HTTPAdapter):
                 ssl_version=ssl.PROTOCOL_TLS,
                 ssl_context=ctx
         )
+
 
 class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     languages = ({Language('por', 'BR'), Language('srp', script='Latn'), Language('srp', script='Cyrl')} |
@@ -130,12 +133,14 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     server_url = 'https://podnapisi.net/subtitles/'
     only_foreign = False
     also_foreign = False
+    verify_ssl = True
     subtitle_class = PodnapisiSubtitle
     hearing_impaired_verifiable = True
 
-    def __init__(self, only_foreign=False, also_foreign=False):
+    def __init__(self, only_foreign=False, also_foreign=False, verify_ssl=True):
         self.only_foreign = only_foreign
         self.also_foreign = also_foreign
+        self.verify_ssl = verify_ssl
 
         if only_foreign:
             logger.info("Only searching for foreign/forced subtitles")
@@ -145,6 +150,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     def initialize(self):
         super().initialize()
         self.session.mount('https://', PodnapisiAdapter())
+        self.session.verify = self.verify_ssl
 
     def list_subtitles(self, video, languages):
         if video.is_special:
