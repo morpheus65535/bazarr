@@ -6,7 +6,6 @@ import io
 import logging
 import re
 import rarfile
-import json
 from random import randint
 
 from zipfile import ZipFile, is_zipfile
@@ -26,11 +25,6 @@ from subzero.language import Language
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
 
-class Object:
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
-
 
 def fix_inconsistent_naming(title):
     """Fix titles with inconsistent naming using dictionary and sanitize them.
@@ -49,11 +43,13 @@ logger = logging.getLogger(__name__)
 # Configure :mod:`rarfile` to use the same path separator as :mod:`zipfile`
 rarfile.PATH_SEP = '/'
 
+
 class SubtitrarinoiSubtitle(Subtitle):
 
     provider_name = 'subtitrarinoi'
 
-    def __init__(self, language, download_link, sid, releases, title, imdb_id, uploader, page_link, year=None, download_count=None, comments=None):
+    def __init__(self, language, download_link, sid, comments, title, imdb_id, uploader, page_link, year=None,
+            download_count=None, is_episode=False, desired_episode=False):
         super(SubtitrarinoiSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
@@ -61,9 +57,8 @@ class SubtitrarinoiSubtitle(Subtitle):
         self.download_link = download_link
         self.year = year
         self.download_count = download_count
-        self.releases = self.release_info = releases
-        self.release_info = comments
-        self.comments = comments
+        self.comments = self.releases = self.release_info = "/".join(comments.split(","))
+        self.matches = None
         self.uploader = uploader
         self.page_link = page_link
 
@@ -80,31 +75,53 @@ class SubtitrarinoiSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
 
+        if video.year and self.year == video.year:
+            matches.add('year')
+
+        if video.release_group and video.release_group in self.comments:
+            matches.add('release_group')
+
         if isinstance(video, Movie):
             # title
             if video.title and sanitize(self.title) == fix_inconsistent_naming(video.title):
                 matches.add('title')
 
-            if video.year and self.year == video.year:
-                matches.add('year')
-
+            # imdb
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 matches.add('imdb_id')
 
-            if video.release_group and video.release_group in self.comments:
-                matches.add('release_group')
-
+            # guess match others
             matches |= guess_matches(video, guessit(self.comments, {"type": "movie"}))
+
+        else:
+            # title
+            seasonless_title = re.sub(r'\s-\sSezonul\s\d+$', '', self.title.rstrip())
+            if video.series and fix_inconsistent_naming(video.series) == sanitize(seasonless_title):
+                matches.add('series')
+
+            # imdb
+            if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
+                matches.add('imdb_id')
+
+            # season
+            if f"Sezonul {video.season}" in self.comments:
+                matches.add('season')
+
+            # episode
+            if {"imdb_id", "season"}.issubset(matches):
+                matches.add('episode')
+
+            # guess match others
+            matches |= guess_matches(video, guessit(self.comments, {"type": "episode"}))
 
         self.matches = matches
 
         return matches
 
-
 class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = SubtitrarinoiSubtitle
-    languages = {Language(l) for l in ['ron']}
-    languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages = {Language(lang) for lang in ['ron']}
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     server_url = 'https://www.subtitrari-noi.ro/'
     api_url = server_url + 'paginare_filme.php'
 
@@ -148,7 +165,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
 
             fullTitle = row.select_one('#content-main a').text
 
-            #Get title
+            # Get title
             try:
                 title = fullTitle.split("(")[0]
             except:
@@ -161,6 +178,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
                 logger.error("Error parsing uploader")
 
             # Get downloads count
+            downloads = 0
             try:
                 downloads = int(row.select_one('#content-right p').text[12:])
             except:
@@ -176,6 +194,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
             # Get imdbId
             sub_imdb_id = self.getImdbIdFromSubtitle(row)
 
+            comments = ''
             try:
                 comments = comment_rows[index].text
                 logger.debug('Comments: {}'.format(comments))
@@ -188,20 +207,24 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
             except:
                 logger.error("Error parsing page_link")
 
-            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, None, title, sub_imdb_id, uploader, page_link, year, downloads, comments)
+            episode_number = video.episode if isinstance(video, Episode) else None
+            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, comments, title, sub_imdb_id, uploader, page_link, year, downloads, isinstance(video, Episode), episode_number)
             logger.debug('Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
-        ordered_subs = self.order(subtitles, video)
+        ordered_subs = self.order(subtitles)
         
         return ordered_subs
 
-    def order(self, subtitles, video):
+    @staticmethod
+    def order(subtitles):
         logger.debug("Sorting by download count...")
         sorted_subs = sorted(subtitles, key=lambda s: s.download_count, reverse=True)
         return sorted_subs
 
-    def getImdbIdFromSubtitle(self, row):
+    @staticmethod
+    def getImdbIdFromSubtitle(row):
+        imdbId = None
         try:
             imdbId = row.select('div[id=content-right] a')[-1].find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
         except:
@@ -239,7 +262,6 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
     def list_subtitles(self, video, languages):
         title = fix_inconsistent_naming(video.title)
         imdb_id = None
-
         try:
             if isinstance(video, Episode):
                 imdb_id = video.series_imdb_id[2:]
@@ -248,8 +270,9 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
         except:
             logger.error('Error parsing imdb_id from video object {}'.format(str(video)))
 
-        return [s for s in
+        subtitles = [s for s in
                 self.query(languages, title, imdb_id, video)]
+        return subtitles
 
     def download_subtitle(self, subtitle):
         r = self.session.get(subtitle.download_link, headers={'Referer': self.api_url}, timeout=10)
@@ -270,23 +293,27 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitle.content = None
 
             raise ProviderError('Unidentified archive type')
+        
+        if subtitle.is_episode:
+            subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
+        else:
+            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
 
-        subtitle.releases = _get_releases_from_archive(archive)
-        subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
+    @staticmethod
+    def _get_subtitle_from_archive(subtitle, archive):
+        for name in archive.namelist():
+            # discard hidden files
+            if os.path.split(name)[-1].startswith('.'):
+                continue
 
+            # discard non-subtitle files
+            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
+                continue
 
-def _get_releases_from_archive(archive):
-    releases = []
-    for name in archive.namelist():
-        # discard hidden files
-        if os.path.split(name)[-1].startswith('.'):
-            continue
+            _guess = guessit(name)
+            if subtitle.desired_episode == _guess['episode']:
+                return archive.read(name)
 
-        # discard non-subtitle files
-        if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-            continue
+        return None
 
-        releases.append(os.path.splitext(os.path.split(name)[1])[0])
-
-    return releases
 # vim: set expandtab ts=4 sw=4:
