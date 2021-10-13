@@ -139,15 +139,15 @@ def get_providers_auth():
                     'skip_wrong_fps'
             ),
         },
-        'opensubtitlescom': {
-            'username': settings.opensubtitlescom.username,
-            'password': settings.opensubtitlescom.password,
-            'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
-            'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
-        },
-        'podnapisi': {
-            'only_foreign': True,
-            'also_foreign': False
+        'opensubtitlescom': {'username': settings.opensubtitlescom.username,
+                             'password': settings.opensubtitlescom.password,
+                             'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
+                             'api_key' : 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
+                             },
+        'podnapisi'       : {
+            'only_foreign': False,  # fixme
+            'also_foreign': False,  # fixme
+            'verify_ssl': settings.podnapisi.getboolean('verify_ssl')
         },
         'subscene': {
             'username': settings.subscene.username,

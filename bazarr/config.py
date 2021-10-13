@@ -166,6 +166,9 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'podnapisi': {
+        'verify_ssl': 'True'
+    },
     'legendasdivx': {
         'username': '',
         'password': '',

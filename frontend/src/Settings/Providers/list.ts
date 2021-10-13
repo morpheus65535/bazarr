@@ -135,7 +135,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       use_hash: "Use Hash",
     },
   },
-  { key: "podnapisi" },
+  {
+    key: "podnapisi",
+    name: "Podnapisi",
+    defaultKey: {
+      verify_ssl: true,
+    },
+    keyNameOverride: {
+      verify_ssl:
+        "Verify SSL certificate (disabling introduce a MitM attack risk)",
+    },
+  },
   {
     key: "regielive",
     name: "RegieLive",
@@ -178,6 +188,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "subsynchro", description: "French Subtitles Provider" },
   {
+    key: "subtitrarinoi",
+    name: "Subtitrari-noi.ro",
+    description: "Romanian Subtitles Provider",
+  },
+  {
     key: "subtitriid",
     name: "subtitri.id.lv",
     description: "Latvian Subtitles Provider",
@@ -196,7 +211,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       password: "",
     },
   },
-  { key: "titrari", name: "Titrari.ro" },
+  {
+    key: "titrari",
+    name: "Titrari.ro",
+    description: "Mostly Romanian Subtitles Provider",
+  },
   {
     key: "tusubtitulo",
     name: "Tusubtitulo.com",

@@ -44,23 +44,23 @@ logger = logging.getLogger(__name__)
 rarfile.PATH_SEP = '/'
 
 
-class TitrariSubtitle(Subtitle):
+class SubtitrarinoiSubtitle(Subtitle):
 
-    provider_name = 'titrari'
+    provider_name = 'subtitrarinoi'
 
-    def __init__(self, language, download_link, sid, comments, title, imdb_id, page_link, uploader, year=None,
-            download_count=None, is_episode=False, desired_episode=None):
-        super(TitrariSubtitle, self).__init__(language)
+    def __init__(self, language, download_link, sid, comments, title, imdb_id, uploader, page_link, year=None,
+            download_count=None, is_episode=False, desired_episode=False):
+        super(SubtitrarinoiSubtitle, self).__init__(language)
         self.sid = sid
         self.title = title
         self.imdb_id = imdb_id
         self.download_link = download_link
-        self.page_link = page_link
-        self.uploader = uploader
         self.year = year
         self.download_count = download_count
-        self.comments = self.releases = self.release_info = comments
+        self.comments = self.releases = self.release_info = ",".join(comments.split(";"))
         self.matches = None
+        self.uploader = uploader
+        self.page_link = page_link
         self.is_episode = is_episode
         self.desired_episode = desired_episode
 
@@ -106,7 +106,7 @@ class TitrariSubtitle(Subtitle):
                 matches.add('imdb_id')
 
             # season
-            if f"Sezonul {video.season}" in self.title:
+            if f"Sezonul {video.season}" in self.comments:
                 matches.add('season')
 
             # episode
@@ -120,51 +120,52 @@ class TitrariSubtitle(Subtitle):
 
         return matches
 
-
-class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
-    subtitle_class = TitrariSubtitle
-    languages = {Language(lang) for lang in ['ron', 'eng']}
+class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
+    subtitle_class = SubtitrarinoiSubtitle
+    languages = {Language(lang) for lang in ['ron']}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
-    api_url = 'https://www.titrari.ro/'
-    query_advanced_search = 'cautarepreaavansata'
+    server_url = 'https://www.subtitrari-noi.ro/'
+    api_url = server_url + 'paginare_filme.php'
 
     def __init__(self):
         self.session = None
 
     def initialize(self):
         self.session = Session()
-        # Hardcoding the UA to bypass the 30s throttle that titrari.ro uses for IP/UA pair
-        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
-                                             'like Gecko) Chrome/93.0.4535.2 Safari/537.36'
-        # self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4535.2 Safari/537.36'
+        self.session.headers['X-Requested-With'] = 'XMLHttpRequest'
+        self.session.headers['Referer'] = self.server_url
 
     def terminate(self):
         self.session.close()
 
-    def query(self, language=None, title=None, imdb_id=None, video=None):
+    def query(self, languages=None, title=None, imdb_id=None, video=None):
         subtitles = []
 
-        params = self.getQueryParams(imdb_id, title, language)
-
-        search_response = self.session.get(self.api_url, params=params, timeout=15)
+        params = self.getQueryParams(imdb_id, title)
+        search_response = self.session.post(self.api_url, data=params, timeout=15)
         search_response.raise_for_status()
-
-        if not search_response.content:
-            logger.debug('No data returned from provider')
-            return []
 
         soup = ParserBeautifulSoup(search_response.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
 
         # loop over subtitle cells
-        rows = soup.select('td[rowspan="5"]')
+        rows = soup.select('div[id="round"]')
+
+        if len(rows) == 0:
+            logger.debug('No data returned from provider')
+            return []
+
+        # release comments are outside of the parent for the sub details itself, so we just map it to another list
+        comment_rows = soup.findAll('div', attrs={'class': None, 'id': None, 'align': None})
+
         for index, row in enumerate(rows):
-            result_anchor_el = row.select_one('a')
+            result_anchor_el = row.select_one('.buton').select('a')
 
             # Download link
-            href = result_anchor_el.get('href')
-            download_link = self.api_url + href
+            href = result_anchor_el[0]['href']
+            download_link = self.server_url + href
 
-            fullTitle = row.parent.select('h1 a')[0].text
+            fullTitle = row.select_one('#content-main a').text
 
             # Get title
             try:
@@ -172,10 +173,16 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             except:
                 logger.error("Error parsing title")
 
+            # Get Uploader
+            try:
+                uploader = row.select('#content-main p')[4].text[10:]
+            except:
+                logger.error("Error parsing uploader")
+
             # Get downloads count
             downloads = 0
             try:
-                downloads = int(row.parent.parent.select('span')[index].text[12:])
+                downloads = int(row.select_one('#content-right p').text[12:])
             except:
                 logger.error("Error parsing downloads")
 
@@ -191,30 +198,24 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             comments = ''
             try:
-                comments = row.parent.parent.select('.comment')[1].text
+                comments = comment_rows[index].text
+                logger.debug('Comments: {}'.format(comments))
             except:
                 logger.error("Error parsing comments")
 
-            # Get page_link
+            # Get Page Link
             try:
-                page_link = self.api_url + row.parent.select('h1 a')[0].get('href')
+                page_link = row.select_one('#content-main a')['href']
             except:
                 logger.error("Error parsing page_link")
 
-            # Get uploader
-            try:
-                uploader = row.parent.select('td.row1.stanga a')[-1].text
-            except:
-                logger.error("Error parsing uploader")
-
             episode_number = video.episode if isinstance(video, Episode) else None
-            subtitle = self.subtitle_class(language, download_link, index, comments, title, sub_imdb_id, page_link, uploader,
-                                           year, downloads, isinstance(video, Episode), episode_number)
+            subtitle = self.subtitle_class(next(iter(languages)), download_link, index, comments, title, sub_imdb_id, uploader, page_link, year, downloads, isinstance(video, Episode), episode_number)
             logger.debug('Found subtitle %r', str(subtitle))
             subtitles.append(subtitle)
 
         ordered_subs = self.order(subtitles)
-
+        
         return ordered_subs
 
     @staticmethod
@@ -227,7 +228,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
     def getImdbIdFromSubtitle(row):
         imdbId = None
         try:
-            imdbId = row.parent.parent.find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
+            imdbId = row.select('div[id=content-right] a')[-1].find_all(src=re.compile("imdb"))[0].parent.get('href').split("tt")[-1]
         except:
             logger.error("Error parsing imdb id")
         if imdbId is not None:
@@ -235,38 +236,28 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             return None
 
-    # titrari.ro seems to require all parameters now
-    #  z2 = comment (empty)
-    #  z3 = fps (-1: any, 0: N/A, 1: 23.97 FPS etc.)
-    #  z4 = CD count (-1: any)
-    #  z5 = imdb_id (empty or integer)
-    #  z6 = sort order (0: unsorted, 1: by date, 2: by name)
-    #  z7 = title (empty or string)
-    #  z8 = language (-1: all, 1: ron, 2: eng)
-    #  z9 = genre (All: all, Action: action etc.)
-    # z11 = type (0: any, 1: movie, 2: series)
-    def getQueryParams(self, imdb_id, title, language):
-        queryParams = {
-            'page': self.query_advanced_search,
-            'z7': '',
-            'z2': '',
-            'z5': '',
-            'z3': '-1',
-            'z4': '-1',
-            'z8': '-1',
-            'z9': 'All',
-            'z11': '0',
-            'z6': '0'
-        }
-        if imdb_id is not None:
-            queryParams["z5"] = imdb_id
-        elif title is not None:
-            queryParams["z7"] = title
+    # subtitrari-noi.ro params
+    # info: there seems to be no way to do an advanced search by imdb_id or title
+    # the page seems to populate both "search_q" and "cautare" with the same value
+    # search_q = ?
+    # cautare = search string
+    # tip = type of search (0: premiere - doesn't return anything, 1: series only, 2: both, I think, not sure on that)
+    # an = year
+    # gen = genre
 
-        if language == 'ro':
-            queryParams["z8"] = '1'
-        elif language == 'en':
-            queryParams["z8"] = '2'
+    def getQueryParams(self, imdb_id, title):
+        queryParams = {
+        'search_q': '1',
+            'tip': '2',
+            'an': 'Toti anii',
+            'gen': 'Toate',
+        }   
+        if imdb_id is not None:
+            queryParams["cautare"] = imdb_id
+        elif title is not None:
+            queryParams["cautare"] = title
+        
+        queryParams["query_q"] = queryParams["cautare"]
 
         return queryParams
 
@@ -281,8 +272,8 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         except:
             logger.error('Error parsing imdb_id from video object {}'.format(str(video)))
 
-        subtitles = [s for lang in languages for s in
-                     self.query(lang, title, imdb_id, video)]
+        subtitles = [s for s in
+                self.query(languages, title, imdb_id, video)]
         return subtitles
 
     def download_subtitle(self, subtitle):
@@ -292,10 +283,10 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
         # open the archive
         archive_stream = io.BytesIO(r.content)
         if is_rarfile(archive_stream):
-            logger.debug('Archive identified as RAR')
+            logger.debug('Archive identified as rar')
             archive = RarFile(archive_stream)
         elif is_zipfile(archive_stream):
-            logger.debug('Archive identified as ZIP')
+            logger.debug('Archive identified as zip')
             archive = ZipFile(archive_stream)
         else:
             subtitle.content = r.content
@@ -304,7 +295,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitle.content = None
 
             raise ProviderError('Unidentified archive type')
-
+        
         if subtitle.is_episode:
             subtitle.content = self._get_subtitle_from_archive(subtitle, archive)
         else:
