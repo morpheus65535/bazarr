@@ -271,7 +271,9 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             reversed_path = path_mappings.path_replace_reverse(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
                             notify_sonarr(episode_metadata['sonarrSeriesId'])
-                            event_stream(type='episode-wanted', action='delete', payload=episode_metadata['sonarrEpisodeId'])
+                            event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
+                            event_stream(type='episode-wanted', action='delete',
+                                         payload=episode_metadata['sonarrEpisodeId'])
 
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
@@ -717,10 +719,14 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
         notify_sonarr(episode_metadata['sonarrSeriesId'])
+        event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
+        event_stream(type='episode-wanted', action='delete', payload=episode_metadata['sonarrEpisodeId'])
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
         notify_radarr(movie_metadata['radarrId'])
+        event_stream(type='movie', action='update', payload=movie_metadata['radarrId'])
+        event_stream(type='movie-wanted', action='delete', payload=movie_metadata['radarrId'])
 
     return message, reversed_path, reversed_subtitles_path
 
@@ -1066,6 +1072,7 @@ def wanted_download_subtitles(sonarr_episode_id):
                             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
                                         language_code, provider, score, subs_id, subs_path)
+                            event_stream(type='series', action='update', payload=episode['sonarrSeriesId'])
                             event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
