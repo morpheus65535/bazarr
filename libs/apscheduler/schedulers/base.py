@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod
-from collections import MutableMapping
 from threading import RLock
 from datetime import datetime, timedelta
 from logging import getLogger
@@ -26,6 +25,11 @@ from apscheduler.events import (
     EVENT_JOBSTORE_ADDED, EVENT_JOBSTORE_REMOVED, EVENT_ALL, EVENT_JOB_MODIFIED, EVENT_JOB_REMOVED,
     EVENT_JOB_ADDED, EVENT_EXECUTOR_ADDED, EVENT_EXECUTOR_REMOVED, EVENT_ALL_JOBS_REMOVED,
     EVENT_JOB_SUBMITTED, EVENT_JOB_MAX_INSTANCES, EVENT_SCHEDULER_RESUMED, EVENT_SCHEDULER_PAUSED)
+
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
 #: constant indicating a scheduler's stopped state
 STATE_STOPPED = 0
@@ -81,6 +85,11 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         self._pending_jobs = []
         self.state = STATE_STOPPED
         self.configure(gconfig, **options)
+
+    def __getstate__(self):
+        raise TypeError("Schedulers cannot be serialized. Ensure that you are not passing a "
+                        "scheduler instance as an argument to a job, or scheduling an instance "
+                        "method where the instance contains a scheduler as an attribute.")
 
     def configure(self, gconfig={}, prefix='apscheduler.', **options):
         """
@@ -398,7 +407,7 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         :param str|unicode id: explicit identifier for the job (for modifying it later)
         :param str|unicode name: textual description of the job
         :param int misfire_grace_time: seconds after the designated runtime that the job is still
-            allowed to be run
+            allowed to be run (or ``None`` to allow the job to run no matter how late it is)
         :param bool coalesce: run once instead of many times if the scheduler determines that the
             job should be run more than once in succession
         :param int max_instances: maximum number of concurrently running instances allowed for this
@@ -594,14 +603,13 @@ class BaseScheduler(six.with_metaclass(ABCMeta)):
         """
         jobstore_alias = None
         with self._jobstores_lock:
+            # Check if the job is among the pending jobs
             if self.state == STATE_STOPPED:
-                # Check if the job is among the pending jobs
-                if self.state == STATE_STOPPED:
-                    for i, (job, alias, replace_existing) in enumerate(self._pending_jobs):
-                        if job.id == job_id and jobstore in (None, alias):
-                            del self._pending_jobs[i]
-                            jobstore_alias = alias
-                            break
+                for i, (job, alias, replace_existing) in enumerate(self._pending_jobs):
+                    if job.id == job_id and jobstore in (None, alias):
+                        del self._pending_jobs[i]
+                        jobstore_alias = alias
+                        break
             else:
                 # Otherwise, try to remove it from each store until it succeeds or we run out of
                 # stores to check
