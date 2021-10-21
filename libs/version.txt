@@ -46,7 +46,6 @@ twine=3.4.1
 urllib3=1.23
 waitress=2.0.0
 watchdog=2.1.5
-watchdog-gevent=0.1.1
 websocket-client=1.0.0
 
 ## indirect dependencies

@@ -16,7 +16,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie
 # temporarily disable warning for mac users
 warnings.simplefilter('ignore', category=UserWarning)
 if settings.general.filewatcher_type == 'local':
-    from watchdog_gevent import Observer
+    from watchdog import Observer
 else:
     from watchdog.observers.polling import PollingObserverVFS as Observer
 # then we enable it again just in case some other module would use this type of warnings
