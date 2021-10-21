@@ -1,14 +1,6 @@
 # coding=utf-8
 # pylama:ignore=E402
 
-# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
-try:
-    from gevent import monkey, Greenlet
-except ImportError:
-    pass
-else:
-    monkey.patch_all(aggressive=False)
-
 import os
 
 bazarr_version = 'unknown'
@@ -37,6 +29,7 @@ from notifier import update_notifier
 from urllib.parse import unquote
 from get_languages import load_language_in_db
 from flask import request, redirect, abort, render_template, session, send_file
+from threading import Thread
 
 from check_update import apply_update, check_releases
 from server import app, webserver
@@ -153,5 +146,5 @@ def proxy(protocol, url):
 
 
 if __name__ == "__main__":
-    Greenlet.spawn(fileWatcher.start)
+    Thread(target=fileWatcher.start).start()
     webserver.start()

@@ -2,7 +2,7 @@ import os
 import atexit
 import json
 import ast
-import gevent
+import time
 from peewee import Model, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.sqlite_ext import AutoIncrementField
@@ -12,7 +12,7 @@ from config import settings, get_array_from
 from get_args import args
 
 database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
-                               use_gevent=True,
+                               use_gevent=False,
                                autostart=True,
                                queue_max_size=256)
 database.pragma('foreign_keys', 'on')  # Enable foreign keys enforcement
@@ -286,7 +286,7 @@ def init_db():
             if not System.select().count():
                 System.insert({System.configured: '0', System.updated: '0'}).execute()
         except Exception:
-            gevent.sleep(0.1)
+            time.sleep(0.1)
         else:
             tables_created = True
 

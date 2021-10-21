@@ -249,6 +249,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         # TODO: support multiple languages at once
                         if media_type == 'series':
+                            event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
                             event_stream(type='episode-wanted', action='delete', payload=episode_metadata['episodeId'])
 
                         else:
@@ -675,6 +676,13 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
                              episode_id, hi=hi)
         postprocessing(command, path)
 
+    if media_type == 'series':
+        event_stream(type='series', action='update', payload=episode_metadata['seriesId'])
+        event_stream(type='episode-wanted', action='delete', payload=episode_metadata['episodeId'])
+    else:
+        event_stream(type='movie', action='update', payload=movie_metadata['movieId'])
+        event_stream(type='movie-wanted', action='delete', payload=movie_metadata['movieId'])
+
     return message, path, subtitle_path
 
 
@@ -1011,6 +1019,7 @@ def wanted_download_subtitles(episode_id):
                             store_subtitles(episode['path'])
                             history_log(1, episode['seriesId'], episode['episodeId'], message, path,
                                         language_code, provider, score, subs_id, subs_path)
+                            event_stream(type='series', action='update', payload=episode['seriesId'])
                             event_stream(type='episode-wanted', action='delete', payload=episode['episodeId'])
                             send_notifications(episode['seriesId'], episode['episodeId'], message)
                     else:

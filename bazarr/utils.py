@@ -265,6 +265,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             history_log(0, series_id, episode_id, result, language=language_log,
                         video_path=media_path, subtitles_path=subtitles_path)
             store_subtitles(media_path)
+            event_stream(type='series', action='update', payload=series_id)
             event_stream(type='episode-wanted', action='update', payload=episode_id)
             return True
     else:

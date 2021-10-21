@@ -141,7 +141,7 @@ class TuSubtituloProvider(Provider):
 
                 completed = "%" not in content[5].text
                 download_url = (
-                    content[6].find_all("a")[1].get("href").split("?sub=")[-1]
+                    parse.unquote(content[6].find_all("a")[1].get("href").split("?sub=")[-1])
                 )
                 episode_id = download_url.split("/")[4]
 
@@ -219,9 +219,9 @@ class TuSubtituloProvider(Provider):
         soup = bso(r.content, "lxml")
 
         for url, selected in zip(soup.select(_CSS1), soup.select(_CSS2)):
-            meta = ".".join(
+            meta = parse.unquote(".".join(
                 selected.get("href").split(discriminator)[-1].split(".")[:-1]
-            )
+            ))
             if meta in episode_dict["download_url"]:
 
                 id_url = url.find_all("a")[0].get("href")

@@ -53,7 +53,7 @@ def init():
     # deploy requirements.txt
     if not args.no_update:
         try:
-            import lxml, numpy, webrtcvad, gevent, geventwebsocket, setuptools  # noqa
+            import lxml, numpy, webrtcvad, setuptools  # noqa
         except ImportError:
             try:
                 import pip  # noqa
