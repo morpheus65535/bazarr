@@ -12,7 +12,7 @@ if not args.no_update:
     from check_update import check_if_new_update, check_releases
 else:
     from check_update import check_releases
-from apscheduler.schedulers.gevent import GeventScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
@@ -30,7 +30,7 @@ class Scheduler:
     def __init__(self):
         self.__running_tasks = []
 
-        self.aps_scheduler = GeventScheduler()
+        self.aps_scheduler = BackgroundScheduler()
 
         # task listener
         def task_listener_add(event):

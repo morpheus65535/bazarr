@@ -4,8 +4,7 @@ import warnings
 import logging
 import os
 import io
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
+from waitress.server import create_server
 
 from get_args import args
 from config import settings, base_url
@@ -27,23 +26,23 @@ class Server:
         # Mute Python3 BrokenPipeError
         warnings.simplefilter("ignore", BrokenPipeError)
 
-        self.server = pywsgi.WSGIServer((str(settings.general.ip),
-                                         int(args.port) if args.port else int(settings.general.port)),
-                                        app,
-                                        handler_class=WebSocketHandler)
+        self.server = create_server(app,
+                                    host=str(settings.general.ip),
+                                    port=int(args.port) if args.port else int(settings.general.port),
+                                    threads=100)
 
     def start(self):
         try:
             logging.info(
                 'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
                     args.port) if args.port else str(settings.general.port)) + str(base_url))
-            self.server.serve_forever()
+            self.server.run()
         except KeyboardInterrupt:
             self.shutdown()
 
     def shutdown(self):
         try:
-            self.server.stop()
+            self.server.close()
         except Exception as e:
             logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:
@@ -60,7 +59,7 @@ class Server:
 
     def restart(self):
         try:
-            self.server.stop()
+            self.server.close()
         except Exception as e:
             logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:

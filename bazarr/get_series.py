@@ -3,7 +3,6 @@
 import os
 import requests
 import logging
-from gevent import sleep
 from peewee import DoesNotExist
 
 from config import settings, url_sonarr
@@ -51,7 +50,6 @@ def update_series(send_event=True):
 
         series_count = len(series)
         for i, show in enumerate(series):
-            sleep()
             if send_event:
                 show_progress(id='series_progress',
                               header='Syncing series...',
@@ -78,7 +76,6 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
         for series in removed_series:
-            sleep()
             TableShows.delete().where(TableShows.sonarrSeriesId == series).execute()
             if send_event:
                 event_stream(type='series', action='delete', payload=series)
@@ -106,7 +103,6 @@ def update_series(send_event=True):
         series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
         for updated_series in series_to_update_list:
-            sleep()
             TableShows.update(updated_series).where(TableShows.sonarrSeriesId ==
                                                     updated_series['sonarrSeriesId']).execute()
             if send_event:
@@ -114,7 +110,6 @@ def update_series(send_event=True):
 
         # Insert new series in DB
         for added_series in series_to_add:
-            sleep()
             result = TableShows.insert(added_series).on_conflict(action='IGNORE').execute()
             if result:
                 list_missing_subtitles(no=added_series['sonarrSeriesId'])

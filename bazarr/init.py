@@ -54,7 +54,7 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, gevent, geventwebsocket, setuptools
+        import lxml, numpy, webrtcvad, setuptools
     except ImportError:
         try:
             import pip

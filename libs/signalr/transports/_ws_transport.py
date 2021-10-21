@@ -1,7 +1,6 @@
 import json
 import sys
 
-import gevent
 
 if sys.version_info[0] < 3:
     from urlparse import urlparse, urlunparse
@@ -39,14 +38,14 @@ class WebSocketsTransport(Transport):
         self._session.get(self._get_url('start'))
 
         def _receive():
-            for notification in self.ws:
-                self._handle_notification(notification)
+            notification = self.ws.recv()
+            self._handle_notification(notification)
 
         return _receive
 
     def send(self, data):
         self.ws.send(json.dumps(data))
-        gevent.sleep()
+        #thread.sleep() #TODO: inveistage if we should sleep here or not
 
     def close(self):
         self.ws.close()
