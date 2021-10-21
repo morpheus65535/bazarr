@@ -249,7 +249,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         # TODO: support multiple languages at once
                         if media_type == 'series':
-                            event_stream(type='series', action='update', payload=episode_metadata['sonarrSeriesId'])
+                            event_stream(type='series', action='update', payload=episode_metadata['seriesId'])
                             event_stream(type='episode-wanted', action='delete', payload=episode_metadata['episodeId'])
 
                         else:
