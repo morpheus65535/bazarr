@@ -94,7 +94,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
                 MoviesApi.action.bind(MoviesApi),
                 { action: "scan-disk", radarrid: id }
               );
-              dispatchTask("Scaning Disk...", [task], "Scaning...");
+              dispatchTask("Scanning Disk...", [task], "Scanning...");
             }}
           >
             Scan Disk
