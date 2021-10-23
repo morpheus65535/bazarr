@@ -11,7 +11,6 @@ import rarfile
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
-from six import text_type
 
 from subliminal import __short_version__
 from subliminal.exceptions import Error, ProviderError, AuthenticationError, ConfigurationError, DownloadLimitExceeded
@@ -185,7 +184,7 @@ class TitulkyProvider(Provider):
         result = self.server_url + "/?"
         
         params['action'] = 'search'
-        #params['fsf'] = 1 # Requires subtitle names to match full search keyword
+        params['fsf'] = 1 # Requires subtitle names to match full search keyword
         
         for key, value in params.items():
             result += "{}={}&".format(key, value)
@@ -221,24 +220,30 @@ class TitulkyProvider(Provider):
     #   - Subtitles are here categorised by seasons and episodes
     #   - URL: https://premium.titulky.com/?action=serial&step=<SEASON>&id=<IMDB ID>
     #   - it seems that the url redirects to a page with their own internal ID, redirects should be allowed here
-    def query(self, keyword, language, type, year=None, season=None, episode=None):
+    def query(self, language, type, keyword=None, year=None, season=None, episode=None, imdb_id=None):
         ## Build the search URL
         params = {}
         
+        # Keyword
+        if keyword:
+            params["Fulltext"] = keyword
+        # Video type
         if type == "episode":
             params["Serial"] = "S"
         else:
-            params["Serial"] = "F"    
+            params["Serial"] = "F"
+        # Season / Episode
         if season:
-            params["Sezona"] = "%02d" % season
+            params["Sezona"] = season
         if episode:
-            params["Epizoda"] = "%02d" % episode
-                    
-        params["Fulltext"] = keyword
-        
+            params["Epizoda"] = episode
+        # IMDB ID
+        if imdb_id:
+            params["IMDB"] = imdb_id[2:] # Remove the tt from the imdb id
+        # YEAR
         if year:
             params["Rok"] = year
-        
+        # LANGUAGE
         if language == Language('ces'):
             params["Jazyk"] = "CZ"
         elif language == Language('slk'):
@@ -358,7 +363,7 @@ class TitulkyProvider(Provider):
         search_page_soup.decompose()
         search_page_soup = None
         
-        #logger.debug(subtitles)
+        logger.debug(subtitles)
         
         return subtitles
     
@@ -366,20 +371,46 @@ class TitulkyProvider(Provider):
         subtitles = []
         
         # Possible paths:
-        # (1) Search by IMDB ID [and season/episode for tv series] and year
-        # (2) Search by keyword: video title [and S00E00 for tv series] and year <-- currently following (only) this approach
-        # (3) Search by keyword: video title [and S00E00 for tv series]
-        
-        _type = "episode" if isinstance(video, Episode) else "movie"
+        # (1) Search by IMDB ID [and season/episode for tv series]
+        # (2) Search by keyword: video (title|series) [, and season/episode for tv series], year
+        # (3) Search by keyword: video series + S00E00, year (tv series only)
         
         for language in languages:
             if isinstance(video, Episode):
+                # (1)
+                partial_subs = self.query(language, "episode", imdb_id=video.imdb_id, season=video.season, episode=video.episode)
+                if(len(partial_subs) > 0):
+                    logger.debug("Found subtitles by IMDB ID (1)")
+                    subtitles += partial_subs
+                    continue
+                
+                # (2)
+                keyword = video.series
+                partial_subs = self.query(language, "episode", keyword=keyword, year=video.year, season=video.season, episode=video.episode)
+                if(len(partial_subs) > 0):
+                    logger.debug("Found subtitles by keyword (2)")
+                    subtitles += partial_subs
+                    continue
+                
+                # (3)
+                logger.debug("Found subtitles by keyword (3)")
                 keyword = video.series + " S%02dE%02d" % (video.season, video.episode)
-                subtitles += self.query(keyword, language, _type, year=video.year)
+                partial_subs = self.query(language, "episode", keyword=keyword, year=video.year)
+                subtitles += self.query(language, "episode", keyword=keyword, year=video.year)
             elif isinstance(video, Movie):
+                # (1)
+                partial_subs = self.query(language, "movie", imdb_id=video.imdb_id)
+                if(len(partial_subs) > 0):
+                    logger.debug("Found subtitles by IMDB ID (1)")
+                    subtitles += partial_subs
+                    continue
+                
+                # (2)
+                logger.debug("Found subtitles by keyword (2)")
                 keyword = video.title
-                subtitles += self.query(keyword, language, _type, year=video.year)
-        
+                partial_subs = self.query(language, "movie", keyword=keyword, year=video.year, season=video.season, episode=video.episode)
+                subtitles += partial_subs
+                
         return subtitles
     
 # The rest is old code from original implementation. Might want to redo it.
