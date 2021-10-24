@@ -310,7 +310,7 @@ class TitulkyProvider(Provider):
             details = self.parse_details(details_link)
             if not details:
                 # Details parsing was NOT successful, skipping
-                if threads_data and thread_id:
+                if type(threads_data) is list and type(thread_id) is int:
                     threads_data[thread_id] = {
                         "sub_info": None,
                         "exception": None
@@ -323,7 +323,7 @@ class TitulkyProvider(Provider):
             details["details_link"] = details_link
             details["download_link"] = download_link
             
-            if threads_data and thread_id:
+            if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
                     "sub_info": details,
                     "exception": None
@@ -333,7 +333,7 @@ class TitulkyProvider(Provider):
         except:
             e = Error("Whoops, something unexpected happend while fetching or parsing details page.")
             
-            if threads_data and thread_id:
+            if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
                     "sub_info": None,
                     "exception": e
@@ -455,7 +455,7 @@ class TitulkyProvider(Provider):
                         # Row number j
                         logger.debug("Titulky.com: Creating thread %d (batch: %d)" % (j ,i))
                         # Create a thread for row j and start it
-                        threads[j] = Thread(target=self.process_row, args=(rows[j],), kwargs={"thread_id": j, "threads_data": threads_data})
+                        threads[j] = Thread(target=self.process_row, args=[rows[j]], kwargs={"thread_id": j, "threads_data": threads_data})
                         threads[j].start()
 
                 # Wait for all created threads to finish before moving to another batch of rows
@@ -468,10 +468,9 @@ class TitulkyProvider(Provider):
             for i in range(len(threads_data)):
                 thread_data = threads_data[i]
 
-                # If the thread returned didn't return anything, skip it
+                # If the thread returned didn't return anything, something unexpected happened
                 if not thread_data:
-                    logger.debug("Titulky.com: No data returned from thread ID: " + str(i))
-                    continue
+                    raise Error("No data returned from thread ID: " + str(i))
                 
                 # If an exception was raised in a thread, raise it again in main thread
                 if "exception" in thread_data and thread_data["exception"]:
