@@ -93,7 +93,7 @@ class TitulkySubtitle(Subtitle):
         
         
         if self.skip_wrongFPS and video.fps and self.fps and not framerate_equal(video.fps, self.fps):
-            logger.debug("Skipping subtitle %r: wrong FPS", self)
+            logger.debug("Titulky.com: Skipping subtitle %r: wrong FPS", self)
             matches.clear()
         
         self.matches = matches
@@ -144,7 +144,7 @@ class TitulkyProvider(Provider):
         self.session.close()
     
     def login(self):
-        logger.info('Logging in')
+        logger.info('Titulky.com: Logging in')
         
         self.session.get(self.server_url)
         
@@ -161,7 +161,7 @@ class TitulkyProvider(Provider):
             raise AuthenticationError('Login failed')
     
     def logout(self):
-        logger.info('Logging out')
+        logger.info('Titulky.com: Logging out')
         
         res = self.session.get(self.logout_url, allow_redirects=False, timeout=self.timeout)
         
@@ -172,7 +172,7 @@ class TitulkyProvider(Provider):
             raise AuthenticationError("Logout failed.")
 
     def fetch_page(self, url):
-        logger.debug('Fetching url: %r', url)
+        logger.debug('Titulky.com: Fetching url: %r', url)
         res = self.session.get(url, timeout=self.timeout)
         
         if res.status_code != 200:
@@ -206,19 +206,19 @@ class TitulkyProvider(Provider):
         
         details_container = details_page_soup.find("div", class_="detail")
         if not details_container:
-            logger.debug("Could not find details div container. Skipping.")
+            logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
         
         ### TITLE AND YEAR
         h1_tag = details_container.find("h1", id="titulky")
         if not h1_tag:
-            logger.debug("Could not find h1 tag. Skipping.")
+            logger.debug("Titulky.com: Could not find h1 tag. Skipping.")
             return False
         # The h1 tag contains the title of the subtitle and year
         h1_texts = [text.strip() for text in h1_tag.stripped_strings]
         
         if len(h1_texts) < 1:
-            logger.debug("The header tag didn't include sufficient data. Skipping.")
+            logger.debug("Titulky.com: The header tag didn't include sufficient data. Skipping.")
             return False
         title = h1_texts[0]
         year = int(h1_texts[1]) if len(h1_texts) > 1 else None
@@ -226,18 +226,18 @@ class TitulkyProvider(Provider):
         ### UPLOADER
         uploader_tag = details_container.find("div", class_="ulozil")
         if not uploader_tag:
-            logger.debug("Could not find uploader tag. Skipping.")
+            logger.debug("Titulky.com: Could not find uploader tag. Skipping.")
             return False
         uploader_anchor_tag = uploader_tag.find("a")
         if not uploader_anchor_tag:
-            logger.debug("Could not find uploader anchor tag. Skipping.")
+            logger.debug("Titulky.com: Could not find uploader anchor tag. Skipping.")
             return False
         uploader = uploader_anchor_tag.string.strip()
         
         ### RELEASE
         release_tag = details_container.find("div", class_="releas")
         if not release_tag:
-            logger.debug("Could not find releas tag. Skipping.")
+            logger.debug("Titulky.com: Could not find releas tag. Skipping.")
             return False
         release = release_tag.get_text(strip=True)
         
@@ -377,13 +377,13 @@ class TitulkyProvider(Provider):
         # Get the table containing the search results
         table = search_page_soup.find("table", class_="table")
         if not table:
-            logger.debug("Could not find table")
+            logger.debug("Titulky.com: Could not find table")
             return []
         
         # Get table body containing rows of subtitles
         table_body = table.find('tbody')
         if not table_body:
-            logger.debug('Could not find table body')
+            logger.debug('Titulky.com: Could not find table body')
             return []
         
         ## Loop over all subtitles on the first page and put them in a list
@@ -395,7 +395,7 @@ class TitulkyProvider(Provider):
         threads_data = [None] * len(rows)
         
         for i in range(len(threads)):
-            logger.debug("Creating thread %d" % i)
+            logger.debug("Titulky.com: Creating thread %d" % i)
             threads[i] = Thread(target=self.process_row, args=(i, threads_data, rows[i]))
             threads[i].start()
         
@@ -408,7 +408,7 @@ class TitulkyProvider(Provider):
             thread_data = threads_data[i]
             
             if "exception" in thread_data and thread_data["exception"]:
-                logger.debug("An error occured in a thread ID: " + str(i))
+                logger.debug("Titulky.com: An error occured in a thread ID: " + str(i))
                 raise thread_data["exception"]
             
             if "sub_info" in thread_data and thread_data["sub_info"]:
@@ -418,7 +418,7 @@ class TitulkyProvider(Provider):
                                                         sub_info["uploader"], sub_info["details_link"], sub_info["download_link"], season=season, episode=episode, skip_wrongFPS=self.skip_wrongFPS)
                 subtitles.append(subtitle_instance)
             else:
-                logger.debug("No subtitle info returned from thread ID: " + str(i))
+                logger.debug("Titulky.com: No subtitle info returned from thread ID: " + str(i))
                 
         # Clean up
         search_page_soup.decompose()
@@ -439,39 +439,39 @@ class TitulkyProvider(Provider):
         for language in languages:
             if isinstance(video, Episode):
                 # (1)
+                logger.debug("Titulky.com: Finding subtitles by IMDB ID (1)")
                 if video.series_imdb_id:
                     partial_subs = self.query(language, "episode", imdb_id=video.series_imdb_id, season=video.season, episode=video.episode)
                     if(len(partial_subs) > 0):
-                        logger.debug("Found subtitles by IMDB ID (1)")
                         subtitles += partial_subs
                         continue
                 
                 # (2)
+                logger.debug("Titulky.com: Finding subtitles by keyword (2)")
                 keyword = video.series
                 partial_subs = self.query(language, "episode", keyword=keyword, season=video.season, episode=video.episode)
                 if(len(partial_subs) > 0):
-                    logger.debug("Found subtitles by keyword (2)")
                     subtitles += partial_subs
                     continue
                 
                 # (3)
-                logger.debug("Found subtitles by keyword (3)")
+                logger.debug("Titulky.com: Finding subtitles by keyword (3)")
                 keyword = video.series + " S%02dE%02d" % (video.season, video.episode)
                 partial_subs = self.query(language, "episode", keyword=keyword)
                 subtitles += partial_subs
             elif isinstance(video, Movie):
                 # (1)
+                logger.debug("Titulky.com: Finding subtitles by IMDB ID (1)")
                 if video.imdb_id:
                     partial_subs = self.query(language, "movie", imdb_id=video.imdb_id)
                     if(len(partial_subs) > 0):
-                        logger.debug("Found subtitles by IMDB ID (1)")
                         subtitles += partial_subs
                         continue
                 
                 # (2)
-                logger.debug("Found subtitles by keyword (2)")
+                logger.debug("Titulky.com: Finding subtitles by keyword (2)")
                 keyword = video.title
-                partial_subs = self.query(language, "movie", keyword=keyword, season=video.season, episode=video.episode)
+                partial_subs = self.query(language, "movie", keyword=keyword)
                 subtitles += partial_subs
                 
         return subtitles
@@ -485,11 +485,11 @@ class TitulkyProvider(Provider):
         archive_stream = io.BytesIO(res.content)
         archive = None
         if rarfile.is_rarfile(archive_stream):
-            logger.debug('Identified rar archive')
+            logger.debug('Titulky.com: Identified rar archive')
             archive = rarfile.RarFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         elif zipfile.is_zipfile(archive_stream):
-            logger.debug('Identified zip archive')
+            logger.debug('Titulky.com: Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         else:
@@ -499,14 +499,14 @@ class TitulkyProvider(Provider):
             subtitle.content = fix_line_ending(subtitle_content)
             return subtitle_content
         else:
-            logger.debug('Could not extract subtitle from %r', archive)
+            logger.debug('Titulky.com: Could not extract subtitle from %r', archive)
 
 def _get_subtitle_from_archive(archive):
     if("_info.txt" in archive.namelist()):
         info_content_binary = archive.read("_info.txt")
         info_content = info_content_binary.decode(chardet.detect(info_content_binary)['encoding'])
         if 'nestaženo - překročen limit' in info_content:
-            logger.debug('Subtitle download limit exceeded')
+            logger.debug('Titulky.com: Subtitle download limit exceeded')
             raise DownloadLimitExceeded("The download limit has been exceeded")
 
     for name in archive.namelist():
