@@ -186,7 +186,7 @@ class TitulkyProvider(Provider):
         result = self.server_url + "/?"
         
         params['action'] = 'search'
-        #params['fsf'] = 1 # Requires subtitle names to match full search keyword
+        params['fsf'] = 1 # Requires subtitle names to match full search keyword
         
         for key, value in params.items():
             result += "{}={}&".format(key, value)
