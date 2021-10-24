@@ -433,8 +433,8 @@ class TitulkyProvider(Provider):
         
         # Possible paths:
         # (1) Search by IMDB ID [and season/episode for tv series]
-        # (2) Search by keyword: video (title|series) [, and season/episode for tv series], year
-        # (3) Search by keyword: video series + S00E00, year (tv series only)
+        # (2) Search by keyword: video (title|series) [, and season/episode for tv series]
+        # (3) Search by keyword: video series + S00E00 (tv series only)
         
         for language in languages:
             if isinstance(video, Episode):
@@ -448,7 +448,7 @@ class TitulkyProvider(Provider):
                 
                 # (2)
                 keyword = video.series
-                partial_subs = self.query(language, "episode", keyword=keyword, year=video.year, season=video.season, episode=video.episode)
+                partial_subs = self.query(language, "episode", keyword=keyword, season=video.season, episode=video.episode)
                 if(len(partial_subs) > 0):
                     logger.debug("Found subtitles by keyword (2)")
                     subtitles += partial_subs
@@ -457,7 +457,7 @@ class TitulkyProvider(Provider):
                 # (3)
                 logger.debug("Found subtitles by keyword (3)")
                 keyword = video.series + " S%02dE%02d" % (video.season, video.episode)
-                partial_subs = self.query(language, "episode", keyword=keyword, year=video.year)
+                partial_subs = self.query(language, "episode", keyword=keyword)
                 subtitles += partial_subs
             elif isinstance(video, Movie):
                 # (1)
@@ -471,7 +471,7 @@ class TitulkyProvider(Provider):
                 # (2)
                 logger.debug("Found subtitles by keyword (2)")
                 keyword = video.title
-                partial_subs = self.query(language, "movie", keyword=keyword, year=video.year, season=video.season, episode=video.episode)
+                partial_subs = self.query(language, "movie", keyword=keyword, season=video.season, episode=video.episode)
                 subtitles += partial_subs
                 
         return subtitles
