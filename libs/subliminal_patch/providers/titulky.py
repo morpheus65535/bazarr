@@ -119,25 +119,30 @@ class TitulkyProvider(Provider):
     
     subtitle_class = TitulkySubtitle
     
-    def __init__(self, username=None, password=None, max_threads=10, skip_wrong_fps=False):
+    def __init__(self, username=None, password=None, max_threads=None, skip_wrong_fps=None, multithreading=None):
         if not all([username, password]):
             raise ConfigurationError('Username and password must be specified!')
         
-        self.username = username
-        self.password = password
-        
         if type(skip_wrong_fps) is not bool:
-            raise ConfigurationError('skip_wrong_fps must be a boolean!')
+            raise ConfigurationError('Skip_wrong_fps (%r) must be a boolean!' % skip_wrong_fps)
         
-        self.skip_wrong_fps = skip_wrong_fps
+        if type(multithreading) is not bool:
+            raise ConfigurationError('Multithreading (%r) must be a boolean!' % multithreading)
+                
+        try:
+            max_threads = int(max_threads)
+        except ValueError:
+            raise ConfigurationError('Max threads (%r) must be an integer!' % max_threads)
         
         if max_threads < 0:
-            raise ConfigurationError('Max threads can\'t be negative number!')
+            raise ConfigurationError('Max threads (%r) can\'t be negative number!' % max_threads)
         
-        if type(max_threads) is not int:
-            raise ConfigurationError('Max threads must be integer!')
-        
+        self.username = username
+        self.password = password
+        self.skip_wrong_fps = skip_wrong_fps
+        self.multithreading = multithreading
         self.max_threads = max_threads
+        
         self.session = None
     
     def initialize(self):
@@ -417,7 +422,7 @@ class TitulkyProvider(Provider):
         subtitles = []
         rows = table_body.find_all("tr")
         
-        if self.max_threads == 0:
+        if not self.multithreading:
             # Process the rows sequentially
             logger.info("Titulky.com: processing results in sequence")
             for i, row in enumerate(rows):
