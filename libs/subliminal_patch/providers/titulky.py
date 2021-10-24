@@ -378,11 +378,12 @@ class TitulkyProvider(Provider):
         for language in languages:
             if isinstance(video, Episode):
                 # (1)
-                partial_subs = self.query(language, "episode", imdb_id=video.imdb_id, season=video.season, episode=video.episode)
-                if(len(partial_subs) > 0):
-                    logger.debug("Found subtitles by IMDB ID (1)")
-                    subtitles += partial_subs
-                    continue
+                if video.series_imdb_id:
+                    partial_subs = self.query(language, "episode", imdb_id=video.series_imdb_id, season=video.season, episode=video.episode)
+                    if(len(partial_subs) > 0):
+                        logger.debug("Found subtitles by IMDB ID (1)")
+                        subtitles += partial_subs
+                        continue
                 
                 # (2)
                 keyword = video.series
@@ -399,11 +400,12 @@ class TitulkyProvider(Provider):
                 subtitles += self.query(language, "episode", keyword=keyword, year=video.year)
             elif isinstance(video, Movie):
                 # (1)
-                partial_subs = self.query(language, "movie", imdb_id=video.imdb_id)
-                if(len(partial_subs) > 0):
-                    logger.debug("Found subtitles by IMDB ID (1)")
-                    subtitles += partial_subs
-                    continue
+                if video.imdb_id:
+                    partial_subs = self.query(language, "movie", imdb_id=video.imdb_id)
+                    if(len(partial_subs) > 0):
+                        logger.debug("Found subtitles by IMDB ID (1)")
+                        subtitles += partial_subs
+                        continue
                 
                 # (2)
                 logger.debug("Found subtitles by keyword (2)")
