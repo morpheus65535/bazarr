@@ -35,7 +35,7 @@ class TitulkySubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
-    def __init__(self, sub_id, language, title, year, release_info, fps, uploader, page_link, download_link, season=None, episode=None, skip_wrong_fps=False):
+    def __init__(self, sub_id, language, title, year, release_info, fps, uploader, approved, page_link, download_link, season=None, episode=None, skip_wrong_fps=False):
         super().__init__(language, page_link=page_link)
 
         self.title = title
@@ -46,6 +46,7 @@ class TitulkySubtitle(Subtitle):
         self.episode = episode
         self.release_info = release_info
         self.language = language
+        self.approved = approved
         self.page_link = page_link
         self.uploader = uploader
         self.download_link = download_link
@@ -95,7 +96,7 @@ class TitulkySubtitle(Subtitle):
         
         
         if self.skip_wrong_fps and video.fps and self.fps and not framerate_equal(video.fps, self.fps):
-            logger.debug(f"Titulky.com: Skipping subtitle {self}: wrong FPS")
+            logger.info(f"Titulky.com: Skipping subtitle {self}: wrong FPS")
             matches.clear()
         
         self.matches = matches
@@ -119,12 +120,15 @@ class TitulkyProvider(Provider):
     
     subtitle_class = TitulkySubtitle
     
-    def __init__(self, username=None, password=None, max_threads=None, skip_wrong_fps=None, multithreading=None):
+    def __init__(self, username=None, password=None, max_threads=None, skip_wrong_fps=None, approved_only=None, multithreading=None):
         if not all([username, password]):
             raise ConfigurationError("Username and password must be specified!")
         
         if type(skip_wrong_fps) is not bool:
             raise ConfigurationError(f"Skip_wrong_fps {skip_wrong_fps} must be a boolean!")
+        
+        if type(approved_only) is not bool:
+            raise ConfigurationError(f"Approved_only {approved_only} must be a boolean!")
         
         if type(multithreading) is not bool:
             raise ConfigurationError(f"Multithreading {multithreading} must be a boolean!")
@@ -140,6 +144,7 @@ class TitulkyProvider(Provider):
         self.username = username
         self.password = password
         self.skip_wrong_fps = skip_wrong_fps
+        self.approved_only = approved_only
         self.multithreading = multithreading
         self.max_threads = max_threads
         
@@ -312,6 +317,20 @@ class TitulkyProvider(Provider):
             sub_id = id_match[0] if len(id_match) > 0 else None
             download_link = f"{self.download_url}{sub_id}"
 
+            # Approved subtitles have a pbl1 class for their row, others have a pbl0 class
+            approved = True if 'pbl1' in row.get('class') else False
+            
+            if self.approved_only and not approved:
+                # Don't bother fetching details if we are only interested in approved subtitles
+                logger.info("Titulky.com: Skipping subtitle: unapproved")
+                if type(threads_data) is list and type(thread_id) is int:
+                    threads_data[thread_id] = {
+                        'sub_info': None,
+                        'exception': None
+                    }
+                    
+                return None
+            
             details = self.parse_details(details_link)
             if not details:
                 # Details parsing was NOT successful, skipping
@@ -325,6 +344,7 @@ class TitulkyProvider(Provider):
             
             # Return additional data besides the subtitle details
             details['id'] = sub_id
+            details['approved'] = approved
             details['details_link'] = details_link
             details['download_link'] = download_link
             
@@ -433,12 +453,12 @@ class TitulkyProvider(Provider):
                 if sub_info:
                     logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, row: {i}")
                     subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
-                                                            sub_info['uploader'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # No subtitle info was returned, i. e. something unexpected
                     # happend during subtitle details page fetching and processing.
-                    logger.debug(f"Titulky.com: Couldn't retrieve subtitle details, row: {i}")
+                    logger.debug(f"Titulky.com: No subtitle info retrieved, row: {i}")
         else:
             # Process the rows in paralell
             logger.info(f"Titulky.com: processing results in parelell, {self.max_threads} rows at a time.")
@@ -488,12 +508,12 @@ class TitulkyProvider(Provider):
                     logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, thread ID: {i}")
                     sub_info = thread_data['sub_info']
                     subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
-                                                            sub_info['uploader'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # The thread returned data, but it didn't contain a subtitle info, i. e. something unexpected
                     # happend during subtitle details page fetching and processing.
-                    logger.debug(f"Titulky.com: Couldn't retrieve subtitle details, thread ID: {i}")
+                    logger.debug(f"Titulky.com: No subtitle info retrieved, thread ID: {i}")
                 
         # Clean up
         search_page_soup.decompose()

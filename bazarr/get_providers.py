@@ -184,6 +184,7 @@ def get_providers_auth():
             'username': settings.titulky.username,
             'password': settings.titulky.password,
             'skip_wrong_fps': settings.titulky.getboolean('skip_wrong_fps'),
+            'approved_only': settings.titulky.getboolean('approved_only'),
             'multithreading': settings.titulky.getboolean('multithreading'),
             'max_threads': settings.titulky.max_threads,
         },

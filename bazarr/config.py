@@ -187,6 +187,7 @@ defaults = {
         'username': '',
         'password': '',
         'skip_wrong_fps': 'False',
+        'approved_only': 'False',
         'multithreading': 'True',
         'max_threads': '10'
     },
