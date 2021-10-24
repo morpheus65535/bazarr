@@ -249,7 +249,7 @@ class TitulkyProvider(Provider):
         h1_texts = [text.strip() for text in h1_tag.stripped_strings]
         
         if len(h1_texts) < 1:
-            logger.debug("Titulky.com: The header tag didn't include sufficient data. Skipping.")
+            logger.debug("Titulky.com: The header tag did not include sufficient data. Skipping.")
             return False
         title = h1_texts[0]
         year = int(h1_texts[1]) if len(h1_texts) > 1 else None
@@ -421,17 +421,25 @@ class TitulkyProvider(Provider):
         ## Search results page parsing
         html_src = self.fetch_page(search_url)
         search_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
+        
+        # If there is a message containing "Žádny odpovídající záznam", it means that there are no results
+        # If that's the case, return an empty list
+        error_message = search_page_soup.select('.panel-body > strong')
+        if len(error_message) > 0 and 'Žádný odpovídající záznam' in error_message[0].get_text(strip=True):
+            logger.info("Titulky.com: No results found")
+            return []
+        
         # Get the table containing the search results
         table = search_page_soup.find('table', class_='table')
         if not table:
             logger.debug("Titulky.com: Could not find table")
-            return []
+            raise Error("Could not find table. Did the HTML source change?")
         
         # Get table body containing rows of subtitles
         table_body = table.find('tbody')
         if not table_body:
             logger.debug("Titulky.com: Could not find table body")
-            return []
+            raise Error("Could not find table body. Did the HTML source change?")
         
         ## Loop over all subtitles on the first page and put them in a list
         subtitles = []
@@ -488,11 +496,11 @@ class TitulkyProvider(Provider):
             for i in range(len(threads_data)):
                 thread_data = threads_data[i]
 
-                # If the thread returned didn't return anything, something unexpected happened
+                # If the thread returned didn't return anything, but expected a dict object
                 if not thread_data:
                     raise Error(f"No data returned from thread ID: {i}")
                 
-                # If an exception was raised in a thread, raise it again in main thread
+                # If an exception was raised in a thread, raise it again here
                 if "exception" in thread_data and thread_data["exception"]:
                     logger.debug(f"Titulky.com: An error occured in a thread ID: {i}")
                     raise thread_data['exception']
