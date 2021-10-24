@@ -62,26 +62,26 @@ class TitulkySubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        _type = "movie" if isinstance(video, Movie) else "episode"
+        _type = 'movie' if isinstance(video, Movie) else 'episode'
        
-        if _type == "episode":
+        if _type == 'episode':
             ## EPISODE
             if self.season and self.season == video.season:
-                matches.add("season")
+                matches.add('season')
             if self.episode and self.episode == video.episode:
-                matches.add("episode")
+                matches.add('episode')
             
             if self.season is None and self.episode is None:
-                matches.add("episode")
+                matches.add('episode')
                 
-                if sanitize("S%02dE%02d" % (video.season, video.episode)) in sanitize(self.title):
-                    matches.add("season")
-                    matches.add("episode")
+                if sanitize(f"S{video.season:02d}E{video.episode:02d}") in sanitize(self.title):
+                    matches.add('season')
+                    matches.add('episode')
                     
             if video.series and sanitize(video.series) in sanitize(self.title):
                 matches.add('series')
             
-        elif _type == "movie":
+        elif _type == 'movie':
             ## MOVIE
             if video.title and sanitize(video.title) in sanitize(self.title):
                 matches.add('title') 
@@ -95,7 +95,7 @@ class TitulkySubtitle(Subtitle):
         
         
         if self.skip_wrong_fps and video.fps and self.fps and not framerate_equal(video.fps, self.fps):
-            logger.debug("Titulky.com: Skipping subtitle %r: wrong FPS", self)
+            logger.debug(f"Titulky.com: Skipping subtitle {self}: wrong FPS")
             matches.clear()
         
         self.matches = matches
@@ -112,8 +112,8 @@ class TitulkyProvider(Provider):
     
     server_url = 'https://premium.titulky.com'
     login_url = server_url
-    logout_url = server_url + '?action=logout'
-    download_url = server_url + '/download.php?id='
+    logout_url = f"{server_url}?action=logout"
+    download_url = f"{server_url}/download.php?id="
 
     timeout = 30
     
@@ -121,21 +121,21 @@ class TitulkyProvider(Provider):
     
     def __init__(self, username=None, password=None, max_threads=None, skip_wrong_fps=None, multithreading=None):
         if not all([username, password]):
-            raise ConfigurationError('Username and password must be specified!')
+            raise ConfigurationError("Username and password must be specified!")
         
         if type(skip_wrong_fps) is not bool:
-            raise ConfigurationError('Skip_wrong_fps (%r) must be a boolean!' % skip_wrong_fps)
+            raise ConfigurationError(f"Skip_wrong_fps {skip_wrong_fps} must be a boolean!")
         
         if type(multithreading) is not bool:
-            raise ConfigurationError('Multithreading (%r) must be a boolean!' % multithreading)
+            raise ConfigurationError(f"Multithreading {multithreading} must be a boolean!")
                 
         try:
             max_threads = int(max_threads)
         except ValueError:
-            raise ConfigurationError('Max threads (%r) must be an integer!' % max_threads)
+            raise ConfigurationError(f"Max threads {max_threads} must be an integer!")
         
         if max_threads < 0:
-            raise ConfigurationError('Max threads (%r) can\'t be negative number!' % max_threads)
+            raise ConfigurationError(f"Max threads {max_threads} can not be a negative number!")
         
         self.username = username
         self.password = password
@@ -155,13 +155,13 @@ class TitulkyProvider(Provider):
         
         # Set headers
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
-        self.session.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        self.session.headers["Accept-Language"] = "sk,cz,en;q=0.5"
-        self.session.headers["Accept-Encoding"] = "gzip, deflate"
-        self.session.headers["DNT"] = "1"
-        self.session.headers["Connection"] = "keep-alive"
-        self.session.headers["Upgrade-Insecure-Requests"] = "1"
-        self.session.headers["Cache-Control"] = "max-age=0"
+        self.session.headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        self.session.headers['Accept-Language'] = 'sk,cz,en;q=0.5'
+        self.session.headers['Accept-Encoding'] = 'gzip, deflate'
+        self.session.headers['DNT'] = '1'
+        self.session.headers['Connection'] = 'keep-alive'
+        self.session.headers['Upgrade-Insecure-Requests'] = '1'
+        self.session.headers['Cache-Control'] = 'max-age=0'
         
         self.login()
     
@@ -170,7 +170,7 @@ class TitulkyProvider(Provider):
         self.session.close()
     
     def login(self):
-        logger.info('Titulky.com: Logging in')
+        logger.info("Titulky.com: Logging in")
         
         self.session.get(self.server_url)
         
@@ -181,41 +181,41 @@ class TitulkyProvider(Provider):
         res = self.session.post(self.server_url, data, allow_redirects=False, timeout=self.timeout)
         
         # If the response is a redirect and doesnt point to an error message page, then we are logged in
-        if res.status_code == 302 and "msg_type=i" in res.headers['Location']:
+        if res.status_code == 302 and 'msg_type=i' in res.headers['Location']:
             return True
         else:
-            raise AuthenticationError('Login failed')
+            raise AuthenticationError("Login failed")
     
     def logout(self):
-        logger.info('Titulky.com: Logging out')
+        logger.info("Titulky.com: Logging out")
         
         res = self.session.get(self.logout_url, allow_redirects=False, timeout=self.timeout)
         
         # If the response is a redirect and doesnt point to an error message page, then we are logged out
-        if res.status_code == 302 and "msg_type=i" in res.headers['Location']:
+        if res.status_code == 302 and 'msg_type=i' in res.headers['Location']:
             return True
         else:
             raise AuthenticationError("Logout failed.")
 
     def fetch_page(self, url):
-        logger.debug('Titulky.com: Fetching url: %r', url)
+        logger.debug(f"Titulky.com: Fetching url: {url}")
         res = self.session.get(url, timeout=self.timeout)
         
         if res.status_code != 200:
-            raise ProviderError('Fetch failed with status code {}'.format(res.status_code))
+            raise ProviderError(f"Fetch failed with status code {res.status_code}")
         if not res.text:
-            raise ProviderError('No response returned from the provider')
+            raise ProviderError("No response returned from the provider")
         
         return res.text
 
     def build_search_url(self, params):
-        result = self.server_url + "/?"
+        result = f"{self.server_url}/?"
         
         params['action'] = 'search'
         params['fsf'] = 1 # Requires subtitle names to match full search keyword
         
         for key, value in params.items():
-            result += "{}={}&".format(key, value)
+            result += f'{key}={value}&'
         
         # Remove last &
         result = result[:-1]
@@ -230,13 +230,13 @@ class TitulkyProvider(Provider):
         html_src = self.fetch_page(url)
         details_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
         
-        details_container = details_page_soup.find("div", class_="detail")
+        details_container = details_page_soup.find('div', class_='detail')
         if not details_container:
             logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
         
         ### TITLE AND YEAR
-        h1_tag = details_container.find("h1", id="titulky")
+        h1_tag = details_container.find('h1', id='titulky')
         if not h1_tag:
             logger.debug("Titulky.com: Could not find h1 tag. Skipping.")
             return False
@@ -250,18 +250,18 @@ class TitulkyProvider(Provider):
         year = int(h1_texts[1]) if len(h1_texts) > 1 else None
         
         ### UPLOADER
-        uploader_tag = details_container.find("div", class_="ulozil")
+        uploader_tag = details_container.find('div', class_='ulozil')
         if not uploader_tag:
             logger.debug("Titulky.com: Could not find uploader tag. Skipping.")
             return False
-        uploader_anchor_tag = uploader_tag.find("a")
+        uploader_anchor_tag = uploader_tag.find('a')
         if not uploader_anchor_tag:
             logger.debug("Titulky.com: Could not find uploader anchor tag. Skipping.")
             return False
         uploader = uploader_anchor_tag.string.strip()
         
         ### RELEASE
-        release_tag = details_container.find("div", class_="releas")
+        release_tag = details_container.find('div', class_='releas')
         if not release_tag:
             logger.debug("Titulky.com: Could not find releas tag. Skipping.")
             return False
@@ -269,8 +269,8 @@ class TitulkyProvider(Provider):
         
         ### LANGUAGE
         language = None
-        czech_flag = details_container.select("img[src*='flag-CZ']")
-        slovak_flag = details_container.select("img[src*='flag-SK']")
+        czech_flag = details_container.select('img[src*=\'flag-CZ\']')
+        slovak_flag = details_container.select('img[src*=\'flag-SK\']')
         if czech_flag and not slovak_flag:
             language = Language('ces')
         elif slovak_flag and not czech_flag: 
@@ -278,15 +278,15 @@ class TitulkyProvider(Provider):
         
         ### FPS
         fps = None
-        fps_icon_tag_selection = details_container.select("img[src*='Movieroll']")
+        fps_icon_tag_selection = details_container.select('img[src*=\'Movieroll\']')
         
-        if len(fps_icon_tag_selection) > 0 and hasattr(fps_icon_tag_selection[0], "parent"):
+        if len(fps_icon_tag_selection) > 0 and hasattr(fps_icon_tag_selection[0], 'parent'):
             fps_icon_tag = fps_icon_tag_selection[0]
             parent_text = fps_icon_tag.parent.get_text(strip=True)
-            match = re.findall("(\d+,\d+) fps", parent_text)
+            match = re.findall('(\d+,\d+) fps', parent_text)
             
             # If the match is found, change the decimal separator to a dot and convert to float
-            fps = float(match[0].replace(",", ".")) if len(match) > 0 else None
+            fps = float(match[0].replace(',', '.')) if len(match) > 0 else None
         
         # Clean up
         details_page_soup.decompose()
@@ -294,44 +294,44 @@ class TitulkyProvider(Provider):
         
         # Return the subtitle details
         return {
-            "title": title, 
-            "year": year, 
-            "uploader": uploader, 
-            "release": release, 
-            "language": language, 
-            "fps": fps
+            'title': title, 
+            'year': year, 
+            'uploader': uploader, 
+            'release': release, 
+            'language': language, 
+            'fps': fps
         }
     
     def process_row(self, row, thread_id=None, threads_data=None):
         try:
             # The first anchor tag is an image preview, the second is the title
-            anchor_tag = row.find_all("a")[1]
+            anchor_tag = row.find_all('a')[1]
             # The details link is relative, so we need to remove the dot at the beginning
-            details_link = self.server_url + anchor_tag.get('href')[1:]
-            id_match = re.findall("id=(\d+)", details_link)
+            details_link = f"{self.server_url}{anchor_tag.get('href')[1:]}"
+            id_match = re.findall('id=(\d+)', details_link)
             sub_id = id_match[0] if len(id_match) > 0 else None
-            download_link = self.download_url + sub_id
+            download_link = f"{self.download_url}{sub_id}"
 
             details = self.parse_details(details_link)
             if not details:
                 # Details parsing was NOT successful, skipping
                 if type(threads_data) is list and type(thread_id) is int:
                     threads_data[thread_id] = {
-                        "sub_info": None,
-                        "exception": None
+                        'sub_info': None,
+                        'exception': None
                     }
                     
                 return None
             
             # Return additional data besides the subtitle details
-            details["id"] = sub_id
-            details["details_link"] = details_link
-            details["download_link"] = download_link
+            details['id'] = sub_id
+            details['details_link'] = details_link
+            details['download_link'] = download_link
             
             if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
-                    "sub_info": details,
-                    "exception": None
+                    'sub_info': details,
+                    'exception': None
                 }
                 
             return details
@@ -340,8 +340,8 @@ class TitulkyProvider(Provider):
             
             if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
-                    "sub_info": None,
-                    "exception": e
+                    'sub_info': None,
+                    'exception': e
                 }
                 
             raise e
@@ -374,30 +374,30 @@ class TitulkyProvider(Provider):
         
         # Keyword
         if keyword:
-            params["Fulltext"] = keyword
+            params['Fulltext'] = keyword
         # Video type
-        if type == "episode":
-            params["Serial"] = "S"
+        if type == 'episode':
+            params['Serial'] = 'S'
         else:
-            params["Serial"] = "F"
+            params['Serial'] = 'F'
         # Season / Episode
         if season:
-            params["Sezona"] = season
+            params['Sezona'] = season
         if episode:
-            params["Epizoda"] = episode
+            params['Epizoda'] = episode
         # IMDB ID
         if imdb_id:
-            params["IMDB"] = imdb_id[2:] # Remove the tt from the imdb id
+            params['IMDB'] = imdb_id[2:] # Remove the tt from the imdb id
         # YEAR
         if year:
-            params["Rok"] = year
+            params['Rok'] = year
         # LANGUAGE
         if language == Language('ces'):
-            params["Jazyk"] = "CZ"
+            params['Jazyk'] = 'CZ'
         elif language == Language('slk'):
-            params["Jazyk"] = "SK"
+            params['Jazyk'] = 'SK'
         elif language == None:
-            params["Jazyk"] = ""
+            params['Jazyk'] = ''
         else:
             return []
         
@@ -407,7 +407,7 @@ class TitulkyProvider(Provider):
         html_src = self.fetch_page(search_url)
         search_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
         # Get the table containing the search results
-        table = search_page_soup.find("table", class_="table")
+        table = search_page_soup.find('table', class_='table')
         if not table:
             logger.debug("Titulky.com: Could not find table")
             return []
@@ -415,12 +415,12 @@ class TitulkyProvider(Provider):
         # Get table body containing rows of subtitles
         table_body = table.find('tbody')
         if not table_body:
-            logger.debug('Titulky.com: Could not find table body')
+            logger.debug("Titulky.com: Could not find table body")
             return []
         
         ## Loop over all subtitles on the first page and put them in a list
         subtitles = []
-        rows = table_body.find_all("tr")
+        rows = table_body.find_all('tr')
         
         if not self.multithreading:
             # Process the rows sequentially
@@ -431,17 +431,17 @@ class TitulkyProvider(Provider):
                 # If subtitle info was returned, then everything was okay 
                 # and we can instationate it and add it to the list
                 if sub_info:
-                    logger.debug("Titulky.com: Sucessfully retrieved subtitle info, row: " + str(i))
-                    subtitle_instance = self.subtitle_class(sub_info["id"], sub_info["language"], sub_info["title"], sub_info["year"], sub_info["release"], sub_info["fps"],
-                                                            sub_info["uploader"], sub_info["details_link"], sub_info["download_link"], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+                    logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, row: {i}")
+                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
+                                                            sub_info['uploader'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # No subtitle info was returned, i. e. something unexpected
                     # happend during subtitle details page fetching and processing.
-                    logger.debug("Titulky.com: Couldn't retrieve subtitle details, row: " + str(i))
+                    logger.debug(f"Titulky.com: Couldn't retrieve subtitle details, row: {i}")
         else:
             # Process the rows in paralell
-            logger.info("Titulky.com: processing results in parelell, " + str(self.max_threads) + " rows at a time.")
+            logger.info(f"Titulky.com: processing results in parelell, {self.max_threads} rows at a time.")
 
             threads = [None] * len(rows)
             threads_data = [None] * len(rows)
@@ -458,9 +458,9 @@ class TitulkyProvider(Provider):
                     # Check if j-th row exists
                     if j < len(rows):
                         # Row number j
-                        logger.debug("Titulky.com: Creating thread %d (batch: %d)" % (j ,i))
+                        logger.debug(f"Titulky.com: Creating thread {j} (batch: {i})")
                         # Create a thread for row j and start it
-                        threads[j] = Thread(target=self.process_row, args=[rows[j]], kwargs={"thread_id": j, "threads_data": threads_data})
+                        threads[j] = Thread(target=self.process_row, args=[rows[j]], kwargs={'thread_id': j, 'threads_data': threads_data})
                         threads[j].start()
 
                 # Wait for all created threads to finish before moving to another batch of rows
@@ -475,25 +475,25 @@ class TitulkyProvider(Provider):
 
                 # If the thread returned didn't return anything, something unexpected happened
                 if not thread_data:
-                    raise Error("No data returned from thread ID: " + str(i))
+                    raise Error(f"No data returned from thread ID: {i}")
                 
                 # If an exception was raised in a thread, raise it again in main thread
                 if "exception" in thread_data and thread_data["exception"]:
-                    logger.debug("Titulky.com: An error occured in a thread ID: " + str(i))
-                    raise thread_data["exception"]
+                    logger.debug(f"Titulky.com: An error occured in a thread ID: {i}")
+                    raise thread_data['exception']
 
                 # If the thread returned a subtitle info, great, instantiate it and add it to the list
-                if "sub_info" in thread_data and thread_data["sub_info"]:
+                if 'sub_info' in thread_data and thread_data['sub_info']:
                     # Instantiate the subtitle object
-                    logger.debug("Titulky.com: Sucessfully retrieved subtitle info, thread ID: " + str(i))
-                    sub_info = thread_data["sub_info"]
-                    subtitle_instance = self.subtitle_class(sub_info["id"], sub_info["language"], sub_info["title"], sub_info["year"], sub_info["release"], sub_info["fps"],
-                                                            sub_info["uploader"], sub_info["details_link"], sub_info["download_link"], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+                    logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, thread ID: {i}")
+                    sub_info = thread_data['sub_info']
+                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
+                                                            sub_info['uploader'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # The thread returned data, but it didn't contain a subtitle info, i. e. something unexpected
                     # happend during subtitle details page fetching and processing.
-                    logger.debug("Titulky.com: Couldn't retrieve subtitle details, thread ID: " + str(i))
+                    logger.debug(f"Titulky.com: Couldn't retrieve subtitle details, thread ID: {i}")
                 
         # Clean up
         search_page_soup.decompose()
@@ -516,7 +516,7 @@ class TitulkyProvider(Provider):
                 # (1)
                 logger.debug("Titulky.com: Finding subtitles by IMDB ID (1)")
                 if video.series_imdb_id:
-                    partial_subs = self.query(language, "episode", imdb_id=video.series_imdb_id, season=video.season, episode=video.episode)
+                    partial_subs = self.query(language, 'episode', imdb_id=video.series_imdb_id, season=video.season, episode=video.episode)
                     if(len(partial_subs) > 0):
                         subtitles += partial_subs
                         continue
@@ -524,22 +524,21 @@ class TitulkyProvider(Provider):
                 # (2)
                 logger.debug("Titulky.com: Finding subtitles by keyword (2)")
                 keyword = video.series
-                partial_subs = self.query(language, "episode", keyword=keyword, season=video.season, episode=video.episode)
+                partial_subs = self.query(language, 'episode', keyword=keyword, season=video.season, episode=video.episode)
                 if(len(partial_subs) > 0):
                     subtitles += partial_subs
                     continue
                 
                 # (3)
                 logger.debug("Titulky.com: Finding subtitles by keyword (3)")
-                #keyword = video.series + " S%02dE%02d" % (video.season, video.episode)
-                keyword = video.series
-                partial_subs = self.query(language, "episode", keyword=keyword)
+                keyword = f"{video.series} S{video.season:02d}E{video.episode:02d}"
+                partial_subs = self.query(language, 'episode', keyword=keyword)
                 subtitles += partial_subs
             elif isinstance(video, Movie):
                 # (1)
                 logger.debug("Titulky.com: Finding subtitles by IMDB ID (1)")
                 if video.imdb_id:
-                    partial_subs = self.query(language, "movie", imdb_id=video.imdb_id)
+                    partial_subs = self.query(language, 'movie', imdb_id=video.imdb_id)
                     if(len(partial_subs) > 0):
                         subtitles += partial_subs
                         continue
@@ -547,7 +546,7 @@ class TitulkyProvider(Provider):
                 # (2)
                 logger.debug("Titulky.com: Finding subtitles by keyword (2)")
                 keyword = video.title
-                partial_subs = self.query(language, "movie", keyword=keyword)
+                partial_subs = self.query(language, 'movie', keyword=keyword)
                 subtitles += partial_subs
                 
         return subtitles
@@ -561,11 +560,11 @@ class TitulkyProvider(Provider):
         archive_stream = io.BytesIO(res.content)
         archive = None
         if rarfile.is_rarfile(archive_stream):
-            logger.debug('Titulky.com: Identified rar archive')
+            logger.debug("Titulky.com: Identified rar archive")
             archive = rarfile.RarFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         elif zipfile.is_zipfile(archive_stream):
-            logger.debug('Titulky.com: Identified zip archive')
+            logger.debug("Titulky.com: Identified zip archive")
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         else:
@@ -575,14 +574,13 @@ class TitulkyProvider(Provider):
             subtitle.content = fix_line_ending(subtitle_content)
             return subtitle_content
         else:
-            logger.debug('Titulky.com: Could not extract subtitle from %r', archive)
+            logger.debug(f"Titulky.com: Could not extract subtitle from {archive}")
 
 def _get_subtitle_from_archive(archive):
-    if("_info.txt" in archive.namelist()):
-        info_content_binary = archive.read("_info.txt")
+    if '_info.txt' in archive.namelist():
+        info_content_binary = archive.read('_info.txt')
         info_content = info_content_binary.decode(chardet.detect(info_content_binary)['encoding'])
-        if 'nestaženo - překročen limit' in info_content:
-            logger.debug('Titulky.com: Subtitle download limit exceeded')
+        if "nestaženo - překročen limit" in info_content:
             raise DownloadLimitExceeded("The download limit has been exceeded")
 
     for name in archive.namelist():
