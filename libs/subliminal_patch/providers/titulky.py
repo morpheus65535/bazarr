@@ -320,17 +320,6 @@ class TitulkyProvider(Provider):
             # Approved subtitles have a pbl1 class for their row, others have a pbl0 class
             approved = True if 'pbl1' in row.get('class') else False
             
-            if self.approved_only and not approved:
-                # Don't bother fetching details if we are only interested in approved subtitles
-                logger.info("Titulky.com: Skipping subtitle: unapproved")
-                if type(threads_data) is list and type(thread_id) is int:
-                    threads_data[thread_id] = {
-                        'sub_info': None,
-                        'exception': None
-                    }
-                    
-                return None
-            
             details = self.parse_details(details_link)
             if not details:
                 # Details parsing was NOT successful, skipping
@@ -408,10 +397,10 @@ class TitulkyProvider(Provider):
         # IMDB ID
         if imdb_id:
             params['IMDB'] = imdb_id[2:] # Remove the tt from the imdb id
-        # YEAR
+        # Year
         if year:
             params['Rok'] = year
-        # LANGUAGE
+        # Language
         if language == Language('ces'):
             params['Jazyk'] = 'CZ'
         elif language == Language('slk'):
@@ -420,6 +409,12 @@ class TitulkyProvider(Provider):
             params['Jazyk'] = ''
         else:
             return []
+        # Status
+        if self.approved_only:
+            params['ASchvalene'] = '1'
+        else:
+            params['ASchvalene'] = ''
+            
         
         search_url = self.build_search_url(params)
         
