@@ -8,6 +8,7 @@ import re
 from random import randint
 
 import rarfile
+import chardet
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
@@ -441,6 +442,13 @@ class TitulkyProvider(Provider):
             logger.debug('Could not extract subtitle from %r', archive)
 
 def _get_subtitle_from_archive(archive):
+    if("_info.txt" in archive.namelist()):
+        info_content_binary = archive.read("_info.txt")
+        info_content = info_content_binary.decode(chardet.detect(info_content_binary)['encoding'])
+        if 'nestaženo - překročen limit' in info_content:
+            logger.debug('Subtitle download limit exceeded')
+            raise DownloadLimitExceeded("The download limit has been exceeded")
+
     for name in archive.namelist():
         # discard hidden files
         if os.path.split(name)[-1].startswith('.'):
