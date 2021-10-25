@@ -658,10 +658,12 @@ class Series(Resource):
     def post(self):
         seriesIdList = request.form.getlist('seriesid')
         profileIdList = request.form.getlist('profileid')
+        monitoredList = request.form.getlist('monitored')
 
         for idx in range(len(seriesIdList)):
             seriesId = seriesIdList[idx]
             profileId = profileIdList[idx]
+            monitored = monitoredList[idx]
 
             if profileId in None_Keys:
                 profileId = None
@@ -672,9 +674,16 @@ class Series(Resource):
                     return '', 400
 
             TableShows.update({
-                TableShows.profileId: profileId
+                TableShows.profileId: profileId,
+                TableShows.monitored: monitored
             })\
                 .where(TableShows.seriesId == seriesId)\
+                .execute()
+
+            TableEpisodes.update({
+                TableEpisodes.monitored: monitored
+            })\
+                .where(TableEpisodes.seriesId == seriesId)\
                 .execute()
 
             list_missing_subtitles(no=seriesId, send_event=False)
@@ -687,6 +696,7 @@ class Series(Resource):
                 .dicts()
 
             for item in episode_id_list:
+                event_stream(type='episode', payload=item['episodeId'])
                 event_stream(type='episode-wanted', payload=item['episodeId'])
 
         event_stream(type='badges')
@@ -1032,10 +1042,12 @@ class Movies(Resource):
     def post(self):
         movieIdList = request.form.getlist('movieid')
         profileIdList = request.form.getlist('profileid')
+        monitoredList = request.form.getlist('monitored')
 
         for idx in range(len(movieIdList)):
             movieId = movieIdList[idx]
             profileId = profileIdList[idx]
+            monitored = monitoredList[idx]
 
             if profileId in None_Keys:
                 profileId = None
@@ -1046,7 +1058,8 @@ class Movies(Resource):
                     return '', 400
 
             TableMovies.update({
-                TableMovies.profileId: profileId
+                TableMovies.profileId: profileId,
+                TableMovies.monitored: monitored
             })\
                 .where(TableMovies.movieId == movieId)\
                 .execute()

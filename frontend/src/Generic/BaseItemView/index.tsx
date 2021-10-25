@@ -84,6 +84,20 @@ function BaseItemView<T extends Item.Base>({
     [selections]
   );
 
+  const changeMonitored = useCallback(
+    (value: Nullable<string>) => {
+      const newItems = selections.map((v) => {
+        const item = { ...v };
+        item.monitored = value === "True";
+        return item;
+      });
+      setDirty((dirty) => {
+        return uniqBy([...newItems, ...dirty], GetItemId);
+      });
+    },
+    [selections]
+  );
+
   const startEdit = useCallback(() => {
     if (shared.state.content.ids.every(isNonNullable)) {
       setEdit(true);
@@ -104,11 +118,13 @@ function BaseItemView<T extends Item.Base>({
     const form: FormType.ModifyItem = {
       id: [],
       profileid: [],
+      monitored: [],
     };
     dirtyItems.forEach((v) => {
       const id = GetItemId(v);
       form.id.push(id);
       form.profileid.push(v.profileId);
+      form.monitored.push(v.monitored ? "True" : "False");
     });
     return shared.modify(form);
   }, [dirtyItems, shared]);
@@ -124,6 +140,23 @@ function BaseItemView<T extends Item.Base>({
         {editMode ? (
           <React.Fragment>
             <ContentHeader.Group pos="start">
+              <Dropdown onSelect={changeMonitored}>
+                <Dropdown.Toggle
+                  className={"mr-2"}
+                  disabled={selections.length === 0}
+                  variant="light"
+                >
+                  Change Monitored
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item key={"True"} eventKey={"True"}>
+                    True
+                  </Dropdown.Item>
+                  <Dropdown.Item key={"False"} eventKey={"False"}>
+                    False
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
               <Dropdown onSelect={changeProfiles}>
                 <Dropdown.Toggle
                   disabled={selections.length === 0}

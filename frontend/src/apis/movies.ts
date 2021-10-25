@@ -33,7 +33,11 @@ class MovieApi extends BaseApi {
   }
 
   async modify(form: FormType.ModifyItem) {
-    await this.post("", { movieid: form.id, profileid: form.profileid });
+    await this.post("", {
+      movieid: form.id,
+      profileid: form.profileid,
+      monitored: form.monitored,
+    });
   }
 
   async wanted(params: Parameter.Range) {

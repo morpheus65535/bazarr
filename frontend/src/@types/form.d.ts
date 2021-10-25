@@ -2,6 +2,7 @@ declare namespace FormType {
   interface ModifyItem {
     id: number[];
     profileid: (number | null)[];
+    monitored: string[];
   }
 
   interface FixMatchItem {

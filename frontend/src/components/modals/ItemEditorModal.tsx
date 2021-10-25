@@ -43,9 +43,11 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       promise={() => {
         if (payload) {
           const itemId = GetItemId(payload);
+          const monitored = payload.monitored ? "True" : "False";
           return submit({
             id: [itemId],
             profileid: [id],
+            monitored: [monitored],
           });
         } else {
           return null;
@@ -69,6 +71,14 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     >
       <Container fluid>
         <Form>
+          <Form.Group>
+            <Form.Label>Monitored</Form.Label>
+            <Form.Check
+              custom
+              readOnly={true}
+              checked={payload?.monitored}
+            ></Form.Check>
+          </Form.Group>
           {payload?.audio_language ? (
             <Form.Group>
               <Form.Label>Audio</Form.Label>

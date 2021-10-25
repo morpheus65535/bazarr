@@ -24,7 +24,6 @@ const MovieView: FunctionComponent<Props> = () => {
     () => [
       {
         accessor: "monitored",
-        selectHide: true,
         Cell: ({ value }) => (
           <FontAwesomeIcon
             title={value ? "Monitored" : "Unmonitored"}

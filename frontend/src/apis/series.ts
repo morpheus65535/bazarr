@@ -18,7 +18,11 @@ class SeriesApi extends BaseApi {
   }
 
   async modify(form: FormType.ModifyItem) {
-    await this.post("", { seriesid: form.id, profileid: form.profileid });
+    await this.post("", {
+      seriesid: form.id,
+      profileid: form.profileid,
+      monitored: form.monitored,
+    });
   }
 
   async fixmatch(form: FormType.FixMatchItem) {
