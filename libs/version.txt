@@ -1,5 +1,5 @@
 apprise=0.8.8
-apscheduler=3.5.1
+apscheduler=3.8.0
 babelfish=0.5.5
 backports.functools-lru-cache=1.5
 Beaker=1.10.0

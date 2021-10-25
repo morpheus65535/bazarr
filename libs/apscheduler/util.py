@@ -5,8 +5,9 @@ from __future__ import division
 from datetime import date, datetime, time, timedelta, tzinfo
 from calendar import timegm
 from functools import partial
-from inspect import isclass
+from inspect import isclass, ismethod
 import re
+import sys
 
 from pytz import timezone, utc, FixedOffset
 import six
@@ -20,6 +21,15 @@ try:
     from threading import TIMEOUT_MAX
 except ImportError:
     TIMEOUT_MAX = 4294967  # Maximum value accepted by Event.wait() on Windows
+
+try:
+    from asyncio import iscoroutinefunction
+except ImportError:
+    try:
+        from trollius import iscoroutinefunction
+    except ImportError:
+        def iscoroutinefunction(func):
+            return False
 
 __all__ = ('asint', 'asbool', 'astimezone', 'convert_to_datetime', 'datetime_to_utc_timestamp',
            'utc_timestamp_to_datetime', 'timedelta_seconds', 'datetime_ceil', 'get_callable_name',
@@ -263,7 +273,18 @@ def obj_to_ref(obj):
     if '<locals>' in name:
         raise ValueError('Cannot create a reference to a nested function')
 
-    return '%s:%s' % (obj.__module__, name)
+    if ismethod(obj):
+        if hasattr(obj, 'im_self') and obj.im_self:
+            # bound method
+            module = obj.im_self.__module__
+        elif hasattr(obj, 'im_class') and obj.im_class:
+            # unbound method
+            module = obj.im_class.__module__
+        else:
+            module = obj.__module__
+    else:
+        module = obj.__module__
+    return '%s:%s' % (module, name)
 
 
 def ref_to_obj(ref):
@@ -332,7 +353,10 @@ def check_callable_args(func, args, kwargs):
     has_varargs = has_var_kwargs = False
 
     try:
-        sig = signature(func)
+        if sys.version_info >= (3, 5):
+            sig = signature(func, follow_wrapped=False)
+        else:
+            sig = signature(func)
     except ValueError:
         # signature() doesn't work against every kind of callable
         return
@@ -398,3 +422,12 @@ def check_callable_args(func, args, kwargs):
         raise ValueError(
             'The target callable does not accept the following keyword arguments: %s' %
             ', '.join(unmatched_kwargs))
+
+
+def iscoroutinefunction_partial(f):
+    while isinstance(f, partial):
+        f = f.func
+
+    # The asyncio version of iscoroutinefunction includes testing for @coroutine
+    # decorations vs. the inspect version which does not.
+    return iscoroutinefunction(f)
