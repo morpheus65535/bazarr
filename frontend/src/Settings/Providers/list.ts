@@ -220,7 +220,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "tusubtitulo",
     name: "Tusubtitulo.com",
     description:
-      "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
+      "Provider requested to be removed from Bazarr so it will always return no subtitles. Could potentially come back in the future with an upcoming premium account.",
+    // "LATAM Spanish / Spanish / English Subtitles Provider for TV Shows",
   },
   {
     key: "titulky",
