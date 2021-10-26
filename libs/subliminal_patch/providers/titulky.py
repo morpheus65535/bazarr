@@ -300,10 +300,11 @@ class TitulkyProvider(Provider):
             'fps': fps
         }
     
-    def process_row(self, row, thread_id=None, threads_data=None):
+    def process_row(self, row, keyword, thread_id=None, threads_data=None):
         try:
             # The first anchor tag is an image preview, the second is the title
             anchor_tag = row.find_all('a')[1]
+            title = anchor_tag.string.strip()
             # The details link is relative, so we need to remove the dot at the beginning
             details_link = f"{self.server_url}{anchor_tag.get('href')[1:]}"
             id_match = re.findall('id=(\d+)', details_link)
@@ -312,6 +313,17 @@ class TitulkyProvider(Provider):
 
             # Approved subtitles have a pbl1 class for their row, others have a pbl0 class
             approved = True if 'pbl1' in row.get('class') else False
+            
+            # Skip subtitles that do not contain keyword in their title
+            if keyword and sanitize(keyword) not in sanitize(title):
+                logger.debug(f"Titulky.com: Skipping subtitle '{title}' because it does not contain the keyword '{keyword}'")
+                if type(threads_data) is list and type(thread_id) is int:
+                    threads_data[thread_id] = {
+                        'sub_info': None,
+                        'exception': None
+                    }
+                    
+                return None
             
             details = self.parse_details(details_link)
             if not details:
@@ -442,7 +454,7 @@ class TitulkyProvider(Provider):
             # Process the rows sequentially
             logger.info("Titulky.com: processing results in sequence")
             for i, row in enumerate(rows):
-                sub_info = self.process_row(row)
+                sub_info = self.process_row(row, keyword)
                 
                 # If subtitle info was returned, then everything was okay 
                 # and we can instationate it and add it to the list
@@ -476,7 +488,7 @@ class TitulkyProvider(Provider):
                         # Row number j
                         logger.debug(f"Titulky.com: Creating thread {j} (batch: {i})")
                         # Create a thread for row j and start it
-                        threads[j] = Thread(target=self.process_row, args=[rows[j]], kwargs={'thread_id': j, 'threads_data': threads_data})
+                        threads[j] = Thread(target=self.process_row, args=[rows[j], keyword], kwargs={'thread_id': j, 'threads_data': threads_data})
                         threads[j].start()
 
                 # Wait for all created threads to finish before moving to another batch of rows
