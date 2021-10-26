@@ -33,6 +33,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   );
   const [id, setId] = useState<Nullable<number>>(null);
 
+  const [monitored, setMonitored] = useState(false);
+
   const [updating, setUpdating] = useState(false);
 
   const footer = (
@@ -43,11 +45,12 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       promise={() => {
         if (payload) {
           const itemId = GetItemId(payload);
-          const monitored = payload.monitored ? "True" : "False";
+          setId(id);
+          setMonitored(monitored);
           return submit({
             id: [itemId],
             profileid: [id],
-            monitored: [monitored],
+            monitored: [monitored ? "True" : "False"],
           });
         } else {
           return null;
@@ -75,8 +78,10 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
             <Form.Label>Monitored</Form.Label>
             <Form.Check
               custom
-              readOnly={true}
-              checked={payload?.monitored}
+              id={payload?.tmdbId.toString()}
+              checked={monitored}
+              onChange={(v) => setMonitored(v.target.checked)}
+              label={"Download subtitles if available"}
             ></Form.Check>
           </Form.Group>
           {payload?.audio_language ? (
