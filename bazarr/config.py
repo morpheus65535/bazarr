@@ -188,8 +188,7 @@ defaults = {
         'password': '',
         'skip_wrong_fps': 'False',
         'approved_only': 'False',
-        'multithreading': 'True',
-        'max_threads': '10'
+        'multithreading': 'True'
     },
     'subsync': {
         'use_subsync': 'False',

@@ -117,10 +117,11 @@ class TitulkyProvider(Provider):
     download_url = f"{server_url}/download.php?id="
 
     timeout = 30
+    max_threads = 5
     
     subtitle_class = TitulkySubtitle
     
-    def __init__(self, username=None, password=None, max_threads=None, skip_wrong_fps=None, approved_only=None, multithreading=None):
+    def __init__(self, username=None, password=None, skip_wrong_fps=None, approved_only=None, multithreading=None):
         if not all([username, password]):
             raise ConfigurationError("Username and password must be specified!")
         
@@ -133,20 +134,12 @@ class TitulkyProvider(Provider):
         if type(multithreading) is not bool:
             raise ConfigurationError(f"Multithreading {multithreading} must be a boolean!")
                 
-        try:
-            max_threads = int(max_threads)
-        except ValueError:
-            raise ConfigurationError(f"Max threads {max_threads} must be an integer!")
-        
-        if max_threads < 0:
-            raise ConfigurationError(f"Max threads {max_threads} can not be a negative number!")
         
         self.username = username
         self.password = password
         self.skip_wrong_fps = skip_wrong_fps
         self.approved_only = approved_only
         self.multithreading = multithreading
-        self.max_threads = max_threads
         
         self.session = None
     
@@ -154,7 +147,7 @@ class TitulkyProvider(Provider):
         self.session = Session()
         # Set max pool size to the max number of threads we will use (i .e. the max number of search result rows)
         # or set it to the default value if multithreading is disabled.
-        pool_maxsize = self.max_threads + 3 if self.max_threads > 0 else 10
+        pool_maxsize = self.max_threads + 3 if self.max_threads > 10 else 10
         self.session.mount('https://', HTTPAdapter(pool_maxsize=pool_maxsize))
         self.session.mount('http://', HTTPAdapter(pool_maxsize=pool_maxsize))
         

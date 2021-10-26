@@ -222,11 +222,9 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       password: "",
       skip_wrong_fps: false,
       approved_only: false,
-      max_threads: 10,
       multithreading: true,
     },
     keyNameOverride: {
-      max_threads: "Max threads (requires multithreading to be enabled)",
       skip_wrong_fps: "Skip mismatching FPS",
       approved_only: "Skip unapproved subtitles",
       multithreading: "Enable multithreading",
