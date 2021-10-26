@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
@@ -36,6 +36,13 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const [monitored, setMonitored] = useState(false);
 
   const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    if (payload) {
+      setId(payload.profileId);
+      setMonitored(payload.monitored);
+    }
+  }, [payload]);
 
   const footer = (
     <AsyncButton
