@@ -1541,7 +1541,7 @@ class EpisodesHistory(Resource):
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
             minimum_timestamp = ((datetime.datetime.now() - datetime.timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime(1970, 1, 1)).total_seconds()
+                                 datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
@@ -1663,7 +1663,7 @@ class MoviesHistory(Resource):
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
             minimum_timestamp = ((datetime.datetime.now() - datetime.timedelta(days=int(days_to_upgrade_subs))) -
-                                 datetime(1970, 1, 1)).total_seconds()
+                                 datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3, 6]
