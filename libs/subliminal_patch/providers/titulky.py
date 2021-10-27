@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 import io
 import logging
-import os
-import zipfile
-import re
 import math
+import os
+import re
+import zipfile
 from random import randint
 from threading import Thread
 
-import rarfile
 import chardet
-from subzero.language import Language
+import rarfile
 from guessit import guessit
 from requests import Session
 from requests.adapters import HTTPAdapter
-
 from subliminal import __short_version__
-from subliminal.exceptions import Error, ProviderError, AuthenticationError, ConfigurationError, DownloadLimitExceeded
+from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, Error, ProviderError
 from subliminal.providers import ParserBeautifulSoup, Provider
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, Subtitle
-from subliminal_patch.subtitle import guess_matches, sanitize
-from subliminal_patch.score import framerate_equal
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
 from subliminal.video import Episode, Movie
+from subliminal_patch.score import framerate_equal
+from subliminal_patch.subtitle import guess_matches, sanitize
+from subzero.language import Language
+
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
@@ -89,8 +90,7 @@ class TitulkySubtitle(Subtitle):
         
         if video.year and video.year == self.year:
             matches.add('year')
-        
-        #logger.debug(guessit(self.release_info, {"type": _type}))
+
 
         matches |= guess_matches(video, guessit(self.release_info, {"type": _type}))
         
@@ -223,7 +223,7 @@ class TitulkyProvider(Provider):
         
         return result
     
-    # Details page parsing
+    # Parse details of an individual subtitle: title, year, language, etc.
     def parse_details(self, url):
         html_src = self.fetch_page(url)
         details_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
@@ -527,7 +527,7 @@ class TitulkyProvider(Provider):
         search_page_soup.decompose()
         search_page_soup = None
         
-        logger.debug(subtitles)
+        logger.debug(f"Titulky.com: Found subtitles: {subtitles}")
         
         return subtitles
     
@@ -536,7 +536,7 @@ class TitulkyProvider(Provider):
         
         # Possible paths:
         # (1) Search by IMDB ID [and season/episode for tv series]
-        # (2) Search by keyword: video (title|series) [, and season/episode for tv series]
+        # (2) Search by keyword: video (title|series) [and season/episode for tv series]
         # (3) Search by keyword: video series + S00E00 (tv series only)
         
         for language in languages:
@@ -579,7 +579,7 @@ class TitulkyProvider(Provider):
                 
         return subtitles
     
-# The rest is old code from original implementation. Might want to redo it.
+# The rest is mostly old code from original implementation. Might want to redo it.
     def download_subtitle(self, subtitle):
         res = self.session.get(subtitle.download_link, headers={'Referer': subtitle.page_link},
                              timeout=self.timeout)
