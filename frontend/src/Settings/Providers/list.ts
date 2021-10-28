@@ -230,6 +230,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      skip_wrong_fps: false,
+      approved_only: false,
+      multithreading: true,
+    },
+    keyNameOverride: {
+      skip_wrong_fps: "Skip mismatching FPS",
+      approved_only: "Skip unapproved subtitles",
+      multithreading: "Enable multithreading",
     },
   },
   { key: "tvsubtitles", name: "TVSubtitles" },

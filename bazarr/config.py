@@ -185,7 +185,10 @@ defaults = {
     },
     'titulky': {
         'username': '',
-        'password': ''
+        'password': '',
+        'skip_wrong_fps': 'False',
+        'approved_only': 'False',
+        'multithreading': 'True'
     },
     'subsync': {
         'use_subsync': 'False',
