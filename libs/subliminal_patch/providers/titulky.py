@@ -36,10 +36,10 @@ class TitulkySubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
-    def __init__(self, sub_id, language, title, year, release_info, fps, uploader, approved, page_link, download_link, season=None, episode=None, skip_wrong_fps=False):
+    def __init__(self, sub_id, language, names, season, episode, year, release_info, fps, uploader, approved, page_link, download_link, skip_wrong_fps=False):
         super().__init__(language, page_link=page_link)
 
-        self.title = title
+        self.names = names
         self.year = year
         self.sub_id = sub_id
         self.fps = fps
@@ -73,21 +73,17 @@ class TitulkySubtitle(Subtitle):
             if self.episode and self.episode == video.episode:
                 matches.add('episode')
             
-            if self.season is None and self.episode is None:
-                matches.add('episode')
-                
-                if sanitize(f"S{video.season:02d}E{video.episode:02d}") in sanitize(self.title):
-                    matches.add('season')
-                    matches.add('episode')
-                    
-            if video.series and sanitize(video.series) in sanitize(self.title):
+            name_matches = [video.series and sanitize(name) in sanitize(video.series) for name in self.names]
+            if any(name_matches):
                 matches.add('series')
-            
+
         elif _type == 'movie':
             ## MOVIE
-            if video.title and sanitize(video.title) in sanitize(self.title):
-                matches.add('title') 
+            name_matches = [video.title and sanitize(name) in sanitize(video.title) for name in self.names]
+            if any(name_matches):
+                matches.add('title')
         
+        ## MOVIE OR EPISODE
         if video.year and video.year == self.year:
             matches.add('year')
 
@@ -223,7 +219,7 @@ class TitulkyProvider(Provider):
         
         return result
     
-    # Parse details of an individual subtitle: title, year, language, etc.
+    # Parse details of an individual subtitle: release, language, uploader, fps and year
     def parse_details(self, url):
         html_src = self.fetch_page(url)
         details_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
@@ -233,20 +229,22 @@ class TitulkyProvider(Provider):
             logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
         
-        ### TITLE AND YEAR
-        h1_tag = details_container.find('h1', id='titulky')
-        if not h1_tag:
-            logger.debug("Titulky.com: Could not find h1 tag. Skipping.")
+        ### RELEASE
+        release_tag = details_container.find('div', class_='releas')
+        if not release_tag:
+            logger.debug("Titulky.com: Could not find releas tag. Skipping.")
             return False
-        # The h1 tag contains the title of the subtitle and year
-        h1_texts = [text.strip() for text in h1_tag.stripped_strings]
-        
-        if len(h1_texts) < 1:
-            logger.debug("Titulky.com: The header tag did not include sufficient data. Skipping.")
-            return False
-        title = h1_texts[0]
-        year = int(h1_texts[1]) if len(h1_texts) > 1 else None
-        
+        release = release_tag.get_text(strip=True)
+
+        ### LANGUAGE
+        language = None
+        czech_flag = details_container.select('img[src*=\'flag-CZ\']')
+        slovak_flag = details_container.select('img[src*=\'flag-SK\']')
+        if czech_flag and not slovak_flag:
+            language = Language('ces')
+        elif slovak_flag and not czech_flag: 
+            language = Language('slk')
+
         ### UPLOADER
         uploader_tag = details_container.find('div', class_='ulozil')
         if not uploader_tag:
@@ -257,23 +255,7 @@ class TitulkyProvider(Provider):
             logger.debug("Titulky.com: Could not find uploader anchor tag. Skipping.")
             return False
         uploader = uploader_anchor_tag.string.strip()
-        
-        ### RELEASE
-        release_tag = details_container.find('div', class_='releas')
-        if not release_tag:
-            logger.debug("Titulky.com: Could not find releas tag. Skipping.")
-            return False
-        release = release_tag.get_text(strip=True)
-        
-        ### LANGUAGE
-        language = None
-        czech_flag = details_container.select('img[src*=\'flag-CZ\']')
-        slovak_flag = details_container.select('img[src*=\'flag-SK\']')
-        if czech_flag and not slovak_flag:
-            language = Language('ces')
-        elif slovak_flag and not czech_flag: 
-            language = Language('slk')
-        
+
         ### FPS
         fps = None
         fps_icon_tag_selection = details_container.select('img[src*=\'Movieroll\']')
@@ -285,26 +267,34 @@ class TitulkyProvider(Provider):
             
             # If the match is found, change the decimal separator to a dot and convert to float
             fps = float(match[0].replace(',', '.')) if len(match) > 0 else None
+
+        ### YEAR
+        h1_tag = details_container.find('h1', id='titulky')
+        if not h1_tag:
+            logger.debug("Titulky.com: Could not find h1 tag. Skipping.")
+            return False
+        # The h1 tag contains the name of the subtitle and a year
+        h1_texts = [text.strip() for text in h1_tag.stripped_strings]
+        year = int(h1_texts[1]) if len(h1_texts) > 1 else None
         
+
         # Clean up
         details_page_soup.decompose()
         details_page_soup = None
         
         # Return the subtitle details
         return {
-            'title': title, 
-            'year': year, 
-            'uploader': uploader, 
             'release': release, 
             'language': language, 
-            'fps': fps
+            'uploader': uploader, 
+            'fps': fps,
+            'year': year
         }
     
     def process_row(self, row, keyword, thread_id=None, threads_data=None):
         try:
-            # The first anchor tag is an image preview, the second is the title
+            # The first anchor tag is an image preview, the second is the name
             anchor_tag = row.find_all('a')[1]
-            title = anchor_tag.string.strip()
             # The details link is relative, so we need to remove the dot at the beginning
             details_link = f"{self.server_url}{anchor_tag.get('href')[1:]}"
             id_match = re.findall('id=(\d+)', details_link)
@@ -314,9 +304,19 @@ class TitulkyProvider(Provider):
             # Approved subtitles have a pbl1 class for their row, others have a pbl0 class
             approved = True if 'pbl1' in row.get('class') else False
             
-            # Skip subtitles that do not contain keyword in their title
-            if keyword and sanitize(keyword) not in sanitize(title):
-                logger.debug(f"Titulky.com: Skipping subtitle '{title}' because it does not contain the keyword '{keyword}'")
+            # Name + alternative names
+            table_columns = row.findAll("td")
+            main_name = anchor_tag.get_text(strip=True)
+            alt_names = [alt_name.strip() for alt_name in table_columns[2].get_text(strip=True).split("/")]
+            names = [main_name] + alt_names
+
+
+            # Loop over all subtitle names and check if the keyword contains them
+            name_matches = [keyword and sanitize(keyword) not in sanitize(name) for name in names]
+
+            # Skip subtitles that do not contain the keyword in their name(s)
+            if keyword and all(name_matches) is False:
+                logger.debug(f"Titulky.com: Skipping subtitle with names: '{names}', because it does not not contain the keyword: '{keyword}'")
                 if type(threads_data) is list and type(thread_id) is int:
                     threads_data[thread_id] = {
                         'sub_info': None,
@@ -336,21 +336,26 @@ class TitulkyProvider(Provider):
                     
                 return None
             
-            # Return additional data besides the subtitle details
-            details['id'] = sub_id
-            details['approved'] = approved
-            details['details_link'] = details_link
-            details['download_link'] = download_link
+            # Combine all subtitle data into one dict
+            result = {
+                'names': names,
+                'id': sub_id,
+                'approved': approved,
+                'details_link': details_link,
+                'download_link': download_link
+            }
+            
+            result.update(details)
             
             if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
-                    'sub_info': details,
+                    'sub_info': result,
                     'exception': None
                 }
                 
             return details
         except:
-            e = Error("Whoops, something unexpected happend while fetching or parsing details page.")
+            e = Error("Whoops, something unexpected happend while processing a row.")
             
             if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
@@ -362,7 +367,7 @@ class TitulkyProvider(Provider):
     
     # There are multiple ways to find subs from this provider:
     # 1. SEARCH by sub title
-    #    - parameter: .................. Fulltext=<SUB TITLE> 
+    #    - parameter: .................. Fulltext=<SUB NAME> 
     # 2. SEARCH by imdb id
     #    - parameter: .................. IMDB=<IMDB ID>
     # 3. SEARCH by season/episode
@@ -460,8 +465,18 @@ class TitulkyProvider(Provider):
                 # and we can instationate it and add it to the list
                 if sub_info:
                     logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, row: {i}")
-                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
-                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+
+                    # Try to parse S00E00 string from the main subtitle name
+                    sub_season = None
+                    sub_episode = None
+                    season_episode_string = re.findall('S(\d+)E(\d+)', sub_info['names'][0], re.IGNORECASE)
+                    if season_episode_string:
+                        sub_season = season_episode_string[0][0]
+                        sub_episode = season_episode_string[0][1]
+
+
+                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['names'], sub_season, sub_episode, sub_info['year'], sub_info['release'], sub_info['fps'],
+                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # No subtitle info was returned, i. e. something unexpected
@@ -515,8 +530,17 @@ class TitulkyProvider(Provider):
                     # Instantiate the subtitle object
                     logger.debug(f"Titulky.com: Sucessfully retrieved subtitle info, thread ID: {i}")
                     sub_info = thread_data['sub_info']
-                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['title'], sub_info['year'], sub_info['release'], sub_info['fps'],
-                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], season=season, episode=episode, skip_wrong_fps=self.skip_wrong_fps)
+
+                    # Try to parse S00E00 string from the main subtitle name
+                    sub_season = None
+                    sub_episode = None
+                    season_episode_string = re.findall('S(\d+)E(\d+)', sub_info['names'][0], re.IGNORECASE)
+                    if season_episode_string:
+                        sub_season = season_episode_string[0][0]
+                        sub_episode = season_episode_string[0][1]
+
+                    subtitle_instance = self.subtitle_class(sub_info['id'], sub_info['language'], sub_info['names'], sub_season, sub_episode, sub_info['year'], sub_info['release'], sub_info['fps'],
+                                                            sub_info['uploader'], sub_info['approved'], sub_info['details_link'], sub_info['download_link'], skip_wrong_fps=self.skip_wrong_fps)
                     subtitles.append(subtitle_instance)
                 else:
                     # The thread returned data, but it didn't contain a subtitle info, i. e. something unexpected
