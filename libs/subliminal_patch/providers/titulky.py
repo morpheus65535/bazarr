@@ -234,12 +234,12 @@ class TitulkyProvider(Provider):
         release = None
         release_tag = details_container.find('div', class_='releas')
         
-        if release_tag is None:
+        if not release_tag:
             raise Error("Could not find release tag. Did the HTML source change?")
         
         release = release_tag.get_text(strip=True)
         
-        if release is None:
+        if not release:
             logger.info("Titulky.com: No release information supplied on details page.")
 
         ### LANGUAGE
@@ -252,7 +252,7 @@ class TitulkyProvider(Provider):
         elif slovak_flag and not czech_flag: 
             language = Language('slk')
         
-        if language is None:
+        if not language:
             logger.debug("Titulky.com: No language information supplied on details page.")
 
         ### UPLOADER
@@ -269,14 +269,14 @@ class TitulkyProvider(Provider):
         
         uploader = uploader_anchor_tag.string.strip() if uploader_anchor_tag else None
         
-        if uploader is None:
+        if not uploader:
             logger.debug("Titulky.com: No uploader name supplied on details page.")
 
         ### FPS
         fps = None
         fps_icon_tag_selection = details_container.select('img[src*=\'Movieroll\']')
         
-        if len(fps_icon_tag_selection) == 0 and not hasattr(fps_icon_tag_selection[0], 'parent'):
+        if not fps_icon_tag_selection and not hasattr(fps_icon_tag_selection[0], 'parent'):
             raise Error("Could not find parent of the fps icon tag. Did the HTML source change?")
         
         fps_icon_tag = fps_icon_tag_selection[0]
@@ -286,7 +286,7 @@ class TitulkyProvider(Provider):
          # If the match is found, change the decimal separator to a dot and convert to float
         fps = float(match[0].replace(',', '.')) if len(match) > 0 else None
 
-        if fps is None:
+        if not fps:
             logger.debug("Titulky.com: No fps supplied on details page.")
         
         ### YEAR
@@ -300,7 +300,7 @@ class TitulkyProvider(Provider):
         h1_texts = [text for text in h1_tag.stripped_strings]
         year = int(h1_texts[1]) if len(h1_texts) > 1 else None
         
-        if year is None:
+        if not year:
             logger.debug("Titulky.com: No year supplied on details page.")
         
         
