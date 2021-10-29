@@ -16,6 +16,7 @@ from get_rootfolder import check_radarr_rootfolder
 from get_subtitle import movies_download_subtitles
 from database import get_exclusion_clause, TableMovies
 from event_handler import event_stream, show_progress, hide_progress
+from get_languages import language_from_alpha2
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -450,7 +451,10 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
                 for item in movie['movieFile']['languages']:
                     if isinstance(item, dict):
                         if 'name' in item:
-                            audio_language.append(item['name'])
+                            language = item['name']
+                            if item['name'] == 'Portuguese (Brazil)':
+                                language = language_from_alpha2('pb')
+                            audio_language.append(language)
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
