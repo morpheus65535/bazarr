@@ -226,58 +226,84 @@ class TitulkyProvider(Provider):
         
         details_container = details_page_soup.find('div', class_='detail')
         if not details_container:
+            # The subtitles were removed and got redirected to a different page. Better treat this silently.
             logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
         
         ### RELEASE
+        release = None
         release_tag = details_container.find('div', class_='releas')
-        if not release_tag:
-            logger.debug("Titulky.com: Could not find releas tag. Skipping.")
-            return False
+        
+        if release_tag is None:
+            raise Error("Could not find release tag. Did the HTML source change?")
+        
         release = release_tag.get_text(strip=True)
+        
+        if release is None:
+            logger.info("Titulky.com: No release information supplied on details page.")
 
         ### LANGUAGE
         language = None
         czech_flag = details_container.select('img[src*=\'flag-CZ\']')
         slovak_flag = details_container.select('img[src*=\'flag-SK\']')
+        
         if czech_flag and not slovak_flag:
             language = Language('ces')
         elif slovak_flag and not czech_flag: 
             language = Language('slk')
+        
+        if language is None:
+            logger.debug("Titulky.com: No language information supplied on details page.")
 
         ### UPLOADER
+        uploader = None
         uploader_tag = details_container.find('div', class_='ulozil')
+        
         if not uploader_tag:
-            logger.debug("Titulky.com: Could not find uploader tag. Skipping.")
-            return False
+            raise Error("Could not find uploader tag. Did the HTML source change?")
+        
         uploader_anchor_tag = uploader_tag.find('a')
+        
         if not uploader_anchor_tag:
-            logger.debug("Titulky.com: Could not find uploader anchor tag. Skipping.")
-            return False
-        uploader = uploader_anchor_tag.string.strip()
+            raise Error("Could not find uploader anchor tag. Did the HTML source change?")
+        
+        uploader = uploader_anchor_tag.string.strip() if uploader_anchor_tag else None
+        
+        if uploader is None:
+            logger.debug("Titulky.com: No uploader name supplied on details page.")
 
         ### FPS
         fps = None
         fps_icon_tag_selection = details_container.select('img[src*=\'Movieroll\']')
         
-        if len(fps_icon_tag_selection) > 0 and hasattr(fps_icon_tag_selection[0], 'parent'):
-            fps_icon_tag = fps_icon_tag_selection[0]
-            parent_text = fps_icon_tag.parent.get_text(strip=True)
-            match = re.findall('(\d+,\d+) fps', parent_text)
+        if len(fps_icon_tag_selection) == 0 and not hasattr(fps_icon_tag_selection[0], 'parent'):
+            raise Error("Could not find parent of the fps icon tag. Did the HTML source change?")
+        
+        fps_icon_tag = fps_icon_tag_selection[0]
+        parent_text = fps_icon_tag.parent.get_text(strip=True)
+        match = re.findall('(\d+,\d+) fps', parent_text)
             
-            # If the match is found, change the decimal separator to a dot and convert to float
-            fps = float(match[0].replace(',', '.')) if len(match) > 0 else None
+         # If the match is found, change the decimal separator to a dot and convert to float
+        fps = float(match[0].replace(',', '.')) if len(match) > 0 else None
 
+        if fps is None:
+            logger.debug("Titulky.com: No fps supplied on details page.")
+        
         ### YEAR
+        year = None
         h1_tag = details_container.find('h1', id='titulky')
+        
         if not h1_tag:
-            logger.debug("Titulky.com: Could not find h1 tag. Skipping.")
-            return False
+            raise Error("Could not find h1 tag. Did the HTML source change?")
+        
         # The h1 tag contains the name of the subtitle and a year
-        h1_texts = [text.strip() for text in h1_tag.stripped_strings]
+        h1_texts = [text for text in h1_tag.stripped_strings]
         year = int(h1_texts[1]) if len(h1_texts) > 1 else None
         
-
+        if year is None:
+            logger.debug("Titulky.com: No year supplied on details page.")
+        
+        
         # Clean up
         details_page_soup.decompose()
         details_page_soup = None
@@ -354,9 +380,7 @@ class TitulkyProvider(Provider):
                 }
                 
             return details
-        except:
-            e = Error("Whoops, something unexpected happend while processing a row.")
-            
+        except Exception as e:
             if type(threads_data) is list and type(thread_id) is int:
                 threads_data[thread_id] = {
                     'sub_info': None,
@@ -521,8 +545,8 @@ class TitulkyProvider(Provider):
                     raise Error(f"No data returned from thread ID: {i}")
                 
                 # If an exception was raised in a thread, raise it again here
-                if "exception" in thread_data and thread_data["exception"]:
-                    logger.debug(f"Titulky.com: An error occured in a thread ID: {i}")
+                if 'exception' in thread_data and thread_data['exception']:
+                    logger.debug(f"Titulky.com: An error occured while processing a row in the thread ID {i}")
                     raise thread_data['exception']
 
                 # If the thread returned a subtitle info, great, instantiate it and add it to the list
