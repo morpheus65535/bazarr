@@ -315,8 +315,10 @@ class GetRadarrInfo:
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
                 else:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+                    raise json.decoder.JSONDecodeError
+            except json.decoder.JSONDecodeError:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
             except Exception as e:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
