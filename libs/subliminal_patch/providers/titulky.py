@@ -88,9 +88,9 @@ class TitulkySubtitle(Subtitle):
         if _type == 'episode':
             ## EPISODE
 
-            # match imdb_id
+            # match imdb_id of a series
             if video.series_imdb_id and video.series_imdb_id == self.imdb_id:
-                matches.add('imdb_id')
+                matches.add('series_imdb_id')
                 
             # match season/episode
             if self.season and self.season == video.season:
@@ -111,7 +111,7 @@ class TitulkySubtitle(Subtitle):
         elif _type == 'movie':
             ## MOVIE
             
-            # match imdb_id
+            # match imdb_id of a movie
             if video.imdb_id and video.imdb_id == self.imdb_id:
                 matches.add('imdb_id')
             
