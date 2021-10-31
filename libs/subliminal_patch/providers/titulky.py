@@ -14,18 +14,21 @@ import rarfile
 from guessit import guessit
 from requests import Session
 from requests.adapters import HTTPAdapter
+from requests.exceptions import HTTPError
 
 from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, Error, ProviderError
 from subliminal.providers import ParserBeautifulSoup
+from subliminal.subtitle import fix_line_ending
 from subliminal.video import Episode, Movie
 
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.exceptions import ParseResponseError
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.score import framerate_equal
-from subliminal_patch.subtitle import guess_matches, sanitize
+from subliminal_patch.subtitle import Subtitle, guess_matches, sanitize
 
 from subzero.language import Language
+
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
@@ -234,7 +237,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         res = self.session.get(url, timeout=self.timeout)
         
         if res.status_code != 200:
-            raise ProviderError(f"Fetch failed with status code {res.status_code}")
+            raise HTTPError(f"Fetch failed with status code {res.status_code}")
         if not res.text:
             raise ProviderError("No response returned from the provider")
         
@@ -249,7 +252,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         for key, value in params.items():
             result += f'{key}={value}&'
         
-        # Remove last &
+        # Remove the last &
         result = result[:-1]
         
         # Remove spaces
@@ -264,7 +267,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         
         details_container = details_page_soup.find('div', class_='detail')
         if not details_container:
-            # The subtitles were removed and got redirected to a different page. Better treat this silently.
+            # The subtitles could be removed and got redirected to a different page. Better treat this silently.
             logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
         
@@ -284,7 +287,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         release_tag = details_container.find('div', class_='releas')
         
         if not release_tag:
-            raise Error("Could not find release tag. Did the HTML source change?")
+            raise ParseResponseError("Could not find release tag. Did the HTML source change?")
         
         release = release_tag.get_text(strip=True)
         
@@ -309,12 +312,12 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         uploader_tag = details_container.find('div', class_='ulozil')
         
         if not uploader_tag:
-            raise Error("Could not find uploader tag. Did the HTML source change?")
+            raise ParseResponseError("Could not find uploader tag. Did the HTML source change?")
         
         uploader_anchor_tag = uploader_tag.find('a')
         
         if not uploader_anchor_tag:
-            raise Error("Could not find uploader anchor tag. Did the HTML source change?")
+            raise ParseResponseError("Could not find uploader anchor tag. Did the HTML source change?")
         
         uploader = uploader_anchor_tag.string.strip() if uploader_anchor_tag else None
         
@@ -326,7 +329,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         fps_icon_tag_selection = details_container.select('img[src*=\'Movieroll\']')
         
         if not fps_icon_tag_selection and not hasattr(fps_icon_tag_selection[0], 'parent'):
-            raise Error("Could not find parent of the fps icon tag. Did the HTML source change?")
+            raise ParseResponseError("Could not find parent of the fps icon tag. Did the HTML source change?")
         
         fps_icon_tag = fps_icon_tag_selection[0]
         parent_text = fps_icon_tag.parent.get_text(strip=True)
@@ -343,7 +346,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         h1_tag = details_container.find('h1', id='titulky')
         
         if not h1_tag:
-            raise Error("Could not find h1 tag. Did the HTML source change?")
+            raise ParseResponseError("Could not find h1 tag. Did the HTML source change?")
         
         # The h1 tag contains the name of the subtitle and a year
         h1_texts = [text for text in h1_tag.stripped_strings]
@@ -518,13 +521,13 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         table = search_page_soup.find('table', class_='table')
         if not table:
             logger.debug("Titulky.com: Could not find table")
-            raise Error("Could not find table. Did the HTML source change?")
+            raise ParseResponseError("Could not find table. Did the HTML source change?")
         
         # Get table body containing rows of subtitles
         table_body = table.find('tbody')
         if not table_body:
             logger.debug("Titulky.com: Could not find table body")
-            raise Error("Could not find table body. Did the HTML source change?")
+            raise ParseResponseError("Could not find table body. Did the HTML source change?")
         
         ## Loop over all subtitles on the first page and put them in a list
         subtitles = []
@@ -587,7 +590,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 # If the thread returned didn't return anything, but expected a dict object
                 if not thread_data:
-                    raise Error(f"No data returned from thread ID: {i}")
+                    raise ProviderError(f"No data returned from thread ID: {i}")
                 
                 # If an exception was raised in a thread, raise it again here
                 if 'exception' in thread_data and thread_data['exception']:
@@ -678,7 +681,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         try:
             res.raise_for_status()
         except:
-            raise ProviderError()
+            raise HTTPError(f"An error occured during the download request to {subtitle.download_link}")
             
         archive_stream = io.BytesIO(res.content)
         archive = None
@@ -691,11 +694,11 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = self.get_subtitle_from_archive(subtitle, archive)
         else:
-            subtitle_content = res.content
+            subtitle_content = fix_line_ending(res.content)
         
         if not subtitle_content:
             logger.debug("Titulky.com: No subtitle content found. The downloading limit has been most likely exceeded.")
-            raise DownloadLimitExceeded()
+            raise DownloadLimitExceeded("Subtitles download limit has been exceeded")
         
         subtitle.content = subtitle_content
         
