@@ -437,7 +437,9 @@ class LegendasdivxProvider(Provider):
                     if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
                         logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')
                         continue
-
+                else:
+                    logger.debug('Legendasdivx.pt :: no "season" and/or "episode" on "_guess" , skipping')
+                    continue
             matches = set()
             matches |= guess_matches(subtitle.video, _guess)
             logger.debug('Legendasdivx.pt :: sub matches: %s', matches)
