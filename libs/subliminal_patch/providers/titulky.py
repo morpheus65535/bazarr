@@ -80,11 +80,12 @@ class TitulkySubtitle(Subtitle):
     def get_fps(self):
         return self.fps
     
-    
     def get_matches(self, video):
         matches = set()
         _type = 'movie' if isinstance(video, Movie) else 'episode'
-       
+
+        sub_names = self._remove_season_episode_string(self.names)
+        
         if _type == 'episode':
             ## EPISODE
 
@@ -100,12 +101,12 @@ class TitulkySubtitle(Subtitle):
             
             # match series name
             series_names = [video.series] + video.alternative_series
-            if _contains_element(_from=series_names, _in=self.names):
+            if _contains_element(_from=series_names, _in=sub_names, exactly=True):
                 matches.add('series')
 
             # match episode title
             episode_titles = [video.title]
-            if _contains_element(_from=episode_titles, _in=self.names):
+            if _contains_element(_from=episode_titles, _in=sub_names, exactly=True):
                 matches.add('episode_title')
             
         elif _type == 'movie':
@@ -117,7 +118,7 @@ class TitulkySubtitle(Subtitle):
             
             # match movie title
             video_titles = [video.title] + video.alternative_titles
-            if _contains_element(_from=video_titles, _in=self.names):
+            if _contains_element(_from=video_titles, _in=sub_names, exactly=True):
                 matches.add('title')
         
         ## MOVIE OR EPISODE
@@ -139,6 +140,17 @@ class TitulkySubtitle(Subtitle):
         
         return matches
 
+    # Remove the S00E00 from elements of names array 
+    def _remove_season_episode_string(self, names):
+        result = names.copy()
+        
+        for i, name in enumerate(result):
+            cleaned_name = re.sub(r'S\d+E\d+', '', name)
+            cleaned_name = cleaned_name.strip()
+
+            result[i] = cleaned_name
+        
+        return result
 
 class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     """Titulky.com provider"""
@@ -702,15 +714,19 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         
         subtitle.content = subtitle_content
         
-# Check if any element from source array is **contained** in any element from target array
+# Check if any element from source array is contained partially or exactly in any element from target array
 # Returns on the first match
-def _contains_element(_from=None, _in=None):
+def _contains_element(_from=None, _in=None, exactly=False):
     source_array = _from
     target_array = _in
     
     for source in source_array:
         for target in target_array:
-            if sanitize(source) in sanitize(target):
-                return True
+            if exactly:
+                if sanitize(source) == sanitize(target):
+                    return True
+            else:
+                if sanitize(source) in sanitize(target):
+                    return True
     
     return False
