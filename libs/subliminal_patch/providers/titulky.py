@@ -85,6 +85,7 @@ class TitulkySubtitle(Subtitle):
         _type = 'movie' if isinstance(video, Movie) else 'episode'
 
         sub_names = self._remove_season_episode_string(self.names)
+        logger.debug(f"Titulky.com: Subtitle names: {sub_names}")
         
         if _type == 'episode':
             ## EPISODE
@@ -101,11 +102,13 @@ class TitulkySubtitle(Subtitle):
             
             # match series name
             series_names = [video.series] + video.alternative_series
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names and series names: {series_names}")
             if _contains_element(_from=series_names, _in=sub_names, exactly=True):
                 matches.add('series')
 
             # match episode title
             episode_titles = [video.title]
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names and episode titles: {episode_titles}")
             if _contains_element(_from=episode_titles, _in=sub_names, exactly=True):
                 matches.add('episode_title')
             
@@ -118,6 +121,7 @@ class TitulkySubtitle(Subtitle):
             
             # match movie title
             video_titles = [video.title] + video.alternative_titles
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names and video titles: {video_titles}")
             if _contains_element(_from=video_titles, _in=sub_names, exactly=True):
                 matches.add('title')
         
@@ -145,7 +149,7 @@ class TitulkySubtitle(Subtitle):
         result = names.copy()
         
         for i, name in enumerate(result):
-            cleaned_name = re.sub(r'S\d+E\d+', '', name)
+            cleaned_name = re.sub(r'S\d+E\d+', '', name, flags=re.IGNORECASE)
             cleaned_name = cleaned_name.strip()
 
             result[i] = cleaned_name
@@ -304,7 +308,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         release = release_tag.get_text(strip=True)
         
         if not release:
-            logger.info("Titulky.com: No release information supplied on details page.")
+            logger.debug("Titulky.com: No release information supplied on details page.")
 
         ### LANGUAGE
         language = None
