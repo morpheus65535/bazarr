@@ -38,7 +38,8 @@
     "rooks": "^5.7.1",
     "sass": "^1",
     "socket.io-client": "^4",
-    "typescript": "^4"
+    "typescript": "^4",
+    "moment": "^2.29.1"
   },
   "devDependencies": {
     "@types/bootstrap": "^5",

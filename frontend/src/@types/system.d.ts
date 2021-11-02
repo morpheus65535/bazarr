@@ -16,6 +16,7 @@ declare namespace System {
     python_version: string;
     radarr_version: string;
     sonarr_version: string;
+    start_time: number;
   }
 
   interface Health {
