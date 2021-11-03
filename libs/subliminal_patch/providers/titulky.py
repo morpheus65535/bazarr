@@ -9,7 +9,6 @@ import zipfile
 from random import randint
 from threading import Thread
 
-import chardet
 import rarfile
 from guessit import guessit
 from requests import Session
@@ -85,7 +84,6 @@ class TitulkySubtitle(Subtitle):
         _type = 'movie' if isinstance(video, Movie) else 'episode'
 
         sub_names = self._remove_season_episode_string(self.names)
-        logger.debug(f"Titulky.com: Subtitle names: {sub_names}")
         
         if _type == 'episode':
             ## EPISODE
@@ -102,13 +100,13 @@ class TitulkySubtitle(Subtitle):
             
             # match series name
             series_names = [video.series] + video.alternative_series
-            logger.debug(f"Titulky.com: Finding exact match between subtitle names and series names: {series_names}")
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names {sub_names} and series names {series_names}")
             if _contains_element(_from=series_names, _in=sub_names, exactly=True):
                 matches.add('series')
 
             # match episode title
             episode_titles = [video.title]
-            logger.debug(f"Titulky.com: Finding exact match between subtitle names and episode titles: {episode_titles}")
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names {sub_names} and episode titles {episode_titles}")
             if _contains_element(_from=episode_titles, _in=sub_names, exactly=True):
                 matches.add('episode_title')
             
@@ -121,7 +119,7 @@ class TitulkySubtitle(Subtitle):
             
             # match movie title
             video_titles = [video.title] + video.alternative_titles
-            logger.debug(f"Titulky.com: Finding exact match between subtitle names and video titles: {video_titles}")
+            logger.debug(f"Titulky.com: Finding exact match between subtitle names {sub_names} and video titles {video_titles}")
             if _contains_element(_from=video_titles, _in=sub_names, exactly=True):
                 matches.add('title')
         
@@ -400,9 +398,10 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             approved = True if 'pbl1' in row.get('class') else False
             
             # Subtitle name + its alternative names
-            table_columns = row.findAll("td")
+            table_columns = row.findAll('td')
             main_sub_name = anchor_tag.get_text(strip=True)
-            alt_sub_names = [alt_sub_name.strip() for alt_sub_name in table_columns[2].get_text(strip=True).split("/")]
+            
+            alt_sub_names = [alt_sub_name.strip() for alt_sub_name in table_columns[2].string.split('/')] if table_columns[2].string else []
             sub_names = [main_sub_name] + alt_sub_names
 
             # Does at least one subtitle name contain one of the video names?
