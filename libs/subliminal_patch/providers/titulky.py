@@ -246,9 +246,10 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             raise AuthenticationError("Logout failed.")
 
-    def fetch_page(self, url):
+    def fetch_page(self, url, ref=None):
         logger.debug(f"Titulky.com: Fetching url: {url}")
-        res = self.session.get(url, timeout=self.timeout)
+        
+        res = self.session.get(url, timeout=self.timeout, headers={'Referer': ref if ref else self.server_url})
         
         if res.status_code != 200:
             raise HTTPError(f"Fetch failed with status code {res.status_code}")
@@ -275,8 +276,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         return result
     
     # Parse details of an individual subtitle: imdb_id, release, language, uploader, fps and year
-    def parse_details(self, url):
-        html_src = self.fetch_page(url)
+    def parse_details(self, details_url, search_url):
+        html_src = self.fetch_page(details_url, ref=search_url)
         details_page_soup = ParserBeautifulSoup(html_src, ['lxml', 'html.parser'])
         
         details_container = details_page_soup.find('div', class_='detail')
@@ -384,7 +385,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             'imdb_id': imdb_id
         }
     
-    def process_row(self, row, video_names, thread_id=None, threads_data=None):
+    def process_row(self, row, video_names, search_url, thread_id=None, threads_data=None):
         try:
             # The first anchor tag is an image preview, the second is the name
             anchor_tag = row.find_all('a')[1]
@@ -420,7 +421,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     
                 return None
             
-            details = self.parse_details(details_link)
+            details = self.parse_details(details_link, search_url)
             if not details:
                 # Details parsing was NOT successful, skipping
                 if type(threads_data) is list and type(thread_id) is int:
@@ -552,7 +553,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             # Process the rows sequentially
             logger.info("Titulky.com: processing results in sequence")
             for i, row in enumerate(rows):
-                sub_info = self.process_row(row, video_names)
+                sub_info = self.process_row(row, video_names, search_url)
                 
                 # If subtitle info was returned, then everything was okay 
                 # and we can instationate it and add it to the list
@@ -590,7 +591,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                         # Row number j
                         logger.debug(f"Titulky.com: Creating thread {j} (batch: {i})")
                         # Create a thread for row j and start it
-                        threads[j] = Thread(target=self.process_row, args=[rows[j], video_names], kwargs={'thread_id': j, 'threads_data': threads_data})
+                        threads[j] = Thread(target=self.process_row, args=[rows[j], video_names, search_url], kwargs={'thread_id': j, 'threads_data': threads_data})
                         threads[j].start()
 
                 # Wait for all created threads to finish before moving to another batch of rows
