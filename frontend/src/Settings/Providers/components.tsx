@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 import { components } from "react-select";
-import { SelectComponents } from "react-select/src/components";
+import { SelectComponents } from "react-select/dist/declarations/src/components";
 import {
   BaseModal,
   Selector,
@@ -213,11 +213,12 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   const selectorComponents = useMemo<
-    Partial<SelectComponents<ProviderInfo, false>>
+    Partial<SelectComponents<ProviderInfo, false, any>>
   >(
     () => ({
       Option: ({ data, ...other }) => {
-        const { label, value } = data as SelectorOption<ProviderInfo>;
+        const { label, value } =
+          data as unknown as SelectorOption<ProviderInfo>;
         return (
           <components.Option data={data} {...other}>
             {label}
