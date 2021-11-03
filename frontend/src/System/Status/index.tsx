@@ -7,9 +7,10 @@ import {
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import moment from "moment";
-import React, { FunctionComponent, useEffect, useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
+import { useIntervalWhen } from "rooks";
 import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
 import { AsyncOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
@@ -71,9 +72,10 @@ const SystemStatusView: FunctionComponent<Props> = () => {
   const status = useSystemStatus();
 
   const [uptime, setState] = useState<string>();
+  const [intervalWhenState] = useState(true);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  useIntervalWhen(
+    () => {
       if (status) {
         let duration = moment.duration(
             moment().utc().unix() - status.start_time,
@@ -85,9 +87,11 @@ const SystemStatusView: FunctionComponent<Props> = () => {
           seconds = duration.seconds().toString().padStart(2, "0");
         setState(days + "d " + hours + ":" + minutes + ":" + seconds);
       }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [status]);
+    },
+    1000,
+    intervalWhenState,
+    true
+  );
 
   return (
     <Container className="p-5">
