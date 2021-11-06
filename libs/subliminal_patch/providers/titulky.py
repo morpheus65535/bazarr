@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import io
 import logging
 import math
@@ -328,8 +326,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         details_container = details_page_soup.find('div', class_='detail')
         if not details_container:
             # The subtitles could be removed and got redirected to a different page. Better treat this silently.
-            logger.debug(
-                "Titulky.com: Could not find details div container. Skipping.")
+            logger.debug("Titulky.com: Could not find details div container. Skipping.")
             return False
 
         ### IMDB ID
@@ -354,8 +351,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         release = release_tag.get_text(strip=True)
 
         if not release:
-            logger.debug(
-                "Titulky.com: No release information supplied on details page.")
+            logger.debug("Titulky.com: No release information supplied on details page.")
 
         ### LANGUAGE
         language = None
@@ -368,9 +364,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             language = Language('slk')
 
         if not language:
-            logger.debug(
-                "Titulky.com: No language information supplied on details page."
-            )
+            logger.debug("Titulky.com: No language information supplied on details page.")
 
         ### UPLOADER
         uploader = None
@@ -391,8 +385,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         ) if uploader_anchor_tag else None
 
         if not uploader:
-            logger.debug(
-                "Titulky.com: No uploader name supplied on details page.")
+            logger.debug("Titulky.com: No uploader name supplied on details page.")
 
         ### FPS
         fps = None
@@ -664,8 +657,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 else:
                     # No subtitle info was returned, i. e. something unexpected
                     # happend during subtitle details page fetching and processing.
-                    logger.debug(
-                        f"Titulky.com: No subtitle info retrieved, row: {i}")
+                    logger.debug(f"Titulky.com: No subtitle info retrieved, row: {i}")
         else:
             # Process the rows in paralell
             logger.info(
@@ -807,8 +799,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     continue
 
                 # (3)
-                logger.debug(
-                    "Titulky.com: Finding subtitles by keyword only (3)")
+                logger.debug("Titulky.com: Finding subtitles by keyword only (3)")
                 keyword = f"{video.series} S{video.season:02d}E{video.episode:02d}"
                 partial_subs = self.query(language,
                                           video_names,
