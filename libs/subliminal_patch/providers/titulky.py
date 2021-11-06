@@ -326,7 +326,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         details_container = details_page_soup.find('div', class_='detail')
         if not details_container:
             # The subtitles could be removed and got redirected to a different page. Better treat this silently.
-            logger.debug("Titulky.com: Could not find details div container. Skipping.")
+            logger.info("Titulky.com: Could not find details div container. Skipping.")
             return False
 
         ### IMDB ID
@@ -472,7 +472,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             # Could be handled in TitulkySubtitle class, however we want to keep the number of requests
             # as low as possible and this prevents the from requesting the details page unnecessarily
             if not _contains_element(_from=video_names, _in=sub_names):
-                logger.debug(
+                logger.info(
                     f"Titulky.com: Skipping subtitle with names: {sub_names}, because there was no match with video names: {video_names}"
                 )
                 if type(threads_data) is list and type(thread_id) is int:
@@ -582,6 +582,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             return []
         # Status
         if self.approved_only:
+            logger.debug(f"Titulky.com: Searching only for approved subtitles")
             params['ASchvalene'] = '1'
         else:
             params['ASchvalene'] = ''
@@ -769,7 +770,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                               ] + video.alternative_series
 
                 # (1)
-                logger.debug(
+                logger.info(
                     "Titulky.com: Finding subtitles by IMDB ID, Season and Episode (1)"
                 )
                 if video.series_imdb_id:
@@ -784,7 +785,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                         continue
 
                 # (2)
-                logger.debug(
+                logger.info(
                     "Titulky.com: Finding subtitles by keyword, Season and Episode (2)"
                 )
                 keyword = video.series
@@ -799,7 +800,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     continue
 
                 # (3)
-                logger.debug("Titulky.com: Finding subtitles by keyword only (3)")
+                logger.info("Titulky.com: Finding subtitles by keyword only (3)")
                 keyword = f"{video.series} S{video.season:02d}E{video.episode:02d}"
                 partial_subs = self.query(language,
                                           video_names,
@@ -810,7 +811,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 video_names = [video.title] + video.alternative_titles
 
                 # (1)
-                logger.debug("Titulky.com: Finding subtitles by IMDB ID (1)")
+                logger.info("Titulky.com: Finding subtitles by IMDB ID (1)")
                 if video.imdb_id:
                     partial_subs = self.query(language,
                                               video_names,
@@ -821,7 +822,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                         continue
 
                 # (2)
-                logger.debug("Titulky.com: Finding subtitles by keyword (2)")
+                logger.info("Titulky.com: Finding subtitles by keyword (2)")
                 keyword = video.title
                 partial_subs = self.query(language,
                                           video_names,
