@@ -14,7 +14,7 @@
   "private": true,
   "homepage": "./",
   "dependencies": {
-    "@fontsource/roboto": "^4.2.2",
+    "@fontsource/roboto": "^4.5.1",
     "@fortawesome/fontawesome-svg-core": "^1.2",
     "@fortawesome/free-brands-svg-icons": "^5.15",
     "@fortawesome/free-regular-svg-icons": "^5.15",
