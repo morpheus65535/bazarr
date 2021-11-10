@@ -18,6 +18,7 @@ from helper import path_mappings, get_subtitle_destination_folder
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
+from peewee import DoesNotExist
 
 gc.enable()
 
@@ -36,33 +37,39 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                     .where(TableEpisodes.path == original_path)\
                     .dicts()\
                     .get()
-                subtitle_languages = embedded_subs_reader(reversed_path,
-                                                          file_size=item['file_size'],
-                                                          episode_file_id=item['episode_file_id'],
-                                                          use_cache=use_cache)
-                for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
-                    try:
-                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
-                                (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub") or \
-                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
-                                 "ass"):
-                            logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
-                            continue
+            except DoesNotExist:
+                logging.exception(f"BAZARR error when trying to select this episode from database: {reversed_path}")
+            else:
+                try:
+                    subtitle_languages = embedded_subs_reader(reversed_path,
+                                                              file_size=item['file_size'],
+                                                              episode_file_id=item['episode_file_id'],
+                                                              use_cache=use_cache)
+                    for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
+                        try:
+                            if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
+                                    (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                                     "vobsub") or \
+                                    (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                     "ass"):
+                                logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
+                                continue
 
-                        if alpha2_from_alpha3(subtitle_language) is not None:
-                            lang = str(alpha2_from_alpha3(subtitle_language))
-                            if subtitle_forced:
-                                lang = lang + ":forced"
-                            if subtitle_hi:
-                                lang = lang + ":hi"
-                            logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
-                    except Exception as error:
-                        logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language, error)
-            except Exception as e:
-                logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
+                            if alpha2_from_alpha3(subtitle_language) is not None:
+                                lang = str(alpha2_from_alpha3(subtitle_language))
+                                if subtitle_forced:
+                                    lang = lang + ":forced"
+                                if subtitle_hi:
+                                    lang = lang + ":hi"
+                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                actual_subtitles.append([lang, None])
+                        except Exception as error:
+                            logging.debug("BAZARR unable to index this unrecognized language: %s (%s)", subtitle_language, error)
+                except Exception as e:
+                    logging.exception(
+                        "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1],
+                                                                                  reversed_path))
+                    pass
         try:
             dest_folder = get_subtitle_destination_folder()
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -130,35 +137,40 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                     .where(TableMovies.path == original_path)\
                     .dicts()\
                     .get()
-                subtitle_languages = embedded_subs_reader(reversed_path,
-                                                          file_size=item['file_size'],
-                                                          movie_file_id=item['movie_file_id'],
-                                                          use_cache=use_cache)
-                for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
-                    try:
-                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
-                                (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
-                                 "vobsub") or \
-                                (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
-                                 "ass"):
-                            logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
-                            continue
+            except DoesNotExist:
+                logging.exception(f"BAZARR error when trying to select this movie from database: {reversed_path}")
+            else:
+                try:
+                    subtitle_languages = embedded_subs_reader(reversed_path,
+                                                              file_size=item['file_size'],
+                                                              movie_file_id=item['movie_file_id'],
+                                                              use_cache=use_cache)
+                    for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
+                        try:
+                            if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
+                                    (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                                     "vobsub") or \
+                                    (settings.general.getboolean("ignore_ass_subs") and subtitle_codec.lower() ==
+                                     "ass"):
+                                logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
+                                continue
 
-                        if alpha2_from_alpha3(subtitle_language) is not None:
-                            lang = str(alpha2_from_alpha3(subtitle_language))
-                            if subtitle_forced:
-                                lang = lang + ':forced'
-                            if subtitle_hi:
-                                lang = lang + ':hi'
-                            logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
-                    except:
-                        logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
-                        pass
-            except Exception:
-                logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
-                pass
+                            if alpha2_from_alpha3(subtitle_language) is not None:
+                                lang = str(alpha2_from_alpha3(subtitle_language))
+                                if subtitle_forced:
+                                    lang = lang + ':forced'
+                                if subtitle_hi:
+                                    lang = lang + ':hi'
+                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                actual_subtitles.append([lang, None])
+                        except:
+                            logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
+                            pass
+                except Exception:
+                    logging.exception(
+                        "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1],
+                                                                                  reversed_path))
+                    pass
 
         try:
             dest_folder = get_subtitle_destination_folder() or ''
