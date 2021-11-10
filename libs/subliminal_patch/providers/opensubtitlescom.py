@@ -126,6 +126,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     languages = {Language.fromopensubtitles(lang) for lang in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
 
+    video_types = (Episode, Movie)
+
     def __init__(self, username=None, password=None, use_hash=True, api_key=None):
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')

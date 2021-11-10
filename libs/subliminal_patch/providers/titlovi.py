@@ -135,6 +135,7 @@ class TitloviSubtitle(Subtitle):
 class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = TitloviSubtitle
     languages = {Language.fromtitlovi(l) for l in language_converters['titlovi'].codes} | {Language.fromietf('sr-Latn')}
+    video_types = (Episode, Movie)
     api_url = 'https://kodi.titlovi.com/api/subtitles'
     api_gettoken_url = api_url + '/gettoken'
     api_search_url = api_url + '/search'

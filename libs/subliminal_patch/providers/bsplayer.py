@@ -72,6 +72,7 @@ class BSPlayerProvider(Provider):
         'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
         'ron', 'rus', 'spa', 'swe', 'tur', 'ukr', 'zho'
     ]}
+    video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
     hash_verifiable = True
     # fmt: on

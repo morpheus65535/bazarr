@@ -144,6 +144,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     """Titulky.com provider"""
     
     languages = {Language(l) for l in ['ces', 'slk']}
+    video_types = (Episode, Movie)
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
@@ -203,7 +204,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     def terminate(self):
         self.logout()
         self.session.close()
-    
+
     def login(self):
         logger.info("Titulky.com: Logging in")
         

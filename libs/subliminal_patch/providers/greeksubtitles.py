@@ -52,6 +52,7 @@ class GreekSubtitlesSubtitle(Subtitle):
 class GreekSubtitlesProvider(Provider):
     """GreekSubtitles Provider."""
     languages = {Language(l) for l in ['ell', 'eng']}
+    video_types = (Episode, Movie)
     server_url = 'http://gr.greek-subtitles.com/'
     search_url = 'search.php?name={}'
     download_url = 'http://www.greeksubtitles.info/getp.php?id={:d}'

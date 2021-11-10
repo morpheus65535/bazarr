@@ -102,6 +102,7 @@ class YavkaNetProvider(Provider):
     languages = {Language(l) for l in [
         'bul', 'eng', 'rus', 'spa', 'ita'
     ]}
+    video_types = (Episode, Movie)
 
     def initialize(self):
         self.session = Session()

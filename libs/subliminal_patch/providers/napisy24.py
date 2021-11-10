@@ -12,6 +12,7 @@ from subliminal import __short_version__
 from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal.subtitle import fix_line_ending
 from subzero.language import Language
+from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class Napisy24Subtitle(Subtitle):
 class Napisy24Provider(Provider):
     '''Napisy24 Provider.'''
     languages = {Language(l) for l in ['pol']}
+    video_types = (Episode, Movie)
     required_hash = 'napisy24'
     api_url = 'http://napisy24.pl/run/CheckSubAgent.php'
 

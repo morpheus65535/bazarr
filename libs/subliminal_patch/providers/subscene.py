@@ -21,6 +21,7 @@ from babelfish import language_converters
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal import Episode, ProviderError
+from subliminal.video import Episode, Movie
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.utils import sanitize_release_group
 from subliminal.cache import region
@@ -124,7 +125,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = supported_languages
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
-
+    video_types = (Episode, Movie)
     session = None
     skip_wrong_fps = False
     hearing_impaired_verifiable = True

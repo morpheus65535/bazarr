@@ -21,6 +21,7 @@ from bs4 import UnicodeDammit
 from babelfish import LanguageReverseError
 from guessit.jsonutils import GuessitEncoder
 from subliminal import ProviderError, refiner_manager
+from concurrent.futures import as_completed
 
 from .extensions import provider_registry
 from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
@@ -427,6 +428,58 @@ class SZProviderPool(ProviderPool):
 
         return downloaded_subtitles
 
+    def list_supported_languages(self):
+        """List supported languages.
+
+        :return: languages supported by the providers.
+        :rtype: list of dicts
+
+        """
+        languages = []
+
+        for name in self.providers:
+            # list supported languages for a single provider
+            try:
+                provider_languages = self[name].languages
+            except AttributeError:
+                logger.exception(f"{name} provider doesn't have a languages attribute")
+                continue
+
+            if provider_languages is None:
+                logger.info(f"Skipping provider {name} because it doesn't support any languages.")
+                continue
+
+            # add the languages for this provider
+            languages.append({'provider': name, 'languages': provider_languages})
+
+        return languages
+
+    def list_supported_video_types(self):
+        """List supported video types.
+
+        :return: video types supported by the providers.
+        :rtype: tuple of video types
+
+        """
+        video_types = []
+
+        for name in self.providers:
+            # list supported video types for a single provider
+            try:
+                provider_video_type = self[name].video_types
+            except AttributeError:
+                logger.exception(f"{name} provider doesn't have a video_types method")
+                continue
+
+            if provider_video_type is None:
+                logger.info(f"Skipping provider {name} because it doesn't support any video type.")
+                continue
+
+            # add the video types for this provider
+            video_types.append({'provider': name, 'video_types': provider_video_type})
+
+        return video_types
+
 
 class SZAsyncProviderPool(SZProviderPool):
     """Subclass of :class:`ProviderPool` with asynchronous support for :meth:`~ProviderPool.list_subtitles`.
@@ -473,6 +526,65 @@ class SZAsyncProviderPool(SZProviderPool):
                 subtitles.extend(provider_subtitles)
 
         return subtitles
+
+    def list_supported_languages(self):
+        """List supported languages asynchronously.
+
+        :return: languages supported by the providers.
+        :rtype: list of dicts
+
+        """
+        languages = []
+
+        def get_providers_languages(provider_name):
+            provider_languages = None
+            try:
+                provider_languages = {'provider': provider_name, 'languages': self[provider_name].languages}
+            except AttributeError:
+                logger.exception(f"{provider_name} provider doesn't have a languages attribute")
+
+            return provider_languages
+
+        with ThreadPoolExecutor(self.max_workers) as executor:
+            for future in as_completed([executor.submit(get_providers_languages, x) for x in self.providers]):
+                provider_languages = future.result()
+                if provider_languages is None:
+                    continue
+
+                # add the languages for this provider
+                languages.append(provider_languages)
+
+        return languages
+
+    def list_supported_video_types(self):
+        """List supported video types asynchronously.
+
+        :return: video types supported by the providers.
+        :rtype: tuple of video types
+
+        """
+        video_types = []
+
+        def get_providers_video_types(provider_name):
+            provider_video_types = None
+            try:
+                provider_video_types = {'provider': provider_name,
+                                        'video_types': self[provider_name].video_types}
+            except AttributeError:
+                logger.exception(f"{provider_name} provider doesn't have a video_types attribute")
+
+            return provider_video_types
+
+        with ThreadPoolExecutor(self.max_workers) as executor:
+            for future in as_completed([executor.submit(get_providers_video_types, x) for x in self.providers]):
+                provider_video_types = future.result()
+                if provider_video_types is None:
+                    continue
+
+                # add the languages for this provider
+                video_types.append(provider_video_types)
+
+        return video_types
 
 
 if is_windows_special_path:
@@ -756,6 +868,16 @@ def list_all_subtitles(videos, languages, **kwargs):
             logger.info('Found %d subtitle(s)', len(subtitles))
 
     return listed_subtitles
+
+
+def list_supported_languages(pool_class, **kwargs):
+    with pool_class(**kwargs) as pool:
+        return pool.list_supported_languages()
+
+
+def list_supported_video_types(pool_class, **kwargs):
+    with pool_class(**kwargs) as pool:
+        return pool.list_supported_video_types()
 
 
 def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):

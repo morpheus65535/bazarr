@@ -5,6 +5,7 @@ import logging
 from subliminal.providers.napiprojekt import NapiProjektProvider as _NapiProjektProvider, \
     NapiProjektSubtitle as _NapiProjektSubtitle, get_subhash
 from subzero.language import Language
+from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class NapiProjektSubtitle(_NapiProjektSubtitle):
 
 class NapiProjektProvider(_NapiProjektProvider):
     languages = {Language.fromalpha2(l) for l in ['pl']}
+    video_types = (Episode, Movie)
     subtitle_class = NapiProjektSubtitle
 
     def query(self, language, hash):

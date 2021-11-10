@@ -121,6 +121,7 @@ class LegendasdivxSubtitle(Subtitle):
 class LegendasdivxProvider(Provider):
     """Legendasdivx Provider."""
     languages = {Language('por', 'BR')} | {Language('por')}
+    video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
     site = 'https://www.legendasdivx.pt'
     headers = {

@@ -84,6 +84,7 @@ class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
     languages = {Language(*l) for l in supported_languages}
+    video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
     server_url = "http://zimuku.org"

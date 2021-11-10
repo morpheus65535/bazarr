@@ -140,6 +140,8 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
+    video_types = (Episode, Movie)
+
     def __init__(self, username=None, password=None, use_tag_search=False, only_foreign=False, also_foreign=False,
                  skip_wrong_fps=True, is_vip=False, use_ssl=True, timeout=15):
         if any((username, password)) and not all((username, password)):
