@@ -2,6 +2,7 @@ import { capitalize, isArray, isBoolean } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -80,6 +81,10 @@ export const ProviderModal: FunctionComponent = () => {
   const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
+
+  useEffect(() => {
+    setInfo(payload);
+  }, [payload]);
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
