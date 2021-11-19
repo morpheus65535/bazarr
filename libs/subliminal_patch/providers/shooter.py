@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 from subliminal.providers.shooter import ShooterProvider as _ShooterProvider, ShooterSubtitle as _ShooterSubtitle
+from subliminal.video import Episode, Movie
 
 
 class ShooterSubtitle(_ShooterSubtitle):
@@ -13,4 +14,4 @@ class ShooterSubtitle(_ShooterSubtitle):
 
 class ShooterProvider(_ShooterProvider):
     subtitle_class = ShooterSubtitle
-
+    video_types = (Episode, Movie)

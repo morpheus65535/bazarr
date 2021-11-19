@@ -5,7 +5,6 @@ import requests
 import logging
 import operator
 from functools import reduce
-from gevent import sleep
 from peewee import DoesNotExist
 
 from config import settings, url_radarr
@@ -17,6 +16,7 @@ from get_rootfolder import check_radarr_rootfolder
 from get_subtitle import movies_download_subtitles
 from database import get_exclusion_clause, TableMovies
 from event_handler import event_stream, show_progress, hide_progress
+from get_languages import language_from_alpha2
 
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
@@ -64,7 +64,6 @@ def update_movies(send_event=True):
             # Build new and updated movies
             movies_count = len(movies)
             for i, movie in enumerate(movies):
-                sleep()
                 if send_event:
                     show_progress(id='movies_progress',
                                   header='Syncing movies...',
@@ -96,7 +95,6 @@ def update_movies(send_event=True):
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                sleep()
                 TableMovies.delete().where(TableMovies.tmdbId == removed_movie).execute()
 
             # Update movies in DB
@@ -129,7 +127,6 @@ def update_movies(send_event=True):
             movies_to_update_list = [i for i in movies_to_update if i not in movies_in_db_list]
 
             for updated_movie in movies_to_update_list:
-                sleep()
                 TableMovies.update(updated_movie).where(TableMovies.tmdbId == updated_movie['tmdbId']).execute()
                 altered_movies.append([updated_movie['tmdbId'],
                                        updated_movie['path'],
@@ -138,7 +135,6 @@ def update_movies(send_event=True):
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                sleep()
                 result = TableMovies.insert(added_movie).on_conflict(action='IGNORE').execute()
                 if result > 0:
                     altered_movies.append([added_movie['tmdbId'],
@@ -153,7 +149,6 @@ def update_movies(send_event=True):
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
-                sleep()
                 store_subtitles_movie(altered_movie[1], path_mappings.path_replace_movie(altered_movie[1]))
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
@@ -456,7 +451,10 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
                 for item in movie['movieFile']['languages']:
                     if isinstance(item, dict):
                         if 'name' in item:
-                            audio_language.append(item['name'])
+                            language = item['name']
+                            if item['name'] == 'Portuguese (Brazil)':
+                                language = language_from_alpha2('pb')
+                            audio_language.append(language)
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 

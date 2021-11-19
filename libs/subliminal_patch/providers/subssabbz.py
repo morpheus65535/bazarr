@@ -122,6 +122,7 @@ class SubsSabBzProvider(Provider):
     languages = {Language(l) for l in [
         'bul', 'eng'
     ]}
+    video_types = (Episode, Movie)
 
     def initialize(self):
         self.session = Session()

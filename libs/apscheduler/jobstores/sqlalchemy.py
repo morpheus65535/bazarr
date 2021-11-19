@@ -11,7 +11,7 @@ except ImportError:  # pragma: nocover
 
 try:
     from sqlalchemy import (
-        create_engine, Table, Column, MetaData, Unicode, Float, LargeBinary, select)
+        create_engine, Table, Column, MetaData, Unicode, Float, LargeBinary, select, and_)
     from sqlalchemy.exc import IntegrityError
     from sqlalchemy.sql.expression import null
 except ImportError:  # pragma: nocover
@@ -106,7 +106,7 @@ class SQLAlchemyJobStore(BaseJobStore):
         }).where(self.jobs_t.c.id == job.id)
         result = self.engine.execute(update)
         if result.rowcount == 0:
-            raise JobLookupError(id)
+            raise JobLookupError(job.id)
 
     def remove_job(self, job_id):
         delete = self.jobs_t.delete().where(self.jobs_t.c.id == job_id)
@@ -134,7 +134,7 @@ class SQLAlchemyJobStore(BaseJobStore):
         jobs = []
         selectable = select([self.jobs_t.c.id, self.jobs_t.c.job_state]).\
             order_by(self.jobs_t.c.next_run_time)
-        selectable = selectable.where(*conditions) if conditions else selectable
+        selectable = selectable.where(and_(*conditions)) if conditions else selectable
         failed_job_ids = set()
         for row in self.engine.execute(selectable):
             try:

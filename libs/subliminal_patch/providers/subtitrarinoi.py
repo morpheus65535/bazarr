@@ -124,6 +124,7 @@ class SubtitrarinoiProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = SubtitrarinoiSubtitle
     languages = {Language(lang) for lang in ['ron']}
     languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
+    video_types = (Episode, Movie)
     server_url = 'https://www.subtitrari-noi.ro/'
     api_url = server_url + 'paginare_filme.php'
 

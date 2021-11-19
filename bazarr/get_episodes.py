@@ -3,7 +3,6 @@
 import os
 import requests
 import logging
-from gevent import sleep
 from peewee import DoesNotExist
 
 from database import get_exclusion_clause, TableEpisodes, TableShows
@@ -45,7 +44,6 @@ def sync_episodes(series_id=None, send_event=True):
 
     series_count = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList):
-        sleep()
         if send_event:
             show_progress(id='episodes_progress',
                           header='Syncing episodes...',
@@ -70,7 +68,6 @@ def sync_episodes(series_id=None, send_event=True):
                             episode['episodeFile'] = item[0]
 
             for episode in episodes:
-                sleep()
                 if 'hasFile' in episode:
                     if episode['hasFile'] is True:
                         if 'episodeFile' in episode:
@@ -91,7 +88,6 @@ def sync_episodes(series_id=None, send_event=True):
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
     for removed_episode in removed_episodes:
-        sleep()
         episode_to_delete = TableEpisodes.select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId)\
             .where(TableEpisodes.sonarrEpisodeId == removed_episode)\
             .dicts()\
@@ -124,7 +120,6 @@ def sync_episodes(series_id=None, send_event=True):
     episodes_to_update_list = [i for i in episodes_to_update if i not in episode_in_db_list]
 
     for updated_episode in episodes_to_update_list:
-        sleep()
         TableEpisodes.update(updated_episode).where(TableEpisodes.sonarrEpisodeId ==
                                                     updated_episode['sonarrEpisodeId']).execute()
         altered_episodes.append([updated_episode['sonarrEpisodeId'],
@@ -133,7 +128,6 @@ def sync_episodes(series_id=None, send_event=True):
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
-        sleep()
         result = TableEpisodes.insert(added_episode).on_conflict(action='IGNORE').execute()
         if result > 0:
             altered_episodes.append([added_episode['sonarrEpisodeId'],
@@ -147,7 +141,6 @@ def sync_episodes(series_id=None, send_event=True):
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
-        sleep()
         store_subtitles(altered_episode[1], path_mappings.path_replace(altered_episode[1]))
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')

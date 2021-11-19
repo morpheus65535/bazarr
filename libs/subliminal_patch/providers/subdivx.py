@@ -83,6 +83,7 @@ class SubdivxSubtitlesProvider(Provider):
     provider_name = "subdivx"
     hash_verifiable = False
     languages = {Language("spa", "MX")} | {Language.fromalpha2("es")}
+    video_types = (Episode, Movie)
     subtitle_class = SubdivxSubtitle
 
     server_url = "https://www.subdivx.com/"

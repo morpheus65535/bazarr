@@ -2,9 +2,9 @@
 
 import logging
 
-import gevent
 import json
 import os
+import time
 from requests import Session
 from signalr import Connection
 from requests.exceptions import ConnectionError
@@ -36,7 +36,6 @@ class SonarrSignalrClient:
         if get_sonarr_info.is_legacy():
             logging.warning('BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should '
                             'consider upgrading your version({}).'.format(get_sonarr_info.version()))
-            raise gevent.GreenletExit
         else:
             logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
             self.configure()
@@ -44,14 +43,13 @@ class SonarrSignalrClient:
                 try:
                     self.connection.start()
                 except ConnectionError:
-                    gevent.sleep(5)
+                    time.sleep(5)
                 except json.decoder.JSONDecodeError:
                     logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is caused by a permissions "
                                   "issue when Sonarr try to access its /config/.config directory. You should fix "
                                   "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
                                   "user, you should make sure you properly defined PUID/PGID environment variables. "
                                   "Otherwise, please contact Sonarr support.")
-                    raise gevent.GreenletExit
                 else:
                     logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
                 finally:
@@ -107,7 +105,7 @@ class RadarrSignalrClient:
             try:
                 self.connection.start()
             except ConnectionError:
-                gevent.sleep(5)
+                time.sleep(5)
 
     def stop(self):
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')

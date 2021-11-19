@@ -65,6 +65,7 @@ class RegieLiveProvider(Provider):
     """RegieLive Provider."""
     languages = {Language(l) for l in ['ron']}
     language = list(languages)[0]
+    video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
 
     def __init__(self):

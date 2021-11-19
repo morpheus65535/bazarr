@@ -27,8 +27,7 @@ except ImportError:
     except ImportError:
         import xml.etree.ElementTree as etree
 from babelfish import language_converters
-from subliminal import Episode
-from subliminal import Movie
+from subliminal.video import Episode, Movie
 from subliminal.providers.podnapisi import PodnapisiProvider as _PodnapisiProvider, \
     PodnapisiSubtitle as _PodnapisiSubtitle
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
@@ -129,6 +128,8 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
                  {Language.fromalpha2(l) for l in language_converters['alpha2'].codes})
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
+
+    video_types = (Episode, Movie)
 
     server_url = 'https://podnapisi.net/subtitles/'
     only_foreign = False

@@ -10,6 +10,7 @@ from subliminal.cache import SHOW_EXPIRATION_TIME, region, EPISODE_EXPIRATION_TI
 from subliminal.providers.tvsubtitles import TVsubtitlesProvider as _TVsubtitlesProvider, \
     TVsubtitlesSubtitle as _TVsubtitlesSubtitle, link_re, episode_id_re
 from subliminal.utils import sanitize
+from subliminal.video import Episode
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class TVsubtitlesProvider(_TVsubtitlesProvider):
         'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
         'ron', 'rus', 'spa', 'swe', 'tur', 'ukr', 'zho'
     ]}
+    video_types = (Episode,)
     subtitle_class = TVsubtitlesSubtitle
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)

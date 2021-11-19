@@ -2,12 +2,13 @@ import { capitalize, isArray, isBoolean } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 import { components } from "react-select";
-import { SelectComponents } from "react-select/src/components";
+import { SelectComponents } from "react-select/dist/declarations/src/components";
 import {
   BaseModal,
   Selector,
@@ -80,6 +81,10 @@ export const ProviderModal: FunctionComponent = () => {
   const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
 
   const [staged, setChange] = useState<LooseObject>({});
+
+  useEffect(() => {
+    setInfo(payload);
+  }, [payload]);
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
@@ -213,11 +218,12 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   const selectorComponents = useMemo<
-    Partial<SelectComponents<ProviderInfo, false>>
+    Partial<SelectComponents<ProviderInfo, false, any>>
   >(
     () => ({
       Option: ({ data, ...other }) => {
-        const { label, value } = data as SelectorOption<ProviderInfo>;
+        const { label, value } =
+          data as unknown as SelectorOption<ProviderInfo>;
         return (
           <components.Option data={data} {...other}>
             {label}

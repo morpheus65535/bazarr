@@ -1,13 +1,5 @@
 # coding=utf-8
 
-# Gevent monkey patch if gevent available. If not, it will be installed on during the init process.
-try:
-    from gevent import monkey, Greenlet, joinall
-except ImportError:
-    pass
-else:
-    monkey.patch_all()
-
 import os
 
 bazarr_version = 'unknown'
@@ -34,6 +26,7 @@ from urllib.parse import unquote
 from get_languages import load_language_in_db
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
+from threading import Thread
 
 from get_series import *
 from get_episodes import *
@@ -202,11 +195,10 @@ def proxy(protocol, url):
             return dict(status=False, error=result.raise_for_status())
 
 
-greenlets = []
 if settings.general.getboolean('use_sonarr'):
-    greenlets.append(Greenlet.spawn(sonarr_signalr_client.start))
+    Thread(target=sonarr_signalr_client.start).start()
 if settings.general.getboolean('use_radarr'):
-    greenlets.append(Greenlet.spawn(radarr_signalr_client.start))
+    Thread(target=radarr_signalr_client.start).start()
 
 
 if __name__ == "__main__":

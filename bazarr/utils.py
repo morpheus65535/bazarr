@@ -315,8 +315,10 @@ class GetRadarrInfo:
                 if 'version' in radarr_json:
                     radarr_version = radarr_json['version']
                 else:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+                    raise json.decoder.JSONDecodeError
+            except json.decoder.JSONDecodeError:
+                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
             except Exception as e:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
@@ -384,6 +386,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                         subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
             store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
             notify_sonarr(sonarr_series_id)
+            event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
             return True
     else:

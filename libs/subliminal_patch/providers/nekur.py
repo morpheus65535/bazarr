@@ -104,6 +104,7 @@ class NekurProvider(Provider, ProviderSubtitleArchiveMixin):
     """Nekur Provider."""
     subtitle_class = NekurSubtitle
     languages = {Language('lva', 'LV')} | {Language.fromalpha2(l) for l in ['lv']}
+    video_types = (Movie,)
     server_url = 'http://subtitri.nekur.net/'
     search_url = server_url + 'modules/Subtitles.php'
 

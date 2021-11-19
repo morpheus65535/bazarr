@@ -102,6 +102,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
     """Sous-Titres.eu Provider."""
     subtitle_class = SoustitreseuSubtitle
     languages = {Language(l) for l in ['fra', 'eng']}
+    video_types = (Episode, Movie)
     server_url = 'https://www.sous-titres.eu/'
     search_url = server_url + 'search.html'
 

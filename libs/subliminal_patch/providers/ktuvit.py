@@ -110,6 +110,7 @@ class KtuvitProvider(Provider):
     """Ktuvit Provider."""
 
     languages = {Language(l) for l in ["heb"]}
+    video_types = (Episode, Movie)
     server_url = "https://www.ktuvit.me/"
     sign_in_url = "Services/MembershipService.svc/Login"
     search_url = "Services/ContentProvider.svc/SearchPage_search"
