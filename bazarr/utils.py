@@ -434,10 +434,14 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     language_code_convert_dict = {
         'he': 'iw',
+        'zt': 'zh-cn',
+        'zh': 'zh-tw',
     }
 
     to_lang = alpha3_from_alpha2(to_lang)
-    lang_obj = Language(to_lang)
+    lang_obj = CustomLanguage.from_value(to_lang, "alpha3")
+    if not lang_obj:
+        lang_obj = Language(to_lang)
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
     if hi:
@@ -447,7 +451,8 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     max_characters = 5000
 
-    dest_srt_file = get_subtitle_path(video_path, language=lang_obj, extension='.srt', forced_tag=forced, hi_tag=hi)
+    dest_srt_file = get_subtitle_path(video_path, language=lang_obj if isinstance(lang_obj, Language) else lang_obj.subzero_language(),
+                                      extension='.srt', forced_tag=forced, hi_tag=hi)
 
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
     lines_list = [x.plaintext for x in subs]
@@ -471,8 +476,8 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
     for block_str in lines_block_list:
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
-                                                           target=language_code_convert_dict.get(lang_obj.basename,
-                                                                                                 lang_obj.basename)
+                                                           target=language_code_convert_dict.get(lang_obj.alpha2,
+                                                                                                 lang_obj.alpha2)
                                                            ).translate(text=block_str)
         except:
             return False

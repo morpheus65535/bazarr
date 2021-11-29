@@ -1,46 +1,34 @@
 """
 google translator API
 """
-
-from .constants import BASE_URLS, GOOGLE_LANGUAGES_TO_CODES
-from .exceptions import TooManyRequests, LanguageNotSupportedException, TranslationNotFound, NotValidPayload, RequestError
-from .parent import BaseTranslator
-from bs4 import BeautifulSoup
+import json
+from .constants import BASE_URLS, PAPAGO_LANGUAGE_TO_CODE
+from .exceptions import LanguageNotSupportedException, TranslationNotFound, NotValidPayload
 import requests
-from time import sleep
 import warnings
 import logging
 
 
-class GoogleTranslator(BaseTranslator):
+class PapagoTranslator(object):
     """
     class that wraps functions, which use google translate under the hood to translate text(s)
     """
-    _languages = GOOGLE_LANGUAGES_TO_CODES
+    _languages = PAPAGO_LANGUAGE_TO_CODE
     supported_languages = list(_languages.keys())
 
-    def __init__(self, source="auto", target="en", proxies=None, **kwargs):
+    def __init__(self, client_id=None, secret_key=None, source="auto", target="en", **kwargs):
         """
         @param source: source language to translate from
         @param target: target language to translate to
         """
-        self.__base_url = BASE_URLS.get("GOOGLE_TRANSLATE")
-        self.proxies = proxies
+        if not client_id or not secret_key:
+            raise Exception("Please pass your client id and secret key! visit the papago website for more infos")
 
+        self.__base_url = BASE_URLS.get("PAPAGO_API")
+        self.client_id = client_id
+        self.secret_key = secret_key
         if self.is_language_supported(source, target):
             self._source, self._target = self._map_language_to_code(source.lower(), target.lower())
-
-        super(GoogleTranslator, self).__init__(base_url=self.__base_url,
-                                               source=self._source,
-                                               target=self._target,
-                                               element_tag='div',
-                                               element_query={"class": "t0"},
-                                               payload_key='q',  # key of text in the url
-                                               tl=self._target,
-                                               sl=self._source,
-                                               **kwargs)
-
-        self._alt_element_query = {"class": "result-container"}
 
     @staticmethod
     def get_supported_languages(as_dict=False, **kwargs):
@@ -49,7 +37,7 @@ class GoogleTranslator(BaseTranslator):
         @param as_dict: if True, the languages will be returned as a dictionary mapping languages to their abbreviations
         @return: list or dict
         """
-        return GoogleTranslator.supported_languages if not as_dict else GoogleTranslator._languages
+        return PapagoTranslator.supported_languages if not as_dict else PapagoTranslator._languages
 
     def _map_language_to_code(self, *languages):
         """
@@ -84,41 +72,29 @@ class GoogleTranslator(BaseTranslator):
         @return: str: translated text
         """
 
-        if self._validate_payload(text):
-            text = text.strip()
+        payload = {
+            "source": self._source,
+            "target": self._target,
+            "text": text
+        }
+        headers = {
+            'X-Naver-Client-Id': self.client_id,
+            'X-Naver-Client-Secret': self.secret_key,
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        }
+        response = requests.post(self.__base_url, headers=headers, data=payload)
+        if response.status_code != 200:
+            raise Exception(f'Translation error! -> status code: {response.status_code}')
+        res_body = json.loads(response.text)
+        if "message" not in res_body:
+            raise TranslationNotFound(text)
 
-            if self.payload_key:
-                self._url_params[self.payload_key] = text
-
-            response = requests.get(self.__base_url,
-                                    params=self._url_params,
-                                    proxies=self.proxies)
-            if response.status_code == 429:
-                raise TooManyRequests()
-
-            if response.status_code != 200:
-                raise RequestError()
-
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            element = soup.find(self._element_tag, self._element_query)
-
-            if not element:
-                element = soup.find(self._element_tag, self._alt_element_query)
-                if not element:
-                    raise TranslationNotFound(text)
-            if element.get_text(strip=True) == text.strip():
-                to_translate_alpha = ''.join(ch for ch in text.strip() if ch.isalnum())
-                translated_alpha = ''.join(ch for ch in element.get_text(strip=True) if ch.isalnum())
-                if to_translate_alpha and translated_alpha and to_translate_alpha == translated_alpha:
-                    self._url_params["tl"] = self._target
-                    if "hl" not in self._url_params:
-                        return text.strip()
-                    del self._url_params["hl"]
-                    return self.translate(text)
-
-            else:
-                return element.get_text(strip=True)
+        msg = res_body.get("message")
+        result = msg.get("result", None)
+        if not result:
+            raise TranslationNotFound(text)
+        translated_text = result.get("translatedText")
+        return translated_text
 
     def translate_file(self, path, **kwargs):
         """
@@ -168,22 +144,11 @@ class GoogleTranslator(BaseTranslator):
         """
         if not batch:
             raise Exception("Enter your text list that you want to translate")
-
-        print("Please wait.. This may take a couple of seconds because deep_translator sleeps "
-              "for two seconds after each request in order to not spam the google server.")
         arr = []
         for i, text in enumerate(batch):
 
             translated = self.translate(text, **kwargs)
             arr.append(translated)
-            print("sentence number ", i+1, " has been translated successfully")
-            sleep(2)
-
         return arr
 
 
-
-if __name__ == '__main__':
-    translator = GoogleTranslator(source='ru', target='uk')
-    t = translator.translate("Я разработчик") # => "I am a developer"
-    print(t)

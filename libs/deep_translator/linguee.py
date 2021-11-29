@@ -2,14 +2,14 @@
 linguee translator API
 """
 
-from deep_translator.constants import BASE_URLS, LINGUEE_LANGUAGES_TO_CODES, LINGUEE_CODE_TO_LANGUAGE
-from deep_translator.exceptions import (LanguageNotSupportedException,
-                                        TranslationNotFound,
-                                        NotValidPayload,
-                                        ElementNotFoundInGetRequest,
-                                        RequestError,
-                                        TooManyRequests)
-from deep_translator.parent import BaseTranslator
+from .constants import BASE_URLS, LINGUEE_LANGUAGES_TO_CODES, LINGUEE_CODE_TO_LANGUAGE
+from .exceptions import (LanguageNotSupportedException,
+                        TranslationNotFound,
+                        NotValidPayload,
+                        ElementNotFoundInGetRequest,
+                        RequestError,
+                        TooManyRequests)
+from .parent import BaseTranslator
 from bs4 import BeautifulSoup
 import requests
 from requests.utils import requote_uri
@@ -22,12 +22,13 @@ class LingueeTranslator(BaseTranslator):
     _languages = LINGUEE_LANGUAGES_TO_CODES
     supported_languages = list(_languages.keys())
 
-    def __init__(self, source, target="en"):
+    def __init__(self, source, target="en", proxies=None, **kwargs):
         """
         @param source: source language to translate from
         @param target: target language to translate to
         """
         self.__base_url = BASE_URLS.get("LINGUEE")
+        self.proxies = proxies
 
         if self.is_language_supported(source, target):
             self._source, self._target = self._map_language_to_code(source.lower(), target.lower())
@@ -41,7 +42,7 @@ class LingueeTranslator(BaseTranslator):
                         )
 
     @staticmethod
-    def get_supported_languages(as_dict=False):
+    def get_supported_languages(as_dict=False, **kwargs):
         """
         return the supported languages by the linguee translator
         @param as_dict: if True, the languages will be returned as a dictionary mapping languages to their abbreviations
@@ -88,7 +89,7 @@ class LingueeTranslator(BaseTranslator):
             # %s-%s/translation/%s.html
             url = "{}{}-{}/translation/{}.html".format(self.__base_url, self._source, self._target, word)
             url = requote_uri(url)
-            response = requests.get(url)
+            response = requests.get(url, proxies=self.proxies)
 
             if response.status_code == 429:
                 raise TooManyRequests()
@@ -125,6 +126,6 @@ class LingueeTranslator(BaseTranslator):
 
         translated_words = []
         for word in words:
-            translated_words.append(self.translate(payload=word))
+            translated_words.append(self.translate(word=word, **kwargs))
         return translated_words
 

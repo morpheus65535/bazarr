@@ -2,10 +2,8 @@
 Yandex translator API
 """
 import requests
-from requests import exceptions
-from deep_translator.constants import BASE_URLS
-from deep_translator.exceptions import (RequestError,
-                                        ServerException, TranslationNotFound, TooManyRequests)
+from .constants import BASE_URLS
+from .exceptions import (RequestError, ServerException, TranslationNotFound, TooManyRequests)
 
 
 class YandexTranslator(object):
@@ -13,13 +11,15 @@ class YandexTranslator(object):
     class that wraps functions, which use the yandex translator under the hood to translate word(s)
     """
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key=None, source="en", target="de", **kwargs):
         """
         @param api_key: your yandex api key
         """
         if not api_key:
             raise ServerException(401)
         self.__base_url = BASE_URLS.get("YANDEX")
+        self.source = source
+        self.target = target
 
         self.api_key = api_key
         self.api_version = "v1.5"
@@ -29,7 +29,14 @@ class YandexTranslator(object):
             "translate": "translate",
         }
 
-    def get_supported_languages(self):
+    @staticmethod
+    def get_supported_languages(as_dict=False, **kwargs):
+        """ this method is just for consistency."""
+        return """ this method is just for consistency. You need to create an instance of yandex and access
+                    supported languages using the languages property or call _get_supported_languages
+                """
+
+    def _get_supported_languages(self):
         return set(x.split("-")[0] for x in self.dirs)
 
     @property
@@ -79,11 +86,11 @@ class YandexTranslator(object):
             raise ServerException(501)
         return language
 
-    def translate(self, source, target, text, proxies=None):
+    def translate(self, text, proxies=None, **kwargs):
         params = {
             "text": text,
             "format": "plain",
-            "lang": target if source == "auto" else "{}-{}".format(source, target),
+            "lang": self.target if self.source == "auto" else "{}-{}".format(self.source, self.target),
             "key": self.api_key
         }
         try:
@@ -105,11 +112,9 @@ class YandexTranslator(object):
 
         return response['text']
 
-    def translate_file(self, source, target, path):
+    def translate_file(self, path, **kwargs):
         """
         translate from a file
-        @param source: source language
-        @param target: target language
         @param path: path to file
         @return: translated text
         """
@@ -117,16 +122,14 @@ class YandexTranslator(object):
             with open(path) as f:
                 text = f.read()
 
-            return self.translate(source, target, text)
+            return self.translate(text)
         except Exception as e:
             raise e
 
-    def translate_batch(self, source, target, batch):
+    def translate_batch(self, batch, **kwargs):
         """
         translate a batch of texts
-        @param source: source language
-        @param target: target language
         @param batch: list of texts to translate
         @return: list of translations
         """
-        return [self.translate(source, target, text) for text in batch]
+        return [self.translate(text, **kwargs) for text in batch]
