@@ -193,7 +193,7 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                      '^venv' + separator,
                      '^WinPython' + separator,
                      separator + '__pycache__' + separator + '$']
-    if os.path.abspath(bazarr_dir) in os.path.abspath(config_dir):
+    if os.path.abspath(bazarr_dir).lower() in os.path.abspath(config_dir).lower():
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
     logging.debug('BAZARR upgrade leftover cleaner will ignore directories matching this regex: '
