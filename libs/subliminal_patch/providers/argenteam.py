@@ -7,7 +7,7 @@ import io
 import time
 import urllib.parse
 
-from simplejson.errors import JSONDecodeError
+from json import JSONDecodeError
 from zipfile import ZipFile
 from guessit import guessit
 from requests import Session
