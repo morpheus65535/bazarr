@@ -44,7 +44,7 @@ ftfy_defaults = {
 class Subtitle(Subtitle_):
     storage_path = None
     release_info = None
-    matches = None
+    matches = {}
     hash_verifiable = False
     hearing_impaired_verifiable = False
     mods = None
