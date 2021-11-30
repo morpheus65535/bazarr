@@ -1,8 +1,7 @@
-from __future__ import absolute_import
-
 import gevent
 from gevent import queue
 from gevent.event import Event
+from gevent import selectors
 import uwsgi
 _websocket_available = hasattr(uwsgi, 'websocket_handshake')
 
@@ -40,21 +39,20 @@ class uWSGIWebSocket(object):  # pragma: no cover
             self._req_ctx = uwsgi.request_context()
         else:
             # use event and queue for sending messages
-            from gevent.event import Event
-            from gevent.queue import Queue
-            from gevent.select import select
             self._event = Event()
-            self._send_queue = Queue()
+            self._send_queue = queue.Queue()
 
             # spawn a select greenlet
             def select_greenlet_runner(fd, event):
                 """Sets event when data becomes available to read on fd."""
-                while True:
-                    event.set()
-                    try:
-                        select([fd], [], [])[0]
-                    except ValueError:
-                        break
+                sel = selectors.DefaultSelector()
+                sel.register(fd, selectors.EVENT_READ)
+                try:
+                    while True:
+                        sel.select()
+                        event.set()
+                except gevent.GreenletExit:
+                    sel.unregister(fd)
             self._select_greenlet = gevent.spawn(
                 select_greenlet_runner,
                 self._sock,

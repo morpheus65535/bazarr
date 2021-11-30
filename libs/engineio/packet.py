@@ -1,5 +1,5 @@
 import base64
-import json as _json
+from engineio import json as _json
 
 (OPEN, CLOSE, PING, PONG, MESSAGE, UPGRADE, NOOP) = (0, 1, 2, 3, 4, 5, 6)
 packet_names = ['OPEN', 'CLOSE', 'PING', 'PONG', 'MESSAGE', 'UPGRADE', 'NOOP']
@@ -23,7 +23,7 @@ class Packet(object):
             self.binary = False
         if self.binary and self.packet_type != MESSAGE:
             raise ValueError('Binary packets can only be of type MESSAGE')
-        if encoded_packet:
+        if encoded_packet is not None:
             self.decode(encoded_packet)
 
     def encode(self, b64=False):

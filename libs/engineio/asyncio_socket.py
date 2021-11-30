@@ -143,12 +143,18 @@ class AsyncSocket(socket.Socket):
 
     async def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
+        async def websocket_wait():
+            data = await ws.wait()
+            if data and len(data) > self.server.max_http_buffer_size:
+                raise ValueError('packet is too large')
+            return data
+
         if self.connected:
             # the socket was already connected, so this is an upgrade
             self.upgrading = True  # hold packet sends during the upgrade
 
             try:
-                pkt = await ws.wait()
+                pkt = await websocket_wait()
             except IOError:  # pragma: no cover
                 return
             decoded_pkt = packet.Packet(encoded_packet=pkt)
@@ -162,7 +168,7 @@ class AsyncSocket(socket.Socket):
             await self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             try:
-                pkt = await ws.wait()
+                pkt = await websocket_wait()
             except IOError:  # pragma: no cover
                 self.upgrading = False
                 return
@@ -204,7 +210,7 @@ class AsyncSocket(socket.Socket):
 
         while True:
             p = None
-            wait_task = asyncio.ensure_future(ws.wait())
+            wait_task = asyncio.ensure_future(websocket_wait())
             try:
                 p = await asyncio.wait_for(
                     wait_task,
