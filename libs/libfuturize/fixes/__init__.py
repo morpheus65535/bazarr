@@ -50,7 +50,7 @@ lib2to3_fix_names_stage2 = set([
     'lib2to3.fixes.fix_getcwdu',
     # 'lib2to3.fixes.fix_imports',   # called by libfuturize.fixes.fix_future_standard_library
     # 'lib2to3.fixes.fix_imports2',  # we don't handle this yet (dbm)
-    'lib2to3.fixes.fix_input',
+    # 'lib2to3.fixes.fix_input',     # Called conditionally by libfuturize.fixes.fix_input
     'lib2to3.fixes.fix_itertools',
     'lib2to3.fixes.fix_itertools_imports',
     'lib2to3.fixes.fix_filter',
@@ -86,6 +86,7 @@ libfuturize_fix_names_stage2 = set([
     'libfuturize.fixes.fix_future_builtins',
     'libfuturize.fixes.fix_future_standard_library',
     'libfuturize.fixes.fix_future_standard_library_urllib',
+    'libfuturize.fixes.fix_input',
     'libfuturize.fixes.fix_metaclass',
     'libpasteurize.fixes.fix_newstyle',
     'libfuturize.fixes.fix_object',

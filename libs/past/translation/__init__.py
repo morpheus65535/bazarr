@@ -16,7 +16,7 @@ Usage
 Once your Py2 package is installed in the usual module search path, the import
 hook is invoked as follows:
 
-    >>> from past import autotranslate
+    >>> from past.translation import autotranslate
     >>> autotranslate('mypackagename')
 
 Or:
@@ -219,22 +219,9 @@ def detect_python2(source, pathname):
     if source != str(tree)[:-1]:   # remove added newline
         # The above fixers made changes, so we conclude it's Python 2 code
         logger.debug('Detected Python 2 code: {0}'.format(pathname))
-        with open('/tmp/original_code.py', 'w') as f:
-            f.write('### Original code (detected as py2): %s\n%s' %
-                    (pathname, source))
-        with open('/tmp/py2_detection_code.py', 'w') as f:
-            f.write('### Code after running py3 detection (from %s)\n%s' %
-                    (pathname, str(tree)[:-1]))
         return True
     else:
         logger.debug('Detected Python 3 code: {0}'.format(pathname))
-        with open('/tmp/original_code.py', 'w') as f:
-            f.write('### Original code (detected as py3): %s\n%s' %
-                    (pathname, source))
-        try:
-            os.remove('/tmp/futurize_code.py')
-        except OSError:
-            pass
         return False
 
 
@@ -395,9 +382,6 @@ class Py2Fixer(object):
 
                         if detect_python2(source, self.pathname):
                             source = self.transform(source)
-                            with open('/tmp/futurized_code.py', 'w') as f:
-                                f.write('### Futurized code (from %s)\n%s' %
-                                        (self.pathname, source))
 
                         code = compile(source, self.pathname, 'exec')
 
@@ -432,7 +416,7 @@ def install_hooks(include_paths=(), exclude_paths=()):
     _hook.include(include_paths)
     _hook.exclude(exclude_paths)
     # _hook.debug = debug
-    enable = sys.version_info[0] >= 3   # enabled for all 3.x
+    enable = sys.version_info[0] >= 3   # enabled for all 3.x+
     if enable and _hook not in sys.meta_path:
         sys.meta_path.insert(0, _hook)  # insert at beginning. This could be made a parameter
 
@@ -495,3 +479,7 @@ class suspend_hooks(object):
     def __exit__(self, *args):
         if self.hooks_were_installed:
             install_hooks()
+
+
+# alias
+autotranslate = install_hooks

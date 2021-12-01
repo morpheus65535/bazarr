@@ -11,10 +11,12 @@ from werkzeug.wrappers import Response as ResponseBase
 from flask_restful.utils import http_status_message, unpack, OrderedDict
 from flask_restful.representations.json import output_json
 import sys
-from flask.helpers import _endpoint_from_view_func
 from types import MethodType
 import operator
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 
 __all__ = ('Api', 'Resource', 'marshal', 'marshal_with', 'marshal_with_field', 'abort')
@@ -58,7 +60,7 @@ class Api(object):
         to handle 404 errors throughout your app
     :param serve_challenge_on_401: Whether to serve a challenge response to
         clients on receiving 401. This usually leads to a username/password
-        popup in web browers.
+        popup in web browsers.
     :param url_part_order: A string that controls the order that the pieces
         of the url are concatenated when the full url is constructed.  'b'
         is the blueprint (or blueprint registration) prefix, 'a' is the api
@@ -153,7 +155,7 @@ class Api(object):
             rule = blueprint_setup.url_prefix + rule
         options.setdefault('subdomain', blueprint_setup.subdomain)
         if endpoint is None:
-            endpoint = _endpoint_from_view_func(view_func)
+            endpoint = view_func.__name__
         defaults = blueprint_setup.url_defaults
         if 'defaults' in options:
             defaults = dict(defaults, **options.pop('defaults'))
@@ -287,6 +289,13 @@ class Api(object):
 
         headers = Headers()
         if isinstance(e, HTTPException):
+            if e.response is not None:
+                # If HTTPException is initialized with a response, then return e.get_response().
+                # This prevents specified error response from being overridden.
+                # eg. HTTPException(response=Response("Hello World"))
+                resp = e.get_response()
+                return resp
+
             code = e.code
             default_data = {
                 'message': getattr(e, 'description', http_status_message(code))

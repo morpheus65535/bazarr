@@ -72,7 +72,7 @@ if PY3:
         >>> oldmap(None, range(4))
         [0, 1, 2, 3]
 
-        More test cases are in past.tests.test_builtins.
+        More test cases are in test_past.test_builtins.
         """
         zipped = itertools.zip_longest(*iterables)
         l = list(zipped)

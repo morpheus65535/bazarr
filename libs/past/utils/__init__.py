@@ -16,7 +16,7 @@ For example:
 import sys
 import numbers
 
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] >= 3
 PY2 = sys.version_info[0] == 2
 PYPY = hasattr(sys, 'pypy_translation_info')
 

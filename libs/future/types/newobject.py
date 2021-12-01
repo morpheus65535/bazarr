@@ -112,5 +112,6 @@ class newobject(object):
         """
         return object(self)
 
+    __slots__ = []
 
 __all__ = ['newobject']

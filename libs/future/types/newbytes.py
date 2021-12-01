@@ -5,14 +5,18 @@ Why do this? Without it, the Python 2 bytes object is a very, very
 different beast to the Python 3 bytes object.
 """
 
-from collections import Iterable
 from numbers import Integral
 import string
 import copy
 
-from future.utils import istext, isbytes, PY3, with_metaclass
+from future.utils import istext, isbytes, PY2, PY3, with_metaclass
 from future.types import no, issubset
 from future.types.newobject import newobject
+
+if PY2:
+    from collections import Iterable
+else:
+    from collections.abc import Iterable
 
 
 _builtin_bytes = bytes
