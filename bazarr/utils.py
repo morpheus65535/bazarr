@@ -256,8 +256,10 @@ class GetSonarrInfo:
                 if 'version' in sonarr_json:
                     sonarr_version = sonarr_json['version']
                 else:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                    sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
+                    raise json.decoder.JSONDecodeError
+            except json.decoder.JSONDecodeError:
+                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
