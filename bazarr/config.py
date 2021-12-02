@@ -463,8 +463,10 @@ def save_settings(settings_items):
         configure_captcha_func()
 
     if update_schedule:
-        from api import scheduler
+        from scheduler import scheduler
+        from event_handler import event_stream
         scheduler.update_configurable_tasks()
+        event_stream(type='task')
 
     if sonarr_changed:
         from signalr_client import sonarr_signalr_client
