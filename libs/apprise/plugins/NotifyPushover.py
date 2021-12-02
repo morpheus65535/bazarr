@@ -29,6 +29,7 @@ import requests
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyType
+from ..common import NotifyFormat
 from ..utils import parse_list
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
@@ -162,14 +163,12 @@ class NotifyPushover(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[a-z0-9]{30}$', 'i'),
         },
         'token': {
             'name': _('Access Token'),
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[a-z0-9]{30}$', 'i'),
         },
         'target_device': {
             'name': _('Target Device'),
@@ -197,6 +196,16 @@ class NotifyPushover(NotifyBase):
             'regex': (r'^[a-z]{1,12}$', 'i'),
             'default': PushoverSound.PUSHOVER,
         },
+        'url': {
+            'name': _('URL'),
+            'map_to': 'supplemental_url',
+            'type': 'string',
+        },
+        'url_title': {
+            'name': _('URL Title'),
+            'map_to': 'supplemental_url_title',
+            'type': 'string'
+        },
         'retry': {
             'name': _('Retry'),
             'type': 'int',
@@ -216,15 +225,15 @@ class NotifyPushover(NotifyBase):
     })
 
     def __init__(self, user_key, token, targets=None, priority=None,
-                 sound=None, retry=None, expire=None, **kwargs):
+                 sound=None, retry=None, expire=None, supplemental_url=None,
+                 supplemental_url_title=None, **kwargs):
         """
         Initialize Pushover Object
         """
         super(NotifyPushover, self).__init__(**kwargs)
 
         # Access Token (associated with project)
-        self.token = validate_regex(
-            token, *self.template_tokens['token']['regex'])
+        self.token = validate_regex(token)
         if not self.token:
             msg = 'An invalid Pushover Access Token ' \
                   '({}) was specified.'.format(token)
@@ -232,8 +241,7 @@ class NotifyPushover(NotifyBase):
             raise TypeError(msg)
 
         # User Key (associated with project)
-        self.user_key = validate_regex(
-            user_key, *self.template_tokens['user_key']['regex'])
+        self.user_key = validate_regex(user_key)
         if not self.user_key:
             msg = 'An invalid Pushover User Key ' \
                   '({}) was specified.'.format(user_key)
@@ -243,6 +251,10 @@ class NotifyPushover(NotifyBase):
         self.targets = parse_list(targets)
         if len(self.targets) == 0:
             self.targets = (PUSHOVER_SEND_TO_ALL, )
+
+        # Setup supplemental url
+        self.supplemental_url = supplemental_url
+        self.supplemental_url_title = supplemental_url_title
 
         # Setup our sound
         self.sound = NotifyPushover.default_pushover_sound \
@@ -323,6 +335,15 @@ class NotifyPushover(NotifyBase):
                 'device': device,
                 'sound': self.sound,
             }
+
+            if self.supplemental_url:
+                payload['url'] = self.supplemental_url
+            if self.supplemental_url_title:
+                payload['url_title'] = self.supplemental_url_title
+
+            if self.notify_format == NotifyFormat.HTML:
+                # https://pushover.net/api#html
+                payload['html'] = 1
 
             if self.priority == PushoverPriority.EMERGENCY:
                 payload.update({'retry': self.retry, 'expire': self.expire})
@@ -567,6 +588,14 @@ class NotifyPushover(NotifyBase):
         if 'sound' in results['qsd'] and len(results['qsd']['sound']):
             results['sound'] = \
                 NotifyPushover.unquote(results['qsd']['sound'])
+
+        # Get the supplementary url
+        if 'url' in results['qsd'] and len(results['qsd']['url']):
+            results['supplemental_url'] = NotifyPushover.unquote(
+                results['qsd']['url']
+            )
+        if 'url_title' in results['qsd'] and len(results['qsd']['url_title']):
+            results['supplemental_url_title'] = results['qsd']['url_title']
 
         # Get expire and retry
         if 'expire' in results['qsd'] and len(results['qsd']['expire']):

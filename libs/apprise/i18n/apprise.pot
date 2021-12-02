@@ -1,21 +1,27 @@
 # Translations template for apprise.
-# Copyright (C) 2020 Chris Caron
+# Copyright (C) 2021 Chris Caron
 # This file is distributed under the same license as the apprise project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: apprise 0.8.8\n"
+"Project-Id-Version: apprise 0.9.6\n"
 "Report-Msgid-Bugs-To: lead2gold@gmail.com\n"
-"POT-Creation-Date: 2020-09-02 07:46-0400\n"
+"POT-Creation-Date: 2021-12-01 18:56-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.9.1\n"
+
+msgid "A local Gnome environment is required."
+msgstr ""
+
+msgid "A local Microsoft Windows environment is required."
+msgstr ""
 
 msgid "API Key"
 msgstr ""
@@ -42,6 +48,27 @@ msgid "Account SID"
 msgstr ""
 
 msgid "Add Tokens"
+msgstr ""
+
+msgid "Alert Type"
+msgstr ""
+
+msgid "Alias"
+msgstr ""
+
+msgid "Amount"
+msgstr ""
+
+msgid "App Access Token"
+msgstr ""
+
+msgid "App ID"
+msgstr ""
+
+msgid "App Version"
+msgstr ""
+
+msgid "Application ID"
 msgstr ""
 
 msgid "Application Key"
@@ -83,6 +110,9 @@ msgstr ""
 msgid "Cache Results"
 msgstr ""
 
+msgid "Call"
+msgstr ""
+
 msgid "Carbon Copy"
 msgstr ""
 
@@ -104,13 +134,25 @@ msgstr ""
 msgid "Country"
 msgstr ""
 
+msgid "Currency"
+msgstr ""
+
 msgid "Custom Icon"
 msgstr ""
 
 msgid "Cycles"
 msgstr ""
 
+msgid "DBus Notification"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
 msgid "Detect Bot Owner"
+msgstr ""
+
+msgid "Device"
 msgstr ""
 
 msgid "Device API Key"
@@ -134,10 +176,16 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
+msgid "Email Header"
+msgstr ""
+
 msgid "Encrypted Password"
 msgstr ""
 
 msgid "Encrypted Salt"
+msgstr ""
+
+msgid "Entity"
 msgstr ""
 
 msgid "Event"
@@ -150,6 +198,12 @@ msgid "Expire"
 msgstr ""
 
 msgid "Facility"
+msgstr ""
+
+msgid "Flair ID"
+msgstr ""
+
+msgid "Flair Text"
 msgstr ""
 
 msgid "Footer Logo"
@@ -170,6 +224,9 @@ msgstr ""
 msgid "From Phone No"
 msgstr ""
 
+msgid "Gnome Notification"
+msgstr ""
+
 msgid "Group"
 msgstr ""
 
@@ -185,10 +242,31 @@ msgstr ""
 msgid "Icon Type"
 msgstr ""
 
+msgid "Identifier"
+msgstr ""
+
+msgid "Image Link"
+msgstr ""
+
 msgid "Include Footer"
 msgstr ""
 
 msgid "Include Image"
+msgstr ""
+
+msgid "Include Segment"
+msgstr ""
+
+msgid "Is Ad?"
+msgstr ""
+
+msgid "Is Spoiler"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Language"
 msgstr ""
 
 msgid "Local File"
@@ -200,6 +278,15 @@ msgstr ""
 msgid "Log to STDERR"
 msgstr ""
 
+msgid "Long-Lived Access Token"
+msgstr ""
+
+msgid "MacOSX Notification"
+msgstr ""
+
+msgid "Master Key"
+msgstr ""
+
 msgid "Memory"
 msgstr ""
 
@@ -209,16 +296,39 @@ msgstr ""
 msgid "Message Mode"
 msgstr ""
 
+msgid "Message Type"
+msgstr ""
+
 msgid "Modal"
 msgstr ""
 
 msgid "Mode"
 msgstr ""
 
+msgid "NSFW"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "No dependencies."
+msgstr ""
+
+msgid "Notification ID"
+msgstr ""
+
 msgid "Notify Format"
 msgstr ""
 
 msgid "OAuth Access Token"
+msgstr ""
+
+msgid "OAuth2 KeyFile"
+msgstr ""
+
+msgid ""
+"Only works with Mac OS X 10.8 and higher. Additionally  requires that "
+"/usr/local/bin/terminal-notifier is locally accessible."
 msgstr ""
 
 msgid "Organization"
@@ -228,6 +338,12 @@ msgid "Originating Address"
 msgstr ""
 
 msgid "Overflow Mode"
+msgstr ""
+
+msgid "Packages are recommended to improve functionality."
+msgstr ""
+
+msgid "Packages are required to function."
 msgstr ""
 
 msgid "Password"
@@ -254,6 +370,9 @@ msgstr ""
 msgid "Provider Key"
 msgstr ""
 
+msgid "QOS"
+msgstr ""
+
 msgid "Region"
 msgstr ""
 
@@ -261,6 +380,9 @@ msgid "Region Name"
 msgstr ""
 
 msgid "Remove Tokens"
+msgstr ""
+
+msgid "Resubmit Flag"
 msgstr ""
 
 msgid "Retry"
@@ -287,6 +409,9 @@ msgstr ""
 msgid "Secure Mode"
 msgstr ""
 
+msgid "Send Replies"
+msgstr ""
+
 msgid "Sender ID"
 msgstr ""
 
@@ -294,6 +419,9 @@ msgid "Server Key"
 msgstr ""
 
 msgid "Server Timeout"
+msgstr ""
+
+msgid "Silent Notification"
 msgstr ""
 
 msgid "Socket Connect Timeout"
@@ -305,6 +433,9 @@ msgstr ""
 msgid "Sound"
 msgstr ""
 
+msgid "Sound Link"
+msgstr ""
+
 msgid "Source Email"
 msgstr ""
 
@@ -314,10 +445,19 @@ msgstr ""
 msgid "Source Phone No"
 msgstr ""
 
+msgid "Special Text Color"
+msgstr ""
+
 msgid "Sticky"
 msgstr ""
 
 msgid "Subtitle"
+msgstr ""
+
+msgid "Syslog Mode"
+msgstr ""
+
+msgid "Tags"
 msgstr ""
 
 msgid "Target Channel"
@@ -344,10 +484,19 @@ msgstr ""
 msgid "Target Encoded ID"
 msgstr ""
 
+msgid "Target Escalation"
+msgstr ""
+
 msgid "Target JID"
 msgstr ""
 
 msgid "Target Phone No"
+msgstr ""
+
+msgid "Target Player ID"
+msgstr ""
+
+msgid "Target Queue"
 msgstr ""
 
 msgid "Target Room Alias"
@@ -356,10 +505,22 @@ msgstr ""
 msgid "Target Room ID"
 msgstr ""
 
+msgid "Target Schedule"
+msgstr ""
+
 msgid "Target Short Code"
 msgstr ""
 
+msgid "Target Stream"
+msgstr ""
+
+msgid "Target Subreddit"
+msgstr ""
+
 msgid "Target Tag ID"
+msgstr ""
+
+msgid "Target Team"
 msgstr ""
 
 msgid "Target Topic"
@@ -371,10 +532,22 @@ msgstr ""
 msgid "Targets"
 msgstr ""
 
+msgid "Targets "
+msgstr ""
+
+msgid "Team Name"
+msgstr ""
+
 msgid "Template"
 msgstr ""
 
 msgid "Template Data"
+msgstr ""
+
+msgid "Template Path"
+msgstr ""
+
+msgid "Template Tokens"
 msgstr ""
 
 msgid "Tenant Domain"
@@ -404,10 +577,25 @@ msgstr ""
 msgid "Token C"
 msgstr ""
 
+msgid "URL"
+msgstr ""
+
+msgid "URL Title"
+msgstr ""
+
 msgid "Urgency"
 msgstr ""
 
 msgid "Use Avatar"
+msgstr ""
+
+msgid "Use Blocks"
+msgstr ""
+
+msgid "Use Fields"
+msgstr ""
+
+msgid "Use Session"
 msgstr ""
 
 msgid "User ID"
@@ -434,16 +622,25 @@ msgstr ""
 msgid "Web Based"
 msgstr ""
 
+msgid "Web Page Preview"
+msgstr ""
+
 msgid "Webhook"
 msgstr ""
 
 msgid "Webhook ID"
 msgstr ""
 
+msgid "Webhook Key"
+msgstr ""
+
 msgid "Webhook Mode"
 msgstr ""
 
 msgid "Webhook Token"
+msgstr ""
+
+msgid "Workspace"
 msgstr ""
 
 msgid "X-Axis"
@@ -453,6 +650,9 @@ msgid "XEP"
 msgstr ""
 
 msgid "Y-Axis"
+msgstr ""
+
+msgid "libdbus-1.so.x must be installed."
 msgstr ""
 
 msgid "ttl"

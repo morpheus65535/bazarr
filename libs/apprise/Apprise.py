@@ -34,6 +34,7 @@ from .common import MATCH_ALL_TAG
 from .utils import is_exclusive_match
 from .utils import parse_list
 from .utils import parse_urls
+from .utils import cwe312_url
 from .logger import logger
 
 from .AppriseAsset import AppriseAsset
@@ -58,13 +59,15 @@ class Apprise(object):
 
     """
 
-    def __init__(self, servers=None, asset=None, debug=False):
+    def __init__(self, servers=None, asset=None, location=None, debug=False):
         """
         Loads a set of server urls while applying the Asset() module to each
         if specified.
 
         If no asset is provided, then the default asset is used.
 
+        Optionally specify a global ContentLocation for a more strict means
+        of handling Attachments.
         """
 
         # Initialize a server list of URLs
@@ -86,6 +89,11 @@ class Apprise(object):
 
         # Set our debug flag
         self.debug = debug
+
+        # Store our hosting location for optional strict rule handling
+        # of Attachments.  Setting this to None removes any attachment
+        # restrictions.
+        self.location = location
 
     @staticmethod
     def instantiate(url, asset=None, tag=None, suppress_exceptions=True):
@@ -116,9 +124,14 @@ class Apprise(object):
         # Initialize our result set
         results = None
 
+        # Prepare our Asset Object
+        asset = asset if isinstance(asset, AppriseAsset) else AppriseAsset()
+
         if isinstance(url, six.string_types):
             # Acquire our url tokens
-            results = plugins.url_to_dict(url)
+            results = plugins.url_to_dict(
+                url, secure_logging=asset.secure_logging)
+
             if results is None:
                 # Failed to parse the server URL; detailed logging handled
                 # inside url_to_dict - nothing to report here.
@@ -132,25 +145,40 @@ class Apprise(object):
                 # schema is a mandatory dictionary item as it is the only way
                 # we can index into our loaded plugins
                 logger.error('Dictionary does not include a "schema" entry.')
-                logger.trace('Invalid dictionary unpacked as:{}{}'.format(
-                    os.linesep, os.linesep.join(
-                        ['{}="{}"'.format(k, v) for k, v in results.items()])))
+                logger.trace(
+                    'Invalid dictionary unpacked as:{}{}'.format(
+                        os.linesep, os.linesep.join(
+                            ['{}="{}"'.format(k, v)
+                             for k, v in results.items()])))
                 return None
 
-            logger.trace('Dictionary unpacked as:{}{}'.format(
-                os.linesep, os.linesep.join(
-                    ['{}="{}"'.format(k, v) for k, v in results.items()])))
+            logger.trace(
+                'Dictionary unpacked as:{}{}'.format(
+                    os.linesep, os.linesep.join(
+                        ['{}="{}"'.format(k, v) for k, v in results.items()])))
 
+        # Otherwise we handle the invalid input specified
         else:
-            logger.error('Invalid URL specified: {}'.format(url))
+            logger.error(
+                'An invalid URL type (%s) was specified for instantiation',
+                type(url))
+            return None
+
+        if not plugins.SCHEMA_MAP[results['schema']].enabled:
+            #
+            # First Plugin Enable Check (Pre Initialization)
+            #
+
+            # Plugin has been disabled at a global level
+            logger.error(
+                '%s:// is disabled on this system.', results['schema'])
             return None
 
         # Build a list of tags to associate with the newly added notifications
         results['tag'] = set(parse_list(tag))
 
-        # Prepare our Asset Object
-        results['asset'] = \
-            asset if isinstance(asset, AppriseAsset) else AppriseAsset()
+        # Set our Asset Object
+        results['asset'] = asset
 
         if suppress_exceptions:
             try:
@@ -159,20 +187,45 @@ class Apprise(object):
                 plugin = plugins.SCHEMA_MAP[results['schema']](**results)
 
                 # Create log entry of loaded URL
-                logger.debug('Loaded {} URL: {}'.format(
-                    plugins.SCHEMA_MAP[results['schema']].service_name,
-                    plugin.url()))
+                logger.debug(
+                    'Loaded {} URL: {}'.format(
+                        plugins.SCHEMA_MAP[results['schema']].service_name,
+                        plugin.url(privacy=asset.secure_logging)))
 
             except Exception:
+                # CWE-312 (Secure Logging) Handling
+                loggable_url = url if not asset.secure_logging \
+                    else cwe312_url(url)
+
                 # the arguments are invalid or can not be used.
-                logger.error('Could not load {} URL: {}'.format(
-                    plugins.SCHEMA_MAP[results['schema']].service_name, url))
+                logger.error(
+                    'Could not load {} URL: {}'.format(
+                        plugins.SCHEMA_MAP[results['schema']].service_name,
+                        loggable_url))
                 return None
 
         else:
             # Attempt to create an instance of our plugin using the parsed
             # URL information but don't wrap it in a try catch
             plugin = plugins.SCHEMA_MAP[results['schema']](**results)
+
+        if not plugin.enabled:
+            #
+            # Second Plugin Enable Check (Post Initialization)
+            #
+
+            # Service/Plugin is disabled (on a more local level).  This is a
+            # case where the plugin was initially enabled but then after the
+            # __init__() was called under the hood something pre-determined
+            # that it could no longer be used.
+
+            # The only downside to doing it this way is services are
+            # initialized prior to returning the details() if 3rd party tools
+            # are polling what is available. These services that become
+            # disabled thereafter are shown initially that they can be used.
+            logger.error(
+                '%s:// has become disabled on this system.', results['schema'])
+            return None
 
         return plugin
 
@@ -286,7 +339,8 @@ class Apprise(object):
         return
 
     def notify(self, body, title='', notify_type=NotifyType.INFO,
-               body_format=None, tag=MATCH_ALL_TAG, attach=None):
+               body_format=None, tag=MATCH_ALL_TAG, attach=None,
+               interpret_escapes=None):
         """
         Send a notification to all of the plugins previously loaded.
 
@@ -306,47 +360,158 @@ class Apprise(object):
         Attach can contain a list of attachment URLs.  attach can also be
         represented by a an AttachBase() (or list of) object(s). This
         identifies the products you wish to notify
+
+        Set interpret_escapes to True if you want to pre-escape a string
+        such as turning a \n into an actual new line, etc.
+        """
+
+        if ASYNCIO_SUPPORT:
+            return py3compat.asyncio.tosync(
+                self.async_notify(
+                    body, title,
+                    notify_type=notify_type, body_format=body_format,
+                    tag=tag, attach=attach,
+                    interpret_escapes=interpret_escapes,
+                ),
+                debug=self.debug
+            )
+
+        else:
+            try:
+                results = list(
+                    self._notifyall(
+                        Apprise._notifyhandler,
+                        body, title,
+                        notify_type=notify_type, body_format=body_format,
+                        tag=tag, attach=attach,
+                        interpret_escapes=interpret_escapes,
+                    )
+                )
+
+            except TypeError:
+                # No notifications sent, and there was an internal error.
+                return False
+
+            else:
+                if len(results) > 0:
+                    # All notifications sent, return False if any failed.
+                    return all(results)
+
+                else:
+                    # No notifications sent.
+                    return None
+
+    def async_notify(self, *args, **kwargs):
+        """
+        Send a notification to all of the plugins previously loaded, for
+        asynchronous callers. This method is an async method that should be
+        awaited on, even if it is missing the async keyword in its signature.
+        (This is omitted to preserve syntax compatibility with Python 2.)
+
+        The arguments are identical to those of Apprise.notify(). This method
+        is not available in Python 2.
+        """
+
+        try:
+            coroutines = list(
+                self._notifyall(
+                    Apprise._notifyhandlerasync, *args, **kwargs))
+
+        except TypeError:
+            # No notifications sent, and there was an internal error.
+            return py3compat.asyncio.toasyncwrap(False)
+
+        else:
+            if len(coroutines) > 0:
+                # All notifications sent, return False if any failed.
+                return py3compat.asyncio.notify(coroutines)
+
+            else:
+                # No notifications sent.
+                return py3compat.asyncio.toasyncwrap(None)
+
+    @staticmethod
+    def _notifyhandler(server, **kwargs):
+        """
+        The synchronous notification sender. Returns True if the notification
+        sent successfully.
+        """
+
+        try:
+            # Send notification
+            return server.notify(**kwargs)
+
+        except TypeError:
+            # These our our internally thrown notifications
+            return False
+
+        except Exception:
+            # A catch all so we don't have to abort early
+            # just because one of our plugins has a bug in it.
+            logger.exception("Unhandled Notification Exception")
+            return False
+
+    @staticmethod
+    def _notifyhandlerasync(server, **kwargs):
+        """
+        The asynchronous notification sender. Returns a coroutine that yields
+        True if the notification sent successfully.
+        """
+
+        if server.asset.async_mode:
+            return server.async_notify(**kwargs)
+
+        else:
+            # Send the notification immediately, and wrap the result in a
+            # coroutine.
+            status = Apprise._notifyhandler(server, **kwargs)
+            return py3compat.asyncio.toasyncwrap(status)
+
+    def _notifyall(self, handler, body, title='', notify_type=NotifyType.INFO,
+                   body_format=None, tag=MATCH_ALL_TAG, attach=None,
+                   interpret_escapes=None):
+        """
+        Creates notifications for all of the plugins loaded.
+
+        Returns a generator that calls handler for each notification. The first
+        and only argument supplied to handler is the server, and the keyword
+        arguments are exactly as they would be passed to server.notify().
         """
 
         if len(self) == 0:
             # Nothing to notify
-            return False
-
-        # Initialize our return result which only turns to True if we send
-        # at least one valid notification
-        status = None
+            raise TypeError("No service(s) to notify")
 
         if not (title or body):
-            return False
+            raise TypeError("No message content specified to deliver")
+
+        if six.PY2:
+            # Python 2.7.x Unicode Character Handling
+            # Ensure we're working with utf-8
+            if isinstance(title, unicode):  # noqa: F821
+                title = title.encode('utf-8')
+
+            if isinstance(body, unicode):  # noqa: F821
+                body = body.encode('utf-8')
 
         # Tracks conversions
         conversion_map = dict()
 
         # Prepare attachments if required
         if attach is not None and not isinstance(attach, AppriseAttachment):
-            try:
-                attach = AppriseAttachment(attach, asset=self.asset)
-
-            except TypeError:
-                # bad attachments
-                return False
+            attach = AppriseAttachment(
+                attach, asset=self.asset, location=self.location)
 
         # Allow Asset default value
         body_format = self.asset.body_format \
             if body_format is None else body_format
 
-        # for asyncio support; we track a list of our servers to notify
-        # sequentially
-        coroutines = []
+        # Allow Asset default value
+        interpret_escapes = self.asset.interpret_escapes \
+            if interpret_escapes is None else interpret_escapes
 
         # Iterate over our loaded plugins
         for server in self.find(tag):
-            if status is None:
-                # We have at least one server to notify; change status
-                # to be a default value of True from now (purely an
-                # initialiation at this point)
-                status = True
-
             # If our code reaches here, we either did not define a tag (it
             # was set to None), or we did define a tag and the logic above
             # determined we need to notify the service it's associated with
@@ -396,48 +561,59 @@ class Apprise(object):
                     # Store entry directly
                     conversion_map[server.notify_format] = body
 
-            if ASYNCIO_SUPPORT and server.asset.async_mode:
-                # Build a list of servers requiring notification
-                # that will be triggered asynchronously afterwards
-                coroutines.append(server.async_notify(
-                    body=conversion_map[server.notify_format],
-                    title=title,
-                    notify_type=notify_type,
-                    attach=attach))
+            if interpret_escapes:
+                #
+                # Escape our content
+                #
 
-                # We gather at this point and notify at the end
-                continue
+                try:
+                    # Added overhead required due to Python 3 Encoding Bug
+                    # identified here: https://bugs.python.org/issue21331
+                    conversion_map[server.notify_format] = \
+                        conversion_map[server.notify_format]\
+                        .encode('ascii', 'backslashreplace')\
+                        .decode('unicode-escape')
 
-            try:
-                # Send notification
-                if not server.notify(
-                        body=conversion_map[server.notify_format],
-                        title=title,
-                        notify_type=notify_type,
-                        attach=attach):
+                except UnicodeDecodeError:  # pragma: no cover
+                    # This occurs using a very old verion of Python 2.7 such
+                    # as the one that ships with CentOS/RedHat 7.x (v2.7.5).
+                    conversion_map[server.notify_format] = \
+                        conversion_map[server.notify_format] \
+                        .decode('string_escape')
 
-                    # Toggle our return status flag
-                    status = False
+                except AttributeError:
+                    # Must be of string type
+                    logger.error('Failed to escape message body')
+                    raise TypeError
 
-            except TypeError:
-                # These our our internally thrown notifications
-                status = False
+                if title:
+                    try:
+                        # Added overhead required due to Python 3 Encoding Bug
+                        # identified here: https://bugs.python.org/issue21331
+                        title = title\
+                            .encode('ascii', 'backslashreplace')\
+                            .decode('unicode-escape')
 
-            except Exception:
-                # A catch all so we don't have to abort early
-                # just because one of our plugins has a bug in it.
-                logger.exception("Notification Exception")
-                status = False
+                    except UnicodeDecodeError:  # pragma: no cover
+                        # This occurs using a very old verion of Python 2.7
+                        # such as the one that ships with CentOS/RedHat 7.x
+                        # (v2.7.5).
+                        title = title.decode('string_escape')
 
-        if coroutines:
-            # perform our async notification(s)
-            if not py3compat.asyncio.notify(coroutines, debug=self.debug):
-                # Toggle our status only if we had a failure
-                status = False
+                    except AttributeError:
+                        # Must be of string type
+                        logger.error('Failed to escape message title')
+                        raise TypeError
 
-        return status
+            yield handler(
+                server,
+                body=conversion_map[server.notify_format],
+                title=title,
+                notify_type=notify_type,
+                attach=attach
+            )
 
-    def details(self, lang=None):
+    def details(self, lang=None, show_requirements=False, show_disabled=False):
         """
         Returns the details associated with the Apprise object
 
@@ -453,8 +629,27 @@ class Apprise(object):
             'asset': self.asset.details(),
         }
 
-        # to add it's mapping to our hash table
         for plugin in set(plugins.SCHEMA_MAP.values()):
+            # Iterate over our hashed plugins and dynamically build details on
+            # their status:
+
+            content = {
+                'service_name': getattr(plugin, 'service_name', None),
+                'service_url': getattr(plugin, 'service_url', None),
+                'setup_url': getattr(plugin, 'setup_url', None),
+                # Placeholder - populated below
+                'details': None
+            }
+
+            # Standard protocol(s) should be None or a tuple
+            enabled = getattr(plugin, 'enabled', True)
+            if not show_disabled and not enabled:
+                # Do not show inactive plugins
+                continue
+
+            elif show_disabled:
+                # Add current state to response
+                content['enabled'] = enabled
 
             # Standard protocol(s) should be None or a tuple
             protocols = getattr(plugin, 'protocol', None)
@@ -466,31 +661,35 @@ class Apprise(object):
             if isinstance(secure_protocols, six.string_types):
                 secure_protocols = (secure_protocols, )
 
+            # Add our protocol details to our content
+            content.update({
+                'protocols': protocols,
+                'secure_protocols': secure_protocols,
+            })
+
             if not lang:
                 # Simply return our results
-                details = plugins.details(plugin)
+                content['details'] = plugins.details(plugin)
+                if show_requirements:
+                    content['requirements'] = plugins.requirements(plugin)
+
             else:
                 # Emulate the specified language when returning our results
                 with self.locale.lang_at(lang):
-                    details = plugins.details(plugin)
+                    content['details'] = plugins.details(plugin)
+                    if show_requirements:
+                        content['requirements'] = plugins.requirements(plugin)
 
             # Build our response object
-            response['schemas'].append({
-                'service_name': getattr(plugin, 'service_name', None),
-                'service_url': getattr(plugin, 'service_url', None),
-                'setup_url': getattr(plugin, 'setup_url', None),
-                'protocols': protocols,
-                'secure_protocols': secure_protocols,
-                'details': details,
-            })
+            response['schemas'].append(content)
 
         return response
 
-    def urls(self):
+    def urls(self, privacy=False):
         """
         Returns all of the loaded URLs defined in this apprise object.
         """
-        return [x.url() for x in self.servers]
+        return [x.url(privacy=privacy) for x in self.servers]
 
     def pop(self, index):
         """
@@ -592,3 +791,7 @@ class Apprise(object):
         """
         return sum([1 if not isinstance(s, (ConfigBase, AppriseConfig))
                     else len(s.servers()) for s in self.servers])
+
+
+if six.PY2:
+    del Apprise.async_notify

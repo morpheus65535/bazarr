@@ -106,6 +106,21 @@ EMAIL_TEMPLATES = (
         },
     ),
 
+    # Yandex
+    (
+        'Yandex',
+        re.compile(
+            r'^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@'
+            r'(?P<domain>yandex\.(com|ru|ua|by|kz|uz|tr|fr))$', re.I),
+        {
+            'port': 465,
+            'smtp_host': 'smtp.yandex.ru',
+            'secure': True,
+            'secure_mode': SecureMailMode.SSL,
+            'login_type': (WebBaseLogin.USERID, )
+        },
+    ),
+
     # Microsoft Hotmail
     (
         'Microsoft Hotmail',
@@ -205,20 +220,21 @@ EMAIL_TEMPLATES = (
         },
     ),
 
-    # Zoho Mail
+    # Zoho Mail (Free)
     (
         'Zoho Mail',
         re.compile(
             r'^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@'
-            r'(?P<domain>zoho\.com)$', re.I),
+            r'(?P<domain>zoho(mail)?\.com)$', re.I),
         {
-            'port': 465,
+            'port': 587,
             'smtp_host': 'smtp.zoho.com',
             'secure': True,
-            'secure_mode': SecureMailMode.SSL,
+            'secure_mode': SecureMailMode.STARTTLS,
             'login_type': (WebBaseLogin.EMAIL, )
         },
     ),
+
 
     # SendGrid (Email Server)
     # You must specify an authenticated sender address in the from= settings
@@ -285,7 +301,7 @@ class NotifyEmail(NotifyBase):
     default_secure_mode = SecureMailMode.STARTTLS
 
     # Default SMTP Timeout (in seconds)
-    connect_timeout = 15
+    socket_connect_timeout = 15
 
     # Define object templates
     templates = (
@@ -347,10 +363,6 @@ class NotifyEmail(NotifyBase):
             'type': 'string',
             'map_to': 'from_name',
         },
-        'smtp_host': {
-            'name': _('SMTP Server'),
-            'type': 'string',
-        },
         'cc': {
             'name': _('Carbon Copy'),
             'type': 'list:string',
@@ -359,6 +371,11 @@ class NotifyEmail(NotifyBase):
             'name': _('Blind Carbon Copy'),
             'type': 'list:string',
         },
+        'smtp': {
+            'name': _('SMTP Server'),
+            'type': 'string',
+            'map_to': 'smtp_host',
+        },
         'mode': {
             'name': _('Secure Mode'),
             'type': 'choice:string',
@@ -366,17 +383,19 @@ class NotifyEmail(NotifyBase):
             'default': SecureMailMode.STARTTLS,
             'map_to': 'secure_mode',
         },
-        'timeout': {
-            'name': _('Server Timeout'),
-            'type': 'int',
-            'default': 15,
-            'min': 5,
-        },
     })
 
-    def __init__(self, timeout=15, smtp_host=None, from_name=None,
+    # Define any kwargs we're using
+    template_kwargs = {
+        'headers': {
+            'name': _('Email Header'),
+            'prefix': '+',
+        },
+    }
+
+    def __init__(self, smtp_host=None, from_name=None,
                  from_addr=None, secure_mode=None, targets=None, cc=None,
-                 bcc=None, **kwargs):
+                 bcc=None, headers=None, **kwargs):
         """
         Initialize Email Object
 
@@ -393,13 +412,6 @@ class NotifyEmail(NotifyBase):
             else:
                 self.port = self.default_port
 
-        # Email SMTP Server Timeout
-        try:
-            self.timeout = int(timeout)
-
-        except (ValueError, TypeError):
-            self.timeout = self.connect_timeout
-
         # Acquire Email 'To'
         self.targets = list()
 
@@ -411,6 +423,11 @@ class NotifyEmail(NotifyBase):
 
         # For tracking our email -> name lookups
         self.names = {}
+
+        self.headers = {}
+        if headers:
+            # Store our extra headers
+            self.headers.update(headers)
 
         # Now we want to construct the To and From email
         # addresses from the URL provided
@@ -620,11 +637,11 @@ class NotifyEmail(NotifyBase):
             except TypeError:
                 # Python v2.x Support (no charset keyword)
                 # Format our cc addresses to support the Name field
-                cc = [formataddr(
+                cc = [formataddr(  # pragma: no branch
                     (self.names.get(addr, False), addr)) for addr in cc]
 
                 # Format our bcc addresses to support the Name field
-                bcc = [formataddr(
+                bcc = [formataddr(  # pragma: no branch
                     (self.names.get(addr, False), addr)) for addr in bcc]
 
             self.logger.debug(
@@ -646,6 +663,11 @@ class NotifyEmail(NotifyBase):
                 content = MIMEText(body, 'plain', 'utf-8')
 
             base = MIMEMultipart() if attach else content
+
+            # Apply any provided custom headers
+            for k, v in self.headers.items():
+                base[k] = Header(v, 'utf-8')
+
             base['Subject'] = Header(title, 'utf-8')
             try:
                 base['From'] = formataddr(
@@ -714,7 +736,7 @@ class NotifyEmail(NotifyBase):
                     self.smtp_host,
                     self.port,
                     None,
-                    timeout=self.timeout,
+                    timeout=self.socket_connect_timeout,
                 )
 
                 if self.secure and self.secure_mode == SecureMailMode.STARTTLS:
@@ -762,9 +784,11 @@ class NotifyEmail(NotifyBase):
             'from': self.from_addr,
             'mode': self.secure_mode,
             'smtp': self.smtp_host,
-            'timeout': self.timeout,
             'user': self.user,
         }
+
+        # Append our headers into our parameters
+        params.update({'+{}'.format(k): v for k, v in self.headers.items()})
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
@@ -864,8 +888,11 @@ class NotifyEmail(NotifyBase):
             results['from_name'] = NotifyEmail.unquote(results['qsd']['name'])
 
         if 'timeout' in results['qsd'] and len(results['qsd']['timeout']):
-            # Extract the timeout to associate with smtp server
-            results['timeout'] = results['qsd']['timeout']
+            # Deprecated in favor of cto= flag
+            NotifyBase.logger.deprecate(
+                "timeout= argument is deprecated; use cto= instead.")
+            results['qsd']['cto'] = results['qsd']['timeout']
+            del results['qsd']['timeout']
 
         # Store SMTP Host if specified
         if 'smtp' in results['qsd'] and len(results['qsd']['smtp']):
@@ -886,5 +913,10 @@ class NotifyEmail(NotifyBase):
 
         results['from_addr'] = from_addr
         results['smtp_host'] = smtp_host
+
+        # Add our Meta Headers that the user can provide with their outbound
+        # emails
+        results['headers'] = {NotifyBase.unquote(x): NotifyBase.unquote(y)
+                              for x, y in results['qsd+'].items()}
 
         return results

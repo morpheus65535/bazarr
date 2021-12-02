@@ -33,7 +33,7 @@ from os.path import abspath
 
 # Used for testing
 from . import NotifyEmail as NotifyEmailBase
-from .NotifyXMPP import SleekXmppAdapter
+from .NotifyXMPP import SliXmppAdapter
 
 # NotifyBase object is passed in as a module not class
 from . import NotifyBase
@@ -43,6 +43,7 @@ from ..common import NOTIFY_IMAGE_SIZES
 from ..common import NotifyType
 from ..common import NOTIFY_TYPES
 from ..utils import parse_list
+from ..utils import cwe312_url
 from ..utils import GET_SCHEMA_RE
 from ..logger import logger
 from ..AppriseLocale import gettext_lazy as _
@@ -62,8 +63,8 @@ __all__ = [
     # Tokenizer
     'url_to_dict',
 
-    # sleekxmpp access points (used for NotifyXMPP Testing)
-    'SleekXmppAdapter',
+    # slixmpp access points (used for NotifyXMPP Testing)
+    'SliXmppAdapter',
 ]
 
 # we mirror our base purely for the ability to reset everything; this
@@ -438,7 +439,93 @@ def details(plugin):
     }
 
 
-def url_to_dict(url):
+def requirements(plugin):
+    """
+    Provides a list of packages and its requirement details
+
+    """
+    requirements = {
+        # Use the description to provide a human interpretable description of
+        # what is required to make the plugin work. This is only nessisary
+        # if there are package dependencies
+        'details': '',
+
+        # Define any required packages needed for the plugin to run.  This is
+        # an array of strings that simply look like lines in the
+        # `requirements.txt` file...
+        #
+        # A single string is perfectly acceptable:
+        # 'packages_required' = 'cryptography'
+        #
+        # Multiple entries should look like the following
+        # 'packages_required' = [
+        #   'cryptography < 3.4`,
+        # ]
+        #
+        'packages_required': [],
+
+        # Recommended packages identify packages that are not required to make
+        # your plugin work, but would improve it's use or grant it access to
+        # full functionality (that might otherwise be limited).
+
+        # Similar to `packages_required`, you would identify each entry in
+        # the array as you would in a `requirements.txt` file.
+        #
+        #   - Do not re-provide entries already in the `packages_required`
+        'packages_recommended': [],
+    }
+
+    # Populate our template differently if we don't find anything above
+    if not (hasattr(plugin, 'requirements')
+            and isinstance(plugin.requirements, dict)):
+        # We're done early
+        return requirements
+
+    # Get our required packages
+    _req_packages = plugin.requirements.get('packages_required')
+    if isinstance(_req_packages, six.string_types):
+        # Convert to list
+        _req_packages = [_req_packages]
+
+    elif not isinstance(_req_packages, (set, list, tuple)):
+        # Allow one to set the required packages to None (as an example)
+        _req_packages = []
+
+    requirements['packages_required'] = [str(p) for p in _req_packages]
+
+    # Get our recommended packages
+    _opt_packages = plugin.requirements.get('packages_recommended')
+    if isinstance(_opt_packages, six.string_types):
+        # Convert to list
+        _opt_packages = [_opt_packages]
+
+    elif not isinstance(_opt_packages, (set, list, tuple)):
+        # Allow one to set the recommended packages to None (as an example)
+        _opt_packages = []
+
+    requirements['packages_recommended'] = [str(p) for p in _opt_packages]
+
+    # Get our package details
+    _req_details = plugin.requirements.get('details')
+    if not _req_details:
+        if not (_req_packages or _opt_packages):
+            _req_details = _('No dependencies.')
+
+        elif _req_packages:
+            _req_details = _('Packages are required to function.')
+
+        else:  # opt_packages
+            _req_details = \
+                _('Packages are recommended to improve functionality.')
+    else:
+        # Store our details if defined
+        requirements['details'] = _req_details
+
+    # Return our compiled package requirements
+    return requirements
+
+
+def url_to_dict(url, secure_logging=True):
     """
     Takes an apprise URL and returns the tokens associated with it
     if they can be acquired based on the plugins available.
@@ -453,13 +540,16 @@ def url_to_dict(url):
     # swap hash (#) tag values with their html version
     _url = url.replace('/#', '/%23')
 
+    # CWE-312 (Secure Logging) Handling
+    loggable_url = url if not secure_logging else cwe312_url(url)
+
     # Attempt to acquire the schema at the very least to allow our plugins to
     # determine if they can make a better interpretation of a URL geared for
     # them.
     schema = GET_SCHEMA_RE.match(_url)
     if schema is None:
         # Not a valid URL; take an early exit
-        logger.error('Unsupported URL: {}'.format(url))
+        logger.error('Unsupported URL: {}'.format(loggable_url))
         return None
 
     # Ensure our schema is always in lower case
@@ -476,7 +566,7 @@ def url_to_dict(url):
                  None)
 
         if not results:
-            logger.error('Unparseable URL {}'.format(url))
+            logger.error('Unparseable URL {}'.format(loggable_url))
             return None
 
         logger.trace('URL {} unpacked as:{}{}'.format(
@@ -489,7 +579,7 @@ def url_to_dict(url):
         results = SCHEMA_MAP[schema].parse_url(_url)
         if not results:
             logger.error('Unparseable {} URL {}'.format(
-                SCHEMA_MAP[schema].service_name, url))
+                SCHEMA_MAP[schema].service_name, loggable_url))
             return None
 
         logger.trace('{} URL {} unpacked as:{}{}'.format(

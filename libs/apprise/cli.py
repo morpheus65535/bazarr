@@ -26,7 +26,11 @@
 import click
 import logging
 import platform
+import six
 import sys
+import os
+import re
+
 from os.path import isfile
 from os.path import expanduser
 from os.path import expandvars
@@ -39,6 +43,7 @@ from . import AppriseConfig
 from .utils import parse_list
 from .common import NOTIFY_TYPES
 from .common import NOTIFY_FORMATS
+from .common import ContentLocation
 from .logger import logger
 
 from . import __title__
@@ -133,6 +138,9 @@ def print_version_msg():
               help='Perform a trial run but only prints the notification '
               'services to-be triggered to stdout. Notifications are never '
               'sent using this mode.')
+@click.option('--details', '-l', is_flag=True,
+              help='Prints details about the current services supported by '
+              'Apprise.')
 @click.option('--recursion-depth', '-R', default=DEFAULT_RECURSION_DEPTH,
               type=int,
               help='The number of recursive import entries that can be '
@@ -141,6 +149,8 @@ def print_version_msg():
 @click.option('--verbose', '-v', count=True,
               help='Makes the operation more talkative. Use multiple v to '
               'increase the verbosity. I.e.: -vvvv')
+@click.option('--interpret-escapes', '-e', is_flag=True,
+              help='Enable interpretation of backslash escapes')
 @click.option('--debug', '-D', is_flag=True, help='Debug mode')
 @click.option('--version', '-V', is_flag=True,
               help='Display the apprise version and exit.')
@@ -148,7 +158,7 @@ def print_version_msg():
                 metavar='SERVER_URL [SERVER_URL2 [SERVER_URL3]]',)
 def main(body, title, config, attach, urls, notification_type, theme, tag,
          input_format, dry_run, recursion_depth, verbose, disable_async,
-         debug, version):
+         details, interpret_escapes, debug, version):
     """
     Send a notification to all of the specified servers identified by their
     URLs the content provided within the title, body and notification-type.
@@ -224,8 +234,15 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
 
     # Prepare our asset
     asset = AppriseAsset(
+        # Our body format
         body_format=input_format,
+
+        # Interpret Escapes
+        interpret_escapes=interpret_escapes,
+
+        # Set the theme
         theme=theme,
+
         # Async mode is only used for Python v3+ and allows a user to send
         # all of their notifications asyncronously.  This was made an option
         # incase there are problems in the future where it's better that
@@ -234,18 +251,132 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
     )
 
     # Create our Apprise object
-    a = Apprise(asset=asset, debug=debug)
+    a = Apprise(asset=asset, debug=debug, location=ContentLocation.LOCAL)
 
-    # Load our configuration if no URLs or specified configuration was
-    # identified on the command line
-    a.add(AppriseConfig(
-        paths=[f for f in DEFAULT_SEARCH_PATHS if isfile(expanduser(f))]
-        if not (config or urls) else config,
-        asset=asset, recursion=recursion_depth))
+    if details:
+        # Print details and exit
+        results = a.details(show_requirements=True, show_disabled=True)
 
-    # Load our inventory up
-    for url in urls:
-        a.add(url)
+        # Sort our results:
+        plugins = sorted(
+            results['schemas'], key=lambda i: str(i['service_name']))
+        for entry in plugins:
+            protocols = [] if not entry['protocols'] else \
+                [p for p in entry['protocols']
+                 if isinstance(p, six.string_types)]
+            protocols.extend(
+                [] if not entry['secure_protocols'] else
+                [p for p in entry['secure_protocols']
+                 if isinstance(p, six.string_types)])
+
+            if len(protocols) == 1:
+                # Simplify view by swapping {schema} with the single
+                # protocol value
+
+                # Convert tuple to list
+                entry['details']['templates'] = \
+                    list(entry['details']['templates'])
+
+                for x in range(len(entry['details']['templates'])):
+                    entry['details']['templates'][x] = \
+                        re.sub(
+                            r'^[^}]+}://',
+                            '{}://'.format(protocols[0]),
+                            entry['details']['templates'][x])
+
+            click.echo(click.style(
+                '{} {:<30} '.format(
+                    '+' if entry['enabled'] else '-',
+                    str(entry['service_name'])),
+                fg="green" if entry['enabled'] else "red", bold=True),
+                nl=(not entry['enabled'] or len(protocols) == 1))
+
+            if not entry['enabled']:
+                if entry['requirements']['details']:
+                    click.echo(
+                        '   ' + str(entry['requirements']['details']))
+
+                if entry['requirements']['packages_required']:
+                    click.echo('   Python Packages Required:')
+                    for req in entry['requirements']['packages_required']:
+                        click.echo('     - ' + req)
+
+                if entry['requirements']['packages_recommended']:
+                    click.echo('   Python Packages Recommended:')
+                    for req in entry['requirements']['packages_recommended']:
+                        click.echo('     - ' + req)
+
+                # new line padding between entries
+                click.echo()
+                continue
+
+            if len(protocols) > 1:
+                click.echo('| Schema(s): {}'.format(
+                    ', '.join(protocols),
+                ))
+
+            prefix = '   - '
+            click.echo('{}{}'.format(
+                prefix,
+                '\n{}'.format(prefix).join(entry['details']['templates'])))
+
+            # new line padding between entries
+            click.echo()
+
+        sys.exit(0)
+
+    # The priorities of what is accepted are parsed in order below:
+    #    1. URLs by command line
+    #    2. Configuration by command line
+    #    3. URLs by environment variable: APPRISE_URLS
+    #    4. Configuration by environment variable: APPRISE_CONFIG
+    #    5. Default Configuration File(s) (if found)
+    #
+    if urls:
+        if tag:
+            # Ignore any tags specified
+            logger.warning(
+                '--tag (-g) entries are ignored when using specified URLs')
+            tag = None
+
+        # Load our URLs (if any defined)
+        for url in urls:
+            a.add(url)
+
+        if config:
+            # Provide a warning to the end user if they specified both
+            logger.warning(
+                'You defined both URLs and a --config (-c) entry; '
+                'Only the URLs will be referenced.')
+
+    elif config:
+        # We load our configuration file(s) now only if no URLs were specified
+        # Specified config entries trump all
+        a.add(AppriseConfig(
+            paths=config, asset=asset, recursion=recursion_depth))
+
+    elif os.environ.get('APPRISE_URLS', '').strip():
+        logger.debug('Loading provided APPRISE_URLS environment variable')
+        if tag:
+            # Ignore any tags specified
+            logger.warning(
+                '--tag (-g) entries are ignored when using specified URLs')
+            tag = None
+
+        # Attempt to use our APPRISE_URLS environment variable (if populated)
+        a.add(os.environ['APPRISE_URLS'].strip())
+
+    elif os.environ.get('APPRISE_CONFIG', '').strip():
+        logger.debug('Loading provided APPRISE_CONFIG environment variable')
+        # Fall back to config environment variable (if populated)
+        a.add(AppriseConfig(
+            paths=os.environ['APPRISE_CONFIG'].strip(),
+            asset=asset, recursion=recursion_depth))
+    else:
+        # Load default configuration
+        a.add(AppriseConfig(
+            paths=[f for f in DEFAULT_SEARCH_PATHS if isfile(expanduser(f))],
+            asset=asset, recursion=recursion_depth))
 
     if len(a) == 0:
         logger.error(

@@ -1,4 +1,4 @@
-apprise=0.8.8
+apprise=0.9.6
 apscheduler=3.8.0
 babelfish=0.6.0
 backports.functools-lru-cache=1.5
