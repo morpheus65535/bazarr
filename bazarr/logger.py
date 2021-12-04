@@ -118,8 +118,7 @@ def configure_logging(debug=False):
         logging.getLogger("SignalRCoreClient").setLevel(logging.CRITICAL)
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
 
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
-    logging.getLogger("engineio.server").setLevel(logging.WARNING)
+    logging.getLogger("waitress").setLevel(logging.ERROR)
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

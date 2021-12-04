@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 
 import re
-
+from uuid import uuid4
 from os.path import join
 from os.path import dirname
 from os.path import isfile
@@ -104,6 +104,36 @@ class AppriseAsset(object):
     # This is a Python 3 supported option only. If set to False, then
     # notifications are sent sequentially (one after another)
     async_mode = True
+
+    # Whether or not to interpret escapes found within the input text prior
+    # to passing it upstream. Such as converting \t to an actual tab and \n
+    # to a new line.
+    interpret_escapes = False
+
+    # For more detail see CWE-312 @
+    #    https://cwe.mitre.org/data/definitions/312.html
+    #
+    # By enabling this, the logging output has additional overhead applied to
+    # it preventing secure password and secret information from being
+    # displayed in the logging. Since there is overhead involved in performing
+    # this cleanup; system owners who run in a very isolated environment may
+    # choose to disable this for a slight performance bump. It is recommended
+    # that you leave this option as is otherwise.
+    secure_logging = True
+
+    # All internal/system flags are prefixed with an underscore (_)
+    # These can only be initialized using Python libraries and are not picked
+    # up from (yaml) configuration files (if set)
+
+    # An internal counter that is used by AppriseAPI
+    # (https://github.com/caronc/apprise-api). The idea is to allow one
+    # instance of AppriseAPI to call another, but to track how many times
+    # this occurs. It's intent is to prevent a loop where an AppriseAPI
+    # Server calls itself (or loops indefinitely)
+    _recursion = 0
+
+    # A unique identifer we can use to associate our calling source
+    _uid = str(uuid4())
 
     def __init__(self, **kwargs):
         """

@@ -54,6 +54,7 @@ class GreekSubsSubtitle(Subtitle):
 class GreekSubsProvider(Provider):
     """GreekSubs Provider."""
     languages = {Language('ell')}
+    video_types = (Episode, Movie)
     server_url = 'https://greeksubs.net/'
     subtitle_class = GreekSubsSubtitle
 

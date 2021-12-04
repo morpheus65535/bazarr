@@ -132,23 +132,35 @@ class SSAEvent:
         else:
             raise TypeError("Cannot compare to non-SSAEvent object")
 
-    def __eq__(self, other: "SSAEvent"):
+    def __eq__(self, other) -> bool:
         # XXX document this
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return self.start == other.start and self.end == other.end
 
-    def __ne__(self, other: "SSAEvent"):
+    def __ne__(self, other) -> bool:
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return self.start != other.start or self.end != other.end
 
-    def __lt__(self, other: "SSAEvent"):
+    def __lt__(self, other) -> bool:
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return (self.start, self.end) < (other.start, other.end)
 
-    def __le__(self, other: "SSAEvent"):
+    def __le__(self, other) -> bool:
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return (self.start, self.end) <= (other.start, other.end)
 
-    def __gt__(self, other: "SSAEvent"):
+    def __gt__(self, other) -> bool:
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return (self.start, self.end) > (other.start, other.end)
 
-    def __ge__(self, other: "SSAEvent"):
+    def __ge__(self, other) -> bool:
+        if not isinstance(other, SSAEvent):
+            return NotImplemented
         return (self.start, self.end) >= (other.start, other.end)
 
     def __repr__(self):

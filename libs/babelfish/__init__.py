@@ -4,12 +4,6 @@
 # Use of this source code is governed by the 3-clause BSD license
 # that can be found in the LICENSE file.
 #
-__title__ = 'babelfish'
-__version__ = '0.5.5-dev'
-__author__ = 'Antoine Bertin'
-__license__ = 'BSD'
-__copyright__ = 'Copyright 2015 the BabelFish authors'
-
 import sys
 
 if sys.version_info[0] >= 3:

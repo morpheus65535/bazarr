@@ -14,6 +14,7 @@ declare namespace System {
     bazarr_version: string;
     operating_system: string;
     python_version: string;
+    start_time: number;
   }
 
   interface Health {

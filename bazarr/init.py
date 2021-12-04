@@ -13,7 +13,11 @@ from dogpile.cache.region import register_backend as register_cache_backend
 from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
+import time
 
+# set start time global variable as epoch
+global startTime
+startTime = time.time()
 
 def init():
     # set subliminal_patch user agent

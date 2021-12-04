@@ -285,29 +285,26 @@ class Addic7edProvider(_Addic7edProvider):
         logger.info('Getting show ids')
         region.set(self.last_show_ids_fetch_key, datetime.datetime.now())
 
-        r = self.session.get(self.server_url, timeout=60)
+        r = self.session.get(self.server_url + 'shows.php', timeout=60)
         r.raise_for_status()
 
         soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
 
         # populate the show ids
         show_ids = {}
-        shows = soup.find(id='qsShow')
+        shows = soup.select('td > h3 > a[href^="/show/"]')
         for show in shows:
-            if hasattr(show, 'attrs'):
-                try:
-                    show_id = int(show.attrs['value'])
-                except ValueError:
-                    continue
+            show_clean = sanitize(show.text, default_characters=self.sanitize_characters)
+            try:
+                show_id = int(show['href'][6:])
+            except ValueError:
+                continue
 
-                if show_id != 0:
-                    show_clean = sanitize(show.text, default_characters=self.sanitize_characters)
-
-                    show_ids[show_clean] = show_id
-                    match = series_year_re.match(show_clean)
-                    if match and match.group(2) and match.group(1) not in show_ids:
-                        # year found, also add it without year
-                        show_ids[match.group(1)] = show_id
+            show_ids[show_clean] = show_id
+            match = series_year_re.match(show_clean)
+            if match and match.group(2) and match.group(1) not in show_ids:
+                # year found, also add it without year
+                show_ids[match.group(1)] = show_id
 
         soup.decompose()
         soup = None

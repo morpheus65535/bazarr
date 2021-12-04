@@ -2,11 +2,12 @@
 language detection API
 """
 import requests
-from deep_translator.configs import config
 from requests.exceptions import HTTPError
 
+# Module global config
+config = {"url": 'https://ws.detectlanguage.com/0.2/detect',"headers": {'User-Agent': 'Detect Language API Python Client 1.4.0','Authorization': 'Bearer {}',}}
 
-def get_request_body(text, api_key, *args):
+def get_request_body(text, api_key, *args, **kwargs):
     """
     send a request and return the response body parsed as dictionary
 
@@ -58,7 +59,7 @@ def single_detection(text, api_key=None, detailed=False, *args, **kwargs):
         return lang
 
 
-def batch_detection(text_list, api_key, detailed=False, *args):
+def batch_detection(text_list, api_key, detailed=False, *args, **kwargs):
     """
     function responsible for detecting the language from a text
 

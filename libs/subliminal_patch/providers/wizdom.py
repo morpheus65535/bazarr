@@ -79,6 +79,7 @@ class WizdomSubtitle(Subtitle):
 class WizdomProvider(Provider):
     """Wizdom Provider."""
     languages = {Language(l) for l in ['heb']}
+    video_types = (Episode, Movie)
     server_url = 'wizdom.xyz'
 
     _tmdb_api_key = 'a51ee051bcd762543373903de296e0a3'

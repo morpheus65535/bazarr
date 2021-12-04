@@ -1,61 +1,8 @@
-"""SocksiPy - Python SOCKS module.
-
-Copyright 2006 Dan-Haim. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-3. Neither the name of Dan Haim nor the names of his contributors may be used
-   to endorse or promote products derived from this software without specific
-   prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY DAN HAIM "AS IS" AND ANY EXPRESS OR IMPLIED
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
-EVENT SHALL DAN HAIM OR HIS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA
-OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-This module provides a standard socket-like interface for Python
-for tunneling connections through SOCKS proxies.
-
-===============================================================================
-
-Minor modifications made by Christopher Gilbert (http://motomastyle.com/)
-for use in PyLoris (http://pyloris.sourceforge.net/)
-
-Minor modifications made by Mario Vilas (http://breakingcode.wordpress.com/)
-mainly to merge bug fixes found in Sourceforge
-
-Modifications made by Anorov (https://github.com/Anorov)
--Forked and renamed to PySocks
--Fixed issue with HTTP proxy failure checking (same bug that was in the
- old ___recvall() method)
--Included SocksiPyHandler (sockshandler.py), to be used as a urllib2 handler,
- courtesy of e000 (https://github.com/e000):
- https://gist.github.com/869791#file_socksipyhandler.py
--Re-styled code to make it readable
-    -Aliased PROXY_TYPE_SOCKS5 -> SOCKS5 etc.
-    -Improved exception handling and output
-    -Removed irritating use of sequence indexes, replaced with tuple unpacked
-     variables
-    -Fixed up Python 3 bytestring handling - chr(0x03).encode() -> b"\x03"
-    -Other general fixes
--Added clarification that the HTTP proxy connection method only supports
- CONNECT-style tunneling HTTP proxies
--Various small bug fixes
-"""
-
 from base64 import b64encode
-from collections import Callable
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
 from errno import EOPNOTSUPP, EINVAL, EAGAIN
 import functools
 from io import BytesIO
@@ -66,7 +13,7 @@ import socket
 import struct
 import sys
 
-__version__ = "1.6.7"
+__version__ = "1.7.0"
 
 
 if os.name == "nt" and sys.version_info < (3, 0):
@@ -114,7 +61,7 @@ class ProxyError(IOError):
         self.socket_err = socket_err
 
         if socket_err:
-            self.msg += ": {0}".format(socket_err)
+            self.msg += ": {}".format(socket_err)
 
     def __str__(self):
         return self.msg
@@ -533,6 +480,14 @@ class socksocket(_BaseSocket):
             if chosen_auth[1:2] == b"\x02":
                 # Okay, we need to perform a basic username/password
                 # authentication.
+                if not (username and password):
+                    # Although we said we don't support authentication, the
+                    # server may still request basic username/password
+                    # authentication
+                    raise SOCKS5AuthError("No username/password supplied. "
+                                          "Server requested username/password"
+                                          " authentication")
+
                 writer.write(b"\x01" + chr(len(username)).encode()
                              + username
                              + chr(len(password)).encode()
@@ -575,7 +530,7 @@ class socksocket(_BaseSocket):
             if status != 0x00:
                 # Connection failed: server returned an error
                 error = SOCKS5_ERRORS.get(status, "Unknown error")
-                raise SOCKS5Error("{0:#04x}: {1}".format(status, error))
+                raise SOCKS5Error("{:#04x}: {}".format(status, error))
 
             # Get the bound address/port
             bnd = self._read_SOCKS5_address(reader)
@@ -693,7 +648,7 @@ class socksocket(_BaseSocket):
             if status != 0x5A:
                 # Connection failed: server returned an error
                 error = SOCKS4_ERRORS.get(status, "Unknown error")
-                raise SOCKS4Error("{0:#04x}: {1}".format(status, error))
+                raise SOCKS4Error("{:#04x}: {}".format(status, error))
 
             # Get the bound address/port
             self.proxy_sockname = (socket.inet_ntoa(resp[4:]),
@@ -753,7 +708,7 @@ class socksocket(_BaseSocket):
                 "HTTP proxy server did not return a valid HTTP status")
 
         if status_code != 200:
-            error = "{0}: {1}".format(status_code, status_msg)
+            error = "{}: {}".format(status_code, status_msg)
             if status_code in (400, 403, 405):
                 # It's likely that the HTTP proxy server does not support the
                 # CONNECT tunneling method
@@ -772,7 +727,7 @@ class socksocket(_BaseSocket):
                          }
 
     @set_self_blocking
-    def connect(self, dest_pair):
+    def connect(self, dest_pair, catch_errors=None):
         """
         Connects to the specified destination through a proxy.
         Uses the same API as socket's connect().
@@ -834,14 +789,17 @@ class socksocket(_BaseSocket):
         except socket.error as error:
             # Error while connecting to proxy
             self.close()
-            proxy_addr, proxy_port = proxy_addr
-            proxy_server = "{0}:{1}".format(proxy_addr, proxy_port)
-            printable_type = PRINTABLE_PROXY_TYPES[proxy_type]
+            if not catch_errors:
+                proxy_addr, proxy_port = proxy_addr
+                proxy_server = "{}:{}".format(proxy_addr, proxy_port)
+                printable_type = PRINTABLE_PROXY_TYPES[proxy_type]
 
-            msg = "Error connecting to {0} proxy {1}".format(printable_type,
-                                                             proxy_server)
-            log.debug("%s due to: %s", msg, error)
-            raise ProxyConnectionError(msg, error)
+                msg = "Error connecting to {} proxy {}".format(printable_type,
+                                                                    proxy_server)
+                log.debug("%s due to: %s", msg, error)
+                raise ProxyConnectionError(msg, error)
+            else:
+                raise error
 
         else:
             # Connected to proxy server, now negotiate
@@ -850,12 +808,31 @@ class socksocket(_BaseSocket):
                 negotiate = self._proxy_negotiators[proxy_type]
                 negotiate(self, dest_addr, dest_port)
             except socket.error as error:
-                # Wrap socket errors
-                self.close()
-                raise GeneralProxyError("Socket error", error)
+                if not catch_errors:
+                    # Wrap socket errors
+                    self.close()
+                    raise GeneralProxyError("Socket error", error)
+                else:
+                    raise error
             except ProxyError:
                 # Protocol error while negotiating with proxy
                 self.close()
+                raise
+                
+    @set_self_blocking
+    def connect_ex(self, dest_pair):
+        """ https://docs.python.org/3/library/socket.html#socket.socket.connect_ex
+        Like connect(address), but return an error indicator instead of raising an exception for errors returned by the C-level connect() call (other problems, such as "host not found" can still raise exceptions).
+        """
+        try:
+            self.connect(dest_pair, catch_errors=True)
+            return 0
+        except OSError as e:
+            # If the error is numeric (socket errors are numeric), then return number as 
+            # connect_ex expects. Otherwise raise the error again (socket timeout for example)
+            if e.errno:
+                return e.errno
+            else:
                 raise
 
     def _proxy_addr(self):

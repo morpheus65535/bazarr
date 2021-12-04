@@ -121,6 +121,7 @@ class LegendasdivxSubtitle(Subtitle):
 class LegendasdivxProvider(Provider):
     """Legendasdivx Provider."""
     languages = {Language('por', 'BR')} | {Language('por')}
+    video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
     site = 'https://www.legendasdivx.pt'
     headers = {
@@ -272,7 +273,7 @@ class LegendasdivxProvider(Provider):
             querytext = video.imdb_id if video.imdb_id else video.title
 
         if isinstance(video, Episode):
-            querytext = '{} S{:02d}E{:02d}'.format(video.series, video.season, video.episode)
+            querytext = '%22{}%20S{:02d}E{:02d}%22'.format(video.series, video.season, video.episode)
             querytext = quote(querytext.lower())
 
         # language query filter
@@ -430,13 +431,16 @@ class LegendasdivxProvider(Provider):
 
             _guess = guessit(name)
             if isinstance(subtitle.video, Episode):
-                logger.debug("Legendasdivx.pt :: guessing %s", name)
-                logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
+                if all(key in _guess for key in ('season', 'episode')):
+                    logger.debug("Legendasdivx.pt :: guessing %s", name)
+                    logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
 
-                if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
-                    logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')
+                    if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
+                        logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')
+                        continue
+                else:
+                    logger.debug('Legendasdivx.pt :: no "season" and/or "episode" on "_guess" , skipping')
                     continue
-
             matches = set()
             matches |= guess_matches(subtitle.video, _guess)
             logger.debug('Legendasdivx.pt :: sub matches: %s', matches)

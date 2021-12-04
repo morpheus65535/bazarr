@@ -21,23 +21,28 @@ def get_static_file(path, static_files):
     "content_type". If the requested URL does not match any static file, the
     return value is None.
     """
+    extra_path = ''
     if path in static_files:
         f = static_files[path]
     else:
         f = None
-        rest = ''
         while path != '':
             path, last = path.rsplit('/', 1)
-            rest = '/' + last + rest
+            extra_path = '/' + last + extra_path
             if path in static_files:
-                f = static_files[path] + rest
+                f = static_files[path]
                 break
             elif path + '/' in static_files:
-                f = static_files[path + '/'] + rest[1:]
+                f = static_files[path + '/']
                 break
     if f:
         if isinstance(f, str):
             f = {'filename': f}
+        else:
+            f = f.copy()  # in case it is mutated below
+        if f['filename'].endswith('/') and extra_path.startswith('/'):
+            extra_path = extra_path[1:]
+        f['filename'] += extra_path
         if f['filename'].endswith('/'):
             if '' in static_files:
                 if isinstance(static_files[''], str):

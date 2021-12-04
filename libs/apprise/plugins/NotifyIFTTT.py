@@ -325,6 +325,10 @@ class NotifyIFTTT(NotifyBase):
         # Unquote our API Key
         results['webhook_id'] = NotifyIFTTT.unquote(results['webhook_id'])
 
+        # Parse our add_token and del_token arguments (if specified)
+        results['add_token'] = results['qsd+']
+        results['del_token'] = results['qsd-']
+
         # Our Event
         results['events'] = list()
         if results['user']:
@@ -351,7 +355,7 @@ class NotifyIFTTT(NotifyBase):
         result = re.match(
             r'^https?://maker\.ifttt\.com/use/'
             r'(?P<webhook_id>[A-Z0-9_-]+)'
-            r'/?(?P<events>([A-Z0-9_-]+/?)+)?'
+            r'((?P<events>(/[A-Z0-9_-]+)+))?'
             r'/?(?P<params>\?.+)?$', url, re.I)
 
         if result:

@@ -92,8 +92,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           variant="danger"
           onClick={() => {
             if (current) {
-              current.enabled = false;
-              update(current);
+              update({ ...current, enabled: false });
             }
             closeModal();
           }}

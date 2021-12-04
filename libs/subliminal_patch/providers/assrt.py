@@ -109,6 +109,7 @@ class AssrtSubtitle(Subtitle):
 class AssrtProvider(Provider):
     """Assrt Provider."""
     languages = {Language(*l) for l in supported_languages}
+    video_types = (Episode, Movie)
 
     def __init__(self, token=None):
         if not token:

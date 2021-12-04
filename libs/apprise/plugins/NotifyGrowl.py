@@ -68,6 +68,13 @@ class NotifyGrowl(NotifyBase):
     A wrapper to Growl Notifications
 
     """
+    # Set our global enabled flag
+    enabled = NOTIFY_GROWL_SUPPORT_ENABLED
+
+    requirements = {
+        # Define our required packaging in order to work
+        'packages_required': 'gntp'
+    }
 
     # The default descriptive name associated with the Notification
     service_name = 'Growl'
@@ -83,15 +90,6 @@ class NotifyGrowl(NotifyBase):
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_72
-
-    # This entry is a bit hacky, but it allows us to unit-test this library
-    # in an environment that simply doesn't have the windows packages
-    # available to us.  It also allows us to handle situations where the
-    # packages actually are present but we need to test that they aren't.
-    # If anyone is seeing this had knows a better way of testing this
-    # outside of what is defined in test/test_growl_plugin.py, please
-    # let me know! :)
-    _enabled = NOTIFY_GROWL_SUPPORT_ENABLED
 
     # Disable throttle rate for Growl requests since they are normally
     # local anyway
@@ -251,13 +249,6 @@ class NotifyGrowl(NotifyBase):
         """
         Perform Growl Notification
         """
-
-        if not self._enabled:
-            self.logger.warning(
-                "Growl Notifications are not supported by this system; "
-                "`pip install gntp`.")
-            return False
-
         # Register ourselves with the server if we haven't done so already
         if not self.growl and not self.register():
             # We failed to register
@@ -395,15 +386,27 @@ class NotifyGrowl(NotifyBase):
 
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
             _map = {
+                # Letter Assignments
                 'l': GrowlPriority.LOW,
                 'm': GrowlPriority.MODERATE,
                 'n': GrowlPriority.NORMAL,
                 'h': GrowlPriority.HIGH,
                 'e': GrowlPriority.EMERGENCY,
+                'lo': GrowlPriority.LOW,
+                'me': GrowlPriority.MODERATE,
+                'no': GrowlPriority.NORMAL,
+                'hi': GrowlPriority.HIGH,
+                'em': GrowlPriority.EMERGENCY,
+                # Support 3rd Party Documented Scale
+                '-2': GrowlPriority.LOW,
+                '-1': GrowlPriority.MODERATE,
+                '0': GrowlPriority.NORMAL,
+                '1': GrowlPriority.HIGH,
+                '2': GrowlPriority.EMERGENCY,
             }
             try:
                 results['priority'] = \
-                    _map[results['qsd']['priority'][0].lower()]
+                    _map[results['qsd']['priority'][0:2].lower()]
 
             except KeyError:
                 # No priority was set

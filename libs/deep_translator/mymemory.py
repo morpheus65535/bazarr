@@ -4,13 +4,13 @@ mymemory translator API
 import logging
 import warnings
 
-from deep_translator.constants import BASE_URLS, GOOGLE_LANGUAGES_TO_CODES
-from deep_translator.exceptions import (NotValidPayload,
-                                        TranslationNotFound,
-                                        LanguageNotSupportedException,
-                                        RequestError,
-                                        TooManyRequests)
-from deep_translator.parent import BaseTranslator
+from .constants import BASE_URLS, GOOGLE_LANGUAGES_TO_CODES
+from .exceptions import (NotValidPayload,
+                        TranslationNotFound,
+                        LanguageNotSupportedException,
+                        RequestError,
+                        TooManyRequests)
+from .parent import BaseTranslator
 import requests
 from time import sleep
 
@@ -22,12 +22,13 @@ class MyMemoryTranslator(BaseTranslator):
     _languages = GOOGLE_LANGUAGES_TO_CODES
     supported_languages = list(_languages.keys())
 
-    def __init__(self, source="auto", target="en", **kwargs):
+    def __init__(self, source="auto", target="en", proxies=None, **kwargs):
         """
         @param source: source language to translate from
         @param target: target language to translate to
         """
         self.__base_url = BASE_URLS.get("MYMEMORY")
+        self.proxies = proxies
         if self.is_language_supported(source, target):
             self._source, self._target = self._map_language_to_code(source.lower(), target.lower())
             self._source = self._source if self._source != 'auto' else 'Lao'
@@ -40,7 +41,7 @@ class MyMemoryTranslator(BaseTranslator):
                                                  langpair='{}|{}'.format(self._source, self._target))
 
     @staticmethod
-    def get_supported_languages(as_dict=False):
+    def get_supported_languages(as_dict=False, **kwargs):
         """
          return the supported languages by the mymemory translator
          @param as_dict: if True, the languages will be returned as a dictionary mapping languages to their abbreviations
@@ -93,7 +94,8 @@ class MyMemoryTranslator(BaseTranslator):
 
             response = requests.get(self.__base_url,
                                     params=self._url_params,
-                                    headers=self.headers)
+                                    headers=self.headers,
+                                    proxies=self.proxies)
 
             if response.status_code == 429:
                 raise TooManyRequests()
@@ -150,13 +152,13 @@ class MyMemoryTranslator(BaseTranslator):
          """
         try:
             with open(path) as f:
-                text = f.read()
+                text = f.read().strip()
 
             return self.translate(text=text)
         except Exception as e:
             raise e
 
-    def translate_batch(self, batch=None):
+    def translate_batch(self, batch=None, **kwargs):
         """
         translate a list of texts
         @param batch: list of texts you want to translate
@@ -167,7 +169,7 @@ class MyMemoryTranslator(BaseTranslator):
 
         arr = []
         for text in batch:
-            translated = self.translate(text)
+            translated = self.translate(text, **kwargs)
             arr.append(translated)
             sleep(2)
 

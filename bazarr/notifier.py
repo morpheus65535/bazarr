@@ -23,11 +23,11 @@ def update_notifier():
         notifiers_current.append([notifier['name']])
 
     for x in results['schemas']:
-        if [x['service_name']] not in notifiers_current:
-            notifiers_new.append({'name': x['service_name'], 'enabled': 0})
-            logging.debug('Adding new notifier agent: ' + x['service_name'])
+        if [str(x['service_name'])] not in notifiers_current:
+            notifiers_new.append({'name': str(x['service_name']), 'enabled': 0})
+            logging.debug('Adding new notifier agent: ' + str(x['service_name']))
         else:
-            notifiers_old.append([x['service_name']])
+            notifiers_old.append([str(x['service_name'])])
 
     notifiers_to_delete = [item for item in notifiers_current if item not in notifiers_old]
 

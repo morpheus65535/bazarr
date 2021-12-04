@@ -30,8 +30,8 @@ def framerate_equal(source, check):
 
 def compute_score(matches, subtitle, video, hearing_impaired=None, score_obj=None):
     """Compute the score of the `subtitle` against the `video` with `hearing_impaired` preference.
-    
-    patch: 
+
+    patch:
         - remove upper bounds of score
         - re-add matches argument and remove get_matches from here
 
@@ -49,8 +49,11 @@ def compute_score(matches, subtitle, video, hearing_impaired=None, score_obj=Non
     """
     logger.info('%r: Computing score for video %r with %r', subtitle, video, dict(hearing_impaired=hearing_impaired))
 
-    scores = score_obj.scores or get_scores(video)
-    score_obj.check_custom_profiles(subtitle, matches)
+    if score_obj is not None:
+        scores = score_obj.scores
+        score_obj.check_custom_profiles(subtitle, matches)
+    else:
+        scores = get_scores(video)
 
     is_episode = isinstance(video, Episode)
     is_movie = isinstance(video, Movie)

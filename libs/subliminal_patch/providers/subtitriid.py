@@ -94,6 +94,7 @@ class SubtitriIdProvider(Provider, ProviderSubtitleArchiveMixin):
     """subtitri.id.lv Provider."""
     subtitle_class = SubtitriIdSubtitle
     languages = {Language('lva', 'LV')} | {Language.fromalpha2(l) for l in ['lv']}
+    video_types = (Movie,)
     server_url = 'http://subtitri.id.lv'
     search_url =  server_url + '/search/'
 

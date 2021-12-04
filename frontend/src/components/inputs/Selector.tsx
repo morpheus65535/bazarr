@@ -1,7 +1,7 @@
 import { isArray } from "lodash";
 import React, { useCallback, useMemo } from "react";
-import ReactSelect from "react-select";
-import { SelectComponents } from "react-select/src/components";
+import Select from "react-select";
+import { SelectComponents } from "react-select/dist/declarations/src/components";
 import "./selector.scss";
 
 export interface SelectorProps<T, M extends boolean> {
@@ -17,7 +17,7 @@ export interface SelectorProps<T, M extends boolean> {
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;
-  components?: Partial<SelectComponents<T, M>>;
+  components?: Partial<SelectComponents<T, M, any>>;
 }
 
 export function Selector<T = string, M extends boolean = false>(
@@ -69,15 +69,15 @@ export function Selector<T = string, M extends boolean = false>(
     [label, multiple, nameFromItems]
   );
 
-  const defaultWrapper = useMemo(() => wrapper(defaultValue), [
-    defaultValue,
-    wrapper,
-  ]);
+  const defaultWrapper = useMemo(
+    () => wrapper(defaultValue),
+    [defaultValue, wrapper]
+  );
 
   const valueWrapper = useMemo(() => wrapper(value), [wrapper, value]);
 
   return (
-    <ReactSelect
+    <Select
       isLoading={loading}
       placeholder={placeholder}
       isSearchable={options.length >= 10}
@@ -92,7 +92,7 @@ export function Selector<T = string, M extends boolean = false>(
       className={`custom-selector w-100 ${className ?? ""}`}
       classNamePrefix="selector"
       onFocus={onFocus}
-      onChange={(v) => {
+      onChange={(v: SelectorOption<T>[]) => {
         if (onChange) {
           let res: T | T[] | null = null;
           if (isArray(v)) {
@@ -106,6 +106,6 @@ export function Selector<T = string, M extends boolean = false>(
           onChange(res as any);
         }
       }}
-    ></ReactSelect>
+    ></Select>
   );
 }

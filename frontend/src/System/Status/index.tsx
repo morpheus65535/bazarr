@@ -6,9 +6,11 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent } from "react";
+import moment from "moment";
+import React, { FunctionComponent, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
+import { useIntervalWhen } from "rooks";
 import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
 import { AsyncOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
@@ -69,6 +71,28 @@ const SystemStatusView: FunctionComponent<Props> = () => {
   const health = useSystemHealth();
   const status = useSystemStatus();
 
+  const [uptime, setState] = useState<string>();
+  const [intervalWhenState] = useState(true);
+
+  useIntervalWhen(
+    () => {
+      if (status) {
+        let duration = moment.duration(
+            moment().utc().unix() - status.start_time,
+            "seconds"
+          ),
+          days = duration.days(),
+          hours = duration.hours().toString().padStart(2, "0"),
+          minutes = duration.minutes().toString().padStart(2, "0"),
+          seconds = duration.seconds().toString().padStart(2, "0");
+        setState(days + "d " + hours + ":" + minutes + ":" + seconds);
+      }
+    },
+    1000,
+    intervalWhenState,
+    true
+  );
+
   return (
     <Container className="p-5">
       <Helmet>
@@ -99,6 +123,9 @@ const SystemStatusView: FunctionComponent<Props> = () => {
           </CRow>
           <CRow title="Bazarr Config Directory">
             <span>{status?.bazarr_config_directory}</span>
+          </CRow>
+          <CRow title="Uptime">
+            <span>{uptime}</span>
           </CRow>
         </InfoContainer>
       </Row>

@@ -68,6 +68,7 @@ class LegendasTVSubtitle(_LegendasTVSubtitle):
 
 class LegendasTVProvider(_LegendasTVProvider):
     languages = {Language(*l) for l in language_converters['legendastv'].to_legendastv.keys()}
+    video_types = (Episode, Movie)
     subtitle_class = LegendasTVSubtitle
 
     def __init__(self, username=None, password=None, featured_only=False):

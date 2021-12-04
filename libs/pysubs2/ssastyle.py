@@ -20,7 +20,7 @@ class SSAStyle:
     This class defines equality (equality of all fields).
 
     """
-    DEFAULT_STYLE: ClassVar["SSAStyle"] = None
+    DEFAULT_STYLE: ClassVar["SSAStyle"] = None  # type: ignore[assignment]
 
     @property
     def FIELDS(self):

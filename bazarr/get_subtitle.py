@@ -210,6 +210,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = episode_metadata['seriesId']
                             episode_id = episode_metadata['episodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           forced=subtitle.language.forced,
                                            srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            series_id=episode_metadata['seriesId'],
@@ -222,6 +223,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             series_id = ""
                             episode_id = movie_metadata['movieId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           forced=subtitle.language.forced,
                                            srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=percent_score,
                                            movie_id=movie_metadata['movieId'])
@@ -522,6 +524,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = episode_metadata['seriesId']
                             episode_id = episode_metadata['episodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           forced=subtitle.language.forced,
                                            srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score,
                                            series_id=episode_metadata['seriesId'],
@@ -534,6 +537,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             series_id = ""
                             episode_id = movie_metadata['movieId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           forced=subtitle.language.forced,
                                            srt_lang=downloaded_language_code2, media_type=media_type,
                                            percent_score=score, movie_id=movie_metadata['movieId'])
 
@@ -657,7 +661,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         series_id = episode_metadata['seriesId']
         episode_id = episode_metadata['episodeId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, series_id=episode_metadata['seriesId'],
+                       percent_score=100, series_id=episode_metadata['seriesId'], forced=forced,
                        episode_id=episode_metadata['episodeId'])
     else:
         movie_metadata = TableMovies.select(TableMovies.movieId)\
@@ -667,7 +671,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, media_type, subtit
         series_id = ""
         episode_id = movie_metadata['movieId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
-                       percent_score=100, movie_id=movie_metadata['movieId'])
+                       percent_score=100, movie_id=movie_metadata['movieId'], forced=forced)
 
     if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
@@ -1602,9 +1606,15 @@ def postprocessing(command, path):
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 
 
-def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score, series_id=None,
+def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_score, series_id=None,
                    episode_id=None, movie_id=None):
-    if settings.subsync.getboolean('use_subsync'):
+    if forced:
+        logging.debug('BAZARR cannot sync forced subtitles. Skipping sync routine.')
+    elif not settings.subsync.getboolean('use_subsync'):
+        logging.debug('BAZARR automatic syncing is disabled in settings. Skipping sync routine.')
+    else:
+        logging.debug(f'BAZARR automatic syncing is enabled in settings. We\'ll try to sync this '
+                      f'subtitles: {srt_path}.')
         if media_type == 'series':
             use_subsync_threshold = settings.subsync.getboolean('use_subsync_threshold')
             subsync_threshold = settings.subsync.subsync_threshold

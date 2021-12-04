@@ -21,6 +21,6 @@ class FixAddFutureImportsExceptUnicodeLiterals(fixer_base.BaseFix):
 
     def transform(self, node, results):
         # Reverse order:
-        future_import(u"print_function", node)
-        future_import(u"division", node)
         future_import(u"absolute_import", node)
+        future_import(u"division", node)
+        future_import(u"print_function", node)

@@ -207,7 +207,10 @@ defaults = {
     },
     'titulky': {
         'username': '',
-        'password': ''
+        'password': '',
+        'skip_wrong_fps': 'False',
+        'approved_only': 'False',
+        'multithreading': 'True'
     }
 }
 
@@ -412,8 +415,10 @@ def save_settings(settings_items):
         configure_captcha_func()
 
     if update_schedule:
-        from api import scheduler
+        from scheduler import scheduler
+        from event_handler import event_stream
         scheduler.update_configurable_tasks()
+        event_stream(type='task')
 
     if configure_proxy:
         configure_proxy_func()

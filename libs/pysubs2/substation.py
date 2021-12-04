@@ -147,17 +147,23 @@ class SubstationFormat(FormatBase):
     @classmethod
     def guess_format(cls, text):
         """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
-        if "V4+ Styles" in text:
+        if re.search(r"V4\+ Styles", text, re.IGNORECASE):
             return "ass"
-        elif "V4 Styles" in text:
+        elif re.search(r"V4 Styles", text, re.IGNORECASE):
             return "ssa"
 
     @classmethod
     def from_file(cls, subs, fp, format_, **kwargs):
         """See :meth:`pysubs2.formats.FormatBase.from_file()`"""
 
-        def string_to_field(f, v):
+        def string_to_field(f: str, v: str):
+            # Per issue #45, we should handle the case where there is extra whitespace around the values.
+            # Extra whitespace is removed in non-string fields where it would break the parser otherwise,
+            # and in font name (where it doesn't really make sense). It is preserved in Dialogue string
+            # fields like Text, Name and Effect (to avoid introducing unnecessary change to parser output).
+
             if f in {"start", "end"}:
+                v = v.strip()
                 if v.startswith("-"):
                     # handle negative timestamps
                     v = v[1:]
@@ -165,6 +171,7 @@ class SubstationFormat(FormatBase):
                 else:
                     return timestamp_to_ms(TIMESTAMP.match(v).groups())
             elif "color" in f:
+                v = v.strip()
                 return rgba_to_color(v)
             elif f in {"bold", "underline", "italic", "strikeout"}:
                 return v == "-1"
@@ -180,6 +187,8 @@ class SubstationFormat(FormatBase):
                     return i
                 else:
                     return ssa_to_ass_alignment(i)
+            elif f == "fontname":
+                return v.strip()
             else:
                 return v
 

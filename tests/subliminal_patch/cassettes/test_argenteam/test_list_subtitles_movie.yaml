@@ -1,0 +1,366 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://argenteam.net/api/v1/search?q=Dune
+  response:
+    body:
+      string: !!binary |
+        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
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 6b6743805800751b-SCL
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 30 Nov 2021 21:45:36 GMT
+      Expect-CT:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=Yn6t4SwaaAd9gFu7CdcUfuG7sL4OIk%2BUlzt%2FiSOj00efVFPV5%2Botf%2BLwl8egR0g5tIU8V33OlhnF9TKWWImtVl8yPo80jTtytM7ELcnayyMkjEyj%2BCgZMBN2ptAqHyimW3e%2FNkBpWaeaJVuP"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443";
+        ma=86400
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://argenteam.net/api/v1/movie?id=324
+  response:
+    body:
+      string: !!binary |
+        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
+        AAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 6b6743828b81751b-SCL
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 30 Nov 2021 21:45:36 GMT
+      Expect-CT:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=6sWVI63HrWSWdlINe3fSYawBVQfavfKNksSfSbBSIW6Fh8YSxwqMlDHb5EP37r1WrL0w5i01ybpYeOJ1zG84rRBtfe6J1y550wu9PNeZbzB8vmwhwSHhXz19bBr23yYqCXR03wsghed1mTOt"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443";
+        ma=86400
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://argenteam.net/api/v1/movie?id=43318
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA9RWTZPjthH9K1242K7CcihypJF406c3KW+yFTvOViVbU02iJcEDAnQD1ESzs/8l
+        e/RhT7nlGP2xFEDNlyubnH0DQeCh+73XDXwQWonqsixHUynCQdWiElez8XgkpAg6GBKVWPWW4Osi
+        z/NvhBS+b1vko6gEAMCcGW+0lxCwrfXpFwuNs67RykHjWgdxrwQy0Bm0FBAUeU0cXJZlsDZw+pcJ
+        unVg+h0yoIGfewKLSlMcMZ8+I2iGowSvLVBbI+/cC8D29MmDbjvHAW0gUGSgt/pA7J0Eg9D1xAFh
+        j41G6B8CbDXZ4MD3HbF2DMe4dNvTABE/PNZa9TGCDObQkUeOf3zvAVWERx+xlG60s+ShMbo9fQq6
+        QT+gNeh1ZKEzMU7sPdkYgiLAXY8S/OmfxgHZRBJ4ArJNDIAx5ldrskNyjYtnoHJVRCXfUYQ584wD
+        zy0ZtDvKYEWgbYOm6Q3WhuCAJmV30AENdDiAN64lbnQ8PTA9cOklHJB1zAtjdtbVhmIySp/zdbxD
+        q+/wnHLQZMmC76HVjCpx7QM+5CThCGj96TPaSD+xpxh2opD1zz3doc9g2aNVLtGPrTYaYR6YtCIP
+        imp62hmlj+w9es4gHCIDUfKf3IEsvMXeRCYPxKdPoPj0yUdB2iQrbqkJqDCDN5FWNCauiVrHk3xH
+        SqtBO+eBqemJlfPJbAP6IzAyow+Myp1t5fuIELR1EhAYT5/vInJvETyxTpbSNrDeDaaJGp9+Meez
+        fH90PkpXJ3TvaqbO2ZT1EchumWzA+IVpfcdRmBZ9qhZDEBO8Q5vKJG6G4JSTwOQ7ZxVx3IeAA04m
+        pNB260T14UWJx+k2NYB8dFnkZSGkOBKyqGLpS8EYtN2JapLNpODeBt2SqIpZIQWaQGwx6AP9cEYU
+        UjSutyF1ij9/P//3P+7hb3aJFhUO42+JW7TH4eN3Ac1RSNE5H4hFJfYhdL66uEDeRfGwzSyFCybv
+        em7IXzQuWvLikrBsrmZbmtRFOZ2Oaaq2Rb3dzi7rBgui7KduJ6RQmqkJjofAMA69qMRftDEaW3jd
+        c5AwN9TAH+i2RSvhW422QTYujay2WnyUwhN6Z72o/vrhPBbVSArqtHeKhvlzQy3yx4ZajopyEjvq
+        sy22b+uUaP7rVvuix/7RQtgTUNsRO/4qVqAilrDqbwi+o+CeiqV1B/KwZdfCXnvYu/ahsCUs0aCK
+        ad3qsE+/U60dITgwhCodMix+Ki803sGNdbcW0KeCzubbEN1kAUPA5gZcCk8z+MDO7vbOKJngvbMy
+        VaMEtCpN3eotSfgO1RF+T97rBiVsDaXCcCkARZ44ZFl0KJMh9GdKB9EjPz+u/qS75C1FjajEu4Ne
+        Rf4IW1GJ75t9X+v4jTs/aO31Xdx4lefwZhH/OI5VEHHfS0FG25vhjJ61qASp4qa6uLjfakP3MeXr
+        V9cbRntz/Zq4Jg7+Os2+0Va/SqXtr19dv0UO16Ps69WPq2+yIYjs7wetMjzo+6vycjydTKf5/WZV
+        Xq03q2KxnF1NN5N8mhdFURabxWZUXubr2f2F+Pg+ql8nP6QYP77/KJ88NXrpqeJLniqeeepNj+qr
+        la5f+OqHPb2QYlCJ+Em4R2NJaNHiLjaV1LqwCUmtod6Hy6tzXW8w6Lj50TEbppbsb1PM4sti5qNR
+        OSvu17PxbJ0vynI5m8yuFpPp9Gq5mM8m+WS0WI42q/8vZvFSzPJLYpbPxIy6vWXX7Sm80PNXit3u
+        483koaZ40z9JkpY9GEKm0vfxwqKajNHOAu5QWz8I/Br5xllL9gHvQGneU8MU4tMpPrrAbZ+3qN+m
+        3OWX5Z6NLseT/H4+Ga/ns9WkmK3z9bLM16OymM6Xm/FyvVhPF/P/LfeoLPLJ+EFv2xvz37V+9+65
+        1hRftTg88dIj8rnkA8gT1f8BAAD//wMAU3/zfcoLAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 6b6743847e35751b-SCL
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 30 Nov 2021 21:45:36 GMT
+      Expect-CT:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=roopZ7rq4zoUh8HmwGGxVKeqTkLo4oTjKQais8ptS3gkHgwlMMTqBYkDaxwKTpKxO35BOLVkkmPEafRs1dWLLO9P10SkErIx04SdNuBn8mopoL858lvHHYUM75ZhPDx%2BO5k%2FJaAv%2Bm0dy3w5"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443";
+        ma=86400
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://argenteam.net/api/v1/movie?id=24827
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA2xUy24jRwz8FYLAAgnQGY3eowFysC07wK4c+JE1jGR9oLopqe2e7kk/BMiWP2aP
+        e9hDsJ+gHwt6lA1iIMdhNVnFGpIvqBXWg1E1mAqMOhrGGufJMvzQn1WjH1GgtiuH9csbNIcbtcQa
+        y7Ka9qsBCtwxeaxzlkBPUds11pNiLNAnG3XDWPeHU4FkIntLUW/5t38qokDpko1+hzV+vD1Bga0L
+        kT3WuImxDXWvR37NNjI1heXY8xxc8pJDT7ot+9DjwbCi6Wg64dFE9mdlSeVqsppNZqNyyVKq4rFd
+        o0ClPcvocuE5bbWCxc7KDQqkHA1Y44edYbgkuSC5MWQF3Gm/1lYTXJIKbAVceLKSgyQ4sVYHfBUY
+        UtNQp/7cAhtQHA5ffNTSQWvIciRQDCfe05MOAqSzTmrlIFKz1IcvFlrnIfsqwBB43rJnqwgaUp7h
+        hhoyxuW0x+QJkiXYan4kaL1bsTx8pRo+4R1b5Q+fgcw6abaZsUk7MPzoAuwgeuIMG4J1Yu8JAtlI
+        Iut9rzekBPyZGNrk9UpLyk/ZQLI6++tgB9YFCHREFIOhAFFbzUtDoSiKTwjH5j03Lr5p/MwZUtnL
+        BakdvOcQtCSRXXJLViyzBcp1FQ/fvGLLIaeFBBv2DVlFKn9LZyUvtYfgDDV5GmCjHykIIEnLjkmR
+        BwKTnoFMBh1syR++2a61kIAa1zWsUg4sODo4iZ614iAgko0uq2JaUvFGLITEh78ItJUmhe5XfC/Z
+        sVxRMmAMrxMDZXTLPmofGNhCstBwOHylkJ/YTAGtU+w5QHP4vNbS5aGglp4zlKz2WWPU3LTZeDbA
+        oSWpXVEUKNCzYQocsP7jBY97kOf5bn6j226VFMsc0Nt7FJh3Bmv81f1yc5U/aR2OKxf0c86bliVc
+        nmbEec825rIPAtlo+3SkSF5jjawGT3Wvt19pw/s8q8XxQhRH4iLT/TS8uCxoq/fTYTksq0lZ7c8m
+        81l/Phyczaez8Ww2mFxUo+qkGs/Phxfz8WS03/x8ev/x98V4fDe8vDk9/XA7WNyMpvP76fXV9fvb
+        s/H1+b6Hrw95yZbdCfqvqP+/Dv++7PVn49Gk16l9N6iy3neD2RvF333pDhDW1XhY9V8fXh9e/wYA
+        AP//AwAQgSiXGgUAAA==
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 6b6743871ab0751b-SCL
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 30 Nov 2021 21:45:37 GMT
+      Expect-CT:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=f1%2FtVUaDLDW9XLjFghRHPaon1nuMq2Umv6OSR%2F5TGwYh2Pd4H1RGDiql3jFX05VN7oSywM%2FNyLKtDscx%2BXhXlHdLOmB%2BOILMvGUMfsjWE3wAXN%2BCOrR7ELOK%2F3tGj6Qk8jYjUX48q9NsD8j2"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443";
+        ma=86400
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://argenteam.net/api/v1/movie?id=132088
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//vFXbbtw2EP0VgsAGDqBoddvVBQiCTRzXaXNDcyta+GFEjrSMpaFCUls7
+        gT8mj37uJ/jHCmrt2GnqpC7SPkkEz5yZOXM0+sCV5FWcJlFRBNwp1yGv+O5IWLHnYBx7Rsh2kiiJ
+        b/OAK2o0rz5cg/OAXta84nG8jLK45AE/RjC88vEBN+AUtbwqwjTgZiSneuRVvFgEHDqHhsCpDb48
+        5+YBF3okZ455xV+RcijZCwcObcAeAIGEgO2P1II5DthTbX6H44A9IqmAB3zQ1qHhFV87N9hqPgfT
+        IjmEPiR0c4NWj0agnQu9QWPnUV1ngM1yIdO0yNIijmpMlyLGZS5qLBfh26HlAZfKoHDaE+8iKcte
+        q65DwnHjmwd/ZXnFX6peu/XZKbIHa+igRxewn7FGIYDtoWlHqylgvyJJOAZ+EnA79j1Mja6MgUNl
+        A4YdGzogdMAkdkyiVWicDliDo9RMIuuANdCrTgHbB3OoiZA8TiJbg0DWIqEBoTR5yd6NKIEhsR5I
+        2/P4B2BhetWWrZxBJdFf2WE8O50w70b0lWA/oAGpDROeBdjZqXXgGfBo6LQDoc7+oC2pZQYtmg1M
+        BGgHFAoCNhJc3Pfg0CiwbDCq9+ezj5ZtoFPawkVlLXRwpIAdMwd9rc5OactgdAtMwADvPRD6oVON
+        EmB8jNAkFJKYwvDIIUmcLjZKQsgedkyOvqHH6DTbeWZ92CMLIG4HHiWhB/YjWqsEsJ2/zuu25+zY
+        Wr3V28y1tgF7DmN3qdzOl4P31B22QAwuByo0TdpZryq9n4QxKEZ/ND6LQdJ9bdBf2JEJsBCwAY1m
+        g9HkNLPINmjOPhJD2ozYOW39bL1Ezvg+JPoXtZ2+L51auKftNNAOrS9qAxMBMDGidUoTmCmZpkZN
+        VSE54/OfTwimRqT2dODnpX21MJmnG1sweM9L4o97Bnuk7dA9txmmVtZQKwfkJpNdenrS4xxqUKyB
+        GezOLXVFKqEg5AE32CFYtLz67QPffsa84m8e3p8WhkTBK76fLDMecP+984o/XT168cofofVfZ55E
+        Aw+4Ve99YBYu2A8+1mljkNyWdzSKV7yHltBV947c3dFQVTu1rmqsJZZLKLK6iXOEJCuwWUaYyHxZ
+        Yp76S5HE2S1Jd/16DP3uC33O8M3D+6Gv7M5U0C1n7vrtNEtXs2Rvluw5A+IQTXj+bNRRKHQ/S1dF
+        NEv2gEiPJNCHjfIyqgwNmLoNe5ylqyTPo+sATntAkX4B+JR3rQg7HNZALtSmnaWrOMm/goeuG5Da
+        UdEFfJHnET85CDh2ig69lAd+udXT/+Kqsn+/lj8h58UyStL5pJ//u4TPCMNZUngtZ0n5SclJ1zsX
+        851+F7wqFmkRnxycBP/OHnFUXPVHGRY38kdSJxLTqJG4hCRPiygSSdNETVbnUVkuyqxImqaM48/9
+        MSX9PwxSZN8ySHSzgSc381MRfT+DZP/AIJOwN3fIUbJcXOuQJF5edUgS3XCF5NgUCdYLEZUC6xRl
+        Vogig2UTJ2VaJlG5gKxe5unnFpmyhvtPVr/47u7sPg53d58vwjhcuV7bcPd1+OSn16Ev/D+0T5l+
+        wz754ob75Xr/NOAO1xo6uACnefz9zLP4unm8jlvJrzPPwcmfAAAA//8DAF+Mars8CwAA
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 6b6743963ac0751b-SCL
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 30 Nov 2021 21:45:39 GMT
+      Expect-CT:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      NEL:
+      - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=OOTMjfi961ChESCSv1lx8pV7e4fOzfcUwY%2FGNUVjmQb7GZ5jDSRK51fRZwZlAxGzIXWonIGdvrRtnVF4dvJ%2FbANIAd0LPcbDR1w2JbzE8Z%2B%2BvHg7waks8MDGnggzHmjXyUTPHAySBa8Vo0DM"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      alt-svc:
+      - h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443";
+        ma=86400
+    status:
+      code: 200
+      message: OK
+version: 1

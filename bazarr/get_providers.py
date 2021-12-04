@@ -2,6 +2,7 @@
 
 import os
 import datetime
+import pytz
 import logging
 import subliminal_patch
 import pretty
@@ -29,6 +30,9 @@ def time_until_end_of_day(dt=None):
     tomorrow = dt + datetime.timedelta(days=1)
     return datetime.datetime.combine(tomorrow, datetime.time.min) - dt
 
+# Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
+titulky_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Prague')).replace(tzinfo=None) # Needs to convert to offset-naive dt
+titulky_limit_reset_datetime = time_until_end_of_day(dt=titulky_server_local_time)
 
 hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
@@ -64,9 +68,8 @@ PROVIDER_THROTTLE_MAP = {
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
         IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
     },
-    "titulky": {
-        DownloadLimitExceeded: (
-            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day)))
+    "titulky"         : {
+        DownloadLimitExceeded: (titulky_limit_reset_datetime, f"{titulky_limit_reset_datetime.seconds // 3600 + 1} hours")
     },
     "legendasdivx": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
@@ -183,6 +186,9 @@ def get_providers_auth():
         'titulky': {
             'username': settings.titulky.username,
             'password': settings.titulky.password,
+            'skip_wrong_fps': settings.titulky.getboolean('skip_wrong_fps'),
+            'approved_only': settings.titulky.getboolean('approved_only'),
+            'multithreading': settings.titulky.getboolean('multithreading'),
         },
         'titlovi': {
             'username': settings.titlovi.username,

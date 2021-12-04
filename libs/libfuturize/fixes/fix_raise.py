@@ -4,33 +4,39 @@ From Armin Ronacher's ``python-modernize``.
 
 raise         -> raise
 raise E       -> raise E
-raise E, V    -> raise E(V)
+raise E, 5    -> raise E(5)
+raise E, 5, T -> raise E(5).with_traceback(T)
+raise E, None, T -> raise E.with_traceback(T)
 
-raise (((E, E'), E''), E'''), V -> raise E(V)
+raise (((E, E'), E''), E'''), 5 -> raise E(5)
+raise "foo", V, T               -> warns about string exceptions
+
+raise E, (V1, V2) -> raise E(V1, V2)
+raise E, (V1, V2), T -> raise E(V1, V2).with_traceback(T)
 
 
 CAVEATS:
-1) "raise E, V" will be incorrectly translated if V is an exception
-   instance. The correct Python 3 idiom is
+1) "raise E, V, T" cannot be translated safely in general. If V
+   is not a tuple or a (number, string, None) literal, then:
 
-        raise E from V
-
-   but since we can't detect instance-hood by syntax alone and since
-   any client code would have to be changed as well, we don't automate
-   this.
+   raise E, V, T -> from future.utils import raise_
+                    raise_(E, V, T)
 """
-# Author: Collin Winter, Armin Ronacher
+# Author: Collin Winter, Armin Ronacher, Mark Huang
 
 # Local imports
 from lib2to3 import pytree, fixer_base
 from lib2to3.pgen2 import token
-from lib2to3.fixer_util import Name, Call, is_tuple
+from lib2to3.fixer_util import Name, Call, is_tuple, Comma, Attr, ArgList
+
+from libfuturize.fixer_util import touch_import_top
+
 
 class FixRaise(fixer_base.BaseFix):
 
     BM_compatible = True
     PATTERN = """
-    raise_stmt< 'raise' exc=any [',' val=any] >
+    raise_stmt< 'raise' exc=any [',' val=any [',' tb=any]] >
     """
 
     def transform(self, node, results):
@@ -55,19 +61,47 @@ class FixRaise(fixer_base.BaseFix):
                 exc = exc.children[1].children[0].clone()
             exc.prefix = u" "
 
-        if "val" not in results:
-            # One-argument raise
-            new = pytree.Node(syms.raise_stmt, [Name(u"raise"), exc])
-            new.prefix = node.prefix
-            return new
-
-        val = results["val"].clone()
-        if is_tuple(val):
-            args = [c.clone() for c in val.children[1:-1]]
+        if "tb" in results:
+            tb = results["tb"].clone()
         else:
-            val.prefix = u""
-            args = [val]
+            tb = None
+
+        if "val" in results:
+            val = results["val"].clone()
+            if is_tuple(val):
+                # Assume that exc is a subclass of Exception and call exc(*val).
+                args = [c.clone() for c in val.children[1:-1]]
+                exc = Call(exc, args)
+            elif val.type in (token.NUMBER, token.STRING):
+                # Handle numeric and string literals specially, e.g.
+                # "raise Exception, 5" -> "raise Exception(5)".
+                val.prefix = u""
+                exc = Call(exc, [val])
+            elif val.type == token.NAME and val.value == u"None":
+                # Handle None specially, e.g.
+                # "raise Exception, None" -> "raise Exception".
+                pass
+            else:
+                # val is some other expression. If val evaluates to an instance
+                # of exc, it should just be raised. If val evaluates to None,
+                # a default instance of exc should be raised (as above). If val
+                # evaluates to a tuple, exc(*val) should be called (as
+                # above). Otherwise, exc(val) should be called. We can only
+                # tell what to do at runtime, so defer to future.utils.raise_(),
+                # which handles all of these cases.
+                touch_import_top(u"future.utils", u"raise_", node)
+                exc.prefix = u""
+                args = [exc, Comma(), val]
+                if tb is not None:
+                    args += [Comma(), tb]
+                return Call(Name(u"raise_"), args)
+
+        if tb is not None:
+            tb.prefix = ""
+            exc_list = Attr(exc, Name('with_traceback')) + [ArgList([tb])]
+        else:
+            exc_list = [exc]
 
         return pytree.Node(syms.raise_stmt,
-                           [Name(u"raise"), Call(exc, args)],
+                           [Name(u"raise")] + exc_list,
                            prefix=node.prefix)

@@ -18,6 +18,7 @@ from helper import get_subtitle_destination_folder
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
+from peewee import DoesNotExist
 
 gc.enable()
 
@@ -426,7 +427,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
                 # remove missing that have forced or hi subtitles for this language in existing
                 for item in actual_subtitles_list:
-                    if item[1] == 'True' or item[2] == 'True':
+                    if item[2] == 'True':
                         try:
                             missing_subtitles_list.remove([item[0], 'False', 'False'])
                         except ValueError:

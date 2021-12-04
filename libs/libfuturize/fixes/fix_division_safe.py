@@ -14,10 +14,8 @@ nothing.
 """
 
 import re
-import lib2to3.pytree as pytree
 from lib2to3.fixer_util import Leaf, Node, Comma
 from lib2to3 import fixer_base
-from lib2to3.fixer_util import syms, does_tree_import
 from libfuturize.fixer_util import (token, future_import, touch_import_top,
                                     wrap_in_fn_call)
 
@@ -33,8 +31,8 @@ def match_division(node):
 
 const_re = re.compile('^[0-9]*[.][0-9]*$')
 
-def is_floaty(node, div_idx):
-    return _is_floaty(node.children[0:div_idx]) or _is_floaty(node.children[div_idx+1:])
+def is_floaty(node):
+    return _is_floaty(node.prev_sibling) or _is_floaty(node.next_sibling)
 
 
 def _is_floaty(expr):
@@ -50,24 +48,6 @@ def _is_floaty(expr):
             return expr.children[0].value == u'float'
     return False
 
-def find_division(node):
-    for i, child in enumerate(node.children):
-        if match_division(child):
-            return i
-    return False
-
-def clone_div_operands(node, div_idx):
-    children = []
-    for i, child in enumerate(node.children):
-        if i == div_idx:
-            children.append(Comma())
-        else:
-            children.append(child.clone())
-
-    # Strip any leading space for the first number:
-    children[0].prefix = u''
-
-    return children
 
 class FixDivisionSafe(fixer_base.BaseFix):
     # BM_compatible = True
@@ -92,13 +72,28 @@ class FixDivisionSafe(fixer_base.BaseFix):
         matches, we can start discarding matches after the first.
         """
         if node.type == self.syms.term:
-            div_idx = find_division(node)
-            if div_idx is not False:
-                # if expr1 or expr2 are obviously floats, we don't need to wrap in
-                # old_div, as the behavior of division between any number and a float
-                # should be the same in 2 or 3
-                if not is_floaty(node, div_idx):
-                    return clone_div_operands(node, div_idx)
+            matched = False
+            skip = False
+            children = []
+            for child in node.children:
+                if skip:
+                    skip = False
+                    continue
+                if match_division(child) and not is_floaty(child):
+                    matched = True
+
+                    # Strip any leading space for the first number:
+                    children[0].prefix = u''
+
+                    children = [wrap_in_fn_call("old_div",
+                                                children + [Comma(), child.next_sibling.clone()],
+                                                prefix=node.prefix)]
+                    skip = True
+                else:
+                    children.append(child.clone())
+            if matched:
+                return Node(node.type, children, fixers_applied=node.fixers_applied)
+
         return False
 
     def transform(self, node, results):
@@ -106,4 +101,4 @@ class FixDivisionSafe(fixer_base.BaseFix):
             return
         future_import(u"division", node)
         touch_import_top(u'past.utils', u'old_div', node)
-        return wrap_in_fn_call("old_div", results, prefix=node.prefix)
+        return results

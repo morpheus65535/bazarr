@@ -36,7 +36,7 @@ class Server(object):
                           is a grace period added by the server.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
-                         is 5 seconds.
+                         is 20 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport. The default is 1,000,000
                                  bytes.
@@ -78,20 +78,25 @@ class Server(object):
                             inactive clients are closed. Set to ``False`` to
                             disable the monitoring task (not recommended). The
                             default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
+    valid_transports = ['polling', 'websocket']
     _default_monitor_clients = True
     sequence_number = 0
 
-    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=5,
+    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=20,
                  max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
-                 async_handlers=True, monitor_clients=None, **kwargs):
+                 async_handlers=True, monitor_clients=None, transports=None,
+                 **kwargs):
         self.ping_timeout = ping_timeout
         if isinstance(ping_interval, tuple):
             self.ping_interval = ping_interval[0]
@@ -152,6 +157,14 @@ class Server(object):
                 self._async['asyncio']:  # pragma: no cover
             raise ValueError('The selected async_mode requires asyncio and '
                              'must use the AsyncServer class')
+        if transports is not None:
+            if isinstance(transports, str):
+                transports = [transports]
+            transports = [transport for transport in transports
+                          if transport in self.valid_transports]
+            if not transports:
+                raise ValueError('No valid transports provided')
+        self.transports = transports or self.valid_transports
         self.logger.info('Server initialized for %s.', self.async_mode)
 
     def is_asyncio_based(self):
@@ -333,8 +346,7 @@ class Server(object):
                         allowed_origins:
                     self._log_error_once(
                         origin + ' is not an accepted origin.', 'bad-origin')
-                    r = self._bad_request(
-                        origin + ' is not an accepted origin.')
+                    r = self._bad_request('Not an accepted origin.')
                     start_response(r['status'], r['headers'])
                     return [r['response']]
 
@@ -342,6 +354,14 @@ class Server(object):
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
         jsonp = False
         jsonp_index = None
+
+        # make sure the client uses an allowed transport
+        transport = query.get('transport', ['polling'])[0]
+        if transport not in self.transports:
+            self._log_error_once('Invalid transport', 'bad-transport')
+            r = self._bad_request('Invalid transport')
+            start_response(r['status'], r['headers'])
+            return [r['response']]
 
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
@@ -369,7 +389,6 @@ class Server(object):
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
-                transport = query.get('transport', ['polling'])[0]
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
                 upgrade_header = environ.get('HTTP_UPGRADE').lower() \
@@ -379,13 +398,13 @@ class Server(object):
                     r = self._handle_connect(environ, start_response,
                                              transport, jsonp_index)
                 else:
-                    self._log_error_once('Invalid transport ' + transport,
-                                         'bad-transport')
-                    r = self._bad_request('Invalid transport ' + transport)
+                    self._log_error_once('Invalid websocket upgrade',
+                                         'bad-upgrade')
+                    r = self._bad_request('Invalid websocket upgrade')
             else:
                 if sid not in self.sockets:
                     self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                    r = self._bad_request('Invalid session ' + sid)
+                    r = self._bad_request('Invalid session')
                 else:
                     socket = self._get_socket(sid)
                     try:
@@ -405,7 +424,7 @@ class Server(object):
             if sid is None or sid not in self.sockets:
                 self._log_error_once(
                     'Invalid session ' + (sid or 'None'), 'bad-sid')
-                r = self._bad_request('Invalid session ' + (sid or 'None'))
+                r = self._bad_request('Invalid session')
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -453,9 +472,9 @@ class Server(object):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        This function returns an object that represents the background task,
+        on which the ``join()`` methond can be invoked to wait for the task to
+        complete.
         """
         th = self._async['thread'](target=target, args=args, kwargs=kwargs)
         th.start()
@@ -581,7 +600,14 @@ class Server(object):
     def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self._async['websocket'] is None or transport == 'websocket':
+                transport == 'websocket':
+            return []
+        if self._async['websocket'] is None:  # pragma: no cover
+            self._log_error_once(
+                'The WebSocket transport is not available, you must install a '
+                'WebSocket server that is compatible with your async mode to '
+                'enable it. See the documentation for details.',
+                'no-websocket')
             return []
         return ['websocket']
 
@@ -656,13 +682,15 @@ class Server(object):
         if 'wsgi.url_scheme' in environ and 'HTTP_HOST' in environ:
             default_origins.append('{scheme}://{host}'.format(
                 scheme=environ['wsgi.url_scheme'], host=environ['HTTP_HOST']))
-            if 'HTTP_X_FORWARDED_HOST' in environ:
+            if 'HTTP_X_FORWARDED_PROTO' in environ or \
+                    'HTTP_X_FORWARDED_HOST' in environ:
                 scheme = environ.get(
                     'HTTP_X_FORWARDED_PROTO',
                     environ['wsgi.url_scheme']).split(',')[0].strip()
                 default_origins.append('{scheme}://{host}'.format(
-                    scheme=scheme, host=environ['HTTP_X_FORWARDED_HOST'].split(
-                        ',')[0].strip()))
+                    scheme=scheme, host=environ.get(
+                        'HTTP_X_FORWARDED_HOST', environ['HTTP_HOST']).split(
+                            ',')[0].strip()))
         if self.cors_allowed_origins is None:
             allowed_origins = default_origins
         elif self.cors_allowed_origins == '*':

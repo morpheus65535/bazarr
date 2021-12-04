@@ -1,9 +1,8 @@
 """parent translator class"""
 
-from deep_translator.exceptions import NotValidPayload, NotValidLength
+from .exceptions import NotValidPayload, NotValidLength, InvalidSourceOrTargetLanguage
 from abc import ABC, abstractmethod
-
-
+import string
 class BaseTranslator(ABC):
     """
     Abstract class that serve as a parent translator for other different translators
@@ -20,6 +19,9 @@ class BaseTranslator(ABC):
         @param source: source language to translate from
         @param target: target language to translate to
         """
+        if source == target:
+            raise InvalidSourceOrTargetLanguage(source)
+
         self.__base_url = base_url
         self._source = source
         self._target = target
@@ -40,8 +42,13 @@ class BaseTranslator(ABC):
         @return: bool
         """
 
-        if not payload or not isinstance(payload, str):
+        if not payload or not isinstance(payload, str) or not payload.strip() or payload.isdigit():
             raise NotValidPayload(payload)
+
+        # check if payload contains only symbols
+        if all(i in string.punctuation for i in payload):
+            raise NotValidPayload(payload)
+
         if not BaseTranslator.__check_length(payload, min_chars, max_chars):
             raise NotValidLength(payload, min_chars, max_chars)
         return True
@@ -55,7 +62,7 @@ class BaseTranslator(ABC):
         @param max_chars: maximum characters allowed
         @return: bool
         """
-        return True if min_chars < len(payload) < max_chars else False
+        return True if min_chars <= len(payload) < max_chars else False
 
     @abstractmethod
     def translate(self, text, **kwargs):

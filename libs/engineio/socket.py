@@ -159,6 +159,12 @@ class Socket(object):
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
+        def websocket_wait():
+            data = ws.wait()
+            if data and len(data) > self.server.max_http_buffer_size:
+                raise ValueError('packet is too large')
+            return data
+
         # try to set a socket timeout matching the configured ping interval
         # and timeout
         for attr in ['_sock', 'socket']:  # pragma: no cover
@@ -170,7 +176,7 @@ class Socket(object):
             # the socket was already connected, so this is an upgrade
             self.upgrading = True  # hold packet sends during the upgrade
 
-            pkt = ws.wait()
+            pkt = websocket_wait()
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.PING or \
                     decoded_pkt.data != 'probe':
@@ -181,7 +187,7 @@ class Socket(object):
             ws.send(packet.Packet(packet.PONG, data='probe').encode())
             self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
-            pkt = ws.wait()
+            pkt = websocket_wait()
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.UPGRADE:
                 self.upgraded = False
@@ -221,7 +227,7 @@ class Socket(object):
         while True:
             p = None
             try:
-                p = ws.wait()
+                p = websocket_wait()
             except Exception as e:
                 # if the socket is already closed, we can assume this is a
                 # downstream error of that

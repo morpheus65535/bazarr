@@ -1,10 +1,7 @@
 from base64 import b64encode
-from json import JSONDecodeError
+from engineio.json import JSONDecodeError
 import logging
-try:
-    import queue
-except ImportError:  # pragma: no cover
-    import Queue as queue
+import queue
 import signal
 import ssl
 import threading
@@ -69,17 +66,18 @@ class Client(object):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self,
-                 logger=False,
-                 json=None,
-                 request_timeout=5,
-                 http_session=None,
-                 ssl_verify=True):
+    def __init__(self, logger=False, json=None, request_timeout=5,
+                 http_session=None, ssl_verify=True, handle_sigint=True):
         global original_signal_handler
-        if original_signal_handler is None and \
+        if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
@@ -92,6 +90,7 @@ class Client(object):
         self.ping_interval = None
         self.ping_timeout = None
         self.http = http_session
+        self.handle_sigint = handle_sigint
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
@@ -244,9 +243,9 @@ class Client(object):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        This function returns an object that represents the background task,
+        on which the ``join()`` method can be invoked to wait for the task to
+        complete.
         """
         th = threading.Thread(target=target, args=args, kwargs=kwargs)
         th.start()
@@ -282,10 +281,10 @@ class Client(object):
         r = self._send_request(
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
             timeout=self.request_timeout)
-        if r is None:
+        if r is None or isinstance(r, str):
             self._reset()
             raise exceptions.ConnectionError(
-                'Connection refused by the server')
+                r or 'Connection refused by the server')
         if r.status_code < 200 or r.status_code >= 300:
             self._reset()
             try:
@@ -528,6 +527,7 @@ class Client(object):
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
+            return str(exc)
 
     def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -574,9 +574,9 @@ class Client(object):
             r = self._send_request(
                 'GET', self.base_url + self._get_url_timestamp(),
                 timeout=max(self.ping_interval, self.ping_timeout) + 5)
-            if r is None:
+            if r is None or isinstance(r, str):
                 self.logger.warning(
-                    'Connection refused by the server, aborting')
+                    r or 'Connection refused by the server, aborting')
                 self.queue.put(None)
                 break
             if r.status_code < 200 or r.status_code >= 300:
@@ -682,13 +682,13 @@ class Client(object):
                 p = payload.Payload(packets=packets)
                 r = self._send_request(
                     'POST', self.base_url, body=p.encode(),
-                    headers={'Content-Type': 'application/octet-stream'},
+                    headers={'Content-Type': 'text/plain'},
                     timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
-                if r is None:
+                if r is None or isinstance(r, str):
                     self.logger.warning(
-                        'Connection refused by the server, aborting')
+                        r or 'Connection refused by the server, aborting')
                     break
                 if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
