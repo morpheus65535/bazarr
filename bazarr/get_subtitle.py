@@ -216,6 +216,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             action = "upgraded"
                         else:
                             action = "downloaded"
+
                         percent_score = round(subtitle.score * 100 / max_score, 2)
                         message = downloaded_language + modifier_string + " subtitles " + action + " from " + \
                             downloaded_provider + " with a score of " + str(percent_score) + "%."
@@ -417,9 +418,10 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi, score_obj=handler)
                 if 'hash' not in matches:
                     not_matched = scores - matches
+                    s.score = score_without_hash
                 else:
+                    s.score = score
                     not_matched = set()
-                s.score = score_without_hash
 
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')

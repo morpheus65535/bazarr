@@ -146,6 +146,7 @@ class Score:
     def __init__(self, load_profiles=False, **kwargs):
         self.data = self.defaults.copy()
         self.data.update(**kwargs)
+        self.data["hash"] = self._hash_score()
         self._profiles = []
         self._profiles_loaded = False
 
@@ -205,9 +206,16 @@ class Score:
     @property
     def max_score(self):
         return (
-            sum(val for val in self.scores.values() if val > 0)
-            + sum(item.score for item in self._profiles if item.score > 0)
-            - self.data["hash"]
+            self.data["hash"]
+            + self.data["hearing_impaired"]
+            + sum(item.score for item in self._profiles if item.score)
+        )
+
+    def _hash_score(self):
+        return sum(
+            val
+            for key, val in self.data.items()
+            if key not in ("hash", "hearing_impaired")
         )
 
     def __str__(self):
