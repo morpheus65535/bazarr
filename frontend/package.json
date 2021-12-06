@@ -28,7 +28,7 @@
     "package.json": "^2.0.1",
     "rc-slider": "^9.7",
     "react": "^17",
-    "react-bootstrap": "^1",
+    "react-bootstrap": "^2",
     "react-dom": "^17",
     "react-helmet": "^6.1",
     "react-redux": "^7.2",
