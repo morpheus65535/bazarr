@@ -15,13 +15,13 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        radarrId = request.args.getlist('radarrid[]')
+        movieId = request.args.getlist('movieid[]')
 
         count = TableMovies.select().count()
 
-        if len(radarrId) != 0:
+        if len(movieId) != 0:
             result = TableMovies.select()\
-                .where(TableMovies.radarrId.in_(radarrId))\
+                .where(TableMovies.movieId.in_(movieId))\
                 .order_by(TableMovies.sortTitle)\
                 .dicts()
         else:
@@ -34,12 +34,14 @@ class Movies(Resource):
 
     @authenticate
     def post(self):
-        radarrIdList = request.form.getlist('radarrid')
+        movieIdList = request.form.getlist('movieid')
         profileIdList = request.form.getlist('profileid')
+        monitoredList = request.form.getlist('monitored')
 
-        for idx in range(len(radarrIdList)):
-            radarrId = radarrIdList[idx]
+        for idx in range(len(movieIdList)):
+            movieId = movieIdList[idx]
             profileId = profileIdList[idx]
+            monitored = monitoredList[idx]
 
             if profileId in None_Keys:
                 profileId = None
@@ -50,31 +52,56 @@ class Movies(Resource):
                     return '', 400
 
             TableMovies.update({
-                TableMovies.profileId: profileId
+                TableMovies.profileId: profileId,
+                TableMovies.monitored: monitored
             })\
-                .where(TableMovies.radarrId == radarrId)\
+                .where(TableMovies.movieId == movieId)\
                 .execute()
 
-            list_missing_subtitles_movies(no=radarrId, send_event=False)
+            list_missing_subtitles_movies(no=movieId, send_event=False)
 
-            event_stream(type='movie', payload=radarrId)
-            event_stream(type='movie-wanted', payload=radarrId)
+            event_stream(type='movie', payload=movieId)
+            event_stream(type='movie-wanted', payload=movieId)
         event_stream(type='badges')
 
         return '', 204
 
     @authenticate
     def patch(self):
-        radarrid = request.form.get('radarrid')
+        movieid = request.form.get('movieid')
         action = request.form.get('action')
-        if action == "scan-disk":
-            movies_scan_subtitles(radarrid)
+        value = request.form.get('value')
+        tmdbid = request.form.get('tmdbid')
+        if tmdbid:
+            TableMovies.update({TableMovies.tmdbId: tmdbid}).where(TableMovies.movieId == movieid).execute()
+            event_stream(type='movie', payload=movieid)
+            movies_scan_subtitles(movieid)
+            return '', 204
+        elif action == "refresh":
+            movies_scan_subtitles(movieid)
             return '', 204
         elif action == "search-missing":
-            movies_download_subtitles(radarrid)
+            movies_download_subtitles(movieid)
             return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_movies()
+            return '', 204
+        elif action == "monitored":
+            if value == 'false':
+                new_monitored_value = 'True'
+            else:
+                new_monitored_value = 'False'
+
+            TableMovies.update({
+                TableMovies.monitored: new_monitored_value
+            }) \
+                .where(TableMovies.movieId == movieid) \
+                .execute()
+
+            event_stream(type='movie', payload=movieid)
+            event_stream(type='badges')
+            event_stream(type='movie-wanted')
+
             return '', 204
 
         return '', 400

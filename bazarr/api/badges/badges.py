@@ -22,7 +22,7 @@ class Badges(Resource):
         missing_episodes = TableEpisodes.select(TableShows.tags,
                                                 TableShows.seriesType,
                                                 TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableShows)\
             .where(reduce(operator.and_, episodes_conditions))\
             .count()
 

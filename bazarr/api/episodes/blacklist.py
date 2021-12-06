@@ -9,7 +9,6 @@ from flask_restful import Resource
 from database import TableEpisodes, TableShows, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
 from utils import blacklist_log, delete_subtitles, blacklist_delete_all, blacklist_delete
-from helper import path_mappings
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream
 
@@ -26,13 +25,13 @@ class EpisodesBlacklist(Resource):
         data = TableBlacklist.select(TableShows.title.alias('seriesTitle'),
                                      TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
                                      TableEpisodes.title.alias('episodeTitle'),
-                                     TableEpisodes.sonarrSeriesId,
+                                     TableEpisodes.seriesId,
                                      TableBlacklist.provider,
                                      TableBlacklist.subs_id,
                                      TableBlacklist.language,
                                      TableBlacklist.timestamp)\
-            .join(TableEpisodes, on=(TableBlacklist.sonarr_episode_id == TableEpisodes.sonarrEpisodeId))\
-            .join(TableShows, on=(TableBlacklist.sonarr_series_id == TableShows.sonarrSeriesId))\
+            .join(TableEpisodes)\
+            .join(TableShows)\
             .order_by(TableBlacklist.timestamp.desc())\
             .limit(length)\
             .offset(start)\
@@ -50,22 +49,22 @@ class EpisodesBlacklist(Resource):
 
     @authenticate
     def post(self):
-        sonarr_series_id = int(request.args.get('seriesid'))
-        sonarr_episode_id = int(request.args.get('episodeid'))
+        series_id = int(request.args.get('seriesid'))
+        episode_id = int(request.args.get('episodeid'))
         provider = request.form.get('provider')
         subs_id = request.form.get('subs_id')
         language = request.form.get('language')
 
         episodeInfo = TableEpisodes.select(TableEpisodes.path)\
-            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
+            .where(TableEpisodes.episodeId == episode_id)\
             .dicts()\
             .get()
 
         media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')
 
-        blacklist_log(sonarr_series_id=sonarr_series_id,
-                      sonarr_episode_id=sonarr_episode_id,
+        blacklist_log(series_id=series_id,
+                      episode_id=episode_id,
                       provider=provider,
                       subs_id=subs_id,
                       language=language)
@@ -73,11 +72,11 @@ class EpisodesBlacklist(Resource):
                          language=language,
                          forced=False,
                          hi=False,
-                         media_path=path_mappings.path_replace(media_path),
+                         media_path=media_path,
                          subtitles_path=subtitles_path,
-                         sonarr_series_id=sonarr_series_id,
-                         sonarr_episode_id=sonarr_episode_id)
-        episode_download_subtitles(sonarr_episode_id)
+                         series_id=series_id,
+                         episode_id=episode_id)
+        episode_download_subtitles(episode_id)
         event_stream(type='episode-history')
         return '', 200
 

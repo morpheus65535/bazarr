@@ -24,7 +24,7 @@ class Series(Resource):
 
         if len(seriesId) != 0:
             result = TableShows.select() \
-                .where(TableShows.sonarrSeriesId.in_(seriesId)) \
+                .where(TableShows.seriesId.in_(seriesId)) \
                 .order_by(TableShows.sortTitle).dicts()
         else:
             result = TableShows.select().order_by(TableShows.sortTitle).limit(length).offset(start).dicts()
@@ -35,14 +35,14 @@ class Series(Resource):
             postprocessSeries(item)
 
             # Add missing subtitles episode count
-            episodes_missing_conditions = [(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId']),
+            episodes_missing_conditions = [(TableEpisodes.seriesId == item['seriesId']),
                                            (TableEpisodes.missing_subtitles != '[]')]
             episodes_missing_conditions += get_exclusion_clause('series')
 
             episodeMissingCount = TableEpisodes.select(TableShows.tags,
                                                        TableEpisodes.monitored,
                                                        TableShows.seriesType) \
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                .join(TableShows) \
                 .where(reduce(operator.and_, episodes_missing_conditions)) \
                 .count()
             item.update({"episodeMissingCount": episodeMissingCount})
@@ -51,8 +51,8 @@ class Series(Resource):
             episodeFileCount = TableEpisodes.select(TableShows.tags,
                                                     TableEpisodes.monitored,
                                                     TableShows.seriesType) \
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
-                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId']) \
+                .join(TableShows) \
+                .where(TableEpisodes.seriesId == item['seriesId']) \
                 .count()
             item.update({"episodeFileCount": episodeFileCount})
 
@@ -62,10 +62,12 @@ class Series(Resource):
     def post(self):
         seriesIdList = request.form.getlist('seriesid')
         profileIdList = request.form.getlist('profileid')
+        monitoredList = request.form.getlist('monitored')
 
         for idx in range(len(seriesIdList)):
             seriesId = seriesIdList[idx]
             profileId = profileIdList[idx]
+            monitored = monitoredList[idx]
 
             if profileId in None_Keys:
                 profileId = None
@@ -76,9 +78,16 @@ class Series(Resource):
                     return '', 400
 
             TableShows.update({
-                TableShows.profileId: profileId
+                TableShows.profileId: profileId,
+                TableShows.monitored: monitored
             }) \
-                .where(TableShows.sonarrSeriesId == seriesId) \
+                .where(TableShows.seriesId == seriesId) \
+                .execute()
+
+            TableEpisodes.update({
+                TableEpisodes.monitored: monitored
+            }) \
+                .where(TableEpisodes.seriesId == seriesId) \
                 .execute()
 
             list_missing_subtitles(no=seriesId, send_event=False)
@@ -86,12 +95,13 @@ class Series(Resource):
             event_stream(type='series', payload=seriesId)
 
             episode_id_list = TableEpisodes \
-                .select(TableEpisodes.sonarrEpisodeId) \
-                .where(TableEpisodes.sonarrSeriesId == seriesId) \
+                .select(TableEpisodes.episodeId) \
+                .where(TableEpisodes.seriesId == seriesId) \
                 .dicts()
 
             for item in episode_id_list:
-                event_stream(type='episode-wanted', payload=item['sonarrEpisodeId'])
+                event_stream(type='episode', payload=item['episodeId'])
+                event_stream(type='episode-wanted', payload=item['episodeId'])
 
         event_stream(type='badges')
 
@@ -101,7 +111,15 @@ class Series(Resource):
     def patch(self):
         seriesid = request.form.get('seriesid')
         action = request.form.get('action')
-        if action == "scan-disk":
+        value = request.form.get('value')
+        tmdbid = request.form.get('tmdbid')
+
+        if tmdbid:
+            TableShows.update({TableShows.tmdbId: tmdbid}).where(TableShows.seriesId == seriesid).execute()
+            event_stream(type='series', payload=seriesid)
+            series_scan_subtitles(seriesid)
+            return '', 204
+        elif action == "refresh":
             series_scan_subtitles(seriesid)
             return '', 204
         elif action == "search-missing":
@@ -109,6 +127,37 @@ class Series(Resource):
             return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
+            return '', 204
+        elif action == "monitored":
+            if value == 'false':
+                new_monitored_value = 'True'
+            else:
+                new_monitored_value = 'False'
+
+            # update series monitored status
+            TableShows.update({
+                TableShows.monitored: new_monitored_value
+            }) \
+                .where(TableShows.seriesId == seriesid) \
+                .execute()
+
+            event_stream(type='series', payload=seriesid)
+
+            # update each series episode monitored status
+            series_episodes = TableEpisodes.select(TableEpisodes.episodeId) \
+                .where(TableEpisodes.seriesId == seriesid) \
+                .dicts()
+
+            TableEpisodes.update({
+                TableEpisodes.monitored: new_monitored_value
+            }) \
+                .where(TableEpisodes.seriesId == seriesid) \
+                .execute()
+
+            for episodeid in series_episodes:
+                event_stream(type='badges')
+                event_stream(type='episode-wanted', payload=episodeid['episodeId'])
+
             return '', 204
 
         return '', 400

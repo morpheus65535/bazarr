@@ -47,30 +47,30 @@ class WebHooksPlex(Resource):
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
                 series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
-            except:
+            except Exception:
                 return '', 404
             else:
-                sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
-                    .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
+                episodeId = TableEpisodes.select(TableEpisodes.episodeId) \
+                    .join(TableShows) \
                     .where(TableShows.imdbId == series_imdb_id,
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode) \
                     .dicts() \
                     .get()
 
-                if sonarrEpisodeId:
-                    episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
+                if episodeId:
+                    episode_download_subtitles(no=episodeId['episodeId'], send_progress=True)
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-            except:
+            except Exception:
                 return '', 404
             else:
-                radarrId = TableMovies.select(TableMovies.radarrId)\
+                movieId = TableMovies.select(TableMovies.movieId)\
                     .where(TableMovies.imdbId == movie_imdb_id)\
                     .dicts()\
                     .get()
-                if radarrId:
-                    movies_download_subtitles(no=radarrId['radarrId'])
+                if movieId:
+                    movies_download_subtitles(no=movieId['movieId'])
 
         return '', 200

@@ -6,10 +6,9 @@ from functools import wraps
 from flask import request, abort
 from operator import itemgetter
 
-from config import settings, base_url
+from config import settings
 from get_languages import language_from_alpha2, alpha3_from_alpha2
 from database import get_audio_profile_languages, get_desired_languages
-from helper import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
 
@@ -74,7 +73,7 @@ def postprocessSeries(item):
     postprocess(item)
     # Parse audio language
     if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(series_id=item['sonarrSeriesId'])
+        item['audio_language'] = get_audio_profile_languages(series_id=item['seriesId'])
 
     if 'alternateTitles' in item:
         if item['alternateTitles'] is None:
@@ -87,23 +86,11 @@ def postprocessSeries(item):
     if 'seriesType' in item and item['seriesType'] is not None:
         item['seriesType'] = item['seriesType'].capitalize()
 
-    if 'path' in item:
-        item['path'] = path_mappings.path_replace(item['path'])
-
-    # map poster and fanart to server proxy
-    if 'poster' in item:
-        poster = item['poster']
-        item['poster'] = f"{base_url}/images/series{poster}" if poster else None
-
-    if 'fanart' in item:
-        fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/series{fanart}" if fanart else None
-
 
 def postprocessEpisode(item):
     postprocess(item)
     if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])
+        item['audio_language'] = get_audio_profile_languages(episode_id=item['episodeId'])
 
     if 'subtitles' in item:
         if item['subtitles'] is None:
@@ -117,7 +104,7 @@ def postprocessEpisode(item):
             sub = {"name": language_from_alpha2(subtitle[0]),
                    "code2": subtitle[0],
                    "code3": alpha3_from_alpha2(subtitle[0]),
-                   "path": path_mappings.path_replace(subs[1]),
+                   "path": subs[1],
                    "forced": False,
                    "hi": False}
             if len(subtitle) > 1:
@@ -147,21 +134,13 @@ def postprocessEpisode(item):
                     "hi": True if subtitle[1] == 'hi' else False
                 })
 
-    if 'scene_name' in item:
-        item["sceneName"] = item["scene_name"]
-        del item["scene_name"]
-
-    if 'path' in item and item['path']:
-        # Provide mapped path
-        item['path'] = path_mappings.path_replace(item['path'])
-
 
 # TODO: Move
 def postprocessMovie(item):
     postprocess(item)
     # Parse audio language
     if 'audio_language' in item and item['audio_language'] is not None:
-        item['audio_language'] = get_audio_profile_languages(movie_id=item['radarrId'])
+        item['audio_language'] = get_audio_profile_languages(movie_id=item['movieId'])
 
     # Parse alternate titles
     if 'alternativeTitles' in item:
@@ -183,7 +162,7 @@ def postprocessMovie(item):
             item['subtitles'] = ast.literal_eval(item['subtitles'])
         for i, subs in enumerate(item['subtitles']):
             language = subs[0].split(':')
-            item['subtitles'][i] = {"path": path_mappings.path_replace_movie(subs[1]),
+            item['subtitles'][i] = {"path": subs[1],
                                     "name": language_from_alpha2(language[0]),
                                     "code2": language[0],
                                     "code3": alpha3_from_alpha2(language[0]),
@@ -219,21 +198,3 @@ def postprocessMovie(item):
                     "forced": True if language[1] == 'forced' else False,
                     "hi": True if language[1] == 'hi' else False
                 })
-
-    # Provide mapped path
-    if 'path' in item:
-        if item['path']:
-            item['path'] = path_mappings.path_replace_movie(item['path'])
-
-    if 'subtitles_path' in item:
-        # Provide mapped subtitles path
-        item['subtitles_path'] = path_mappings.path_replace_movie(item['subtitles_path'])
-
-    # map poster and fanart to server proxy
-    if 'poster' in item:
-        poster = item['poster']
-        item['poster'] = f"{base_url}/images/movies{poster}" if poster else None
-
-    if 'fanart' in item:
-        fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/movies{fanart}" if fanart else None

@@ -15,10 +15,10 @@ class Searches(Resource):
         search_list = []
 
         if query:
-            if settings.general.getboolean('use_sonarr'):
+            if settings.general.getboolean('use_series'):
                 # Get matching series
                 series = TableShows.select(TableShows.title,
-                                           TableShows.sonarrSeriesId,
+                                           TableShows.seriesId,
                                            TableShows.year)\
                     .where(TableShows.title.contains(query))\
                     .order_by(TableShows.title)\
@@ -26,10 +26,10 @@ class Searches(Resource):
                 series = list(series)
                 search_list += series
 
-            if settings.general.getboolean('use_radarr'):
+            if settings.general.getboolean('use_movies'):
                 # Get matching movies
                 movies = TableMovies.select(TableMovies.title,
-                                            TableMovies.radarrId,
+                                            TableMovies.movieId,
                                             TableMovies.year) \
                     .where(TableMovies.title.contains(query)) \
                     .order_by(TableMovies.title) \

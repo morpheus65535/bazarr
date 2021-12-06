@@ -14,7 +14,6 @@ from datetime import timedelta
 from database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
 from config import settings
-from helper import path_mappings
 
 
 class EpisodesHistory(Resource):
@@ -27,7 +26,7 @@ class EpisodesHistory(Resource):
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-            minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+            minimum_timestamp = ((datetime.datetime.now() - datetime.timedelta(days=int(days_to_upgrade_subs))) -
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
             if settings.general.getboolean('upgrade_manual'):
@@ -45,8 +44,8 @@ class EpisodesHistory(Resource):
                                                       TableShows.tags,
                                                       TableEpisodes.monitored,
                                                       TableShows.seriesType)\
-                .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
-                .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .join(TableEpisodes)\
+                .join(TableShows)\
                 .where(reduce(operator.and_, upgradable_episodes_conditions))\
                 .group_by(TableHistory.video_path)\
                 .dicts()
@@ -63,7 +62,7 @@ class EpisodesHistory(Resource):
 
         query_conditions = [(TableEpisodes.title is not None)]
         if episodeid:
-            query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
+            query_conditions.append((TableEpisodes.episodeId == episodeid))
         query_condition = reduce(operator.and_, query_conditions)
         episode_history = TableHistory.select(TableHistory.id,
                                               TableShows.title.alias('seriesTitle'),
@@ -73,18 +72,18 @@ class EpisodesHistory(Resource):
                                               TableHistory.timestamp,
                                               TableHistory.subs_id,
                                               TableHistory.description,
-                                              TableHistory.sonarrSeriesId,
+                                              TableHistory.seriesId,
                                               TableEpisodes.path,
                                               TableHistory.language,
                                               TableHistory.score,
                                               TableShows.tags,
                                               TableHistory.action,
                                               TableHistory.subtitles_path,
-                                              TableHistory.sonarrEpisodeId,
+                                              TableHistory.episodeId,
                                               TableHistory.provider,
                                               TableShows.seriesType)\
-            .join(TableShows, on=(TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId))\
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+            .join(TableShows)\
+            .join(TableEpisodes)\
             .where(query_condition)\
             .order_by(TableHistory.timestamp.desc())\
             .limit(length)\
@@ -98,13 +97,18 @@ class EpisodesHistory(Resource):
         for item in episode_history:
             # Mark episode as upgradable or not
             item.update({"upgradable": False})
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
-                if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
+            if {
+                "video_path": str(item["path"]),
+                "timestamp": float(item["timestamp"]),
+                "score": str(item["score"]),
+                "tags": str(item["tags"]),
+                "monitored": str(item["monitored"]),
+                "seriesType": str(item["seriesType"]),
+            } in upgradable_episodes_not_perfect:
+                if os.path.isfile(item["subtitles_path"]):
                     item.update({"upgradable": True})
 
-            del item['path']
+            del item["path"]
 
             postprocessEpisode(item)
 
@@ -127,7 +131,7 @@ class EpisodesHistory(Resource):
                         break
 
         count = TableHistory.select()\
-            .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
+            .join(TableEpisodes)\
             .where(TableEpisodes.title is not None).count()
 
         return jsonify(data=episode_history, total=count)

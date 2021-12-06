@@ -18,7 +18,7 @@ class EpisodesWanted(Resource):
 
         wanted_conditions = [(TableEpisodes.missing_subtitles != '[]')]
         if len(episodeid) > 0:
-            wanted_conditions.append((TableEpisodes.sonarrEpisodeId in episodeid))
+            wanted_conditions.append((TableEpisodes.episodeId in episodeid))
         wanted_conditions += get_exclusion_clause('series')
         wanted_condition = reduce(operator.and_, wanted_conditions)
 
@@ -28,13 +28,12 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
                                         TableEpisodes.title.alias('episodeTitle'),
                                         TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableEpisodes.seriesId,
+                                        TableEpisodes.episodeId,
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .join(TableShows)\
                 .where(wanted_condition)\
                 .dicts()
         else:
@@ -45,15 +44,14 @@ class EpisodesWanted(Resource):
                                         TableEpisodes.season.concat('x').concat(TableEpisodes.episode).alias('episode_number'),
                                         TableEpisodes.title.alias('episodeTitle'),
                                         TableEpisodes.missing_subtitles,
-                                        TableEpisodes.sonarrSeriesId,
-                                        TableEpisodes.sonarrEpisodeId,
-                                        TableEpisodes.scene_name.alias('sceneName'),
+                                        TableEpisodes.seriesId,
+                                        TableEpisodes.episodeId,
                                         TableShows.tags,
                                         TableEpisodes.failedAttempts,
                                         TableShows.seriesType)\
-                .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+                .join(TableShows)\
                 .where(wanted_condition)\
-                .order_by(TableEpisodes.rowid.desc())\
+                .order_by(TableEpisodes.episodeId.desc())\
                 .limit(length)\
                 .offset(start)\
                 .dicts()
@@ -67,7 +65,7 @@ class EpisodesWanted(Resource):
         count = TableEpisodes.select(TableShows.tags,
                                      TableShows.seriesType,
                                      TableEpisodes.monitored)\
-            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
+            .join(TableShows)\
             .where(reduce(operator.and_, count_conditions))\
             .count()
 

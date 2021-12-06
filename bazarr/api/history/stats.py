@@ -71,8 +71,7 @@ class HistoryStats(Resource):
             .dicts()
         data_movies = list(data_movies)
 
-        for dt in rrule.rrule(rrule.DAILY,
-                              dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
+        for dt in rrule.rrule(rrule.DAILY, dtstart=datetime.datetime.now() - datetime.timedelta(seconds=delay),
                               until=datetime.datetime.now()):
             if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
                 data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})

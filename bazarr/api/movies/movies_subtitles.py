@@ -8,7 +8,6 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from database import TableMovies, get_audio_profile_languages
 from ..utils import authenticate
-from helper import path_mappings
 from get_providers import get_providers, get_providers_auth
 from get_subtitle import download_subtitle, manual_upload_subtitle
 from utils import history_log_movie, delete_subtitles
@@ -25,19 +24,16 @@ class MoviesSubtitles(Resource):
     @authenticate
     def patch(self):
         # Download
-        radarrId = request.args.get('radarrid')
+        movieId = request.args.get('movieid')
 
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.audio_language)\
-            .where(TableMovies.radarrId == radarrId)\
+            .where(TableMovies.movieId == movieId)\
             .dicts()\
             .get()
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        moviePath = movieInfo['path']
 
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
@@ -49,7 +45,7 @@ class MoviesSubtitles(Resource):
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        audio_language_list = get_audio_profile_languages(movie_id=movieId)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
@@ -57,7 +53,7 @@ class MoviesSubtitles(Resource):
 
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'movie')
+                                       providers_auth, title, 'movie')
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -72,11 +68,11 @@ class MoviesSubtitles(Resource):
                 score = result[4]
                 subs_id = result[6]
                 subs_path = result[7]
-                history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath)
+                history_log_movie(1, movieId, message, path, language_code, provider, score, subs_id, subs_path)
+                send_notifications_movie(movieId, message)
+                store_subtitles_movie(moviePath)
             else:
-                event_stream(type='movie', payload=radarrId)
+                event_stream(type='movie', payload=movieId)
         except OSError:
             pass
 
@@ -86,18 +82,15 @@ class MoviesSubtitles(Resource):
     def post(self):
         # Upload
         # TODO: Support Multiply Upload
-        radarrId = request.args.get('radarrid')
+        movieId = request.args.get('movieid')
         movieInfo = TableMovies.select(TableMovies.title,
                                        TableMovies.path,
-                                       TableMovies.sceneName,
                                        TableMovies.audio_language) \
-            .where(TableMovies.radarrId == radarrId) \
+            .where(TableMovies.movieId == movieId) \
             .dicts() \
             .get()
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        moviePath = movieInfo['path']
 
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']
@@ -118,7 +111,6 @@ class MoviesSubtitles(Resource):
                                             forced=forced,
                                             hi=hi,
                                             title=title,
-                                            scene_name=sceneName,
                                             media_type='movie',
                                             subtitle=subFile,
                                             audio_language=audioLanguage)
@@ -135,10 +127,10 @@ class MoviesSubtitles(Resource):
                     language_code = language
                 provider = "manual"
                 score = 120
-                history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
+                history_log_movie(4, movieId, message, path, language_code, provider, score, subtitles_path=subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath)
+                    send_notifications_movie(movieId, message)
+                store_subtitles_movie(moviePath)
         except OSError:
             pass
 
@@ -147,20 +139,18 @@ class MoviesSubtitles(Resource):
     @authenticate
     def delete(self):
         # Delete
-        radarrId = request.args.get('radarrid')
+        movieId = request.args.get('movieid')
         movieInfo = TableMovies.select(TableMovies.path) \
-            .where(TableMovies.radarrId == radarrId) \
+            .where(TableMovies.movieId == movieId) \
             .dicts() \
             .get()
 
-        moviePath = path_mappings.path_replace_movie(movieInfo['path'])
+        moviePath = movieInfo['path']
 
         language = request.form.get('language')
         forced = request.form.get('forced')
         hi = request.form.get('hi')
         subtitlesPath = request.form.get('path')
-
-        subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
         result = delete_subtitles(media_type='movie',
                                   language=language,
@@ -168,7 +158,7 @@ class MoviesSubtitles(Resource):
                                   hi=hi,
                                   media_path=moviePath,
                                   subtitles_path=subtitlesPath,
-                                  radarr_id=radarrId)
+                                  movie_id=movieId)
         if result:
             return '', 202
         else:
