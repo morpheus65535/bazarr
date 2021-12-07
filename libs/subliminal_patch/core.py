@@ -5,6 +5,7 @@ import json
 import re
 import os
 import logging
+import datetime
 import socket
 import traceback
 import time
@@ -55,6 +56,8 @@ REMOVE_CRAP_FROM_FILENAME = re.compile(r"(?i)(?:([\s_-]+(?:obfuscated|scrambled|
 
 SUBTITLE_EXTENSIONS = ('.srt', '.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '.vtt')
 
+_POOL_LIFETIME = datetime.timedelta(hours=12)
+
 
 def remove_crap_from_fn(fn):
     # in case of the second regex part, the legit release group name will be in group(2), if it's followed by [string]
@@ -69,7 +72,7 @@ class SZProviderPool(ProviderPool):
     def __init__(self, providers=None, provider_configs=None, blacklist=None, throttle_callback=None,
                  pre_download_hook=None, post_download_hook=None, language_hook=None):
         #: Name of providers to use
-        self.providers = providers
+        self.providers = set(providers or set())
 
         #: Provider configuration
         self.provider_configs = provider_configs or {}
@@ -88,8 +91,60 @@ class SZProviderPool(ProviderPool):
         self.post_download_hook = post_download_hook
         self.language_hook = language_hook
 
+        self._born = time.time()
+
         if not self.throttle_callback:
             self.throttle_callback = lambda x, y: x
+
+    def update(self, providers, provider_configs, blacklist):
+        # Check if the pool was initialized enough hours ago
+        self._check_lifetime()
+
+        # Check if any new provider has been added
+        updated = set(providers) != self.providers
+        removed_providers = list(sorted(self.providers - set(providers)))
+
+        # Terminate and delete removed providers from instance
+        for removed in removed_providers:
+            del self[removed]
+
+        self.providers.difference_update(removed_providers)
+        self.providers.update(list(providers))
+
+        if updated:
+            logger.debug("Removed providers: %s", removed_providers)
+            logger.debug(f"New provider list: %s", self.providers)
+
+        self.blacklist = blacklist
+
+        # Restart providers with new configs
+        for key, val in provider_configs.items():
+            # key: provider's name; val: config dict
+            old_val = self.provider_configs.get(key)
+
+            if old_val == val:
+                continue
+
+            logger.debug("Restarting provider: %s", key)
+            try:
+                provider = provider_registry[key](**val)
+                provider.initialize()
+            except Exception as error:
+                self.throttle_callback(key, error)
+            else:
+                self.initialized_providers[key] = provider
+                updated = True
+
+        self.provider_configs = provider_configs
+
+        return updated
+
+    def _check_lifetime(self):
+        # This method is used to avoid possible memory leaks
+        if abs(self._born - time.time()) > _POOL_LIFETIME.seconds:
+            logger.info("%s elapsed. Terminating providers", _POOL_LIFETIME)
+            self._born = time.time()
+            self.terminate()
 
     def __enter__(self):
         return self
