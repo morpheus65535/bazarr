@@ -200,6 +200,14 @@ class SZProviderPool(ProviderPool):
         else:
             languages_search_base = languages
 
+        # Check if the provider is alive
+        if not provider_registry[provider].ping():
+            try:
+                provider_registry[provider].terminate()
+                provider_registry[provider].initialize()
+            except Exception as error:
+                self.throttle_callback(provider, error)
+
         # check video validity
         if not provider_registry[provider].check(video):
             logger.info('Skipping provider %r: not a valid video', provider)

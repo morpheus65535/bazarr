@@ -19,6 +19,10 @@ class Provider(_Provider):
     hearing_impaired_verifiable = False
     skip_wrong_fps = True
 
+    def ping(self):
+        """Check if the provider is alive."""
+        return True
+
 
 # register providers
 # fixme: this is bad
