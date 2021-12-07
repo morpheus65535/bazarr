@@ -30,8 +30,10 @@ def time_until_end_of_day(dt=None):
     tomorrow = dt + datetime.timedelta(days=1)
     return datetime.datetime.combine(tomorrow, datetime.time.min) - dt
 
+
 # Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
-titulky_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Prague')).replace(tzinfo=None) # Needs to convert to offset-naive dt
+titulky_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Prague')).replace(tzinfo=None)
+# Needs to convert to offset-naive dt
 titulky_limit_reset_datetime = time_until_end_of_day(dt=titulky_server_local_time)
 
 hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
@@ -68,7 +70,7 @@ PROVIDER_THROTTLE_MAP = {
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
         IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
     },
-    "titulky"         : {
+    "titulky": {
         DownloadLimitExceeded: (titulky_limit_reset_datetime, f"{titulky_limit_reset_datetime.seconds // 3600 + 1} hours")
     },
     "legendasdivx": {
@@ -145,9 +147,9 @@ def get_providers_auth():
         'opensubtitlescom': {'username': settings.opensubtitlescom.username,
                              'password': settings.opensubtitlescom.password,
                              'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
-                             'api_key' : 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
+                             'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
-        'podnapisi'       : {
+        'podnapisi': {
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
             'verify_ssl': settings.podnapisi.getboolean('verify_ssl')

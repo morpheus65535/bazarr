@@ -259,8 +259,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
-                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score,\
-                               subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
+                        return message, path, downloaded_language_code2, downloaded_provider, subtitle.score, \
+                            subtitle.language.forced, subtitle.id, downloaded_path, subtitle.language.hi
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)

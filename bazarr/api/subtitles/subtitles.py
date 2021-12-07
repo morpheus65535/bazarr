@@ -38,7 +38,7 @@ class Subtitles(Resource):
             if media_type == 'episode':
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='series', series_id=metadata['seriesId'],
-                             episode_id = int(id))
+                             episode_id=int(id))
             else:
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='movies', movie_id=id)

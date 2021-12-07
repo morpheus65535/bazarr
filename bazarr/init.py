@@ -19,6 +19,7 @@ import time
 global startTime
 startTime = time.time()
 
+
 def init():
     # set subliminal_patch user agent
     os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])

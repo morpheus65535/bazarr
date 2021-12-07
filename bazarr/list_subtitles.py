@@ -18,7 +18,6 @@ from helper import get_subtitle_destination_folder
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
-from peewee import DoesNotExist
 
 gc.enable()
 

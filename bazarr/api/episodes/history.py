@@ -9,7 +9,6 @@ from flask import request, jsonify
 from flask_restful import Resource
 from functools import reduce
 from peewee import fn
-from datetime import timedelta
 
 from database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
