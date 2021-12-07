@@ -1,4 +1,5 @@
 # coding=utf-8
+# fmt: off
 
 import os
 import sys
@@ -12,15 +13,19 @@ import re
 import subliminal
 import copy
 import operator
+import time
+
 from functools import reduce
+from inspect import getfullargspec
 from peewee import fn
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
 from subliminal import region, score as subliminal_scores, \
     list_subtitles, Episode, Movie
-from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
-    list_all_subtitles, get_subtitle_path
+from subliminal_patch.core import SZAsyncProviderPool, save_subtitles, get_subtitle_path
+
+from subliminal_patch.core_persistent import download_best_subtitles, list_all_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
 from subliminal_patch.subtitle import Subtitle
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
@@ -43,7 +48,6 @@ from embedded_subs_reader import parse_video_metadata
 from analytics import track_event
 from locale import getpreferredencoding
 from score import movie_score, series_score
-
 
 def get_video(path, title, sceneName, providers=None, media_type="movie"):
     """
@@ -83,6 +87,78 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
 
 
+# fmt: on
+def _init_pool(media_type, providers=None):
+    pool = provider_pool()
+    return pool(
+        providers=providers or get_providers(),
+        provider_configs=get_providers_auth(),
+        blacklist=get_blacklist(media_type),
+        throttle_callback=provider_throttle,
+        language_hook=None,
+    )
+
+
+_movie_pool = _init_pool("movie")
+_series_pool = _init_pool("series")
+
+# Subscene pools only used to satisfy a conditional in manual_search()
+# This will be probably no longer needed in the future
+if "subscene" not in (get_providers() or {}):
+    _s_movie_pool = _s_series_pool = None
+else:
+    _s_movie_pool = _init_pool("movie", {"subscene"})
+    _s_series_pool = _init_pool("series", {"subcene"})
+
+_pools = {
+    "movie": (_movie_pool, _s_movie_pool),
+    "series": (_series_pool, _s_series_pool),
+}
+
+
+def _pool_by_type(media_type, subcene=False):
+    pools = _pools[media_type]
+    return pools[0] if not subcene else pools[1]
+
+
+def _update_pools(media_type):
+    updated = False
+    for pool in _pools[media_type]:
+        if pool is None:
+            continue
+
+        updated = pool.update(
+            get_providers(),
+            get_providers_auth(),
+            get_blacklist(media_type),
+        )
+        # Don't bother updating subscene pool if the config was not updated
+        if updated is False:
+            break
+
+    return updated
+
+
+def update_pools(f):
+    """Decorator that ensures all pools are updated on each function run.
+    It will detect any config changes in Bazarr"""
+
+    def decorated(*args, **kwargs):
+        start = time.time()
+        argument_index = getfullargspec(f).args.index("media_type")
+        updated = _update_pools(args[argument_index])
+
+        if updated:
+            logging.info("BAZARR pools update elapsed time: %s", time.time() - start)
+
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+# fmt: off
+
+@update_pools
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, sceneName, title,
                       media_type, forced_minimum_score=None, is_upgrade=False):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
@@ -144,6 +220,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     """
     video = get_video(force_unicode(path), title, sceneName, providers=providers,
                       media_type=media_type)
+
     if video:
         handler = series_score if media_type == "series" else movie_score
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
@@ -151,18 +228,11 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         if providers:
             if forced_minimum_score:
                 min_score = int(forced_minimum_score) + 1
-            downloaded_subtitles = download_best_subtitles({video}, language_set, int(min_score), hi,
-                                                           providers=providers,
-                                                           provider_configs=providers_auth,
-                                                           pool_class=provider_pool(),
+            downloaded_subtitles = download_best_subtitles({video}, language_set, _pool_by_type(media_type),
+                                                           int(min_score), hi,
                                                            compute_score=compute_score,
                                                            throttle_time=None,  # fixme
-                                                           blacklist=get_blacklist(media_type=media_type),
-                                                           throttle_callback=provider_throttle,
-                                                           score_obj=handler,
-                                                           pre_download_hook=None,  # fixme
-                                                           post_download_hook=None,  # fixme
-                                                           language_hook=None)  # fixme
+                                                           score_obj=handler)
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
@@ -298,6 +368,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
 
 
+@update_pools
 def manual_search(path, profileId, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
@@ -357,12 +428,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
 
         try:
             if providers:
-                subtitles = list_all_subtitles([video], language_set,
-                                               providers=providers,
-                                               provider_configs=providers_auth,
-                                               blacklist=get_blacklist(media_type=media_type),
-                                               throttle_callback=provider_throttle,
-                                               language_hook=None)  # fixme
+                subtitles = list_all_subtitles([video], language_set, _pool_by_type(media_type))
 
                 if 'subscene' in providers:
                     subscene_language_set = set()
@@ -372,11 +438,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                     if len(subscene_language_set):
                         providers_auth['subscene']['only_foreign'] = True
                         subtitles_subscene = list_all_subtitles([video], subscene_language_set,
-                                                                providers=['subscene'],
-                                                                provider_configs=providers_auth,
-                                                                blacklist=get_blacklist(media_type=media_type),
-                                                                throttle_callback=provider_throttle,
-                                                                language_hook=None)  # fixme
+                                                                _pool_by_type(media_type, True))
                         providers_auth['subscene']['only_foreign'] = False
                         subtitles[video] += subtitles_subscene[video]
             else:
@@ -404,6 +466,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
 
+                initial_hi = None
                 initial_hi_match = False
                 for language in initial_language_set:
                     if s.language.basename == language.basename and \
@@ -465,6 +528,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     return final_subtitles
 
 
+@update_pools
 def manual_download_subtitle(path, language, audio_language, hi, forced, subtitle, provider, providers_auth, sceneName,
                              title, media_type):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
@@ -493,12 +557,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         min_score, max_score, scores = _get_scores(media_type)
         try:
             if provider:
-                download_subtitles([subtitle],
-                                   providers={provider},
-                                   provider_configs=providers_auth,
-                                   pool_class=provider_pool(),
-                                   blacklist=get_blacklist(media_type=media_type),
-                                   throttle_callback=provider_throttle)
+                download_subtitles([subtitle], _pool_by_type(media_type))
                 logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             else:
                 logging.info("BAZARR All providers are throttled")
