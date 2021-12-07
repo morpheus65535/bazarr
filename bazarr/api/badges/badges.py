@@ -34,7 +34,7 @@ class Badges(Resource):
             .where(reduce(operator.and_, movies_conditions))\
             .count()
 
-        throttled_providers = len(eval(str(get_throttled_providers())))
+        throttled_providers = len(get_throttled_providers())
 
         health_issues = len(get_health_issues())
 

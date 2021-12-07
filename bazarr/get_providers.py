@@ -315,12 +315,15 @@ def reset_throttled_providers():
 
 def get_throttled_providers():
     providers = {}
-    if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
-        with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as handle:
-            providers = handle.read()
-    if not providers:
+    try:
+        if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
+            with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
+                    handle:
+                providers = ast.literal_eval(handle.read())
+    except (OSError, ValueError):
         providers = {}
-    return providers
+    finally:
+        return providers
 
 
 def set_throttled_providers(data):
@@ -329,11 +332,11 @@ def set_throttled_providers(data):
 
 
 try:
-    tp = eval(str(get_throttled_providers()))
+    tp = get_throttled_providers()
     if not isinstance(tp, dict):
         raise ValueError('tp should be a dict')
 except Exception:
     logging.error("Invalid content in throttled_providers.dat. Resetting")
     # set empty content in throttled_providers.dat
     set_throttled_providers('')
-    tp = eval(str(get_throttled_providers()))
+    tp = get_throttled_providers()
