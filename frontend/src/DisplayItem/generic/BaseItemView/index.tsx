@@ -149,17 +149,19 @@ function BaseItemView<T extends Item.Base>({
             </ContentHeader.Group>
           </React.Fragment>
         ) : (
-          <ContentHeader.Button
-            updating={pendingEditMode !== editMode}
-            disabled={
-              (state.content.ids.length === 0 && state.state === "loading") ||
-              hasTask
-            }
-            icon={faList}
-            onClick={startEdit}
-          >
-            Mass Edit
-          </ContentHeader.Button>
+          <ContentHeader.Group pos="start">
+            <ContentHeader.Button
+              updating={pendingEditMode !== editMode}
+              disabled={
+                (state.content.ids.length === 0 && state.state === "loading") ||
+                hasTask
+              }
+              icon={faList}
+              onClick={startEdit}
+            >
+              Mass Edit
+            </ContentHeader.Button>
+          </ContentHeader.Group>
         )}
       </ContentHeader>
       <Row>

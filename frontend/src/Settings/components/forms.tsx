@@ -91,7 +91,6 @@ export const Check: FunctionComponent<CheckProps> = ({
 
   return (
     <Form.Check
-      custom
       type="checkbox"
       id={settingKey}
       inline={inline}

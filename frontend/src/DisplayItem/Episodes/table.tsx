@@ -97,7 +97,7 @@ const Table: FunctionComponent<Props> = ({
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" key={v.code2}>
+            <Badge text="secondary" key={v.code2}>
               {v.name}
             </Badge>
           ));

@@ -42,7 +42,6 @@ const Checkbox = forwardRef<
 
   return (
     <Form.Check
-      custom
       disabled={disabled}
       id={idIn}
       ref={resolvedRef}

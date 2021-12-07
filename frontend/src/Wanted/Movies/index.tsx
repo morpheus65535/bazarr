@@ -1,7 +1,6 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateWantedByRange } from "../../@redux/actions";
@@ -48,7 +47,6 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
 
           return value.map((item, idx) => (
             <AsyncButton
-              as={Badge}
               key={BuildKey(idx, item.code2)}
               className="mx-1 mr-2"
               variant="secondary"

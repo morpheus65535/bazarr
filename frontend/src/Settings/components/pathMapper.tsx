@@ -161,7 +161,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           data={data}
           update={updateCell}
         ></SimpleTable>
-        <Button block variant="light" onClick={addRow}>
+        <Button variant="light" onClick={addRow}>
           Add
         </Button>
       </React.Fragment>

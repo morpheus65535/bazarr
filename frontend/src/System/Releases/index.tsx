@@ -51,16 +51,16 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
     <Card className="mb-4 mx-3 d-flex flex-grow-1">
       <Card.Header>
         <span className={headerBadgeCls}>{name}</span>
-        <Badge className={headerBadgeCls} variant="info">
+        <Badge className={headerBadgeCls} text="info">
           {date}
         </Badge>
         <Badge
           className={headerBadgeCls}
-          variant={prerelease ? "danger" : "success"}
+          text={prerelease ? "danger" : "success"}
         >
           {prerelease ? "Development" : "Master"}
         </Badge>
-        <Badge className={headerBadgeCls} hidden={!current} variant="primary">
+        <Badge className={headerBadgeCls} hidden={!current} text="primary">
           Installed
         </Badge>
       </Card.Header>

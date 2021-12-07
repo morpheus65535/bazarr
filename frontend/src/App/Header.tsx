@@ -66,7 +66,7 @@ const Header: FunctionComponent<Props> = () => {
 
   const serverActions = useMemo(
     () => (
-      <Dropdown alignRight>
+      <Dropdown align={"end"}>
         <Dropdown.Toggle className="dropdown-hidden" as={Button}>
           <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
         </Dropdown.Toggle>
@@ -124,7 +124,7 @@ const Header: FunctionComponent<Props> = () => {
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
       </Button>
       <Container fluid>
-        <Row noGutters className="flex-grow-1">
+        <Row className="flex-grow-1 gx-0">
           <Col xs={4} sm={6} className="d-flex align-items-center">
             <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>

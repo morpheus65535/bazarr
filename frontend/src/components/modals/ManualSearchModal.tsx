@@ -96,7 +96,7 @@ export function ManualSearchModal<T extends SupportType>(
             name: "",
           };
           return (
-            <Badge variant="secondary">
+            <Badge text="secondary">
               <LanguageText text={lang}></LanguageText>
             </Badge>
           );
@@ -219,7 +219,7 @@ export function ManualSearchModal<T extends SupportType>(
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
-          <Button variant="primary" block onClick={search}>
+          <Button variant="primary" onClick={search}>
             Start Search
           </Button>
         </div>
@@ -314,7 +314,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   const popover = useMemo(
     () => (
       <Popover className="w-100" id="manual-search-matches-info">
-        <Popover.Content>
+        <Popover.Body>
           <Container fluid>
             <Row>
               <Col xs={6}>
@@ -333,7 +333,7 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
               </Col>
             </Row>
           </Container>
-        </Popover.Content>
+        </Popover.Body>
       </Popover>
     ),
     [matchElements, dontElements]

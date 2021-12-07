@@ -18,7 +18,7 @@ const Router: FunctionComponent = () => {
   });
 
   return (
-    <div className="d-flex flex-row flex-grow-1 main-router">
+    <div className="d-flex flex-row flex-grow-1 px-0 main-router">
       <Switch>
         {navItems.map((v, idx) => {
           if ("routes" in v) {

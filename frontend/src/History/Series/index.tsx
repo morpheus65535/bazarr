@@ -52,7 +52,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Cell: ({ value }) => {
           if (value) {
             return (
-              <Badge variant="secondary">
+              <Badge text="secondary">
                 <LanguageText text={value} long></LanguageText>
               </Badge>
             );
@@ -85,7 +85,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Cell: ({ row, value }) => {
           const overlay = (
             <Popover id={`description-${row.id}`}>
-              <Popover.Content>{value}</Popover.Content>
+              <Popover.Body>{value}</Popover.Body>
             </Popover>
           );
           return (
@@ -100,9 +100,9 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Cell: (row) => {
           const overlay = (
             <Popover id={`description-${row.row.id}`}>
-              <Popover.Content>
+              <Popover.Body>
                 This Subtitles File Is Eligible For An Upgrade.
-              </Popover.Content>
+              </Popover.Body>
             </Popover>
           );
           if (row.value) {

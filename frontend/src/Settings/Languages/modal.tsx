@@ -165,7 +165,6 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           const item = row.original;
           return (
             <Form.Check
-              custom
               id={BuildKey(item.id, item.language, "forced")}
               checked={value === "True"}
               onChange={(v) => {
@@ -183,7 +182,6 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           const item = row.original;
           return (
             <Form.Check
-              custom
               id={BuildKey(item.id, item.language, "hi")}
               checked={value === "True"}
               onChange={(v) => {
@@ -201,7 +199,6 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           const item = row.original;
           return (
             <Form.Check
-              custom
               id={BuildKey(item.id, item.language, "audio")}
               checked={value === "True"}
               onChange={(v) => {
@@ -247,7 +244,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           data={current.items}
           update={updateRow}
         ></SimpleTable>
-        <Button block variant="light" onClick={addItem}>
+        <Button variant="light" onClick={addItem}>
           Add
         </Button>
       </Input>

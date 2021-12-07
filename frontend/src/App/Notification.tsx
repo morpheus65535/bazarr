@@ -168,7 +168,7 @@ const NotificationCenter: FunctionComponent = () => {
         onClick={onToggleClick}
         className={`notification-btn ${hasNew ? "new-item" : ""}`}
         ref={dropdownRef}
-        alignRight
+        align={"end"}
       >
         <Dropdown.Toggle as={Button} className="dropdown-hidden">
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>

@@ -51,10 +51,9 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
   }, [fileList, emptyText, multiple]);
 
   return (
-    <Form.File
+    <Form.Control
+      type="file"
       disabled={disabled}
-      custom
-      label={label}
       multiple={multiple}
       ref={input}
       onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +67,6 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
           onChange && onChange(list);
         }
       }}
-    ></Form.File>
+    ></Form.Control>
   );
 };

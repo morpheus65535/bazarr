@@ -238,7 +238,7 @@ const SidebarContent: FunctionComponent<{
         ></FontAwesomeIcon>
       )}
       <span className="d-flex flex-grow-1 justify-content-between">
-        {name} <Badge variant="secondary">{badge !== 0 ? badge : null}</Badge>
+        {name} <Badge text="secondary">{badge !== 0 ? badge : null}</Badge>
       </span>
     </React.Fragment>
   );

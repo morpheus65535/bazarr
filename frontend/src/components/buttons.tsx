@@ -2,7 +2,7 @@ import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, MouseEvent } from "react";
-import { Badge, Button, ButtonProps } from "react-bootstrap";
+import { Button, ButtonProps } from "react-bootstrap";
 
 export const ActionBadge: FunctionComponent<{
   icon: IconDefinition;
@@ -10,7 +10,8 @@ export const ActionBadge: FunctionComponent<{
 }> = ({ icon, onClick }) => {
   return (
     <Button
-      as={Badge}
+      // TODO
+      // as={Badge}
       className="mx-1 p-1"
       variant="secondary"
       onClick={onClick}

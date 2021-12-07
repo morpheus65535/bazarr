@@ -129,7 +129,6 @@ const Table: FunctionComponent = () => {
         update={updateRow}
       ></SimpleTable>
       <Button
-        block
         disabled={!canAdd}
         variant="light"
         onClick={() => {
@@ -173,7 +172,7 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
     <Badge
       className={className}
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      variant={cutoff ? "primary" : "secondary"}
+      text={cutoff ? "primary" : "secondary"}
     >
       {text}
     </Badge>

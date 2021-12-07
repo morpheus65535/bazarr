@@ -43,9 +43,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
             </Input>
             <Input name="Base URL">
               <InputGroup>
-                <InputGroup.Prepend>
-                  <InputGroup.Text>/</InputGroup.Text>
-                </InputGroup.Prepend>
+                <InputGroup.Text>/</InputGroup.Text>
                 <Text
                   settingKey="settings-radarr-base_url"
                   override={baseUrlOverride}

@@ -143,7 +143,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
         }
         input.current?.focus();
       }}
-      onToggle={(open, _, meta) => {
+      onToggle={(open, meta) => {
         if (!open && meta.source !== "select") {
           canShow(false);
         } else if (open) {
@@ -154,9 +154,8 @@ export const FileBrowser: FunctionComponent<Props> = ({
       <Dropdown.Toggle
         as={Form.Control}
         placeholder="Click to start"
-        type="text"
         value={text}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange={(e) => {
           setText(e.currentTarget.value);
         }}
         ref={input}

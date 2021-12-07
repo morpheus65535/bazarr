@@ -217,15 +217,13 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
   return (
     <BaseModal title="Adjust Times" footer={footer} {...modal}>
       <InputGroup>
-        <InputGroup.Prepend>
-          <Button
-            variant="secondary"
-            title={isPlus ? "Later" : "Earlier"}
-            onClick={() => setPlus(!isPlus)}
-          >
-            <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
-          </Button>
-        </InputGroup.Prepend>
+        <Button
+          variant="secondary"
+          title={isPlus ? "Later" : "Earlier"}
+          onClick={() => setPlus(!isPlus)}
+        >
+          <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
+        </Button>
         <Form.Control
           type="number"
           placeholder="hour"
@@ -340,7 +338,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         Header: "Language",
         accessor: "_language",
         Cell: ({ value }) => (
-          <Badge variant="secondary">
+          <Badge text="secondary">
             <LanguageText text={value} long></LanguageText>
           </Badge>
         ),

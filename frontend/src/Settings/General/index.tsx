@@ -49,9 +49,7 @@ const SettingsGeneralView: FunctionComponent = () => {
         </Input>
         <Input name="Base URL">
           <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>/</InputGroup.Text>
-            </InputGroup.Prepend>
+            <InputGroup.Text>/</InputGroup.Text>
             <Text
               settingKey="settings-general-base_url"
               override={baseUrlOverride}
@@ -85,31 +83,29 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Input name="API Key">
           <InputGroup>
             <Text disabled controlled settingKey={settingApiKey}></Text>
-            <InputGroup.Append>
-              <Button
-                variant={copied ? "success" : "light"}
-                settingKey={settingApiKey}
-                onClick={(update, key, value) => {
-                  if (value) {
-                    copyToClipboard(value);
-                    toggleState(setCopy, 1500);
-                  }
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={copied ? faCheck : faClipboard}
-                ></FontAwesomeIcon>
-              </Button>
-              <Button
-                variant="danger"
-                settingKey={settingApiKey}
-                onClick={(update, key) => {
-                  update(generateApiKey(), key);
-                }}
-              >
-                <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
-              </Button>
-            </InputGroup.Append>
+            <Button
+              variant={copied ? "success" : "light"}
+              settingKey={settingApiKey}
+              onClick={(update, key, value) => {
+                if (value) {
+                  copyToClipboard(value);
+                  toggleState(setCopy, 1500);
+                }
+              }}
+            >
+              <FontAwesomeIcon
+                icon={copied ? faCheck : faClipboard}
+              ></FontAwesomeIcon>
+            </Button>
+            <Button
+              variant="danger"
+              settingKey={settingApiKey}
+              onClick={(update, key) => {
+                update(generateApiKey(), key);
+              }}
+            >
+              <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
+            </Button>
           </InputGroup>
         </Input>
       </Group>

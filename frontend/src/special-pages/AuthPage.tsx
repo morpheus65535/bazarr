@@ -88,7 +88,7 @@ const AuthPage: FunctionComponent<Props> = () => {
             </Collapse>
           </Card.Body>
           <Card.Footer>
-            <Button type="submit" disabled={updating} block>
+            <Button type="submit" disabled={updating}>
               {updating ? (
                 <Spinner size="sm" animation="border"></Spinner>
               ) : (

@@ -52,10 +52,10 @@ const App: FunctionComponent<Props> = () => {
   }
   return (
     <ErrorBoundary>
-      <Row noGutters className="header-container">
+      <Row className="header-container gx-0">
         <Header></Header>
       </Row>
-      <Row noGutters className="flex-nowrap">
+      <Row className="flex-nowrap gx-0">
         <Sidebar></Sidebar>
         <ModalProvider>
           <Router></Router>

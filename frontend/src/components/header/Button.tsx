@@ -30,18 +30,20 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   return (
     <Button
       variant="dark"
-      className="d-flex flex-column text-nowrap py-1"
+      className="py-1"
       disabled={disabled || updating}
       onClick={onClick}
     >
-      <FontAwesomeIcon
-        className="mx-auto my-1"
-        icon={displayIcon}
-        spin={updating}
-      ></FontAwesomeIcon>
-      <span className="align-bottom text-themecolor small text-center">
-        {children}
-      </span>
+      <div className="d-flex flex-column text-nowrap">
+        <FontAwesomeIcon
+          className="mx-auto my-1"
+          icon={displayIcon}
+          spin={updating}
+        ></FontAwesomeIcon>
+        <span className="align-bottom text-themecolor small text-center">
+          {children}
+        </span>
+      </div>
     </Button>
   );
 };

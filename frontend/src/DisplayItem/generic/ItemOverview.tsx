@@ -111,12 +111,12 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const alternativePopover = useMemo(
     () => (
       <Popover id="item-overview-alternative">
-        <Popover.Title>Alternate Titles</Popover.Title>
-        <Popover.Content>
+        <Popover.Header>Alternate Titles</Popover.Header>
+        <Popover.Body>
           {item.alternativeTitles.map((v, idx) => (
             <li key={idx}>{v}</li>
           ))}
-        </Popover.Content>
+        </Popover.Body>
       </Popover>
     ),
     [item.alternativeTitles]
@@ -192,7 +192,7 @@ const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge title={desc} variant="secondary" className="mr-2 my-1 text-truncate">
+  <Badge title={desc} text="secondary" className="mr-2 my-1 text-truncate">
     <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
     <span className="ml-1">{children}</span>
   </Badge>

@@ -178,7 +178,6 @@ export default function SubtitleUploadModal<T>(
           const { original, index } = row;
           return (
             <Form.Check
-              custom
               disabled={original.state === "fetching"}
               id={BuildKey(index, original.file.name, "hi")}
               checked={value}
@@ -199,7 +198,6 @@ export default function SubtitleUploadModal<T>(
           const { original, index } = row;
           return (
             <Form.Check
-              custom
               disabled={original.state === "fetching"}
               id={BuildKey(index, original.file.name, "forced")}
               checked={value}

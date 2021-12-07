@@ -71,11 +71,11 @@ export const MessageIcon: FunctionComponent<MessageIconProps> = (props) => {
 
   const popover = (
     <Popover hidden={messages.length === 0} id="overlay-icon">
-      <Popover.Content>
+      <Popover.Body>
         {messages.map((m) => (
           <li key={m}>{m}</li>
         ))}
-      </Popover.Content>
+      </Popover.Body>
     </Popover>
   );
 
