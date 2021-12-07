@@ -200,14 +200,6 @@ class SZProviderPool(ProviderPool):
         else:
             languages_search_base = languages
 
-        # Check if the provider is alive
-        if not provider_registry[provider].ping():
-            try:
-                provider_registry[provider].terminate()
-                provider_registry[provider].initialize()
-            except Exception as error:
-                self.throttle_callback(provider, error)
-
         # check video validity
         if not provider_registry[provider].check(video):
             logger.info('Skipping provider %r: not a valid video', provider)
@@ -226,21 +218,20 @@ class SZProviderPool(ProviderPool):
             logger.info('Skipping provider %r: no language to search for', provider)
             return []
 
+        # Check if the provider is alive
+        if not self[provider].ping():
+            logger.info("%s provider died. Reinitializing", provider)
+            try:
+                self[provider].terminate()
+                self[provider].initialize()
+            except Exception as error:
+                self.throttle_callback(provider, error)
+
         # list subtitles
         logger.info('Listing subtitles with provider %r and languages %r', provider, provider_languages)
         results = []
         try:
-            try:
-                results = self[provider].list_subtitles(video, provider_languages)
-            except ResponseNotReady:
-                logger.error('Provider %r response error, reinitializing', provider)
-                try:
-                    self[provider].terminate()
-                    self[provider].initialize()
-                    results = self[provider].list_subtitles(video, provider_languages)
-                except:
-                    logger.error('Provider %r reinitialization error: %s', provider, traceback.format_exc())
-
+            results = self[provider].list_subtitles(video, provider_languages)
             seen = []
             out = []
             for s in results:
@@ -249,6 +240,7 @@ class SZProviderPool(ProviderPool):
                     continue
                 if s.id in seen:
                     continue
+
                 s.plex_media_fps = float(video.fps) if video.fps else None
                 out.append(s)
                 seen.append(s.id)
