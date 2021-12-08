@@ -106,7 +106,13 @@ class SZProviderPool(ProviderPool):
 
         # Terminate and delete removed providers from instance
         for removed in removed_providers:
-            del self[removed]
+            try:
+                del self[removed]
+                # If the user has updated the providers but hasn't made any
+                # subtitle searches yet, the removed provider won't be in the
+                # self dictionary
+            except KeyError:
+                pass
 
         self.providers.difference_update(removed_providers)
         self.providers.update(list(providers))
