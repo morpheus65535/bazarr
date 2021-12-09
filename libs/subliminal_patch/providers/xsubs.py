@@ -6,6 +6,7 @@ import re
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
+from requests.exceptions import RequestException
 
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal import __short_version__
@@ -16,6 +17,7 @@ from subliminal.subtitle import Subtitle, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode
 from subliminal_patch.subtitle import guess_matches
+from subliminal_patch.providers import reinitialize_on_error
 
 logger = logging.getLogger(__name__)
 article_re = re.compile(r'^([A-Za-z]{1,3}) (.*)$')
@@ -188,7 +190,8 @@ class XSubsProvider(Provider):
                 break
 
         return int(show_id) if show_id else None
-
+    
+    @reinitialize_on_error((RequestException,), attempts=1)
     def query(self, show_id, series, season, year=None, country=None):
         # get the season list of the show
         logger.info('Getting the season list of show id %d', show_id)
@@ -290,6 +293,7 @@ class XSubsProvider(Provider):
 
         return []
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def download_subtitle(self, subtitle):
         if isinstance(subtitle, XSubsSubtitle):
             # download the subtitle

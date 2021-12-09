@@ -10,6 +10,7 @@ from requests.exceptions import HTTPError
 import rarfile
 
 from guessit import guessit
+from requests.exceptions import RequestException
 from subliminal.cache import region
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
 from subliminal.providers import ParserBeautifulSoup
@@ -18,7 +19,7 @@ from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
 from subliminal_patch.http import RetryingCFSession
-from subliminal_patch.providers import Provider
+from subliminal_patch.providers import Provider, reinitialize_on_error
 from subliminal_patch.score import get_scores, framerate_equal
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
@@ -263,6 +264,7 @@ class LegendasdivxProvider(Provider):
             )
         return subtitles
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def query(self, video, languages):
 
         _searchurl = self.searchurl
@@ -365,7 +367,8 @@ class LegendasdivxProvider(Provider):
 
     def list_subtitles(self, video, languages):
         return self.query(video, languages)
-
+    
+    @reinitialize_on_error((RequestException,), attempts=1)
     def download_subtitle(self, subtitle):
 
         try:

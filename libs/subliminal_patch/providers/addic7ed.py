@@ -10,12 +10,14 @@ from urllib.parse import quote_plus
 
 from dogpile.cache.api import NO_VALUE
 from requests import Session
+from requests.exceptions import RequestException
 from subliminal.cache import region
 from subliminal.video import Episode, Movie
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
+from subliminal_patch.providers import reinitialize_on_error
 from subliminal_patch.utils import sanitize
 from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.pitcher import pitchers, load_verification, store_verification
@@ -513,6 +515,7 @@ class Addic7edProvider(_Addic7edProvider):
 
         return subtitles
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def list_subtitles(self, video, languages):
         if isinstance(video, Episode):
             # lookup show_id
@@ -549,6 +552,7 @@ class Addic7edProvider(_Addic7edProvider):
 
         return []
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def download_subtitle(self, subtitle):
         # download the subtitle
         r = self.session.get(self.server_url + subtitle.download_link, headers={'Referer': subtitle.page_link},
