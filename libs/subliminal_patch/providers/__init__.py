@@ -32,7 +32,7 @@ class Provider(_Provider):
 
 def reinitialize_on_error(exceptions: tuple, attempts=1):
     """Method decorator for Provider class. It will reinitialize the instance
-    in case of exceptions.
+    and re-run the method in case of exceptions.
 
     :param exceptions: tuple of expected exceptions
     :param attempts: number of attempts to call the method
