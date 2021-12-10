@@ -14,8 +14,8 @@ const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 
 export interface ChipsProps {
   disabled?: boolean;
-  defaultValue?: string[];
-  value?: string[];
+  defaultValue?: readonly string[];
+  value?: readonly string[];
   onChange?: (v: string[]) => void;
 }
 
@@ -25,7 +25,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
   disabled,
   onChange,
 }) => {
-  const [chips, setChips] = useState<string[]>(() => {
+  const [chips, setChips] = useState<Readonly<string[]>>(() => {
     if (value) {
       return value;
     }
