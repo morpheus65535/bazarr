@@ -6,7 +6,7 @@ from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from database import TableEpisodes, get_audio_profile_languages
+from database import TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
 from get_providers import get_providers, get_providers_auth
@@ -55,7 +55,8 @@ class EpisodesSubtitles(Resource):
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'series')
+                                       providers_auth, sceneName, title, 'series',
+                                       profile_id=get_profile_id(episodeId=sonarrEpisodeId))
             if result is not None:
                 message = result[0]
                 path = result[1]

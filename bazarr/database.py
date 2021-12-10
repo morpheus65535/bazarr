@@ -136,6 +136,8 @@ class TableLanguagesProfiles(BaseModel):
     items = TextField()
     name = TextField()
     profileId = AutoField()
+    mustContain = TextField(null=True)
+    mustNotContain = TextField(null=True)
 
     class Meta:
         table_name = 'table_languages_profiles'
@@ -329,7 +331,9 @@ def migrate_db():
         migrator.add_column('table_history_movie', 'provider', TextField(null=True)),
         migrator.add_column('table_history_movie', 'score', TextField(null=True)),
         migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True))
+        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)),
+        migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)),
+        migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)),
     )
 
 
@@ -394,10 +398,16 @@ def update_profile_id_list():
     profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
                                                     TableLanguagesProfiles.name,
                                                     TableLanguagesProfiles.cutoff,
-                                                    TableLanguagesProfiles.items).dicts()
+                                                    TableLanguagesProfiles.items,
+                                                    TableLanguagesProfiles.mustContain,
+                                                    TableLanguagesProfiles.mustNotContain).dicts()
     profile_id_list = list(profile_id_list)
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
+        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else \
+            profile['mustContain']
+        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else \
+            profile['mustNotContain']
 
 
 def get_profiles_list(profile_id=None):
@@ -455,7 +465,7 @@ def get_profile_cutoff(profile_id):
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
@@ -496,6 +506,19 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
             )
 
     return audio_languages
+
+
+def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+    if series_id:
+        profileId = TableShows.get(TableShows.sonarrSeriesId == series_id).profileId
+    elif episode_id:
+        profileId = TableEpisodes.get(TableEpisodes.sonarrEpisodeId == episode_id).profileId
+    elif movie_id:
+        profileId = TableMovies.get(TableMovies.radarrId == movie_id).profileId
+    else:
+        return None
+
+    return profileId
 
 
 def convert_list_to_clause(arr: list):
