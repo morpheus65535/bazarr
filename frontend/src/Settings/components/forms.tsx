@@ -175,11 +175,11 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
 
   const update = useSingleUpdate();
 
-  const defaultValue = useLatest<string[]>(settingKey, isArray, override);
+  const value = useLatest<string[]>(settingKey, isArray, override);
 
   return (
     <CChips
-      defaultValue={defaultValue ?? undefined}
+      value={value ?? undefined}
       onChange={(v) => {
         update(v, settingKey);
       }}
