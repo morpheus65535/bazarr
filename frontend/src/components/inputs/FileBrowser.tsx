@@ -77,7 +77,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
           <Dropdown.Item eventKey={v.path} key={v.name}>
             <FontAwesomeIcon
               icon={v.children ? faFolder : faFile}
-              className="mr-2"
+              className="me-2"
             ></FontAwesomeIcon>
             <span>{v.name}</span>
           </Dropdown.Item>
@@ -91,7 +91,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
     if (previous.length !== 0) {
       return [
         <Dropdown.Item eventKey={backKey} key="back">
-          <FontAwesomeIcon icon={faReply} className="mr-2"></FontAwesomeIcon>
+          <FontAwesomeIcon icon={faReply} className="me-2"></FontAwesomeIcon>
           <span>Back</span>
         </Dropdown.Item>,
         <Dropdown.Divider key="back-divider"></Dropdown.Divider>,

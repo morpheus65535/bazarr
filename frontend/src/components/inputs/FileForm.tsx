@@ -53,6 +53,7 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
   return (
     <Form.Control
       type="file"
+      title={label}
       disabled={disabled}
       multiple={multiple}
       ref={input}

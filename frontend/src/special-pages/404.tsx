@@ -9,7 +9,7 @@ const EmptyPage: FunctionComponent = () => {
   return (
     <Container className="d-flex flex-column align-items-center my-5">
       <h1>
-        <FontAwesomeIcon className="mr-2" icon={fasEyeSlash}></FontAwesomeIcon>
+        <FontAwesomeIcon className="me-2" icon={fasEyeSlash}></FontAwesomeIcon>
         404
       </h1>
       <p>The Request URL No Found</p>

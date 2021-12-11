@@ -49,7 +49,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
             );
           } else {
             return (
-              <Badge text="secondary">
+              <Badge bg="secondary">
                 <LanguageText text={row.original} long></LanguageText>
               </Badge>
             );

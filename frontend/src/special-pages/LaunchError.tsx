@@ -16,7 +16,7 @@ const LaunchError: FunctionComponent<Props> = ({ children }) => (
     >
       <div>
         <FontAwesomeIcon
-          className="mr-2"
+          className="me-2"
           icon={faExclamationTriangle}
         ></FontAwesomeIcon>
         <span>{children}</span>

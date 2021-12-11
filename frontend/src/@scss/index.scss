@@ -2,7 +2,7 @@
 @import "./variable.scss";
 @import "./bazarr.scss";
 
-@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+@import "~bootstrap/scss/bootstrap";
 
 @mixin sidebar-animation {
   transition: {

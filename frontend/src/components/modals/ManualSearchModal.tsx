@@ -96,7 +96,7 @@ export function ManualSearchModal<T extends SupportType>(
             name: "",
           };
           return (
-            <Badge text="secondary">
+            <Badge bg="secondary">
               <LanguageText text={lang}></LanguageText>
             </Badge>
           );

@@ -52,7 +52,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
         Cell: ({ value }) => {
           if (value) {
             return (
-              <Badge text="secondary">
+              <Badge bg="secondary">
                 <LanguageText text={value} long></LanguageText>
               </Badge>
             );

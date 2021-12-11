@@ -268,7 +268,7 @@ export default function SubtitleUploadModal<T>(
         <Button
           hidden={!showTable}
           variant="outline-secondary"
-          className="mr-2"
+          className="me-2"
           onClick={() => setFiles([])}
         >
           Clean

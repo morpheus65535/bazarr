@@ -149,7 +149,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         </Col>
         <Col>
           <Container fluid className="text-white">
-            <Row>
+            <div className="d-flex flex-row">
               {isMovie(item) ? (
                 <FontAwesomeIcon
                   className="mx-2 mt-2"
@@ -167,13 +167,13 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                   ></FontAwesomeIcon>
                 </OverlayTrigger>
               </span>
-            </Row>
-            <Row>{detailBadges}</Row>
-            <Row>{audioBadges}</Row>
-            <Row>{languageBadges}</Row>
-            <Row>
+            </div>
+            <div>{detailBadges}</div>
+            <div>{audioBadges}</div>
+            <div>{languageBadges}</div>
+            <div>
               <span>{item.overview}</span>
-            </Row>
+            </div>
           </Container>
         </Col>
       </Row>
@@ -192,9 +192,9 @@ const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge title={desc} text="secondary" className="mr-2 my-1 text-truncate">
+  <Badge title={desc} bg="secondary" className="me-2 my-1 text-truncate">
     <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-    <span className="ml-1">{children}</span>
+    <span className="ms-1">{children}</span>
   </Badge>
 );
 

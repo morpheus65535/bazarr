@@ -56,7 +56,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
           return value.map((item, idx) => (
             <AsyncButton
               key={BuildKey(idx, item.code2)}
-              className="mx-1 mr-2"
+              className="mx-1 me-2"
               variant="secondary"
               promise={() =>
                 EpisodesApi.downloadSubtitles(seriesid, episodeid, {
@@ -67,7 +67,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
               }
               onSuccess={() => update && update(row, episodeid)}
             >
-              <LanguageText className="pr-1" text={item}></LanguageText>
+              <LanguageText className="pe-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

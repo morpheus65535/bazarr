@@ -103,7 +103,7 @@ const Header: FunctionComponent<Props> = () => {
   const goHome = useGotoHomepage();
 
   return (
-    <Navbar bg="primary" className="flex-grow-1 px-0">
+    <Navbar bg="primary" className="flex-grow-1">
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
@@ -128,7 +128,7 @@ const Header: FunctionComponent<Props> = () => {
           <Col xs={4} sm={6} className="d-flex align-items-center">
             <SearchBar onSearch={SearchItem}></SearchBar>
           </Col>
-          <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
+          <Col className="d-flex flex-row align-items-center justify-content-end pe-2">
             <NotificationCenter></NotificationCenter>
             <Button
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
@@ -140,7 +140,7 @@ const Header: FunctionComponent<Props> = () => {
               <ActionButton
                 loading
                 alwaysShowText
-                className="ml-2"
+                className="ms-2"
                 variant="warning"
                 icon={faNetworkWired}
               >

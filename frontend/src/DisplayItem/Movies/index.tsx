@@ -57,8 +57,8 @@ const MovieView: FunctionComponent<Props> = () => {
         Cell: (row) => {
           return row.value.map((v) => (
             <Badge
-              text="secondary"
-              className="mr-2"
+              bg="secondary"
+              className="me-2"
               key={BuildKey(v.code2, v.code2, v.hi)}
             >
               {v.name}

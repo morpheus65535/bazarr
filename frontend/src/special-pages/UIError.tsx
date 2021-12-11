@@ -12,7 +12,7 @@ interface Props {
 const UIError: FunctionComponent<Props> = ({ error }) => (
   <Container className="d-flex flex-column align-items-center my-5">
     <h1>
-      <FontAwesomeIcon className="mr-2" icon={faDizzy}></FontAwesomeIcon>
+      <FontAwesomeIcon className="me-2" icon={faDizzy}></FontAwesomeIcon>
       Oops! UI is crashed!
     </h1>
     <p>{error.message}</p>

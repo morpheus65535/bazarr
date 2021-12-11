@@ -74,7 +74,7 @@ export const ActionButtonItem: FunctionComponent<ActionButtonItemProps> = ({
         spin={loading}
       ></FontAwesomeIcon>
       {children && showText ? (
-        <span className="ml-2 font-weight-bold">{children}</span>
+        <span className="ms-2 font-weight-bold">{children}</span>
       ) : null}
     </React.Fragment>
   );

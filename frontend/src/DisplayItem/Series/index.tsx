@@ -42,8 +42,9 @@ const SeriesView: FunctionComponent<Props> = () => {
         Cell: (row) => {
           return row.value.map((v) => (
             <Badge
-              text="secondary"
-              className="mr-2"
+              pill
+              bg="secondary"
+              className="me-2"
               key={BuildKey(v.code2, v.forced, v.hi)}
             >
               {v.name}

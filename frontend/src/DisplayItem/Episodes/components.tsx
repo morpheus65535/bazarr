@@ -43,10 +43,10 @@ export const SubtitleAction: FunctionComponent<Props> = ({
             return null;
           }
         }}
-        className="mr-1"
+        className="me-1"
         variant={missing ? "primary" : "secondary"}
       >
-        <LanguageText className="pr-1" text={subtitle}></LanguageText>
+        <LanguageText className="pe-1" text={subtitle}></LanguageText>
         <FontAwesomeIcon
           size="sm"
           icon={missing ? faSearch : faTrash}
@@ -55,7 +55,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
     );
   } else {
     return (
-      <Badge className="mr-1" text="secondary">
+      <Badge className="me-1" bg="secondary">
         <LanguageText text={subtitle} long={false}></LanguageText>
       </Badge>
     );

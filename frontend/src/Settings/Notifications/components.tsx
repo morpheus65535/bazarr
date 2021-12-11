@@ -74,7 +74,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     () => (
       <React.Fragment>
         <AsyncButton
-          className="mr-auto"
+          className="me-auto"
           disabled={!canSave}
           variant="outline-secondary"
           promise={() => {

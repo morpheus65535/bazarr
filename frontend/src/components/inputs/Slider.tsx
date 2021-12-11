@@ -33,7 +33,7 @@ export const Slider: FunctionComponent<SliderProps> = ({
 
   return (
     <div className="d-flex flex-row align-items-center py-2">
-      <span className="text-muted text-nowrap pr-3">{`${min} / ${curr}`}</span>
+      <span className="text-muted text-nowrap pe-3">{`${min} / ${curr}`}</span>
       <RcSlider
         min={min}
         max={max}
@@ -59,7 +59,7 @@ export const Slider: FunctionComponent<SliderProps> = ({
           </div>
         )}
       ></RcSlider>
-      <span className="text-muted pl-3">{max}</span>
+      <span className="text-muted ps-3">{max}</span>
     </div>
   );
 };

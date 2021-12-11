@@ -34,7 +34,7 @@ const SystemReleasesView: FunctionComponent<Props> = () => {
   );
 };
 
-const headerBadgeCls = "mr-2";
+const headerBadgeCls = "me-2";
 
 const InfoElement: FunctionComponent<ReleaseInfo> = ({
   name,

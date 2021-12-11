@@ -20,7 +20,7 @@ import { OverrideFuncType, useSingleUpdate } from "./hooks";
 export const Message: FunctionComponent<{
   type?: "warning" | "info";
 }> = ({ type, children }) => {
-  const cls = ["pr-4"];
+  const cls = ["pe-4"];
   cls.push(type === "warning" ? "text-warning" : "text-muted");
 
   return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;

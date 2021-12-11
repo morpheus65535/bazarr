@@ -204,7 +204,7 @@ const Notification: FunctionComponent<Server.Notification> = ({
   }, [type]);
   return (
     <div className="notification-center-notification d-flex flex-nowrap align-items-center justify-content-start my-1">
-      <FontAwesomeIcon className="mr-2 text-dark" icon={icon}></FontAwesomeIcon>
+      <FontAwesomeIcon className="me-2 text-dark" icon={icon}></FontAwesomeIcon>
       <span className="text-dark small">{message}</span>
     </div>
   );

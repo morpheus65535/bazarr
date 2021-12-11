@@ -70,7 +70,7 @@ const CollapseBoxContent: FunctionComponent<ContentProps> = ({
   }, [on, value, eventKey]);
 
   return (
-    <Collapse in={open} className={indent === false ? undefined : "pl-4"}>
+    <Collapse in={open} className={indent === false ? undefined : "ps-4"}>
       <div>{children}</div>
     </Collapse>
   );
