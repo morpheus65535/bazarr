@@ -104,7 +104,7 @@ const Table: FunctionComponent = () => {
           }
           return items.map((v) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge className="mx-1" bg="secondary">
                 {v}
               </Badge>
             );
@@ -121,7 +121,7 @@ const Table: FunctionComponent = () => {
           }
           return items.map((v) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge className="mx-1" bg="secondary">
                 {v}
               </Badge>
             );

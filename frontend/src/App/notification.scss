@@ -1,10 +1,3 @@
-@import "../@scss/variable.scss";
-@import "../@scss/bazarr.scss";
-
-@function theme-color($key: "primary") {
-  @return map-get($theme-colors, $key);
-}
-
 .notification-btn {
   &.new-item {
     &::after {

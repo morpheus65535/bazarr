@@ -1,8 +1,8 @@
+@import "./custom-bootstrap.scss";
 @import "./global.scss";
+@import "./utilities.scss";
 @import "./variable.scss";
 @import "./bazarr.scss";
-
-@import "~bootstrap/scss/bootstrap";
 
 @mixin sidebar-animation {
   transition: {

@@ -1,9 +1,3 @@
-// Override bootstrap primary color
-$theme-colors: (
-  "primary": #911f93,
-  "dark": #4f566f,
-);
-
 body {
   font-family: "Roboto", "open sans", "Helvetica Neue", "Helvetica", "Arial",
     sans-serif !important;
@@ -18,4 +12,15 @@ body {
 
 .progress-bar {
   cursor: default;
+}
+
+a {
+  color: theme-color("primary");
+  text-decoration: none;
+  background-color: transparent;
+
+  &:hover {
+    color: theme-color("primary");
+    text-decoration: underline;
+  }
 }
