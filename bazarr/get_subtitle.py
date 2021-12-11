@@ -84,7 +84,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
 
 
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, sceneName, title,
-                      media_type, forced_minimum_score=None, is_upgrade=False):
+                      media_type, forced_minimum_score=None, is_upgrade=False, profile_id=None):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
@@ -158,6 +158,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            compute_score=compute_score,
                                                            throttle_time=None,  # fixme
                                                            blacklist=get_blacklist(media_type=media_type),
+                                                           ban_list=get_ban_list(profile_id),
                                                            throttle_callback=provider_throttle,
                                                            score_obj=handler,
                                                            pre_download_hook=None,  # fixme
@@ -361,6 +362,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                                                providers=providers,
                                                provider_configs=providers_auth,
                                                blacklist=get_blacklist(media_type=media_type),
+                                               ban_list=get_ban_list(profileId),
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
 
@@ -375,6 +377,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
                                                                 providers=['subscene'],
                                                                 provider_configs=providers_auth,
                                                                 blacklist=get_blacklist(media_type=media_type),
+                                                                ban_list=get_ban_list(profileId),
                                                                 throttle_callback=provider_throttle,
                                                                 language_hook=None)  # fixme
                         providers_auth['subscene']['only_foreign'] = False
@@ -466,7 +469,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
 
 
 def manual_download_subtitle(path, language, audio_language, hi, forced, subtitle, provider, providers_auth, sceneName,
-                             title, media_type):
+                             title, media_type, profile_id):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
 
     if settings.general.getboolean('utf8_encode'):
@@ -498,6 +501,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                    provider_configs=providers_auth,
                                    pool_class=provider_pool(),
                                    blacklist=get_blacklist(media_type=media_type),
+                                   ban_list=get_ban_list(profile_id),
                                    throttle_callback=provider_throttle)
                 logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             else:
@@ -1706,6 +1710,7 @@ def _get_lang_obj(alpha3):
 
     return sub.subzero_language()
 
+
 def _get_scores(media_type, min_movie=None, min_ep=None):
     series = "series" == media_type
     handler = series_score if series else movie_score
@@ -1713,3 +1718,12 @@ def _get_scores(media_type, min_movie=None, min_ep=None):
     min_ep = min_ep or (240 * 100 / handler.max_score)
     min_score_ = int(min_ep if series else min_movie)
     return handler.get_scores(min_score_)
+
+
+def get_ban_list(profile_id):
+    if profile_id:
+        profile = get_profiles_list(profile_id)
+        if profile:
+            return {'must_contain': profile['mustContain'] or [],
+                    'must_not_contain': profile['mustNotContain'] or []}
+    return None

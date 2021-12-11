@@ -13,6 +13,7 @@ import {
   ActionButton,
   BaseModal,
   BaseModalProps,
+  Chips,
   LanguageSelector,
   Selector,
   SimpleTable,
@@ -31,6 +32,8 @@ function createDefaultProfile(): Language.Profile {
     name: "",
     items: [],
     cutoff: null,
+    mustContain: [],
+    mustNotContain: [],
   };
 }
 
@@ -259,6 +262,28 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           onChange={(num) => updateProfile("cutoff", num)}
         ></Selector>
         <Message>Ignore others if existing</Message>
+      </Input>
+      <Input name="Release info must contain">
+        <Chips
+          value={current.mustContain}
+          onChange={(mc) => updateProfile("mustContain", mc)}
+        ></Chips>
+        <Message>
+          Subtitles release info must include one of those words or they will be
+          excluded from search results (regex supported).
+        </Message>
+      </Input>
+      <Input name="Release info must not contain">
+        <Chips
+          value={current.mustNotContain}
+          onChange={(mnc: string[]) => {
+            updateProfile("mustNotContain", mnc);
+          }}
+        ></Chips>
+        <Message>
+          Subtitles release info including one of those words (case insensitive)
+          will be excluded from search results (regex supported).
+        </Message>
       </Input>
     </BaseModal>
   );
