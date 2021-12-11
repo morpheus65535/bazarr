@@ -1724,6 +1724,6 @@ def get_ban_list(profile_id):
     if profile_id:
         profile = get_profiles_list(profile_id)
         if profile:
-            return {'must_contain': profile['mustContain'] if profile['mustContain'] else [],
-                    'must_not_contain': profile['mustNotContain'] if profile['mustNotContain'] else []}
+            return {'must_contain': profile['mustContain'] or [],
+                    'must_not_contain': profile['mustNotContain'] or []}
     return None

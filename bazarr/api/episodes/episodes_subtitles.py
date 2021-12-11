@@ -56,7 +56,7 @@ class EpisodesSubtitles(Resource):
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list,
                                        providers_auth, sceneName, title, 'series',
-                                       profile_id=get_profile_id(episodeId=sonarrEpisodeId))
+                                       profile_id=get_profile_id(episode_id=sonarrEpisodeId))
             if result is not None:
                 message = result[0]
                 path = result[1]

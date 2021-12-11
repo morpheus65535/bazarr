@@ -187,13 +187,16 @@ class SZProviderPool(ProviderPool):
                 if (str(provider), str(s.id)) in self.blacklist:
                     logger.info("Skipping blacklisted subtitle: %s", s)
                     continue
-                if s.release:
-                    if any([x for x in self.ban_list['must_not_contain'] if x in s.release.lower()]):
-                        logger.info("Skipping subtitle because release name contains prohibited string: %s", s)
-                        continue
-                    if any([x for x in self.ban_list['must_contain'] if x not in s.release.lower()]):
-                        logger.info("Skipping subtitle because release name does not contains required string: %s", s)
-                        continue
+                if hasattr(s, 'release_info'):
+                    if s.release_info is not None:
+                        if any([x for x in self.ban_list["must_not_contain"]
+                                if re.search(x, s.release_info, flags=re.IGNORECASE) is not None]):
+                            logger.info("Skipping subtitle because release name contains prohibited string: %s", s)
+                            continue
+                        if any([x for x in self.ban_list["must_contain"]
+                                if re.search(x, s.release_info, flags=re.IGNORECASE) is None]):
+                            logger.info("Skipping subtitle because release name does not contains required string: %s", s)
+                            continue
                 if s.id in seen:
                     continue
                 s.plex_media_fps = float(video.fps) if video.fps else None

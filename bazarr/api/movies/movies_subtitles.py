@@ -58,7 +58,7 @@ class MoviesSubtitles(Resource):
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
                                        providers_auth, sceneName, title, 'movie',
-                                       profile_id=get_profile_id(movieId=radarrId))
+                                       profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
                 message = result[0]
                 path = result[1]

@@ -432,7 +432,7 @@ def get_desired_languages(profile_id):
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if profileId == int(profile_id):
                 languages = [x['language'] for x in items]
                 break
@@ -448,7 +448,7 @@ def get_profile_id_name(profile_id):
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if profileId == int(profile_id):
                 name_from_id = name
                 break
@@ -512,7 +512,10 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
         profileId = TableShows.get(TableShows.sonarrSeriesId == series_id).profileId
     elif episode_id:
-        profileId = TableEpisodes.get(TableEpisodes.sonarrEpisodeId == episode_id).profileId
+        profileId = TableShows.select(TableShows.profileId)\
+            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+            .get().profileId
     elif movie_id:
         profileId = TableMovies.get(TableMovies.radarrId == movie_id).profileId
     else:

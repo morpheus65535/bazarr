@@ -263,17 +263,17 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         ></Selector>
         <Message>Ignore others if existing</Message>
       </Input>
-      <Input name="Must contain">
+      <Input name="Release info must contain">
         <Chips
           value={current.mustContain}
           onChange={(mc) => updateProfile("mustContain", mc)}
         ></Chips>
         <Message>
-          Subtitles must include one of those words or they will be excluded
-          from search results.
+          Subtitles release info must include one of those words or they will be
+          excluded from search results (regex supported).
         </Message>
       </Input>
-      <Input name="Must not contain">
+      <Input name="Release info must not contain">
         <Chips
           value={current.mustNotContain}
           onChange={(mnc: string[]) => {
@@ -281,8 +281,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           }}
         ></Chips>
         <Message>
-          Subtitles with one of those words (case insensitive) in their release
-          name will be excluded from search results.
+          Subtitles release info including one of those words (case insensitive)
+          will be excluded from search results (regex supported).
         </Message>
       </Input>
     </BaseModal>
