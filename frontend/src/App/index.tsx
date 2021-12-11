@@ -87,10 +87,9 @@ const MainRouter: FunctionComponent = () => {
 const Main: FunctionComponent = () => {
   return (
     <Provider store={store}>
-      {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
-      {/* <React.StrictMode> */}
-      <MainRouter></MainRouter>
-      {/* </React.StrictMode> */}
+      <React.StrictMode>
+        <MainRouter></MainRouter>
+      </React.StrictMode>
     </Provider>
   );
 };
