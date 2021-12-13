@@ -47,6 +47,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "BSplayer",
   },
   {
+    key: "embeddedsubtitles",
+    name: "Embedded Subtitles",
+    description: "Embedded Subtitles from your Media Files",
+    defaultKey: {
+      include_ass: true,
+    },
+    keyNameOverride: {
+      include_ass: "Convert embedded ASS to SRT",
+    },
+  },
+  {
     key: "greeksubs",
     name: "GreekSubs",
     description: "Greek Subtitles Provider",

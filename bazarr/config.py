@@ -190,6 +190,9 @@ defaults = {
         'approved_only': 'False',
         'multithreading': 'True'
     },
+    'embeddedsubtitles': {
+        'include_ass': 'True',
+    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',
