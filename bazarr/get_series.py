@@ -117,10 +117,10 @@ def update_series(send_event=True):
                 logging.debug('BAZARR unable to insert this series into the database:',
                               path_mappings.path_replace(added_series['path']))
 
-                if send_event:
-                    event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
+            if send_event:
+                event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
 
-                logging.debug('BAZARR All series synced from Sonarr into database.')
+        logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
 def update_one_series(series_id, action):
