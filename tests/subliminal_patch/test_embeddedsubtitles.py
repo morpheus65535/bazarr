@@ -37,6 +37,17 @@ def video_multiple_languages():
 
 
 @pytest.fixture
+def config(tmpdir):
+    return {
+        "include_ass": True,
+        "include_srt": True,
+        "cache_dir": tmpdir,
+        "ffprobe_path": None,
+        "ffmpeg_path": None,
+    }
+
+
+@pytest.fixture
 def video_inexistent(tmpdir):
     return Movie(
         os.path.join(tmpdir, "inexistent_video.mkv"),
@@ -46,10 +57,31 @@ def video_inexistent(tmpdir):
     )
 
 
+def test_init(config):
+    with EmbeddedSubtitlesProvider(**config) as provider:
+        assert provider is not None
+
+
 def test_inexistent_video(video_inexistent):
     with EmbeddedSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(video_inexistent, {})
         assert len(subtitles) == 0
+
+
+def test_list_subtitles_only_forced(video_single_language):
+    with EmbeddedSubtitlesProvider() as provider:
+        language = Language.fromalpha2("en")
+        language = Language.rebuild(language, forced=True)
+        subs = provider.list_subtitles(video_single_language, {language})
+        assert len(subs) == 0
+
+
+def test_list_subtitles_also_forced(video_single_language):
+    with EmbeddedSubtitlesProvider() as provider:
+        language_1 = Language.fromalpha2("en")
+        language_2 = Language.rebuild(language_1, forced=True)
+        subs = provider.list_subtitles(video_single_language, {language_1, language_2})
+        assert any(language_1 == sub.language for sub in subs)
 
 
 def test_list_subtitles_single_language(video_single_language):
@@ -77,6 +109,14 @@ def test_list_subtitles_wo_ass(video_single_language):
     with EmbeddedSubtitlesProvider(include_ass=False) as provider:
         subs = provider.list_subtitles(
             video_single_language, {Language.fromalpha2("en")}
+        )
+        assert not subs
+
+
+def test_list_subtitles_wo_srt(video_multiple_languages):
+    with EmbeddedSubtitlesProvider(include_srt=False) as provider:
+        subs = provider.list_subtitles(
+            video_multiple_languages, {Language.fromalpha2("en")}
         )
         assert not subs
 

@@ -32,6 +32,7 @@ class EmbeddedSubtitle(Subtitle):
         super().__init__(stream.language, stream.disposition.hearing_impaired)
         self.stream: FFprobeSubtitleStream = stream
         self.container: FFprobeVideoContainer = container
+        self.forced = stream.disposition.forced
         self._matches: set = matches
         self.page_link = self.container.path
         self.release_info = os.path.basename(self.page_link)
@@ -55,17 +56,21 @@ class EmbeddedSubtitlesProvider(Provider):
         Language.fromalpha2(l) for l in language_converters["alpha2"].codes
     }
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
-
-    # TODO: add forced support
-    # languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
 
     video_types = (Episode, Movie)
     subtitle_class = EmbeddedSubtitle
 
     def __init__(
-        self, include_ass=True, cache_dir=None, ffprobe_path=None, ffmpeg_path=None
+        self,
+        include_ass=True,
+        include_srt=True,
+        cache_dir=None,
+        ffprobe_path=None,
+        ffmpeg_path=None,
     ):
         self._include_ass = include_ass
+        self._include_srt = include_srt
         self._cache_dir = os.path.join(
             cache_dir or tempfile.gettempdir(), self.__class__.__name__.lower()
         )
@@ -91,7 +96,7 @@ class EmbeddedSubtitlesProvider(Provider):
         video = FFprobeVideoContainer(path)
 
         try:
-            streams = video.get_subtitles()
+            streams = filter(_check_allowed_extensions, video.get_subtitles())
         except fese.InvalidSource as error:
             logger.error("Error trying to get subtitles for %s: %s", video, error)
             streams = []
@@ -99,23 +104,33 @@ class EmbeddedSubtitlesProvider(Provider):
         if not streams:
             logger.debug("No subtitles found for container: %s", video)
 
+        only_forced = all(lang.forced for lang in languages)
+        also_forced = any(lang.forced for lang in languages)
+
         subtitles = []
 
         for stream in streams:
-            # Only subrip and ass are currently supported
-            if stream.codec_name not in ("subrip", "ass"):
-                logger.debug("Ignoring codec: %s", stream)
+            if not self._include_ass and stream.extension == "ass":
+                logger.debug("Ignoring ASS: %s", stream)
                 continue
 
-            if not self._include_ass and stream.codec_name == "ass":
-                logger.debug("Ignoring ASS subtitle: %s", stream)
+            if not self._include_srt and stream.extension == "srt":
+                logger.debug("Ignoring SRT: %s", stream)
                 continue
 
             if stream.language not in languages:
                 continue
 
             disposition = stream.disposition
-            if disposition.generic or disposition.hearing_impaired:
+
+            if only_forced and not disposition.forced:
+                continue
+
+            if (
+                disposition.generic
+                or disposition.hearing_impaired
+                or (disposition.forced and also_forced)
+            ):
                 logger.debug("Appending subtitle: %s", stream)
                 subtitles.append(EmbeddedSubtitle(stream, video, {"hash"}))
             else:

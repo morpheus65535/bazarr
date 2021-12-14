@@ -51,10 +51,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Embedded Subtitles",
     description: "Embedded Subtitles from your Media Files",
     defaultKey: {
+      include_srt: true,
       include_ass: true,
     },
+    message:
+      "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
     keyNameOverride: {
-      include_ass: "Convert embedded ASS to SRT",
+      include_srt: "Include SRT",
+      include_ass: "Include ASS (will be converted to SRT)",
     },
   },
   {
