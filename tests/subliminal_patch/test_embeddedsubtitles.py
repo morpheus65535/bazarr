@@ -82,6 +82,7 @@ def test_list_subtitles_also_forced(video_single_language):
         language_2 = Language.rebuild(language_1, forced=True)
         subs = provider.list_subtitles(video_single_language, {language_1, language_2})
         assert any(language_1 == sub.language for sub in subs)
+        assert any(not sub.language.forced for sub in subs)
 
 
 def test_list_subtitles_single_language(video_single_language):

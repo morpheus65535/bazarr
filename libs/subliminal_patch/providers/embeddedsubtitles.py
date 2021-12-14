@@ -30,6 +30,9 @@ class EmbeddedSubtitle(Subtitle):
 
     def __init__(self, stream, container, matches):
         super().__init__(stream.language, stream.disposition.hearing_impaired)
+        if stream.disposition.forced:
+            self.language = Language.rebuild(stream.language, forced=True)
+
         self.stream: FFprobeSubtitleStream = stream
         self.container: FFprobeVideoContainer = container
         self.forced = stream.disposition.forced
