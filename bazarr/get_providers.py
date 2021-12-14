@@ -13,6 +13,7 @@ import ast
 from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
+from utils import get_binary
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
@@ -198,6 +199,12 @@ def get_providers_auth():
             'email': settings.ktuvit.email,
             'hashed_password': settings.ktuvit.hashed_password,
         },
+        'embeddedsubtitles': {
+            'include_ass': settings.embeddedsubtitles.getboolean('include_ass'),
+            'cache_dir': os.path.join(args.config_dir, "cache"),
+            'ffprobe_path': get_binary("ffprobe"),
+            'ffmpeg_path': get_binary("ffmpeg"),
+        }
     }
 
 
