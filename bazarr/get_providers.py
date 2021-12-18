@@ -127,6 +127,7 @@ def get_providers_auth():
         'addic7ed'        : {
             'username': settings.addic7ed.username,
             'password': settings.addic7ed.password,
+            'is_vip': settings.addic7ed.getboolean('vip'),
         },
         'opensubtitles'   : {
             'username'      : settings.opensubtitles.username,

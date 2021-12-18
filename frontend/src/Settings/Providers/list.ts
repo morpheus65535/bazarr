@@ -21,6 +21,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      vip: false,
+    },
+    keyNameOverride: {
+      vip: "VIP",
     },
   },
   { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },

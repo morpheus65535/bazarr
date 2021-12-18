@@ -132,7 +132,8 @@ defaults = {
     },
     'addic7ed': {
         'username': '',
-        'password': ''
+        'password': '',
+        'vip': 'False'
     },
     'podnapisi': {
         'verify_ssl': 'True'
