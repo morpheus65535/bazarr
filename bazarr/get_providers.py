@@ -8,7 +8,6 @@ import pretty
 import time
 import socket
 import requests
-import ast
 
 from get_args import args
 from config import settings, get_array_from
@@ -328,9 +327,11 @@ def get_throttled_providers():
         if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
             with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
                     handle:
-                providers = ast.literal_eval(handle.read())
-    except (OSError, ValueError):
-        providers = {}
+                providers = eval(handle.read())
+    except:
+        # set empty content in throttled_providers.dat
+        logging.error("Invalid content in throttled_providers.dat. Resetting")
+        set_throttled_providers(providers)
     finally:
         return providers
 
@@ -340,12 +341,6 @@ def set_throttled_providers(data):
         handle.write(data)
 
 
-try:
-    tp = get_throttled_providers()
-    if not isinstance(tp, dict):
-        raise ValueError('tp should be a dict')
-except Exception:
-    logging.error("Invalid content in throttled_providers.dat. Resetting")
-    # set empty content in throttled_providers.dat
-    set_throttled_providers('')
-    tp = get_throttled_providers()
+tp = get_throttled_providers()
+if not isinstance(tp, dict):
+    raise ValueError('tp should be a dict')
