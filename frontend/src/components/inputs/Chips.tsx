@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import "./chip.scss";
+import s from "./chip.module.scss";
 
 const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 
@@ -119,7 +119,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
         <span
           key={idx}
           title={v}
-          className={`custom-chip ${disabled ? "" : "active"}`}
+          className={`${s["custom-chip"]} ${disabled ? "" : s["active"]}`}
           onClick={() => {
             if (!disabled) {
               removeChip(idx);
@@ -133,11 +133,11 @@ export const Chips: FunctionComponent<ChipsProps> = ({
   );
 
   return (
-    <div className="form-control custom-chip-input d-flex">
-      <div className="chip-container">{chipElements}</div>
+    <div className={`form-control ${s["custom-chip-input"]} d-flex`}>
+      <div className={s["chip-container"]}>{chipElements}</div>
       <input
         disabled={disabled}
-        className="main-input p-0"
+        className={`${s["main-input"]} p-0`}
         ref={input}
         onKeyUp={onKeyUp}
         onKeyDown={onKeyDown}

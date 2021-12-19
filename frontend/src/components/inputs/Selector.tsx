@@ -2,7 +2,7 @@ import { isArray } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import Select from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
-import "./selector.scss";
+import s from "./selector.module.scss";
 
 export interface SelectorProps<T, M extends boolean> {
   className?: string;
@@ -89,7 +89,7 @@ export function Selector<T = string, M extends boolean = false>(
       isDisabled={disabled}
       options={options}
       components={components}
-      className={`custom-selector w-100 ${className ?? ""}`}
+      className={`${s["custom-selector"]} w-100 ${className ?? ""}`}
       classNamePrefix="selector"
       onFocus={onFocus}
       onChange={(v: SelectorOption<T>[]) => {

@@ -28,7 +28,7 @@ import {
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import { BuildKey, useIsArrayExtended } from "../utilities";
-import "./notification.scss";
+import s from "./notification.module.scss";
 
 enum State {
   Idle,
@@ -166,7 +166,7 @@ const NotificationCenter: FunctionComponent = () => {
     <React.Fragment>
       <Dropdown
         onClick={onToggleClick}
-        className={`notification-btn ${hasNew ? "new-item" : ""}`}
+        className={`${s["notification-btn"]} ${hasNew ? "new-item" : ""}`}
         ref={dropdownRef}
         align={"end"}
       >

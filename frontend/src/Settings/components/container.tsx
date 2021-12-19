@@ -2,7 +2,7 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Card as BSCard, Col, Form, Row } from "react-bootstrap";
-import "./style.scss";
+import s from "./container.module.scss";
 
 interface GroupProps {
   header: string;
@@ -65,7 +65,7 @@ export const Card: FunctionComponent<CardProps> = ({
   onClick,
 }) => {
   return (
-    <BSCard className="settings-card" onClick={() => onClick && onClick()}>
+    <BSCard className={s["settings-card"]} onClick={() => onClick && onClick()}>
       {plus ? (
         <BSCard.Body className="d-flex justify-content-center align-items-center">
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>

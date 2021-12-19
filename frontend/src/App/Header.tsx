@@ -27,7 +27,6 @@ import logo from "../@static/logo64.png";
 import { SystemApi } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage, useIsMobile } from "../utilities";
-import "./header.scss";
 import NotificationCenter from "./Notification";
 
 async function SearchItem(text: string) {

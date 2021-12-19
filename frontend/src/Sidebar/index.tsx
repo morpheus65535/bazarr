@@ -1,5 +1,6 @@
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import clsx from "clsx";
 import React, {
   createContext,
   FunctionComponent,
@@ -23,7 +24,7 @@ import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import { BuildKey } from "../utilities";
 import { useGotoHomepage } from "../utilities/hooks";
-import "./style.scss";
+import s from "./style.module.scss";
 
 const SelectionContext = createContext<{
   selection: string | null;
@@ -35,14 +36,6 @@ const Sidebar: FunctionComponent = () => {
 
   const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 
-  const cls = ["sidebar-container"];
-  const overlay = ["sidebar-overlay"];
-
-  if (open) {
-    cls.push("open");
-    overlay.push("open");
-  }
-
   const goHome = useGotoHomepage();
 
   const [selection, setSelection] = useState<string | null>(null);
@@ -51,8 +44,15 @@ const Sidebar: FunctionComponent = () => {
     <SelectionContext.Provider
       value={{ selection: selection, select: setSelection }}
     >
-      <aside className={cls.join(" ")}>
-        <Container className="sidebar-title d-flex align-items-center d-md-none">
+      <aside className={clsx(s["sidebar-container"], { open: open })}>
+        <Container
+          className={clsx(
+            s["sidebar-title"],
+            "d-flex",
+            "align-items-center",
+            "d-md-none"
+          )}
+        >
           <Image
             alt="brand"
             src={logo}
@@ -65,7 +65,7 @@ const Sidebar: FunctionComponent = () => {
         <SidebarNavigation></SidebarNavigation>
       </aside>
       <div
-        className={overlay.join(" ")}
+        className={clsx(s["sidebar-overlay"], { open: open })}
         onClick={() => changeSidebar(false)}
       ></div>
     </SelectionContext.Provider>
@@ -127,11 +127,6 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
   const match = useRouteMatch({ path });
   const open = match !== null || selection === path;
 
-  const collapseBoxClass = useMemo(
-    () => `sidebar-collapse-box ${open ? "active" : ""}`,
-    [open]
-  );
-
   const history = useHistory();
 
   if (enabled === false) {
@@ -140,8 +135,12 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
     if (component) {
       return (
         <NavLink
-          activeClassName="sb-active"
-          className="list-group-item list-group-item-action sidebar-button"
+          activeClassName={s["active"]}
+          className={clsx(
+            s["sidebar-button"],
+            "list-group-item",
+            "list-group-item-action"
+          )}
           to={path}
           onClick={() => changeSidebar(false)}
         >
@@ -158,10 +157,10 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
   }
 
   return (
-    <div className={collapseBoxClass}>
+    <div className={clsx(s["sidebar-collapse-box"], { [s["active"]]: open })}>
       <ListGroupItem
         action
-        className="sidebar-button"
+        className={s["sidebar-button"]}
         onClick={() => {
           if (open) {
             select(null);
@@ -180,7 +179,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
         ></SidebarContent>
       </ListGroupItem>
       <Collapse in={open}>
-        <div className="sidebar-collapse">
+        <div className={s["sidebar-collapse"]}>
           {enabledRoutes.map((v, idx) => (
             <SidebarChild
               key={BuildKey(idx, v.name, "child")}
@@ -211,7 +210,12 @@ const SidebarChild: FunctionComponent<
   return (
     <NavLink
       activeClassName="sb-active"
-      className="list-group-item list-group-item-action sidebar-button sb-collapse"
+      className={clsx(
+        s["sidebar-button"],
+        s["sb-collapse"],
+        "list-group-item",
+        "list-group-item-action"
+      )}
       to={parent + path}
       onClick={() => {
         select(null);
@@ -233,7 +237,7 @@ const SidebarContent: FunctionComponent<{
       {icon && (
         <FontAwesomeIcon
           size="1x"
-          className="icon"
+          className={s["icon"]}
           icon={icon}
         ></FontAwesomeIcon>
       )}

@@ -12,7 +12,7 @@ import { Redirect } from "react-router-dom";
 import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
-import "./AuthPage.scss";
+import s from "./auth.module.scss";
 
 interface Props {}
 
@@ -43,7 +43,7 @@ const AuthPage: FunctionComponent<Props> = () => {
 
   return (
     <div className="d-flex bg-light vh-100 justify-content-center align-items-center">
-      <Card className="auth-card shadow">
+      <Card className={`${s["auth-card"]} shadow`}>
         <Form
           onSubmit={(e) => {
             e.preventDefault();

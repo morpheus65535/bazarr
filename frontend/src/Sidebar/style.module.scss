@@ -100,7 +100,7 @@ $sidebar-active-color: #252833;
       width: 1.5rem;
     }
 
-    &.sb-active {
+    &.active {
       background-color: $sidebar-active-color;
       &::before {
         @include active();

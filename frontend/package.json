@@ -23,6 +23,7 @@
     "@reduxjs/toolkit": "^1.6",
     "axios": "^0.23",
     "bootstrap": "^5",
+    "clsx": "^1.1.1",
     "lodash": "^4",
     "moment": "^2.29.1",
     "rc-slider": "^9.7",

@@ -1,7 +1,7 @@
 import RcSlider from "rc-slider";
 import "rc-slider/assets/index.css";
 import React, { FunctionComponent, useMemo, useState } from "react";
-import "./slider.scss";
+import s from "./slider.module.scss";
 
 type TooltipsOptions = boolean | "Always";
 
@@ -37,7 +37,7 @@ export const Slider: FunctionComponent<SliderProps> = ({
       <RcSlider
         min={min}
         max={max}
-        className="custom-rc-slider"
+        className={s["custom-rc-slider"]}
         step={step}
         defaultValue={defaultValue}
         onChange={(v) => {

@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Row } from "react-bootstrap";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
-import "./style.scss";
+import s from "./style.module.scss";
 
 interface Props {
   scroll?: boolean;
@@ -17,14 +17,14 @@ declare type Header = FunctionComponent<Props> & {
 
 export const ContentHeader: Header = ({ children, scroll, className }) => {
   const cls = useMemo(() => {
-    const rowCls = ["content-header", "bg-dark", "p-2"];
+    const rowCls = [s["content-header"], "bg-dark", "p-2"];
 
     if (className !== undefined) {
       rowCls.push(className);
     }
 
     if (scroll !== false) {
-      rowCls.push("scroll");
+      rowCls.push(s["scroll"]);
     }
     return rowCls.join(" ");
   }, [scroll, className]);

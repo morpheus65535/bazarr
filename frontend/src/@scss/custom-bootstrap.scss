@@ -1,7 +1,5 @@
 // Override bootstrap primary color
-$theme-colors: (
-  "primary": #911f93,
-  "dark": #4f566f,
-);
+$primary: #911f93;
+$dark: #4f566f;
 
 @import "~bootstrap/scss/bootstrap";

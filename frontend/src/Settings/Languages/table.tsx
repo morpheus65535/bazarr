@@ -162,21 +162,24 @@ const Table: FunctionComponent = () => {
         data={profiles}
         update={updateRow}
       ></SimpleTable>
-      <Button
-        disabled={!canAdd}
-        variant="light"
-        onClick={() => {
-          const profile = {
-            profileId: nextProfileId,
-            name: "",
-            items: [],
-            cutoff: null,
-          };
-          showModal("profile", profile);
-        }}
-      >
-        {canAdd ? "Add New Profile" : "No Enabled Languages"}
-      </Button>
+      <div className="d-grid gap-2">
+        <Button
+          disabled={!canAdd}
+          variant="light"
+          onClick={() => {
+            const profile = {
+              profileId: nextProfileId,
+              name: "",
+              items: [],
+              cutoff: null,
+            };
+            showModal("profile", profile);
+          }}
+        >
+          {canAdd ? "Add New Profile" : "No Enabled Languages"}
+        </Button>
+      </div>
+
       <Modal update={updateProfile} modalKey="profile"></Modal>
     </React.Fragment>
   );
@@ -206,7 +209,7 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
     <Badge
       className={className}
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      text={cutoff ? "primary" : "secondary"}
+      bg={cutoff ? "primary" : "secondary"}
     >
       {text}
     </Badge>

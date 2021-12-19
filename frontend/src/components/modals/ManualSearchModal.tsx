@@ -36,7 +36,7 @@ import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
 import { ProvidersApi } from "../../apis";
 import { GetItemId, isMovie } from "../../utilities";
-import "./msmStyle.scss";
+import s from "./SearchModal.module.scss";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -143,7 +143,7 @@ export function ManualSearchModal<T extends SupportType>(
           }
 
           const cls = [
-            "release-container",
+            s["release-container"],
             "d-flex",
             "justify-content-between",
             "align-items-center",
