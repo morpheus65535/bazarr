@@ -50,6 +50,7 @@ class KtuvitSubtitle(Subtitle):
         self.ktuvit_id = ktuvit_id
         self.subtitle_id = subtitle_id
         self.release = release
+        self.release_info = release
 
     def __repr__(self):
         return "<%s [%s] %r [%s:%s]>" % (
@@ -63,10 +64,6 @@ class KtuvitSubtitle(Subtitle):
     @property
     def id(self):
         return str(self.subtitle_id)
-
-    @property
-    def release_info(self):
-        return self.release
 
     def get_matches(self, video):
         matches = set()
