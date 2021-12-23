@@ -142,7 +142,11 @@ class EmbeddedSubtitlesProvider(Provider):
         return subtitles
 
     def list_subtitles(self, video, languages):
-        return self.query(video.name, languages)
+        if not os.path.isfile(video.original_path):
+            logger.debug("Ignoring inexistent file: %s", video.original_path)
+            return []
+
+        return self.query(video.original_path, languages)
 
     def download_subtitle(self, subtitle):
         path = self._get_subtitle_path(subtitle)
