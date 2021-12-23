@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import React, {
   FocusEvent,
   FunctionComponent,
@@ -8,7 +9,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import s from "./chip.module.scss";
 
 const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 
@@ -119,7 +119,7 @@ export const Chips: FunctionComponent<ChipsProps> = ({
         <span
           key={idx}
           title={v}
-          className={`${s["custom-chip"]} ${disabled ? "" : s["active"]}`}
+          className={clsx("element", { active: disabled !== true })}
           onClick={() => {
             if (!disabled) {
               removeChip(idx);
@@ -133,11 +133,11 @@ export const Chips: FunctionComponent<ChipsProps> = ({
   );
 
   return (
-    <div className={`form-control ${s["custom-chip-input"]} d-flex`}>
-      <div className={s["chip-container"]}>{chipElements}</div>
+    <div className={clsx("chip-container", "form-control d-flex")}>
+      <div className="chips">{chipElements}</div>
       <input
         disabled={disabled}
-        className={`${s["main-input"]} p-0`}
+        className={clsx("p-0", "input")}
         ref={input}
         onKeyUp={onKeyUp}
         onKeyDown={onKeyDown}

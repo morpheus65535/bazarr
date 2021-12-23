@@ -1,5 +1,5 @@
-.notification-btn {
-  &.new-item {
+.notification-button {
+  &.new {
     &::after {
       position: absolute;
       background-color: red;
@@ -12,31 +12,24 @@
     }
   }
 
-  .dropdown-menu {
+  .menu {
     max-height: 85vh;
     overflow-y: auto;
   }
 
   $content-width: 14rem;
 
-  .notification-center-progress {
+  .progress {
     width: $content-width;
     max-width: $content-width;
 
-    .progress-name {
+    .name {
       word-wrap: break-word;
       white-space: normal;
     }
-
-    .progress .progress-bar {
-      text-shadow: -2px -2px 5px theme-color("primary"),
-        2px -2px 5px theme-color("primary"), -2px 2px 5px theme-color("primary"),
-        2px 2px 5px theme-color("primary");
-      overflow: visible;
-    }
   }
 
-  .notification-center-notification {
+  .notification {
     word-wrap: break-word;
     white-space: normal;
     width: $content-width;

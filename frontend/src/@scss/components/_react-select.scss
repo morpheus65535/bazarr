@@ -1,0 +1,29 @@
+@use "../custom-bootstrap" as bs;
+
+.selector__control {
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0.25rem;
+}
+
+.selector__control--is-focused {
+  border-color: bs.$primary !important;
+}
+.selector__menu {
+  z-index: 1000 !important;
+}
+
+.selector__option--is-focused {
+  background-color: transparentize(bs.$primary, 0.85) !important;
+  &:focus,
+  &:active {
+    background-color: transparentize(bs.$primary, 0.65) !important;
+  }
+}
+
+.selector__option--is-selected {
+  background-color: bs.$primary !important;
+  &:active {
+    background-color: darken(bs.$primary, 10) !important;
+  }
+}

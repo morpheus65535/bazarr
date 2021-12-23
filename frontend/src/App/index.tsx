@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { Provider } from "react-redux";
@@ -16,7 +17,6 @@ import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
 import { Environment } from "../utilities";
 import Header from "./Header";
-import h from "./header.module.scss";
 
 // Sidebar Toggle
 
@@ -51,10 +51,9 @@ const App: FunctionComponent<Props> = () => {
   } else if (typeof initialized === "string") {
     return <LaunchError>{initialized}</LaunchError>;
   }
-  console.log(h);
   return (
     <ErrorBoundary>
-      <Row className={`${h["header-container"]} gx-0`}>
+      <Row className={clsx("header-container", "gx-0")}>
         <Header></Header>
       </Row>
       <Row className="flex-nowrap gx-0">

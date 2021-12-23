@@ -1,6 +1,58 @@
-@import "../@scss/variable.scss";
+@use "variables" as vars;
+@use "custom-bootstrap" as bs;
 
-@mixin sidebar-border($side) {
+@mixin sidebar-animation {
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+}
+
+@include bs.media-breakpoint-up(sm) {
+  .main-router {
+    max-width: calc(100% - #{vars.$sidebar-width});
+  }
+
+  .header-icon {
+    min-width: vars.$sidebar-width;
+  }
+
+  .sidebar-container {
+    position: sticky;
+  }
+}
+
+@include bs.media-breakpoint-down(sm) {
+  .main-router {
+    max-width: 100%;
+  }
+
+  .header-icon {
+    min-width: 0;
+  }
+
+  .sidebar-container {
+    position: fixed !important;
+    transform: translateX(-100%);
+
+    @include sidebar-animation();
+
+    &.open {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .sidebar-overlay {
+    @include sidebar-animation();
+
+    &.open {
+      display: block !important;
+      opacity: 0.6;
+    }
+  }
+}
+
+@mixin border($side) {
   border: {
     #{$side}: {
       color: rgba(0, 0, 0, 0.125);
@@ -33,8 +85,8 @@ $sidebar-active-color: #252833;
 
   z-index: 1001;
 
-  min-width: $sidebar-width;
-  max-width: $sidebar-width;
+  min-width: vars.$sidebar-width;
+  max-width: vars.$sidebar-width;
 
   flex-grow: 2;
 
@@ -49,8 +101,8 @@ $sidebar-active-color: #252833;
     height: 0px;
   }
 
-  .sidebar-title {
-    height: $header-height;
+  .title {
+    height: vars.$header-height;
   }
 
   @mixin active {
@@ -62,10 +114,10 @@ $sidebar-active-color: #252833;
     left: 0;
     width: 3px;
     z-index: 10;
-    background-color: var(--primary);
+    background-color: bs.$primary;
   }
 
-  .sidebar-collapse-box {
+  .collapse-box {
     position: relative;
     &.active {
       &::before {
@@ -74,7 +126,7 @@ $sidebar-active-color: #252833;
     }
   }
 
-  .sidebar-button {
+  .button {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
@@ -107,7 +159,7 @@ $sidebar-active-color: #252833;
       }
     }
 
-    &.sb-collapse {
+    &.collapse {
       padding-left: 3rem;
     }
   }

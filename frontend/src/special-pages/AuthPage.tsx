@@ -12,7 +12,6 @@ import { Redirect } from "react-router-dom";
 import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import { SystemApi } from "../apis";
-import s from "./auth.module.scss";
 
 interface Props {}
 
@@ -43,7 +42,7 @@ const AuthPage: FunctionComponent<Props> = () => {
 
   return (
     <div className="d-flex bg-light vh-100 justify-content-center align-items-center">
-      <Card className={`${s["auth-card"]} shadow`}>
+      <Card style={{ width: "24rem" }} className="shadow">
         <Form
           onSubmit={(e) => {
             e.preventDefault();
@@ -59,7 +58,7 @@ const AuthPage: FunctionComponent<Props> = () => {
             <Form.Group className="mb-5 d-flex justify-content-center">
               <Image width="64" height="64" src={logo}></Image>
             </Form.Group>
-            <Form.Group>
+            <Form.Group className="my-3">
               <Form.Control
                 disabled={updating}
                 name="username"

@@ -1,0 +1,13 @@
+@use "variables" as vars;
+
+$primary: #911f93;
+$dark: #4f566f;
+
+@import "bootstrap";
+
+.progress-bar {
+  cursor: default;
+  text-shadow: -2px -2px 5px $primary, 2px -2px 5px $primary,
+    -2px 2px 5px $primary, 2px 2px 5px $primary;
+  overflow: visible;
+}

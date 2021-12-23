@@ -1,25 +1,27 @@
-.custom-chip-input {
+@use "../custom-bootstrap" as bs;
+
+.chip-container {
   overflow: hidden;
   &:focus-within {
-    border-color: var(--primary);
+    border-color: bs.$primary;
   }
-  .main-input {
+  .input {
     border: hidden;
     outline: none;
     width: 100%;
     flex-grow: 2;
   }
 
-  .chip-container {
+  .chips {
     display: flex;
     flex-wrap: nowrap;
     flex-grow: 1;
   }
 
-  .custom-chip {
+  .element {
     padding: 0 0.5rem;
     margin-right: 0.25rem;
-    background-color: var(--light);
+    background-color: bs.$light;
     border-radius: 0.25rem;
 
     max-width: 10rem;
@@ -35,7 +37,7 @@
     &.active {
       &:hover {
         cursor: pointer;
-        background-color: var(--danger);
+        background-color: bs.$danger;
         color: white;
       }
     }

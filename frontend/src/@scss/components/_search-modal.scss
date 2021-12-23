@@ -1,20 +1,20 @@
-.release-container {
+.search-modal-container {
   flex-wrap: nowrap;
   overflow: hidden;
   .text-container {
     max-width: 500px;
-    .release-text {
+    .text {
       text-overflow: ellipsis;
       overflow-wrap: break-word;
       word-wrap: break-word;
       white-space: pre-wrap;
 
-      &.hidden-item {
+      &.hidden {
         color: gray;
       }
     }
   }
-  &.release-multi {
+  &.multi {
     cursor: zoom-in;
   }
 }

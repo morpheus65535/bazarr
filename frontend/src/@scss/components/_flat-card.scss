@@ -1,4 +1,6 @@
-.settings-card {
+@use "../custom-bootstrap" as bs;
+
+.flat-card {
   cursor: pointer;
 
   min-height: 85px;
@@ -9,6 +11,6 @@
   }
 
   &:hover {
-    border-color: var(--primary);
+    border-color: bs.$primary;
   }
 }

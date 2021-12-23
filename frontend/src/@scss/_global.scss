@@ -1,0 +1,38 @@
+@use "custom-bootstrap" as bs;
+
+// Reduce padding of cells in react-table
+.table td,
+.table th {
+  padding: 0.4rem !important;
+}
+
+a {
+  color: bs.$primary;
+  text-decoration: none;
+  background-color: transparent;
+
+  &:hover {
+    color: bs.$primary;
+    text-decoration: underline;
+  }
+}
+
+:root {
+  .form-control {
+    &:focus {
+      outline-color: none !important;
+      box-shadow: none !important;
+      border-color: bs.$primary !important;
+    }
+  }
+}
+
+td {
+  vertical-align: middle !important;
+}
+
+body {
+  font-family: "Roboto", "open sans", "Helvetica Neue", "Helvetica", "Arial",
+    sans-serif !important;
+  font-weight: 300 !important;
+}

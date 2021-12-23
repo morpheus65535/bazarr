@@ -24,7 +24,6 @@ import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import { BuildKey } from "../utilities";
 import { useGotoHomepage } from "../utilities/hooks";
-import s from "./style.module.scss";
 
 const SelectionContext = createContext<{
   selection: string | null;
@@ -44,14 +43,9 @@ const Sidebar: FunctionComponent = () => {
     <SelectionContext.Provider
       value={{ selection: selection, select: setSelection }}
     >
-      <aside className={clsx(s["sidebar-container"], { open: open })}>
+      <aside className={clsx("sidebar-container", { open: open })}>
         <Container
-          className={clsx(
-            s["sidebar-title"],
-            "d-flex",
-            "align-items-center",
-            "d-md-none"
-          )}
+          className={clsx("title", "d-flex", "align-items-center", "d-md-none")}
         >
           <Image
             alt="brand"
@@ -65,7 +59,7 @@ const Sidebar: FunctionComponent = () => {
         <SidebarNavigation></SidebarNavigation>
       </aside>
       <div
-        className={clsx(s["sidebar-overlay"], { open: open })}
+        className={clsx("sidebar-overlay", { open: open })}
         onClick={() => changeSidebar(false)}
       ></div>
     </SelectionContext.Provider>
@@ -135,9 +129,9 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
     if (component) {
       return (
         <NavLink
-          activeClassName={s["active"]}
+          activeClassName={"active"}
           className={clsx(
-            s["sidebar-button"],
+            "button",
             "list-group-item",
             "list-group-item-action"
           )}
@@ -157,10 +151,10 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
   }
 
   return (
-    <div className={clsx(s["sidebar-collapse-box"], { [s["active"]]: open })}>
+    <div className={clsx("collapse-box", { active: open })}>
       <ListGroupItem
         action
-        className={s["sidebar-button"]}
+        className={"button"}
         onClick={() => {
           if (open) {
             select(null);
@@ -179,7 +173,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
         ></SidebarContent>
       </ListGroupItem>
       <Collapse in={open}>
-        <div className={s["sidebar-collapse"]}>
+        <div className="collapse">
           {enabledRoutes.map((v, idx) => (
             <SidebarChild
               key={BuildKey(idx, v.name, "child")}
@@ -211,8 +205,8 @@ const SidebarChild: FunctionComponent<
     <NavLink
       activeClassName="sb-active"
       className={clsx(
-        s["sidebar-button"],
-        s["sb-collapse"],
+        "button",
+        "collapse",
         "list-group-item",
         "list-group-item-action"
       )}
@@ -237,7 +231,7 @@ const SidebarContent: FunctionComponent<{
       {icon && (
         <FontAwesomeIcon
           size="1x"
-          className={s["icon"]}
+          className={"icon"}
           icon={icon}
         ></FontAwesomeIcon>
       )}

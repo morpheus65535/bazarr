@@ -1,7 +1,7 @@
-@import "../@scss/variable.scss";
+@use "../variables" as vars;
 
 .header-container {
-  height: $header-height;
+  height: vars.$header-height;
 
   input {
     &[type="text"] {

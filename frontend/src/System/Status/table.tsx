@@ -1,7 +1,6 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { SimpleTable } from "../../components";
-import s from "./style.module.scss";
 
 interface Props {
   health: readonly System.Health[];
@@ -17,7 +16,6 @@ const Table: FunctionComponent<Props> = ({ health }) => {
       {
         Header: "Issue",
         accessor: "issue",
-        className: s["status-issue"],
       },
     ],
     []

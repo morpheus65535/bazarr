@@ -1,8 +1,8 @@
-import React, { FunctionComponent, useMemo } from "react";
+import clsx from "clsx";
+import React, { FunctionComponent } from "react";
 import { Row } from "react-bootstrap";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
-import s from "./style.module.scss";
 
 interface Props {
   scroll?: boolean;
@@ -16,19 +16,6 @@ declare type Header = FunctionComponent<Props> & {
 };
 
 export const ContentHeader: Header = ({ children, scroll, className }) => {
-  const cls = useMemo(() => {
-    const rowCls = [s["content-header"], "bg-dark", "p-2"];
-
-    if (className !== undefined) {
-      rowCls.push(className);
-    }
-
-    if (scroll !== false) {
-      rowCls.push(s["scroll"]);
-    }
-    return rowCls.join(" ");
-  }, [scroll, className]);
-
   let childItem: React.ReactNode;
 
   if (scroll !== false) {
@@ -38,7 +25,15 @@ export const ContentHeader: Header = ({ children, scroll, className }) => {
   } else {
     childItem = children;
   }
-  return <Row className={cls}>{childItem}</Row>;
+  return (
+    <Row
+      className={clsx("content-header", "bg-dark p-2", className, {
+        scroll: scroll !== false,
+      })}
+    >
+      {childItem}
+    </Row>
+  );
 };
 
 ContentHeader.Button = ContentHeaderButton;

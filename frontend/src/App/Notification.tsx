@@ -10,6 +10,7 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
+import clsx from "clsx";
 import React, {
   FunctionComponent,
   useCallback,
@@ -28,7 +29,6 @@ import {
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import { BuildKey, useIsArrayExtended } from "../utilities";
-import s from "./notification.module.scss";
 
 enum State {
   Idle,
@@ -166,14 +166,16 @@ const NotificationCenter: FunctionComponent = () => {
     <React.Fragment>
       <Dropdown
         onClick={onToggleClick}
-        className={`${s["notification-btn"]} ${hasNew ? "new-item" : ""}`}
+        className={clsx("notification-button", { new: hasNew })}
         ref={dropdownRef}
         align={"end"}
       >
         <Dropdown.Toggle as={Button} className="dropdown-hidden">
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
         </Dropdown.Toggle>
-        <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>
+        <Dropdown.Menu className={clsx("menu", "pb-3")}>
+          {content}
+        </Dropdown.Menu>
       </Dropdown>
       <Overlay target={dropdownRef} show={showTooltip} placement="bottom">
         {(props) => {
@@ -203,7 +205,12 @@ const Notification: FunctionComponent<Server.Notification> = ({
     }
   }, [type]);
   return (
-    <div className="notification-center-notification d-flex flex-nowrap align-items-center justify-content-start my-1">
+    <div
+      className={clsx(
+        "notification-button",
+        "d-flex flex-nowrap align-items-center justify-content-start my-1"
+      )}
+    >
       <FontAwesomeIcon className="me-2 text-dark" icon={icon}></FontAwesomeIcon>
       <span className="text-dark small">{message}</span>
     </div>
@@ -219,15 +226,15 @@ const Progress: FunctionComponent<Site.Progress> = ({
   const isCompleted = value / count > 1;
   const displayValue = Math.min(count, value + 1);
   return (
-    <div className="notification-center-progress d-flex flex-column">
+    <div className={clsx("progress", "d-flex", "flex-column")}>
       <p className="progress-header m-0 h-6 text-dark font-weight-bold">
         {header}
       </p>
-      <p className="progress-name m-0 small text-secondary">
+      <p className={clsx("name", "m-0 small text-secondary")}>
         {isCompleted ? "Completed successfully" : name}
       </p>
       <ProgressBar
-        className="mt-2"
+        className={clsx("bar", "mt-2")}
         animated={!isCompleted}
         now={displayValue / count}
         max={1}

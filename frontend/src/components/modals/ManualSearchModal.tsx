@@ -6,6 +6,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import clsx from "clsx";
 import React, {
   FunctionComponent,
   useCallback,
@@ -36,7 +37,6 @@ import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
 import { ProvidersApi } from "../../apis";
 import { GetItemId, isMovie } from "../../utilities";
-import s from "./SearchModal.module.scss";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -131,7 +131,7 @@ export function ManualSearchModal<T extends SupportType>(
           const items = useMemo(
             () =>
               value.slice(1).map((v, idx) => (
-                <span className="release-text hidden-item" key={idx}>
+                <span className={clsx("text", "hidden")} key={idx}>
                   {v}
                 </span>
               )),
@@ -142,21 +142,17 @@ export function ManualSearchModal<T extends SupportType>(
             return <span className="text-muted">Cannot get release info</span>;
           }
 
-          const cls = [
-            s["release-container"],
-            "d-flex",
-            "justify-content-between",
-            "align-items-center",
-          ];
-
-          if (value.length > 1) {
-            cls.push("release-multi");
-          }
-
           return (
-            <div className={cls.join(" ")} onClick={() => setOpen((o) => !o)}>
+            <div
+              className={clsx(
+                "search-modal-container",
+                "d-flex justify-content-between align-items-center",
+                { multi: value.length > 1 }
+              )}
+              onClick={() => setOpen((o) => !o)}
+            >
               <div className="text-container">
-                <span className="release-text">{value[0]}</span>
+                <span className="text">{value[0]}</span>
                 <Collapse in={open}>
                   <div>{items}</div>
                 </Collapse>

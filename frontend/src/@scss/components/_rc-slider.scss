@@ -1,12 +1,15 @@
+@use "../variables" as vars;
+@use "../custom-bootstrap" as bs;
+
 .custom-rc-slider {
   .rc-slider-track {
-    background-color: var(--primary);
+    background-color: bs.$primary;
   }
   .rc-slider-step {
     cursor: pointer;
   }
   .rc-slider-handle {
-    border: 3px solid var(--primary);
+    border: 3px solid bs.$primary;
     margin-top: 0;
     top: 50%;
     transform: translate(-50%, -50%) !important;
@@ -32,14 +35,14 @@
     }
 
     &:hover {
-      border-color: var(--primary);
+      border-color: bs.$primary;
       .rc-slider-handle-tips {
         display: block;
       }
     }
 
     &:active {
-      border-color: var(--primary);
+      border-color: bs.$primary;
       box-shadow: none;
       .rc-slider-handle-tips {
         display: block;
