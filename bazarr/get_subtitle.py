@@ -1027,9 +1027,6 @@ def wanted_download_subtitles(sonarr_episode_id):
         providers_list = get_providers()
 
         if providers_list:
-            attempt = episode['failedAttempts']
-            if type(attempt) == str:
-                attempt = ast.literal_eval(attempt)
             for language in ast.literal_eval(episode['missing_subtitles']):
                 # confirm if language is still missing or if cutoff have been reached
                 confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
@@ -1039,61 +1036,53 @@ def wanted_download_subtitles(sonarr_episode_id):
                 if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
                     continue
 
-                if attempt is None:
-                    attempt = []
-                    attempt.append([language, time.time()])
-                else:
-                    att = list(zip(*attempt))[0]
-                    if language not in att:
-                        attempt.append([language, time.time()])
+                if is_search_active(desired_language=language, attempt_string=episode['failedAttempts']):
+                    TableEpisodes.update({TableEpisodes.failedAttempts:
+                                          updateFailedAttempts(desired_language=language,
+                                                               attempt_string=episode['failedAttempts'])}) \
+                        .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
+                        .execute()
 
-                TableEpisodes.update({TableEpisodes.failedAttempts: str(attempt)})\
-                    .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId'])\
-                    .execute()
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
+                    else:
+                        audio_language = 'None'
 
-                for i in range(len(attempt)):
-                    if attempt[i][0] == language:
-                        if search_active(attempt[i][1]):
-                            audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
-                            if len(audio_language_list) > 0:
-                                audio_language = audio_language_list[0]['name']
-                            else:
-                                audio_language = 'None'
-
-                            result = download_subtitle(path_mappings.path_replace(episode['path']),
-                                                       language.split(':')[0],
-                                                       audio_language,
-                                                       "True" if language.endswith(':hi') else "False",
-                                                       "True" if language.endswith(':forced') else "False",
-                                                       providers_list,
-                                                       providers_auth,
-                                                       str(episode['scene_name']),
-                                                       episode['title'],
-                                                       'series')
-                            if result is not None:
-                                message = result[0]
-                                path = result[1]
-                                forced = result[5]
-                                if result[8]:
-                                    language_code = result[2] + ":hi"
-                                elif forced:
-                                    language_code = result[2] + ":forced"
-                                else:
-                                    language_code = result[2]
-                                provider = result[3]
-                                score = result[4]
-                                subs_id = result[6]
-                                subs_path = result[7]
-                                store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-                                history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                            language_code, provider, score, subs_id, subs_path)
-                                event_stream(type='series', action='update', payload=episode['sonarrSeriesId'])
-                                event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
-                                send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+                    result = download_subtitle(path_mappings.path_replace(episode['path']),
+                                               language.split(':')[0],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
+                                               "True" if language.endswith(':forced') else "False",
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode['scene_name']),
+                                               episode['title'],
+                                               'series')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
                         else:
-                            logging.debug(
-                                'BAZARR Search is not active for episode ' + episode['path'] + ' Language: ' + attempt[i][
-                                    0])
+                            language_code = result[2]
+                        provider = result[3]
+                        score = result[4]
+                        subs_id = result[6]
+                        subs_path = result[7]
+                        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
+                        history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
+                                    language_code, provider, score, subs_id, subs_path)
+                        event_stream(type='series', action='update', payload=episode['sonarrSeriesId'])
+                        event_stream(type='episode-wanted', action='delete', payload=episode['sonarrEpisodeId'])
+                        send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
+                else:
+                    logging.debug(
+                        f"BAZARR Search is throttled by adaptive search for this episode {episode['path']} and "
+                        f"language: {language}")
         else:
             logging.info("BAZARR All providers are throttled")
             break
@@ -1117,9 +1106,6 @@ def wanted_download_subtitles_movie(radarr_id):
         providers_list = get_providers()
 
         if providers_list:
-            attempt = movie['failedAttempts']
-            if type(attempt) == str:
-                attempt = ast.literal_eval(attempt)
             for language in ast.literal_eval(movie['missing_subtitles']):
                 # confirm if language is still missing or if cutoff have been reached
                 confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
@@ -1129,60 +1115,51 @@ def wanted_download_subtitles_movie(radarr_id):
                 if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
                     continue
 
-                if attempt is None:
-                    attempt = []
-                    attempt.append([language, time.time()])
-                else:
-                    att = list(zip(*attempt))[0]
-                    if language not in att:
-                        attempt.append([language, time.time()])
+                if is_search_active(desired_language=language, attempt_string=movie['failedAttempts']):
+                    TableMovies.update({TableMovies.failedAttempts:
+                                        updateFailedAttempts(desired_language=language,
+                                                             attempt_string=movie['failedAttempts'])}) \
+                        .where(TableMovies.radarrId == movie['radarrId']) \
+                        .execute()
 
-                TableMovies.update({TableMovies.failedAttempts: str(attempt)})\
-                    .where(TableMovies.radarrId == movie['radarrId'])\
-                    .execute()
+                    audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
+                    else:
+                        audio_language = 'None'
 
-                for i in range(len(attempt)):
-                    if attempt[i][0] == language:
-                        if search_active(attempt[i][1]) is True:
-                            audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
-                            if len(audio_language_list) > 0:
-                                audio_language = audio_language_list[0]['name']
-                            else:
-                                audio_language = 'None'
-
-                            result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
-                                                       language.split(':')[0],
-                                                       audio_language,
-                                                       "True" if language.endswith(':hi') else "False",
-                                                       "True" if language.endswith(':forced') else "False",
-                                                       providers_list,
-                                                       providers_auth,
-                                                       str(movie['sceneName']),
-                                                       movie['title'],
-                                                       'movie')
-                            if result is not None:
-                                message = result[0]
-                                path = result[1]
-                                forced = result[5]
-                                if result[8]:
-                                    language_code = result[2] + ":hi"
-                                elif forced:
-                                    language_code = result[2] + ":forced"
-                                else:
-                                    language_code = result[2]
-                                provider = result[3]
-                                score = result[4]
-                                subs_id = result[6]
-                                subs_path = result[7]
-                                store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-                                history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
-                                                  subs_id, subs_path)
-                                event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
-                                send_notifications_movie(movie['radarrId'], message)
+                    result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
+                                               language.split(':')[0],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
+                                               "True" if language.endswith(':forced') else "False",
+                                               providers_list,
+                                               providers_auth,
+                                               str(movie['sceneName']),
+                                               movie['title'],
+                                               'movie')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
                         else:
-                            logging.info(
-                                'BAZARR Search is not active for this Movie ' + movie['path'] + ' Language: ' + attempt[i][
-                                    0])
+                            language_code = result[2]
+                        provider = result[3]
+                        score = result[4]
+                        subs_id = result[6]
+                        subs_path = result[7]
+                        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+                        history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
+                                          subs_id, subs_path)
+                        event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
+                        send_notifications_movie(movie['radarrId'], message)
+                else:
+                    logging.info(f"BAZARR Search is throttled by adaptive search for this episode {movie['path']} and "
+                                 f"language: {language}")
         else:
             logging.info("BAZARR All providers are throttled")
             break
@@ -1257,25 +1234,6 @@ def wanted_search_missing_subtitles_movies():
     hide_progress(id='wanted_movies_progress')
     
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
-
-
-def search_active(timestamp):
-    if settings.general.getboolean('adaptive_searching'):
-        search_deadline = timedelta(weeks=3)
-        search_delta = timedelta(weeks=1)
-        aa = datetime.fromtimestamp(float(timestamp))
-        attempt_datetime = datetime.strptime(str(aa).split(".")[0], '%Y-%m-%d %H:%M:%S')
-        attempt_search_deadline = attempt_datetime + search_deadline
-        today = datetime.today()
-        attempt_age_in_days = (today.date() - attempt_search_deadline.date()).days
-        if today.date() <= attempt_search_deadline.date():
-            return True
-        elif attempt_age_in_days % search_delta.days == 0:
-            return True
-        else:
-            return False
-    else:
-        return True
 
 
 def convert_to_guessit(guessit_key, attr_from_db):
@@ -1738,3 +1696,145 @@ def get_ban_list(profile_id):
             return {'must_contain': profile['mustContain'] or [],
                     'must_not_contain': profile['mustNotContain'] or []}
     return None
+
+
+def is_search_active(desired_language, attempt_string):
+    """
+    Function to test if it's time to search again after a previous attempt matching the desired language. For 3 weeks,
+    we search on a scheduled basis but after 3 weeks we start searching only once a week.
+
+    @param desired_language: 2 letters language to search for in attempts
+    @type desired_language: str
+    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @type attempt_string: str
+
+    @return: return True if it's time to search again and False if not
+    @rtype: bool
+    """
+
+    if settings.general.getboolean('adaptive_searching'):
+        logging.debug("Adaptive searching is enable, we'll see if it's time to search again...")
+        try:
+            # let's try to get a list of lists from the string representation in database
+            attempts = ast.literal_eval(attempt_string)
+            if type(attempts) is not list:
+                # attempts should be a list if not, it's malformed or None
+                raise ValueError
+        except ValueError:
+            logging.debug("Adaptive searching: attempts is malformed. As a failsafe, search will run.")
+            return True
+
+        if not len(attempts):
+            logging.debug("Adaptive searching: attempts list is empty, search will run.")
+            return True
+
+        # get attempts matching the desired language and sort them by timestamp ascending
+        matching_attempts = sorted([x for x in attempts if x[0] == desired_language], key=lambda x: x[1])
+
+        if not len(matching_attempts):
+            logging.debug("Adaptive searching: there's no attempts matching desired language, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: attempts matching language {desired_language}: {matching_attempts}")
+
+        # try to get the initial and latest search timestamp from matching attempts
+        initial_search_attempt = matching_attempts[0]
+        latest_search_attempt = matching_attempts[-1]
+
+        # try to parse the timestamps for those attempts
+        try:
+            initial_search_timestamp = datetime.fromtimestamp(initial_search_attempt[1])
+            latest_search_timestamp = datetime.fromtimestamp(latest_search_attempt[1])
+        except (OverflowError, ValueError, OSError):
+            logging.debug("Adaptive searching: unable to parse initial and latest search timestamps, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: initial search date for {desired_language} is "
+                          f"{initial_search_timestamp}")
+            logging.debug(f"Adaptive searching: latest search date for {desired_language} is {latest_search_timestamp}")
+
+        # defining basic calculation variables
+        now = datetime.now()
+        if settings.general.adaptive_searching_delay.endswith('d'):
+            extended_search_delay = timedelta(days=int(settings.general.adaptive_searching_delay[:1]))
+        elif settings.general.adaptive_searching_delay.endswith('w'):
+            extended_search_delay = timedelta(weeks=int(settings.general.adaptive_searching_delay[:1]))
+        else:
+            logging.debug(f"Adaptive searching: cannot parse adaptive_searching_delay from config file: "
+                          f"{settings.general.adaptive_searching_delay}")
+            return True
+        logging.debug(f"Adaptive searching: delay after initial search value: {extended_search_delay}")
+
+        if settings.general.adaptive_searching_delta.endswith('d'):
+            extended_search_delta = timedelta(days=int(settings.general.adaptive_searching_delta[:1]))
+        elif settings.general.adaptive_searching_delta.endswith('w'):
+            extended_search_delta = timedelta(weeks=int(settings.general.adaptive_searching_delta[:1]))
+        else:
+            logging.debug(f"Adaptive searching: cannot parse adaptive_searching_delta from config file: "
+                          f"{settings.general.adaptive_searching_delta}")
+            return True
+        logging.debug(f"Adaptive searching: delta between latest search and now value: {extended_search_delta}")
+
+        if initial_search_timestamp + extended_search_delay > now:
+            logging.debug(f"Adaptive searching: it's been less than {settings.general.adaptive_searching_delay} since "
+                          f"initial search, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: it's been more than {settings.general.adaptive_searching_delay} since "
+                          f"initial search, let's check if it's time to search again.")
+            if latest_search_timestamp + extended_search_delta <= now:
+                logging.debug(
+                    f"Adaptive searching: it's been more than {settings.general.adaptive_searching_delta} since "
+                    f"latest search, search will run.")
+                return True
+            else:
+                logging.debug(
+                    f"Adaptive searching: it's been less than {settings.general.adaptive_searching_delta} since "
+                    f"latest search, we're not ready to search yet.")
+                return False
+
+    logging.debug("adaptive searching is disabled, search will run.")
+    return True
+
+
+def updateFailedAttempts(desired_language, attempt_string):
+    """
+    Function to parse attempts and make sure we only keep initial and latest search timestamp for each language.
+
+    @param desired_language: 2 letters language to search for in attempts
+    @type desired_language: str
+    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @type attempt_string: str
+
+    @return: return a string representation of a list of lists like [str(language_code), str(attempts)]
+    @rtype: str
+    """
+
+    try:
+        # let's try to get a list of lists from the string representation in database
+        attempts = ast.literal_eval(attempt_string)
+        logging.debug(f"Adaptive searching: current attempts value is {attempts}")
+        if type(attempts) is not list:
+            # attempts should be a list if not, it's malformed or None
+            raise ValueError
+    except ValueError:
+        logging.debug("Adaptive searching: failed to parse attempts value, we'll use an empty list.")
+        attempts = []
+
+    matching_attempts = sorted([x for x in attempts if x[0] == desired_language], key=lambda x: x[1])
+    logging.debug(f"Adaptive searching: attempts matching language {desired_language}: {matching_attempts}")
+
+    filtered_attempts = sorted([x for x in attempts if x[0] != desired_language], key=lambda x: x[1])
+    logging.debug(f"Adaptive searching: attempts not matching language {desired_language}: {filtered_attempts}")
+
+    # get the initial search from attempts if there's one
+    if len(matching_attempts):
+        filtered_attempts.append(matching_attempts[0])
+
+    # append current attempt with language and timestamp to attempts
+    filtered_attempts.append([desired_language, datetime.timestamp(datetime.now())])
+
+    updated_attempts = sorted(filtered_attempts, key=lambda x: x[0])
+    logging.debug(f"Adaptive searching: updated attempts that will be saved to database is {updated_attempts}")
+
+    return str(updated_attempts)
