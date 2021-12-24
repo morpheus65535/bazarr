@@ -300,9 +300,9 @@ class Addic7edProvider(_Addic7edProvider):
         # LXML parser seems to fail when parsing Addic7ed.com HTML markup.
         # Last known version to work properly is 3.6.4 (next version, 3.7.0, fails)
         # Assuming the site's markup is bad, and stripping it down to only contain what's needed.
-        show_cells = re.findall(show_cells_re, r.content)
+        show_cells = [cell.decode("utf-8", "ignore") for cell in re.findall(show_cells_re, r.content)]
         if show_cells:
-            soup = ParserBeautifulSoup(''.join(show_cells).decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+            soup = ParserBeautifulSoup(''.join(show_cells), ['lxml', 'html.parser'])
         else:
             # If RegEx fails, fall back to original r.content and use 'html.parser'
             soup = ParserBeautifulSoup(r.content, ['html.parser'])
@@ -461,7 +461,7 @@ class Addic7edProvider(_Addic7edProvider):
 
     def query_movie(self, movie_id, title, year=None):
         # get the page of the movie
-        logger.info('Getting the page of movie id %d', movie_id)
+        logger.info('Getting the page of movie id %s', movie_id)
         r = self.session.get(self.server_url + 'movie/' + movie_id,
                              timeout=10,
                              headers={
