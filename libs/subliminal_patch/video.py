@@ -28,3 +28,4 @@ class Video(Video_):
         self.external_subtitle_languages = set()
         self.streaming_service = streaming_service
         self.edition = edition
+        self.original_path = name

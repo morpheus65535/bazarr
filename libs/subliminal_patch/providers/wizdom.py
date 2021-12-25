@@ -35,14 +35,11 @@ class WizdomSubtitle(Subtitle):
         self.imdb_id = imdb_id
         self.subtitle_id = subtitle_id
         self.release = release
+        self.release_info = release
 
     @property
     def id(self):
         return str(self.subtitle_id)
-
-    @property
-    def release_info(self):
-        return self.release
 
     def get_matches(self, video):
         matches = set()

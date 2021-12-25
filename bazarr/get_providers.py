@@ -13,6 +13,7 @@ import requests
 from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
+from utils import get_binary
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
@@ -128,6 +129,7 @@ def get_providers_auth():
         'addic7ed': {
             'username': settings.addic7ed.username,
             'password': settings.addic7ed.password,
+            'is_vip': settings.addic7ed.getboolean('vip'),
         },
         'opensubtitles': {
             'username': settings.opensubtitles.username,
@@ -200,6 +202,13 @@ def get_providers_auth():
             'email': settings.ktuvit.email,
             'hashed_password': settings.ktuvit.hashed_password,
         },
+        'embeddedsubtitles': {
+            'include_ass': settings.embeddedsubtitles.getboolean('include_ass'),
+            'include_srt': settings.embeddedsubtitles.getboolean('include_srt'),
+            'cache_dir': os.path.join(args.config_dir, "cache"),
+            'ffprobe_path': get_binary("ffprobe"),
+            'ffmpeg_path': get_binary("ffmpeg"),
+        }
     }
 
 
@@ -320,9 +329,11 @@ def get_throttled_providers():
         if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
             with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
                     handle:
-                providers = ast.literal_eval(handle.read())
-    except (OSError, ValueError):
-        providers = {}
+                providers = eval(handle.read())
+    except:
+        # set empty content in throttled_providers.dat
+        logging.error("Invalid content in throttled_providers.dat. Resetting")
+        set_throttled_providers(providers)
     finally:
         return providers
 
@@ -332,12 +343,6 @@ def set_throttled_providers(data):
         handle.write(data)
 
 
-try:
-    tp = get_throttled_providers()
-    if not isinstance(tp, dict):
-        raise ValueError('tp should be a dict')
-except Exception:
-    logging.error("Invalid content in throttled_providers.dat. Resetting")
-    # set empty content in throttled_providers.dat
-    set_throttled_providers('')
-    tp = get_throttled_providers()
+tp = get_throttled_providers()
+if not isinstance(tp, dict):
+    raise ValueError('tp should be a dict')

@@ -39,6 +39,7 @@ class XSubsSubtitle(Subtitle):
         self.download_link = download_link
         self.hearing_impaired = None
         self.encoding = 'windows-1253'
+        self.release_info = version
 
     @property
     def id(self):

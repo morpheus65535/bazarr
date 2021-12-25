@@ -71,8 +71,8 @@ def get_video(path, title, providers=None, media_type="movie"):
 
 
 def download_subtitle(path, language, audio_language, hi, forced, providers, providers_auth, title,
-                      media_type, forced_minimum_score=None, is_upgrade=False):
-    # TODO: supply all missing languages, not only one, to hit providers only once who support multiple languages in
+                      media_type, forced_minimum_score=None, is_upgrade=False, profile_id=None):
+    # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
     if settings.general.getboolean('utf8_encode'):
@@ -139,6 +139,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            compute_score=compute_score,
                                                            throttle_time=None,  # TODO
                                                            blacklist=get_blacklist(media_type=media_type),
+                                                           ban_list=get_ban_list(profile_id),
                                                            throttle_callback=provider_throttle,
                                                            score_obj=handler,
                                                            pre_download_hook=None,  # TODO
@@ -332,6 +333,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                providers=providers,
                                                provider_configs=providers_auth,
                                                blacklist=get_blacklist(media_type=media_type),
+                                               ban_list=get_ban_list(profileId),
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # TODO
 
@@ -346,6 +348,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
                                                                 providers=['subscene'],
                                                                 provider_configs=providers_auth,
                                                                 blacklist=get_blacklist(media_type=media_type),
+                                                                ban_list=get_ban_list(profileId),
                                                                 throttle_callback=provider_throttle,
                                                                 language_hook=None)  # TODO
                         providers_auth['subscene']['only_foreign'] = False
@@ -437,7 +440,7 @@ def manual_search(path, profileId, providers, providers_auth, title, media_type)
 
 
 def manual_download_subtitle(path, language, audio_language, hi, forced, subtitle, provider, providers_auth, title,
-                             media_type):
+                             media_type, profile_id):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
 
     if settings.general.getboolean('utf8_encode'):
@@ -468,6 +471,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                    provider_configs=providers_auth,
                                    pool_class=provider_pool(),
                                    blacklist=get_blacklist(media_type=media_type),
+                                   ban_list=get_ban_list(profile_id),
                                    throttle_callback=provider_throttle)
                 logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             else:
@@ -715,12 +719,13 @@ def series_download_subtitles(no):
                       "ignored because of monitored status, series type or series tags: {}".format(no))
         return
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     count_episodes_details = len(episodes_details)
 
     for i, episode in enumerate(episodes_details):
+        providers_list = get_providers()
+
         if providers_list:
             show_progress(id='series_search_progress_{}'.format(no),
                           header='Searching missing subtitles...',
@@ -803,10 +808,11 @@ def episode_download_subtitles(no, send_progress=False):
         logging.debug("BAZARR no episode with that episodeId can be found in database:", str(no))
         return
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     for episode in episodes_details:
+        providers_list = get_providers()
+
         if providers_list:
             if send_progress:
                 show_progress(id='episode_search_progress_{}'.format(no),
@@ -885,7 +891,6 @@ def movies_download_subtitles(no):
     else:
         movie = movies[0]
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     if ast.literal_eval(movie['missing_subtitles']):
@@ -894,15 +899,17 @@ def movies_download_subtitles(no):
         count_movie = 0
 
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles'])):
-        # confirm if language is still missing or if cutoff have been reached
-        confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles)\
-            .where(TableMovies.movieId == movie['movieId'])\
-            .dicts()\
-            .get()
-        if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-            continue
+        providers_list = get_providers()
 
         if providers_list:
+            # confirm if language is still missing or if cutoff have been reached
+            confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
+                .where(TableMovies.movieId == movie['movieId']) \
+                .dicts() \
+                .get()
+            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                continue
+
             show_progress(id='movie_search_progress_{}'.format(no),
                           header='Searching missing subtitles...',
                           name=movie['title'],
@@ -962,76 +969,70 @@ def wanted_download_subtitles(episode_id):
         .dicts()
     episodes_details = list(episodes_details)
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     for episode in episodes_details:
-        attempt = episode['failedAttempts']
-        if type(attempt) == str:
-            attempt = ast.literal_eval(attempt)
-        for language in ast.literal_eval(episode['missing_subtitles']):
-            # confirm if language is still missing or if cutoff have been reached
-            confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
-                .where(TableEpisodes.episodeId == episode['episodeId']) \
-                .dicts() \
-                .get()
-            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-                continue
+        providers_list = get_providers()
 
-            if attempt is None:
-                attempt = []
-                attempt.append([language, time.time()])
-            else:
-                att = list(zip(*attempt))[0]
-                if language not in att:
-                    attempt.append([language, time.time()])
+        if providers_list:
+            for language in ast.literal_eval(episode['missing_subtitles']):
+                # confirm if language is still missing or if cutoff have been reached
+                confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
+                    .where(TableEpisodes.episodeId == episode['episodeId']) \
+                    .dicts() \
+                    .get()
+                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                    continue
 
-            TableEpisodes.update({TableEpisodes.failedAttempts: str(attempt)})\
-                .where(TableEpisodes.episodeId == episode['episodeId'])\
-                .execute()
+                if is_search_active(desired_language=language, attempt_string=episode['failedAttempts']):
+                    TableEpisodes.update({TableEpisodes.failedAttempts:
+                                          updateFailedAttempts(desired_language=language,
+                                                               attempt_string=episode['failedAttempts'])}) \
+                        .where(TableEpisodes.episodeId == episode['episodeId']) \
+                        .execute()
 
-            for i in range(len(attempt)):
-                if attempt[i][0] == language:
-                    if search_active(attempt[i][1]):
-                        audio_language_list = get_audio_profile_languages(episode_id=episode['episodeId'])
-                        if len(audio_language_list) > 0:
-                            audio_language = audio_language_list[0]['name']
-                        else:
-                            audio_language = 'None'
-
-                        result = download_subtitle(episode['path'],
-                                                   language.split(':')[0],
-                                                   audio_language,
-                                                   "True" if language.endswith(':hi') else "False",
-                                                   "True" if language.endswith(':forced') else "False",
-                                                   providers_list,
-                                                   providers_auth,
-                                                   episode['title'],
-                                                   'series')
-                        if result is not None:
-                            message = result[0]
-                            path = result[1]
-                            forced = result[5]
-                            if result[8]:
-                                language_code = result[2] + ":hi"
-                            elif forced:
-                                language_code = result[2] + ":forced"
-                            else:
-                                language_code = result[2]
-                            provider = result[3]
-                            score = result[4]
-                            subs_id = result[6]
-                            subs_path = result[7]
-                            store_subtitles(episode['path'])
-                            history_log(1, episode['seriesId'], episode['episodeId'], message, path,
-                                        language_code, provider, score, subs_id, subs_path)
-                            event_stream(type='series', action='update', payload=episode['seriesId'])
-                            event_stream(type='episode-wanted', action='delete', payload=episode['episodeId'])
-                            send_notifications(episode['seriesId'], episode['episodeId'], message)
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['episodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
                     else:
-                        logging.debug(
-                            'BAZARR Search is not active for episode ' + episode['path'] + ' Language: ' + attempt[i][
-                                0])
+                        audio_language = 'None'
+
+                    result = download_subtitle(episode['path'],
+                                               language.split(':')[0],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
+                                               "True" if language.endswith(':forced') else "False",
+                                               providers_list,
+                                               providers_auth,
+                                               episode['title'],
+                                               'series')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
+                        else:
+                            language_code = result[2]
+                        provider = result[3]
+                        score = result[4]
+                        subs_id = result[6]
+                        subs_path = result[7]
+                        store_subtitles(episode['path'])
+                        history_log(1, episode['seriesId'], episode['episodeId'], message, path,
+                                    language_code, provider, score, subs_id, subs_path)
+                        event_stream(type='series', action='update', payload=episode['seriesId'])
+                        event_stream(type='episode-wanted', action='delete', payload=episode['episodeId'])
+                        send_notifications(episode['seriesId'], episode['episodeId'], message)
+                else:
+                    logging.debug(
+                        f"BAZARR Search is throttled by adaptive search for this episode {episode['path']} and "
+                        f"language: {language}")
+        else:
+            logging.info("BAZARR All providers are throttled")
+            break
 
 
 def wanted_download_subtitles_movie(movie_id):
@@ -1045,75 +1046,68 @@ def wanted_download_subtitles_movie(movie_id):
         .dicts()
     movies_details = list(movies_details)
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     for movie in movies_details:
-        attempt = movie['failedAttempts']
-        if type(attempt) == str:
-            attempt = ast.literal_eval(attempt)
-        for language in ast.literal_eval(movie['missing_subtitles']):
-            # confirm if language is still missing or if cutoff have been reached
-            confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
-                .where(TableMovies.movieId == movie['movieId']) \
-                .dicts() \
-                .get()
-            if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
-                continue
+        providers_list = get_providers()
 
-            if attempt is None:
-                attempt = []
-                attempt.append([language, time.time()])
-            else:
-                att = list(zip(*attempt))[0]
-                if language not in att:
-                    attempt.append([language, time.time()])
+        if providers_list:
+            for language in ast.literal_eval(movie['missing_subtitles']):
+                # confirm if language is still missing or if cutoff have been reached
+                confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
+                    .where(TableMovies.movieId == movie['movieId']) \
+                    .dicts() \
+                    .get()
+                if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
+                    continue
 
-            TableMovies.update({TableMovies.failedAttempts: str(attempt)})\
-                .where(TableMovies.movieId == movie['movieId'])\
-                .execute()
+                if is_search_active(desired_language=language, attempt_string=movie['failedAttempts']):
+                    TableMovies.update({TableMovies.failedAttempts:
+                                        updateFailedAttempts(desired_language=language,
+                                                             attempt_string=movie['failedAttempts'])}) \
+                        .where(TableMovies.movieId == movie['movieId']) \
+                        .execute()
 
-            for i in range(len(attempt)):
-                if attempt[i][0] == language:
-                    if search_active(attempt[i][1]) is True:
-                        audio_language_list = get_audio_profile_languages(movie_id=movie['movieId'])
-                        if len(audio_language_list) > 0:
-                            audio_language = audio_language_list[0]['name']
-                        else:
-                            audio_language = 'None'
-
-                        result = download_subtitle(movie['path'],
-                                                   language.split(':')[0],
-                                                   audio_language,
-                                                   "True" if language.endswith(':hi') else "False",
-                                                   "True" if language.endswith(':forced') else "False",
-                                                   providers_list,
-                                                   providers_auth,
-                                                   movie['title'],
-                                                   'movie')
-                        if result is not None:
-                            message = result[0]
-                            path = result[1]
-                            forced = result[5]
-                            if result[8]:
-                                language_code = result[2] + ":hi"
-                            elif forced:
-                                language_code = result[2] + ":forced"
-                            else:
-                                language_code = result[2]
-                            provider = result[3]
-                            score = result[4]
-                            subs_id = result[6]
-                            subs_path = result[7]
-                            store_subtitles_movie(movie['path'])
-                            history_log_movie(1, movie['movieId'], message, path, language_code, provider, score,
-                                              subs_id, subs_path)
-                            event_stream(type='movie-wanted', action='delete', payload=movie['movieId'])
-                            send_notifications_movie(movie['movieId'], message)
+                    audio_language_list = get_audio_profile_languages(movie_id=movie['movieId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0]['name']
                     else:
-                        logging.info(
-                            'BAZARR Search is not active for this Movie ' + movie['path'] + ' Language: ' + attempt[i][
-                                0])
+                        audio_language = 'None'
+
+                    result = download_subtitle(movie['path'],
+                                               language.split(':')[0],
+                                               audio_language,
+                                               "True" if language.endswith(':hi') else "False",
+                                               "True" if language.endswith(':forced') else "False",
+                                               providers_list,
+                                               providers_auth,
+                                               movie['title'],
+                                               'movie')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
+                        else:
+                            language_code = result[2]
+                        provider = result[3]
+                        score = result[4]
+                        subs_id = result[6]
+                        subs_path = result[7]
+                        store_subtitles_movie(movie['path'])
+                        history_log_movie(1, movie['movieId'], message, path, language_code, provider, score,
+                                          subs_id, subs_path)
+                        event_stream(type='movie-wanted', action='delete', payload=movie['movieId'])
+                        send_notifications_movie(movie['movieId'], message)
+                else:
+                    logging.info(f"BAZARR Search is throttled by adaptive search for this episode {movie['path']} and "
+                                 f"language: {language}")
+        else:
+            logging.info("BAZARR All providers are throttled")
+            break
 
 
 def wanted_search_missing_subtitles_series():
@@ -1185,25 +1179,6 @@ def wanted_search_missing_subtitles_movies():
     hide_progress(id='wanted_movies_progress')
 
     logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
-
-
-def search_active(timestamp):
-    if settings.general.getboolean('adaptive_searching'):
-        search_deadline = timedelta(weeks=3)
-        search_delta = timedelta(weeks=1)
-        aa = datetime.fromtimestamp(float(timestamp))
-        attempt_datetime = datetime.strptime(str(aa).split(".")[0], '%Y-%m-%d %H:%M:%S')
-        attempt_search_deadline = attempt_datetime + search_deadline
-        today = datetime.today()
-        attempt_age_in_days = (today.date() - attempt_search_deadline.date()).days
-        if today.date() <= attempt_search_deadline.date():
-            return True
-        elif attempt_age_in_days % search_delta.days == 0:
-            return True
-        else:
-            return False
-    else:
-        return True
 
 
 def convert_to_guessit(guessit_key, attr_from_db):
@@ -1441,11 +1416,12 @@ def upgrade_subtitles():
 
         count_movie_to_upgrade = len(movies_to_upgrade)
 
-    providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     if settings.general.getboolean('use_series'):
         for i, episode in enumerate(episodes_to_upgrade):
+            providers_list = get_providers()
+
             show_progress(id='upgrade_episodes_progress',
                           header='Upgrading episodes subtitles...',
                           name='{0} - S{1:02d}E{2:02d} - {3}'.format(episode['seriesTitle'],
@@ -1455,8 +1431,7 @@ def upgrade_subtitles():
                           value=i,
                           count=count_episode_to_upgrade)
 
-            providers = get_providers()
-            if not providers:
+            if not providers_list:
                 logging.info("BAZARR All providers are throttled")
                 return
             if episode['language'].endswith('forced'):
@@ -1512,17 +1487,15 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_movies'):
         for i, movie in enumerate(movies_to_upgrade):
+            providers_list = get_providers()
+
             show_progress(id='upgrade_movies_progress',
                           header='Upgrading movies subtitles...',
                           name=movie['title'],
                           value=i,
                           count=count_movie_to_upgrade)
 
-            providers = get_providers()
-            if not providers:
-                logging.info("BAZARR All providers are throttled")
-                return
-            if not providers:
+            if not providers_list:
                 logging.info("BAZARR All providers are throttled")
                 return
             if movie['language'].endswith('forced'):
@@ -1656,3 +1629,154 @@ def _get_scores(media_type, min_movie=None, min_ep=None):
     min_ep = min_ep or (240 * 100 / handler.max_score)
     min_score_ = int(min_ep if series else min_movie)
     return handler.get_scores(min_score_)
+
+
+def get_ban_list(profile_id):
+    if profile_id:
+        profile = get_profiles_list(profile_id)
+        if profile:
+            return {'must_contain': profile['mustContain'] or [],
+                    'must_not_contain': profile['mustNotContain'] or []}
+    return None
+
+
+def is_search_active(desired_language, attempt_string):
+    """
+    Function to test if it's time to search again after a previous attempt matching the desired language. For 3 weeks,
+    we search on a scheduled basis but after 3 weeks we start searching only once a week.
+
+    @param desired_language: 2 letters language to search for in attempts
+    @type desired_language: str
+    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @type attempt_string: str
+
+    @return: return True if it's time to search again and False if not
+    @rtype: bool
+    """
+
+    if settings.general.getboolean('adaptive_searching'):
+        logging.debug("Adaptive searching is enable, we'll see if it's time to search again...")
+        try:
+            # let's try to get a list of lists from the string representation in database
+            attempts = ast.literal_eval(attempt_string)
+            if type(attempts) is not list:
+                # attempts should be a list if not, it's malformed or None
+                raise ValueError
+        except ValueError:
+            logging.debug("Adaptive searching: attempts is malformed. As a failsafe, search will run.")
+            return True
+
+        if not len(attempts):
+            logging.debug("Adaptive searching: attempts list is empty, search will run.")
+            return True
+
+        # get attempts matching the desired language and sort them by timestamp ascending
+        matching_attempts = sorted([x for x in attempts if x[0] == desired_language], key=lambda x: x[1])
+
+        if not len(matching_attempts):
+            logging.debug("Adaptive searching: there's no attempts matching desired language, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: attempts matching language {desired_language}: {matching_attempts}")
+
+        # try to get the initial and latest search timestamp from matching attempts
+        initial_search_attempt = matching_attempts[0]
+        latest_search_attempt = matching_attempts[-1]
+
+        # try to parse the timestamps for those attempts
+        try:
+            initial_search_timestamp = datetime.fromtimestamp(initial_search_attempt[1])
+            latest_search_timestamp = datetime.fromtimestamp(latest_search_attempt[1])
+        except (OverflowError, ValueError, OSError):
+            logging.debug("Adaptive searching: unable to parse initial and latest search timestamps, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: initial search date for {desired_language} is "
+                          f"{initial_search_timestamp}")
+            logging.debug(f"Adaptive searching: latest search date for {desired_language} is {latest_search_timestamp}")
+
+        # defining basic calculation variables
+        now = datetime.now()
+        if settings.general.adaptive_searching_delay.endswith('d'):
+            extended_search_delay = timedelta(days=int(settings.general.adaptive_searching_delay[:1]))
+        elif settings.general.adaptive_searching_delay.endswith('w'):
+            extended_search_delay = timedelta(weeks=int(settings.general.adaptive_searching_delay[:1]))
+        else:
+            logging.debug(f"Adaptive searching: cannot parse adaptive_searching_delay from config file: "
+                          f"{settings.general.adaptive_searching_delay}")
+            return True
+        logging.debug(f"Adaptive searching: delay after initial search value: {extended_search_delay}")
+
+        if settings.general.adaptive_searching_delta.endswith('d'):
+            extended_search_delta = timedelta(days=int(settings.general.adaptive_searching_delta[:1]))
+        elif settings.general.adaptive_searching_delta.endswith('w'):
+            extended_search_delta = timedelta(weeks=int(settings.general.adaptive_searching_delta[:1]))
+        else:
+            logging.debug(f"Adaptive searching: cannot parse adaptive_searching_delta from config file: "
+                          f"{settings.general.adaptive_searching_delta}")
+            return True
+        logging.debug(f"Adaptive searching: delta between latest search and now value: {extended_search_delta}")
+
+        if initial_search_timestamp + extended_search_delay > now:
+            logging.debug(f"Adaptive searching: it's been less than {settings.general.adaptive_searching_delay} since "
+                          f"initial search, search will run.")
+            return True
+        else:
+            logging.debug(f"Adaptive searching: it's been more than {settings.general.adaptive_searching_delay} since "
+                          f"initial search, let's check if it's time to search again.")
+            if latest_search_timestamp + extended_search_delta <= now:
+                logging.debug(
+                    f"Adaptive searching: it's been more than {settings.general.adaptive_searching_delta} since "
+                    f"latest search, search will run.")
+                return True
+            else:
+                logging.debug(
+                    f"Adaptive searching: it's been less than {settings.general.adaptive_searching_delta} since "
+                    f"latest search, we're not ready to search yet.")
+                return False
+
+    logging.debug("adaptive searching is disabled, search will run.")
+    return True
+
+
+def updateFailedAttempts(desired_language, attempt_string):
+    """
+    Function to parse attempts and make sure we only keep initial and latest search timestamp for each language.
+
+    @param desired_language: 2 letters language to search for in attempts
+    @type desired_language: str
+    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @type attempt_string: str
+
+    @return: return a string representation of a list of lists like [str(language_code), str(attempts)]
+    @rtype: str
+    """
+
+    try:
+        # let's try to get a list of lists from the string representation in database
+        attempts = ast.literal_eval(attempt_string)
+        logging.debug(f"Adaptive searching: current attempts value is {attempts}")
+        if type(attempts) is not list:
+            # attempts should be a list if not, it's malformed or None
+            raise ValueError
+    except ValueError:
+        logging.debug("Adaptive searching: failed to parse attempts value, we'll use an empty list.")
+        attempts = []
+
+    matching_attempts = sorted([x for x in attempts if x[0] == desired_language], key=lambda x: x[1])
+    logging.debug(f"Adaptive searching: attempts matching language {desired_language}: {matching_attempts}")
+
+    filtered_attempts = sorted([x for x in attempts if x[0] != desired_language], key=lambda x: x[1])
+    logging.debug(f"Adaptive searching: attempts not matching language {desired_language}: {filtered_attempts}")
+
+    # get the initial search from attempts if there's one
+    if len(matching_attempts):
+        filtered_attempts.append(matching_attempts[0])
+
+    # append current attempt with language and timestamp to attempts
+    filtered_attempts.append([desired_language, datetime.timestamp(datetime.now())])
+
+    updated_attempts = sorted(filtered_attempts, key=lambda x: x[0])
+    logging.debug(f"Adaptive searching: updated attempts that will be saved to database is {updated_attempts}")
+
+    return str(updated_attempts)

@@ -25,7 +25,6 @@
     "bootstrap": "^4",
     "lodash": "^4",
     "moment": "^2.29.1",
-    "package.json": "^2.0.1",
     "rc-slider": "^9.7",
     "react": "^17",
     "react-bootstrap": "^1",

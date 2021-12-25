@@ -3,7 +3,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies, get_audio_profile_languages
+from database import TableMovies, get_audio_profile_languages, get_profile_id
 from get_providers import get_providers, get_providers_auth
 from get_subtitle import manual_search, manual_download_subtitle
 from utils import history_log_movie
@@ -69,7 +69,8 @@ class ProviderMovies(Resource):
 
         try:
             result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, title, 'movie')
+                                              selected_provider, providers_auth, title, 'movie',
+                                              profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
                 message = result[0]
                 path = result[1]
