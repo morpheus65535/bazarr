@@ -5,7 +5,6 @@ import sys
 import ast
 import logging
 import subprocess
-import time
 import pickle
 import codecs
 import re

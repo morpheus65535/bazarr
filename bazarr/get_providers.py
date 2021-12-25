@@ -330,7 +330,7 @@ def get_throttled_providers():
             with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
                     handle:
                 providers = eval(handle.read())
-    except:
+    except (OSError, ValueError, NameError, SyntaxError):
         # set empty content in throttled_providers.dat
         logging.error("Invalid content in throttled_providers.dat. Resetting")
         set_throttled_providers(providers)

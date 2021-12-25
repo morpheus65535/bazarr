@@ -70,7 +70,7 @@ class ProviderMovies(Resource):
         try:
             result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
                                               selected_provider, providers_auth, title, 'movie',
-                                              profile_id=get_profile_id(movie_id=radarrId))
+                                              profile_id=get_profile_id(movie_id=movieId))
             if result is not None:
                 message = result[0]
                 path = result[1]

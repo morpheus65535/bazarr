@@ -69,7 +69,7 @@ class ProviderEpisodes(Resource):
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
                                               selected_provider, providers_auth, title, 'series',
-                                              profile_id=get_profile_id(episode_id=sonarrEpisodeId))
+                                              profile_id=get_profile_id(episode_id=episodeId))
             if result is not None:
                 message = result[0]
                 path = result[1]

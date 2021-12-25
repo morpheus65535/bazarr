@@ -48,6 +48,8 @@ class TableLanguagesProfiles(BaseModel):
     items = TextField(null=False)
     name = TextField(null=False)
     profileId = AutoIncrementField()
+    mustContain = TextField(null=True)
+    mustNotContain = TextField(null=True)
 
     class Meta:
         table_name = 'table_languages_profiles'
@@ -136,15 +138,6 @@ class TableBlacklist(BaseModel):
 
     class Meta:
         table_name = 'table_blacklist'
-
-
-class TableLanguagesProfiles(BaseModel):
-    cutoff = IntegerField(null=True)
-    items = TextField()
-    name = TextField()
-    profileId = AutoField()
-    mustContain = TextField(null=True)
-    mustNotContain = TextField(null=True)
 
 
 class TableMoviesRootfolder(BaseModel):
@@ -302,7 +295,7 @@ def init_db():
 
 def migrate_db():
     migrate(
-        migrator.add_column('table_shows', 'monitored', TextField(null=True))
+        migrator.add_column('table_shows', 'monitored', TextField(null=True)),
         migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)),
         migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)),
     )
@@ -450,14 +443,14 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        profileId = TableShows.get(TableShows.sonarrSeriesId == series_id).profileId
+        profileId = TableShows.get(TableShows.seriesId == series_id).profileId
     elif episode_id:
         profileId = TableShows.select(TableShows.profileId)\
-            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+            .join(TableEpisodes)\
+            .where(TableEpisodes.episodeId == episode_id)\
             .get().profileId
     elif movie_id:
-        profileId = TableMovies.get(TableMovies.radarrId == movie_id).profileId
+        profileId = TableMovies.get(TableMovies.movieId == movie_id).profileId
     else:
         return None
 
