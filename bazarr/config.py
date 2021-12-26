@@ -94,7 +94,8 @@ defaults = {
         'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
-        'use_ffprobe_cache': 'True'
+        'use_ffprobe_cache': 'True',
+        'exclude_season_zero': 'False'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -395,12 +396,12 @@ def save_settings(settings_items):
             configure_proxy = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
-                   'settings-radarr-only_monitored']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
+                   'settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
             exclusion_updated = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero']:
             sonarr_exclusion_updated = True
 
         if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:

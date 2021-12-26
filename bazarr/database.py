@@ -390,6 +390,10 @@ def get_exclusion_clause(exclusion_type):
         for item in typesList:
             where_clause.append((TableShows.seriesType != item))
 
+        exclude_season_zero = settings.sonarr.getboolean('exclude_season_zero')
+        if exclude_season_zero:
+            where_clause.append((TableEpisodes.season != 0))
+
     return where_clause
 
 
