@@ -148,6 +148,7 @@ class FFprobeSubtitleStream:
 
     def _language(self) -> Language:
         og_lang = self.tags.get("language")
+        last_exc = None
 
         if og_lang is not None:
             if og_lang in _extra_languages:
@@ -158,17 +159,21 @@ class FFprobeSubtitleStream:
                     return Language(*extra["language_args"])
 
             try:
-                return Language.fromalpha3b(og_lang)
+                lang = Language.fromalpha3b(og_lang)
+                # Test for suffix
+                assert lang.alpha2
+
+                return lang
             except LanguageError as error:
+                last_exc = error
                 logger.debug("Error with '%s' language: %s", og_lang, error)
 
-        raise LanguageNotFound(f"Couldn't detect language for stream: {self.tags}")
+        raise LanguageNotFound(
+            f"Couldn't detect language for stream: {self.tags}"
+        ) from last_exc
 
     def __repr__(self) -> str:
         return f"<{self.codec_name.upper()}: {self.language}@{self.disposition}>"
-
-
-# Helpers
 
 
 class FFprobeVideoContainer:
@@ -361,7 +366,12 @@ def to_srt(
     return output
 
 
-_subtitle_extensions = {"subrip": "srt", "ass": "ass"}
+_subtitle_extensions = {
+    "subrip": "srt",
+    "ass": "ass",
+    "hdmv_pgs_subtitle": "sup",
+    "pgs": "sup",
+}
 
 
 _content_types = {
