@@ -1158,7 +1158,7 @@ def wanted_download_subtitles_movie(radarr_id):
                         event_stream(type='movie-wanted', action='delete', payload=movie['radarrId'])
                         send_notifications_movie(movie['radarrId'], message)
                 else:
-                    logging.info(f"BAZARR Search is throttled by adaptive search for this episode {movie['path']} and "
+                    logging.info(f"BAZARR Search is throttled by adaptive search for this movie {movie['path']} and "
                                  f"language: {language}")
         else:
             logging.info("BAZARR All providers are throttled")
