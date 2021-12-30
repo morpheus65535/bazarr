@@ -31,6 +31,9 @@ _CLEAN_TITLE_RES = [
     (r" {2,}", " "),
 ]
 
+_YEAR_RE = re.compile(r"(\(\d{4}\))")
+_AKA_RE = re.compile("aka")
+
 logger = logging.getLogger(__name__)
 
 
@@ -176,16 +179,21 @@ class SubdivxSubtitlesProvider(Provider):
         )
         title_soups = page_soup.find_all("div", {"id": "menu_detalle_buscador"})
         body_soups = page_soup.find_all("div", {"id": "buscador_detalle"})
+        episode = isinstance(video, Episode)
 
         for subtitle in range(0, len(title_soups)):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
             # title
-            title = self._clean_title(title_soup.find("a").text)
-            # discard subtitles if a year between parenthesis is present in title and doesn't match the one provided
-            # in video object
-            if re.match(r'(\(\d{4}\))', title):
-                if video.year and str(video.year) not in title:
-                    continue
+            title = _clean_title(title_soup.find("a").text)
+
+            # Forced subtitles are not supported
+            if title.lower().rstrip().endswith(("forzado", "forzados")):
+                logger.debug("Skipping forced subtitles: %s", title)
+                continue
+
+            # Check movie title (if the video is a movie)
+            if not episode and not _check_movie(video, title):
+                continue
 
             # Data
             datos = body_soup.find("div", {"id": "buscador_detalle_sub_datos"}).text
@@ -318,3 +326,28 @@ def _get_subtitle_from_archive(archive, subtitle):
         return archive.read(_max_name)
 
     raise APIThrottled("Can not find the subtitle in the compressed file")
+
+
+def _check_movie(video, title):
+    if str(video.year) not in title:
+        return False
+
+    aka_split = re.split("aka", title, flags=re.IGNORECASE)
+
+    alt_title = None
+    if len(aka_split) == 2:
+        alt_title = aka_split[-1].strip()
+
+    try:
+        actual_movie_title = _YEAR_RE.split(title)[0].strip()
+    except IndexError:
+        return False
+
+    all_titles = [
+        v_title.lower() for v_title in [video.title, *video.alternative_titles]
+    ]
+
+    return (
+        actual_movie_title.lower() in all_titles
+        or (alt_title or "").lower() in all_titles
+    )
