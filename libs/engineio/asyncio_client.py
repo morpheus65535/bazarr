@@ -57,6 +57,11 @@ class AsyncClient(client.Client):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
     """
     def is_asyncio_based(self):
         return True
@@ -85,9 +90,8 @@ class AsyncClient(client.Client):
             await eio.connect('http://localhost:5000')
         """
         global async_signal_handler_set
-        if not async_signal_handler_set and \
+        if self.handle_sigint and not async_signal_handler_set and \
                 threading.current_thread() == threading.main_thread():
-
             try:
                 asyncio.get_event_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)
@@ -166,11 +170,7 @@ class AsyncClient(client.Client):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
-
-        Note: this method is a coroutine.
+        The return value is a ``asyncio.Task`` object.
         """
         return asyncio.ensure_future(target(*args, **kwargs))
 
@@ -191,10 +191,17 @@ class AsyncClient(client.Client):
         """Create an event object."""
         return asyncio.Event()
 
-    def _reset(self):
-        if self.http:  # pragma: no cover
-            asyncio.ensure_future(self.http.close())
-        super()._reset()
+    def __del__(self):  # pragma: no cover
+        # try to close the aiohttp session if it is still open
+        if self.http and not self.http.closed:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.ensure_future(self.http.close())
+                else:
+                    loop.run_until_complete(self.http.close())
+            except:
+                pass
 
     async def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -207,10 +214,10 @@ class AsyncClient(client.Client):
         r = await self._send_request(
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
             timeout=self.request_timeout)
-        if r is None:
+        if r is None or isinstance(r, str):
             self._reset()
             raise exceptions.ConnectionError(
-                'Connection refused by the server')
+                r or 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
             self._reset()
             try:
@@ -416,6 +423,7 @@ class AsyncClient(client.Client):
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
+            return str(exc)
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -462,9 +470,9 @@ class AsyncClient(client.Client):
             r = await self._send_request(
                 'GET', self.base_url + self._get_url_timestamp(),
                 timeout=max(self.ping_interval, self.ping_timeout) + 5)
-            if r is None:
+            if r is None or isinstance(r, str):
                 self.logger.warning(
-                    'Connection refused by the server, aborting')
+                    r or 'Connection refused by the server, aborting')
                 await self.queue.put(None)
                 break
             if r.status < 200 or r.status >= 300:
@@ -578,13 +586,13 @@ class AsyncClient(client.Client):
                 p = payload.Payload(packets=packets)
                 r = await self._send_request(
                     'POST', self.base_url, body=p.encode(),
-                    headers={'Content-Type': 'application/octet-stream'},
+                    headers={'Content-Type': 'text/plain'},
                     timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
-                if r is None:
+                if r is None or isinstance(r, str):
                     self.logger.warning(
-                        'Connection refused by the server, aborting')
+                        r or 'Connection refused by the server, aborting')
                     break
                 if r.status < 200 or r.status >= 300:
                     self.logger.warning('Unexpected status code %s in server '

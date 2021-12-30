@@ -30,7 +30,7 @@ from ...URLBase import PrivacyMode
 from ...common import NotifyType
 from ...utils import parse_list
 from ...AppriseLocale import gettext_lazy as _
-from .SleekXmppAdapter import SleekXmppAdapter
+from .SliXmppAdapter import SliXmppAdapter
 
 # xep string parser
 XEP_PARSE_RE = re.compile('^[^1-9]*(?P<xep>[1-9][0-9]{0,3})$')
@@ -40,9 +40,21 @@ class NotifyXMPP(NotifyBase):
     """
     A wrapper for XMPP Notifications
     """
+    # Set our global enabled flag
+    enabled = SliXmppAdapter._enabled
+
+    requirements = {
+        # Define our required packaging in order to work
+        'packages_required': [
+            "slixmpp; python_version >= '3.7'",
+        ]
+    }
 
     # The default descriptive name associated with the Notification
     service_name = 'XMPP'
+
+    # The services URL
+    service_url = 'https://xmpp.org/'
 
     # The default protocol
     protocol = 'xmpp'
@@ -56,34 +68,13 @@ class NotifyXMPP(NotifyBase):
     # Lower throttle rate for XMPP
     request_rate_per_sec = 0.5
 
-    # The default XMPP port
-    default_unsecure_port = 5222
-
-    # The default XMPP secure port
-    default_secure_port = 5223
-
-    # XMPP does not support a title
-    title_maxlen = 0
-
-    # This entry is a bit hacky, but it allows us to unit-test this library
-    # in an environment that simply doesn't have the sleekxmpp package
-    # available to us.
-    #
-    # If anyone is seeing this had knows a better way of testing this
-    # outside of what is defined in test/test_xmpp_plugin.py, please
-    # let me know! :)
-    _enabled = SleekXmppAdapter._enabled
+    # Our XMPP Adapter we use to communicate through
+    _adapter = SliXmppAdapter if SliXmppAdapter._enabled else None
 
     # Define object templates
     templates = (
-        '{schema}://{host}',
-        '{schema}://{password}@{host}',
-        '{schema}://{password}@{host}:{port}',
         '{schema}://{user}:{password}@{host}',
         '{schema}://{user}:{password}@{host}:{port}',
-        '{schema}://{host}/{targets}',
-        '{schema}://{password}@{host}/{targets}',
-        '{schema}://{password}@{host}:{port}/{targets}',
         '{schema}://{user}:{password}@{host}/{targets}',
         '{schema}://{user}:{password}@{host}:{port}/{targets}',
     )
@@ -104,6 +95,7 @@ class NotifyXMPP(NotifyBase):
         'user': {
             'name': _('Username'),
             'type': 'string',
+            'required': True,
         },
         'password': {
             'name': _('Password'),
@@ -214,6 +206,7 @@ class NotifyXMPP(NotifyBase):
         # By default we send ourselves a message
         if targets:
             self.targets = parse_list(targets)
+            self.targets[0] = self.targets[0][1:]
 
         else:
             self.targets = list()
@@ -223,40 +216,20 @@ class NotifyXMPP(NotifyBase):
         Perform XMPP Notification
         """
 
-        if not self._enabled:
-            self.logger.warning(
-                'XMPP Notifications are not supported by this system '
-                '- install sleekxmpp.')
-            return False
-
         # Detect our JID if it isn't otherwise specified
         jid = self.jid
         password = self.password
         if not jid:
-            if self.user and self.password:
-                # xmpp://user:password@hostname
-                jid = '{}@{}'.format(self.user, self.host)
-
-            else:
-                # xmpp://password@hostname
-                jid = self.host
-                password = self.password if self.password else self.user
-
-        # Compute port number
-        if not self.port:
-            port = self.default_secure_port \
-                if self.secure else self.default_unsecure_port
-
-        else:
-            port = self.port
+            jid = '{}@{}'.format(self.user, self.host)
 
         try:
             # Communicate with XMPP.
-            xmpp_adapter = SleekXmppAdapter(
-                host=self.host, port=port, secure=self.secure,
+            xmpp_adapter = self._adapter(
+                host=self.host, port=self.port, secure=self.secure,
                 verify_certificate=self.verify_certificate, xep=self.xep,
-                jid=jid, password=password, body=body, targets=self.targets,
-                before_message=self.throttle, logger=self.logger)
+                jid=jid, password=password, body=body, subject=title,
+                targets=self.targets, before_message=self.throttle,
+                logger=self.logger)
 
         except ValueError:
             # We failed
@@ -287,28 +260,19 @@ class NotifyXMPP(NotifyBase):
         # and/or space as a delimiters - %20 = space
         jids = '%20'.join([NotifyXMPP.quote(x, safe='') for x in self.targets])
 
-        default_port = self.default_secure_port \
-            if self.secure else self.default_unsecure_port
-
         default_schema = self.secure_protocol if self.secure else self.protocol
 
-        if self.user and self.password:
-            auth = '{user}:{password}'.format(
-                user=NotifyXMPP.quote(self.user, safe=''),
-                password=self.pprint(
-                    self.password, privacy, mode=PrivacyMode.Secret, safe=''))
-
-        else:
-            auth = self.pprint(
-                self.password if self.password else self.user, privacy,
-                mode=PrivacyMode.Secret, safe='')
+        auth = '{user}:{password}'.format(
+            user=NotifyXMPP.quote(self.user, safe=''),
+            password=self.pprint(
+                self.password, privacy, mode=PrivacyMode.Secret, safe=''))
 
         return '{schema}://{auth}@{hostname}{port}/{jids}?{params}'.format(
             auth=auth,
             schema=default_schema,
             # never encode hostname since we're expecting it to be a valid one
             hostname=self.host,
-            port='' if not self.port or self.port == default_port
+            port='' if not self.port
                  else ':{}'.format(self.port),
             jids=jids,
             params=NotifyXMPP.urlencode(params),

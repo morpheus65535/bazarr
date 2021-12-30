@@ -27,11 +27,12 @@ def character_encoding(s: str) -> str:
     except LookupError:
         raise argparse.ArgumentError
 
-def time(s: str):
+
+def time(s: str) -> int:
     d = {}
     for v, k in re.findall(r"(\d*\.?\d*)(ms|m|s|h)", s):
         d[k] = float(v)
-    return make_time(**d)
+    return make_time(**d)  # type: ignore  # Argument 1 has incomp. type "**Dict[Any, float]"; expected "Optional[int]"
 
 
 def change_ext(path: str, ext: str) -> str:

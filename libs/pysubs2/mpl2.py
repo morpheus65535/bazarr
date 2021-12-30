@@ -6,7 +6,7 @@ from .ssaevent import SSAEvent
 
 
 # thanks to http://otsaloma.io/gaupol/doc/api/aeidon.files.mpl2_source.html
-MPL2_FORMAT = re.compile(r"^(?um)\[(-?\d+)\]\[(-?\d+)\](.*)")
+MPL2_FORMAT = re.compile(r"^\[(-?\d+)\]\[(-?\d+)\](.*)", re.MULTILINE)
 
 
 class MPL2Format(FormatBase):

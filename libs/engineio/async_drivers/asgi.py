@@ -43,19 +43,23 @@ class ASGIApp:
                  on_startup=None, on_shutdown=None):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
-        self.engineio_path = engineio_path.strip('/')
+        self.engineio_path = engineio_path
+        if not self.engineio_path.startswith('/'):
+            self.engineio_path = '/' + self.engineio_path
+        if not self.engineio_path.endswith('/'):
+            self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
-                scope['path'].startswith('/{0}/'.format(self.engineio_path)):
+                scope['path'].startswith(self.engineio_path):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
-            if static_file:
+            if static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
                 await self.other_asgi_app(scope, receive, send)
@@ -68,17 +72,14 @@ class ASGIApp:
                                 send):  # pragma: no cover
         event = await receive()
         if event['type'] == 'http.request':
-            if os.path.exists(static_file['filename']):
-                with open(static_file['filename'], 'rb') as f:
-                    payload = f.read()
-                await send({'type': 'http.response.start',
-                            'status': 200,
-                            'headers': [(b'Content-Type', static_file[
-                                'content_type'].encode('utf-8'))]})
-                await send({'type': 'http.response.body',
-                            'body': payload})
-            else:
-                await self.not_found(receive, send)
+            with open(static_file['filename'], 'rb') as f:
+                payload = f.read()
+            await send({'type': 'http.response.start',
+                        'status': 200,
+                        'headers': [(b'Content-Type', static_file[
+                            'content_type'].encode('utf-8'))]})
+            await send({'type': 'http.response.body',
+                        'body': payload})
 
     async def lifespan(self, receive, send):
         while True:
@@ -195,7 +196,13 @@ async def make_response(status, headers, payload, environ):
             await environ['asgi.send']({'type': 'websocket.accept',
                                         'headers': headers})
         else:
-            await environ['asgi.send']({'type': 'websocket.close'})
+            if payload:
+                reason = payload.decode('utf-8') \
+                    if isinstance(payload, bytes) else str(payload)
+                await environ['asgi.send']({'type': 'websocket.close',
+                                            'reason': reason})
+            else:
+                await environ['asgi.send']({'type': 'websocket.close'})
         return
 
     await environ['asgi.send']({'type': 'http.response.start',

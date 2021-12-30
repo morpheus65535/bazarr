@@ -1,4 +1,7 @@
-from collections import MutableSequence
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc  # type: ignore[no-redef]
 import io
 from io import open
 from itertools import chain
@@ -14,7 +17,8 @@ from .ssastyle import SSAStyle
 from .time import make_time, ms_to_str
 
 
-class SSAFile(MutableSequence):
+# TODO fix mypy errors regarding SSAFile
+class SSAFile(abc.MutableSequence):
     """
     Subtitle file in SubStation Alpha format.
 
@@ -389,52 +393,52 @@ class SSAFile(MutableSequence):
 
         if isinstance(other, SSAFile):
             for key in set(chain(self.info.keys(), other.info.keys())) - {"ScriptType"}:
-                sv, ov = self.info.get(key), other.info.get(key)
-                if sv is None:
+                self_info, other_info = self.info.get(key), other.info.get(key)
+                if self_info is None:
                     logging.debug("%r missing in self.info", key)
                     return False
-                elif ov is None:
+                elif other_info is None:
                     logging.debug("%r missing in other.info", key)
                     return False
-                elif sv != ov:
-                    logging.debug("info %r differs (self=%r, other=%r)", key, sv, ov)
+                elif self_info != other_info:
+                    logging.debug("info %r differs (self=%r, other=%r)", key, self_info, other_info)
                     return False
 
             for key in set(chain(self.fonts_opaque.keys(), other.fonts_opaque.keys())):
-                sv, ov = self.fonts_opaque.get(key), other.fonts_opaque.get(key)
-                if sv is None:
+                self_font, other_font = self.fonts_opaque.get(key), other.fonts_opaque.get(key)
+                if self_font is None:
                     logging.debug("%r missing in self.fonts_opaque", key)
                     return False
-                elif ov is None:
+                elif other_font is None:
                     logging.debug("%r missing in other.fonts_opaque", key)
                     return False
-                elif sv != ov:
-                    logging.debug("fonts_opaque %r differs (self=%r, other=%r)", key, sv, ov)
+                elif self_font != other_font:
+                    logging.debug("fonts_opaque %r differs (self=%r, other=%r)", key, self_font, other_font)
                     return False
 
             for key in set(chain(self.styles.keys(), other.styles.keys())):
-                sv, ov = self.styles.get(key), other.styles.get(key)
-                if sv is None:
+                self_style, other_style = self.styles.get(key), other.styles.get(key)
+                if self_style is None:
                     logging.debug("%r missing in self.styles", key)
                     return False
-                elif ov is None:
+                elif other_style is None:
                     logging.debug("%r missing in other.styles", key)
                     return False
-                elif sv != ov:
-                    for k in sv.FIELDS:
-                        if getattr(sv, k) != getattr(ov, k): logging.debug("difference in field %r", k)
-                    logging.debug("style %r differs (self=%r, other=%r)", key, sv.as_dict(), ov.as_dict())
+                elif self_style != other_style:
+                    for k in self_style.FIELDS:
+                        if getattr(self_style, k) != getattr(other_style, k): logging.debug("difference in field %r", k)
+                    logging.debug("style %r differs (self=%r, other=%r)", key, self_style.as_dict(), other_style.as_dict())
                     return False
 
             if len(self) != len(other):
                 logging.debug("different # of subtitles (self=%d, other=%d)", len(self), len(other))
                 return False
 
-            for i, (se, oe) in enumerate(zip(self.events, other.events)):
-                if not se.equals(oe):
-                    for k in se.FIELDS:
-                        if getattr(se, k) != getattr(oe, k): logging.debug("difference in field %r", k)
-                    logging.debug("event %d differs (self=%r, other=%r)", i, se.as_dict(), oe.as_dict())
+            for i, (self_event, other_event) in enumerate(zip(self.events, other.events)):
+                if not self_event.equals(other_event):
+                    for k in self_event.FIELDS:
+                        if getattr(self_event, k) != getattr(other_event, k): logging.debug("difference in field %r", k)
+                    logging.debug("event %d differs (self=%r, other=%r)", i, self_event.as_dict(), other_event.as_dict())
                     return False
 
             return True

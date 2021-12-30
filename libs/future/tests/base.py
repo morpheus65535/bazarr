@@ -272,7 +272,11 @@ class CodeHandler(unittest.TestCase):
         else:
             headers = ''
 
-        self.compare(output, headers + reformat_code(expected),
+        reformatted = reformat_code(expected)
+        if headers in reformatted:
+            headers = ''
+
+        self.compare(output, headers + reformatted,
                      ignore_imports=ignore_imports)
 
     def unchanged(self, code, **kwargs):
@@ -338,6 +342,10 @@ class CodeHandler(unittest.TestCase):
                         '----\n%s\n----' % f.read(),
                     )
             ErrorClass = (FuturizeError if 'futurize' in script else PasteurizeError)
+
+            if not hasattr(e, 'output'):
+                # The attribute CalledProcessError.output doesn't exist on Py2.6
+                e.output = None
             raise ErrorClass(msg, e.returncode, e.cmd, output=e.output)
         return output
 

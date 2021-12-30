@@ -36,6 +36,18 @@ class NotValidPayload(BaseError):
         super(NotValidPayload, self).__init__(val, message)
 
 
+class InvalidSourceOrTargetLanguage(BaseError):
+    """
+    exception thrown if the user enters an invalid payload
+    """
+
+    def __init__(self,
+                 val,
+                 message="source and target language can't be the same"):
+        super(InvalidSourceOrTargetLanguage, self).__init__(val, message)
+
+
+
 class TranslationNotFound(BaseError):
     """
     exception thrown if no translation was found for the text provided by the user
@@ -70,7 +82,7 @@ class NotValidLength(BaseError):
 
 class RequestError(Exception):
     """
-    exception thrown if an error occured during the request call, e.g a connection problem.
+    exception thrown if an error occurred during the request call, e.g a connection problem.
     """
 
     def __init__(self, message="Request exception can happen due to an api connection error. "
@@ -81,9 +93,22 @@ class RequestError(Exception):
         return self.message
 
 
+class MicrosoftAPIerror(Exception):
+    """
+    exception thrown if Microsoft API returns one of its errors
+    """
+
+    def __init__(self, api_message):
+        self.api_message = str(api_message)
+        self.message="Microsoft API returned the following error"
+
+    def __str__(self):
+        return "{}: {}".format(self.message, self.api_message)
+
+
 class TooManyRequests(Exception):
     """
-    exception thrown if an error occured during the request call, e.g a connection problem.
+    exception thrown if an error occurred during the request call, e.g a connection problem.
     """
 
     def __init__(self, message="Server Error: You made too many requests to the server. According to google, you are allowed to make 5 requests per second and up to 200k requests per day. You can wait and try again later or you can try the translate_batch function"):
@@ -111,3 +136,9 @@ class ServerException(Exception):
     def __init__(self, status_code, *args):
         message = self.errors.get(status_code, "API server error")
         super(ServerException, self).__init__(message, *args)
+
+
+class AuthorizationException(Exception):
+    def __init__(self, api_key, *args):
+        msg = 'Unauthorized access with the api key ' + api_key
+        super().__init__(msg, *args)

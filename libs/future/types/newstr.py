@@ -40,7 +40,6 @@ representations of your objects portably across Py3 and Py2, use the
 
 """
 
-from collections import Iterable
 from numbers import Number
 
 from future.utils import PY3, istext, with_metaclass, isnewbytes
@@ -51,6 +50,9 @@ from future.types.newobject import newobject
 if PY3:
     # We'll probably never use newstr on Py3 anyway...
     unicode = str
+    from collections.abc import Iterable
+else:
+    from collections import Iterable
 
 
 class BaseNewStr(type):
@@ -105,6 +107,7 @@ class newstr(with_metaclass(BaseNewStr, unicode)):
         """
         Without the u prefix
         """
+
         value = super(newstr, self).__repr__()
         # assert value[0] == u'u'
         return value[1:]
@@ -290,7 +293,14 @@ class newstr(with_metaclass(BaseNewStr, unicode)):
             isinstance(other, bytes) and not isnewbytes(other)):
             return super(newstr, self).__eq__(other)
         else:
-            return False
+            return NotImplemented
+
+    def __hash__(self):
+        if (isinstance(self, unicode) or
+            isinstance(self, bytes) and not isnewbytes(self)):
+            return super(newstr, self).__hash__()
+        else:
+            raise NotImplementedError()
 
     def __ne__(self, other):
         if (isinstance(other, unicode) or

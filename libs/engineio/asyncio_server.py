@@ -29,7 +29,7 @@ class AsyncServer(server.Server):
                           is a grace period added by the server.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
-                         is 5 seconds.
+                         is 20 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport. The default is 1,000,000
                                  bytes.
@@ -63,6 +63,9 @@ class AsyncServer(server.Server):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -213,6 +216,13 @@ class AsyncServer(server.Server):
         jsonp = False
         jsonp_index = None
 
+        # make sure the client uses an allowed transport
+        transport = query.get('transport', ['polling'])[0]
+        if transport not in self.transports:
+            self._log_error_once('Invalid transport', 'bad-transport')
+            return await self._make_response(
+                self._bad_request('Invalid transport'), environ)
+
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
         if sid is None and query.get('EIO') != ['4']:
@@ -239,7 +249,6 @@ class AsyncServer(server.Server):
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
-                transport = query.get('transport', ['polling'])[0]
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
                 upgrade_header = environ.get('HTTP_UPGRADE').lower() \
@@ -249,9 +258,9 @@ class AsyncServer(server.Server):
                     r = await self._handle_connect(environ, transport,
                                                    jsonp_index)
                 else:
-                    self._log_error_once('Invalid transport ' + transport,
-                                         'bad-transport')
-                    r = self._bad_request('Invalid transport ' + transport)
+                    self._log_error_once('Invalid websocket upgrade',
+                                         'bad-upgrade')
+                    r = self._bad_request('Invalid websocket upgrade')
             else:
                 if sid not in self.sockets:
                     self._log_error_once('Invalid session ' + sid, 'bad-sid')

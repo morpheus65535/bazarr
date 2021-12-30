@@ -35,7 +35,11 @@ class WSGIApp(object):
                  engineio_path='engine.io'):
         self.engineio_app = engineio_app
         self.wsgi_app = wsgi_app
-        self.engineio_path = engineio_path.strip('/')
+        self.engineio_path = engineio_path
+        if not self.engineio_path.startswith('/'):
+            self.engineio_path = '/' + self.engineio_path
+        if not self.engineio_path.endswith('/'):
+            self.engineio_path += '/'
         self.static_files = static_files or {}
 
     def __call__(self, environ, start_response):
@@ -55,21 +59,17 @@ class WSGIApp(object):
 
             environ['eventlet.input'] = Input(environ['gunicorn.socket'])
         path = environ['PATH_INFO']
-        if path is not None and \
-                path.startswith('/{0}/'.format(self.engineio_path)):
+        if path is not None and path.startswith(self.engineio_path):
             return self.engineio_app.handle_request(environ, start_response)
         else:
             static_file = get_static_file(path, self.static_files) \
                 if self.static_files else None
-            if static_file:
-                if os.path.exists(static_file['filename']):
-                    start_response(
-                        '200 OK',
-                        [('Content-Type', static_file['content_type'])])
-                    with open(static_file['filename'], 'rb') as f:
-                        return [f.read()]
-                else:
-                    return self.not_found(start_response)
+            if static_file and os.path.exists(static_file['filename']):
+                start_response(
+                    '200 OK',
+                    [('Content-Type', static_file['content_type'])])
+                with open(static_file['filename'], 'rb') as f:
+                    return [f.read()]
             elif self.wsgi_app is not None:
                 return self.wsgi_app(environ, start_response)
         return self.not_found(start_response)

@@ -25,7 +25,7 @@
 
 import re
 import six
-import logging
+from .logger import logger
 from time import sleep
 from datetime import datetime
 from xml.sax.saxutils import escape as sax_escape
@@ -47,6 +47,7 @@ from .AppriseAsset import AppriseAsset
 from .utils import parse_url
 from .utils import parse_bool
 from .utils import parse_list
+from .utils import parse_phone_no
 
 # Used to break a path list into parts
 PATHSPLIT_LIST_DELIM = re.compile(r'[ \t\r\n,\\/]+')
@@ -115,8 +116,8 @@ class URLBase(object):
     # Secure sites should be verified against a Certificate Authority
     verify_certificate = True
 
-    # Logging
-    logger = logging.getLogger(__name__)
+    # Logging to our global logger
+    logger = logger
 
     # Define a default set of template arguments used for dynamically building
     # details about our individual plugins for developers.
@@ -280,7 +281,7 @@ class URLBase(object):
             self._last_io_datetime = reference
             return
 
-        if self.request_rate_per_sec <= 0.0:
+        if self.request_rate_per_sec <= 0.0 and not wait:
             # We're done if there is no throttle limit set
             return
 
@@ -560,6 +561,39 @@ class URLBase(object):
 
         return content
 
+    @staticmethod
+    def parse_phone_no(content, unquote=True):
+        """A wrapper to utils.parse_phone_no() with unquoting support
+
+        Parses a specified set of data and breaks it into a list.
+
+        Args:
+            content (str): The path to split up into a list. If a list is
+                 provided, then it's individual entries are processed.
+
+            unquote (:obj:`bool`, optional): call unquote on each element
+                 added to the returned list.
+
+        Returns:
+            list: A unique list containing all of the elements in the path
+        """
+
+        if unquote:
+            try:
+                content = URLBase.unquote(content)
+            except TypeError:
+                # Nothing further to do
+                return []
+
+            except AttributeError:
+                # This exception ONLY gets thrown under Python v2.7 if an
+                # object() is passed in place of the content
+                return []
+
+        content = parse_phone_no(content)
+
+        return content
+
     @property
     def app_id(self):
         return self.asset.app_id if self.asset.app_id else ''
@@ -636,6 +670,8 @@ class URLBase(object):
                 results['qsd'].get('verify', True))
 
         # Password overrides
+        if 'password' in results['qsd']:
+            results['password'] = results['qsd']['password']
         if 'pass' in results['qsd']:
             results['password'] = results['qsd']['pass']
 

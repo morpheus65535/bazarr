@@ -3,6 +3,7 @@ import React, {
   FunctionComponent,
   KeyboardEvent,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -14,15 +15,31 @@ const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 export interface ChipsProps {
   disabled?: boolean;
   defaultValue?: readonly string[];
+  value?: readonly string[];
   onChange?: (v: string[]) => void;
 }
 
 export const Chips: FunctionComponent<ChipsProps> = ({
   defaultValue,
+  value,
   disabled,
   onChange,
 }) => {
-  const [chips, setChips] = useState(defaultValue ?? []);
+  const [chips, setChips] = useState<Readonly<string[]>>(() => {
+    if (value) {
+      return value;
+    }
+    if (defaultValue) {
+      return defaultValue;
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (value) {
+      setChips(value);
+    }
+  }, [value]);
 
   const input = useRef<HTMLInputElement>(null);
 

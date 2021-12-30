@@ -25,7 +25,7 @@ def sanitize(string, ignore_characters=None, default_characters={'-', ':', '(', 
         string = re.sub(r'[%s]' % re.escape(''.join(characters)), ' ', string)
 
     # remove some characters
-    characters = {'\''} - ignore_characters
+    characters = {'\'', '´', '`', '’'} - ignore_characters
     if characters:
         string = re.sub(r'[%s]' % re.escape(''.join(characters)), '', string)
 

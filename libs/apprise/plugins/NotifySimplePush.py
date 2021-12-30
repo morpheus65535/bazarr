@@ -32,8 +32,8 @@ from ..common import NotifyType
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
-# Default our global support flag
-CRYPTOGRAPHY_AVAILABLE = False
+from base64 import urlsafe_b64encode
+import hashlib
 
 try:
     from cryptography.hazmat.primitives import padding
@@ -41,21 +41,27 @@ try:
     from cryptography.hazmat.primitives.ciphers import algorithms
     from cryptography.hazmat.primitives.ciphers import modes
     from cryptography.hazmat.backends import default_backend
-    from base64 import urlsafe_b64encode
-    import hashlib
 
-    CRYPTOGRAPHY_AVAILABLE = True
+    # We're good to go!
+    NOTIFY_SIMPLEPUSH_ENABLED = True
 
 except ImportError:
-    # no problem; this just means the added encryption functionality isn't
-    # available. You can still send a SimplePush message
-    pass
+    # cryptography is required in order for this package to work
+    NOTIFY_SIMPLEPUSH_ENABLED = False
 
 
 class NotifySimplePush(NotifyBase):
     """
     A wrapper for SimplePush Notifications
     """
+
+    # Set our global enabled flag
+    enabled = NOTIFY_SIMPLEPUSH_ENABLED
+
+    requirements = {
+        # Define our required packaging in order to work
+        'packages_required': 'cryptography'
+    }
 
     # The default descriptive name associated with the Notification
     service_name = 'SimplePush'
@@ -181,15 +187,6 @@ class NotifySimplePush(NotifyBase):
         Perform SimplePush Notification
         """
 
-        # Encrypt Message (providing support is available)
-        if self.password and self.user and not CRYPTOGRAPHY_AVAILABLE:
-            # Provide the end user at least some notification that they're
-            # not getting what they asked for
-            self.logger.warning(
-                "Authenticated SimplePush Notifications are not supported by "
-                "this system; `pip install cryptography`.")
-            return False
-
         headers = {
             'User-Agent': self.app_id,
             'Content-type': "application/x-www-form-urlencoded",
@@ -200,7 +197,7 @@ class NotifySimplePush(NotifyBase):
             'key': self.apikey,
         }
 
-        if self.password and self.user and CRYPTOGRAPHY_AVAILABLE:
+        if self.password and self.user:
             body = self._encrypt(body)
             title = self._encrypt(title)
             payload.update({

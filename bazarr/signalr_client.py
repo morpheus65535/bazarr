@@ -22,9 +22,9 @@ from get_args import args
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
-class SonarrSignalrClient:
+class SonarrSignalrClientLegacy:
     def __init__(self):
-        super(SonarrSignalrClient, self).__init__()
+        super(SonarrSignalrClientLegacy, self).__init__()
         self.apikey_sonarr = None
         self.session = Session()
         self.session.timeout = 60
@@ -90,6 +90,65 @@ class SonarrSignalrClient:
             sonarr_hub.client.on(item, dispatcher)
 
         self.connection.exception += self.exception_handler
+
+
+class SonarrSignalrClient:
+    def __init__(self):
+        super(SonarrSignalrClient, self).__init__()
+        self.apikey_sonarr = None
+        self.connection = None
+
+    def start(self):
+        self.configure()
+        logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
+        while self.connection.transport.state.value not in [0, 1, 2]:
+            try:
+                self.connection.start()
+            except ConnectionError:
+                time.sleep(5)
+
+    def stop(self):
+        logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
+        self.connection.stop()
+
+    def restart(self):
+        if self.connection:
+            if self.connection.transport.state.value in [0, 1, 2]:
+                self.stop()
+        if settings.general.getboolean('use_sonarr'):
+            self.start()
+
+    def exception_handler(self):
+        logging.error("BAZARR connection to Sonarr SignalR feed has failed. We'll try to reconnect.")
+        self.restart()
+
+    @staticmethod
+    def on_connect_handler():
+        logging.info('BAZARR SignalR client for Sonarr is connected and waiting for events.')
+        if not args.dev:
+            scheduler.add_job(update_series, kwargs={'send_event': True}, max_instances=1)
+            scheduler.add_job(sync_episodes, kwargs={'send_event': True}, max_instances=1)
+
+    def configure(self):
+        self.apikey_sonarr = settings.sonarr.apikey
+        self.connection = HubConnectionBuilder() \
+            .with_url(url_sonarr() + "/signalr/messages?access_token={}".format(self.apikey_sonarr),
+                      options={
+                          "verify_ssl": False,
+                          "headers": headers
+                      }) \
+            .with_automatic_reconnect({
+                "type": "raw",
+                "keep_alive_interval": 5,
+                "reconnect_interval": 180,
+                "max_attempts": None
+            }).build()
+        self.connection.on_open(self.on_connect_handler)
+        self.connection.on_reconnect(lambda: logging.error('BAZARR SignalR client for Sonarr connection as been lost. '
+                                                           'Trying to reconnect...'))
+        self.connection.on_close(lambda: logging.debug('BAZARR SignalR client for Sonarr is disconnected.'))
+        self.connection.on_error(self.exception_handler)
+        self.connection.on("receiveMessage", dispatcher)
 
 
 class RadarrSignalrClient:
@@ -186,5 +245,6 @@ def dispatcher(data):
         return
 
 
-sonarr_signalr_client = SonarrSignalrClient()
+sonarr_signalr_client = SonarrSignalrClientLegacy() if get_sonarr_info.version().startswith(('0.', '2.', '3.')) else \
+    SonarrSignalrClient()
 radarr_signalr_client = RadarrSignalrClient()

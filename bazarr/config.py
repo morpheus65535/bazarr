@@ -57,6 +57,8 @@ defaults = {
         'ignore_vobsub_subs': 'False',
         'ignore_ass_subs': 'False',
         'adaptive_searching': 'False',
+        'adaptive_searching_delay': '3w',
+        'adaptive_searching_delta': '1w',
         'enabled_providers': '[]',
         'multithreading': 'True',
         'chmod_enabled': 'False',
@@ -92,7 +94,8 @@ defaults = {
         'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
-        'use_ffprobe_cache': 'True'
+        'use_ffprobe_cache': 'True',
+        'exclude_season_zero': 'False'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -132,7 +135,8 @@ defaults = {
     },
     'addic7ed': {
         'username': '',
-        'password': ''
+        'password': '',
+        'vip': 'False'
     },
     'podnapisi': {
         'verify_ssl': 'True'
@@ -189,6 +193,10 @@ defaults = {
         'skip_wrong_fps': 'False',
         'approved_only': 'False',
         'multithreading': 'True'
+    },
+    'embeddedsubtitles': {
+        'include_ass': 'True',
+        'include_srt': 'True',
     },
     'subsync': {
         'use_subsync': 'False',
@@ -388,12 +396,12 @@ def save_settings(settings_items):
             configure_proxy = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
-                   'settings-radarr-only_monitored']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
+                   'settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
             exclusion_updated = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero']:
             sonarr_exclusion_updated = True
 
         if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
@@ -463,8 +471,10 @@ def save_settings(settings_items):
         configure_captcha_func()
 
     if update_schedule:
-        from api import scheduler
+        from scheduler import scheduler
+        from event_handler import event_stream
         scheduler.update_configurable_tasks()
+        event_stream(type='task')
 
     if sonarr_changed:
         from signalr_client import sonarr_signalr_client

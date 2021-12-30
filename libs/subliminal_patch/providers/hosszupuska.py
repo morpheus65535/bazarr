@@ -43,6 +43,9 @@ logger = logging.getLogger(__name__)
 
 language_converters.register('hosszupuska = subliminal_patch.converters.hosszupuska:HosszupuskaConverter')
 
+_SUB_ENGLISH_NAME_RE = re.compile(r's(\d{1,2})e(\d{1,2})')
+_SUB_YEAR_RE = re.compile(r"(?<=\()(\d{4})(?=\))")
+
 
 class HosszupuskaSubtitle(Subtitle):
     """Hosszupuska Subtitle."""
@@ -141,11 +144,10 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
         return None
 
     def query(self, series, season, episode, year=None, video=None):
-
         # Search for s01e03 instead of s1e3
         seasona = "%02d" % season
         episodea = "%02d" % episode
-        series = fix_inconsistent_naming(series)
+        seriesa = fix_inconsistent_naming(series)
         seriesa = series.replace(' ', '+')
 
         # get the episode page
@@ -156,16 +158,22 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
 
         r = self.session.get(url, timeout=10).content
 
-        i = 0
         soup = ParserBeautifulSoup(r, ['lxml'])
 
-        table = soup.find_all("table")[9]
-
         subtitles = []
-        # loop over subtitles rows
+
+        for num, temp in enumerate(soup.find_all("table")):
+            if "this.style.backgroundImage='url(css/over2.jpg)" in str(temp) and "css/infooldal.png" in str(temp):
+                logger.debug("Found valid table (%d index)", num)
+                subtitles += self._loop_over_table(temp, season, episode, video)
+
+        return subtitles
+
+    def _loop_over_table(self, table, season, episode, video):
+        i = 0
         for row in table.find_all("tr"):
             i = i + 1
-            if "this.style.backgroundImage='url(css/over2.jpg)" in str(row) and i > 5:
+            if "this.style.backgroundImage='url(css/over2.jpg)" in str(row): #and i > 5:
                 datas = row.find_all("td")
 
                 # Currently subliminal not use these params, but maybe later will come in handy
@@ -177,18 +185,20 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 sub_year = sub_english_name = sub_version = None
                 # Handle the case when '(' in subtitle
+
+
                 if datas[1].getText().count('(') == 1:
-                    sub_english_name = re.split('s(\d{1,2})e(\d{1,2})', datas[1].getText())[3]
+                    sub_english_name = _SUB_ENGLISH_NAME_RE.split(datas[1].getText())[3]
                 if datas[1].getText().count('(') == 2:
-                    sub_year = re.findall(r"(?<=\()(\d{4})(?=\))", datas[1].getText().strip())[0]
-                    sub_english_name = re.split('s(\d{1,2})e(\d{1,2})', datas[1].getText().split('(')[0])[0]
+                    sub_year = _SUB_YEAR_RE.findall(datas[1].getText().strip())[0]
+                    sub_english_name = _SUB_ENGLISH_NAME_RE.split(datas[1].getText().split('(')[0])[0]
 
                 if not sub_english_name:
                     continue
 
-                sub_season = int((re.findall('s(\d{1,2})', datas[1].find_all('b')[0].getText(), re.VERBOSE)[0])
+                sub_season = int((re.findall(r's(\d{1,2})', datas[1].find_all('b')[0].getText(), re.VERBOSE)[0])
                                  .lstrip('0'))
-                sub_episode = int((re.findall('e(\d{1,2})', datas[1].find_all('b')[0].getText(), re.VERBOSE)[0])
+                sub_episode = int((re.findall(r'e(\d{1,2})', datas[1].find_all('b')[0].getText(), re.VERBOSE)[0])
                                   .lstrip('0'))
 
                 if sub_season == season and sub_episode == episode:
@@ -209,9 +219,7 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
                                                    asked_for_episode=episode)
 
                     logger.debug('Found subtitle: %r', subtitle)
-                    subtitles.append(subtitle)
-
-        return subtitles
+                    yield subtitle
 
     def list_subtitles(self, video, languages):
         titles = [video.series] + video.alternative_series

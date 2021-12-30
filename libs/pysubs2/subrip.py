@@ -73,8 +73,8 @@ class SubripFormat(FormatBase):
             # Handle the "happy" empty subtitle case, which is timestamp line followed by blank line(s)
             # followed by number line and timestamp line of the next subtitle. Fixes issue #11.
             if (len(lines) >= 2
-                    and all(re.match("\s*$", line) for line in lines[:-1])
-                    and re.match("\s*\d+\s*$", lines[-1])):
+                    and all(re.match(r"\s*$", line) for line in lines[:-1])
+                    and re.match(r"\s*\d+\s*$", lines[-1])):
                 return ""
 
             # Handle the general case.

@@ -1,6 +1,9 @@
 from copy import deepcopy
 
-import collections
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 from flask import current_app, request
 from werkzeug.datastructures import MultiDict, FileStorage
 from werkzeug import exceptions
@@ -146,7 +149,7 @@ class Argument(object):
         except TypeError:
             try:
                 if self.type is decimal.Decimal:
-                    return self.type(str(value), self.name)
+                    return self.type(str(value))
                 else:
                     return self.type(value, self.name)
             except TypeError:
@@ -194,7 +197,7 @@ class Argument(object):
                     values = source.getlist(name)
                 else:
                     values = source.get(name)
-                    if not (isinstance(values, collections.MutableSequence) and self.action == 'append'):
+                    if not (isinstance(values, MutableSequence) and self.action == 'append'):
                         values = [values]
 
                 for value in values:
