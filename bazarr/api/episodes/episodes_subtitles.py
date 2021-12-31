@@ -6,7 +6,7 @@ from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from database import TableEpisodes, get_audio_profile_languages
+from database import TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
 from get_providers import get_providers, get_providers_auth
@@ -44,9 +44,6 @@ class EpisodesSubtitles(Resource):
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
 
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
-
         audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
@@ -54,8 +51,8 @@ class EpisodesSubtitles(Resource):
             audio_language = None
 
         try:
-            result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, providers_list,
-                                       providers_auth, sceneName, title, 'series'))
+            result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
+                                             title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
             if result:
                 result = result[0]
                 message = result[0]

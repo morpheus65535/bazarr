@@ -50,6 +50,8 @@ class Subtitle(object):
         #: Encoding to decode with when accessing :attr:`text`
         self.encoding = None
 
+        self.release_info = None
+
         # validate the encoding
         if encoding:
             try:

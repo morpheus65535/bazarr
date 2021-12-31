@@ -10,7 +10,13 @@ import {
   Slider,
   Text,
 } from "../components";
-import { antiCaptchaOption, colorOptions, folderOptions } from "./options";
+import {
+  adaptiveSearchingDelayOption,
+  adaptiveSearchingDeltaOption,
+  antiCaptchaOption,
+  colorOptions,
+  folderOptions,
+} from "./options";
 
 const subzeroOverride = (key: string) => {
   return (settings: Settings) => {
@@ -124,16 +130,44 @@ const SettingsSubtitlesView: FunctionComponent = () => {
         </CollapseBox>
       </Group>
       <Group header="Performance / Optimization">
-        <Input>
-          <Check
-            label="Adaptive Searching"
-            settingKey="settings-general-adaptive_searching"
-          ></Check>
-          <Message>
-            When searching for subtitles, Bazarr will search less frequently to
-            limit call to providers.
-          </Message>
-        </Input>
+        <CollapseBox>
+          <CollapseBox.Control>
+            <Input>
+              <Check
+                label="Adaptive Searching"
+                settingKey="settings-general-adaptive_searching"
+              ></Check>
+              <Message>
+                When searching for subtitles, Bazarr will reduce search
+                frequency to limit call to providers.
+              </Message>
+            </Input>
+          </CollapseBox.Control>
+          <CollapseBox.Content>
+            <Input>
+              <Selector
+                settingKey="settings-general-adaptive_searching_delay"
+                beforeStaged={(v) => (v === undefined ? "3w" : v)}
+                options={adaptiveSearchingDelayOption}
+              ></Selector>
+              <Message>
+                How much weeks must Bazarr wait after initial search to reduce
+                search frequency.
+              </Message>
+            </Input>
+            <Input>
+              <Selector
+                settingKey="settings-general-adaptive_searching_delta"
+                beforeStaged={(v) => (v === undefined ? "1w" : v)}
+                options={adaptiveSearchingDeltaOption}
+              ></Selector>
+              <Message>
+                How often should Bazarr search for subtitles when in adaptive
+                search mode.
+              </Message>
+            </Input>
+          </CollapseBox.Content>
+        </CollapseBox>
         <Input>
           <Check
             label="Search Enabled Providers Simultaneously"

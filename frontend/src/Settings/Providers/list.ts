@@ -21,6 +21,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       username: "",
       password: "",
+      vip: false,
+    },
+    keyNameOverride: {
+      vip: "VIP",
     },
   },
   { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },
@@ -45,6 +49,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "bsplayer",
     name: "BSplayer",
+  },
+  {
+    key: "embeddedsubtitles",
+    name: "Embedded Subtitles",
+    description: "Embedded Subtitles from your Media Files",
+    defaultKey: {
+      include_srt: true,
+      include_ass: true,
+    },
+    message:
+      "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
+    keyNameOverride: {
+      include_srt: "Include SRT",
+      include_ass: "Include ASS (will be converted to SRT)",
+    },
   },
   {
     key: "greeksubs",

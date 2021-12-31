@@ -69,10 +69,10 @@ def remove_crap_from_fn(fn):
 
 
 class SZProviderPool(ProviderPool):
-    def __init__(self, providers=None, provider_configs=None, blacklist=None, throttle_callback=None,
+    def __init__(self, providers=None, provider_configs=None, blacklist=None, ban_list=None, throttle_callback=None,
                  pre_download_hook=None, post_download_hook=None, language_hook=None):
         #: Name of providers to use
-        self.providers = set(providers or set())
+        self.providers = set(providers or [])
 
         #: Provider configuration
         self.provider_configs = provider_configs or {}
@@ -85,6 +85,9 @@ class SZProviderPool(ProviderPool):
 
         self.blacklist = blacklist or []
 
+        #: Should be a dict of 2 lists of strings
+        self.ban_list = ban_list or {'must_contain': [], 'must_not_contain': []}
+
         self.throttle_callback = throttle_callback
 
         self.pre_download_hook = pre_download_hook
@@ -96,13 +99,14 @@ class SZProviderPool(ProviderPool):
         if not self.throttle_callback:
             self.throttle_callback = lambda x, y: x
 
-    def update(self, providers, provider_configs, blacklist):
+    def update(self, providers, provider_configs, blacklist, ban_list):
         # Check if the pool was initialized enough hours ago
         self._check_lifetime()
 
         # Check if any new provider has been added
-        updated = set(providers) != self.providers
+        updated = set(providers) != self.providers or ban_list != self.ban_list
         removed_providers = list(sorted(self.providers - set(providers)))
+        new_providers = list(sorted(set(providers) - self.providers))
 
         # Terminate and delete removed providers from instance
         for removed in removed_providers:
@@ -114,12 +118,13 @@ class SZProviderPool(ProviderPool):
             except KeyError:
                 pass
 
-        self.providers.difference_update(removed_providers)
-        self.providers.update(list(providers))
-
         if updated:
             logger.debug("Removed providers: %s", removed_providers)
-            logger.debug(f"New provider list: %s", self.providers)
+            logger.debug("New providers: %s", new_providers)
+
+            self.discarded_providers.difference_update(new_providers)
+            self.providers.difference_update(removed_providers)
+            self.providers.update(list(providers))
 
         self.blacklist = blacklist
 
@@ -224,15 +229,6 @@ class SZProviderPool(ProviderPool):
             logger.info('Skipping provider %r: no language to search for', provider)
             return []
 
-        # Check if the provider is alive
-        if not self[provider].ping():
-            logger.info("%s provider died. Reinitializing", provider)
-            try:
-                self[provider].terminate()
-                self[provider].initialize()
-            except Exception as error:
-                self.throttle_callback(provider, error)
-
         # list subtitles
         logger.info('Listing subtitles with provider %r and languages %r', provider, provider_languages)
         results = []
@@ -244,6 +240,15 @@ class SZProviderPool(ProviderPool):
                 if (str(provider), str(s.id)) in self.blacklist:
                     logger.info("Skipping blacklisted subtitle: %s", s)
                     continue
+                if s.release_info is not None:
+                    if any([x for x in self.ban_list["must_not_contain"]
+                            if re.search(x, s.release_info, flags=re.IGNORECASE) is not None]):
+                        logger.info("Skipping subtitle because release name contains prohibited string: %s", s)
+                        continue
+                    if any([x for x in self.ban_list["must_contain"]
+                            if re.search(x, s.release_info, flags=re.IGNORECASE) is None]):
+                        logger.info("Skipping subtitle because release name does not contains required string: %s", s)
+                        continue
                 if s.id in seen:
                     continue
 
@@ -252,10 +257,6 @@ class SZProviderPool(ProviderPool):
                 seen.append(s.id)
 
             return out
-
-        except (requests.Timeout, socket.timeout) as e:
-            logger.error('Provider %r timed out', provider)
-            self.throttle_callback(provider, e)
 
         except Exception as e:
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
@@ -337,16 +338,6 @@ class SZProviderPool(ProviderPool):
                     socket.timeout) as e:
                 logger.error('Provider %r connection error', subtitle.provider_name)
                 self.throttle_callback(subtitle.provider_name, e)
-
-            except ResponseNotReady as e:
-                logger.error('Provider %r response error, reinitializing', subtitle.provider_name)
-                try:
-                    self[subtitle.provider_name].terminate()
-                    self[subtitle.provider_name].initialize()
-                except:
-                    logger.error('Provider %r reinitialization error: %s', subtitle.provider_name,
-                                 traceback.format_exc())
-                    self.throttle_callback(subtitle.provider_name, e)
 
             except rarfile.BadRarFile:
                 logger.error('Malformed RAR file from provider %r, skipping subtitle.', subtitle.provider_name)
@@ -567,7 +558,7 @@ class SZAsyncProviderPool(SZProviderPool):
 
         return provider, provider_subtitles
 
-    def list_subtitles(self, video, languages, blacklist=None):
+    def list_subtitles(self, video, languages, blacklist=None, ban_list=None):
         if is_windows_special_path:
             return super(SZAsyncProviderPool, self).list_subtitles(video, languages)
 

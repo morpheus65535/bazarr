@@ -3,9 +3,6 @@
 import pytest
 import os
 
-# import sys
-# sys.path.append("libs")
-
 from subliminal_patch.core import Movie, Episode
 
 
@@ -24,6 +21,7 @@ def movies():
             resolution="1080p",
             source="Web",
             # other="Rip",
+            alternative_titles=["Dune: Part One"],
             audio_codec="Dolby Digital",
             video_codec="H.264",
             release_group="SHITBOX",
