@@ -21,6 +21,7 @@ class CustomLanguage:
     _possible_matches = ("pt-br", "pob", "pb", "brazilian", "brasil", "brazil")
     _extensions = (".pt-br", ".pob", ".pb")
     _extensions_forced = (".pt-br.forced", ".pob.forced", ".pb.forced")
+    _extensions_hi = (".pt-br.hi", ".pob.hi", ".pb.hi")
 
     def subzero_language(self):
         return Language(self.official_alpha3, self.iso)
@@ -70,6 +71,9 @@ class CustomLanguage:
         if extension.endswith(cls._extensions_forced):
             to_return = f"{cls.alpha2}:forced"
 
+        if extension.endswith(cls._extensions_hi):
+            to_return = f"{cls.alpha2}:HI"
+
         if to_return is not None:
             logging.debug("BAZARR external subtitles detected: %s", to_return)
 
@@ -118,6 +122,16 @@ class ChineseTraditional(CustomLanguage):
         "雙語.forced",
         ".zh-tw.forced",
     )
+    _extensions_hi = (
+        ".cht.hi",
+        ".tc.hi",
+        ".zht.hi",
+        "hant.hi",
+        ".big5.hi",
+        "繁體中文.hi",
+        "雙語.hi",
+        ".zh-tw.hi",
+    )
     _extensions_fuzzy = ("繁", "雙語")
     _extensions_disamb_fuzzy = ("简", "双语")
     _extensions_disamb = (
@@ -140,6 +154,15 @@ class ChineseTraditional(CustomLanguage):
         "简体中文.forced",
         "双语.forced",
     )
+    _extensions_disamb_hi = (
+        ".chs.hi",
+        ".sc.hi",
+        ".zhs.hi",
+        "hans.hi",
+        ".gb.hi",
+        "简体中文.hi",
+        "双语.hi",
+    )
 
     @classmethod
     def get_alpha_type(cls, subtitle, subtitle_path=None):
@@ -158,6 +181,9 @@ class ChineseTraditional(CustomLanguage):
         elif any(ext in extension[-12:] for ext in cls._extensions_disamb_forced):
             to_return = "zh:forced"
 
+        elif any(ext in extension[-12:] for ext in cls._extensions_disamb_hi):
+            to_return = "zh:HI"
+
         # Traditional chinese
         elif (
             extension.endswith(cls._extensions)
@@ -167,6 +193,9 @@ class ChineseTraditional(CustomLanguage):
 
         elif any(ext in extension[-12:] for ext in cls._extensions_forced):
             to_return = "zt:forced"
+
+        elif any(ext in extension[-12:] for ext in cls._extensions_hi):
+            to_return = "zt:HI"
 
         if to_return is not None:
             logging.debug("BAZARR external subtitles detected: %s", to_return)
@@ -201,4 +230,13 @@ class LatinAmericanSpanish(CustomLanguage):
         ".es-mx.forced",
         ".lat.forced",
         ".es.ar.forced",
+    )
+    _extensions_hi = (
+        ".es-la.hi",
+        ".spl.hi",
+        ".spa-la.hi",
+        ".ea.hi",
+        ".es-mx.hi",
+        ".lat.hi",
+        ".es.ar.hi",
     )
