@@ -163,6 +163,9 @@ def update_pools(f):
 @update_pools
 def generate_subtitles(path, languages, audio_language, sceneName, title, media_type,
                        forced_minimum_score=None, is_upgrade=False, profile_id=None):
+    if not languages:
+        return None
+
     if settings.general.getboolean('utf8_encode'):
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
@@ -383,6 +386,7 @@ def manual_search(path, profile_id, providers, providers_auth, sceneName, title,
 
     # where [3] is items list of dict(id, lang, forced, hi)
     language_items = get_profiles_list(profile_id=int(profile_id))['items']
+    pool = _get_pool(media_type, profile_id)
 
     for language in language_items:
         forced = language['forced']
@@ -397,8 +401,8 @@ def manual_search(path, profile_id, providers, providers_auth, sceneName, title,
         if forced == "True":
             lang_obj = Language.rebuild(lang_obj, forced=True)
 
-            providers_auth['podnapisi']['also_foreign'] = True
-            providers_auth['opensubtitles']['also_foreign'] = True
+            pool.provider_configs['podnapisi']['also_foreign'] = True
+            pool.provider_configs['opensubtitles']['also_foreign'] = True
 
         if hi == "True":
             lang_obj = Language.rebuild(lang_obj, hi=True)
@@ -432,7 +436,6 @@ def manual_search(path, profile_id, providers, providers_auth, sceneName, title,
 
         try:
             if providers:
-                pool = _get_pool(media_type, profile_id)
                 subtitles = list_all_subtitles([video], language_set, pool)
 
                 if 'subscene' in providers:
@@ -443,9 +446,10 @@ def manual_search(path, profile_id, providers, providers_auth, sceneName, title,
                         if language.forced:
                             subscene_language_set.add(language)
                     if len(subscene_language_set):
-                        providers_auth['subscene']['only_foreign'] = True
+                        s_pool.provider_configs['subscene'] = {}
+                        s_pool.provider_configs['subscene']['only_foreign'] = True
                         subtitles_subscene = list_all_subtitles([video], subscene_language_set, s_pool)
-                        providers_auth['subscene']['only_foreign'] = False
+                        s_pool.provider_configs['subscene']['only_foreign'] = False
                         subtitles[video] += subtitles_subscene[video]
             else:
                 subtitles = []
@@ -826,8 +830,6 @@ def series_download_subtitles(no):
                       "ignored because of monitored status, series type or series tags: {}".format(no))
         return
 
-    providers_auth = get_providers_auth()
-
     count_episodes_details = len(episodes_details)
 
     for i, episode in enumerate(episodes_details):
@@ -1079,7 +1081,6 @@ def movies_download_subtitles(no):
     hide_progress(id='movie_search_progress_{}'.format(no))
 
 
-@update_pools
 def _wanted_episode(episode):
     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
     if len(audio_language_list) > 0:
@@ -1165,7 +1166,6 @@ def wanted_download_subtitles(sonarr_episode_id):
         else:
             logging.info("BAZARR All providers are throttled")
             break
-
 
 
 def _wanted_movie(movie):
