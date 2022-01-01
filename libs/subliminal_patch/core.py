@@ -25,6 +25,7 @@ from subliminal import ProviderError, refiner_manager
 from concurrent.futures import as_completed
 
 from .extensions import provider_registry
+from .exceptions import MustGetBlacklisted
 from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
 from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
@@ -339,9 +340,8 @@ class SZProviderPool(ProviderPool):
                 logger.error('Provider %r connection error', subtitle.provider_name)
                 self.throttle_callback(subtitle.provider_name, e)
 
-            except rarfile.BadRarFile:
-                logger.error('Malformed RAR file from provider %r, skipping subtitle.', subtitle.provider_name)
-                logger.debug("RAR Traceback: %s", traceback.format_exc())
+            except (rarfile.BadRarFile, MustGetBlacklisted) as e:
+                self.throttle_callback(subtitle.provider_name, e)
                 return False
 
             except Exception as e:

@@ -12,8 +12,8 @@ import requests
 from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
-from utils import get_binary
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
+from utils import get_binary, blacklist_log, blacklist_log_movie
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, MustGetBlacklisted
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
@@ -210,7 +210,19 @@ def get_providers_auth():
     }
 
 
+def _handle_mgb(name, exception):
+    # There's no way to get Radarr/Sonarr IDs from subliminal_patch. Blacklisted subtitles
+    # will not appear on fronted but they will work with utils.get_blacklist
+    if exception.media_type == "series":
+        blacklist_log("", "", name, exception.id, "")
+    else:
+        blacklist_log_movie("", name, exception.id, "")
+
+
 def provider_throttle(name, exception):
+    if isinstance(exception, MustGetBlacklisted):
+        return _handle_mgb(name, exception)
+
     cls = getattr(exception, "__class__")
     cls_name = getattr(cls, "__name__")
     if cls not in VALID_THROTTLE_EXCEPTIONS:
