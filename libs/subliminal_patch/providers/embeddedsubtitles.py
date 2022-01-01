@@ -71,12 +71,14 @@ class EmbeddedSubtitlesProvider(Provider):
         cache_dir=None,
         ffprobe_path=None,
         ffmpeg_path=None,
+        hi_fallback=False,
     ):
         self._include_ass = include_ass
         self._include_srt = include_srt
         self._cache_dir = os.path.join(
             cache_dir or tempfile.gettempdir(), self.__class__.__name__.lower()
         )
+        self._hi_fallback = hi_fallback
         self._cached_paths = {}
 
         fese.FFPROBE_PATH = ffprobe_path or fese.FFPROBE_PATH
@@ -110,7 +112,7 @@ class EmbeddedSubtitlesProvider(Provider):
         only_forced = all(lang.forced for lang in languages)
         also_forced = any(lang.forced for lang in languages)
 
-        subtitles = []
+        allowed_streams = []
 
         for stream in streams:
             if not self._include_ass and stream.extension == "ass":
@@ -135,11 +137,14 @@ class EmbeddedSubtitlesProvider(Provider):
                 or (disposition.forced and also_forced)
             ):
                 logger.debug("Appending subtitle: %s", stream)
-                subtitles.append(EmbeddedSubtitle(stream, video, {"hash"}))
+                allowed_streams.append(stream)
             else:
                 logger.debug("Ignoring unwanted subtitle: %s", stream)
 
-        return subtitles
+        if self._hi_fallback:
+            _check_hi_fallback(allowed_streams, languages)
+
+        return [EmbeddedSubtitle(stream, video, {"hash"}) for stream in allowed_streams]
 
     def list_subtitles(self, video, languages):
         if not os.path.isfile(video.original_path):
@@ -182,3 +187,22 @@ class EmbeddedSubtitlesProvider(Provider):
 
 def _check_allowed_extensions(subtitle: FFprobeSubtitleStream):
     return subtitle.extension in ("ass", "srt")
+
+
+def _check_hi_fallback(streams, languages):
+    for language in languages:
+        compatible_streams = [
+            stream for stream in streams if stream.language == language
+        ]
+        if len(compatible_streams) == 1:
+            stream = compatible_streams[0]
+            logger.debug("HI fallback: updating %s HI to False", stream)
+            stream.disposition.hearing_impaired = False
+
+        elif all(stream.disposition.hearing_impaired for stream in streams):
+            for stream in streams:
+                logger.debug("HI fallback: updating %s HI to False", stream)
+                stream.disposition.hearing_impaired = False
+
+        else:
+            logger.debug("HI fallback not needed: %s", compatible_streams)

@@ -57,12 +57,15 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     defaultKey: {
       include_srt: true,
       include_ass: true,
+      hi_fallback: false,
     },
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
     keyNameOverride: {
       include_srt: "Include SRT",
       include_ass: "Include ASS (will be converted to SRT)",
+      hi_fallback:
+        "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
     },
   },
   {

@@ -197,6 +197,7 @@ defaults = {
     'embeddedsubtitles': {
         'include_ass': 'True',
         'include_srt': 'True',
+        'hi_fallback': 'False'
     },
     'subsync': {
         'use_subsync': 'False',
