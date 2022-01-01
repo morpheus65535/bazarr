@@ -1,8 +1,11 @@
 # coding=utf-8
 
 from __future__ import absolute_import
+
+import functools
 import importlib
 import os
+import logging
 import subliminal
 from subliminal.providers import Provider as _Provider
 from subliminal.subtitle import Subtitle as _Subtitle
@@ -14,10 +17,49 @@ from subzero.lib.io import get_viable_encoding
 import six
 
 
+logger = logging.getLogger(__name__)
+
+
 class Provider(_Provider):
     hash_verifiable = False
     hearing_impaired_verifiable = False
     skip_wrong_fps = True
+
+    def ping(self):
+        """Check if the provider is alive."""
+        return True
+
+
+def reinitialize_on_error(exceptions: tuple, attempts=1):
+    """Method decorator for Provider class. It will reinitialize the instance
+    and re-run the method in case of exceptions.
+
+    :param exceptions: tuple of expected exceptions
+    :param attempts: number of attempts to call the method
+    """
+
+    def real_decorator(method):
+        @functools.wraps(method)
+        def wrapper(self, *args, **kwargs):
+            inc = 1
+            while True:
+                try:
+                    return method(self, *args, **kwargs)
+                except exceptions as error:
+                    if inc > attempts:
+                        raise
+
+                    logger.exception(error)
+                    logger.debug("Reinitializing %s instance (%s attempt)", self, inc)
+
+                    self.terminate()
+                    self.initialize()
+
+                    inc += 1
+
+        return wrapper
+
+    return real_decorator
 
 
 # register providers

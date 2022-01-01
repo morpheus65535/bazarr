@@ -8,8 +8,10 @@ from subliminal.exceptions import ConfigurationError
 from subliminal.providers.legendastv import LegendasTVSubtitle as _LegendasTVSubtitle, \
     LegendasTVProvider as _LegendasTVProvider, Episode, Movie, guessit, sanitize, region, type_map, \
     raise_for_status, json, SHOW_EXPIRATION_TIME, title_re, season_re, datetime, pytz, NO_VALUE, releases_key, \
-    SUBTITLE_EXTENSIONS, language_converters
+    SUBTITLE_EXTENSIONS, language_converters, ServiceUnavailable
 
+from requests.exceptions import RequestException
+from subliminal_patch.providers import reinitialize_on_error
 from subliminal_patch.subtitle import guess_matches
 from subzero.language import Language
 
@@ -184,6 +186,7 @@ class LegendasTVProvider(_LegendasTVProvider):
 
         return titles_found
 
+    @reinitialize_on_error((RequestException, ServiceUnavailable), attempts=1)
     def query(self, language, titles, season=None, episode=None, year=None, imdb_id=None):
         # search for titles
         titles_found = self.search_titles(titles, season, year, imdb_id)

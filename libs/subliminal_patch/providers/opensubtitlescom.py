@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import time
 import datetime
 
 from requests import Session, ConnectionError, Timeout, ReadTimeout
@@ -147,14 +148,17 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.password = password
         self.video = None
         self.use_hash = use_hash
+        self._started = None
 
     def initialize(self):
-        self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
-        if self.token is NO_VALUE:
-            self.login()
+        self._started = time.time()
+        self.login()
 
     def terminate(self):
         self.session.close()
+
+    def ping(self):
+        return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
     def login(self):
         try:

@@ -10,7 +10,7 @@ from database import TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
 from get_providers import get_providers, get_providers_auth
-from get_subtitle import download_subtitle, manual_upload_subtitle
+from get_subtitle import generate_subtitles, manual_upload_subtitle
 from utils import history_log, delete_subtitles
 from notifier import send_notifications
 from list_subtitles import store_subtitles
@@ -44,9 +44,6 @@ class EpisodesSubtitles(Resource):
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
 
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
-
         audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
@@ -54,10 +51,10 @@ class EpisodesSubtitles(Resource):
             audio_language = None
 
         try:
-            result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'series',
-                                       profile_id=get_profile_id(episode_id=sonarrEpisodeId))
-            if result is not None:
+            result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
+                                             title, 'series', profile_id=get_profile_id(episode_id=sonarrEpisodeId)))
+            if result:
+                result = result[0]
                 message = result[0]
                 path = result[1]
                 forced = result[5]
