@@ -8,12 +8,14 @@ import tempfile
 from babelfish import language_converters
 import fese
 from fese import check_integrity
+from fese import InvalidFile
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
 from fese import to_srt
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
+from subliminal_patch.exceptions import MustGetBlacklisted
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
@@ -28,7 +30,7 @@ class EmbeddedSubtitle(Subtitle):
     provider_name = "embeddedsubtitles"
     hash_verifiable = False
 
-    def __init__(self, stream, container, matches):
+    def __init__(self, stream, container, matches, media_type):
         super().__init__(stream.language, stream.disposition.hearing_impaired)
         if stream.disposition.forced:
             self.language = Language.rebuild(stream.language, forced=True)
@@ -36,9 +38,11 @@ class EmbeddedSubtitle(Subtitle):
         self.stream: FFprobeSubtitleStream = stream
         self.container: FFprobeVideoContainer = container
         self.forced = stream.disposition.forced
-        self._matches: set = matches
         self.page_link = self.container.path
         self.release_info = os.path.basename(self.page_link)
+        self.media_type = media_type
+
+        self._matches: set = matches
 
     def get_matches(self, video):
         if self.hearing_impaired:
@@ -97,7 +101,7 @@ class EmbeddedSubtitlesProvider(Provider):
         # Remove leftovers
         shutil.rmtree(self._cache_dir, ignore_errors=True)
 
-    def query(self, path: str, languages):
+    def query(self, path: str, languages, media_type):
         video = FFprobeVideoContainer(path)
 
         try:
@@ -144,14 +148,21 @@ class EmbeddedSubtitlesProvider(Provider):
         if self._hi_fallback:
             _check_hi_fallback(allowed_streams, languages)
 
-        return [EmbeddedSubtitle(stream, video, {"hash"}) for stream in allowed_streams]
+        return [
+            EmbeddedSubtitle(stream, video, {"hash"}, media_type)
+            for stream in allowed_streams
+        ]
 
     def list_subtitles(self, video, languages):
         if not os.path.isfile(video.original_path):
             logger.debug("Ignoring inexistent file: %s", video.original_path)
             return []
 
-        return self.query(video.original_path, languages)
+        return self.query(
+            video.original_path,
+            languages,
+            "series" if isinstance(video, Episode) else "movie",
+        )
 
     def download_subtitle(self, subtitle):
         path = self._get_subtitle_path(subtitle)
@@ -175,7 +186,10 @@ class EmbeddedSubtitlesProvider(Provider):
         # Get the subtitle file by index
         subtitle_path = cached_path[subtitle.stream.index]
 
-        check_integrity(subtitle.stream, subtitle_path)
+        try:
+            check_integrity(subtitle.stream, subtitle_path)
+        except InvalidFile as error:
+            raise MustGetBlacklisted(subtitle.id, subtitle.media_type) from error
 
         # Convert to SRT if the subtitle is ASS
         new_subtitle_path = to_srt(subtitle_path, remove_source=True)

@@ -6,6 +6,7 @@ import pytest
 import fese
 from fese import FFprobeSubtitleStream
 from subliminal_patch.core import Episode, Movie
+from subliminal_patch.exceptions import MustGetBlacklisted
 from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
 from subzero.language import Language
 
@@ -223,5 +224,8 @@ def test_download_invalid_subtitle(video_single_language):
         provider._cached_paths[subtitle.container.path] = {
             subtitle.stream.index: "dummy.srt"
         }
-        with pytest.raises(fese.InvalidFile):
+        try:
             provider.download_subtitle(subtitle)
+        except MustGetBlacklisted as error:
+            assert error.id == subtitle.id
+            assert error.media_type == subtitle.media_type
