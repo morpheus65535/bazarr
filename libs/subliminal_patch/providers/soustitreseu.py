@@ -163,9 +163,6 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
                     else:
                         matching_archive = True
 
-                if guessed_subs['season'] == 16:
-                    print('test')
-
                 if matching_archive:
                     download_link = self.server_url + 'series/' + item.attrs['href']
                     res = self.session.get(download_link, timeout=30)
