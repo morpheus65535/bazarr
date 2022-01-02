@@ -319,11 +319,12 @@ class GetRadarrInfo:
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
-                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception as e:
-                logging.debug('BAZARR cannot get Radarr version')
-                radarr_version = 'unknown'
+                try:
+                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+                except json.decoder.JSONDecodeError:
+                    logging.debug('BAZARR cannot get Radarr version')
+                    radarr_version = 'unknown'
         logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
         region.set("radarr_version", radarr_version)
         return radarr_version
