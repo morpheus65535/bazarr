@@ -273,7 +273,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
             if 'omezené' in location_qs['msg'][0]:
                 raise AuthenticationError("V.I.P. account is required for this provider to work!")
-            else
+            else:
                 return True
         else:
             raise AuthenticationError("Login failed")
