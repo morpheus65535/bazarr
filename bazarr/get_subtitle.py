@@ -151,7 +151,10 @@ def update_pools(f):
         updated = _update_pool(args[args_spec.index("media_type")], profile_id)
 
         if updated:
-            logging.info("BAZARR pools update elapsed time: %s", time.time() - start)
+            logging.debug(
+                "BAZARR pools update elapsed time: %sms",
+                round((time.time() - start) * 1000, 2),
+            )
 
         return f(*args, **kwargs)
 
