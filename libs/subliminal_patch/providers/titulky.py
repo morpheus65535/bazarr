@@ -5,6 +5,7 @@ import math
 import re
 import zipfile
 from random import randint
+from urllib.parse import urlparse, parse_qs
 from threading import Thread
 
 import rarfile
@@ -266,9 +267,14 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                                 allow_redirects=False,
                                 timeout=self.timeout)
 
+        location_qs = parse_qs(urlparse(res.headers['Location']).query)
+
         # If the response is a redirect and doesnt point to an error message page, then we are logged in
-        if res.status_code == 302 and 'msg_type=i' in res.headers['Location']:
-            return True
+        if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
+            if 'omezené' in location_qs['msg'][0]:
+                raise AuthenticationError("V.I.P. account is required for this provider to work!")
+            else
+                return True
         else:
             raise AuthenticationError("Login failed")
 
@@ -279,8 +285,10 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                                allow_redirects=False,
                                timeout=self.timeout)
 
+        location_qs = parse_qs(urlparse(res.headers['Location']).query)
+
         # If the response is a redirect and doesnt point to an error message page, then we are logged out
-        if res.status_code == 302 and 'msg_type=i' in res.headers['Location']:
+        if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
             return True
         else:
             raise AuthenticationError("Logout failed.")
