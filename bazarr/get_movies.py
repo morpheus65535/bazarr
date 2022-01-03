@@ -282,6 +282,7 @@ def profile_id_to_language(id, profiles):
 
 
 def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):
+    if audioFormat == None: return None    
     if audioFormat == "AC-3": return "AC3"
     if audioFormat == "E-AC-3": return "EAC3"
     if audioFormat == "AAC":
