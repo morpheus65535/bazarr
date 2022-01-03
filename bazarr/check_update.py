@@ -195,8 +195,8 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     if os.path.abspath(bazarr_dir).lower() in os.path.abspath(config_dir).lower():
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
-    logging.debug('BAZARR upgrade leftover cleaner will ignore directories matching this regex: '
-                  '{}'.format(dir_to_ignore_regex))
+    logging.debug(f'BAZARR upgrade leftover cleaner will ignore directories matching this '
+                  f'regex: {dir_to_ignore_regex.pattern}')
 
     file_to_ignore = ['nssm.exe', '7za.exe']
     logging.debug('BAZARR upgrade leftover cleaner will ignore those files: {}'.format(', '.join(file_to_ignore)))
