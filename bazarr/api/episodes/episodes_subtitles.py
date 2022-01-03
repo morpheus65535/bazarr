@@ -9,8 +9,8 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from database import TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
-from get_providers import get_providers, get_providers_auth
-from get_subtitle import generate_subtitles, manual_upload_subtitle
+from get_subtitle.upload import manual_upload_subtitle
+from get_subtitle.download import generate_subtitles
 from utils import history_log, delete_subtitles
 from notifier import send_notifications
 from list_subtitles import store_subtitles
@@ -36,9 +36,7 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name']
-        audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
+        sceneName = episodeInfo['scene_name'] or "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -94,9 +92,8 @@ class EpisodesSubtitles(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name']
+        sceneName = episodeInfo['scene_name'] or "None"
         audio_language = episodeInfo['audio_language']
-        if sceneName is None: sceneName = "None"
 
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'true' else False

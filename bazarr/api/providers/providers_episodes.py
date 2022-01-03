@@ -6,7 +6,7 @@ from flask_restful import Resource
 from database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
 from helper import path_mappings
 from get_providers import get_providers, get_providers_auth
-from get_subtitle import manual_search, manual_download_subtitle
+from get_subtitle.manual import manual_search, manual_download_subtitle
 from utils import history_log
 from config import settings
 from notifier import send_notifications
@@ -31,9 +31,8 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name']
+        sceneName = episodeInfo['scene_name'] or "None"
         profileId = episodeInfo['profileId']
-        if sceneName is None: sceneName = "None"
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
@@ -58,8 +57,7 @@ class ProviderEpisodes(Resource):
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
-        sceneName = episodeInfo['scene_name']
-        if sceneName is None: sceneName = "None"
+        sceneName = episodeInfo['scene_name'] or "None"
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()

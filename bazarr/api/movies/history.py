@@ -38,7 +38,7 @@ class MoviesHistory(Resource):
 
             upgradable_movies_conditions = [(TableHistoryMovie.action.in_(query_actions)),
                                             (TableHistoryMovie.timestamp > minimum_timestamp),
-                                            (TableHistoryMovie.score is not None)]
+                                            (TableHistoryMovie.score.is_null(False))]
             upgradable_movies_conditions += get_exclusion_clause('movie')
             upgradable_movies = TableHistoryMovie.select(TableHistoryMovie.video_path,
                                                          fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
@@ -61,7 +61,7 @@ class MoviesHistory(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        query_conditions = [(TableMovies.title is not None)]
+        query_conditions = [(TableMovies.title.is_null(False))]
         if radarrid:
             query_conditions.append((TableMovies.radarrId == radarrid))
         query_condition = reduce(operator.and_, query_conditions)
@@ -95,7 +95,7 @@ class MoviesHistory(Resource):
             # Mark movies as upgradable or not
             item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
-                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
+                "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
                 if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
                     item.update({"upgradable": True})
 
@@ -117,13 +117,13 @@ class MoviesHistory(Resource):
             if item['action'] not in [0, 4, 5]:
                 for blacklisted_item in blacklist_db:
                     if blacklisted_item['provider'] == item['provider'] and blacklisted_item['subs_id'] == item[
-                        'subs_id']:
+                        'subs_id']:  # noqa: E125
                         item.update({"blacklisted": True})
                         break
 
         count = TableHistoryMovie.select()\
             .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
-            .where(TableMovies.title is not None)\
+            .where(TableMovies.title.is_null(False))\
             .count()
 
         return jsonify(data=movie_history, total=count)

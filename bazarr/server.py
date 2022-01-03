@@ -13,7 +13,7 @@ from database import database
 from app import create_app
 app = create_app()
 
-from api import api_bp_list
+from api import api_bp_list  # noqa E402
 for item in api_bp_list:
     app.register_blueprint(item, url_prefix=base_url.rstrip('/') + '/api')
 
