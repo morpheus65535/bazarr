@@ -8,7 +8,7 @@ from subliminal import Episode, Movie
 
 from helper import path_mappings
 from database import TableShows, TableEpisodes, TableMovies
-from ..utils import convert_to_guessit
+from .utils import convert_to_guessit
 
 
 def refine_from_db(path, video):

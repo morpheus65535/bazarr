@@ -1,17 +1,17 @@
 # coding=utf-8
 # fmt: off
 
-import os
 import logging
-import copy
+import os
 
 from subzero.language import Language
 from subzero.video import parse_video
-from guessit import guessit
 
 from custom_lang import CustomLanguage
 from database import get_profiles_list
 from score import movie_score, series_score
+
+from .refiners import registered as registered_refiners
 
 
 def get_video(path, title, sceneName, providers=None, media_type="movie"):
@@ -42,23 +42,15 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         video.original_name = original_name
         video.original_path = original_path
 
-        from get_subtitle.refiners import refine_from_db
-        refine_from_db(original_path, video)
-        from get_subtitle.refiners import refine_from_ffprobe
-        refine_from_ffprobe(original_path, video)
+        for key, refiner in registered_refiners.items():
+            logging.debug("Running refiner: %s", key)
+            refiner(original_path, video)
 
-        logging.debug('BAZARR is using these video object properties: %s', vars(copy.deepcopy(video)))
+        logging.debug('BAZARR is using these video object properties: %s', vars(video))
         return video
 
-    except Exception:
-        logging.exception("BAZARR Error trying to get video information for this file: " + original_path)
-
-
-def convert_to_guessit(guessit_key, attr_from_db):
-    try:
-        return guessit(attr_from_db)[guessit_key]
-    except KeyError:
-        return attr_from_db
+    except Exception as error:
+        logging.exception("BAZARR Error (%s) trying to get video information for this file: %s", error, original_path)
 
 
 def _get_download_code3(subtitle):
