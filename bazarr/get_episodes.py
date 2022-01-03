@@ -5,11 +5,11 @@ import requests
 import logging
 from peewee import DoesNotExist
 
-from database import get_exclusion_clause, TableEpisodes, TableShows
+from database import TableEpisodes, TableShows
 from config import settings, url_sonarr
 from helper import path_mappings
 from list_subtitles import store_subtitles, series_full_scan_subtitles
-from get_subtitle import episode_download_subtitles
+from get_subtitle.mass_download import episode_download_subtitles
 from event_handler import event_stream, show_progress, hide_progress
 from utils import get_sonarr_info
 
@@ -24,7 +24,7 @@ def update_all_episodes():
 def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
-    
+
     # Get current episodes id in DB
     current_episodes_db = TableEpisodes.select(TableEpisodes.sonarrEpisodeId,
                                                TableEpisodes.path,
@@ -38,7 +38,7 @@ def sync_episodes(series_id=None, send_event=True):
     episodes_to_update = []
     episodes_to_add = []
     altered_episodes = []
-    
+
     # Get sonarrId for each series from database
     seriesIdList = get_series_from_sonarr_api(series_id=series_id, url=url_sonarr(), apikey_sonarr=apikey_sonarr,)
 
@@ -299,11 +299,11 @@ def episodeParser(episode):
 
                     try:
                         video_format, video_resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
-                    except:
+                    except Exception:
                         video_format = episode['episodeFile']['quality']['quality']['name']
                         try:
                             video_resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
-                        except:
+                        except Exception:
                             video_resolution = None
 
                     return {'sonarrSeriesId': episode['seriesId'],

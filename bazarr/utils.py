@@ -17,7 +17,7 @@ from custom_lang import CustomLanguage
 from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
     TableMoviesRootfolder
 from event_handler import event_stream
-from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, alpha3_from_alpha2
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
@@ -293,7 +293,7 @@ def notify_sonarr(sonarr_series_id):
             'seriesId': int(sonarr_series_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Sonarr')
 
 
@@ -321,7 +321,7 @@ class GetRadarrInfo:
             except json.decoder.JSONDecodeError:
                 rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
                 radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception as e:
+            except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
         logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
@@ -354,7 +354,7 @@ def notify_radarr(radarr_id):
             'movieId': int(radarr_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Radarr')
 
 
@@ -372,7 +372,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-        
+
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -481,7 +481,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                                            target=language_code_convert_dict.get(lang_obj.alpha2,
                                                                                                  lang_obj.alpha2)
                                                            ).translate(text=block_str)
-        except:
+        except Exception:
             return False
         else:
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')

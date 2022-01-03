@@ -4,8 +4,8 @@ from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
-from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
-    upgrade_subtitles
+from get_subtitle.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
+from get_subtitle.upgrade import upgrade_subtitles
 from utils import cache_maintenance, check_health
 from get_args import args
 if not args.no_update:

@@ -60,7 +60,7 @@ class SonarrSignalrClientLegacy:
     def stop(self, log=True):
         try:
             self.connection.close()
-        except Exception as e:
+        except Exception:
             pass
         if log:
             logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
@@ -70,7 +70,7 @@ class SonarrSignalrClientLegacy:
             if self.connection.started:
                 try:
                     self.stop(log=False)
-                except:
+                except Exception:
                     self.connection.started = False
         if settings.general.getboolean('use_sonarr'):
             self.start()

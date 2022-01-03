@@ -9,8 +9,8 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from database import TableMovies, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
-from get_providers import get_providers, get_providers_auth
-from get_subtitle import manual_upload_subtitle, generate_subtitles
+from get_subtitle.upload import manual_upload_subtitle
+from get_subtitle.download import generate_subtitles
 from utils import history_log_movie, delete_subtitles
 from notifier import send_notifications_movie
 from list_subtitles import store_subtitles_movie
@@ -36,8 +36,7 @@ class MoviesSubtitles(Resource):
             .get()
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        sceneName = movieInfo['sceneName'] or 'None'
 
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
@@ -45,9 +44,6 @@ class MoviesSubtitles(Resource):
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
-
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
@@ -97,8 +93,7 @@ class MoviesSubtitles(Resource):
             .get()
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        sceneName = movieInfo['sceneName'] or 'None'
 
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']

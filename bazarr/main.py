@@ -12,31 +12,31 @@ if os.path.isfile(version_file):
 
 os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
-import libs
+import libs  # noqa W0611
 
-from get_args import args
-from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
+from get_args import args  # noqa E402
+from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url  # noqa E402
 
-from init import *
-from database import System
+from init import *  # noqa E402
+from database import System  # noqa E402
 
-from notifier import update_notifier
+from notifier import update_notifier  # noqa E402
 
-from urllib.parse import unquote
-from get_languages import load_language_in_db
-from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
-    send_file, stream_with_context
-from threading import Thread
+from urllib.parse import unquote  # noqa E402
+from get_languages import load_language_in_db  # noqa E402
+from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context  # noqa E402
+from threading import Thread  # noqa E402
+import requests  # noqa E402
 
-from get_series import *
-from get_episodes import *
-from get_movies import *
-from signalr_client import sonarr_signalr_client, radarr_signalr_client
+from get_series import *  # noqa E402
+from get_episodes import *  # noqa E402
+from get_movies import *  # noqa E402
+from signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 
-from check_update import apply_update, check_if_new_update, check_releases
-from server import app, webserver
-from functools import wraps
-from utils import check_credentials, get_sonarr_info, get_radarr_info
+from check_update import apply_update, check_releases  # noqa E402
+from server import app, webserver  # noqa E402
+from functools import wraps  # noqa E402
+from utils import check_credentials, get_sonarr_info, get_radarr_info  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':
@@ -94,7 +94,7 @@ def catch_all(path):
 
     try:
         updated = System.get().updated
-    except:
+    except Exception:
         updated = '0'
 
     inject = dict()
@@ -132,7 +132,7 @@ def series_images(url):
                      apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
+    except Exception:
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
@@ -149,7 +149,7 @@ def movies_images(url):
         url_image = url_radarr() + '/api/v3/' + url.lstrip(baseUrl) + '?apikey=' + apikey
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=headers)
-    except:
+    except Exception:
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])

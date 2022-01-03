@@ -6,7 +6,6 @@ import pickle
 from knowit import api
 import enzyme
 from enzyme.exceptions import MalformedMKVError
-from enzyme.exceptions import MalformedMKVError
 from custom_lang import CustomLanguage
 from database import TableEpisodes, TableMovies
 from helper import path_mappings
@@ -31,7 +30,7 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     subtitles_list = []
     if data["ffprobe"] and "subtitle" in data["ffprobe"]:
         for detected_language in data["ffprobe"]["subtitle"]:
-            if not "language" in detected_language:
+            if "language" not in detected_language:
                 continue
 
             # Avoid commentary subtitles
@@ -93,7 +92,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         try:
             # Unpickle ffprobe cache
             cached_value = pickle.loads(cache_key['ffprobe_cache'])
-        except:
+        except Exception:
             pass
         else:
             # Check if file size and file id matches and if so, we return the cached value
