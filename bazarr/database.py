@@ -2,12 +2,10 @@ import os
 import atexit
 import json
 import ast
-import logging
 import time
-from peewee import *
+from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
 from playhouse.sqliteq import SqliteQueueDatabase
-from playhouse.shortcuts import model_to_dict
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
 from helper import path_mappings
@@ -251,8 +249,8 @@ class TableCustomScoreProfiles(BaseModel):
 
 class TableCustomScoreProfileConditions(BaseModel):
     profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
-    type = TextField(null=True) # provider, uploader, regex, etc
-    value = TextField(null=True) # opensubtitles, jane_doe, [a-z], etc
+    type = TextField(null=True)  # provider, uploader, regex, etc
+    value = TextField(null=True)  # opensubtitles, jane_doe, [a-z], etc
     required = BooleanField(default=False)
     negate = BooleanField(default=False)
 
@@ -285,7 +283,7 @@ def init_db():
         try:
             if not System.select().count():
                 System.insert({System.configured: '0', System.updated: '0'}).execute()
-        except:
+        except Exception:
             time.sleep(0.1)
         else:
             tables_created = True
