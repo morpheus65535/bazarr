@@ -325,7 +325,7 @@ class GetRadarrInfo:
                 except json.decoder.JSONDecodeError:
                     logging.debug('BAZARR cannot get Radarr version')
                     radarr_version = 'unknown'
-            except Exception as e:
+            except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
         logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
