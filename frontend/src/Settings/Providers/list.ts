@@ -17,14 +17,20 @@ export interface ProviderInfo {
 export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "addic7ed",
-    description: "Requires Anti-Captcha Provider",
+    description: "Requires Anti-Captcha Provider or cookies",
     defaultKey: {
       username: "",
       password: "",
+      cookies: "",
+      user_agent: "",
       vip: false,
     },
     keyNameOverride: {
       vip: "VIP",
+      cookies:
+        "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+      user_agent:
+        "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
     },
   },
   { key: "argenteam", description: "LATAM Spanish Subtitles Provider" },

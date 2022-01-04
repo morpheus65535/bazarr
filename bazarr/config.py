@@ -136,6 +136,8 @@ defaults = {
     'addic7ed': {
         'username': '',
         'password': '',
+        'cookies': '',
+        'user_agent': '',
         'vip': 'False'
     },
     'podnapisi': {
