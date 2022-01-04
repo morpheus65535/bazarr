@@ -17,10 +17,12 @@ export interface ProviderInfo {
 export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "addic7ed",
-    description: "Requires Anti-Captcha Provider",
+    description: "Requires Anti-Captcha Provider or cookies",
     defaultKey: {
       username: "",
       password: "",
+      cookies: "",
+      user_agent: "",
       vip: false,
     },
     keyNameOverride: {

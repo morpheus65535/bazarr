@@ -81,13 +81,15 @@ class Addic7edProvider(_Addic7edProvider):
     sanitize_characters = {'-', ':', '(', ')', '.', '/'}
     last_show_ids_fetch_key = "addic7ed_last_id_fetch"
 
-    def __init__(self, username=None, password=None, use_random_agents=False, is_vip=False):
-        super(Addic7edProvider, self).__init__(username=username, password=password)
+    def __init__(self, username=None, password=None, cookies=None, user_agent=None, use_random_agents=False,
+                 is_vip=False):
+        super(Addic7edProvider, self).__init__(username=username, password=password, cookies=cookies,
+                                               user_agent=user_agent)
         self.USE_ADDICTED_RANDOM_AGENTS = use_random_agents
         self.vip = is_vip
 
-        if not all((username, password)):
-            raise ConfigurationError('Username and password must be specified')
+        if not all((username, password)) and not cookies:
+            raise ConfigurationError('Username and password or cookies must be specified')
 
     def initialize(self):
         self.session = Session()
@@ -97,6 +99,28 @@ class Addic7edProvider(_Addic7edProvider):
         logger.debug("Addic7ed: using random user agents")
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         self.session.headers['Referer'] = self.server_url
+
+        if self.user_agent:
+            self.session.headers['User-Agent'] = self.user_agent
+        if self.cookies:
+            cookies_string = self.cookies.split(";")
+            from requests.cookies import RequestsCookieJar
+            self.session.cookies = RequestsCookieJar()
+            for c in cookies_string:
+                k, v = c.split("=")
+                self.session.cookies.set(k,v)
+
+            rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
+                                  headers={"Referer": self.server_url})
+            if rr.status_code == 302:
+                logger.info('Addic7ed: Login expired')
+                raise AuthenticationError("cookies not valid anymore")
+
+            store_verification("addic7ed", self.session)
+            logger.debug('Addic7ed: Logged in')
+            self.logged_in = True
+            time.sleep(2)
+            return True
 
         # login
         if self.username and self.password:
