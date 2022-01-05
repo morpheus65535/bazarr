@@ -8,20 +8,25 @@ import time
 from random import randint
 from urllib.parse import quote_plus
 
+import babelfish
 from dogpile.cache.api import NO_VALUE
 from requests import Session
+from requests.exceptions import RequestException
 from subliminal.cache import region
 from subliminal.video import Episode, Movie
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
+from subliminal_patch.providers import reinitialize_on_error
 from subliminal_patch.utils import sanitize
 from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.pitcher import pitchers, load_verification, store_verification
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
+
+show_cells_re = re.compile(b'<td class="(?:version|vr)">.*?</td>', re.DOTALL)
 
 #: Series header parsing regex
 series_year_re = re.compile(r'^(?P<series>[ \w\'.:(),*&!?-]+?)(?: \((?P<year>\d{4})\))?$')
@@ -37,7 +42,8 @@ class Addic7edSubtitle(_Addic7edSubtitle):
                  download_link, uploader=None):
         super(Addic7edSubtitle, self).__init__(language, hearing_impaired, page_link, series, season, episode,
                                                title, year, version, download_link)
-        self.release_info = version.replace('+', ',') if version else None
+        # Guessit will fail if the input is None
+        self.release_info = version.replace('+', ',') if version else ""
         self.uploader = uploader
 
     def get_matches(self, video):
@@ -68,6 +74,7 @@ class Addic7edProvider(_Addic7edProvider):
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     video_types = (Episode, Movie)
+    vip = False
     USE_ADDICTED_RANDOM_AGENTS = False
     hearing_impaired_verifiable = True
     subtitle_class = Addic7edSubtitle
@@ -76,9 +83,10 @@ class Addic7edProvider(_Addic7edProvider):
     sanitize_characters = {'-', ':', '(', ')', '.', '/'}
     last_show_ids_fetch_key = "addic7ed_last_id_fetch"
 
-    def __init__(self, username=None, password=None, use_random_agents=False):
+    def __init__(self, username=None, password=None, use_random_agents=False, is_vip=False):
         super(Addic7edProvider, self).__init__(username=username, password=password)
         self.USE_ADDICTED_RANDOM_AGENTS = use_random_agents
+        self.vip = is_vip
 
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
@@ -95,7 +103,7 @@ class Addic7edProvider(_Addic7edProvider):
         # login
         if self.username and self.password:
             def check_verification(cache_region):
-                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=60,
+                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
                                       headers={"Referer": self.server_url})
                 if rr.status_code == 302:
                     logger.info('Addic7ed: Login expired')
@@ -115,7 +123,7 @@ class Addic7edProvider(_Addic7edProvider):
             tries = 0
             while tries <= 3:
                 tries += 1
-                r = self.session.get(self.server_url + 'login.php', timeout=60, headers={"Referer": self.server_url})
+                r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
                 if "g-recaptcha" in r.text or "grecaptcha" in r.text:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
                                 'happen once every so often')
@@ -139,11 +147,13 @@ class Addic7edProvider(_Addic7edProvider):
                         if tries >= 3:
                             raise Exception("Addic7ed: Couldn't solve captcha!")
                         logger.info("Addic7ed: Couldn't solve captcha! Retrying")
+                        time.sleep(4)
                         continue
 
                     data[g] = result
 
-                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=60,
+                time.sleep(1)
+                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
                                       headers={"Referer": self.server_url + "login.php"})
 
                 if "relax, slow down" in r.text:
@@ -157,6 +167,7 @@ class Addic7edProvider(_Addic7edProvider):
                         logger.error("Addic7ed: Something went wrong when logging in")
                         raise AuthenticationError(self.username)
                     logger.info("Addic7ed: Something went wrong when logging in; retrying")
+                    time.sleep(4)
                     continue
                 break
 
@@ -164,6 +175,8 @@ class Addic7edProvider(_Addic7edProvider):
 
             logger.debug('Addic7ed: Logged in')
             self.logged_in = True
+
+            time.sleep(2)
 
     def terminate(self):
         self.session.close()
@@ -238,7 +251,7 @@ class Addic7edProvider(_Addic7edProvider):
         # get the movie id
         logger.info('Getting movie id')
 
-        r = self.session.get(self.server_url + 'search.php?search=' + quote_plus(movie), timeout=60)
+        r = self.session.get(self.server_url + 'search.php?search=' + quote_plus(movie), timeout=10)
         r.raise_for_status()
 
         soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
@@ -285,10 +298,18 @@ class Addic7edProvider(_Addic7edProvider):
         logger.info('Getting show ids')
         region.set(self.last_show_ids_fetch_key, datetime.datetime.now())
 
-        r = self.session.get(self.server_url + 'shows.php', timeout=60)
+        r = self.session.get(self.server_url + 'shows.php', timeout=10)
         r.raise_for_status()
 
-        soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+        # LXML parser seems to fail when parsing Addic7ed.com HTML markup.
+        # Last known version to work properly is 3.6.4 (next version, 3.7.0, fails)
+        # Assuming the site's markup is bad, and stripping it down to only contain what's needed.
+        show_cells = [cell.decode("utf-8", "ignore") for cell in re.findall(show_cells_re, r.content)]
+        if show_cells:
+            soup = ParserBeautifulSoup(''.join(show_cells), ['lxml', 'html.parser'])
+        else:
+            # If RegEx fails, fall back to original r.content and use 'html.parser'
+            soup = ParserBeautifulSoup(r.content, ['html.parser'])
 
         # populate the show ids
         show_ids = {}
@@ -345,7 +366,7 @@ class Addic7edProvider(_Addic7edProvider):
                 headers = {
                     "referer": self.server_url + "srch.php"
                 }
-            r = self.session.get(self.server_url + endpoint, params=params, timeout=60, headers=headers)
+            r = self.session.get(self.server_url + endpoint, params=params, timeout=10, headers=headers)
             r.raise_for_status()
 
             if r.text and "Sorry, your search" not in r.text:
@@ -386,7 +407,7 @@ class Addic7edProvider(_Addic7edProvider):
         logger.info('Getting the page of show id %d, season %d', show_id, season)
         r = self.session.get(self.server_url + 'ajax_loadShow.php',
                              params={'show': show_id, 'season': season},
-                             timeout=60,
+                             timeout=10,
                              headers={
                                  "referer": "%sshow/%s" % (self.server_url, show_id),
                                  "X-Requested-With": "XMLHttpRequest"
@@ -418,7 +439,12 @@ class Addic7edProvider(_Addic7edProvider):
                 continue
 
             # read the item
-            language = Language.fromaddic7ed(cells[3].text)
+            try:
+                language = Language.fromaddic7ed(cells[3].text)
+            except babelfish.exceptions.LanguageReverseError as error:
+                logger.debug("Language error: %s, Ignoring subtitle", error)
+                continue
+
             hearing_impaired = bool(cells[6].text)
             page_link = self.server_url + cells[2].a['href'][1:]
             season = int(cells[0].text)
@@ -444,9 +470,9 @@ class Addic7edProvider(_Addic7edProvider):
 
     def query_movie(self, movie_id, title, year=None):
         # get the page of the movie
-        logger.info('Getting the page of movie id %d', movie_id)
+        logger.info('Getting the page of movie id %s', movie_id)
         r = self.session.get(self.server_url + 'movie/' + movie_id,
-                             timeout=60,
+                             timeout=10,
                              headers={
                                  "referer": self.server_url,
                                  "X-Requested-With": "XMLHttpRequest"
@@ -488,11 +514,24 @@ class Addic7edProvider(_Addic7edProvider):
                 continue
 
             # read the item
-            language = Language.fromaddic7ed(row2.contents[4].text.strip('\n'))
+            try:
+                language = Language.fromaddic7ed(row2.contents[4].text.strip('\n'))
+            except babelfish.exceptions.LanguageReverseError as error:
+                logger.debug("Language error: %s, Ignoring subtitle", error)
+                continue
+
             hearing_impaired = bool(row3.contents[1].contents[1].attrs['src'].endswith('hi.jpg'))
             page_link = self.server_url + 'movie/' + movie_id
-            version_matches = re.search(r'Version\s(.+),.+', str(row1.contents[1].contents[1]))
-            version = version_matches.group(1) if version_matches else None
+
+            # Seems like Addic7ed returns the first word in the language of the user (Version, Versión, etc)
+            # As we can't match a regex, we will just strip the first word
+            try:
+                version = " ".join(str(row1.contents[1].contents[1]).split()[1:])
+                version_matches = re.search(r"(.+),.+", version)
+                version = version_matches.group(1) if version_matches else None
+            except IndexError:
+                version = None
+
             try:
                 download_link = row2.contents[8].contents[3].attrs['href'][1:]
             except IndexError:
@@ -513,6 +552,7 @@ class Addic7edProvider(_Addic7edProvider):
 
         return subtitles
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def list_subtitles(self, video, languages):
         if isinstance(video, Episode):
             # lookup show_id
@@ -549,10 +589,32 @@ class Addic7edProvider(_Addic7edProvider):
 
         return []
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def download_subtitle(self, subtitle):
+        last_dls = region.get("addic7ed_dls")
+        now = datetime.datetime.now()
+        one_day = datetime.timedelta(hours=24)
+
+        def raise_limit():
+            logger.info("Addic7ed: Downloads per day exceeded (%s)", cap)
+            raise DownloadLimitPerDayExceeded
+
+        if type(last_dls) is not list:
+            last_dls = []
+        else:
+            # filter all non-expired DLs
+            last_dls = list(filter(lambda t: t + one_day > now, last_dls))
+            region.set("addic7ed_dls", last_dls)
+
+        cap = self.vip and 80 or 40
+        amount = len(last_dls)
+
+        if amount >= cap:
+            raise_limit()
+
         # download the subtitle
         r = self.session.get(self.server_url + subtitle.download_link, headers={'Referer': subtitle.page_link},
-                             timeout=60)
+                             timeout=10)
         r.raise_for_status()
 
         if r.status_code == 304:
@@ -569,3 +631,9 @@ class Addic7edProvider(_Addic7edProvider):
             raise DownloadLimitExceeded
 
         subtitle.content = fix_line_ending(r.content)
+        last_dls.append(datetime.datetime.now())
+        region.set("addic7ed_dls", last_dls)
+        logger.info("Addic7ed: Used %s/%s downloads", amount + 1, cap)
+
+        if amount + 1 >= cap:
+            raise_limit()

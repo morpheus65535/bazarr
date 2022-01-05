@@ -5,6 +5,7 @@ import json
 import re
 import os
 import logging
+import datetime
 import socket
 import traceback
 import time
@@ -24,6 +25,7 @@ from subliminal import ProviderError, refiner_manager
 from concurrent.futures import as_completed
 
 from .extensions import provider_registry
+from .exceptions import MustGetBlacklisted
 from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
 from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
@@ -55,6 +57,8 @@ REMOVE_CRAP_FROM_FILENAME = re.compile(r"(?i)(?:([\s_-]+(?:obfuscated|scrambled|
 
 SUBTITLE_EXTENSIONS = ('.srt', '.sub', '.smi', '.txt', '.ssa', '.ass', '.mpl', '.vtt')
 
+_POOL_LIFETIME = datetime.timedelta(hours=12)
+
 
 def remove_crap_from_fn(fn):
     # in case of the second regex part, the legit release group name will be in group(2), if it's followed by [string]
@@ -66,10 +70,10 @@ def remove_crap_from_fn(fn):
 
 
 class SZProviderPool(ProviderPool):
-    def __init__(self, providers=None, provider_configs=None, blacklist=None, throttle_callback=None,
+    def __init__(self, providers=None, provider_configs=None, blacklist=None, ban_list=None, throttle_callback=None,
                  pre_download_hook=None, post_download_hook=None, language_hook=None):
         #: Name of providers to use
-        self.providers = providers
+        self.providers = set(providers or [])
 
         #: Provider configuration
         self.provider_configs = provider_configs or {}
@@ -82,14 +86,77 @@ class SZProviderPool(ProviderPool):
 
         self.blacklist = blacklist or []
 
+        #: Should be a dict of 2 lists of strings
+        self.ban_list = ban_list or {'must_contain': [], 'must_not_contain': []}
+
         self.throttle_callback = throttle_callback
 
         self.pre_download_hook = pre_download_hook
         self.post_download_hook = post_download_hook
         self.language_hook = language_hook
 
+        self._born = time.time()
+
         if not self.throttle_callback:
             self.throttle_callback = lambda x, y: x
+
+    def update(self, providers, provider_configs, blacklist, ban_list):
+        # Check if the pool was initialized enough hours ago
+        self._check_lifetime()
+
+        # Check if any new provider has been added
+        updated = set(providers) != self.providers or ban_list != self.ban_list
+        removed_providers = list(sorted(self.providers - set(providers)))
+        new_providers = list(sorted(set(providers) - self.providers))
+
+        # Terminate and delete removed providers from instance
+        for removed in removed_providers:
+            try:
+                del self[removed]
+                # If the user has updated the providers but hasn't made any
+                # subtitle searches yet, the removed provider won't be in the
+                # self dictionary
+            except KeyError:
+                pass
+
+        if updated:
+            logger.debug("Removed providers: %s", removed_providers)
+            logger.debug("New providers: %s", new_providers)
+
+            self.discarded_providers.difference_update(new_providers)
+            self.providers.difference_update(removed_providers)
+            self.providers.update(list(providers))
+
+        self.blacklist = blacklist
+
+        # Restart providers with new configs
+        for key, val in provider_configs.items():
+            # key: provider's name; val: config dict
+            old_val = self.provider_configs.get(key)
+
+            if old_val == val:
+                continue
+
+            logger.debug("Restarting provider: %s", key)
+            try:
+                provider = provider_registry[key](**val)
+                provider.initialize()
+            except Exception as error:
+                self.throttle_callback(key, error)
+            else:
+                self.initialized_providers[key] = provider
+                updated = True
+
+        self.provider_configs = provider_configs
+
+        return updated
+
+    def _check_lifetime(self):
+        # This method is used to avoid possible memory leaks
+        if abs(self._born - time.time()) > _POOL_LIFETIME.seconds:
+            logger.info("%s elapsed. Terminating providers", _POOL_LIFETIME)
+            self._born = time.time()
+            self.terminate()
 
     def __enter__(self):
         return self
@@ -167,34 +234,30 @@ class SZProviderPool(ProviderPool):
         logger.info('Listing subtitles with provider %r and languages %r', provider, provider_languages)
         results = []
         try:
-            try:
-                results = self[provider].list_subtitles(video, provider_languages)
-            except ResponseNotReady:
-                logger.error('Provider %r response error, reinitializing', provider)
-                try:
-                    self[provider].terminate()
-                    self[provider].initialize()
-                    results = self[provider].list_subtitles(video, provider_languages)
-                except:
-                    logger.error('Provider %r reinitialization error: %s', provider, traceback.format_exc())
-
+            results = self[provider].list_subtitles(video, provider_languages)
             seen = []
             out = []
             for s in results:
                 if (str(provider), str(s.id)) in self.blacklist:
                     logger.info("Skipping blacklisted subtitle: %s", s)
                     continue
+                if s.release_info is not None:
+                    if any([x for x in self.ban_list["must_not_contain"]
+                            if re.search(x, s.release_info, flags=re.IGNORECASE) is not None]):
+                        logger.info("Skipping subtitle because release name contains prohibited string: %s", s)
+                        continue
+                    if any([x for x in self.ban_list["must_contain"]
+                            if re.search(x, s.release_info, flags=re.IGNORECASE) is None]):
+                        logger.info("Skipping subtitle because release name does not contains required string: %s", s)
+                        continue
                 if s.id in seen:
                     continue
+
                 s.plex_media_fps = float(video.fps) if video.fps else None
                 out.append(s)
                 seen.append(s.id)
 
             return out
-
-        except (requests.Timeout, socket.timeout) as e:
-            logger.error('Provider %r timed out', provider)
-            self.throttle_callback(provider, e)
 
         except Exception as e:
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
@@ -277,19 +340,8 @@ class SZProviderPool(ProviderPool):
                 logger.error('Provider %r connection error', subtitle.provider_name)
                 self.throttle_callback(subtitle.provider_name, e)
 
-            except ResponseNotReady as e:
-                logger.error('Provider %r response error, reinitializing', subtitle.provider_name)
-                try:
-                    self[subtitle.provider_name].terminate()
-                    self[subtitle.provider_name].initialize()
-                except:
-                    logger.error('Provider %r reinitialization error: %s', subtitle.provider_name,
-                                 traceback.format_exc())
-                    self.throttle_callback(subtitle.provider_name, e)
-
-            except rarfile.BadRarFile:
-                logger.error('Malformed RAR file from provider %r, skipping subtitle.', subtitle.provider_name)
-                logger.debug("RAR Traceback: %s", traceback.format_exc())
+            except (rarfile.BadRarFile, MustGetBlacklisted) as e:
+                self.throttle_callback(subtitle.provider_name, e)
                 return False
 
             except Exception as e:
@@ -506,7 +558,7 @@ class SZAsyncProviderPool(SZProviderPool):
 
         return provider, provider_subtitles
 
-    def list_subtitles(self, video, languages, blacklist=None):
+    def list_subtitles(self, video, languages, blacklist=None, ban_list=None):
         if is_windows_special_path:
             return super(SZAsyncProviderPool, self).list_subtitles(video, languages)
 

@@ -10,6 +10,7 @@ import { useHistory } from "react-router";
 import { useThrottle } from "rooks";
 
 export interface SearchResult {
+  id: string;
   name: string;
   link?: string;
 }
@@ -58,7 +59,7 @@ export const SearchBar: FunctionComponent<Props> = ({
   const items = useMemo(() => {
     const its = results.map((v) => (
       <Dropdown.Item
-        key={v.name}
+        key={v.id}
         eventKey={v.link}
         disabled={v.link === undefined}
       >

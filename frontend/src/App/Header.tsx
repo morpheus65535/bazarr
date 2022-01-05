@@ -5,6 +5,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { uniqueId } from "lodash";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   Button,
@@ -35,16 +36,22 @@ async function SearchItem(text: string) {
 
   return results.map<SearchResult>((v) => {
     let link: string;
+    let id: string;
     if (v.sonarrSeriesId) {
       link = `/series/${v.sonarrSeriesId}`;
+      id = `series-${v.sonarrSeriesId}`;
     } else if (v.radarrId) {
       link = `/movies/${v.radarrId}`;
+      id = `movie-${v.radarrId}`;
     } else {
       link = "";
+      id = uniqueId("unknown");
     }
+
     return {
       name: `${v.title} (${v.year})`,
       link,
+      id,
     };
   });
 }

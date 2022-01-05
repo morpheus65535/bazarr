@@ -24,6 +24,48 @@ export const antiCaptchaOption: SelectorOption<string>[] = [
   },
 ];
 
+export const adaptiveSearchingDelayOption: SelectorOption<string>[] = [
+  {
+    label: "1 week",
+    value: "1w",
+  },
+  {
+    label: "2 weeks",
+    value: "2w",
+  },
+  {
+    label: "3 weeks",
+    value: "3w",
+  },
+  {
+    label: "4 weeks",
+    value: "4w",
+  },
+];
+
+export const adaptiveSearchingDeltaOption: SelectorOption<string>[] = [
+  {
+    label: "3 days",
+    value: "3d",
+  },
+  {
+    label: "1 week",
+    value: "1w",
+  },
+  {
+    label: "2 weeks",
+    value: "2w",
+  },
+  {
+    label: "3 weeks",
+    value: "3w",
+  },
+  {
+    label: "4 weeks",
+    value: "4w",
+  },
+];
+
 function buildColor(name: string) {
   return `color(name=${name})`;
 }

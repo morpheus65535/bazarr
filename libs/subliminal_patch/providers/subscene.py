@@ -20,13 +20,14 @@ import rarfile
 from babelfish import language_converters
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
+from requests.exceptions import RequestException
 from subliminal import Episode, ProviderError
 from subliminal.video import Episode, Movie
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.utils import sanitize_release_group
 from subliminal.cache import region
 from subliminal_patch.http import RetryingCFSession
-from subliminal_patch.providers import Provider
+from subliminal_patch.providers import Provider, reinitialize_on_error
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.converters.subscene import language_ids, supported_languages
@@ -315,7 +316,9 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             return search(*args, **kwargs)
         except requests.HTTPError:
             region.delete("subscene_cookies2")
+            raise
 
+    @reinitialize_on_error((RequestException,), attempts=1)
     def query(self, video):
         subtitles = []
         if isinstance(video, Episode):

@@ -39,6 +39,7 @@ class NekurSubtitle(Subtitle):
         self.fps = fps
         self.notes = notes
         self.matches = None
+        self.release_info = notes
 
     @property
     def id(self):

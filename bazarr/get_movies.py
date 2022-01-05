@@ -3,8 +3,6 @@
 import os
 import requests
 import logging
-import operator
-from functools import reduce
 from peewee import DoesNotExist
 
 from config import settings, url_radarr
@@ -13,8 +11,8 @@ from utils import get_radarr_info
 from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 from get_rootfolder import check_radarr_rootfolder
 
-from get_subtitle import movies_download_subtitles
-from database import get_exclusion_clause, TableMovies
+from get_subtitle.mass_download import movies_download_subtitles
+from database import TableMovies
 from event_handler import event_stream, show_progress, hide_progress
 from get_languages import language_from_alpha2
 
@@ -45,7 +43,7 @@ def update_movies(send_event=True):
     else:
         audio_profiles = get_profile_list()
         tagsDict = get_tags()
-        
+
         # Get movies data from radarr
         movies = get_movies_from_radarr_api(url=url_radarr(), apikey_radarr=apikey_radarr)
         if not movies:
@@ -53,7 +51,7 @@ def update_movies(send_event=True):
         else:
             # Get current movies in DB
             current_movies_db = TableMovies.select(TableMovies.tmdbId, TableMovies.path, TableMovies.radarrId).dicts()
-            
+
             current_movies_db_list = [x['tmdbId'] for x in current_movies_db]
 
             current_movies_radarr = []
@@ -87,7 +85,7 @@ def update_movies(send_event=True):
                                                                  tags_dict=tagsDict,
                                                                  movie_default_profile=movie_default_profile,
                                                                  audio_profiles=audio_profiles))
- 
+
             if send_event:
                 hide_progress(id='movies_progress')
 
@@ -196,10 +194,10 @@ def update_one_movie(movie_id, action):
             return
         else:
             if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, 
+                movie = movieParser(movie_data, action='update', tags_dict=tagsDict,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
             elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, 
+                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict,
                                     movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.debug('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
@@ -253,11 +251,11 @@ def get_profile_list():
 
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False, headers=headers)
-    except requests.exceptions.ConnectionError as errc:
+    except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
-    except requests.exceptions.Timeout as errt:
+    except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Timeout Error.")
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
@@ -282,49 +280,68 @@ def profile_id_to_language(id, profiles):
 
 
 def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):
-    if audioFormat == "AC-3": return "AC3"
-    if audioFormat == "E-AC-3": return "EAC3"
-    if audioFormat == "AAC":
-        if audioCodecID == "A_AAC/MPEG4/LC/SBR":
-            return "HE-AAC"
+    if type(audioFormat) is not str:
+        return audioFormat
+    else:
+        if audioFormat == "AC-3":
+            return "AC3"
+        elif audioFormat == "E-AC-3":
+            return "EAC3"
+        elif audioFormat == "AAC":
+            if audioCodecID == "A_AAC/MPEG4/LC/SBR":
+                return "HE-AAC"
+            else:
+                return "AAC"
+        elif audioFormat.strip() == "mp3":
+            return "MP3"
+        elif audioFormat == "MPEG Audio":
+            if audioCodecID == "55" or audioCodecID == "A_MPEG/L3" or audioProfile == "Layer 3":
+                return "MP3"
+            if audioCodecID == "A_MPEG/L2" or audioProfile == "Layer 2":
+                return "MP2"
+        elif audioFormat == "MLP FBA":
+            if audioAdditionalFeatures == "16-ch":
+                return "TrueHD Atmos"
+            else:
+                return "TrueHD"
         else:
-            return "AAC"
-    if audioFormat.strip() == "mp3": return "MP3"
-    if audioFormat == "MPEG Audio":
-        if audioCodecID == "55" or audioCodecID == "A_MPEG/L3" or audioProfile == "Layer 3": return "MP3"
-        if audioCodecID == "A_MPEG/L2" or audioProfile == "Layer 2": return "MP2"
-    if audioFormat == "MLP FBA":
-        if audioAdditionalFeatures == "16-ch":
-            return "TrueHD Atmos"
-        else:
-            return "TrueHD"
-
-    return audioFormat
+            return audioFormat
 
 
 def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
-    if videoFormat == "x264": return "h264"
-    if videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC": return "h264"
-    if videoCodecLibrary and (videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC"):
-        if videoCodecLibrary.startswith("x265"): return "h265"
-    if videoCodecID and videoFormat == "MPEG Video":
-        if videoCodecID == "2" or videoCodecID == "V_MPEG2":
-            return "Mpeg2"
-        else:
+    if type(videoFormat) is not str:
+        return videoFormat
+    else:
+        if videoFormat == "x264":
+            return "h264"
+        elif videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC":
+            return "h264"
+        elif videoCodecLibrary and (videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC"):
+            if videoCodecLibrary.startswith("x265"):
+                return "h265"
+        elif videoCodecID and videoFormat == "MPEG Video":
+            if videoCodecID == "2" or videoCodecID == "V_MPEG2":
+                return "Mpeg2"
+            else:
+                return "Mpeg"
+        elif videoFormat == "MPEG-1 Video":
             return "Mpeg"
-    if videoFormat == "MPEG-1 Video": return "Mpeg"
-    if videoFormat == "MPEG-2 Video": return "Mpeg2"
-    if videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
-        if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"): return "XviD"
-        if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
-            "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
-    if videoFormat == "VC-1": return "VC1"
-    if videoFormat == "WMV2":
-        return "WMV"
-    if videoFormat == "DivX" or videoFormat == "div3":
-        return "DivX"
-
-    return videoFormat
+        elif videoFormat == "MPEG-2 Video":
+            return "Mpeg2"
+        elif videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
+            if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"):
+                return "XviD"
+            if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
+                    "DX50") or videoCodecLibrary.startswith("DivX"):
+                return "DivX"
+        elif videoFormat == "VC-1":
+            return "VC1"
+        elif videoFormat == "WMV2":
+            return "WMV"
+        elif videoFormat == "DivX" or videoFormat == "div3":
+            return "DivX"
+        else:
+            return videoFormat
 
 
 def get_tags():
@@ -362,16 +379,16 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         try:
             overview = str(movie['overview'])
-        except:
+        except Exception:
             overview = ""
         try:
             poster_big = movie['images'][0]['url']
             poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
-        except:
+        except Exception:
             poster = ""
         try:
             fanart = movie['images'][1]['url']
-        except:
+        except Exception:
             fanart = ""
 
         if 'sceneName' in movie['movieFile']:
@@ -394,44 +411,41 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
 
         try:
             format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
-        except:
+        except Exception:
             format = movie['movieFile']['quality']['quality']['name']
             try:
                 resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
-            except:
+            except Exception:
                 resolution = None
 
         if 'mediaInfo' in movie['movieFile']:
-            videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
+            videoFormat = videoCodecID = videoCodecLibrary = None
             if get_radarr_info.is_legacy():
-                if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = \
-                movie['movieFile']['mediaInfo']['videoFormat']
+                if 'videoFormat' in movie['movieFile']['mediaInfo']:
+                    videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
             else:
-                if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = \
-                movie['movieFile']['mediaInfo']['videoCodec']
-            if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = \
-            movie['movieFile']['mediaInfo']['videoCodecID']
-            if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = \
-            movie['movieFile']['mediaInfo']['videoProfile']
-            if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = \
-            movie['movieFile']['mediaInfo']['videoCodecLibrary']
+                if 'videoCodec' in movie['movieFile']['mediaInfo']:
+                    videoFormat = movie['movieFile']['mediaInfo']['videoCodec']
+            if 'videoCodecID' in movie['movieFile']['mediaInfo']:
+                videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
+            if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']:
+                videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
             videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
             audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
             if get_radarr_info.is_legacy():
-                if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = \
-                movie['movieFile']['mediaInfo']['audioFormat']
+                if 'audioFormat' in movie['movieFile']['mediaInfo']:
+                    audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
             else:
-                if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = \
-                movie['movieFile']['mediaInfo']['audioCodec']
-            if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = \
-            movie['movieFile']['mediaInfo']['audioCodecID']
-            if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = \
-            movie['movieFile']['mediaInfo']['audioProfile']
-            if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = \
-            movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
-            audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile,
-                                                audioAdditionalFeatures)
+                if 'audioCodec' in movie['movieFile']['mediaInfo']:
+                    audioFormat = movie['movieFile']['mediaInfo']['audioCodec']
+            if 'audioCodecID' in movie['movieFile']['mediaInfo']:
+                audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
+            if 'audioProfile' in movie['movieFile']['mediaInfo']:
+                audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
+            if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']:
+                audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+            audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures)
         else:
             videoCodec = None
             audioCodec = None
@@ -459,27 +473,27 @@ def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles)
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
         if action == 'update':
-             return {'radarrId': int(movie["id"]),
-                     'title': movie["title"],
-                     'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                     'tmdbId': str(movie["tmdbId"]),
-                     'poster': poster,
-                     'fanart': fanart,
-                     'audio_language': str(audio_language),
-                     'sceneName': sceneName,
-                     'monitored': str(bool(movie['monitored'])),
-                     'year': str(movie['year']),
-                     'sortTitle': movie['sortTitle'],
-                     'alternativeTitles': alternativeTitles,
-                     'format': format,
-                     'resolution': resolution,
-                     'video_codec': videoCodec,
-                     'audio_codec': audioCodec,
-                     'overview': overview,
-                     'imdbId': imdbId,
-                     'movie_file_id': int(movie['movieFile']['id']),
-                     'tags': str(tags),
-                     'file_size': movie['movieFile']['size']}
+            return {'radarrId': int(movie["id"]),
+                    'title': movie["title"],
+                    'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                    'tmdbId': str(movie["tmdbId"]),
+                    'poster': poster,
+                    'fanart': fanart,
+                    'audio_language': str(audio_language),
+                    'sceneName': sceneName,
+                    'monitored': str(bool(movie['monitored'])),
+                    'year': str(movie['year']),
+                    'sortTitle': movie['sortTitle'],
+                    'alternativeTitles': alternativeTitles,
+                    'format': format,
+                    'resolution': resolution,
+                    'video_codec': videoCodec,
+                    'audio_codec': audioCodec,
+                    'overview': overview,
+                    'imdbId': imdbId,
+                    'movie_file_id': int(movie['movieFile']['id']),
+                    'tags': str(tags),
+                    'file_size': movie['movieFile']['size']}
         else:
             return {'radarrId': int(movie["id"]),
                     'title': movie["title"],
@@ -519,16 +533,16 @@ def get_movies_from_radarr_api(url, apikey_radarr, radarr_id=None):
         if r.status_code == 404:
             return
         r.raise_for_status()
-    except requests.exceptions.HTTPError as errh:
+    except requests.exceptions.HTTPError:
         logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
         return
-    except requests.exceptions.ConnectionError as errc:
+    except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
         return
-    except requests.exceptions.Timeout as errt:
+    except requests.exceptions.Timeout:
         logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
         return
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get movies from Radarr.")
         return
     else:

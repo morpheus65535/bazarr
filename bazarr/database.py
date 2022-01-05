@@ -2,12 +2,10 @@ import os
 import atexit
 import json
 import ast
-import logging
 import time
-from peewee import *
+from peewee import Model, AutoField, TextField, IntegerField, ForeignKeyField, BlobField, BooleanField
 from playhouse.sqliteq import SqliteQueueDatabase
-from playhouse.shortcuts import model_to_dict
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
 from helper import path_mappings
@@ -136,6 +134,8 @@ class TableLanguagesProfiles(BaseModel):
     items = TextField()
     name = TextField()
     profileId = AutoField()
+    mustContain = TextField(null=True)
+    mustNotContain = TextField(null=True)
 
     class Meta:
         table_name = 'table_languages_profiles'
@@ -249,8 +249,8 @@ class TableCustomScoreProfiles(BaseModel):
 
 class TableCustomScoreProfileConditions(BaseModel):
     profile_id = ForeignKeyField(TableCustomScoreProfiles, to_field="id")
-    type = TextField(null=True) # provider, uploader, regex, etc
-    value = TextField(null=True) # opensubtitles, jane_doe, [a-z], etc
+    type = TextField(null=True)  # provider, uploader, regex, etc
+    value = TextField(null=True)  # opensubtitles, jane_doe, [a-z], etc
     required = BooleanField(default=False)
     negate = BooleanField(default=False)
 
@@ -283,7 +283,7 @@ def init_db():
         try:
             if not System.select().count():
                 System.insert({System.configured: '0', System.updated: '0'}).execute()
-        except:
+        except Exception:
             time.sleep(0.1)
         else:
             tables_created = True
@@ -329,7 +329,9 @@ def migrate_db():
         migrator.add_column('table_history_movie', 'provider', TextField(null=True)),
         migrator.add_column('table_history_movie', 'score', TextField(null=True)),
         migrator.add_column('table_history_movie', 'subs_id', TextField(null=True)),
-        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True))
+        migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)),
+        migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)),
+        migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)),
     )
 
 
@@ -386,6 +388,10 @@ def get_exclusion_clause(exclusion_type):
         for item in typesList:
             where_clause.append((TableShows.seriesType != item))
 
+        exclude_season_zero = settings.sonarr.getboolean('exclude_season_zero')
+        if exclude_season_zero:
+            where_clause.append((TableEpisodes.season != 0))
+
     return where_clause
 
 
@@ -394,10 +400,16 @@ def update_profile_id_list():
     profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
                                                     TableLanguagesProfiles.name,
                                                     TableLanguagesProfiles.cutoff,
-                                                    TableLanguagesProfiles.items).dicts()
+                                                    TableLanguagesProfiles.items,
+                                                    TableLanguagesProfiles.mustContain,
+                                                    TableLanguagesProfiles.mustNotContain).dicts()
     profile_id_list = list(profile_id_list)
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
+        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else \
+            profile['mustContain']
+        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else \
+            profile['mustNotContain']
 
 
 def get_profiles_list(profile_id=None):
@@ -422,7 +434,7 @@ def get_desired_languages(profile_id):
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if profileId == int(profile_id):
                 languages = [x['language'] for x in items]
                 break
@@ -438,7 +450,7 @@ def get_profile_id_name(profile_id):
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if profileId == int(profile_id):
                 name_from_id = name
                 break
@@ -455,7 +467,7 @@ def get_profile_cutoff(profile_id):
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
@@ -496,6 +508,22 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
             )
 
     return audio_languages
+
+
+def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+    if series_id:
+        profileId = TableShows.get(TableShows.sonarrSeriesId == series_id).profileId
+    elif episode_id:
+        profileId = TableShows.select(TableShows.profileId)\
+            .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+            .get().profileId
+    elif movie_id:
+        profileId = TableMovies.get(TableMovies.radarrId == movie_id).profileId
+    else:
+        return None
+
+    return profileId
 
 
 def convert_list_to_clause(arr: list):

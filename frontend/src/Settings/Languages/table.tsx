@@ -95,6 +95,40 @@ const Table: FunctionComponent = () => {
         },
       },
       {
+        Header: "Must contain",
+        accessor: "mustContain",
+        Cell: (row) => {
+          const items = row.value;
+          if (!items) {
+            return false;
+          }
+          return items.map((v) => {
+            return (
+              <Badge className={"mx-1"} variant={"secondary"}>
+                {v}
+              </Badge>
+            );
+          });
+        },
+      },
+      {
+        Header: "Must not contain",
+        accessor: "mustNotContain",
+        Cell: (row) => {
+          const items = row.value;
+          if (!items) {
+            return false;
+          }
+          return items.map((v) => {
+            return (
+              <Badge className={"mx-1"} variant={"secondary"}>
+                {v}
+              </Badge>
+            );
+          });
+        },
+      },
+      {
         accessor: "profileId",
         Cell: ({ row, update }) => {
           const profile = row.original;
@@ -138,6 +172,8 @@ const Table: FunctionComponent = () => {
             name: "",
             items: [],
             cutoff: null,
+            mustContain: [],
+            mustNotContain: [],
           };
           showModal("profile", profile);
         }}

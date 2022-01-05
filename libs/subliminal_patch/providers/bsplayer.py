@@ -36,14 +36,11 @@ class BSPlayerSubtitle(Subtitle):
         self.subtype = subtype
         self.video = video
         self.subid = subid
+        self.release_info = filename
 
     @property
     def id(self):
         return self.subid
-
-    @property
-    def release_info(self):
-        return self.filename
 
     def get_matches(self, video):
         matches = set()
