@@ -5,12 +5,11 @@ source property
 """
 import copy
 
+from rebulk import AppendMatch, Rebulk, RemoveMatch, Rule
 from rebulk.remodule import re
 
-from rebulk import AppendMatch, Rebulk, RemoveMatch, Rule
-
 from .audio_codec import HqConflictRule
-from ..common import dash, seps
+from ..common import dash, seps, optional
 from ..common.pattern import is_disabled
 from ..common.validators import seps_before, seps_after, or_
 
@@ -31,78 +30,74 @@ def source(config):  # pylint:disable=unused-argument
                              validate_all=True,
                              validator={'__parent__': or_(seps_before, seps_after)})
 
-    rip_prefix = '(?P<other>Rip)-?'
-    rip_suffix = '-?(?P<other>Rip)'
-    rip_optional_suffix = '(?:' + rip_suffix + ')?'
+    rip_prefix = config['rip_prefix']
+    rip_suffix = config['rip_suffix']
 
-    def build_source_pattern(*patterns, **kwargs):
+    def build_source_pattern(*patterns, prefix='', suffix=''):
         """Helper pattern to build source pattern."""
-        prefix_format = kwargs.get('prefix') or ''
-        suffix_format = kwargs.get('suffix') or ''
-
-        string_format = prefix_format + '({0})' + suffix_format
-        return [string_format.format(pattern) for pattern in patterns]
+        return [prefix + f'({pattern})' + suffix for pattern in patterns]
 
     def demote_other(match, other):  # pylint: disable=unused-argument
         """Default conflict solver with 'other' property."""
-        return other if other.name == 'other' or other.name == 'release_group' else '__default__'
+        return other if other.name in ['other', 'release_group'] else '__default__'
 
-    rebulk.regex(*build_source_pattern('VHS', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('VHS', suffix=optional(rip_suffix)),
                  value={'source': 'VHS', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('CAM', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('CAM', suffix=optional(rip_suffix)),
                  value={'source': 'Camera', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('HD-?CAM', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('HD-?CAM', suffix=optional(rip_suffix)),
                  value={'source': 'HD Camera', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('TELESYNC', 'TS', suffix=rip_optional_suffix),
-                 value={'source': 'Telesync', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('HD-?TELESYNC', 'HD-?TS', suffix=rip_optional_suffix),
+    # For TS, we remove 'streaming_service.suffix' tag to avoid "Shots" being guessed as Showtime and TS.
+    rebulk.regex(*build_source_pattern('TELESYNC', 'TS', suffix=optional(rip_suffix)),
+                 value={'source': 'Telesync', 'other': 'Rip'}, tags=['video-codec-prefix'], overrides=["tags"])
+    rebulk.regex(*build_source_pattern('HD-?TELESYNC', 'HD-?TS', suffix=optional(rip_suffix)),
                  value={'source': 'HD Telesync', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('WORKPRINT', 'WP'), value='Workprint')
-    rebulk.regex(*build_source_pattern('TELECINE', 'TC', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('TELECINE', 'TC', suffix=optional(rip_suffix)),
                  value={'source': 'Telecine', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('HD-?TELECINE', 'HD-?TC', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('HD-?TELECINE', 'HD-?TC', suffix=optional(rip_suffix)),
                  value={'source': 'HD Telecine', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('PPV', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('PPV', suffix=optional(rip_suffix)),
                  value={'source': 'Pay-per-view', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('SD-?TV', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('SD-?TV', suffix=optional(rip_suffix)),
                  value={'source': 'TV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('TV', suffix=rip_suffix),  # TV is too common to allow matching
                  value={'source': 'TV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('TV', 'SD-?TV', prefix=rip_prefix),
                  value={'source': 'TV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('TV-?(?=Dub)'), value='TV')
-    rebulk.regex(*build_source_pattern('DVB', 'PD-?TV', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('DVB', 'PD-?TV', suffix=optional(rip_suffix)),
                  value={'source': 'Digital TV', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('DVD', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('DVD', suffix=optional(rip_suffix)),
                  value={'source': 'DVD', 'other': 'Rip'})
-    rebulk.regex(*build_source_pattern('DM', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('DM', suffix=optional(rip_suffix)),
                  value={'source': 'Digital Master', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('VIDEO-?TS', 'DVD-?R(?:$|(?!E))',  # 'DVD-?R(?:$|^E)' => DVD-Real ...
                                        'DVD-?9', 'DVD-?5'), value='DVD')
 
-    rebulk.regex(*build_source_pattern('HD-?TV', suffix=rip_optional_suffix), conflict_solver=demote_other,
+    rebulk.regex(*build_source_pattern('HD-?TV', suffix=optional(rip_suffix)), conflict_solver=demote_other,
                  value={'source': 'HDTV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('TV-?HD', suffix=rip_suffix), conflict_solver=demote_other,
                  value={'source': 'HDTV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('TV', suffix='-?(?P<other>Rip-?HD)'), conflict_solver=demote_other,
                  value={'source': 'HDTV', 'other': 'Rip'})
 
-    rebulk.regex(*build_source_pattern('VOD', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('VOD', suffix=optional(rip_suffix)),
                  value={'source': 'Video on Demand', 'other': 'Rip'})
 
     rebulk.regex(*build_source_pattern('WEB', 'WEB-?DL', suffix=rip_suffix),
                  value={'source': 'Web', 'other': 'Rip'})
     # WEBCap is a synonym to WEBRip, mostly used by non english
-    rebulk.regex(*build_source_pattern('WEB-?(?P<another>Cap)', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('WEB-?(?P<another>Cap)', suffix=optional(rip_suffix)),
                  value={'source': 'Web', 'other': 'Rip', 'another': 'Rip'})
     rebulk.regex(*build_source_pattern('WEB-?DL', 'WEB-?U?HD', 'DL-?WEB', 'DL(?=-?Mux)'),
                  value={'source': 'Web'})
     rebulk.regex('(WEB)', value='Web', tags='weak.source')
 
-    rebulk.regex(*build_source_pattern('HD-?DVD', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('HD-?DVD', suffix=optional(rip_suffix)),
                  value={'source': 'HD-DVD', 'other': 'Rip'})
 
-    rebulk.regex(*build_source_pattern('Blu-?ray', 'BD', 'BD[59]', 'BD25', 'BD50', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('Blu-?ray', 'BD', 'BD[59]', 'BD25', 'BD50', suffix=optional(rip_suffix)),
                  value={'source': 'Blu-ray', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('(?P<another>BR)-?(?=Scr(?:eener)?)', '(?P<another>BR)-?(?=Mux)'),  # BRRip
                  value={'source': 'Blu-ray', 'another': 'Reencoded'})
@@ -112,12 +107,12 @@ def source(config):  # pylint:disable=unused-argument
     rebulk.regex(*build_source_pattern('Ultra-?Blu-?ray', 'Blu-?ray-?Ultra'), value='Ultra HD Blu-ray')
 
     rebulk.regex(*build_source_pattern('AHDTV'), value='Analog HDTV')
-    rebulk.regex(*build_source_pattern('UHD-?TV', suffix=rip_optional_suffix), conflict_solver=demote_other,
+    rebulk.regex(*build_source_pattern('UHD-?TV', suffix=optional(rip_suffix)), conflict_solver=demote_other,
                  value={'source': 'Ultra HDTV', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('UHD', suffix=rip_suffix), conflict_solver=demote_other,
                  value={'source': 'Ultra HDTV', 'other': 'Rip'})
 
-    rebulk.regex(*build_source_pattern('DSR', 'DTH', suffix=rip_optional_suffix),
+    rebulk.regex(*build_source_pattern('DSR', 'DTH', suffix=optional(rip_suffix)),
                  value={'source': 'Satellite', 'other': 'Rip'})
     rebulk.regex(*build_source_pattern('DSR?', 'SAT', suffix=rip_suffix),
                  value={'source': 'Satellite', 'other': 'Rip'})
@@ -145,11 +140,11 @@ class UltraHdBlurayRule(Rule):
     def validate_range(cls, matches, start, end):
         """Validate no holes or invalid matches exist in the specified range."""
         return (
-            not matches.holes(start, end, predicate=lambda m: m.value.strip(seps)) and
-            not matches.range(start, end, predicate=(
-                lambda m: not m.private and (
-                    m.name not in ('screen_size', 'color_depth') and (
-                        m.name != 'other' or 'uhdbluray-neighbor' not in m.tags))))
+                not matches.holes(start, end, predicate=lambda m: m.value.strip(seps)) and
+                not matches.range(start, end, predicate=(
+                    lambda m: not m.private and (
+                            m.name not in ('screen_size', 'color_depth') and (
+                            m.name != 'other' or 'uhdbluray-neighbor' not in m.tags))))
         )
 
     def when(self, matches, context):
