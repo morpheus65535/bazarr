@@ -123,6 +123,10 @@ def get_providers():
     return providers_list
 
 
+_FFPROBE_BINARY = get_binary("ffprobe")
+_FFMPEG_BINARY= get_binary("ffmpeg")
+
+
 def get_providers_auth():
     return {
         'addic7ed': {
@@ -208,8 +212,8 @@ def get_providers_auth():
             'include_srt': settings.embeddedsubtitles.getboolean('include_srt'),
             'hi_fallback': settings.embeddedsubtitles.getboolean('hi_fallback'),
             'cache_dir': os.path.join(args.config_dir, "cache"),
-            'ffprobe_path': get_binary("ffprobe"),
-            'ffmpeg_path': get_binary("ffmpeg"),
+            'ffprobe_path': _FFPROBE_BINARY,
+            'ffmpeg_path': _FFMPEG_BINARY,
         }
     }
 
