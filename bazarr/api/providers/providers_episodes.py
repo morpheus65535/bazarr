@@ -5,7 +5,7 @@ from flask_restful import Resource
 
 from database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
 from helper import path_mappings
-from get_providers import get_providers, get_providers_auth
+from get_providers import get_providers
 from get_subtitle.manual import manual_search, manual_download_subtitle
 from utils import history_log
 from config import settings
@@ -35,10 +35,8 @@ class ProviderEpisodes(Resource):
         profileId = episodeInfo['profileId']
 
         providers_list = get_providers()
-        providers_auth = get_providers_auth()
 
-        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
-                             'series')
+        data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
         if not data:
             data = []
         return jsonify(data=data)
@@ -59,12 +57,10 @@ class ProviderEpisodes(Resource):
         episodePath = path_mappings.path_replace(episodeInfo['path'])
         sceneName = episodeInfo['scene_name'] or "None"
 
-        language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
-        providers_auth = get_providers_auth()
 
         audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
         if len(audio_language_list) > 0:
@@ -73,8 +69,8 @@ class ProviderEpisodes(Resource):
             audio_language = 'None'
 
         try:
-            result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'series',
+            result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
+                                              sceneName, title, 'series',
                                               profile_id=get_profile_id(episode_id=sonarrEpisodeId))
             if result is not None:
                 message = result[0]
