@@ -16,6 +16,7 @@ import {
   antiCaptchaOption,
   colorOptions,
   folderOptions,
+  hiExtensionOptions,
 } from "./options";
 
 const subzeroOverride = (key: string) => {
@@ -87,6 +88,16 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             </Input>
           </CollapseBox.Content>
         </CollapseBox>
+        <Input name="Hearing-impaired subtitles extension">
+          <Selector
+            options={hiExtensionOptions}
+            settingKey="settings-general-hi_extension"
+          ></Selector>
+          <Message>
+            What file extension to use when saving hearing-impaired subtitles to
+            disk (e.g., video.en.sdh.srt).
+          </Message>
+        </Input>
       </Group>
       <Group header="Anti-Captcha Options">
         <CollapseBox>
