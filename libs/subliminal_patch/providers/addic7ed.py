@@ -220,7 +220,7 @@ class Addic7edProvider(_Addic7edProvider):
         """
         show_id = None
         ids_to_look_for = {sanitize(series).lower(), sanitize(series.replace(".", "")).lower(),
-                           sanitize(series.replace("&", "and")).lower()}
+                           sanitize(series.replace("&", "and")).lower(), sanitize(series.replace("and", "&")).lower()}
         show_ids = self._get_show_ids()
         if ignore_cache or not show_ids:
             show_ids = self._get_show_ids.refresh(self)
@@ -580,7 +580,7 @@ class Addic7edProvider(_Addic7edProvider):
     def list_subtitles(self, video, languages):
         if isinstance(video, Episode):
             # lookup show_id
-            titles = [video.series] + video.alternative_series[5:]
+            titles = [video.series] + video.alternative_series[:5]
             show_id = None
             for title in titles:
                 show_id = self.get_show_id(title, video.year)
@@ -596,7 +596,7 @@ class Addic7edProvider(_Addic7edProvider):
             else:
                 logger.error('No show id found for %r (%r)', video.series, {'year': video.year})
         else:
-            titles = [video.title] + video.alternative_titles[5:]
+            titles = [video.title] + video.alternative_titles[:5]
 
             for title in titles:
                 movie_id = self.get_movie_id(title, video.year)
