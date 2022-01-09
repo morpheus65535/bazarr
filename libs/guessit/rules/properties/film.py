@@ -6,9 +6,11 @@ film property
 from rebulk import Rebulk, AppendMatch, Rule
 from rebulk.remodule import re
 
+from ..common import dash
 from ..common.formatters import cleanup
 from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
+from ...config import load_config_patterns
 
 
 def film(config):  # pylint:disable=unused-argument
@@ -17,10 +19,11 @@ def film(config):  # pylint:disable=unused-argument
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk().regex_defaults(flags=re.IGNORECASE, validate_all=True, validator={'__parent__': seps_surround})
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'film'))
+    rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash]).string_defaults(ignore_case=True)
+    rebulk.defaults(name='film', validator=seps_surround)
 
-    rebulk.regex(r'f(\d{1,2})', name='film', private_parent=True, children=True, formatter=int,
-                 disabled=lambda context: is_disabled(context, 'film'))
+    load_config_patterns(rebulk, config.get('film'))
 
     rebulk.rules(FilmTitleRule)
 

@@ -5,7 +5,7 @@ from flask_restful import Resource
 
 from database import TableMovies, get_audio_profile_languages, get_profile_id
 from helper import path_mappings
-from get_providers import get_providers, get_providers_auth
+from get_providers import get_providers
 from get_subtitle.manual import manual_search, manual_download_subtitle
 from utils import history_log_movie
 from config import settings
@@ -34,10 +34,8 @@ class ProviderMovies(Resource):
         profileId = movieInfo['profileId']
 
         providers_list = get_providers()
-        providers_auth = get_providers_auth()
 
-        data = manual_search(moviePath, profileId, providers_list, providers_auth, sceneName, title,
-                             'movie')
+        data = manual_search(moviePath, profileId, providers_list, sceneName, title, 'movie')
         if not data:
             data = []
         return jsonify(data=data)
@@ -58,13 +56,10 @@ class ProviderMovies(Resource):
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName'] or "None"
 
-        language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
-
-        providers_auth = get_providers_auth()
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
@@ -73,9 +68,8 @@ class ProviderMovies(Resource):
             audio_language = 'None'
 
         try:
-            result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'movie',
-                                              profile_id=get_profile_id(movie_id=radarrId))
+            result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
+                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
                 message = result[0]
                 path = result[1]

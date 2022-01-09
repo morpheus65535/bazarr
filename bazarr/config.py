@@ -73,7 +73,8 @@ defaults = {
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False'
+        'dont_notify_manual_actions': 'False',
+        'hi_extension': 'hi'
     },
     'auth': {
         'type': 'None',
@@ -136,6 +137,8 @@ defaults = {
     'addic7ed': {
         'username': '',
         'password': '',
+        'cookies': '',
+        'user_agent': '',
         'vip': 'False'
     },
     'podnapisi': {
@@ -365,6 +368,9 @@ def save_settings(settings_items):
 
         if key == 'settings-general-debug':
             configure_debug = True
+
+        if key == 'settings-general-hi_extension':
+            os.environ["SZ_HI_EXTENSION"] = str(value)
 
         if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
                    'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:

@@ -1011,17 +1011,22 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
     :param language: language of the subtitle to put in the path.
     :type language: :class:`~babelfish.language.Language`
     :param str extension: extension of the subtitle.
+    :param bool forced_tag: is the subtitles forced/foreign?
+    :param bool hi_tag: is the subtitles hearing-impaired?
+    :param list tags: list of custom tags
     :return: path of the subtitle.
     :rtype: str
 
     """
     subtitle_root = os.path.splitext(video_path)[0]
     tags = tags or []
+    hi_extension = os.environ.get("SZ_HI_EXTENSION", "hi")
+
     if forced_tag:
         tags.append("forced")
 
     elif hi_tag:
-        tags.append("hi")
+        tags.append(hi_extension)
 
     if language:
         subtitle_root += '.' + str(language.basename)

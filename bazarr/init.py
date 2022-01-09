@@ -23,6 +23,9 @@ startTime = time.time()
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
 
+# set subliminal_patch hearing-impaired extension to use when naming subtitles
+os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
+
 # set anti-captcha provider and key
 configure_captcha_func()
 

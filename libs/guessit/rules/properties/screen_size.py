@@ -26,7 +26,7 @@ def screen_size(config):
     """
     interlaced = frozenset(config['interlaced'])
     progressive = frozenset(config['progressive'])
-    frame_rates = [re.escape(rate) for rate in config['frame_rates']]
+    frame_rates = frozenset(config['frame_rates'])
     min_ar = config['min_ar']
     max_ar = config['max_ar']
 
@@ -45,11 +45,12 @@ def screen_size(config):
     rebulk.regex(res_pattern + progressive_pattern + r'(?P<scan_type>p)' + frame_rate_pattern + '?')
     rebulk.regex(res_pattern + progressive_pattern + r'(?P<scan_type>p)?(?:hd)')
     rebulk.regex(res_pattern + progressive_pattern + r'(?P<scan_type>p)?x?')
-    rebulk.string('4k', value='2160p')
+    rebulk.string('4k', value='2160p',
+                  conflict_solver=lambda match, other: '__default__' if other.name == 'screen_size' else match)
     rebulk.regex(r'(?P<width>\d{3,4})-?(?:x|\*)-?(?P<height>\d{3,4})',
                  conflict_solver=lambda match, other: '__default__' if other.name == 'screen_size' else other)
 
-    rebulk.regex(frame_rate_pattern + '(p|fps)', name='frame_rate',
+    rebulk.regex(frame_rate_pattern + '-?(?:p|fps)', name='frame_rate',
                  formatter=FrameRate.fromstring, disabled=lambda context: is_disabled(context, 'frame_rate'))
 
     rebulk.rules(PostProcessScreenSize(progressive, min_ar, max_ar), ScreenSizeOnlyOne, ResolveScreenSizeConflicts)
@@ -89,7 +90,7 @@ class PostProcessScreenSize(Rule):
             scan_type = (values.get('scan_type') or 'p').lower()
             height = values['height']
             if 'width' not in values:
-                match.value = '{0}{1}'.format(height, scan_type)
+                match.value = f'{height}{scan_type}'
                 continue
 
             width = values['width']
@@ -102,9 +103,9 @@ class PostProcessScreenSize(Rule):
                 to_append.append(aspect_ratio)
 
             if height in self.standard_heights and self.min_ar < calculated_ar < self.max_ar:
-                match.value = '{0}{1}'.format(height, scan_type)
+                match.value = f'{height}{scan_type}'
             else:
-                match.value = '{0}x{1}'.format(width, height)
+                match.value = f'{width}x{height}'
 
         return to_append
 

@@ -1,3 +1,18 @@
+export const hiExtensionOptions: SelectorOption<string>[] = [
+  {
+    label: ".hi (Hearing-Impaired)",
+    value: "hi",
+  },
+  {
+    label: ".sdh (Subtitles for the Deaf or Hard-of-Hearing)",
+    value: "sdh",
+  },
+  {
+    label: ".cc (Close Captioned)",
+    value: "cc",
+  },
+];
+
 export const folderOptions: SelectorOption<string>[] = [
   {
     label: "AlongSide Media File",

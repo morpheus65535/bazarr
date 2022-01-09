@@ -50,6 +50,16 @@
   video_codec: Xvid
   release_group: PUKKA
 
+? Enter.the.Void.2009.2in1.1080p.BluRay.DD5.1.x264-EbP.mkv
+: title: Enter the Void
+  year: 2009
+  other: 2in1
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  release_group: EbP
+
 ? "[XCT].Le.Prestige.(The.Prestige).DVDRip.[x264.HP.He-Aac.{Fr-Eng}.St{Fr-Eng}.Chaps].mkv"
 : title: Le Prestige
   source: DVD
@@ -78,6 +88,11 @@
   edition: Criterion
   year: 1985
   cd: 2
+
+? Movies/Picnic.at.Hanging.Rock.1975.Criterion.Collection.1080p.BluRay.x264.DTS-WiKi
+: title: Picnic at Hanging Rock
+  edition: Criterion
+  year: 1975
 
 ? Movies/Persepolis (2007)/[XCT] Persepolis [H264+Aac-128(Fr-Eng)+ST(Fr-Eng)+Ind].mkv
 : title: Persepolis
@@ -1045,6 +1060,36 @@
   release_group: Seven
   type: movie
 
+? Maze.Runner.The.Scorch.Trials.OM.2015.WEB-DLRip.by.Seven
+: title: Maze Runner The Scorch Trials
+  other: [Open Matte, Rip]
+  year: 2015
+  source: Web
+  release_group: Seven
+  type: movie
+
+? Foo Bar 2015 Open Matte 1080p WEB-DL DD+5.1 H.264
+: title: Foo Bar
+  year: 2015
+  other: Open Matte
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  type: movie
+
+? foo.bar.2015.open.matte.1080p.web-dl.dd+5.1.h.264
+: title: foo bar
+  year: 2015
+  other: Open Matte
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  type: movie
+
 ? Kampen Om Tungtvannet aka The Heavy Water War COMPLETE 720p x265 HEVC-Lund
 : title: Kampen Om Tungtvannet aka The Heavy Water War
   other: Complete
@@ -1312,6 +1357,22 @@
   screen_size: 2160p
   other: [Ultra HD, Upscaled]
   release_group: ETRG
+  type: movie
+
+? Heathers.1988.1080p.BluRay.ARROW.4K.RESTORED.Plus.Comm.DTS.x264-MaG
+: title: Heathers
+  edition: Restored
+  year: 1988
+  screen_size: 1080p
+  release_group: MaG
+  type: movie
+
+? The.Woman.2011.1080p.BluRay.4K.REMASTERED.Remux.AVC.DTS-HD.MA.5.1-PTP.mkv
+: title: The Woman
+  edition: Remastered
+  year: 2011
+  screen_size: 1080p
+  release_group: PTP
   type: movie
 
 ? Delibal 2015 720p Upscale DVDRip x264 DD5.1 AC3
@@ -1784,4 +1845,17 @@
   audio_codec: Dolby Digital
   release_group: EVO
   container: mkv
+  type: movie
+
+? Kes.1969.1080p.BluRay.FLAC1.0.x264-DON.mkv
+: title: Kes
+  year: 1969
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: FLAC
+  audio_channels: '1.0'
+  video_codec: H.264
+  release_group: DON
+  container: mkv
+  mimetype: video/x-matroska
   type: movie

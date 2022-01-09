@@ -6,10 +6,13 @@ Options
 import copy
 import json
 import os
-import pkgutil
 import shlex
-
 from argparse import ArgumentParser
+
+try:
+    from importlib.resources import read_text
+except ImportError:
+    from importlib_resources import read_text
 
 
 def build_argument_parser():
@@ -142,7 +145,7 @@ def load_config(options):
     configurations = []
 
     if not options.get('no_default_config'):
-        default_options_data = pkgutil.get_data('guessit', 'config/options.json').decode('utf-8')
+        default_options_data = read_text('guessit.config', 'options.json')
         default_options = json.loads(default_options_data)
         configurations.append(default_options)
 
@@ -176,7 +179,7 @@ def load_config(options):
 
     if 'advanced_config' not in config:
         # Guessit doesn't work without advanced_config, so we use default if no configuration files provides it.
-        default_options_data = pkgutil.get_data('guessit', 'config/options.json').decode('utf-8')
+        default_options_data = read_text('guessit.config', 'options.json')
         default_options = json.loads(default_options_data)
         config['advanced_config'] = default_options['advanced_config']
 
@@ -246,17 +249,16 @@ def load_config_file(filepath):
     :rtype:
     """
     if filepath.endswith('.json'):
-        with open(filepath) as config_file_data:
+        with open(filepath, encoding='utf-8') as config_file_data:
             return json.load(config_file_data)
     if filepath.endswith('.yaml') or filepath.endswith('.yml'):
         try:
             import yaml  # pylint:disable=import-outside-toplevel
-            with open(filepath) as config_file_data:
+            with open(filepath, encoding='utf-8') as config_file_data:
                 return yaml.load(config_file_data, yaml.SafeLoader)
         except ImportError as err:  # pragma: no cover
             raise ConfigurationException('Configuration file extension is not supported. '
-                                         'PyYAML should be installed to support "%s" file' % (
-                                             filepath,)) from err
+                                         f'PyYAML should be installed to support "{filepath}" file') from err
 
     try:
         # Try to load input as JSON
@@ -264,7 +266,7 @@ def load_config_file(filepath):
     except:  # pylint: disable=bare-except
         pass
 
-    raise ConfigurationException('Configuration file extension is not supported for "%s" file.' % (filepath,))
+    raise ConfigurationException(f'Configuration file extension is not supported for "{filepath}" file.')
 
 
 def get_options_file_locations(homedir, cwd, yaml_supported=False):

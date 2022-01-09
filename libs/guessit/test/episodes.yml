@@ -4691,3 +4691,68 @@
   container: mp4
   mimetype: video/mp4
   type: episode
+
+? "Seitokai Yakuindomo - 14 OAD [BDRip 1920x1080 x264 FLAC].mkv"
+: title: Seitokai Yakuindomo
+  episode: 14
+  source: Blu-ray
+  other: [Original Animation DVD, Rip]
+  screen_size: 1080p
+  aspect_ratio: 1.778
+  video_codec: H.264
+  audio_codec: FLAC
+  container: mkv
+  mimetype: video/x-matroska
+  type: episode
+
+? "[EveTaku] Kyouso Giga ONA v2 [540p][128BAC43].mkv"
+: release_group: EveTaku
+  title: Kyouso Giga
+  other: Original Net Animation
+  version: 2
+  screen_size: 540p
+  crc32: 128BAC43
+  container: mkv
+  mimetype: video/x-matroska
+  type: episode
+
+? '[Erai-raws] Fumetsu no Anata e - 03 [720p][Multiple Subtitle].mkv'
+: release_group: Erai-raws
+  title: Fumetsu no Anata e
+  episode: 3
+  screen_size: 720p
+  subtitle_language: mul
+  container: mkv
+  mimetype: video/x-matroska
+  type: episode
+
+? Mom.S06E08.Jell-O.Shots.and.the.Truth.About.Santa.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv
+: title: Mom
+  season: 6
+  episode: 8
+  episode_title: Jell-O Shots and the Truth About Santa
+  screen_size: 1080p
+  streaming_service: Amazon Prime
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NTb
+  container: mkv
+  mimetype: video/x-matroska
+  type: episode
+
+? Archer.2009.S12E05.Shots.720p.HULU.WEB-DL.DDP5.1.H.264-NOGRP
+: title: Archer
+  year: 2009
+  season: 12
+  episode: 5
+  episode_title: Shots
+  screen_size: 720p
+  streaming_service: Hulu
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NOGRP
+  type: episode

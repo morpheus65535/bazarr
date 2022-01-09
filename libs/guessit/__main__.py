@@ -56,7 +56,7 @@ def guess_filename(filename, options):
                 print(yline)
             i += 1
     else:
-        print('GuessIt found:', json.dumps(guess, cls=GuessitEncoder, ensure_ascii=False))
+        print('GuessIt found:', json.dumps(guess, cls=GuessitEncoder, indent=4, ensure_ascii=False))
 
 
 def display_properties(options):
@@ -85,10 +85,10 @@ def display_properties(options):
         properties_list = list(sorted(properties.keys()))
         for property_name in properties_list:
             property_values = properties.get(property_name)
-            print(2 * ' ' + '[+] %s' % (property_name,))
+            print(2 * ' ' + f'[+] {property_name}')
             if property_values and options.get('values'):
                 for property_value in property_values:
-                    print(4 * ' ' + '[!] %s' % (property_value,))
+                    print(4 * ' ' + f'[!] {property_value}')
 
 
 def main(args=None):  # pylint:disable=too-many-branches
@@ -136,11 +136,8 @@ def main(args=None):  # pylint:disable=too-many-branches
         for filename in options.get('filename'):
             filenames.append(filename)
     if options.get('input_file'):
-        input_file = open(options.get('input_file'), 'r', encoding='utf-8')
-        try:
+        with open(options.get('input_file'), 'r', encoding='utf-8') as input_file:
             filenames.extend([line.strip() for line in input_file.readlines()])
-        finally:
-            input_file.close()
 
     filenames = list(filter(lambda f: f, filenames))
 
