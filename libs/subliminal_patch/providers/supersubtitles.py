@@ -2,7 +2,6 @@
 import io
 import logging
 import re
-import os
 import time
 
 from babelfish import language_converters
@@ -40,14 +39,10 @@ def fix_tv_naming(title):
     :rtype: str
 
     """
-    return fix_inconsistent_naming(title, {"Marvel's WandaVision": "WandaVision",
-                                           "Marvel's Daredevil": "Daredevil",
-                                           "Marvel's Luke Cage": "Luke Cage",
-                                           "Marvel's Iron Fist": "Iron Fist",
-                                           "Marvel's Jessica Jones": "Jessica Jones",
-                                           "DC's Legends of Tomorrow": "Legends of Tomorrow",
+    return fix_inconsistent_naming(title, {"DC's Legends of Tomorrow": "Legends of Tomorrow",
                                            "Star Trek: The Next Generation": "Star Trek TNG",
                                            "Loki (aka. Marvel\'s Loki)": "Loki",
+                                           "Marvel's": "",
                                            }, True)
 
 
@@ -87,7 +82,8 @@ class SuperSubtitlesSubtitle(Subtitle):
         if year:
             self.year = int(year)
 
-        self.release_info = u", ".join(releases)
+        self.release_info = u" ,".join([u"%s (%s)" % (self.__get_name(), releases[0])] +
+                                       (releases[1:] if len(releases) > 1 else []))
         self.page_link = page_link
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
@@ -98,11 +94,13 @@ class SuperSubtitlesSubtitle(Subtitle):
     def numeric_id(self):
         return self.subtitle_id
 
-    def __repr__(self):
+    def __get_name(self):
         ep_addon = (" S%02dE%02d" % (self.season, self.episode)) if self.episode else ""
+        return u"%s%s%s" % (self.series, " (%s)" % self.year if self.year else "", ep_addon)
+
+    def __repr__(self):
         return '<%s %r [%s]>' % (
-            self.__class__.__name__, u"%s%s%s [%s]" % (self.series, " (%s)" % self.year if self.year else "", ep_addon,
-                                                       self.release_info), self.language)
+            self.__class__.__name__, u"%s [%s]" % (self.__get_name(), self.version), self.language)
 
     @property
     def id(self):
@@ -117,20 +115,13 @@ class SuperSubtitlesSubtitle(Subtitle):
             # series
             if video.series and sanitize(self.series) == sanitize(video.series):
                 matches.add('series')
-            # season
-            if video.season and self.season == video.season:
-                matches.add('season')
-            # episode
-            if video.episode and self.episode == video.episode:
-                matches.add('episode')
             # imdb_id
             if video.series_imdb_id and self.imdb_id and str(self.imdb_id) == str(video.series_imdb_id):
                 matches.add('series_imdb_id')
                 matches.add('series')
                 matches.add('year')
             # year
-            if ('series' in matches and video.original_series and self.year is None or
-                    video.year and video.year == self.year):
+            if 'year' not in matches and 'series' in matches and video.original_series and self.year is None:
                 matches.add('year')
         # movie
         elif isinstance(video, Movie):
@@ -148,10 +139,22 @@ class SuperSubtitlesSubtitle(Subtitle):
                 matches.add('year')
 
         # release_group
-        if (video.release_group and self.version and
-                any(r in sanitize_release_group(self.version)
-                    for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
-            matches.add('release_group')
+        if video.release_group and self.releases:
+            video_release_groups = get_equivalent_release_groups(sanitize_release_group(video.release_group))
+            for release in self.releases:
+
+                if any(r in sanitize_release_group(release) for r in video_release_groups):
+                    matches.add('release_group')
+
+                    if video.resolution and video.resolution in release.lower():
+                        matches.add('resolution')
+
+                    if video.source and video.source in release.lower():
+                        matches.add('source')
+
+                # We don't have to continue in case it is a perfect match
+                if all(m in matches for m in ['release_group', 'resolution', 'source']):
+                    break
 
         self.matches = matches
         return matches
@@ -173,7 +176,10 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {'User-Agent': AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]}
+        self.session.headers = {
+            'User-Agent': AGENT_LIST[randint(0, len(AGENT_LIST) - 1)],
+            'Referer': 'https://www.feliratok.info/index.php'
+        }
 
     def terminate(self):
         self.session.close()
@@ -191,7 +197,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
         """
 
-        url = self.server_url + "index.php?tipus=adatlap&azon=a_" + sub_id
+        url = self.server_url + "index.php?tipus=adatlap&azon=a_" + str(sub_id)
         # url = https://www.feliratok.info/index.php?tipus=adatlap&azon=a_1518600916
         logger.info('Get IMDB id from URL %s', url)
         r = self.session.get(url, timeout=10).content
@@ -249,20 +255,25 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             except IndexError:
                 continue
 
-            result_title = fix_tv_naming(result_title).strip().replace("�", "").replace("& ", "").replace(" ", ".")
-            if not result_title:
-                continue
+            for title in (result_title, fix_tv_naming(result_title)):
 
-            guessable = result_title.strip() + ".s01e01." + result_year
-            guess = guessit(guessable, {'type': "episode"})
+                title = title.strip().replace("�", "").replace("& ", "").replace(" ", ".")
+                if not title:
+                    continue
 
-            if sanitize(original_title.replace('& ', '')) == sanitize(guess['title']) and year and guess['year'] and \
-                    year == guess['year']:
-                # Return the founded id
-                return result_id
-            elif sanitize(original_title.replace('& ', '')) == sanitize(guess['title']) and not year:
-                # Return the founded id
-                return result_id
+                guessable = title.strip() + ".s01e01." + result_year
+                guess = guessit(guessable, {'type': "episode"})
+
+                sanitized_original_title = sanitize(original_title.replace('& ', ''))
+                guess_title = sanitize(guess['title'])
+
+                if sanitized_original_title == guess_title and year and guess['year'] and \
+                        year == guess['year']:
+                    # Return the founded id
+                    return result_id
+                elif sanitized_original_title == guess_title and not year:
+                    # Return the founded id
+                    return result_id
 
         return None
 
@@ -290,19 +301,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     if not series_id:
                         return None
 
-            # https://www.feliratok.info/index.php?search=&soriSorszam=&nyelv=&sorozatnev=&sid=2075&complexsearch=true&
-            # knyelv=0&evad=6&epizod1=16&cimke=0&minoseg=0&rlsr=0&tab=all
-            url = self.server_url + "index.php?search=&soriSorszam=&nyelv=&sorozatnev=&sid=" + \
-                str(series_id) + "&complexsearch=true&knyelv=0&evad=" + str(season) + "&epizod1=" + \
-                str(episode) + "&cimke=0&minoseg=0&rlsr=0&tab=all"
-            subtitle = self.process_subs(languages, video, url)
-
-            if not subtitle:
-                # No Subtitle found. Maybe already archived to season pack
-                url = self.server_url + "index.php?search=&soriSorszam=&nyelv=&sorozatnev=&sid=" + \
-                      str(series_id) + "&complexsearch=true&knyelv=0&evad=" + \
-                      str(season) + "&epizod1=&evadpakk=on&cimke=0&minoseg=0&rlsr=0&tab=all"
-                subtitle = self.process_subs(languages, video, url)
+            subtitle = self.retrieve_series_subtitles(series_id, season, episode, video, languages)
 
         if isinstance(video, Movie):
             title = urllib.parse.quote_plus(series)
@@ -313,7 +312,141 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return subtitle
 
+    def retrieve_series_subtitles(self, series_id, season, episode, video, languages):
+        """
+        Retrieve subtitles for a given episode
+
+        :param series_id: the ID of the series returned by @find_id.
+        :param season: the season number
+        :param episode: the episode number
+        :param video: video details
+        :param languages: languages to search for
+        :return: list of subtitles for the given episode
+        """
+        if isinstance(video, Movie):
+            return None
+
+        subtitles = []
+
+        logger.info('Getting the list of subtitles for %s', video)
+
+        # First, try using every param that we got
+        episode_subs, season_subs = self.get_subtitle_list(series_id, season, episode, video)
+
+        if episode_subs:
+            sub_list = episode_subs
+        else:
+            ''' 
+            Sometimes the site is a bit buggy when you are searching for an episode sub that is only present in a
+            season pack, so we have to make a separate call for that without supplying the episode number
+            '''
+            _, sub_list = self.get_subtitle_list(series_id, season, None, video)
+
+        series_imdb_id = None
+
+        # Convert the list of subtitles for the proper format
+        for sub in sub_list.values():
+            '''
+            Since it is not possible to narrow down the languages in the request, we need to filter out the
+            inappropriate elements
+            '''
+            if sub['language'] in languages:
+                link = self.server_url + '/index.php?action=letolt&felirat=' + str(sub['id'])
+
+                # For episodes we open the series page so all subtitles imdb_id must be the same
+                if series_imdb_id is None:
+                    series_imdb_id = self.find_imdb_id(sub['id'])
+
+                # Let's create a SuperSubtitlesSubtitle instance from the data that we got and add it to the list
+                subtitles.append(SuperSubtitlesSubtitle(sub['language'], link, sub['id'], sub['name'], sub['season'],
+                                                        sub['episode'], ', '.join(sub['releases']), sub['releases'],
+                                                        video.year, series_imdb_id, sub['uploader'], video.episode,
+                                                        asked_for_release_group=video.release_group))
+
+        return subtitles
+
+    def get_subtitle_list(self, series_id, season, episode, video):
+        """
+        We can retrieve the list of subtitles for a given show via the following url:
+        https://www.feliratok.info/index.php?action=xbmc&sid=SERIES_ID&ev=SEASON&rtol=EPISODE
+        SERIES_ID is the ID of the show returned by the @find_id method. It is a mandatory parameter.
+        SEASON is the season number. Optional paramter.
+        EPISODE is the episode number. Optional parameter (using this param can cause problems).
+
+        NOTE: you gonna get back multiple records for the same subtitle, in case it is compatible with multiple releases
+        """
+
+        # Construct the url
+        url = self.server_url + "index.php?action=xbmc&sid=" + str(series_id) + "&ev=" + str(season)
+
+        # Use the 'rtol' param in case we have a valid episode number
+        if episode:
+            url += "&rtol=" + str(episode)
+
+        results = self.session.get(url, timeout=10).json()
+
+        '''
+        The result will be a JSON like this:
+        [{
+            "10": {
+                "language":"Angol",
+                "nev":"The Flash (Season 5) (1080p)",
+                "baselink":"http://www.feliratok.info/index.php",
+                "fnev":"The.Flash.S05.HDTV.WEB.720p.1080p.ENG.zip",
+                "felirat":"1560706755",
+                "evad":"5",
+                "ep":"-1",
+                "feltolto":"J1GG4",
+                "pontos_talalat":"111",
+                "evadpakk":"1"
+            }
+        },...]
+        '''
+
+        subtitle_list = {}
+        season_pack_list = {}
+
+        # Check the results:
+        if results:
+            for result in results.values():
+                '''
+                Gonna get back multiple records for the same subtitle, in case it is compatible with multiple releases,
+                so we have to group them manually
+                '''
+                sub_id = int(result['felirat'])
+
+                # 'Nev' is something like this:
+                #   Marvel's The Falcon and the Winter Soldier - 1x05 (WEB.2160p-KOGi)
+                # or
+                #   Loki (Season 1) (DSNP.WEB-DL.720p-TOMMY)
+                search_name = re.search(r'^(.*)\s(?:-\s\d+x\d+|(\(Season\s\d+\)))?\s\((.*)\)$', result['nev'])
+
+                name = search_name.group(1) if search_name else ''
+                release = search_name.group(3) if search_name else ''
+
+                # In case of 0 it is an episode sub, in other cases, it is a season pack
+                target = subtitle_list if not int(result['evadpakk']) else season_pack_list
+
+                # Check that this sub_id is not already in the list
+                if sub_id not in target.keys():
+                    target[sub_id] = {
+                        'id': sub_id,
+                        'name': name,
+                        'language': self.get_language(result['language']),
+                        'season': int(result['evad']),
+                        'episode': result['ep'] if not result['evadpakk'] else int(video.episode),
+                        'uploader': result['feltolto'],
+                        'releases': [release],
+                        'fname': result['fnev']
+                    }
+                else:
+                    target[sub_id]['releases'].append(release)
+
+        return subtitle_list, season_pack_list
+
     def process_subs(self, languages, video, url):
+        if isinstance(video, Episode):
+            return None
 
         subtitles = []
 
@@ -324,43 +457,16 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         tables = soup.find_all("table")
         tables = tables[0].find_all("tr")
         i = 0
-        series_imdb_id = None
+
         for table in tables:
             if "vilagit" in str(table) and i > 1:
                 asked_for_episode = None
                 sub_season = None
                 sub_episode = None
                 sub_english = table.findAll("div", {"class": "eredeti"})
-                sub_english_name = None
-                if isinstance(video, Episode):
-                    asked_for_episode = video.episode
-                    if "Season" not in str(sub_english):
-                        # [<div class="eredeti">Gossip Girl (Season 3) (DVDRip-REWARD)</div>]
-                        sub_english_name = re.search(r'(?<=<div class="eredeti">).*?(?= -)',
-                                                     str(sub_english))
-                        sub_english_name = sub_english_name.group() if sub_english_name else ''
-
-                        sub_season = re.search(r"(?<=- ).*?(?= - )", str(sub_english))
-                        sub_season = sub_season.group() if sub_season else ''
-                        sub_season = int((sub_season.split('x')[0]).strip())
-
-                        sub_episode = re.search(r"(?<=- ).*?(?= - )", str(sub_english))
-                        sub_episode = sub_episode.group() if sub_episode else ''
-                        sub_episode = int((sub_episode.split('x')[1]).strip())
-
-                    else:
-                        # [<div class="eredeti">DC's Legends of Tomorrow - 3x11 - Here I Go Again (HDTV-AFG, HDTV-RMX,
-                        # 720p-SVA, 720p-PSA </div>]
-                        sub_english_name = \
-                            re.search(r'(?<=<div class="eredeti">).*?(?=\(Season)', str(sub_english))
-                        sub_english_name = sub_english_name.group() if sub_english_name else ''
-                        sub_season = re.search(r"(?<=Season )\d+(?=\))", str(sub_english))
-                        sub_season = int(sub_season.group()) if sub_season else None
-                        sub_episode = int(video.episode)
-                if isinstance(video, Movie):
-                    sub_english_name = re.search(r'(?<=<div class="eredeti">).*?(?=</div>)', str(sub_english))
-                    sub_english_name = sub_english_name.group() if sub_english_name else ''
-                    sub_english_name = sub_english_name.split(' (')[0]
+                sub_english_name = re.search(r'(?<=<div class="eredeti">).*?(?=</div>)', str(sub_english))
+                sub_english_name = sub_english_name.group() if sub_english_name else ''
+                sub_english_name = sub_english_name.split(' (')[0]
 
                 sub_english_name = sub_english_name.replace('&amp;', '&')
                 sub_version = 'n/a'
@@ -391,12 +497,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     elif isinstance(item, NavigableString):
                         uploader = item.lstrip('\r\n\t\t\t\t\t').rstrip('\r\n\t\t\t\t')
 
-                # For episodes we open the series page so all subtitles imdb_id must be the same. no need to check all
-                if isinstance(video, Episode) and series_imdb_id is not None:
-                    sub_imdb_id = series_imdb_id
-                else:
-                    sub_imdb_id = self.find_imdb_id(sub_id)
-                    series_imdb_id = sub_imdb_id
+                sub_imdb_id = self.find_imdb_id(sub_id)
 
                 subtitle = SuperSubtitlesSubtitle(sub_language, sub_downloadlink, sub_id, sub_english_name.strip(),
                                                   sub_season, sub_episode, sub_version, sub_releases, sub_year,
@@ -424,7 +525,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                         fixed_title = fix_tv_naming(item.series)
                     else:
                         fixed_title = fix_movie_naming(item.series)
-                    if fixed_title in titles:
+                    # Check for the original and the fixed titles too
+                    if any(x in (fixed_title.strip(), item.series) for x in titles):
                         subtitles.append(item)
 
             time.sleep(self.multi_result_throttle)
