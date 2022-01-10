@@ -19,7 +19,7 @@
     "@fortawesome/free-brands-svg-icons": "^5.15",
     "@fortawesome/free-regular-svg-icons": "^5.15",
     "@fortawesome/free-solid-svg-icons": "^5.15",
-    "@fortawesome/react-fontawesome": "^0.1.11",
+    "@fortawesome/react-fontawesome": "^0.1.16",
     "@reduxjs/toolkit": "^1.6",
     "axios": "^0.24",
     "bootstrap": "^4",
