@@ -32,7 +32,6 @@ _CLEAN_TITLE_RES = [
 ]
 
 _YEAR_RE = re.compile(r"(\(\d{4}\))")
-_AKA_RE = re.compile("aka")
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +40,15 @@ class SubdivxSubtitle(Subtitle):
     provider_name = "subdivx"
     hash_verifiable = False
 
-    def __init__(self, language, video, page_link, title, description, uploader):
+    def __init__(
+        self, language, video, page_link, title, description, uploader, download_url
+    ):
         super(SubdivxSubtitle, self).__init__(
             language, hearing_impaired=False, page_link=page_link
         )
         self.video = video
         self.title = title
+        self.download_url = download_url
         self.description = description
         self.uploader = uploader
         self.release_info = self.title
@@ -80,7 +82,14 @@ class SubdivxSubtitle(Subtitle):
             ),
         )
 
+        # Don't lowercase; otherwise it will match a lot of false positives
+        if video.release_group and video.release_group in self.description:
+            matches.add("release_group")
+
         return matches
+
+
+_IDUSER_COOKIE = "VkZaRk9WQlJQVDA12809"
 
 
 class SubdivxSubtitlesProvider(Provider):
@@ -99,6 +108,7 @@ class SubdivxSubtitlesProvider(Provider):
     def initialize(self):
         self.session = Session()
         self.session.headers["User-Agent"] = f"Subliminal/{__short_version__}"
+        self.session.cookies.update({"iduser_cookie": _IDUSER_COOKIE})
 
     def terminate(self):
         self.session.close()
@@ -153,12 +163,9 @@ class SubdivxSubtitlesProvider(Provider):
         # download the subtitle
         logger.info("Downloading subtitle %r", subtitle)
 
-        # get download link
-        download_link = self._get_download_link(subtitle)
-
         # download zip / rar file with the subtitle
         response = self.session.get(
-            f"{_SERVER_URL}/{download_link}",
+            subtitle.download_url,
             headers={"Referer": subtitle.page_link},
             timeout=30,
         )
@@ -206,42 +213,21 @@ class SubdivxSubtitlesProvider(Provider):
 
             # description
             sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
-            description = sub_details.replace(",", " ").lower()
+            description = sub_details.replace(",", " ")
 
             # uploader
             uploader = body_soup.find("a", {"class": "link1"}).text
+            download_url = _get_download_url(body_soup)
             page_link = title_soup.find("a")["href"]
 
             subtitle = self.subtitle_class(
-                language, video, page_link, title, description, uploader
+                language, video, page_link, title, description, uploader, download_url
             )
 
             logger.debug("Found subtitle %r", subtitle)
             subtitles.append(subtitle)
 
         return subtitles
-
-    def _get_download_link(self, subtitle):
-        response = self.session.get(subtitle.page_link, timeout=20)
-        response.raise_for_status()
-
-        try:
-            page_soup = ParserBeautifulSoup(
-                response.content.decode("utf-8", "ignore"), ["lxml", "html.parser"]
-            )
-            links_soup = page_soup.find_all("a", {"class": "detalle_link"})
-            for link_soup in links_soup:
-                if link_soup["href"].startswith("bajar"):
-                    return f"{_SERVER_URL}/{link_soup['href']}"
-
-            links_soup = page_soup.find_all("a", {"class": "link1"})
-            for link_soup in links_soup:
-                if "bajar.php" in link_soup["href"]:
-                    return link_soup["href"]
-        except Exception as e:
-            raise APIThrottled(f"Error parsing download link: {e}")
-
-        raise APIThrottled("Download link not found")
 
 
 def _clean_title(title):
@@ -326,6 +312,17 @@ def _get_subtitle_from_archive(archive, subtitle):
         return archive.read(_max_name)
 
     raise APIThrottled("Can not find the subtitle in the compressed file")
+
+
+def _get_download_url(data):
+    try:
+        return [
+            a_.get("href")
+            for a_ in data.find_all("a")
+            if "bajar.php" in a_.get("href", "n/a")
+        ][0]
+    except IndexError:
+        return None
 
 
 def _check_movie(video, title):
