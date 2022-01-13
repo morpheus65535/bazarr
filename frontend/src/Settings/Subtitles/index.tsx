@@ -162,8 +162,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
                 options={adaptiveSearchingDelayOption}
               ></Selector>
               <Message>
-                How much weeks must Bazarr wait after initial search to reduce
-                search frequency.
+                In order to reduce search frequency, how many weeks must Bazarr wait after initial search.
               </Message>
             </Input>
             <Input>
