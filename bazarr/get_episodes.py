@@ -173,7 +173,7 @@ def sync_one_episode(episode_id):
             if not get_sonarr_info.is_legacy() and existing_episode and episode_data['hasFile']:
                 episode_data['episodeFile'] = \
                     get_episodesFiles_from_sonarr_api(url=url, apikey_sonarr=apikey_sonarr,
-                                                      episode_file_id=existing_episode['episode_file_id'])
+                                                      episode_file_id=episode_data['episodeFileId'])
             episode = episodeParser(episode_data)
     except Exception:
         logging.debug('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
