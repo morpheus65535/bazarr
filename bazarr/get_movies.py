@@ -365,8 +365,14 @@ def get_tags():
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get tags from Radarr.")
         return []
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Exception while trying to get tags from Radarr.")
+        return []
     else:
-        return tagsDict.json()
+        try:
+            return tagsDict.json()
+        except Exception:
+            return []
 
 
 def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):
