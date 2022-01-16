@@ -86,7 +86,9 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
             logging.exception("BAZARR unable to index external subtitles.")
         else:
             for subtitle, language in subtitles.items():
-                if not language:
+                valid_language = alpha2_from_alpha3(language.alpha3)
+                if not valid_language:
+                    logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
 
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
@@ -188,7 +190,9 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             pass
         else:
             for subtitle, language in subtitles.items():
-                if not language:
+                valid_language = alpha2_from_alpha3(language.alpha3)
+                if not valid_language:
+                    logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
 
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
