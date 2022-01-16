@@ -23,6 +23,9 @@ startTime = time.time()
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
 
+# set subliminal_patch hearing-impaired extension to use when naming subtitles
+os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
+
 # set anti-captcha provider and key
 configure_captcha_func()
 
@@ -45,7 +48,7 @@ if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
-import logging
+import logging  # noqa E402
 
 
 def is_virtualenv():
@@ -59,10 +62,10 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, setuptools
+        import lxml, numpy, webrtcvad, setuptools  # noqa E401
     except ImportError:
         try:
-            import pip
+            import pip  # noqa W0611
         except ImportError:
             logging.info('BAZARR unable to install requirements (pip not installed).')
         else:
@@ -136,7 +139,7 @@ if os.path.isfile(package_info_file):
                     continue
         if 'branch' in package_info:
             settings.general.branch = package_info['branch']
-    except:
+    except Exception:
         pass
     else:
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -173,24 +176,24 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
-    
+
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
-    except:
+    except Exception:
         logging.debug("custom check failed for: %s", exe)
-    
+
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-    
+
     return unrar
 
 
-from database import init_db, migrate_db
+from database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

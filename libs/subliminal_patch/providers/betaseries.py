@@ -36,6 +36,7 @@ class BetaSeriesSubtitle(Subtitle):
         self.matches = matches
         self.source = source
         self.video_release_group = video_release_group
+        self.release_info = video_name
 
     @property
     def id(self):
@@ -44,10 +45,6 @@ class BetaSeriesSubtitle(Subtitle):
     @property
     def download_link(self):
         return self.download_url
-
-    @property
-    def release_info(self):
-        return self.video_name
 
     def get_matches(self, video):
         matches = self.matches

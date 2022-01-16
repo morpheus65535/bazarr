@@ -46,6 +46,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Assrt
 * BetaSeries
 * BSplayer
+* Embedded Subtitles
 * GreekSubtitles
 * Hosszupuska
 * LegendasDivx

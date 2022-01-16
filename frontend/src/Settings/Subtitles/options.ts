@@ -1,3 +1,18 @@
+export const hiExtensionOptions: SelectorOption<string>[] = [
+  {
+    label: ".hi (Hearing-Impaired)",
+    value: "hi",
+  },
+  {
+    label: ".sdh (Subtitles for the Deaf or Hard-of-Hearing)",
+    value: "sdh",
+  },
+  {
+    label: ".cc (Close Captioned)",
+    value: "cc",
+  },
+];
+
 export const folderOptions: SelectorOption<string>[] = [
   {
     label: "AlongSide Media File",
@@ -21,6 +36,48 @@ export const antiCaptchaOption: SelectorOption<string>[] = [
   {
     label: "Death by Captcha",
     value: "death-by-captcha",
+  },
+];
+
+export const adaptiveSearchingDelayOption: SelectorOption<string>[] = [
+  {
+    label: "1 week",
+    value: "1w",
+  },
+  {
+    label: "2 weeks",
+    value: "2w",
+  },
+  {
+    label: "3 weeks",
+    value: "3w",
+  },
+  {
+    label: "4 weeks",
+    value: "4w",
+  },
+];
+
+export const adaptiveSearchingDeltaOption: SelectorOption<string>[] = [
+  {
+    label: "3 days",
+    value: "3d",
+  },
+  {
+    label: "1 week",
+    value: "1w",
+  },
+  {
+    label: "2 weeks",
+    value: "2w",
+  },
+  {
+    label: "3 weeks",
+    value: "3w",
+  },
+  {
+    label: "4 weeks",
+    value: "4w",
   },
 ];
 

@@ -6,8 +6,10 @@ import os
 from pathlib import Path
 
 import pytest
+from pytest_mock import MockerFixture
 
-from ..api import guessit, properties, suggested_expected, GuessitException
+from .. import api
+from ..api import guessit, properties, suggested_expected, GuessitException, default_api
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -62,7 +64,53 @@ def test_exception():
 
 
 def test_suggested_expected():
-    with open(os.path.join(__location__, 'suggested.json'), 'r') as f:
+    with open(os.path.join(__location__, 'suggested.json'), 'r', encoding='utf-8') as f:
         content = json.load(f)
     actual = suggested_expected(content['titles'])
     assert actual == content['suggested']
+
+
+def test_should_rebuild_rebulk_on_advanced_config_change(mocker: MockerFixture):
+    api.reset()
+    rebulk_builder_spy = mocker.spy(api, 'rebulk_builder')
+
+    string = "some.movie.trfr.mkv"
+
+    result1 = default_api.guessit(string)
+
+    assert result1.get('title') == 'some movie trfr'
+    assert 'subtitle_language' not in result1
+
+    rebulk_builder_spy.assert_called_once_with(mocker.ANY)
+    rebulk_builder_spy.reset_mock()
+
+    result2 = default_api.guessit(string, {'advanced_config': {'language': {'subtitle_prefixes': ['tr']}}})
+
+    assert result2.get('title') == 'some movie'
+    assert str(result2.get('subtitle_language')) == 'fr'
+
+    rebulk_builder_spy.assert_called_once_with(mocker.ANY)
+    rebulk_builder_spy.reset_mock()
+
+
+def test_should_not_rebuild_rebulk_on_same_advanced_config(mocker: MockerFixture):
+    api.reset()
+    rebulk_builder_spy = mocker.spy(api, 'rebulk_builder')
+
+    string = "some.movie.subfr.mkv"
+
+    result1 = default_api.guessit(string)
+
+    assert result1.get('title') == 'some movie'
+    assert str(result1.get('subtitle_language')) == 'fr'
+
+    rebulk_builder_spy.assert_called_once_with(mocker.ANY)
+    rebulk_builder_spy.reset_mock()
+
+    result2 = default_api.guessit(string)
+
+    assert result2.get('title') == 'some movie'
+    assert str(result2.get('subtitle_language')) == 'fr'
+
+    assert rebulk_builder_spy.call_count == 0
+    rebulk_builder_spy.reset_mock()

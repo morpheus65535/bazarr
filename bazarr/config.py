@@ -57,6 +57,8 @@ defaults = {
         'ignore_vobsub_subs': 'False',
         'ignore_ass_subs': 'False',
         'adaptive_searching': 'False',
+        'adaptive_searching_delay': '3w',
+        'adaptive_searching_delta': '1w',
         'enabled_providers': '[]',
         'multithreading': 'True',
         'chmod_enabled': 'False',
@@ -71,7 +73,8 @@ defaults = {
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False'
+        'dont_notify_manual_actions': 'False',
+        'hi_extension': 'hi'
     },
     'auth': {
         'type': 'None',
@@ -92,7 +95,8 @@ defaults = {
         'episodes_sync': '60',
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
-        'use_ffprobe_cache': 'True'
+        'use_ffprobe_cache': 'True',
+        'exclude_season_zero': 'False'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -132,7 +136,10 @@ defaults = {
     },
     'addic7ed': {
         'username': '',
-        'password': ''
+        'password': '',
+        'cookies': '',
+        'user_agent': '',
+        'vip': 'False'
     },
     'podnapisi': {
         'verify_ssl': 'True'
@@ -190,6 +197,11 @@ defaults = {
         'approved_only': 'False',
         'multithreading': 'True'
     },
+    'embeddedsubtitles': {
+        'include_ass': 'True',
+        'include_srt': 'True',
+        'hi_fallback': 'False'
+    },
     'subsync': {
         'use_subsync': 'False',
         'use_subsync_threshold': 'False',
@@ -235,19 +247,19 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
-                'page_size',
-                'page_size_manual_search',
-                'throtteled_providers']
+               'page_size',
+               'page_size_manual_search',
+               'throtteled_providers']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
-                'exclude',
-                'subzero_mods',
-                'excluded_series_types',
-                'enabled_providers',
-                'path_mappings',
-                'path_mappings_movie']
+              'exclude',
+              'subzero_mods',
+              'excluded_series_types',
+              'enabled_providers',
+              'path_mappings',
+              'path_mappings_movie']
 
 str_keys = ['chmod']
 
@@ -300,17 +312,15 @@ def get_settings():
                             value = int(value)
                         except ValueError:
                             pass
-            
+
             values_dict[key] = value
-        
+
         result[sec] = values_dict
 
     return result
 
 
 def save_settings(settings_items):
-    from database import database
-
     configure_debug = False
     configure_captcha = False
     update_schedule = False
@@ -332,7 +342,7 @@ def save_settings(settings_items):
     for key, value in settings_items:
 
         settings_keys = key.split('-')
-        
+
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
@@ -340,7 +350,7 @@ def save_settings(settings_items):
                 value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values :
+        if settings_keys[-1] in array_keys and value[0] in empty_values:
             value = []
 
         # Handle path mappings settings since they are array in array
@@ -353,11 +363,14 @@ def save_settings(settings_items):
             value = 'False'
 
         if key == 'settings-auth-password':
-            if value != settings.auth.password and value != None:
+            if value != settings.auth.password and value is not None:
                 value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
             configure_debug = True
+
+        if key == 'settings-general-hi_extension':
+            os.environ["SZ_HI_EXTENSION"] = str(value)
 
         if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
                    'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
@@ -388,12 +401,12 @@ def save_settings(settings_items):
             configure_proxy = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
-                   'settings-radarr-only_monitored']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
+                   'settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
             exclusion_updated = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
-                   'settings-sonarr-excluded_series_types']:
+                   'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero']:
             sonarr_exclusion_updated = True
 
         if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
@@ -472,14 +485,14 @@ def save_settings(settings_items):
         from signalr_client import sonarr_signalr_client
         try:
             sonarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if radarr_changed:
         from signalr_client import radarr_signalr_client
         try:
             radarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if update_path_map:

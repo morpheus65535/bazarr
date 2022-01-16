@@ -10,7 +10,7 @@ from database import TableEpisodes, TableShows, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
 from utils import blacklist_log, delete_subtitles, blacklist_delete_all, blacklist_delete
 from helper import path_mappings
-from get_subtitle import episode_download_subtitles
+from get_subtitle.mass_download import episode_download_subtitles
 from event_handler import event_stream
 
 

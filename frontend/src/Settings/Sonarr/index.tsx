@@ -95,6 +95,16 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
                 episodes in Sonarr.
               </Message>
             </Input>
+            <Input>
+              <Check
+                label="Exclude season zero (extras)"
+                settingKey="settings-sonarr-exclude_season_zero"
+              ></Check>
+              <Message>
+                Episodes from season zero (extras) from automatic download of
+                subtitles.
+              </Message>
+            </Input>
           </Group>
           <Group header="Path Mappings">
             <PathMappingTable type="sonarr"></PathMappingTable>

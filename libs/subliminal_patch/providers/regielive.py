@@ -29,14 +29,11 @@ class RegieLiveSubtitle(Subtitle):
         self.video = video
         self.rating = rating
         self.language = language
+        self.release_info = filename
 
     @property
     def id(self):
         return self.page_link
-
-    @property
-    def release_info(self):
-        return self.filename
 
     def get_matches(self, video):
         type_ = "movie" if isinstance(video, Movie) else "episode"

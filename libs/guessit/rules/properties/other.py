@@ -3,15 +3,16 @@
 """
 other property
 """
-import copy
 
 from rebulk import Rebulk, Rule, RemoveMatch, RenameMatch, POST_PROCESS, AppendMatch
+from rebulk.match import Match
 from rebulk.remodule import re
 
 from ..common import dash
 from ..common import seps
 from ..common.pattern import is_disabled
 from ..common.validators import seps_after, seps_before, seps_surround, and_
+from ...config import load_config_patterns
 from ...reutils import build_or_pattern
 from ...rules.common.formatters import raw_cleanup
 
@@ -29,34 +30,21 @@ def other(config):  # pylint:disable=unused-argument,too-many-statements
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash]).string_defaults(ignore_case=True)
     rebulk.defaults(name="other", validator=seps_surround)
 
-    rebulk.regex('Audio-?Fix', 'Audio-?Fixed', value='Audio Fixed')
-    rebulk.regex('Sync-?Fix', 'Sync-?Fixed', value='Sync Fixed')
-    rebulk.regex('Dual', 'Dual-?Audio', value='Dual Audio')
-    rebulk.regex('ws', 'wide-?screen', value='Widescreen')
-    rebulk.regex('Re-?Enc(?:oded)?', value='Reencoded')
+    load_config_patterns(rebulk, config.get('other'))
 
-    rebulk.string('Repack', 'Rerip', value='Proper',
-                  tags=['streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.string('Proper', value='Proper',
-                  tags=['has-neighbor', 'streaming_service.prefix', 'streaming_service.suffix'])
+    rebulk.rules(RenameAnotherToOther, ValidateHasNeighbor, ValidateHasNeighborAfter, ValidateHasNeighborBefore,
+                 ValidateScreenerRule, ValidateMuxRule, ValidateHardcodedSubs, ValidateStreamingServiceNeighbor,
+                 ValidateAtEnd, ValidateReal, ProperCountRule)
 
-    rebulk.regex('Real-Proper', 'Real-Repack', 'Real-Rerip', value='Proper',
-                 tags=['streaming_service.prefix', 'streaming_service.suffix', 'real'])
-    rebulk.regex('Real', value='Proper',
-                 tags=['has-neighbor', 'streaming_service.prefix', 'streaming_service.suffix', 'real'])
+    return rebulk
 
-    rebulk.string('Fix', 'Fixed', value='Fix', tags=['has-neighbor-before', 'has-neighbor-after',
-                                                     'streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.string('Dirfix', 'Nfofix', 'Prooffix', value='Fix',
-                  tags=['streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.regex('(?:Proof-?)?Sample-?Fix', value='Fix',
-                 tags=['streaming_service.prefix', 'streaming_service.suffix'])
 
-    rebulk.string('Fansub', value='Fan Subtitled', tags='has-neighbor')
-    rebulk.string('Fastsub', value='Fast Subtitled', tags='has-neighbor')
-
-    season_words = build_or_pattern(["seasons?", "series?"])
-    complete_articles = build_or_pattern(["The"])
+def complete_words(rebulk: Rebulk, season_words, complete_article_words):
+    """
+    Custom pattern to find complete seasons from words.
+    """
+    season_words_pattern = build_or_pattern(season_words)
+    complete_article_words_pattern = build_or_pattern(complete_article_words)
 
     def validate_complete(match):
         """
@@ -71,82 +59,13 @@ def other(config):  # pylint:disable=unused-argument,too-many-statements
             return False
         return True
 
-    rebulk.regex('(?P<completeArticle>' + complete_articles + '-)?' +
-                 '(?P<completeWordsBefore>' + season_words + '-)?' +
-                 'Complete' + '(?P<completeWordsAfter>-' + season_words + ')?',
+    rebulk.regex('(?P<completeArticle>' + complete_article_words_pattern + '-)?' +
+                 '(?P<completeWordsBefore>' + season_words_pattern + '-)?' +
+                 'Complete' + '(?P<completeWordsAfter>-' + season_words_pattern + ')?',
                  private_names=['completeArticle', 'completeWordsBefore', 'completeWordsAfter'],
                  value={'other': 'Complete'},
                  tags=['release-group-prefix'],
                  validator={'__parent__': and_(seps_surround, validate_complete)})
-    rebulk.string('R5', value='Region 5')
-    rebulk.string('RC', value='Region C')
-    rebulk.regex('Pre-?Air', value='Preair')
-    rebulk.regex('(?:PS-?)Vita', value='PS Vita')
-    rebulk.regex('Vita', value='PS Vita', tags='has-neighbor')
-    rebulk.regex('(HD)(?P<another>Rip)', value={'other': 'HD', 'another': 'Rip'},
-                 private_parent=True, children=True, validator={'__parent__': seps_surround}, validate_all=True)
-
-    for value in ('Screener', 'Remux', 'Hybrid', 'PAL', 'SECAM', 'NTSC', 'XXX'):
-        rebulk.string(value, value=value)
-    rebulk.string('3D', value='3D', tags='has-neighbor')
-
-    rebulk.string('HQ', value='High Quality', tags='uhdbluray-neighbor')
-    rebulk.string('HR', value='High Resolution')
-    rebulk.string('LD', value='Line Dubbed')
-    rebulk.string('MD', value='Mic Dubbed')
-    rebulk.string('mHD', 'HDLight', value='Micro HD')
-    rebulk.string('LDTV', value='Low Definition')
-    rebulk.string('HFR', value='High Frame Rate')
-    rebulk.string('VFR', value='Variable Frame Rate')
-    rebulk.string('HD', value='HD', validator=None,
-                  tags=['streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.regex('Full-?HD', 'FHD', value='Full HD', validator=None,
-                 tags=['streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.regex('Ultra-?(?:HD)?', 'UHD', value='Ultra HD', validator=None,
-                 tags=['streaming_service.prefix', 'streaming_service.suffix'])
-    rebulk.regex('Upscaled?', value='Upscaled')
-
-    for value in ('Complete', 'Classic', 'Bonus', 'Trailer', 'Retail',
-                  'Colorized', 'Internal'):
-        rebulk.string(value, value=value, tags=['has-neighbor', 'release-group-prefix'])
-    rebulk.regex('LiNE', value='Line Audio', tags=['has-neighbor-before', 'has-neighbor-after', 'release-group-prefix'])
-    rebulk.regex('Read-?NFO', value='Read NFO')
-    rebulk.string('CONVERT', value='Converted', tags='has-neighbor')
-    rebulk.string('DOCU', 'DOKU', value='Documentary', tags='has-neighbor')
-    rebulk.string('OM', value='Open Matte', tags='has-neighbor')
-    rebulk.string('STV', value='Straight to Video', tags='has-neighbor')
-    rebulk.string('OAR', value='Original Aspect Ratio', tags='has-neighbor')
-    rebulk.string('Complet', value='Complete', tags=['has-neighbor', 'release-group-prefix'])
-
-    for coast in ('East', 'West'):
-        rebulk.regex(r'(?:Live-)?(?:Episode-)?' + coast + '-?(?:Coast-)?Feed', value=coast + ' Coast Feed')
-
-    rebulk.string('VO', 'OV', value='Original Video', tags='has-neighbor')
-    rebulk.string('Ova', 'Oav', value='Original Animated Video')
-
-    rebulk.regex('Scr(?:eener)?', value='Screener', validator=None,
-                 tags=['other.validate.screener', 'source-prefix', 'source-suffix'])
-    rebulk.string('Mux', value='Mux', validator=seps_after,
-                  tags=['other.validate.mux', 'video-codec-prefix', 'source-suffix'])
-    rebulk.string('HC', 'vost', value='Hardcoded Subtitles')
-
-    rebulk.string('SDR', value='Standard Dynamic Range', tags='uhdbluray-neighbor')
-    rebulk.regex('HDR(?:10)?', value='HDR10', tags='uhdbluray-neighbor')
-    rebulk.regex('Dolby-?Vision', value='Dolby Vision', tags='uhdbluray-neighbor')
-    rebulk.regex('BT-?2020', value='BT.2020', tags='uhdbluray-neighbor')
-
-    rebulk.string('Sample', value='Sample', tags=['at-end', 'not-a-release-group'])
-    rebulk.string('Extras', value='Extras', tags='has-neighbor')
-    rebulk.regex('Digital-?Extras?', value='Extras')
-    rebulk.string('Proof', value='Proof', tags=['at-end', 'not-a-release-group'])
-    rebulk.string('Obfuscated', 'Scrambled', value='Obfuscated', tags=['at-end', 'not-a-release-group'])
-    rebulk.string('xpost', 'postbot', 'asrequested', value='Repost', tags='not-a-release-group')
-
-    rebulk.rules(RenameAnotherToOther, ValidateHasNeighbor, ValidateHasNeighborAfter, ValidateHasNeighborBefore,
-                 ValidateScreenerRule, ValidateMuxRule, ValidateHardcodedSubs, ValidateStreamingServiceNeighbor,
-                 ValidateAtEnd, ValidateReal, ProperCountRule)
-
-    return rebulk
 
 
 class ProperCountRule(Rule):
@@ -165,15 +84,30 @@ class ProperCountRule(Rule):
             raws = {}  # Count distinct raw values
             for proper in propers:
                 raws[raw_cleanup(proper.raw)] = proper
-            proper_count_match = copy.copy(propers[-1])
-            proper_count_match.name = 'proper_count'
 
             value = 0
-            for raw in raws.values():
-                value += 2 if 'real' in raw.tags else 1
+            start = None
+            end = None
 
+            proper_count_matches = []
+
+            for proper in raws.values():
+                if not start or start > proper.start:
+                    start = proper.start
+                if not end or end < proper.end:
+                    end = proper.end
+                if proper.children.named('proper_count', 0):
+                    value += int(proper.children.named('proper_count', 0).value)
+                elif 'real' in proper.tags:
+                    value += 2
+                else:
+                    value += 1
+
+            proper_count_match = Match(name='proper_count', start=start, end=end, input_string=matches.input_string)
             proper_count_match.value = value
-            return proper_count_match
+            proper_count_matches.append(proper_count_match)
+
+            return proper_count_matches
 
 
 class RenameAnotherToOther(Rule):
@@ -360,7 +294,7 @@ class ValidateAtEnd(Rule):
                                        predicate=lambda m: m.name == 'other' and 'at-end' in m.tags):
                 if (matches.holes(match.end, filepart.end, predicate=lambda m: m.value.strip(seps)) or
                         matches.range(match.end, filepart.end, predicate=lambda m: m.name not in (
-                            'other', 'container'))):
+                                'other', 'container'))):
                     to_remove.append(match)
 
         return to_remove

@@ -7,7 +7,8 @@ from database import TableMovies
 from ..utils import authenticate, postprocessMovie, None_Keys
 from list_subtitles import list_missing_subtitles_movies, movies_scan_subtitles
 from event_handler import event_stream
-from get_subtitle import movies_download_subtitles, wanted_search_missing_subtitles_movies
+from get_subtitle.wanted import wanted_search_missing_subtitles_movies
+from get_subtitle.mass_download import movies_download_subtitles
 
 
 class Movies(Resource):

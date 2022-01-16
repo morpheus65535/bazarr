@@ -3,6 +3,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 from subliminal_patch.core import guessit
+
 from ..utils import authenticate
 
 

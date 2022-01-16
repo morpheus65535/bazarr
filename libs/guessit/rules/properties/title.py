@@ -205,7 +205,7 @@ class TitleBaseRule(Rule):
                 for ignored_match in ignored_matches:
                     if ignored_match not in to_keep:
                         starting = matches.chain_after(hole.start, seps,
-                                                       predicate=lambda m: m == ignored_match)
+                                                       predicate=lambda m, im=ignored_match: m == im)
                         if starting:
                             should_keep = self.should_keep(ignored_match, to_keep, matches, filepart, hole, True)
                             if should_keep:

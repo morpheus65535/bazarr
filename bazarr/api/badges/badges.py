@@ -16,7 +16,7 @@ from ..utils import authenticate
 class Badges(Resource):
     @authenticate
     def get(self):
-        episodes_conditions = [(TableEpisodes.missing_subtitles is not None),
+        episodes_conditions = [(TableEpisodes.missing_subtitles.is_null(False)),
                                (TableEpisodes.missing_subtitles != '[]')]
         episodes_conditions += get_exclusion_clause('series')
         missing_episodes = TableEpisodes.select(TableShows.tags,
@@ -26,7 +26,7 @@ class Badges(Resource):
             .where(reduce(operator.and_, episodes_conditions))\
             .count()
 
-        movies_conditions = [(TableMovies.missing_subtitles is not None),
+        movies_conditions = [(TableMovies.missing_subtitles.is_null(False)),
                              (TableMovies.missing_subtitles != '[]')]
         movies_conditions += get_exclusion_clause('movie')
         missing_movies = TableMovies.select(TableMovies.tags,

@@ -172,6 +172,8 @@ const Table: FunctionComponent = () => {
               name: "",
               items: [],
               cutoff: null,
+              mustContain: [],
+              mustNotContain: [],
             };
             showModal("profile", profile);
           }}

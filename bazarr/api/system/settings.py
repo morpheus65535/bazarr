@@ -70,8 +70,8 @@ class SystemSettings(Resource):
                         TableLanguagesProfiles.name: item['name'],
                         TableLanguagesProfiles.cutoff: item['cutoff'] if item['cutoff'] != 'null' else None,
                         TableLanguagesProfiles.items: json.dumps(item['items']),
-                        TableLanguagesProfiles.mustContain: item['must_contain'],
-                        TableLanguagesProfiles.mustNotContain: item['must_not_contain'],
+                        TableLanguagesProfiles.mustContain: item['mustContain'],
+                        TableLanguagesProfiles.mustNotContain: item['mustNotContain'],
                     }).execute()
             for profileId in existing:
                 # Unassign this profileId from series and movies

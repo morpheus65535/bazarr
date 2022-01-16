@@ -11,7 +11,7 @@ from helper import path_mappings
 from ..utils import authenticate
 from subsyncer import subsync
 from utils import translate_subtitles_file, subtitles_apply_mods
-from get_subtitle import store_subtitles, store_subtitles_movie
+from list_subtitles import store_subtitles, store_subtitles_movie
 from config import settings
 
 

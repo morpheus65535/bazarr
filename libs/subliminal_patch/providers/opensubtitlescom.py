@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import time
 import datetime
 
 from requests import Session, ConnectionError, Timeout, ReadTimeout
@@ -147,14 +148,17 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.password = password
         self.video = None
         self.use_hash = use_hash
+        self._started = None
 
     def initialize(self):
-        self.token = region.get("oscom_token", expiration_time=TOKEN_EXPIRATION_TIME)
-        if self.token is NO_VALUE:
-            self.login()
+        self._started = time.time()
+        self.login()
 
     def terminate(self):
         self.session.close()
+
+    def ping(self):
+        return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
     def login(self):
         try:
@@ -177,7 +181,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
             elif r.status_code == 429:
                 raise TooManyRequests()
-            elif r.status_code == 503:
+            elif 500 <= r.status_code <= 599:
                 raise ProviderError(r.reason)
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
@@ -207,11 +211,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             if results.status_code == 429:
                 raise TooManyRequests()
-            elif results.status_code == 503:
+            elif 500 <= results.status_code <= 599:
                 raise ProviderError(results.reason)
         elif results.status_code == 429:
             raise TooManyRequests()
-        elif results.status_code == 503:
+        elif 500 <= results.status_code <= 599:
             raise ProviderError(results.reason)
 
         # deserialize results
@@ -304,7 +308,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if res.status_code == 429:
             raise TooManyRequests()
 
-        elif res.status_code == 503:
+        elif 500 <= res.status_code <= 599:
             raise ProviderError(res.reason)
 
         subtitles = []
@@ -378,7 +382,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             raise TooManyRequests()
         elif res.status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
-        elif res.status_code == 503:
+        elif 500 <= res.status_code <= 599:
             raise ProviderError(res.reason)
         else:
             try:
@@ -392,7 +396,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     raise TooManyRequests()
                 elif res.status_code == 406:
                     raise DownloadLimitExceeded("Daily download limit reached")
-                elif res.status_code == 503:
+                elif 500 <= res.status_code <= 599:
                     raise ProviderError(res.reason)
 
                 subtitle_content = r.content

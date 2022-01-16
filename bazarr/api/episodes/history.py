@@ -37,7 +37,7 @@ class EpisodesHistory(Resource):
 
             upgradable_episodes_conditions = [(TableHistory.action.in_(query_actions)),
                                               (TableHistory.timestamp > minimum_timestamp),
-                                              (TableHistory.score is not None)]
+                                              (TableHistory.score.is_null(False))]
             upgradable_episodes_conditions += get_exclusion_clause('series')
             upgradable_episodes = TableHistory.select(TableHistory.video_path,
                                                       fn.MAX(TableHistory.timestamp).alias('timestamp'),
@@ -61,7 +61,7 @@ class EpisodesHistory(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
-        query_conditions = [(TableEpisodes.title is not None)]
+        query_conditions = [(TableEpisodes.title.is_null(False))]
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
         query_condition = reduce(operator.and_, query_conditions)
@@ -100,7 +100,7 @@ class EpisodesHistory(Resource):
             item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
                 "tags": str(item['tags']), "monitored": str(item['monitored']),
-                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
+                "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
                 if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
                     item.update({"upgradable": True})
 
@@ -128,6 +128,6 @@ class EpisodesHistory(Resource):
 
         count = TableHistory.select()\
             .join(TableEpisodes, on=(TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId))\
-            .where(TableEpisodes.title is not None).count()
+            .where(TableEpisodes.title.is_null(False)).count()
 
         return jsonify(data=episode_history, total=count)
