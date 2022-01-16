@@ -486,6 +486,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                                                                                  lang_obj.alpha2)
                                                            ).translate(text=block_str)
         except Exception:
+            logging.exception(f'BAZARR Unable to translate subtitles {source_srt_file}')
             return False
         else:
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
@@ -493,7 +494,11 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     logging.debug('BAZARR saving translated subtitles to {}'.format(dest_srt_file))
     for i, line in enumerate(subs):
-        line.plaintext = translated_lines_list[i]
+        try:
+            line.plaintext = translated_lines_list[i]
+        except IndexError:
+            logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
+            return False
     subs.save(dest_srt_file)
 
     return dest_srt_file
