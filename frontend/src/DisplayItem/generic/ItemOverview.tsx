@@ -148,7 +148,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           ></Image>
         </Col>
         <Col>
-          <Container fluid className="text-white">
+          <Container fluid className="text-white gx-0">
             <div className="d-flex flex-row">
               {isMovie(item) ? (
                 <FontAwesomeIcon

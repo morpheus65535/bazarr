@@ -170,7 +170,7 @@ const NotificationCenter: FunctionComponent = () => {
         ref={dropdownRef}
         align={"end"}
       >
-        <Dropdown.Toggle as={Button} className="dropdown-hidden">
+        <Dropdown.Toggle className="hide-arrow" as={Button}>
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu className={clsx("menu", "pb-3")}>

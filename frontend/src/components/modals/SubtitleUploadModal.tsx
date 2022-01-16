@@ -312,7 +312,7 @@ export default function SubtitleUploadModal<T>(
     >
       <Container fluid className="flex-column">
         <Form>
-          <Form.Group>
+          <Form.Group className="mb-2">
             <FileForm
               disabled={showTable}
               emptyText="Select..."

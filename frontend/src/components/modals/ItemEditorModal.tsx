@@ -69,7 +69,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     >
       <Container fluid>
         <Form>
-          <Form.Group>
+          <Form.Group className="py-2">
             <Form.Label>Audio</Form.Label>
             <Form.Control
               type="text"
@@ -79,7 +79,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
                 .join(", ")}
             ></Form.Control>
           </Form.Group>
-          <Form.Group>
+          <Form.Group className="py-2">
             <Form.Label>Languages Profiles</Form.Label>
             <Selector
               clearable

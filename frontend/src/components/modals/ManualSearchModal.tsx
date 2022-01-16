@@ -215,9 +215,11 @@ export function ManualSearchModal<T extends SupportType>(
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
-          <Button variant="primary" onClick={search}>
-            Start Search
-          </Button>
+          <div className="d-grid gap-2">
+            <Button variant="primary" onClick={search}>
+              Start Search
+            </Button>
+          </div>
         </div>
       );
     } else if (searchState === SearchState.Searching) {

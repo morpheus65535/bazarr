@@ -11,3 +11,9 @@ $dark: #4f566f;
     -2px 2px 5px $primary, 2px 2px 5px $primary;
   overflow: visible;
 }
+
+.dropdown-toggle {
+  &.hide-arrow::after {
+    display: none;
+  }
+}

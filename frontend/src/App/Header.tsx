@@ -66,7 +66,7 @@ const Header: FunctionComponent<Props> = () => {
   const serverActions = useMemo(
     () => (
       <Dropdown align={"end"}>
-        <Dropdown.Toggle className="dropdown-hidden" as={Button}>
+        <Dropdown.Toggle className="hide-arrow" as={Button}>
           <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu>

@@ -68,7 +68,7 @@ const PageControl: FunctionComponent<Props> = ({
   );
 
   return (
-    <Container fluid className="mb-3">
+    <Container fluid className="mb-3 px-4">
       <Row>
         <Col className="d-flex align-items-center justify-content-start">
           <span>
