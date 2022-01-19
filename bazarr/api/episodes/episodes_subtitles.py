@@ -6,7 +6,7 @@ from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from database import TableEpisodes, get_audio_profile_languages, get_profile_id
+from database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
 from get_subtitle.upload import manual_upload_subtitle
@@ -26,10 +26,11 @@ class EpisodesSubtitles(Resource):
     def patch(self):
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
                                            TableEpisodes.scene_name,
-                                           TableEpisodes.audio_language)\
+                                           TableEpisodes.audio_language,
+                                           TableShows.title) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
             .dicts()\
             .get()

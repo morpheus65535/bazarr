@@ -20,9 +20,9 @@ class ProviderEpisodes(Resource):
     def get(self):
         # Manual Search
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
                                            TableEpisodes.scene_name,
+                                           TableShows.title,
                                            TableShows.profileId) \
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
@@ -46,9 +46,10 @@ class ProviderEpisodes(Resource):
         # Manual Download
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
-                                           TableEpisodes.scene_name) \
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableShows.title) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
             .get()
