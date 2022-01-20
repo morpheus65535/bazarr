@@ -63,7 +63,7 @@ function useHasErrorNotification(notifications: Server.Notification[]) {
 }
 
 const NotificationCenter: FunctionComponent = () => {
-  const { progress, notifications, notifier } = useReduxStore((s) => s.site);
+  const { progress, notifications, notifier } = useReduxStore((s) => s);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [hasNew, setHasNew] = useState(false);

@@ -31,7 +31,7 @@ const SelectionContext = createContext<{
 }>({ selection: null, select: () => {} });
 
 const Sidebar: FunctionComponent = () => {
-  const open = useReduxStore((s) => s.site.showSidebar);
+  const open = useReduxStore((s) => s.showSidebar);
 
   const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 

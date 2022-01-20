@@ -4,9 +4,6 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateWantedByRange } from "../../@redux/actions";
-import { useWantedSeries } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi, SeriesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -15,10 +12,6 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
-  const series = useWantedSeries();
-
-  const loader = useReduxAction(seriesUpdateWantedByRange);
-
   const searchAll = useCallback(
     () => SeriesApi.action({ action: "search-wanted" }),
     []
@@ -83,8 +76,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
     <GenericWantedView
       type="series"
       columns={columns}
-      state={series}
-      loader={loader}
+      query={(params) => EpisodesApi.wanted(params)}
       searchAll={searchAll}
     ></GenericWantedView>
   );

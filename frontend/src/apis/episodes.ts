@@ -20,7 +20,7 @@ class EpisodeApi extends BaseApi {
   }
 
   async wanted(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<Wanted.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
       "/wanted",
       params
     );
@@ -28,7 +28,7 @@ class EpisodeApi extends BaseApi {
   }
 
   async wantedBy(episodeid: number[]) {
-    const response = await this.get<AsyncDataWrapper<Wanted.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
       "/wanted",
       { episodeid }
     );
@@ -36,7 +36,7 @@ class EpisodeApi extends BaseApi {
   }
 
   async history(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<History.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<History.Episode>>(
       "/history",
       params
     );
@@ -44,7 +44,7 @@ class EpisodeApi extends BaseApi {
   }
 
   async historyBy(episodeid: number) {
-    const response = await this.get<AsyncDataWrapper<History.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<History.Episode>>(
       "/history",
       { episodeid }
     );

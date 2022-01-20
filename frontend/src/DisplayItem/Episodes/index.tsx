@@ -14,8 +14,9 @@ import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useEpisodesBy, useProfileBy, useSerieBy } from "../../@redux/hooks";
+import { useProfileBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
+import { useEpisodeBySeriesId, useSeriesByIds } from "../../apis/hooks/series";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -24,7 +25,6 @@ import {
   useShowModal,
 } from "../../components";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadedOnce } from "../../utilities";
 import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
@@ -37,40 +37,35 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const series = useSerieBy(id);
-  const episodes = useEpisodesBy(id);
-  const serie = series.content;
+  const { data: series } = useSeriesByIds([id]);
+  const { data: episodes } = useEpisodeBySeriesId([id]);
 
-  const available = episodes.content.length !== 0;
+  const tvShow = (series?.data.length ?? -1) > 0 ? series?.data[0] : undefined;
+
+  const available = episodes?.length !== 0;
 
   const details = useMemo(
     () => [
       {
         icon: faHdd,
-        text: `${serie?.episodeFileCount} files`,
+        text: `${tvShow?.episodeFileCount} files`,
       },
       {
         icon: faAdjust,
-        text: serie?.seriesType ?? "",
+        text: tvShow?.seriesType ?? "",
       },
     ],
-    [serie]
+    [tvShow]
   );
 
   const showModal = useShowModal();
 
   const [valid, setValid] = useState(true);
 
-  useOnLoadedOnce(() => {
-    if (series.content === null) {
-      setValid(false);
-    }
-  }, series);
-
-  const profile = useProfileBy(series.content?.profileId);
+  const profile = useProfileBy(tvShow?.profileId);
 
   const hasTask = useIsAnyTaskRunningWithId([
-    ...episodes.content.map((v) => v.sonarrEpisodeId),
+    ...(episodes?.map((v) => v.sonarrEpisodeId) ?? []),
     id,
   ]);
 
@@ -78,14 +73,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 
-  if (!serie) {
+  if (!tvShow) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
   return (
     <Container fluid>
       <Helmet>
-        <title>{serie.title} - Bazarr (Series)</title>
+        <title>{tvShow.title} - Bazarr (Series)</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
@@ -94,7 +89,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             disabled={!available || hasTask}
             onClick={() => {
               const task = createTask(
-                serie.title,
+                tvShow.title,
                 id,
                 SeriesApi.action.bind(SeriesApi),
                 {
@@ -111,7 +106,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             icon={faSearch}
             onClick={() => {
               const task = createTask(
-                serie.title,
+                tvShow.title,
                 id,
                 SeriesApi.action.bind(SeriesApi),
                 {
@@ -122,8 +117,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
             disabled={
-              serie.episodeFileCount === 0 ||
-              serie.profileId === null ||
+              tvShow.episodeFileCount === 0 ||
+              tvShow.profileId === null ||
               !available
             }
           >
@@ -132,27 +127,27 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={serie.episodeFileCount === 0 || !available || hasTask}
+            disabled={tvShow.episodeFileCount === 0 || !available || hasTask}
             icon={faBriefcase}
-            onClick={() => showModal("tools", episodes.content)}
+            onClick={() => showModal("tools", episodes)}
           >
             Tools
           </ContentHeader.Button>
           <ContentHeader.Button
             disabled={
-              serie.episodeFileCount === 0 ||
-              serie.profileId === null ||
+              tvShow.episodeFileCount === 0 ||
+              tvShow.profileId === null ||
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", serie)}
+            onClick={() => showModal("upload", tvShow)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", serie)}
+            onClick={() => showModal("edit", tvShow)}
           >
             Edit Series
           </ContentHeader.Button>
@@ -169,12 +164,12 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </Alert>
       </Row>
       <Row>
-        <ItemOverview item={serie} details={details}></ItemOverview>
+        <ItemOverview item={tvShow} details={details}></ItemOverview>
       </Row>
       <Row>
         <Table
-          serie={series}
-          episodes={episodes}
+          tvShow={tvShow}
+          episodes={episodes ?? []}
           profile={profile}
           disabled={hasTask}
         ></Table>
@@ -185,7 +180,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       ></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"
-        episodes={episodes.content}
+        episodes={episodes ?? []}
       ></SeriesUploadModal>
     </Container>
   );

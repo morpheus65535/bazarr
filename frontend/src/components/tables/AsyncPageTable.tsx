@@ -1,68 +1,52 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useQuery } from "react-query";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import { usePageSize } from "../../@storage/local";
-import {
-  ScrollToTop,
-  useEntityByRange,
-  useIsEntityLoaded,
-} from "../../utilities";
+import { createRangeId, ScrollToTop } from "../../utilities";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
 
-function useEntityPagination<T>(
-  entity: Async.Entity<T>,
-  loader: (range: Parameter.Range) => void,
-  start: number,
-  end: number
-): T[] {
-  const { state, content } = entity;
-
-  const needInit = state === "uninitialized";
-  const hasEmpty = useIsEntityLoaded(content, start, end) === false;
-
-  useEffect(() => {
-    if (needInit || hasEmpty) {
-      const length = end - start;
-      loader({ start, length });
-    }
-  });
-
-  return useEntityByRange(content, start, end);
-}
-
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
-    entity: Async.Entity<T>;
-    loader: (params: Parameter.Range) => void;
+    keys: string[];
+    query: RangeQuery<T>;
   };
 
 export default function AsyncPageTable<T extends object>(props: Props<T>) {
-  const { entity, plugins, loader, ...remain } = props;
+  const { plugins, query, keys, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  const {
-    state,
-    content: { ids },
-  } = entity;
-
-  // Impl a new pagination system instead of hacking into existing one
   const [pageIndex, setIndex] = useState(0);
   const [pageSize] = usePageSize();
-  const totalRows = ids.length;
-  const pageCount = Math.ceil(totalRows / pageSize);
 
-  const pageStart = pageIndex * pageSize;
-  const pageEnd = pageStart + pageSize;
+  const start = pageIndex * pageSize;
 
-  const data = useEntityPagination(entity, loader, pageStart, pageEnd);
+  const param: Parameter.Range = {
+    start,
+    length: pageSize,
+  };
+
+  const paramKey = createRangeId(keys[0], param);
+  const { data, isLoading } = useQuery(
+    [...keys, paramKey],
+    () => query(param),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  // Impl a new pagination system instead of hacking into existing one
+  const total = data?.total;
+  const pageCount =
+    total !== undefined ? Math.ceil(total / pageSize) : undefined;
 
   const instance = useTable(
     {
       ...options,
-      data,
+      data: data?.data ?? [],
     },
     useDefaultSettings,
     ...(plugins ?? [])
@@ -72,12 +56,14 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     instance;
 
   const previous = useCallback(() => {
-    setIndex((idx) => idx - 1);
+    setIndex((i) => Math.max(0, i - 1));
   }, []);
 
   const next = useCallback(() => {
-    setIndex((idx) => idx + 1);
-  }, []);
+    if (pageCount) {
+      setIndex((i) => Math.min(i + 1, pageCount - 1));
+    }
+  }, [pageCount]);
 
   const goto = useCallback((idx: number) => {
     setIndex(idx);
@@ -89,7 +75,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
 
   // Reset page index if we out of bound
   useEffect(() => {
-    if (pageCount === 0) return;
+    if (pageCount === undefined || pageCount === 0) return;
 
     if (pageIndex >= pageCount) {
       setIndex(pageCount - 1);
@@ -98,7 +84,7 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     }
   }, [pageIndex, pageCount]);
 
-  if ((state === "loading" && data.length === 0) || state === "uninitialized") {
+  if (isLoading) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
@@ -113,12 +99,12 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
         tableBodyProps={getTableBodyProps()}
       ></BaseTable>
       <PageControl
-        count={pageCount}
+        count={pageCount ?? 0}
         index={pageIndex}
         size={pageSize}
-        total={totalRows}
+        total={total ?? 0}
         canPrevious={pageIndex > 0}
-        canNext={pageIndex < pageCount - 1}
+        canNext={pageCount ? pageIndex < pageCount - 1 : false}
         previous={previous}
         next={next}
         goto={goto}

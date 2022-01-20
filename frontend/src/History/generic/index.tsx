@@ -7,16 +7,14 @@ import { AsyncPageTable } from "../../components";
 
 interface Props<T extends History.Base> {
   type: "movies" | "series";
-  state: Readonly<Async.Entity<T>>;
-  loader: (param: Parameter.Range) => void;
+  query: RangeQuery<T>;
   columns: Column<T>[];
 }
 
 function HistoryGenericView<T extends History.Base = History.Base>({
-  state,
-  loader,
   columns,
   type,
+  query,
 }: Props<T>) {
   const typeName = capitalize(type);
   return (
@@ -27,9 +25,9 @@ function HistoryGenericView<T extends History.Base = History.Base>({
       <Row>
         <AsyncPageTable
           emptyText={`Nothing Found in ${typeName} History`}
-          entity={state}
-          loader={loader}
           columns={columns}
+          keys={[type]}
+          query={query}
           data={[]}
         ></AsyncPageTable>
       </Row>

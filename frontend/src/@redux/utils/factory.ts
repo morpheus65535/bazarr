@@ -153,7 +153,7 @@ export function createAsyncListReducer<S, T, ID extends Async.IdType>(
 export function createAsyncEntityReducer<S, T, ID extends Async.IdType>(
   builder: ActionReducerMapBuilder<S>,
   getEntity: (state: Draft<S>) => Draft<Async.Entity<T>>,
-  actions: ActionParam<AsyncDataWrapper<T>, ID>
+  actions: ActionParam<DataWrapperWithTotal<T>, ID>
 ) {
   const { all, removeIds, ids, range, dirty, reset } = actions;
 

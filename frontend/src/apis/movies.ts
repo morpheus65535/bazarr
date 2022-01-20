@@ -21,14 +21,17 @@ class MovieApi extends BaseApi {
   }
 
   async movies(radarrid?: number[]) {
-    const response = await this.get<AsyncDataWrapper<Item.Movie>>("", {
+    const response = await this.get<DataWrapperWithTotal<Item.Movie>>("", {
       radarrid,
     });
     return response;
   }
 
   async moviesBy(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<Item.Movie>>("", params);
+    const response = await this.get<DataWrapperWithTotal<Item.Movie>>(
+      "",
+      params
+    );
     return response;
   }
 
@@ -37,7 +40,7 @@ class MovieApi extends BaseApi {
   }
 
   async wanted(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<Wanted.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.Movie>>(
       "/wanted",
       params
     );
@@ -45,14 +48,17 @@ class MovieApi extends BaseApi {
   }
 
   async wantedBy(radarrid: number[]) {
-    const response = await this.get<AsyncDataWrapper<Wanted.Movie>>("/wanted", {
-      radarrid,
-    });
+    const response = await this.get<DataWrapperWithTotal<Wanted.Movie>>(
+      "/wanted",
+      {
+        radarrid,
+      }
+    );
     return response;
   }
 
   async history(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<History.Movie>>(
       "/history",
       params
     );
@@ -60,7 +66,7 @@ class MovieApi extends BaseApi {
   }
 
   async historyBy(radarrid: number) {
-    const response = await this.get<AsyncDataWrapper<History.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<History.Movie>>(
       "/history",
       { radarrid }
     );

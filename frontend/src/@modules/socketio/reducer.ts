@@ -1,21 +1,5 @@
 import { ActionCreator } from "@reduxjs/toolkit";
 import {
-  episodesMarkBlacklistDirty,
-  episodesMarkDirtyById,
-  episodesRemoveById,
-  episodesResetHistory,
-  movieMarkBlacklistDirty,
-  movieMarkDirtyById,
-  movieMarkWantedDirtyById,
-  movieRemoveById,
-  movieRemoveWantedById,
-  movieResetHistory,
-  movieResetWanted,
-  seriesMarkDirtyById,
-  seriesMarkWantedDirtyById,
-  seriesRemoveById,
-  seriesRemoveWantedById,
-  seriesResetWanted,
   siteAddNotifications,
   siteAddProgress,
   siteRemoveProgress,
@@ -24,6 +8,11 @@ import {
 } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import queryClient from "../../apis/queries";
+import {
+  createEpisodeId,
+  createMovieId,
+  createSeriesId,
+} from "../../utilities";
 
 function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {
@@ -56,7 +45,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "connect_error",
       any: () => {
-        const initialized = reduxStore.getState().site.initialized;
+        const initialized = reduxStore.getState().initialized;
         if (initialized === true) {
           reduxStore.dispatch(siteUpdateOffline(true));
         } else {
@@ -90,28 +79,53 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "series",
-      update: bindReduxAction(seriesMarkDirtyById),
-      delete: bindReduxAction(seriesRemoveById),
+      update: (ids) => {
+        const queries = ids.map(createSeriesId);
+        queryClient.invalidateQueries(queries);
+      },
+      delete: () => {
+        queryClient.invalidateQueries("series");
+      },
     },
     {
       key: "movie",
-      update: bindReduxAction(movieMarkDirtyById),
-      delete: bindReduxAction(movieRemoveById),
+      update: (ids) => {
+        const queries = ids.map(createMovieId);
+        queryClient.invalidateQueries(queries);
+      },
+      delete: () => {
+        queryClient.invalidateQueries("movies");
+      },
     },
     {
       key: "episode",
-      update: bindReduxAction(episodesMarkDirtyById),
-      delete: bindReduxAction(episodesRemoveById),
+      update: (ids) => {
+        const queries = ids.map(createEpisodeId);
+        queryClient.invalidateQueries(queries);
+      },
+      delete: () => {
+        queryClient.invalidateQueries("episodes");
+      },
     },
     {
       key: "episode-wanted",
-      update: bindReduxAction(seriesMarkWantedDirtyById),
-      delete: bindReduxAction(seriesRemoveWantedById),
+      update: (ids) => {
+        // Find a better way to update wanted
+        queryClient.invalidateQueries("wanted");
+      },
+      delete: () => {
+        queryClient.invalidateQueries("wanted");
+      },
     },
     {
       key: "movie-wanted",
-      update: bindReduxAction(movieMarkWantedDirtyById),
-      delete: bindReduxAction(movieRemoveWantedById),
+      update: (ids) => {
+        // Find a better way to update wanted
+        queryClient.invalidateQueries("wanted");
+      },
+      delete: () => {
+        queryClient.invalidateQueries("wanted");
+      },
     },
     {
       key: "settings",
@@ -133,27 +147,39 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "movie-history",
-      any: bindReduxAction(movieResetHistory),
+      any: () => {
+        queryClient.invalidateQueries("history");
+      },
     },
     {
       key: "movie-blacklist",
-      any: bindReduxAction(movieMarkBlacklistDirty),
+      any: () => {
+        queryClient.invalidateQueries("blacklist");
+      },
     },
     {
       key: "episode-history",
-      any: bindReduxAction(episodesResetHistory),
+      any: () => {
+        queryClient.invalidateQueries("history");
+      },
     },
     {
       key: "episode-blacklist",
-      any: bindReduxAction(episodesMarkBlacklistDirty),
+      any: () => {
+        queryClient.invalidateQueries("blacklist");
+      },
     },
     {
       key: "reset-episode-wanted",
-      any: bindReduxAction(seriesResetWanted),
+      any: () => {
+        queryClient.invalidateQueries("wanted");
+      },
     },
     {
       key: "reset-movie-wanted",
-      any: bindReduxAction(movieResetWanted),
+      any: () => {
+        queryClient.invalidateQueries("wanted");
+      },
     },
     {
       key: "task",

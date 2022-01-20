@@ -5,9 +5,6 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateAll, movieUpdateByRange } from "../../@redux/actions";
-import { useMovieEntities } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi, useLanguageProfiles } from "../../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -16,8 +13,6 @@ import BaseItemView from "../generic/BaseItemView";
 interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
-  const movies = useMovieEntities();
-  const loader = useReduxAction(movieUpdateByRange);
   const { data: profiles } = useLanguageProfiles();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
@@ -108,10 +103,8 @@ const MovieView: FunctionComponent<Props> = () => {
 
   return (
     <BaseItemView
-      state={movies}
       name="Movies"
-      loader={loader}
-      updateAction={movieUpdateAll}
+      query={(param) => MoviesApi.moviesBy(param)}
       columns={columns}
       modify={(form) => MoviesApi.modify(form)}
     ></BaseItemView>

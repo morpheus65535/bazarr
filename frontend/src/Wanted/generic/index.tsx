@@ -12,8 +12,7 @@ import { AsyncPageTable, ContentHeader } from "../../components";
 interface Props<T extends Wanted.Base> {
   type: "movies" | "series";
   columns: Column<T>[];
-  state: Async.Entity<T>;
-  loader: (params: Parameter.Range) => void;
+  query: RangeQuery<T>;
   searchAll: () => Promise<void>;
 }
 
@@ -22,13 +21,13 @@ const TaskGroupName = "Searching wanted subtitles...";
 function GenericWantedView<T extends Wanted.Base>({
   type,
   columns,
-  state,
-  loader,
+  query,
   searchAll,
 }: Props<T>) {
   const typeName = capitalize(type);
 
-  const dataCount = Object.keys(state.content.entities).length;
+  // TODO
+  const dataCount = 1;
 
   const hasTask = useIsGroupTaskRunning(TaskGroupName);
 
@@ -39,7 +38,7 @@ function GenericWantedView<T extends Wanted.Base>({
       </Helmet>
       <ContentHeader>
         <ContentHeader.Button
-          disabled={dataCount === 0 || hasTask}
+          // disabled={dataCount === 0 || hasTask}
           onClick={() => {
             const task = createTask(type, undefined, searchAll);
             dispatchTask(TaskGroupName, [task], "Searching...");
@@ -51,9 +50,9 @@ function GenericWantedView<T extends Wanted.Base>({
       </ContentHeader>
       <Row>
         <AsyncPageTable
-          entity={state}
-          loader={loader}
           emptyText={`No Missing ${typeName} Subtitles`}
+          keys={[`${type}-wanted`]}
+          query={query}
           columns={columns}
           data={[]}
         ></AsyncPageTable>

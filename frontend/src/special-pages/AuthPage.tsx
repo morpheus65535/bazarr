@@ -30,7 +30,7 @@ const AuthPage: FunctionComponent<Props> = () => {
 
   const onSuccess = useCallback(() => window.location.reload(), []);
 
-  const authState = useReduxStore((s) => s.site.auth);
+  const authState = useReduxStore((s) => s.auth);
 
   const onError = useCallback(() => {
     setUpdate(false);

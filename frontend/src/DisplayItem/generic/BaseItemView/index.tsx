@@ -1,49 +1,38 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
-import { AsyncThunk } from "@reduxjs/toolkit";
 import { uniqBy } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
-import { useAppDispatch } from "../../../@redux/hooks/base";
 import { useLanguageProfiles } from "../../../apis";
 import { ContentHeader } from "../../../components";
-import { GetItemId, isNonNullable } from "../../../utilities";
+import { GetItemId } from "../../../utilities";
 import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  loader: (params: Parameter.Range) => void;
+  query: RangeQuery<T>;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
-  state: Async.Entity<T>;
 }
 
-interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {
-  updateAction: AsyncThunk<AsyncDataWrapper<T>, void, {}>;
-}
+interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {}
 
-function BaseItemView<T extends Item.Base>({
-  updateAction,
-  ...shared
-}: Props<T>) {
-  const state = shared.state;
-
+function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
   const [pendingEditMode, setPendingEdit] = useState(false);
   const [editMode, setEdit] = useState(false);
 
-  const dispatch = useAppDispatch();
   const update = useCallback(() => {
-    dispatch(updateAction()).then(() => {
-      setPendingEdit((edit) => {
-        // Hack to remove all dependencies
-        setEdit(edit);
-        return edit;
-      });
-      setDirty([]);
-    });
-  }, [dispatch, updateAction]);
+    // dispatch(updateAction()).then(() => {
+    //   setPendingEdit((edit) => {
+    //     // Hack to remove all dependencies
+    //     setEdit(edit);
+    //     return edit;
+    //   });
+    //   setDirty([]);
+    // });
+  }, []);
 
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
@@ -85,13 +74,13 @@ function BaseItemView<T extends Item.Base>({
   );
 
   const startEdit = useCallback(() => {
-    if (shared.state.content.ids.every(isNonNullable)) {
-      setEdit(true);
-    } else {
-      update();
-    }
-    setPendingEdit(true);
-  }, [shared.state.content.ids, update]);
+    // if (shared.state.content.ids.every(isNonNullable)) {
+    //   setEdit(true);
+    // } else {
+    //   update();
+    // }
+    // setPendingEdit(true);
+  }, []);
 
   const endEdit = useCallback(() => {
     setEdit(false);
@@ -152,7 +141,7 @@ function BaseItemView<T extends Item.Base>({
           <ContentHeader.Button
             updating={pendingEditMode !== editMode}
             disabled={
-              (state.content.ids.length === 0 && state.state === "loading") ||
+              // (state.content.ids.length === 0 && state.state === "loading") ||
               hasTask
             }
             icon={faList}

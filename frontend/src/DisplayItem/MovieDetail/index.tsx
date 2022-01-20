@@ -14,8 +14,9 @@ import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useMovieBy, useProfileBy } from "../../@redux/hooks";
+import { useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
+import { useMoviesByIds } from "../../apis/hooks/movies";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -27,7 +28,6 @@ import {
 } from "../../components";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import { RouterEmptyPath } from "../../special-pages/404";
-import { useOnLoadedOnce } from "../../utilities";
 import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
@@ -50,22 +50,16 @@ interface Props extends RouteComponentProps<Params> {}
 
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
-  const movie = useMovieBy(id);
-  const item = movie.content;
+  const { data: movies } = useMoviesByIds([id]);
+  const item = movies && movies.data.length > 0 ? movies.data[0] : undefined;
 
-  const profile = useProfileBy(movie.content?.profileId);
+  const profile = useProfileBy(item?.profileId);
 
   const showModal = useShowModal();
 
   const [valid, setValid] = useState(true);
 
   const hasTask = useIsAnyTaskRunningWithId([id]);
-
-  useOnLoadedOnce(() => {
-    if (movie.content === null) {
-      setValid(false);
-    }
-  }, movie);
 
   if (isNaN(id) || !valid) {
     return <Redirect to={RouterEmptyPath}></Redirect>;

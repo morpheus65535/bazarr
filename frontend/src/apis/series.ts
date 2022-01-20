@@ -6,14 +6,17 @@ class SeriesApi extends BaseApi {
   }
 
   async series(seriesid?: number[]) {
-    const response = await this.get<AsyncDataWrapper<Item.Series>>("", {
+    const response = await this.get<DataWrapperWithTotal<Item.Series>>("", {
       seriesid,
     });
     return response;
   }
 
   async seriesBy(params: Parameter.Range) {
-    const response = await this.get<AsyncDataWrapper<Item.Series>>("", params);
+    const response = await this.get<DataWrapperWithTotal<Item.Series>>(
+      "",
+      params
+    );
     return response;
   }
 

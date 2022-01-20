@@ -18,25 +18,25 @@ const longerList: TestType[] = [...defaultList, newItem];
 const shorterList: TestType[] = defaultList.slice(0, defaultList.length - 1);
 
 const allResolved = createAsyncThunk("all/resolved", () => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
     resolve({ total: defaultList.length, data: defaultList });
   });
 });
 
 const allResolvedLonger = createAsyncThunk("all/longer/resolved", () => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
     resolve({ total: longerList.length, data: longerList });
   });
 });
 
 const allResolvedShorter = createAsyncThunk("all/shorter/resolved", () => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
     resolve({ total: shorterList.length, data: shorterList });
   });
 });
 
 const idsResolved = createAsyncThunk("ids/resolved", (param: number[]) => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
     resolve({
       total: defaultList.length,
       data: intersectionWith(defaultList, param, (l, r) => l.id === r),
@@ -47,7 +47,7 @@ const idsResolved = createAsyncThunk("ids/resolved", (param: number[]) => {
 const idsResolvedLonger = createAsyncThunk(
   "ids/longer/resolved",
   (param: number[]) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
       resolve({
         total: longerList.length,
         data: intersectionWith(longerList, param, (l, r) => l.id === r),
@@ -59,7 +59,7 @@ const idsResolvedLonger = createAsyncThunk(
 const idsResolvedShorter = createAsyncThunk(
   "ids/shorter/resolved",
   (param: number[]) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
       resolve({
         total: shorterList.length,
         data: intersectionWith(shorterList, param, (l, r) => l.id === r),
@@ -71,7 +71,7 @@ const idsResolvedShorter = createAsyncThunk(
 const rangeResolved = createAsyncThunk(
   "range/resolved",
   (param: Parameter.Range) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
       resolve({
         total: defaultList.length,
         data: defaultList.slice(param.start, param.start + param.length),
@@ -83,7 +83,7 @@ const rangeResolved = createAsyncThunk(
 const rangeResolvedLonger = createAsyncThunk(
   "range/longer/resolved",
   (param: Parameter.Range) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
       resolve({
         total: longerList.length,
         data: longerList.slice(param.start, param.start + param.length),
@@ -95,7 +95,7 @@ const rangeResolvedLonger = createAsyncThunk(
 const rangeResolvedShorter = createAsyncThunk(
   "range/shorter/resolved",
   (param: Parameter.Range) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve) => {
       resolve({
         total: shorterList.length,
         data: shorterList.slice(param.start, param.start + param.length),
@@ -105,19 +105,19 @@ const rangeResolvedShorter = createAsyncThunk(
 );
 
 const allRejected = createAsyncThunk("all/rejected", () => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve, rejected) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve, rejected) => {
     rejected("Error");
   });
 });
 const idsRejected = createAsyncThunk("ids/rejected", (param: number[]) => {
-  return new Promise<AsyncDataWrapper<TestType>>((resolve, rejected) => {
+  return new Promise<DataWrapperWithTotal<TestType>>((resolve, rejected) => {
     rejected("Error");
   });
 });
 const rangeRejected = createAsyncThunk(
   "range/rejected",
   (param: Parameter.Range) => {
-    return new Promise<AsyncDataWrapper<TestType>>((resolve, rejected) => {
+    return new Promise<DataWrapperWithTotal<TestType>>((resolve, rejected) => {
       rejected("Error");
     });
   }

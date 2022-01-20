@@ -3,9 +3,6 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { seriesUpdateAll, seriesUpdateByRange } from "../../@redux/actions";
-import { useSerieEntities } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
 import { SeriesApi, useLanguageProfiles } from "../../apis";
 import { ActionBadge } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -14,8 +11,6 @@ import BaseItemView from "../generic/BaseItemView";
 interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
-  const series = useSerieEntities();
-  const loader = useReduxAction(seriesUpdateByRange);
   const { data: profiles } = useLanguageProfiles();
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -108,10 +103,8 @@ const SeriesView: FunctionComponent<Props> = () => {
 
   return (
     <BaseItemView
-      state={series}
       name="Series"
-      updateAction={seriesUpdateAll}
-      loader={loader}
+      query={(params) => SeriesApi.seriesBy(params)}
       columns={columns}
       modify={(form) => SeriesApi.modify(form)}
     ></BaseItemView>

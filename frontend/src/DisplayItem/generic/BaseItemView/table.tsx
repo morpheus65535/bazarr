@@ -1,16 +1,12 @@
-import { uniqBy } from "lodash";
-import React, { useCallback, useMemo } from "react";
-import { TableOptions, TableUpdater, useRowSelect } from "react-table";
+import React, { useCallback } from "react";
+import { TableOptions, TableUpdater } from "react-table";
 import { SharedProps } from ".";
 import {
   AsyncPageTable,
   ItemEditorModal,
-  SimpleTable,
   useShowModal,
 } from "../../../components";
 import { TableStyleProps } from "../../../components/tables/BaseTable";
-import { useCustomSelection } from "../../../components/tables/plugins";
-import { GetItemId, useEntityToList } from "../../../utilities";
 
 interface Props<T extends Item.Base> extends SharedProps<T> {
   dirtyItems: readonly T[];
@@ -19,14 +15,13 @@ interface Props<T extends Item.Base> extends SharedProps<T> {
 }
 
 function Table<T extends Item.Base>({
-  state,
   dirtyItems,
   modify,
   editMode,
   select,
   columns,
-  loader,
   name,
+  query,
 }: Props<T>) {
   const showModal = useShowModal();
 
@@ -37,12 +32,10 @@ function Table<T extends Item.Base>({
     [showModal]
   );
 
-  const orderList = useEntityToList(state.content);
-
-  const data = useMemo(
-    () => uniqBy([...dirtyItems, ...orderList], GetItemId),
-    [dirtyItems, orderList]
-  );
+  // const data = useMemo(
+  //   () => uniqBy([...dirtyItems, ...orderList], GetItemId),
+  //   [dirtyItems, orderList]
+  // );
 
   const options: Partial<TableOptions<T> & TableStyleProps<T>> = {
     emptyText: `No ${name} Found`,
@@ -51,25 +44,13 @@ function Table<T extends Item.Base>({
 
   return (
     <React.Fragment>
-      {editMode ? (
-        // TODO: Use PageTable
-        <SimpleTable
-          {...options}
-          columns={columns}
-          data={data}
-          onSelect={select}
-          isSelecting={true}
-          plugins={[useRowSelect, useCustomSelection]}
-        ></SimpleTable>
-      ) : (
-        <AsyncPageTable
-          {...options}
-          columns={columns}
-          entity={state}
-          loader={loader}
-          data={[]}
-        ></AsyncPageTable>
-      )}
+      <AsyncPageTable
+        {...options}
+        columns={columns}
+        keys={[name]}
+        query={query}
+        data={[]}
+      ></AsyncPageTable>
       <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );

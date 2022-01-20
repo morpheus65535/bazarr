@@ -4,9 +4,6 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { movieUpdateWantedByRange } from "../../@redux/actions";
-import { useWantedMovies } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
 import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -15,10 +12,6 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedMoviesView: FunctionComponent<Props> = () => {
-  const wantedMovies = useWantedMovies();
-
-  const loader = useReduxAction(movieUpdateWantedByRange);
-
   const searchAll = useCallback(
     () => MoviesApi.action({ action: "search-wanted" }),
     []
@@ -75,8 +68,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
     <GenericWantedView
       type="movies"
       columns={columns}
-      state={wantedMovies}
-      loader={loader}
+      query={(param) => MoviesApi.wanted(param)}
       searchAll={searchAll}
     ></GenericWantedView>
   );

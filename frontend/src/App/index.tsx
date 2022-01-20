@@ -20,7 +20,7 @@ import Header from "./Header";
 interface Props {}
 
 const App: FunctionComponent<Props> = () => {
-  const { initialized, auth } = useReduxStore((s) => s.site);
+  const { initialized, auth } = useReduxStore((s) => s);
 
   const notify = useNotification("has-update", 10 * 1000);
 

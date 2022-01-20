@@ -4,9 +4,6 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { episodesUpdateHistoryByRange } from "../../@redux/actions";
-import { useSeriesHistory } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
 import { EpisodesApi } from "../../apis";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
@@ -15,9 +12,6 @@ import HistoryGenericView from "../generic";
 interface Props {}
 
 const SeriesHistoryView: FunctionComponent<Props> = () => {
-  const series = useSeriesHistory();
-  const loader = useReduxAction(episodesUpdateHistoryByRange);
-
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [
       {
@@ -139,8 +133,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
   return (
     <HistoryGenericView
       type="series"
-      state={series}
-      loader={loader}
+      query={(param) => EpisodesApi.history(param)}
       columns={columns}
     ></HistoryGenericView>
   );

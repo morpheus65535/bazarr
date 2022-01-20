@@ -14,7 +14,6 @@ import { useShowOnlyDesired } from "../../@redux/hooks/site";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
-  AsyncOverlay,
   EpisodeHistoryModal,
   GroupTable,
   SubtitleToolModal,
@@ -26,8 +25,8 @@ import { BuildKey, filterSubtitleBy } from "../../utilities";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  serie: Async.Item<Item.Series>;
-  episodes: Async.Base<Item.Episode[]>;
+  tvShow?: Item.Series;
+  episodes: Item.Episode[];
   disabled?: boolean;
   profile?: Language.Profile;
 }
@@ -48,7 +47,7 @@ const download = (item: Item.Episode, result: SearchResultType) => {
 };
 
 const Table: FunctionComponent<Props> = ({
-  serie,
+  tvShow,
   episodes,
   profile,
   disabled,
@@ -152,7 +151,7 @@ const Table: FunctionComponent<Props> = ({
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
-                disabled={serie.content?.profileId === null || disabled}
+                disabled={tvShow?.profileId === null || disabled}
                 onClick={() => {
                   update && update(row, "manual-search");
                 }}
@@ -176,7 +175,7 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, serie, disabled]
+    [onlyDesired, profileItems, tvShow, disabled]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
@@ -192,35 +191,28 @@ const Table: FunctionComponent<Props> = ({
 
   const maxSeason = useMemo(
     () =>
-      episodes.content.reduce<number>(
-        (prev, curr) => Math.max(prev, curr.season),
-        0
-      ),
+      episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
     [episodes]
   );
 
   return (
     <React.Fragment>
-      <AsyncOverlay ctx={episodes}>
-        {({ content }) => (
-          <GroupTable
-            columns={columns}
-            data={content}
-            update={updateRow}
-            initialState={{
-              sortBy: [
-                { id: "season", desc: true },
-                { id: "episode", desc: true },
-              ],
-              groupBy: ["season"],
-              expanded: {
-                [`season:${maxSeason}`]: true,
-              },
-            }}
-            emptyText="No Episode Found For This Series"
-          ></GroupTable>
-        )}
-      </AsyncOverlay>
+      <GroupTable
+        columns={columns}
+        data={episodes}
+        update={updateRow}
+        initialState={{
+          sortBy: [
+            { id: "season", desc: true },
+            { id: "episode", desc: true },
+          ],
+          groupBy: ["season"],
+          expanded: {
+            [`season:${maxSeason}`]: true,
+          },
+        }}
+        emptyText="No Episode Found For This Series"
+      ></GroupTable>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
       <ManualSearchModal
