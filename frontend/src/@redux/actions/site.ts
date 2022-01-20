@@ -1,13 +1,5 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { waitFor } from "../../utilities";
-import { systemUpdateAllSettings } from "./system";
-
-export const siteBootstrap = createAsyncThunk(
-  "site/bootstrap",
-  (_: undefined, { dispatch }) => {
-    dispatch(systemUpdateAllSettings());
-  }
-);
 
 export const siteUpdateInitialization = createAction<string | true>(
   "site/initialization/update"

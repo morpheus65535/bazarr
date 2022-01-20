@@ -21,11 +21,10 @@ import {
   siteChangeSidebarVisibility,
   siteRedirectToAuth,
 } from "../@redux/actions";
-import { useSystemSettings } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
-import { SystemApi } from "../apis";
+import { SystemApi, useSystemSettings } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
@@ -61,9 +60,9 @@ interface Props {}
 const Header: FunctionComponent<Props> = () => {
   const setNeedAuth = useReduxAction(siteRedirectToAuth);
 
-  const settings = useSystemSettings();
+  const { data: settings } = useSystemSettings();
 
-  const canLogout = (settings.content?.auth.type ?? "none") === "form";
+  const canLogout = (settings?.auth.type ?? "none") === "form";
 
   const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 

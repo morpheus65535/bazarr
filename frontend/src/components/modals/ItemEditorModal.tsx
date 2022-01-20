@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../@redux/hooks";
+import { useLanguageProfiles } from "../../apis";
 import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
@@ -15,7 +15,7 @@ interface Props {
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { onSuccess, submit, ...modal } = props;
 
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
 
   const { payload, closeModal } = useModalInformation<Item.Base>(
     modal.modalKey

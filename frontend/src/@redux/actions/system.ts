@@ -1,33 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ProvidersApi, SystemApi } from "../../apis";
 
-export const systemUpdateAllSettings = createAsyncThunk(
-  "system/update",
-  async (_: undefined, { dispatch }) => {
-    await Promise.all([
-      dispatch(systemUpdateSettings()),
-      dispatch(systemUpdateLanguages()),
-      dispatch(systemUpdateLanguagesProfiles()),
-    ]);
-  }
-);
-
-export const systemUpdateLanguages = createAsyncThunk(
-  "system/languages/update",
-  async () => {
-    const response = await SystemApi.languages();
-    return response;
-  }
-);
-
-export const systemUpdateLanguagesProfiles = createAsyncThunk(
-  "system/languages/profile/update",
-  async () => {
-    const response = await SystemApi.languagesProfileList();
-    return response;
-  }
-);
-
 export const systemUpdateStatus = createAsyncThunk(
   "system/status/update",
   async () => {
@@ -66,14 +39,6 @@ export const systemUpdateReleases = createAsyncThunk(
   "system/releases/update",
   async () => {
     const response = await SystemApi.releases();
-    return response;
-  }
-);
-
-export const systemUpdateSettings = createAsyncThunk(
-  "system/settings/update",
-  async () => {
-    const response = await SystemApi.settings();
     return response;
   }
 );

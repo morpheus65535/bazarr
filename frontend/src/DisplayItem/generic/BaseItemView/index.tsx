@@ -6,8 +6,8 @@ import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../../@redux/hooks";
 import { useAppDispatch } from "../../../@redux/hooks/base";
+import { useLanguageProfiles } from "../../../apis";
 import { ContentHeader } from "../../../components";
 import { GetItemId, isNonNullable } from "../../../utilities";
 import Table from "./table";
@@ -48,7 +48,7 @@ function BaseItemView<T extends Item.Base>({
   const [selections, setSelections] = useState<T[]>([]);
   const [dirtyItems, setDirty] = useState<T[]>([]);
 
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
 
   const profileOptions = useMemo<JSX.Element[]>(() => {
     const items: JSX.Element[] = [];

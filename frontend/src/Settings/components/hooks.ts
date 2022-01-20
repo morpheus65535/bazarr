@@ -1,6 +1,6 @@
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
-import { useSystemSettings } from "../../@redux/hooks";
+import { useSystemSettings } from "../../apis";
 import { log } from "../../utilities/logger";
 import { StagedChangesContext } from "./provider";
 
@@ -51,7 +51,7 @@ export function useExtract<T>(
   validate: ValidateFuncType<T>,
   override?: OverrideFuncType<T>
 ): Readonly<Nullable<T>> {
-  const settings = useSystemSettings().content!;
+  const { data: settings } = useSystemSettings();
 
   const extractValue = useMemo(() => {
     let value: Nullable<T> = null;

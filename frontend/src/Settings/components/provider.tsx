@@ -10,11 +10,9 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { useDidUpdate } from "rooks";
-import { useSystemSettings } from "../../@redux/hooks";
 import { useUpdateLocalStorage } from "../../@storage/local";
-import { SystemApi } from "../../apis";
-import { ContentHeader } from "../../components";
+import { SystemApi, useSystemSettings } from "../../apis";
+import { ContentHeader, LoadingIndicator } from "../../components";
 import { log } from "../../utilities/logger";
 import {
   enabledLanguageKey,
@@ -59,14 +57,15 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
-  const settings = useSystemSettings();
-  useDidUpdate(() => {
+  // TODO: Handling refresh
+  const { isLoading, isRefetching } = useSystemSettings();
+  useEffect(() => {
     // Will be updated by websocket
-    if (settings.state !== "loading") {
+    if (!isRefetching) {
       setChange({});
       setUpdating(false);
     }
-  }, [settings.state]);
+  }, [isRefetching]);
 
   const saveSettings = useCallback((settings: LooseObject) => {
     submitHooks(settings);
@@ -127,6 +126,10 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
     // send to default dispatcher
     defaultDispatcher(lostValues);
   }, [stagedChange, dispatcher, defaultDispatcher]);
+
+  if (isLoading) {
+    return <LoadingIndicator></LoadingIndicator>;
+  }
 
   return (
     <Container fluid>

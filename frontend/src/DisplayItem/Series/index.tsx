@@ -4,9 +4,9 @@ import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { seriesUpdateAll, seriesUpdateByRange } from "../../@redux/actions";
-import { useLanguageProfiles, useSerieEntities } from "../../@redux/hooks";
+import { useSerieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
-import { SeriesApi } from "../../apis";
+import { SeriesApi, useLanguageProfiles } from "../../apis";
 import { ActionBadge } from "../../components";
 import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
@@ -16,7 +16,7 @@ interface Props {}
 const SeriesView: FunctionComponent<Props> = () => {
   const series = useSerieEntities();
   const loader = useReduxAction(seriesUpdateByRange);
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {

@@ -6,9 +6,9 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { movieUpdateAll, movieUpdateByRange } from "../../@redux/actions";
-import { useLanguageProfiles, useMovieEntities } from "../../@redux/hooks";
+import { useMovieEntities } from "../../@redux/hooks";
 import { useReduxAction } from "../../@redux/hooks/base";
-import { MoviesApi } from "../../apis";
+import { MoviesApi, useLanguageProfiles } from "../../apis";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
 import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
@@ -18,7 +18,7 @@ interface Props {}
 const MovieView: FunctionComponent<Props> = () => {
   const movies = useMovieEntities();
   const loader = useReduxAction(movieUpdateByRange);
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [

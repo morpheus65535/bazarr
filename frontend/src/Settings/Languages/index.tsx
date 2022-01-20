@@ -1,10 +1,7 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
-import {
-  useEnabledLanguages,
-  useLanguageProfiles,
-  useLanguages,
-} from "../../@redux/hooks";
+import { useEnabledLanguages } from "../../@redux/hooks";
+import { useLanguageProfiles, useLanguages } from "../../apis";
 import {
   Check,
   CollapseBox,
@@ -50,9 +47,9 @@ export function useProfilesContext() {
 interface Props {}
 
 const SettingsLanguagesView: FunctionComponent<Props> = () => {
-  const languages = useLanguages();
-  const enabled = useEnabledLanguages();
-  const profiles = useLanguageProfiles();
+  const { data: languages } = useLanguages();
+  const { data: enabled } = useEnabledLanguages();
+  const { data: profiles } = useLanguageProfiles();
 
   return (
     <SettingsProvider title="Languages - Bazarr (Settings)">
@@ -77,7 +74,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = () => {
             <Input name="Languages Filter">
               <LanguageSelector
                 settingKey={enabledLanguageKey}
-                options={languages}
+                options={languages ?? []}
               ></LanguageSelector>
             </Input>
           </Group>

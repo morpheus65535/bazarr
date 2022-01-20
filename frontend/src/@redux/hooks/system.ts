@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useLanguageProfiles, useLanguages } from "../../apis";
 import {
   providerUpdateList,
   systemUpdateHealth,
@@ -9,12 +10,6 @@ import {
 } from "../actions";
 import { useAutoUpdate } from "./async";
 import { useReduxAction, useReduxStore } from "./base";
-
-export function useSystemSettings() {
-  const items = useReduxStore((s) => s.system.settings);
-
-  return items;
-}
 
 export function useSystemLogs() {
   const items = useReduxStore(({ system }) => system.logs);
@@ -64,61 +59,42 @@ export function useSystemReleases() {
   return items;
 }
 
-export function useLanguageProfiles() {
-  const items = useReduxStore((s) => s.system.languagesProfiles);
-
-  return items.content;
-}
-
 export function useProfileBy(id: number | null | undefined) {
-  const profiles = useLanguageProfiles();
-  return useMemo(
-    () => profiles?.find((v) => v.profileId === id),
-    [id, profiles]
-  );
-}
-
-export function useLanguages() {
-  const data = useReduxStore((s) => s.system.languages);
-
-  const languages = useMemo<Language.Info[]>(
-    () => data.content?.map((v) => ({ code2: v.code2, name: v.name })) ?? [],
-    [data.content]
-  );
-
-  return languages;
+  const { data } = useLanguageProfiles();
+  return useMemo(() => data?.find((v) => v.profileId === id), [id, data]);
 }
 
 export function useEnabledLanguages() {
-  const data = useReduxStore((s) => s.system.languages);
+  const query = useLanguages();
 
-  const enabled = useMemo<Language.Info[]>(
-    () =>
-      data.content
+  const enabled = useMemo(() => {
+    const data =
+      query.data
         ?.filter((v) => v.enabled)
-        .map((v) => ({ code2: v.code2, name: v.name })) ?? [],
-    [data.content]
-  );
+        .map((v) => ({ code2: v.code2, name: v.name })) ?? [];
+
+    return {
+      ...query,
+      data,
+    };
+  }, [query]);
 
   return enabled;
 }
 
 export function useLanguageBy(code?: string) {
-  const languages = useLanguages();
-  return useMemo(
-    () => languages.find((v) => v.code2 === code),
-    [languages, code]
-  );
+  const { data } = useLanguages();
+  return useMemo(() => data?.find((v) => v.code2 === code), [data, code]);
 }
 
 // Convert languageprofile items to language
 export function useProfileItemsToLanguages(profile?: Language.Profile) {
-  const languages = useLanguages();
+  const { data } = useLanguages();
 
   return useMemo(
     () =>
       profile?.items.map<Language.Info>(({ language: code, hi, forced }) => {
-        const name = languages.find((v) => v.code2 === code)?.name ?? "";
+        const name = data?.find((v) => v.code2 === code)?.name ?? "";
         return {
           hi: hi === "True",
           forced: forced === "True",
@@ -126,6 +102,6 @@ export function useProfileItemsToLanguages(profile?: Language.Profile) {
           name,
         };
       }) ?? [],
-    [languages, profile?.items]
+    [data, profile?.items]
   );
 }

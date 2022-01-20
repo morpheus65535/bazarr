@@ -5,7 +5,6 @@ import { isProdEnv } from "../../utilities";
 import {
   siteAddNotifications,
   siteAddProgress,
-  siteBootstrap,
   siteChangeSidebarVisibility,
   siteRedirectToAuth,
   siteRemoveNotifications,
@@ -45,12 +44,6 @@ const defaultSite: Site = {
 
 const reducer = createReducer(defaultSite, (builder) => {
   builder
-    .addCase(siteBootstrap.fulfilled, (state) => {
-      state.initialized = true;
-    })
-    .addCase(siteBootstrap.rejected, (state) => {
-      state.initialized = "An Error Occurred When Initializing Bazarr UI";
-    })
     .addCase(siteRedirectToAuth, (state) => {
       if (!isProdEnv) {
         apis._resetApi("NEED_AUTH");
