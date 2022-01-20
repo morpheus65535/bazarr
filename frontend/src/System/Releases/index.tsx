@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useSystemReleases } from "../../@redux/hooks";
-import { AsyncOverlay } from "../../components";
+import { useSystemReleases } from "../../apis";
+import { QueryOverlay } from "../../components";
 import { BuildKey } from "../../utilities";
 
 interface Props {}
@@ -16,11 +16,11 @@ const SystemReleasesView: FunctionComponent<Props> = () => {
         <title>Releases - Bazarr (System)</title>
       </Helmet>
       <Row>
-        <AsyncOverlay ctx={releases}>
-          {({ content }) => {
+        <QueryOverlay {...releases}>
+          {({ data }) => {
             return (
               <React.Fragment>
-                {content?.map((v, idx) => (
+                {data?.map((v, idx) => (
                   <Col xs={12} key={BuildKey(idx, v.date)}>
                     <InfoElement {...v}></InfoElement>
                   </Col>
@@ -28,7 +28,7 @@ const SystemReleasesView: FunctionComponent<Props> = () => {
               </React.Fragment>
             );
           }}
-        </AsyncOverlay>
+        </QueryOverlay>
       </Row>
     </Container>
   );

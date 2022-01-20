@@ -11,8 +11,8 @@ import React, { FunctionComponent, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
-import { useSystemHealth, useSystemStatus } from "../../@redux/hooks";
-import { AsyncOverlay } from "../../components";
+import { useSystemHealth, useSystemStatus } from "../../apis";
+import { QueryOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
 import "./style.scss";
 import Table from "./table";
@@ -69,7 +69,7 @@ interface Props {}
 
 const SystemStatusView: FunctionComponent<Props> = () => {
   const health = useSystemHealth();
-  const status = useSystemStatus();
+  const { data: status } = useSystemStatus();
 
   const [uptime, setState] = useState<string>();
   const [intervalWhenState] = useState(true);
@@ -100,11 +100,11 @@ const SystemStatusView: FunctionComponent<Props> = () => {
       </Helmet>
       <Row>
         <InfoContainer title="Health">
-          <AsyncOverlay ctx={health}>
-            {({ content }) => {
-              return <Table health={content ?? []}></Table>;
+          <QueryOverlay {...health}>
+            {({ data }) => {
+              return <Table health={data ?? []}></Table>;
             }}
-          </AsyncOverlay>
+          </QueryOverlay>
         </InfoContainer>
       </Row>
       <Row>

@@ -2,11 +2,8 @@ import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { systemUpdateLogs } from "../../@redux/actions";
-import { useSystemLogs } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
-import { SystemApi } from "../../apis";
-import { AsyncOverlay, ContentHeader } from "../../components";
+import { SystemApi, useSystemLogs } from "../../apis";
+import { ContentHeader, QueryOverlay } from "../../components";
 import { Environment } from "../../utilities";
 import Table from "./table";
 
@@ -14,7 +11,6 @@ interface Props {}
 
 const SystemLogsView: FunctionComponent<Props> = () => {
   const logs = useSystemLogs();
-  const update = useReduxAction(systemUpdateLogs);
 
   const [resetting, setReset] = useState(false);
 
@@ -23,17 +19,17 @@ const SystemLogsView: FunctionComponent<Props> = () => {
   }, []);
 
   return (
-    <AsyncOverlay ctx={logs}>
-      {({ content, state }) => (
+    <QueryOverlay {...logs}>
+      {({ data, isFetching, refetch }) => (
         <Container fluid>
           <Helmet>
             <title>Logs - Bazarr (System)</title>
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={state === "loading"}
+              updating={isFetching}
               icon={faSync}
-              onClick={update}
+              onClick={() => refetch()}
             >
               Refresh
             </ContentHeader.Button>
@@ -47,7 +43,7 @@ const SystemLogsView: FunctionComponent<Props> = () => {
                 setReset(true);
                 SystemApi.deleteLogs().finally(() => {
                   setReset(false);
-                  update();
+                  refetch();
                 });
               }}
             >
@@ -55,11 +51,11 @@ const SystemLogsView: FunctionComponent<Props> = () => {
             </ContentHeader.Button>
           </ContentHeader>
           <Row>
-            <Table logs={content ?? []}></Table>
+            <Table logs={data ?? []}></Table>
           </Row>
         </Container>
       )}
-    </AsyncOverlay>
+    </QueryOverlay>
   );
 };
 

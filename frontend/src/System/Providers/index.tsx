@@ -2,48 +2,44 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { providerUpdateList } from "../../@redux/actions";
-import { useSystemProviders } from "../../@redux/hooks";
-import { useReduxAction } from "../../@redux/hooks/base";
-import { ProvidersApi } from "../../apis";
-import { AsyncOverlay, ContentHeader } from "../../components";
+import { ProvidersApi, useSystemProviders } from "../../apis";
+import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
 
 interface Props {}
 
 const SystemProvidersView: FunctionComponent<Props> = () => {
   const providers = useSystemProviders();
-  const update = useReduxAction(providerUpdateList);
 
   return (
-    <AsyncOverlay ctx={providers}>
-      {({ content, state }) => (
+    <QueryOverlay {...providers}>
+      {({ data, isFetching, refetch }) => (
         <Container fluid>
           <Helmet>
             <title>Providers - Bazarr (System)</title>
           </Helmet>
           <ContentHeader>
             <ContentHeader.Button
-              updating={state === "loading"}
+              updating={isFetching}
               icon={faSync}
-              onClick={update}
+              onClick={() => refetch()}
             >
               Refresh
             </ContentHeader.Button>
             <ContentHeader.AsyncButton
               icon={faTrash}
               promise={() => ProvidersApi.reset()}
-              onSuccess={update}
+              onSuccess={() => refetch()}
             >
               Reset
             </ContentHeader.AsyncButton>
           </ContentHeader>
           <Row>
-            <Table providers={content ?? []}></Table>
+            <Table providers={data ?? []}></Table>
           </Row>
         </Container>
       )}
-    </AsyncOverlay>
+    </QueryOverlay>
   );
 };
 

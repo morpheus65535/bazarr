@@ -14,6 +14,7 @@ import React, {
   useState,
 } from "react";
 import { Button, ButtonProps } from "react-bootstrap";
+import { UseQueryResult } from "react-query";
 import { useTimeoutWhen } from "rooks";
 import { LoadingIndicator } from ".";
 import { Selector, SelectorProps } from "./inputs";
@@ -34,6 +35,21 @@ export function AsyncOverlay<T extends Async.Base<any>>(props: Props<T>) {
     return <p>{ctx.error}</p>;
   } else {
     return children(ctx);
+  }
+}
+
+export function QueryOverlay<T>(
+  props: UseQueryResult<T, unknown> & {
+    children: (result: UseQueryResult<T, unknown>) => React.ReactElement;
+  }
+) {
+  const { isLoading, isError, error, children } = props;
+  if (isLoading) {
+    return <LoadingIndicator></LoadingIndicator>;
+  } else if (isError) {
+    return <p>{error as string}</p>;
+  } else {
+    return children(props);
   }
 }
 

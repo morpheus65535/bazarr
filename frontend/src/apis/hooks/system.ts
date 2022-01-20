@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { SystemApi } from "..";
+import { ProvidersApi, SystemApi } from "..";
 
 export function useSystemSettings() {
   return useQuery(["system", "settings"], () => SystemApi.settings());
@@ -15,4 +15,28 @@ export function useLanguageProfiles() {
   return useQuery(["system", "settings", "languages", "profiles"], () =>
     SystemApi.languagesProfileList()
   );
+}
+
+export function useSystemLogs() {
+  return useQuery(["logs"], () => SystemApi.logs());
+}
+
+export function useSystemTasks() {
+  return useQuery(["tasks"], () => SystemApi.tasks());
+}
+
+export function useSystemStatus() {
+  return useQuery(["status"], () => SystemApi.status());
+}
+
+export function useSystemHealth() {
+  return useQuery(["health"], () => SystemApi.health());
+}
+
+export function useSystemProviders() {
+  return useQuery(["providers"], () => ProvidersApi.providers());
+}
+
+export function useSystemReleases() {
+  return useQuery(["releases"], () => SystemApi.releases());
 }

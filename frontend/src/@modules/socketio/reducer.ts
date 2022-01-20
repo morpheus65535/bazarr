@@ -21,7 +21,6 @@ import {
   siteRemoveProgress,
   siteUpdateInitialization,
   siteUpdateOffline,
-  systemMarkTasksDirty,
 } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import queryClient from "../../apis/queries";
@@ -158,7 +157,9 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "task",
-      any: bindReduxAction(systemMarkTasksDirty),
+      any: () => {
+        queryClient.invalidateQueries("tasks");
+      },
     },
   ];
 }
