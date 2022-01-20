@@ -1,12 +1,8 @@
 import { merge } from "lodash";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
+import { useQuery } from "react-query";
 import {
   Bar,
   BarChart,
@@ -17,18 +13,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useDidMount } from "rooks";
+import { HistoryApi, useLanguages, useSystemProviders } from "../../apis";
 import {
-  HistoryApi,
-  ProvidersApi,
-  SystemApi,
-  useAsyncRequest,
-} from "../../apis";
-import {
-  AsyncOverlay,
-  AsyncSelector,
   ContentHeader,
   LanguageSelector,
+  QueryOverlay,
   Selector,
 } from "../../components";
 import { actionOptions, timeframeOptions } from "./options";
@@ -55,32 +44,23 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const [languages, updateLanguages] = useAsyncRequest(
-    SystemApi.languages.bind(SystemApi)
-  );
-  const [providerList, updateProviderParam] = useAsyncRequest(
-    ProvidersApi.providers.bind(ProvidersApi)
-  );
+  const { data: languages } = useLanguages(true);
 
-  const updateProvider = useCallback(
-    () => updateProviderParam(true),
-    [updateProviderParam]
-  );
-
-  useDidMount(() => {
-    updateLanguages(true);
-  });
+  const { data: providerList } = useSystemProviders(true);
 
   const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
   const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
-  const [stats, update] = useAsyncRequest(HistoryApi.stats.bind(HistoryApi));
-
-  useEffect(() => {
-    update(timeframe, action ?? undefined, provider?.name, lang?.code2);
-  }, [timeframe, action, provider?.name, lang?.code2, update]);
+  const stats = useQuery(["stats", lang, timeframe, action, provider], () =>
+    HistoryApi.stats(
+      timeframe,
+      action ?? undefined,
+      provider?.name,
+      lang?.code2
+    )
+  );
 
   return (
     // TODO: Responsive
@@ -88,8 +68,8 @@ const HistoryStats: FunctionComponent = () => {
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
-      <AsyncOverlay ctx={stats}>
-        {({ content }) => (
+      <QueryOverlay {...stats}>
+        {({ data }) => (
           <React.Fragment>
             <ContentHeader scroll={false}>
               <SelectorContainer>
@@ -110,26 +90,26 @@ const HistoryStats: FunctionComponent = () => {
                 ></Selector>
               </SelectorContainer>
               <SelectorContainer>
-                <AsyncSelector
+                {/* <AsyncSelector
                   placeholder="Provider..."
                   clearable
                   state={providerList}
                   label={providerLabel}
                   update={updateProvider}
                   onChange={setProvider}
-                ></AsyncSelector>
+                ></AsyncSelector> */}
               </SelectorContainer>
               <SelectorContainer>
                 <LanguageSelector
                   clearable
-                  options={languages.content ?? []}
+                  options={languages ?? []}
                   value={lang}
                   onChange={setLanguage}
                 ></LanguageSelector>
               </SelectorContainer>
             </ContentHeader>
             <ResponsiveContainer height="100%">
-              <BarChart data={content ? converter(content) : []}>
+              <BarChart data={data ? converter(data) : []}>
                 <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
                 <XAxis dataKey="date"></XAxis>
                 <YAxis allowDecimals={false}></YAxis>
@@ -141,7 +121,7 @@ const HistoryStats: FunctionComponent = () => {
             </ResponsiveContainer>
           </React.Fragment>
         )}
-      </AsyncOverlay>
+      </QueryOverlay>
     </Container>
   );
 };

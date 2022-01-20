@@ -67,7 +67,12 @@ export function filterSubtitleBy(
   }
 }
 
-export * from "./async";
+export async function waitFor(time: number) {
+  return new Promise((resolved) => {
+    setTimeout(resolved, time);
+  });
+}
+
 export * from "./env";
 export * from "./hooks";
 export * from "./id";

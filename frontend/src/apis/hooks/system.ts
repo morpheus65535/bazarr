@@ -33,8 +33,8 @@ export function useSystemHealth() {
   return useQuery(["health"], () => SystemApi.health());
 }
 
-export function useSystemProviders() {
-  return useQuery(["providers"], () => ProvidersApi.providers());
+export function useSystemProviders(history?: boolean) {
+  return useQuery(["providers"], () => ProvidersApi.providers(history));
 }
 
 export function useSystemReleases() {

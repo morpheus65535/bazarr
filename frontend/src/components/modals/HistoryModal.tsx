@@ -1,10 +1,15 @@
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
+import { useQuery } from "react-query";
 import { Column } from "react-table";
-import { useDidUpdate } from "rooks";
-import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
-import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
+import {
+  HistoryIcon,
+  LanguageText,
+  PageTable,
+  QueryOverlay,
+  TextPopover,
+} from "..";
+import { EpisodesApi, MoviesApi } from "../../apis";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
-import { AsyncOverlay } from "../async";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
 
@@ -13,19 +18,11 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
-  const [history, updateHistory] = useAsyncRequest(
-    MoviesApi.historyBy.bind(MoviesApi)
-  );
-
-  const update = useCallback(() => {
+  const history = useQuery(["movies", movie?.radarrId], () => {
     if (movie) {
-      updateHistory(movie.radarrId);
+      MoviesApi.historyBy(movie.radarrId);
     }
-  }, [movie, updateHistory]);
-
-  useDidUpdate(() => {
-    update();
-  }, [movie?.radarrId]);
+  });
 
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
@@ -77,7 +74,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
           const original = row.original;
           return (
             <BlacklistButton
-              update={update}
+              update={history.refetch}
               promise={(form) =>
                 MoviesApi.addBlacklist(original.radarrId, form)
               }
@@ -87,20 +84,20 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         },
       },
     ],
-    [update]
+    [history.refetch]
   );
 
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
-      <AsyncOverlay ctx={history}>
-        {({ content }) => (
+      <QueryOverlay {...history}>
+        {({ data }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={content?.data ?? []}
+            data={data ?? []}
           ></PageTable>
         )}
-      </AsyncOverlay>
+      </QueryOverlay>
     </BaseModal>
   );
 };
@@ -112,19 +109,11 @@ export const EpisodeHistoryModal: FunctionComponent<
 > = (props) => {
   const episode = useModalPayload<Item.Episode>(props.modalKey);
 
-  const [history, updateHistory] = useAsyncRequest(
-    EpisodesApi.historyBy.bind(EpisodesApi)
-  );
-
-  const update = useCallback(() => {
+  const history = useQuery(["episodes", episode?.sonarrEpisodeId], () => {
     if (episode) {
-      updateHistory(episode.sonarrEpisodeId);
+      EpisodesApi.historyBy(episode.sonarrEpisodeId);
     }
-  }, [episode, updateHistory]);
-
-  useDidUpdate(() => {
-    update();
-  }, [episode?.sonarrEpisodeId]);
+  });
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [
@@ -178,7 +167,7 @@ export const EpisodeHistoryModal: FunctionComponent<
           return (
             <BlacklistButton
               history={original}
-              update={update}
+              update={history.refetch}
               promise={(form) =>
                 EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
               }
@@ -187,20 +176,20 @@ export const EpisodeHistoryModal: FunctionComponent<
         },
       },
     ],
-    [update]
+    [history.refetch]
   );
 
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
-      <AsyncOverlay ctx={history}>
-        {({ content }) => (
+      <QueryOverlay {...history}>
+        {({ data }) => (
           <PageTable
             emptyText="No History Found"
             columns={columns}
-            data={content?.data ?? []}
+            data={data ?? []}
           ></PageTable>
         )}
-      </AsyncOverlay>
+      </QueryOverlay>
     </BaseModal>
   );
 };
