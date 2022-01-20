@@ -1,13 +1,11 @@
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
-import { Provider } from "react-redux";
 import { Route, Switch } from "react-router";
 import { BrowserRouter, Redirect } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import Socketio from "../@modules/socketio";
 import { useReduxStore } from "../@redux/hooks/base";
 import { useNotification } from "../@redux/hooks/site";
-import store from "../@redux/store";
 import { LoadingIndicator, ModalProvider } from "../components";
 import Router from "../Router";
 import Sidebar from "../Sidebar";
@@ -84,15 +82,4 @@ const MainRouter: FunctionComponent = () => {
   );
 };
 
-const Main: FunctionComponent = () => {
-  return (
-    <Provider store={store}>
-      {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
-      {/* <React.StrictMode> */}
-      <MainRouter></MainRouter>
-      {/* </React.StrictMode> */}
-    </Provider>
-  );
-};
-
-export default Main;
+export default MainRouter;

@@ -20,7 +20,6 @@ import {
   siteAddProgress,
   siteBootstrap,
   siteRemoveProgress,
-  siteUpdateBadges,
   siteUpdateInitialization,
   siteUpdateOffline,
   systemMarkTasksDirty,
@@ -28,6 +27,7 @@ import {
   systemUpdateLanguages,
 } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
+import queryClient from "../../apis/queries";
 
 function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {
@@ -124,7 +124,9 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "badges",
-      any: bindReduxAction(siteUpdateBadges),
+      any: () => {
+        queryClient.invalidateQueries("badges");
+      },
     },
     {
       key: "movie-history",

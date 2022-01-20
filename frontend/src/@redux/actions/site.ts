@@ -1,15 +1,11 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { BadgesApi } from "../../apis";
 import { waitFor } from "../../utilities";
 import { systemUpdateAllSettings } from "./system";
 
 export const siteBootstrap = createAsyncThunk(
   "site/bootstrap",
   (_: undefined, { dispatch }) => {
-    return Promise.all([
-      dispatch(systemUpdateAllSettings()),
-      dispatch(siteUpdateBadges()),
-    ]);
+    dispatch(systemUpdateAllSettings());
   }
 );
 
@@ -52,11 +48,3 @@ export const siteChangeSidebarVisibility = createAction<boolean>(
 );
 
 export const siteUpdateOffline = createAction<boolean>("site/offline/update");
-
-export const siteUpdateBadges = createAsyncThunk(
-  "site/badges/update",
-  async () => {
-    const response = await BadgesApi.all();
-    return response;
-  }
-);

@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useMemo } from "react";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks";
-import { useReduxStore } from "../@redux/hooks/base";
+import { useBadges } from "../apis/hooks/badges";
 import BlacklistMoviesView from "../Blacklist/Movies";
 import BlacklistSeriesView from "../Blacklist/Series";
 import Episodes from "../DisplayItem/Episodes";
@@ -42,7 +42,7 @@ import RootRedirect from "./RootRedirect";
 export function useNavigationItems() {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
-  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
+  const { data } = useBadges();
 
   const items = useMemo<Navigation.RouteItem[]>(
     () => [
@@ -139,14 +139,14 @@ export function useNavigationItems() {
           {
             name: "Series",
             path: "/series",
-            badge: episodes,
+            badge: data?.episodes,
             enabled: sonarr,
             component: WantedSeriesView,
           },
           {
             name: "Movies",
             path: "/movies",
-            badge: movies,
+            badge: data?.movies,
             enabled: radarr,
             component: WantedMoviesView,
           },
@@ -222,7 +222,7 @@ export function useNavigationItems() {
           {
             name: "Providers",
             path: "/providers",
-            badge: providers,
+            badge: data?.providers,
             component: SystemProvidersView,
           },
           {
@@ -238,7 +238,7 @@ export function useNavigationItems() {
         ],
       },
     ],
-    [episodes, movies, providers, radarr, sonarr]
+    [data, radarr, sonarr]
   );
 
   return items;

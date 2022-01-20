@@ -10,7 +10,6 @@ import {
   siteRedirectToAuth,
   siteRemoveNotifications,
   siteRemoveProgress,
-  siteUpdateBadges,
   siteUpdateInitialization,
   siteUpdateNotifier,
   siteUpdateOffline,
@@ -29,7 +28,6 @@ interface Site {
   };
   notifications: Server.Notification[];
   showSidebar: boolean;
-  badges: Badge;
 }
 
 const defaultSite: Site = {
@@ -42,12 +40,6 @@ const defaultSite: Site = {
   },
   notifications: [],
   showSidebar: false,
-  badges: {
-    movies: 0,
-    episodes: 0,
-    providers: 0,
-    status: 0,
-  },
   offline: false,
 };
 
@@ -121,9 +113,6 @@ const reducer = createReducer(defaultSite, (builder) => {
     })
     .addCase(siteUpdateOffline, (state, action) => {
       state.offline = action.payload;
-    })
-    .addCase(siteUpdateBadges.fulfilled, (state, action) => {
-      state.badges = action.payload;
     });
 });
 
