@@ -1,19 +1,24 @@
 import { useQuery } from "react-query";
+import QueryKeys from "../queries/keys";
 import api from "../raw";
 
 export function useSystemSettings() {
-  return useQuery(["system", "settings"], () => api.system.settings());
+  return useQuery([QueryKeys.system, QueryKeys.settings], () =>
+    api.system.settings()
+  );
 }
 
 export function useLanguages(history?: boolean) {
-  return useQuery(["system", "settings", "languages", history], () =>
-    api.system.languages(history)
+  return useQuery(
+    [QueryKeys.system, QueryKeys.settings, QueryKeys.languages, history],
+    () => api.system.languages(history)
   );
 }
 
 export function useLanguageProfiles() {
-  return useQuery(["system", "settings", "languages", "profiles"], () =>
-    api.system.languagesProfileList()
+  return useQuery(
+    [QueryKeys.system, QueryKeys.settings, QueryKeys.languagesProfiles],
+    () => api.system.languagesProfileList()
   );
 }
 
