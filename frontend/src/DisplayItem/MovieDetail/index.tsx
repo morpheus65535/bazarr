@@ -16,7 +16,11 @@ import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useMovieById, useMovieModification } from "../../apis/hooks/movies";
+import {
+  useMovieAction,
+  useMovieById,
+  useMovieModification,
+} from "../../apis/hooks/movies";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -57,6 +61,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const showModal = useShowModal();
 
   const { mutateAsync } = useMovieModification();
+  const { mutateAsync: action } = useMovieAction();
 
   const [valid, setValid] = useState(true);
 
@@ -83,7 +88,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSync}
             disabled={hasTask}
             onClick={() => {
-              const task = createTask(movie.title, id, api.movies.action, {
+              const task = createTask(movie.title, id, action, {
                 action: "scan-disk",
                 radarrid: id,
               });
@@ -96,7 +101,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSearch}
             disabled={movie.profileId === null}
             onClick={() => {
-              const task = createTask(movie.title, id, api.movies.action, {
+              const task = createTask(movie.title, id, action, {
                 action: "search-missing",
                 radarrid: id,
               });

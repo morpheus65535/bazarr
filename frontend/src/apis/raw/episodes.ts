@@ -48,7 +48,7 @@ class EpisodeApi extends BaseApi {
       "/history",
       { episodeid }
     );
-    return response;
+    return response.data;
   }
 
   async downloadSubtitles(

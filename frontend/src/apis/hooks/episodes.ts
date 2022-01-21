@@ -1,4 +1,9 @@
-import { QueryClient, useQuery, useQueryClient } from "react-query";
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "react-query";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -19,7 +24,7 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
 export function useEpisodeByIds(ids: number[]) {
   const client = useQueryClient();
   return useQuery(
-    [QueryKeys.Episodes, ids],
+    [QueryKeys.Series, QueryKeys.Episodes, ids],
     () => api.episodes.byEpisodeId(ids),
     {
       onSuccess: (data) => {
@@ -43,7 +48,39 @@ export function useEpisodeBySeriesId(id: number) {
 }
 
 export function useEpisodeBlacklist() {
-  return useQuery([QueryKeys.Episodes, QueryKeys.Blacklist], () =>
-    api.episodes.blacklist()
+  return useQuery(
+    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
+    () => api.episodes.blacklist()
+  );
+}
+
+export function useAddEpisodeBlacklist() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: {
+      seriesId: number;
+      episodeId: number;
+      form: FormType.AddBlacklist;
+    }) => {
+      const { seriesId, episodeId, form } = param;
+      return api.episodes.addBlacklist(seriesId, episodeId, form);
+    },
+    {
+      onSuccess: (_, { seriesId, episodeId }) => {
+        client.invalidateQueries([QueryKeys.Series, QueryKeys.Blacklist]);
+        client.invalidateQueries([QueryKeys.Series, seriesId]);
+      },
+    }
+  );
+}
+
+export function useEpisodeHistory(episodeId?: number) {
+  return useQuery(
+    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History, episodeId],
+    () => {
+      if (episodeId) {
+        return api.episodes.historyBy(episodeId);
+      }
+    }
   );
 }

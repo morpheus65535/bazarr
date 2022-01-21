@@ -4,6 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { useAddMovieBlacklist } from "src/apis/hooks";
 import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
@@ -107,13 +108,12 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
       {
         accessor: "blacklisted",
         Cell: ({ row }) => {
-          const original = row.original;
+          const { radarrId } = row.original;
+          const { mutateAsync } = useAddMovieBlacklist();
           return (
             <BlacklistButton
-              history={original}
-              promise={(form) =>
-                api.movies.addBlacklist(original.radarrId, form)
-              }
+              history={row.original}
+              promise={(form) => mutateAsync({ id: radarrId, form })}
             ></BlacklistButton>
           );
         },

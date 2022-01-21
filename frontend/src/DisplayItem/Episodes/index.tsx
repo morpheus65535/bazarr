@@ -11,13 +11,13 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import api from "src/apis/raw";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
 import {
   useEpisodeBySeriesId,
+  useSeriesAction,
   useSeriesById,
   useSeriesModification,
 } from "../../apis/hooks";
@@ -45,6 +45,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { data: episodes } = useEpisodeBySeriesId(id);
 
   const { mutateAsync } = useSeriesModification();
+  const { mutateAsync: action } = useSeriesAction();
 
   const available = episodes?.length !== 0;
 
@@ -92,7 +93,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             icon={faSync}
             disabled={!available || hasTask}
             onClick={() => {
-              const task = createTask(series.title, id, api.series.action, {
+              const task = createTask(series.title, id, action, {
                 action: "scan-disk",
                 seriesid: id,
               });
@@ -104,7 +105,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
-              const task = createTask(series.title, id, api.series.action, {
+              const task = createTask(series.title, id, action, {
                 action: "search-missing",
                 seriesid: id,
               });

@@ -1,15 +1,7 @@
-import React, { FunctionComponent, useCallback, useState } from "react";
-import {
-  Alert,
-  Button,
-  Card,
-  Collapse,
-  Form,
-  Image,
-  Spinner,
-} from "react-bootstrap";
+import React, { FunctionComponent, useState } from "react";
+import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
-import api from "src/apis/raw";
+import { useSystem } from "src/apis/hooks";
 import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
 import "./AuthPage.scss";
@@ -19,23 +11,10 @@ interface Props {}
 const AuthPage: FunctionComponent<Props> = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  const [updating, setUpdate] = useState(false);
-
-  const updateError = useCallback((msg: string) => {
-    setError(msg);
-    setTimeout(() => setError(""), 2000);
-  }, []);
-
-  const onSuccess = useCallback(() => window.location.reload(), []);
+  const { login, isWorking } = useSystem();
 
   const authState = useReduxStore((s) => s.auth);
-
-  const onError = useCallback(() => {
-    setUpdate(false);
-    updateError("Login Failed");
-  }, [updateError]);
 
   if (authState) {
     return <Redirect to="/"></Redirect>;
@@ -47,13 +26,7 @@ const AuthPage: FunctionComponent<Props> = () => {
         <Form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!updating) {
-              setUpdate(true);
-              api.system
-                .login(username, password)
-                .then(onSuccess)
-                .catch(onError);
-            }
+            login({ username, password });
           }}
         >
           <Card.Body>
@@ -62,7 +35,7 @@ const AuthPage: FunctionComponent<Props> = () => {
             </Form.Group>
             <Form.Group>
               <Form.Control
-                disabled={updating}
+                disabled={isWorking}
                 name="username"
                 type="text"
                 placeholder="Username"
@@ -72,7 +45,7 @@ const AuthPage: FunctionComponent<Props> = () => {
             </Form.Group>
             <Form.Group>
               <Form.Control
-                disabled={updating}
+                disabled={isWorking}
                 name="password"
                 type="password"
                 placeholder="Password"
@@ -80,17 +53,17 @@ const AuthPage: FunctionComponent<Props> = () => {
                 onChange={(e) => setPassword(e.currentTarget.value)}
               ></Form.Control>
             </Form.Group>
-            <Collapse in={error.length !== 0}>
+            {/* <Collapse in={error.length !== 0}>
               <div>
                 <Alert variant="danger" className="m-0">
                   {error}
                 </Alert>
               </div>
-            </Collapse>
+            </Collapse> */}
           </Card.Body>
           <Card.Footer>
-            <Button type="submit" disabled={updating} block>
-              {updating ? (
+            <Button type="submit" disabled={isWorking} block>
+              {isWorking ? (
                 <Spinner size="sm" animation="border"></Spinner>
               ) : (
                 "LOGIN"

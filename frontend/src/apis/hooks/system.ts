@@ -53,6 +53,15 @@ export function useSystemTasks() {
   );
 }
 
+export function useRunTask() {
+  const client = useQueryClient();
+  return useMutation((id: string) => api.system.runTask(id), {
+    onSuccess: () => {
+      client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
+    },
+  });
+}
+
 export function useSystemStatus() {
   return useQuery([QueryKeys.System, "status"], () => api.system.status());
 }
@@ -73,6 +82,16 @@ export function useSystem() {
       onSuccess: () => {
         store.dispatch(siteRedirectToAuth());
         client.clear();
+      },
+    }
+  );
+
+  const { mutate: login, isLoading: isLoggingIn } = useMutation(
+    (param: { username: string; password: string }) =>
+      api.system.login(param.username, param.password),
+    {
+      onSuccess: () => {
+        window.location.reload();
       },
     }
   );
@@ -100,8 +119,18 @@ export function useSystem() {
       logout,
       shutdown,
       restart,
-      isWorking: isLoggingOut || isShuttingDown || isRestarting,
+      login,
+      isWorking: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
     }),
-    [isLoggingOut, isRestarting, isShuttingDown, logout, restart, shutdown]
+    [
+      isLoggingIn,
+      isLoggingOut,
+      isRestarting,
+      isShuttingDown,
+      login,
+      logout,
+      restart,
+      shutdown,
+    ]
   );
 }

@@ -1,9 +1,10 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { useSeriesAction } from "src/apis/hooks";
 import api from "../../apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -12,10 +13,7 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
-  const searchAll = useCallback(
-    () => api.series.action({ action: "search-wanted" }),
-    []
-  );
+  const { mutateAsync } = useSeriesAction();
 
   const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(
     () => [
@@ -77,7 +75,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       type="series"
       columns={columns}
       query={(params) => api.episodes.wanted(params)}
-      searchAll={searchAll}
+      searchAll={() => mutateAsync({ action: "search-wanted" })}
     ></GenericWantedView>
   );
 };

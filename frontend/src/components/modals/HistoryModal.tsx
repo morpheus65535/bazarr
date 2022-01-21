@@ -1,6 +1,11 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { useQuery } from "react-query";
 import { Column } from "react-table";
+import {
+  useAddEpisodeBlacklist,
+  useAddMovieBlacklist,
+  useEpisodeHistory,
+  useMovieHistory,
+} from "src/apis/hooks";
 import {
   HistoryIcon,
   LanguageText,
@@ -8,7 +13,6 @@ import {
   QueryOverlay,
   TextPopover,
 } from "..";
-import api from "../../apis/raw";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
@@ -18,11 +22,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
-  const history = useQuery(["movies", movie?.radarrId], () => {
-    if (movie) {
-      api.movies.historyBy(movie.radarrId);
-    }
-  });
+  const history = useMovieHistory(movie?.radarrId);
 
   const { data } = history;
 
@@ -73,14 +73,13 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         // Actions
         accessor: "blacklisted",
         Cell: ({ row }) => {
-          const original = row.original;
+          const { radarrId } = row.original;
+          const { mutateAsync } = useAddMovieBlacklist();
           return (
             <BlacklistButton
               update={history.refetch}
-              promise={(form) =>
-                api.movies.addBlacklist(original.radarrId, form)
-              }
-              history={original}
+              promise={(form) => mutateAsync({ id: radarrId, form })}
+              history={row.original}
             ></BlacklistButton>
           );
         },
@@ -109,11 +108,7 @@ export const EpisodeHistoryModal: FunctionComponent<
 > = (props) => {
   const episode = useModalPayload<Item.Episode>(props.modalKey);
 
-  const history = useQuery(["episodes", episode?.sonarrEpisodeId], () => {
-    if (episode) {
-      api.episodes.historyBy(episode.sonarrEpisodeId);
-    }
-  });
+  const history = useEpisodeHistory(episode?.sonarrEpisodeId);
 
   const { data } = history;
 
@@ -165,20 +160,25 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "blacklisted",
         Cell: ({ row }) => {
           const original = row.original;
-          const { sonarrSeriesId, sonarrEpisodeId } = original;
+
+          const { sonarrEpisodeId, sonarrSeriesId } = original;
+          const { mutateAsync } = useAddEpisodeBlacklist();
           return (
             <BlacklistButton
               history={original}
-              update={history.refetch}
               promise={(form) =>
-                api.episodes.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                mutateAsync({
+                  seriesId: sonarrSeriesId,
+                  episodeId: sonarrEpisodeId,
+                  form,
+                })
               }
             ></BlacklistButton>
           );
         },
       },
     ],
-    [history.refetch]
+    []
   );
 
   return (

@@ -1,9 +1,10 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { useMovieAction } from "src/apis/hooks";
 import api from "src/apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -12,10 +13,7 @@ import GenericWantedView from "../generic";
 interface Props {}
 
 const WantedMoviesView: FunctionComponent<Props> = () => {
-  const searchAll = useCallback(
-    () => api.movies.action({ action: "search-wanted" }),
-    []
-  );
+  const { mutateAsync } = useMovieAction();
 
   const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
     () => [
@@ -69,7 +67,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       type="movies"
       columns={columns}
       query={(param) => api.movies.wanted(param)}
-      searchAll={searchAll}
+      searchAll={() => mutateAsync({ action: "search-wanted" })}
     ></GenericWantedView>
   );
 };

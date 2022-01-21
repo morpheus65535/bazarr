@@ -70,7 +70,7 @@ class MovieApi extends BaseApi {
       "/history",
       { radarrid }
     );
-    return response;
+    return response.data;
   }
 
   async action(action: FormType.MoviesAction) {

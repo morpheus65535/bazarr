@@ -48,3 +48,12 @@ export function useSeriesModification() {
     },
   });
 }
+
+export function useSeriesAction() {
+  const client = useQueryClient();
+  return useMutation((form: FormType.SeriesAction) => api.series.action(form), {
+    onSuccess: () => {
+      client.invalidateQueries([QueryKeys.Series]);
+    },
+  });
+}

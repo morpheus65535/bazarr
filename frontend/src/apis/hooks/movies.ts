@@ -56,8 +56,41 @@ export function useMovieModification() {
   });
 }
 
+export function useMovieAction() {
+  const client = useQueryClient();
+  return useMutation((form: FormType.MoviesAction) => api.movies.action(form), {
+    onSuccess: () => {
+      client.invalidateQueries([QueryKeys.Movies]);
+    },
+  });
+}
+
 export function useMovieBlacklist() {
   return useQuery([QueryKeys.Movies, QueryKeys.Blacklist], () =>
     api.movies.blacklist()
   );
+}
+
+export function useAddMovieBlacklist() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: { id: number; form: FormType.AddBlacklist }) => {
+      const { id, form } = param;
+      return api.movies.addBlacklist(id, form);
+    },
+    {
+      onSuccess: (_, { id }) => {
+        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
+        client.invalidateQueries([QueryKeys.Movies, id]);
+      },
+    }
+  );
+}
+
+export function useMovieHistory(radarrId?: number) {
+  return useQuery([QueryKeys.Movies, QueryKeys.History, radarrId], () => {
+    if (radarrId) {
+      return api.movies.historyBy(radarrId);
+    }
+  });
 }
