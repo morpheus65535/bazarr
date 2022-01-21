@@ -38,10 +38,8 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     }
   );
 
-  // Impl a new pagination system instead of hacking into existing one
-  const total = data?.total;
-  const pageCount =
-    total !== undefined ? Math.ceil(total / pageSize) : undefined;
+  const total = data?.total ?? 0;
+  const pageCount = Math.ceil(total / pageSize);
 
   const instance = useTable(
     {
@@ -99,12 +97,12 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
         tableBodyProps={getTableBodyProps()}
       ></BaseTable>
       <PageControl
-        count={pageCount ?? 0}
+        count={pageCount}
         index={pageIndex}
         size={pageSize}
-        total={total ?? 0}
+        total={total}
         canPrevious={pageIndex > 0}
-        canNext={pageCount ? pageIndex < pageCount - 1 : false}
+        canNext={pageIndex < pageCount - 1}
         previous={previous}
         next={next}
         goto={goto}

@@ -16,7 +16,6 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import api from "src/apis/raw";
 import {
   siteChangeSidebarVisibility,
   siteRedirectToAuth,
@@ -24,7 +23,7 @@ import {
 import { useIsOffline } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
-import { useSystemSettings } from "../apis/queries/client";
+import { useSystem, useSystemSettings } from "../apis/queries/client";
 import { ActionButton, SearchBar } from "../components";
 import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
@@ -37,13 +36,15 @@ const Header: FunctionComponent<Props> = () => {
 
   const { data: settings } = useSystemSettings();
 
-  const canLogout = (settings?.auth.type ?? "none") === "form";
+  const hasLogout = (settings?.auth.type ?? "none") === "form";
 
   const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
 
   const offline = useIsOffline();
 
   const isMobile = useIsMobile();
+
+  const { shutdown, restart, logout } = useSystem();
 
   const serverActions = useMemo(
     () => (
@@ -54,23 +55,23 @@ const Header: FunctionComponent<Props> = () => {
         <Dropdown.Menu>
           <Dropdown.Item
             onClick={() => {
-              api.system.restart();
+              restart();
             }}
           >
             Restart
           </Dropdown.Item>
           <Dropdown.Item
             onClick={() => {
-              api.system.shutdown();
+              shutdown();
             }}
           >
             Shutdown
           </Dropdown.Item>
-          <Dropdown.Divider hidden={!canLogout}></Dropdown.Divider>
+          <Dropdown.Divider hidden={!hasLogout}></Dropdown.Divider>
           <Dropdown.Item
-            hidden={!canLogout}
+            hidden={!hasLogout}
             onClick={() => {
-              api.system.logout().then(() => setNeedAuth());
+              logout();
             }}
           >
             Logout
@@ -78,7 +79,7 @@ const Header: FunctionComponent<Props> = () => {
         </Dropdown.Menu>
       </Dropdown>
     ),
-    [canLogout, setNeedAuth]
+    [hasLogout, logout, restart, shutdown]
   );
 
   const goHome = useGotoHomepage();

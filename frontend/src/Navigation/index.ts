@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useMemo } from "react";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks";
-import { useBadges } from "../apis/hooks/badges";
+import { useBadges } from "../apis/hooks";
 import BlacklistMoviesView from "../Blacklist/Movies";
 import BlacklistSeriesView from "../Blacklist/Series";
 import Episodes from "../DisplayItem/Episodes";

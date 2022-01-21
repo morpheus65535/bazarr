@@ -100,15 +100,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
-              const task = createTask(
-                tvShow.title,
-                id,
-                api.series.action.bind(api.series),
-                {
-                  action: "search-missing",
-                  seriesid: id,
-                }
-              );
+              const task = createTask(tvShow.title, id, api.series.action, {
+                action: "search-missing",
+                seriesid: id,
+              });
               dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
             disabled={

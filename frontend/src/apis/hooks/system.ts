@@ -1,6 +1,13 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { siteRedirectToAuth } from "../../@redux/actions";
+import store from "../../@redux/store";
 import QueryKeys from "../queries/keys";
 import api from "../raw";
+
+export function useBadges() {
+  return useQuery(QueryKeys.badges, () => api.badges.all());
+}
 
 export function useSystemSettings() {
   return useQuery(QueryKeys.settings, () => api.system.settings(), {
@@ -12,31 +19,13 @@ export function useSettingsMutation() {
   const client = useQueryClient();
   return useMutation((data: LooseObject) => api.system.updateSettings(data), {
     onSuccess: () => {
-      client.invalidateQueries(QueryKeys.settings);
-      client.invalidateQueries(QueryKeys.languages);
-      client.invalidateQueries(QueryKeys.languagesProfiles);
+      client.invalidateQueries([
+        QueryKeys.settings,
+        QueryKeys.settings,
+        QueryKeys.languagesProfiles,
+      ]);
     },
   });
-}
-
-export function useLanguages(history?: boolean) {
-  return useQuery(
-    [QueryKeys.languages, history],
-    () => api.system.languages(history),
-    {
-      staleTime: Infinity,
-    }
-  );
-}
-
-export function useLanguageProfiles() {
-  return useQuery(
-    QueryKeys.languagesProfiles,
-    () => api.system.languagesProfileList(),
-    {
-      staleTime: Infinity,
-    }
-  );
 }
 
 export function useServerSearch(query: string) {
@@ -74,4 +63,37 @@ export function useSystemProviders(history?: boolean) {
 
 export function useSystemReleases() {
   return useQuery("releases", () => api.system.releases());
+}
+
+export function useSystem() {
+  const { mutate: logout, isLoading: isLoggingOut } = useMutation(
+    () => api.system.logout(),
+    {
+      onSuccess: () => {
+        store.dispatch(siteRedirectToAuth());
+      },
+    }
+  );
+
+  const { mutate: shutdown, isLoading: isShuttingDown } = useMutation(
+    () => api.system.shutdown(),
+    {
+      onSuccess: () => {},
+    }
+  );
+
+  const { mutate: restart, isLoading: isRestarting } = useMutation(
+    () => api.system.restart(),
+    {}
+  );
+
+  return useMemo(
+    () => ({
+      logout,
+      shutdown,
+      restart,
+      isWorking: isLoggingOut || isShuttingDown || isRestarting,
+    }),
+    [isLoggingOut, isRestarting, isShuttingDown, logout, restart, shutdown]
+  );
 }
