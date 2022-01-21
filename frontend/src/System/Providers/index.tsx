@@ -2,8 +2,10 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import api from "src/apis/raw";
-import { useSystemProviders } from "../../apis/queries/client";
+import {
+  useResetProvider,
+  useSystemProviders,
+} from "../../apis/queries/client";
 import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
 
@@ -13,6 +15,8 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
   const providers = useSystemProviders();
 
   const { isFetching, data, refetch } = providers;
+
+  const { mutate: reset, isLoading: isResetting } = useResetProvider();
 
   return (
     <QueryOverlay result={providers}>
@@ -28,13 +32,13 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
           >
             Refresh
           </ContentHeader.Button>
-          <ContentHeader.AsyncButton
+          <ContentHeader.Button
             icon={faTrash}
-            promise={() => api.providers.reset()}
-            onSuccess={() => refetch()}
+            updating={isResetting}
+            onClick={() => reset()}
           >
             Reset
-          </ContentHeader.AsyncButton>
+          </ContentHeader.Button>
         </ContentHeader>
         <Row>
           <Table providers={data ?? []}></Table>

@@ -19,17 +19,17 @@ export function useSettingsMutation() {
   const client = useQueryClient();
   return useMutation((data: LooseObject) => api.system.updateSettings(data), {
     onSuccess: () => {
-      client.invalidateQueries([
-        QueryKeys.settings,
-        QueryKeys.settings,
-        QueryKeys.languagesProfiles,
-      ]);
+      client.invalidateQueries(QueryKeys.settings);
+      client.invalidateQueries(QueryKeys.languages);
+      client.invalidateQueries(QueryKeys.languagesProfiles);
     },
   });
 }
 
 export function useServerSearch(query: string) {
-  return useQuery(["search", query], () => api.system.search(query));
+  return useQuery(["search", query], () =>
+    query.length > 0 ? api.system.search(query) : null
+  );
 }
 
 export function useSystemLogs() {
@@ -55,10 +55,6 @@ export function useSystemStatus() {
 
 export function useSystemHealth() {
   return useQuery("health", () => api.system.health());
-}
-
-export function useSystemProviders(history?: boolean) {
-  return useQuery("providers", () => api.providers.providers(history));
 }
 
 export function useSystemReleases() {

@@ -4,6 +4,7 @@ const QueryKeys = {
   series: "series",
   badges: "badges",
   settings: "settings",
+  providers: "providers",
   languages: "languages",
   languagesProfiles: "languages-profiles",
 };
