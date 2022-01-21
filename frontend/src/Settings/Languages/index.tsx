@@ -1,6 +1,6 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
-import { useEnabledLanguages } from "../../@redux/hooks";
+import { useEnabledLanguages } from "src/utilities/languages";
 import { useLanguageProfiles, useLanguages } from "../../apis";
 import {
   Check,

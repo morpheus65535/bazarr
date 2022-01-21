@@ -10,10 +10,10 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { useUpdateLocalStorage } from "../../@storage/local";
 import { SystemApi, useSystemSettings } from "../../apis";
 import { ContentHeader, LoadingIndicator } from "../../components";
 import { log } from "../../utilities/logger";
+import { useUpdateLocalStorage } from "../../utilities/storage";
 import {
   enabledLanguageKey,
   languageProfileKey,

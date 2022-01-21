@@ -11,10 +11,10 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy } from "../../@redux/hooks";
 import { SeriesApi } from "../../apis";
 import { useEpisodeBySeriesId, useSeriesByIds } from "../../apis/hooks/series";
 import {
@@ -62,7 +62,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const [valid, setValid] = useState(true);
 
-  const profile = useProfileBy(tvShow?.profileId);
+  const profile = useLanguageProfileBy(tvShow?.profileId);
 
   const hasTask = useIsAnyTaskRunningWithId([
     ...(episodes?.map((v) => v.sonarrEpisodeId) ?? []),

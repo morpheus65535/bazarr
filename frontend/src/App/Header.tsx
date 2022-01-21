@@ -21,8 +21,8 @@ import {
   siteChangeSidebarVisibility,
   siteRedirectToAuth,
 } from "../@redux/actions";
+import { useIsOffline } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
-import { useIsOffline } from "../@redux/hooks/site";
 import logo from "../@static/logo64.png";
 import { SystemApi, useSystemSettings } from "../apis";
 import { ActionButton, SearchBar, SearchResult } from "../components";

@@ -22,7 +22,10 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "src/utilities/languages";
 import { LanguageText } from "../../components";
 import { BuildKey, isMovie } from "../../utilities";
 
@@ -75,7 +78,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     [item.audio_language]
   );
 
-  const profile = useProfileBy(item.profileId);
+  const profile = useLanguageProfileBy(item.profileId);
   const profileItems = useProfileItemsToLanguages(profile);
 
   const languageBadges = useMemo(() => {

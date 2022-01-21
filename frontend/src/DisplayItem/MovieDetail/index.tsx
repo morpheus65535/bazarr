@@ -11,10 +11,10 @@ import React, { FunctionComponent, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy } from "../../@redux/hooks";
 import { MoviesApi, ProvidersApi } from "../../apis";
 import { useMoviesByIds } from "../../apis/hooks/movies";
 import {
@@ -53,7 +53,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const { data: movies } = useMoviesByIds([id]);
   const item = movies && movies.data.length > 0 ? movies.data[0] : undefined;
 
-  const profile = useProfileBy(item?.profileId);
+  const profile = useLanguageProfileBy(item?.profileId);
 
   const showModal = useShowModal();
 

@@ -29,6 +29,7 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
+import { useEnabledLanguages } from "src/utilities/languages";
 import {
   ActionButton,
   ActionButtonItem,
@@ -41,7 +42,6 @@ import {
 } from "..";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { useEnabledLanguages } from "../../@redux/hooks";
 import { SubtitlesApi } from "../../apis";
 import { isMovie, submodProcessColor } from "../../utilities";
 import { log } from "../../utilities/logger";

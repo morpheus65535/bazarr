@@ -9,8 +9,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useProfileItemsToLanguages } from "../../@redux/hooks";
-import { useShowOnlyDesired } from "../../@redux/hooks/site";
+import { useProfileItemsToLanguages } from "src/utilities/languages";
+import { useShowOnlyDesired } from "../../@redux/hooks";
 import { ProvidersApi } from "../../apis";
 import {
   ActionButton,

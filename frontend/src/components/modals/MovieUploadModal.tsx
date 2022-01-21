@@ -1,7 +1,10 @@
 import React, { FunctionComponent, useCallback } from "react";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { MoviesApi } from "../../apis";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
@@ -19,7 +22,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
 
-  const profile = useProfileBy(payload?.profileId);
+  const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 

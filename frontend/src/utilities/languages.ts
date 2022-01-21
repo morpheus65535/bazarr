@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { useLanguageProfiles, useLanguages } from "../../apis";
+import { useLanguageProfiles, useLanguages } from "../apis";
 
-export function useProfileBy(id: number | null | undefined) {
+export function useLanguageProfileBy(id: number | null | undefined) {
   const { data } = useLanguageProfiles();
   return useMemo(() => data?.find((v) => v.profileId === id), [id, data]);
 }

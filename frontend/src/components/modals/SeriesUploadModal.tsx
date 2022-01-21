@@ -1,8 +1,11 @@
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
 import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
@@ -28,7 +31,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
 }) => {
   const { payload } = useModalInformation<Item.Series>(modal.modalKey);
 
-  const profile = useProfileBy(payload?.profileId);
+  const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
