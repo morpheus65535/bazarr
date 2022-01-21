@@ -1,32 +1,32 @@
 import { useQuery } from "react-query";
-import { EpisodesApi, SeriesApi } from "..";
 import { createEpisodeId, createSeriesId } from "../../utilities";
+import api from "../raw";
 
 export function useSeriesByIds(ids: number[]) {
   const keys = ids.map(createSeriesId);
-  return useQuery(["series", ...keys], () => SeriesApi.series(ids));
+  return useQuery(["series", ...keys], () => api.series.series(ids));
 }
 
 export function useSeries() {
-  return useQuery("series", () => SeriesApi.series());
+  return useQuery("series", () => api.series.series());
 }
 
 export function useEpisodeByIds(ids: number[]) {
   const keys = ids.map(createEpisodeId);
   return useQuery(["series", "episodes", ...keys], () =>
-    EpisodesApi.byEpisodeId(ids)
+    api.episodes.byEpisodeId(ids)
   );
 }
 
 export function useEpisodeBySeriesId(ids: number[]) {
   const keys = ids.map(createSeriesId);
   return useQuery(["series", "episodes", ...keys], () =>
-    EpisodesApi.bySeriesId(ids)
+    api.episodes.bySeriesId(ids)
   );
 }
 
 export function useEpisodeBlacklist() {
   return useQuery(["series", "episodes", "blacklist"], () =>
-    EpisodesApi.blacklist()
+    api.episodes.blacklist()
   );
 }

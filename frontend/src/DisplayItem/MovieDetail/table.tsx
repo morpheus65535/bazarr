@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
+import api from "src/apis/raw";
 import { useProfileItemsToLanguages } from "src/utilities/languages";
 import { useShowOnlyDesired } from "../../@redux/hooks";
-import { MoviesApi } from "../../apis";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
 import { filterSubtitleBy } from "../../utilities";
 
@@ -67,7 +67,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               <AsyncButton
                 disabled={disabled}
                 promise={() =>
-                  MoviesApi.downloadSubtitles(movie.radarrId, {
+                  api.movies.downloadSubtitles(movie.radarrId, {
                     language: original.code2,
                     hi: original.hi,
                     forced: original.forced,
@@ -86,7 +86,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 variant="light"
                 size="sm"
                 promise={() =>
-                  MoviesApi.deleteSubtitles(movie.radarrId, {
+                  api.movies.deleteSubtitles(movie.radarrId, {
                     language: original.code2,
                     hi: original.hi,
                     forced: original.forced,

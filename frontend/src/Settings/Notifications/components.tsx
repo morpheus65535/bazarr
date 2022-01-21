@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import { SystemApi } from "../../apis";
+import api from "src/apis/raw";
 import {
   AsyncButton,
   BaseModal,
@@ -79,7 +79,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           variant="outline-secondary"
           promise={() => {
             if (current && current.url) {
-              return SystemApi.testNotification(current.url);
+              return api.system.testNotification(current.url);
             } else {
               return null;
             }

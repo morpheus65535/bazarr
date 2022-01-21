@@ -17,6 +17,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
+import api from "src/apis/raw";
 import {
   siteChangeSidebarVisibility,
   siteRedirectToAuth,
@@ -24,14 +25,14 @@ import {
 import { useIsOffline } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
-import { SystemApi, useSystemSettings } from "../apis";
+import { useSystemSettings } from "../apis/queries/client";
 import { ActionButton, SearchBar, SearchResult } from "../components";
 import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 
 async function SearchItem(text: string) {
-  const results = await SystemApi.search(text);
+  const results = await api.system.search(text);
 
   return results.map<SearchResult>((v) => {
     let link: string;
@@ -79,14 +80,14 @@ const Header: FunctionComponent<Props> = () => {
         <Dropdown.Menu>
           <Dropdown.Item
             onClick={() => {
-              SystemApi.restart();
+              api.system.restart();
             }}
           >
             Restart
           </Dropdown.Item>
           <Dropdown.Item
             onClick={() => {
-              SystemApi.shutdown();
+              api.system.shutdown();
             }}
           >
             Shutdown
@@ -95,7 +96,7 @@ const Header: FunctionComponent<Props> = () => {
           <Dropdown.Item
             hidden={!canLogout}
             onClick={() => {
-              SystemApi.logout().then(() => setNeedAuth());
+              api.system.logout().then(() => setNeedAuth());
             }}
           >
             Logout

@@ -11,11 +11,11 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import api from "src/apis/raw";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { SeriesApi } from "../../apis";
 import { useEpisodeBySeriesId, useSeriesByIds } from "../../apis/hooks/series";
 import {
   ContentHeader,
@@ -88,15 +88,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             icon={faSync}
             disabled={!available || hasTask}
             onClick={() => {
-              const task = createTask(
-                tvShow.title,
-                id,
-                SeriesApi.action.bind(SeriesApi),
-                {
-                  action: "scan-disk",
-                  seriesid: id,
-                }
-              );
+              const task = createTask(tvShow.title, id, api.series.action, {
+                action: "scan-disk",
+                seriesid: id,
+              });
               dispatchTask("Scanning disk...", [task], "Scanning...");
             }}
           >
@@ -108,7 +103,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               const task = createTask(
                 tvShow.title,
                 id,
-                SeriesApi.action.bind(SeriesApi),
+                api.series.action.bind(api.series),
                 {
                   action: "search-missing",
                   seriesid: id,
@@ -176,7 +171,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       </Row>
       <ItemEditorModal
         modalKey="edit"
-        submit={(form) => SeriesApi.modify(form)}
+        submit={(form) => api.series.modify(form)}
       ></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"

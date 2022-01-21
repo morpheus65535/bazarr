@@ -1,6 +1,6 @@
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
-import { useSystemSettings } from "../../apis";
+import { useSystemSettings } from "../../apis/queries/client";
 import { log } from "../../utilities/logger";
 import { StagedChangesContext } from "./provider";
 

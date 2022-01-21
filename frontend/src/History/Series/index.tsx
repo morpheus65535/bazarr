@@ -4,7 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { EpisodesApi } from "../../apis";
+import api from "../../apis/raw";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import HistoryGenericView from "../generic";
@@ -120,7 +120,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
             <BlacklistButton
               history={original}
               promise={(form) =>
-                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                api.episodes.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
               }
             ></BlacklistButton>
           );
@@ -133,7 +133,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
   return (
     <HistoryGenericView
       type="series"
-      query={(param) => EpisodesApi.history(param)}
+      query={(param) => api.episodes.history(param)}
       columns={columns}
     ></HistoryGenericView>
   );

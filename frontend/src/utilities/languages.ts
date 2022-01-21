@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useLanguageProfiles, useLanguages } from "../apis";
+import { useLanguageProfiles, useLanguages } from "../apis/queries/client";
 
 export function useLanguageProfileBy(id: number | null | undefined) {
   const { data } = useLanguageProfiles();

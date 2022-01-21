@@ -29,6 +29,7 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
+import api from "src/apis/raw";
 import { useEnabledLanguages } from "src/utilities/languages";
 import {
   ActionButton,
@@ -42,7 +43,6 @@ import {
 } from "..";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { SubtitlesApi } from "../../apis";
 import { isMovie, submodProcessColor } from "../../utilities";
 import { log } from "../../utilities/logger";
 import { useCustomSelection } from "../tables/plugins";
@@ -318,13 +318,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
           path: s.path,
           ...override,
         };
-        return createTask(
-          s.path,
-          s.id,
-          SubtitlesApi.modify.bind(SubtitlesApi),
-          action,
-          form
-        );
+        return createTask(s.path, s.id, api.subtitles.modify, action, form);
       });
 
       dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");

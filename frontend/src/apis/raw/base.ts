@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import apis from ".";
+import client from "../queries/client";
 
 class BaseApi {
   prefix: string;
@@ -31,7 +31,7 @@ class BaseApi {
   }
 
   protected async get<T = unknown>(path: string, params?: any) {
-    const response = await apis.axios.get<T>(this.prefix + path, { params });
+    const response = await client.axios.get<T>(this.prefix + path, { params });
     return response.data;
   }
 
@@ -41,7 +41,7 @@ class BaseApi {
     params?: any
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
-    return apis.axios.post(this.prefix + path, form, { params });
+    return client.axios.post(this.prefix + path, form, { params });
   }
 
   protected patch<T = void>(
@@ -50,7 +50,7 @@ class BaseApi {
     params?: any
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
-    return apis.axios.patch(this.prefix + path, form, { params });
+    return client.axios.patch(this.prefix + path, form, { params });
   }
 
   protected delete<T = void>(
@@ -59,7 +59,7 @@ class BaseApi {
     params?: any
   ): Promise<AxiosResponse<T>> {
     const form = this.createFormdata(formdata);
-    return apis.axios.delete(this.prefix + path, { params, data: form });
+    return client.axios.delete(this.prefix + path, { params, data: form });
   }
 }
 

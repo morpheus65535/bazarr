@@ -5,7 +5,7 @@ import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../../apis";
+import { useLanguageProfiles } from "../../../apis/queries/client";
 import { ContentHeader } from "../../../components";
 import { GetItemId } from "../../../utilities";
 import Table from "./table";

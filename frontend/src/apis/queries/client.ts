@@ -1,8 +1,8 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth } from "../@redux/actions";
-import { AppDispatch } from "../@redux/store";
-import { Environment, isProdEnv } from "../utilities";
-class Api {
+import { siteRedirectToAuth } from "../../@redux/actions";
+import { AppDispatch } from "../../@redux/store";
+import { Environment, isProdEnv } from "../../utilities";
+class BazarrClient {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
   dispatch!: AppDispatch;
@@ -67,15 +67,5 @@ class Api {
   }
 }
 
-export default new Api();
-export { default as BadgesApi } from "./badges";
-export { default as EpisodesApi } from "./episodes";
-export { default as FilesApi } from "./files";
-export { default as HistoryApi } from "./history";
-export * from "./hooks";
-export { default as MoviesApi } from "./movies";
-export { default as ProvidersApi } from "./providers";
-export { default as SeriesApi } from "./series";
-export { default as SubtitlesApi } from "./subtitles";
-export { default as SystemApi } from "./system";
-export { default as UtilsApi } from "./utils";
+export default new BazarrClient();
+export * from "../hooks";

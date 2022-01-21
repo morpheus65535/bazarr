@@ -5,7 +5,8 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { MoviesApi, useLanguageProfiles } from "../../apis";
+import api from "src/apis/raw";
+import { useLanguageProfiles } from "../../apis/queries/client";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
 import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
@@ -104,9 +105,9 @@ const MovieView: FunctionComponent<Props> = () => {
   return (
     <BaseItemView
       name="Movies"
-      query={(param) => MoviesApi.moviesBy(param)}
+      query={(param) => api.movies.moviesBy(param)}
       columns={columns}
-      modify={(form) => MoviesApi.modify(form)}
+      modify={(form) => api.movies.modify(form)}
     ></BaseItemView>
   );
 };

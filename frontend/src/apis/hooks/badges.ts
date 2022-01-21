@@ -1,6 +1,6 @@
 import { useQuery } from "react-query";
-import { BadgesApi } from "..";
+import api from "../raw";
 
 export function useBadges() {
-  return useQuery(["system", "badges"], () => BadgesApi.all());
+  return useQuery(["system", "badges"], () => api.badges.all());
 }

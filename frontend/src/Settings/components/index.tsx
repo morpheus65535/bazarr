@@ -1,7 +1,7 @@
 import { isBoolean, isNumber, isString } from "lodash";
 import React, { FunctionComponent, useCallback, useState } from "react";
 import { Button } from "react-bootstrap";
-import { UtilsApi } from "../../apis";
+import api from "src/apis/raw";
 import { useLatest } from "./hooks";
 
 export const URLTestButton: FunctionComponent<{
@@ -36,8 +36,9 @@ export const URLTestButton: FunctionComponent<{
         request.url += "/";
       }
 
-      UtilsApi.urlTest(request.protocol, request.url, request.params).then(
-        (result) => {
+      api.utils
+        .urlTest(request.protocol, request.url, request.params)
+        .then((result) => {
           if (result.status) {
             setTitle(`Version: ${result.version}`);
             setVar("success");
@@ -45,8 +46,7 @@ export const URLTestButton: FunctionComponent<{
             setTitle(result.error);
             setVar("danger");
           }
-        }
-      );
+        });
     }
   }, [address, port, url, apikey, ssl]);
 

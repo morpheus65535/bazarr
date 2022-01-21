@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { EpisodesApi } from "../../apis";
+import api from "../../apis/raw";
 import {
   AsyncButton,
   LanguageText,
@@ -78,7 +78,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
               variant="light"
               noReset
               promise={() =>
-                EpisodesApi.deleteBlacklist(false, {
+                api.episodes.deleteBlacklist(false, {
                   provider: row.row.original.provider,
                   subs_id,
                 })

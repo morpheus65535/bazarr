@@ -4,7 +4,7 @@ import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { EpisodesApi, SeriesApi } from "../../apis";
+import api from "../../apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
@@ -13,7 +13,7 @@ interface Props {}
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
   const searchAll = useCallback(
-    () => SeriesApi.action({ action: "search-wanted" }),
+    () => api.series.action({ action: "search-wanted" }),
     []
   );
 
@@ -54,7 +54,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
               className="mx-1 mr-2"
               variant="secondary"
               promise={() =>
-                EpisodesApi.downloadSubtitles(seriesid, episodeid, {
+                api.episodes.downloadSubtitles(seriesid, episodeid, {
                   language: item.code2,
                   hi,
                   forced: false,
@@ -76,7 +76,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
     <GenericWantedView
       type="series"
       columns={columns}
-      query={(params) => EpisodesApi.wanted(params)}
+      query={(params) => api.episodes.wanted(params)}
       searchAll={searchAll}
     ></GenericWantedView>
   );

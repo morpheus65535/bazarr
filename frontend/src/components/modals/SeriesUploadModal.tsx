@@ -1,12 +1,12 @@
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import api from "src/apis/raw";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { EpisodesApi, SubtitlesApi } from "../../apis";
 import { Selector } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
@@ -41,7 +41,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
       const names = list.map((v) => v.file.name);
 
       if (names.length > 0) {
-        const results = await SubtitlesApi.info(names);
+        const results = await api.subtitles.info(names);
 
         // TODO: Optimization
         newList.forEach((v) => {
@@ -107,7 +107,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
           return createTask(
             v.file.name,
             episodeid,
-            EpisodesApi.uploadSubtitles.bind(EpisodesApi),
+            api.episodes.uploadSubtitles,
             seriesid,
             episodeid,
             form

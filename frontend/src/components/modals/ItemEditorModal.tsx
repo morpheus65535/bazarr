@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../apis";
+import { useLanguageProfiles } from "../../apis/queries/client";
 import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";

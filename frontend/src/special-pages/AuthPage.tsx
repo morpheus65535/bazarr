@@ -9,9 +9,9 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
+import api from "src/apis/raw";
 import { useReduxStore } from "../@redux/hooks/base";
 import logo from "../@static/logo128.png";
-import { SystemApi } from "../apis";
 import "./AuthPage.scss";
 
 interface Props {}
@@ -49,7 +49,8 @@ const AuthPage: FunctionComponent<Props> = () => {
             e.preventDefault();
             if (!updating) {
               setUpdate(true);
-              SystemApi.login(username, password)
+              api.system
+                .login(username, password)
                 .then(onSuccess)
                 .catch(onError);
             }

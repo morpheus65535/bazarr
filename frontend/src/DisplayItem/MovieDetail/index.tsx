@@ -11,11 +11,11 @@ import React, { FunctionComponent, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import api from "src/apis/raw";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { MoviesApi, ProvidersApi } from "../../apis";
 import { useMoviesByIds } from "../../apis/hooks/movies";
 import {
   ContentHeader,
@@ -33,7 +33,7 @@ import Table from "./table";
 
 const download = (item: Item.Movie, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return ProvidersApi.downloadMovieSubtitle(item.radarrId, {
+  return api.providers.downloadMovieSubtitle(item.radarrId, {
     language,
     hi: hearing_impaired,
     forced,
@@ -82,12 +82,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSync}
             disabled={hasTask}
             onClick={() => {
-              const task = createTask(
-                item.title,
-                id,
-                MoviesApi.action.bind(MoviesApi),
-                { action: "scan-disk", radarrid: id }
-              );
+              const task = createTask(item.title, id, api.movies.action, {
+                action: "scan-disk",
+                radarrid: id,
+              });
               dispatchTask("Scanning Disk...", [task], "Scanning...");
             }}
           >
@@ -97,15 +95,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSearch}
             disabled={item.profileId === null}
             onClick={() => {
-              const task = createTask(
-                item.title,
-                id,
-                MoviesApi.action.bind(MoviesApi),
-                {
-                  action: "search-missing",
-                  radarrid: id,
-                }
-              );
+              const task = createTask(item.title, id, api.movies.action, {
+                action: "search-missing",
+                radarrid: id,
+              });
               dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
           >
@@ -168,7 +161,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       </Row>
       <ItemEditorModal
         modalKey="edit"
-        submit={(form) => MoviesApi.modify(form)}
+        submit={(form) => api.movies.modify(form)}
       ></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>

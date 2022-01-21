@@ -2,7 +2,7 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
-import { EpisodesApi } from "../../apis";
+import api from "src/apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 
 interface Props {
@@ -27,13 +27,13 @@ export const SubtitleAction: FunctionComponent<Props> = ({
       <AsyncButton
         promise={() => {
           if (missing) {
-            return EpisodesApi.downloadSubtitles(seriesid, episodeid, {
+            return api.episodes.downloadSubtitles(seriesid, episodeid, {
               hi,
               forced,
               language: subtitle.code2,
             });
           } else if (path) {
-            return EpisodesApi.deleteSubtitles(seriesid, episodeid, {
+            return api.episodes.deleteSubtitles(seriesid, episodeid, {
               hi,
               forced,
               path: path,

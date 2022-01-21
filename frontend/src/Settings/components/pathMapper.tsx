@@ -4,7 +4,7 @@ import { capitalize, isArray, isBoolean } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { FilesApi } from "../../apis";
+import api from "src/apis/raw";
 import { ActionButton, FileBrowser, SimpleTable } from "../../components";
 import {
   moviesEnabledKey,
@@ -75,9 +75,9 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   const request = useMemo(() => {
     if (type === "sonarr") {
-      return (path: string) => FilesApi.sonarr(path);
+      return (path: string) => api.files.sonarr(path);
     } else {
-      return (path: string) => FilesApi.radarr(path);
+      return (path: string) => api.files.radarr(path);
     }
   }, [type]);
 
@@ -126,7 +126,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           <FileBrowser
             drop="up"
             defaultValue={value}
-            load={(path) => FilesApi.bazarr(path)}
+            load={(path) => api.files.bazarr(path)}
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.to = path;

@@ -2,7 +2,7 @@ import { faSync } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useSystemTasks } from "../../apis";
+import { useSystemTasks } from "../../apis/queries/client";
 import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
 

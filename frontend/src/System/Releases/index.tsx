@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useSystemReleases } from "../../apis";
+import { useSystemReleases } from "../../apis/queries/client";
 import { QueryOverlay } from "../../components";
 import { BuildKey } from "../../utilities";
 

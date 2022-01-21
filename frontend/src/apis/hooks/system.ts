@@ -1,42 +1,42 @@
 import { useQuery } from "react-query";
-import { ProvidersApi, SystemApi } from "..";
+import api from "../raw";
 
 export function useSystemSettings() {
-  return useQuery(["system", "settings"], () => SystemApi.settings());
+  return useQuery(["system", "settings"], () => api.system.settings());
 }
 
 export function useLanguages(history?: boolean) {
   return useQuery(["system", "settings", "languages", history], () =>
-    SystemApi.languages(history)
+    api.system.languages(history)
   );
 }
 
 export function useLanguageProfiles() {
   return useQuery(["system", "settings", "languages", "profiles"], () =>
-    SystemApi.languagesProfileList()
+    api.system.languagesProfileList()
   );
 }
 
 export function useSystemLogs() {
-  return useQuery(["logs"], () => SystemApi.logs());
+  return useQuery(["logs"], () => api.system.logs());
 }
 
 export function useSystemTasks() {
-  return useQuery(["tasks"], () => SystemApi.tasks());
+  return useQuery(["tasks"], () => api.system.tasks());
 }
 
 export function useSystemStatus() {
-  return useQuery(["status"], () => SystemApi.status());
+  return useQuery(["status"], () => api.system.status());
 }
 
 export function useSystemHealth() {
-  return useQuery(["health"], () => SystemApi.health());
+  return useQuery(["health"], () => api.system.health());
 }
 
 export function useSystemProviders(history?: boolean) {
-  return useQuery(["providers"], () => ProvidersApi.providers(history));
+  return useQuery(["providers"], () => api.providers.providers(history));
 }
 
 export function useSystemReleases() {
-  return useQuery(["releases"], () => SystemApi.releases());
+  return useQuery(["releases"], () => api.system.releases());
 }

@@ -13,7 +13,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { HistoryApi, useLanguages, useSystemProviders } from "../../apis";
+import api from "src/apis/raw";
+import { useLanguages, useSystemProviders } from "../../apis/queries/client";
 import {
   ContentHeader,
   LanguageSelector,
@@ -54,7 +55,7 @@ const HistoryStats: FunctionComponent = () => {
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
   const stats = useQuery(["stats", lang, timeframe, action, provider], () =>
-    HistoryApi.stats(
+    api.history.stats(
       timeframe,
       action ?? undefined,
       provider?.name,

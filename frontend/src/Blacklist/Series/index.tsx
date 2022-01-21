@@ -2,7 +2,7 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { EpisodesApi } from "../../apis";
+import api from "src/apis/raw";
 import { useEpisodeBlacklist } from "../../apis/hooks/series";
 import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
@@ -22,7 +22,7 @@ const BlacklistSeriesView: FunctionComponent<Props> = () => {
             <ContentHeader.AsyncButton
               icon={faTrash}
               disabled={data?.length === 0}
-              promise={() => EpisodesApi.deleteBlacklist(true)}
+              promise={() => api.episodes.deleteBlacklist(true)}
             >
               Remove All
             </ContentHeader.AsyncButton>

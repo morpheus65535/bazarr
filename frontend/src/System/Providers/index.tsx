@@ -2,7 +2,8 @@ import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { ProvidersApi, useSystemProviders } from "../../apis";
+import api from "src/apis/raw";
+import { useSystemProviders } from "../../apis/queries/client";
 import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
 
@@ -28,7 +29,7 @@ const SystemProvidersView: FunctionComponent<Props> = () => {
             </ContentHeader.Button>
             <ContentHeader.AsyncButton
               icon={faTrash}
-              promise={() => ProvidersApi.reset()}
+              promise={() => api.providers.reset()}
               onSuccess={() => refetch()}
             >
               Reset

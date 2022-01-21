@@ -10,7 +10,8 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { SystemApi, useSystemSettings } from "../../apis";
+import api from "src/apis/raw";
+import { useSystemSettings } from "../../apis/queries/client";
 import { ContentHeader, LoadingIndicator } from "../../components";
 import { log } from "../../utilities/logger";
 import { useUpdateLocalStorage } from "../../utilities/storage";
@@ -58,20 +59,20 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
   // TODO: Handling refresh
-  const { isLoading, isRefetching } = useSystemSettings();
-  useEffect(() => {
-    // Will be updated by websocket
-    if (!isRefetching) {
-      setChange({});
-      setUpdating(false);
-    }
-  }, [isRefetching]);
+  const { isLoading } = useSystemSettings();
+  // useEffect(() => {
+  //   // Will be updated by websocket
+  //   if (!isRefetching) {
+  //     setChange({});
+  //     setUpdating(false);
+  //   }
+  // }, [isRefetching]);
 
   const saveSettings = useCallback((settings: LooseObject) => {
     submitHooks(settings);
     setUpdating(true);
     log("info", "submitting settings", settings);
-    SystemApi.setSettings(settings);
+    api.system.setSettings(settings);
   }, []);
 
   const saveLocalStorage = useCallback(

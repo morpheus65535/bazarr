@@ -9,9 +9,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
+import api from "src/apis/raw";
 import { useProfileItemsToLanguages } from "src/utilities/languages";
 import { useShowOnlyDesired } from "../../@redux/hooks";
-import { ProvidersApi } from "../../apis";
 import {
   ActionButton,
   EpisodeHistoryModal,
@@ -33,7 +33,7 @@ interface Props {
 
 const download = (item: Item.Episode, result: SearchResultType) => {
   const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return ProvidersApi.downloadEpisodeSubtitle(
+  return api.providers.downloadEpisodeSubtitle(
     item.sonarrSeriesId,
     item.sonarrEpisodeId,
     {

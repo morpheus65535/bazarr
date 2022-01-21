@@ -11,7 +11,7 @@ import React, { FunctionComponent, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
-import { useSystemHealth, useSystemStatus } from "../../apis";
+import { useSystemHealth, useSystemStatus } from "../../apis/queries/client";
 import { QueryOverlay } from "../../components";
 import { GithubRepoRoot } from "../../constants";
 import "./style.scss";

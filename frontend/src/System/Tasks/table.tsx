@@ -2,7 +2,7 @@ import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
-import { SystemApi } from "../../apis";
+import api from "src/apis/raw";
 import { AsyncButton, SimpleTable } from "../../components";
 
 interface Props {
@@ -33,7 +33,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
           const { job_id } = row.row.original;
           return (
             <AsyncButton
-              promise={() => SystemApi.runTask(job_id)}
+              promise={() => api.system.runTask(job_id)}
               variant="light"
               size="sm"
               disabled={row.value}

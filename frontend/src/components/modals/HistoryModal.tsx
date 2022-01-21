@@ -8,7 +8,7 @@ import {
   QueryOverlay,
   TextPopover,
 } from "..";
-import { EpisodesApi, MoviesApi } from "../../apis";
+import api from "../../apis/raw";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
@@ -20,7 +20,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const history = useQuery(["movies", movie?.radarrId], () => {
     if (movie) {
-      MoviesApi.historyBy(movie.radarrId);
+      api.movies.historyBy(movie.radarrId);
     }
   });
 
@@ -76,7 +76,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
             <BlacklistButton
               update={history.refetch}
               promise={(form) =>
-                MoviesApi.addBlacklist(original.radarrId, form)
+                api.movies.addBlacklist(original.radarrId, form)
               }
               history={original}
             ></BlacklistButton>
@@ -111,7 +111,7 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   const history = useQuery(["episodes", episode?.sonarrEpisodeId], () => {
     if (episode) {
-      EpisodesApi.historyBy(episode.sonarrEpisodeId);
+      api.episodes.historyBy(episode.sonarrEpisodeId);
     }
   });
 
@@ -169,7 +169,7 @@ export const EpisodeHistoryModal: FunctionComponent<
               history={original}
               update={history.refetch}
               promise={(form) =>
-                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                api.episodes.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
               }
             ></BlacklistButton>
           );

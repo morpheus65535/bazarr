@@ -1,11 +1,11 @@
 import React, { FunctionComponent, useCallback } from "react";
+import api from "src/apis/raw";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { MoviesApi } from "../../apis";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {
@@ -70,7 +70,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
           return createTask(
             file.name,
             radarrId,
-            MoviesApi.uploadSubtitles.bind(MoviesApi),
+            api.movies.uploadSubtitles,
             radarrId,
             {
               file,

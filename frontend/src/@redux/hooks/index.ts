@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useSystemSettings } from "../../apis";
+import { useSystemSettings } from "../../apis/queries/client";
 import { siteAddNotifications } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 

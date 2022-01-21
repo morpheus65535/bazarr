@@ -24,6 +24,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { Column } from "react-table";
+import api from "src/apis/raw";
 import {
   BaseModal,
   BaseModalProps,
@@ -34,7 +35,6 @@ import {
 } from "..";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { ProvidersApi } from "../../apis";
 import { GetItemId, isMovie } from "../../utilities";
 import "./msmStyle.scss";
 
@@ -65,9 +65,9 @@ export function ManualSearchModal<T extends SupportType>(
       setSearchState(SearchState.Searching);
       let results: SearchResultType[] = [];
       if (isMovie(item)) {
-        results = await ProvidersApi.movies(item.radarrId);
+        results = await api.providers.movies(item.radarrId);
       } else {
-        results = await ProvidersApi.episodes(item.sonarrEpisodeId);
+        results = await api.providers.episodes(item.sonarrEpisodeId);
       }
       setResult(results);
       setSearchState(SearchState.Finished);

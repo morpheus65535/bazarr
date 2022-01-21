@@ -2,7 +2,8 @@ import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { SystemApi, useSystemLogs } from "../../apis";
+import api from "src/apis/raw";
+import { useSystemLogs } from "../../apis/queries/client";
 import { ContentHeader, QueryOverlay } from "../../components";
 import { Environment } from "../../utilities";
 import Table from "./table";
@@ -41,7 +42,7 @@ const SystemLogsView: FunctionComponent<Props> = () => {
               icon={faTrash}
               onClick={() => {
                 setReset(true);
-                SystemApi.deleteLogs().finally(() => {
+                api.system.deleteLogs().finally(() => {
                   setReset(false);
                   refetch();
                 });

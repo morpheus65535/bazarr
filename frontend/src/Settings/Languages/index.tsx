@@ -1,7 +1,7 @@
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
 import { useEnabledLanguages } from "src/utilities/languages";
-import { useLanguageProfiles, useLanguages } from "../../apis";
+import { useLanguageProfiles, useLanguages } from "../../apis/queries/client";
 import {
   Check,
   CollapseBox,
