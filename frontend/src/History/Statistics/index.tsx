@@ -1,8 +1,7 @@
 import { merge } from "lodash";
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useQuery } from "react-query";
 import {
   Bar,
   BarChart,
@@ -13,30 +12,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import api from "src/apis/raw";
-import { useLanguages, useSystemProviders } from "../../apis/queries/client";
+import {
+  useHistoryStats,
+  useLanguages,
+  useSystemProviders,
+} from "../../apis/queries/client";
 import {
   ContentHeader,
   LanguageSelector,
   QueryOverlay,
   Selector,
 } from "../../components";
-import { actionOptions, timeframeOptions } from "./options";
-
-function converter(item: History.Stat) {
-  const movies = item.movies.map((v) => ({
-    date: v.date,
-    movies: v.count,
-  }));
-  const series = item.series.map((v) => ({
-    date: v.date,
-    series: v.count,
-  }));
-  const result = merge(movies, series);
-  return result;
-}
-
-const providerLabel = (item: System.Provider) => item.name;
+import { actionOptions, timeFrameOptions } from "./options";
 
 const SelectorContainer: FunctionComponent = ({ children }) => (
   <Col xs={6} lg={3} className="p-1">
@@ -47,23 +34,37 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 const HistoryStats: FunctionComponent = () => {
   const { data: languages } = useLanguages(true);
 
-  const { data: providerList } = useSystemProviders(true);
+  const { data: providers } = useSystemProviders(true);
 
-  const [timeframe, setTimeframe] = useState<History.TimeframeOptions>("month");
+  const providerOptions = useMemo<SelectorOption<System.Provider>[]>(
+    () => providers?.map((value) => ({ label: value.name, value })) ?? [],
+    [providers]
+  );
+
+  const [timeFrame, setTimeFrame] = useState<History.TimeFrameOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
   const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
-  const stats = useQuery(["stats", lang, timeframe, action, provider], () =>
-    api.history.stats(
-      timeframe,
-      action ?? undefined,
-      provider?.name,
-      lang?.code2
-    )
-  );
-
+  const stats = useHistoryStats(timeFrame, action, provider, lang);
   const { data } = stats;
+
+  const convertedData = useMemo(() => {
+    if (data) {
+      const movies = data.movies.map((v) => ({
+        date: v.date,
+        movies: v.count,
+      }));
+      const series = data.series.map((v) => ({
+        date: v.date,
+        series: v.count,
+      }));
+      const result = merge(movies, series);
+      return result;
+    } else {
+      return [];
+    }
+  }, [data]);
 
   return (
     // TODO: Responsive
@@ -77,9 +78,9 @@ const HistoryStats: FunctionComponent = () => {
             <SelectorContainer>
               <Selector
                 placeholder="Time..."
-                options={timeframeOptions}
-                value={timeframe}
-                onChange={(v) => setTimeframe(v ?? "month")}
+                options={timeFrameOptions}
+                value={timeFrame}
+                onChange={(v) => setTimeFrame(v ?? "month")}
               ></Selector>
             </SelectorContainer>
             <SelectorContainer>
@@ -92,14 +93,13 @@ const HistoryStats: FunctionComponent = () => {
               ></Selector>
             </SelectorContainer>
             <SelectorContainer>
-              {/* <AsyncSelector
-                  placeholder="Provider..."
-                  clearable
-                  state={providerList}
-                  label={providerLabel}
-                  update={updateProvider}
-                  onChange={setProvider}
-                ></AsyncSelector> */}
+              <Selector
+                placeholder="Provider..."
+                clearable
+                options={providerOptions}
+                value={provider}
+                onChange={setProvider}
+              ></Selector>
             </SelectorContainer>
             <SelectorContainer>
               <LanguageSelector
@@ -111,7 +111,7 @@ const HistoryStats: FunctionComponent = () => {
             </SelectorContainer>
           </ContentHeader>
           <ResponsiveContainer height="100%">
-            <BarChart data={data ? converter(data) : []}>
+            <BarChart data={convertedData}>
               <CartesianGrid strokeDasharray="4 2"></CartesianGrid>
               <XAxis dataKey="date"></XAxis>
               <YAxis allowDecimals={false}></YAxis>

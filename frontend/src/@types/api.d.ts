@@ -227,7 +227,7 @@ declare namespace History {
     series: StatItem[];
   };
 
-  type TimeframeOptions = "week" | "month" | "trimester" | "year";
+  type TimeFrameOptions = "week" | "month" | "trimester" | "year";
   type ActionOptions = 1 | 2 | 3;
 }
 

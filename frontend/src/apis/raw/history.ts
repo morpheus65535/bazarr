@@ -6,13 +6,13 @@ class HistoryApi extends BaseApi {
   }
 
   async stats(
-    timeframe?: History.TimeframeOptions,
+    timeFrame?: History.TimeFrameOptions,
     action?: History.ActionOptions,
     provider?: string,
     language?: Language.CodeType
   ) {
     const response = await this.get<History.Stat>("/stats", {
-      timeframe,
+      timeFrame,
       action,
       provider,
       language,

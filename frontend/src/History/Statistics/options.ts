@@ -13,7 +13,7 @@ export const actionOptions: SelectorOption<History.ActionOptions>[] = [
   },
 ];
 
-export const timeframeOptions: SelectorOption<History.TimeframeOptions>[] = [
+export const timeFrameOptions: SelectorOption<History.TimeFrameOptions>[] = [
   {
     label: "Last Week",
     value: "week",
