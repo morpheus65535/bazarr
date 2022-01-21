@@ -1,9 +1,9 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import {
-  useAddEpisodeBlacklist,
-  useAddMovieBlacklist,
+  useEpisodeAddBlacklist,
   useEpisodeHistory,
+  useMovieAddBlacklist,
   useMovieHistory,
 } from "src/apis/hooks";
 import {
@@ -74,7 +74,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         accessor: "blacklisted",
         Cell: ({ row }) => {
           const { radarrId } = row.original;
-          const { mutateAsync } = useAddMovieBlacklist();
+          const { mutateAsync } = useMovieAddBlacklist();
           return (
             <BlacklistButton
               update={history.refetch}
@@ -162,7 +162,7 @@ export const EpisodeHistoryModal: FunctionComponent<
           const original = row.original;
 
           const { sonarrEpisodeId, sonarrSeriesId } = original;
-          const { mutateAsync } = useAddEpisodeBlacklist();
+          const { mutateAsync } = useEpisodeAddBlacklist();
           return (
             <BlacklistButton
               history={original}

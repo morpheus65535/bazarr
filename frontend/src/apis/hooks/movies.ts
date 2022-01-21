@@ -65,13 +65,26 @@ export function useMovieAction() {
   });
 }
 
+export function useMovieUploadSubtitle() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: { id: number; form: FormType.UploadSubtitle }) =>
+      api.movies.uploadSubtitles(param.id, param.form),
+    {
+      onSuccess: (_, { id }) => {
+        client.invalidateQueries([QueryKeys.Movies, id]);
+      },
+    }
+  );
+}
+
 export function useMovieBlacklist() {
   return useQuery([QueryKeys.Movies, QueryKeys.Blacklist], () =>
     api.movies.blacklist()
   );
 }
 
-export function useAddMovieBlacklist() {
+export function useMovieAddBlacklist() {
   const client = useQueryClient();
   return useMutation(
     (param: { id: number; form: FormType.AddBlacklist }) => {
@@ -82,6 +95,19 @@ export function useAddMovieBlacklist() {
       onSuccess: (_, { id }) => {
         client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
         client.invalidateQueries([QueryKeys.Movies, id]);
+      },
+    }
+  );
+}
+
+export function useMovieDeleteBlacklist() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
+      api.movies.deleteBlacklist(param.all, param.form),
+    {
+      onSuccess: (_, param) => {
+        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
       },
     }
   );

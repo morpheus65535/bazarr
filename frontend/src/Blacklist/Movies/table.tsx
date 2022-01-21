@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import api from "src/apis/raw";
+import { useMovieDeleteBlacklist } from "src/apis/hooks";
 import {
   AsyncButton,
   LanguageText,
@@ -63,8 +63,8 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       },
       {
         accessor: "subs_id",
-        Cell: (row) => {
-          const subs_id = row.value;
+        Cell: ({ row, value }) => {
+          const { mutateAsync } = useMovieDeleteBlacklist();
 
           return (
             <AsyncButton
@@ -72,9 +72,12 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
               variant="light"
               noReset
               promise={() =>
-                api.movies.deleteBlacklist(false, {
-                  provider: row.row.original.provider,
-                  subs_id,
+                mutateAsync({
+                  all: false,
+                  form: {
+                    provider: row.original.provider,
+                    subs_id: value,
+                  },
                 })
               }
             >

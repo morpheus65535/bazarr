@@ -54,7 +54,7 @@ export function useEpisodeBlacklist() {
   );
 }
 
-export function useAddEpisodeBlacklist() {
+export function useEpisodeAddBlacklist() {
   const client = useQueryClient();
   return useMutation(
     (param: {
@@ -74,6 +74,19 @@ export function useAddEpisodeBlacklist() {
   );
 }
 
+export function useEpisodeDeleteBlacklist() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
+      api.episodes.deleteBlacklist(param.all, param.form),
+    {
+      onSuccess: (_, param) => {
+        client.invalidateQueries([QueryKeys.Series, QueryKeys.Blacklist]);
+      },
+    }
+  );
+}
+
 export function useEpisodeHistory(episodeId?: number) {
   return useQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History, episodeId],
@@ -81,6 +94,23 @@ export function useEpisodeHistory(episodeId?: number) {
       if (episodeId) {
         return api.episodes.historyBy(episodeId);
       }
+    }
+  );
+}
+
+export function useEpisodeUploadSubtitle() {
+  const client = useQueryClient();
+  return useMutation(
+    (param: {
+      seriesId: number;
+      episodeId: number;
+      form: FormType.UploadSubtitle;
+    }) =>
+      api.episodes.uploadSubtitles(param.seriesId, param.episodeId, param.form),
+    {
+      onSuccess: (_, { seriesId }) => {
+        client.invalidateQueries([QueryKeys.Series, seriesId]);
+      },
     }
   );
 }

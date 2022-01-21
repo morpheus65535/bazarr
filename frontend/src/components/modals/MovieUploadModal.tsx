@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useCallback } from "react";
-import api from "src/apis/raw";
+import { useMovieUploadSubtitle } from "src/apis/hooks";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -29,6 +29,8 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const update = useCallback(async (list: PendingSubtitle<Payload>[]) => {
     return list;
   }, []);
+
+  const { mutateAsync } = useMovieUploadSubtitle();
 
   const validate = useCallback<Validator<Payload>>(
     (item) => {
@@ -67,23 +69,20 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
         .map((v) => {
           const { file, language, forced, hi } = v;
 
-          return createTask(
-            file.name,
-            radarrId,
-            api.movies.uploadSubtitles,
-            radarrId,
-            {
+          return createTask(file.name, radarrId, mutateAsync, {
+            id: radarrId,
+            form: {
               file,
               forced,
               hi,
               language: language!.code2,
-            }
-          );
+            },
+          });
         });
 
       dispatchTask(TaskGroupName, tasks, "Uploading...");
     },
-    [payload]
+    [mutateAsync, payload]
   );
 
   return (

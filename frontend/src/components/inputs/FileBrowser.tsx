@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import { Dropdown, DropdownProps, Form, Spinner } from "react-bootstrap";
+import { useQuery } from "react-query";
 
 const backKey = "--back--";
 
@@ -45,7 +46,15 @@ export const FileBrowser: FunctionComponent<Props> = ({
   const [show, canShow] = useState(false);
   const [text, setText] = useState(defaultValue ?? "");
   const [path, setPath] = useState(() => extractPath(text));
-  const [loading, setLoading] = useState(true);
+
+  const { data: tree, isLoading } = useQuery(
+    ["FileBrowser", path],
+    () => load(path),
+    {
+      enabled: show,
+      staleTime: 1000 * 60,
+    }
+  );
 
   const filter = useMemo(() => {
     const idx = getLastSeparator(text);
@@ -57,10 +66,8 @@ export const FileBrowser: FunctionComponent<Props> = ({
     return path.slice(0, idx + 1);
   }, [path]);
 
-  const [tree, setTree] = useState<FileTree[]>([]);
-
   const requestItems = useMemo(() => {
-    if (loading) {
+    if (isLoading) {
       return (
         <Dropdown.Item>
           <Spinner size="sm" animation="border"></Spinner>
@@ -70,19 +77,21 @@ export const FileBrowser: FunctionComponent<Props> = ({
 
     const elements = [];
 
-    elements.push(
-      ...tree
-        .filter((v) => v.name.startsWith(filter))
-        .map((v) => (
-          <Dropdown.Item eventKey={v.path} key={v.name}>
-            <FontAwesomeIcon
-              icon={v.children ? faFolder : faFile}
-              className="mr-2"
-            ></FontAwesomeIcon>
-            <span>{v.name}</span>
-          </Dropdown.Item>
-        ))
-    );
+    if (tree) {
+      elements.push(
+        ...tree
+          .filter((v) => v.name.startsWith(filter))
+          .map((v) => (
+            <Dropdown.Item eventKey={v.path} key={v.name}>
+              <FontAwesomeIcon
+                icon={v.children ? faFolder : faFile}
+                className="mr-2"
+              ></FontAwesomeIcon>
+              <span>{v.name}</span>
+            </Dropdown.Item>
+          ))
+      );
+    }
 
     if (elements.length === 0) {
       elements.push(<Dropdown.Header key="no-files">No Files</Dropdown.Header>);
@@ -100,7 +109,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
     } else {
       return elements;
     }
-  }, [tree, filter, previous, loading]);
+  }, [isLoading, tree, previous.length, filter]);
 
   useEffect(() => {
     if (text === path) {
@@ -115,17 +124,6 @@ export const FileBrowser: FunctionComponent<Props> = ({
   }, [path, text, onChange]);
 
   const input = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (show) {
-      setLoading(true);
-      load(path)
-        .then((res) => {
-          setTree(res);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [path, load, show]);
 
   return (
     <Dropdown
