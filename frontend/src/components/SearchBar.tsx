@@ -1,3 +1,4 @@
+import { uniqueId } from "lodash";
 import React, {
   FunctionComponent,
   useCallback,
@@ -8,7 +9,36 @@ import React, {
 import { Dropdown, Form } from "react-bootstrap";
 import { useHistory } from "react-router";
 import { useThrottle } from "rooks";
+import { useServerSearch } from "src/apis/hooks";
 
+function useSearch(query: string) {
+  const { data } = useServerSearch(query);
+
+  return useMemo(
+    () =>
+      data?.map((v) => {
+        let link: string;
+        let id: string;
+        if (v.sonarrSeriesId) {
+          link = `/series/${v.sonarrSeriesId}`;
+          id = `series-${v.sonarrSeriesId}`;
+        } else if (v.radarrId) {
+          link = `/movies/${v.radarrId}`;
+          id = `movie-${v.radarrId}`;
+        } else {
+          link = "";
+          id = uniqueId("unknown");
+        }
+
+        return {
+          name: `${v.title} (${v.year})`,
+          link,
+          id,
+        };
+      }) ?? [],
+    [data]
+  );
+}
 export interface SearchResult {
   id: string;
   name: string;
@@ -17,43 +47,30 @@ export interface SearchResult {
 
 interface Props {
   className?: string;
-  onSearch: (text: string) => Promise<SearchResult[]>;
   onFocus?: () => void;
   onBlur?: () => void;
 }
 
 export const SearchBar: FunctionComponent<Props> = ({
-  onSearch,
   onFocus,
   onBlur,
   className,
 }) => {
-  const [text, setText] = useState("");
+  const [display, setDisplay] = useState("");
+  const [query, setQuery] = useState("");
 
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [debounce] = useThrottle(setQuery, 500);
+  useEffect(() => {
+    debounce(display);
+  }, [debounce, display]);
+
+  const results = useSearch(query);
 
   const history = useHistory();
 
-  const search = useCallback(
-    (value: string) => {
-      if (value === "") {
-        setResults([]);
-      } else {
-        onSearch(value).then((res) => setResults(res));
-      }
-    },
-    [onSearch]
-  );
-
-  const [debounceSearch] = useThrottle(search, 500);
-
-  useEffect(() => {
-    debounceSearch(text);
-  }, [text, debounceSearch]);
-
   const clear = useCallback(() => {
-    setText("");
-    setResults([]);
+    setDisplay("");
+    setQuery("");
   }, []);
 
   const items = useMemo(() => {
@@ -76,7 +93,7 @@ export const SearchBar: FunctionComponent<Props> = ({
 
   return (
     <Dropdown
-      show={text.length !== 0}
+      show={query.length !== 0}
       className={className}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -91,8 +108,8 @@ export const SearchBar: FunctionComponent<Props> = ({
         type="text"
         size="sm"
         placeholder="Search..."
-        value={text}
-        onChange={(e) => setText(e.currentTarget.value)}
+        value={display}
+        onChange={(e) => setDisplay(e.currentTarget.value)}
       ></Form.Control>
       <Dropdown.Menu style={{ maxHeight: 256, overflowY: "auto" }}>
         {items}

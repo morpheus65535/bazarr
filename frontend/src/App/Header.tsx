@@ -5,7 +5,6 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { uniqueId } from "lodash";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   Button,
@@ -26,35 +25,10 @@ import { useIsOffline } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
 import { useSystemSettings } from "../apis/queries/client";
-import { ActionButton, SearchBar, SearchResult } from "../components";
+import { ActionButton, SearchBar } from "../components";
 import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
 import NotificationCenter from "./Notification";
-
-async function SearchItem(text: string) {
-  const results = await api.system.search(text);
-
-  return results.map<SearchResult>((v) => {
-    let link: string;
-    let id: string;
-    if (v.sonarrSeriesId) {
-      link = `/series/${v.sonarrSeriesId}`;
-      id = `series-${v.sonarrSeriesId}`;
-    } else if (v.radarrId) {
-      link = `/movies/${v.radarrId}`;
-      id = `movie-${v.radarrId}`;
-    } else {
-      link = "";
-      id = uniqueId("unknown");
-    }
-
-    return {
-      name: `${v.title} (${v.year})`,
-      link,
-      id,
-    };
-  });
-}
 
 interface Props {}
 
@@ -133,7 +107,7 @@ const Header: FunctionComponent<Props> = () => {
       <Container fluid>
         <Row noGutters className="flex-grow-1">
           <Col xs={4} sm={6} className="d-flex align-items-center">
-            <SearchBar onSearch={SearchItem}></SearchBar>
+            <SearchBar></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <NotificationCenter></NotificationCenter>

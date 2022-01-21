@@ -42,6 +42,12 @@ export function useLanguageProfiles() {
   );
 }
 
+export function useServerSearch(query: string) {
+  return useQuery(["search", query], () => api.system.search(query), {
+    keepPreviousData: true,
+  });
+}
+
 export function useSystemLogs() {
   return useQuery(["logs"], () => api.system.logs());
 }
