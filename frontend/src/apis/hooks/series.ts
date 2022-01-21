@@ -4,8 +4,7 @@ import QueryKeys from "../queries/keys";
 import api from "../raw";
 
 export function useSeriesByIds(ids: number[]) {
-  const keys = ids.map(createSeriesId);
-  return useQuery([QueryKeys.series, ...keys], () => api.series.series(ids));
+  return useQuery([QueryKeys.series, ...ids], () => api.series.series(ids));
 }
 
 export function useSeries() {
@@ -14,21 +13,20 @@ export function useSeries() {
 
 export function useEpisodeByIds(ids: number[]) {
   const keys = ids.map(createEpisodeId);
-  return useQuery([QueryKeys.series, QueryKeys.episodes, ...keys], () =>
+  return useQuery([QueryKeys.episodes, ...keys], () =>
     api.episodes.byEpisodeId(ids)
   );
 }
 
 export function useEpisodeBySeriesId(ids: number[]) {
   const keys = ids.map(createSeriesId);
-  return useQuery([QueryKeys.series, QueryKeys.episodes, ...keys], () =>
+  return useQuery([QueryKeys.episodes, ...keys], () =>
     api.episodes.bySeriesId(ids)
   );
 }
 
 export function useEpisodeBlacklist() {
-  return useQuery(
-    [QueryKeys.series, QueryKeys.episodes, QueryKeys.blacklist],
-    () => api.episodes.blacklist()
+  return useQuery([QueryKeys.episodes, { type: "blacklist" }], () =>
+    api.episodes.blacklist()
   );
 }

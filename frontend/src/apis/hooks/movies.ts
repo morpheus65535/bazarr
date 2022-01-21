@@ -1,11 +1,9 @@
 import { useQuery } from "react-query";
-import { createMovieId } from "../../utilities";
 import QueryKeys from "../queries/keys";
 import api from "../raw";
 
 export function useMoviesByIds(ids: number[]) {
-  const keys = ids.map(createMovieId);
-  return useQuery([QueryKeys.movies, ...keys], () => api.movies.movies(ids));
+  return useQuery([QueryKeys.movies, ...ids], () => api.movies.movies(ids));
 }
 
 export function useMovies() {
@@ -13,7 +11,7 @@ export function useMovies() {
 }
 
 export function useMovieBlacklist() {
-  return useQuery([QueryKeys.movies, QueryKeys.blacklist], () =>
+  return useQuery([QueryKeys.movies, { type: "blacklist" }], () =>
     api.movies.blacklist()
   );
 }
