@@ -30,7 +30,7 @@ class SystemApi extends BaseApi {
     return response;
   }
 
-  async setSettings(data: object) {
+  async updateSettings(data: object) {
     await this.post("/settings", data);
   }
 

@@ -1,24 +1,44 @@
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import QueryKeys from "../queries/keys";
 import api from "../raw";
 
 export function useSystemSettings() {
-  return useQuery([QueryKeys.system, QueryKeys.settings], () =>
-    api.system.settings()
-  );
+  return useQuery(QueryKeys.settings, () => api.system.settings(), {
+    keepPreviousData: true,
+    staleTime: Infinity,
+  });
+}
+
+export function useSettingsMutation() {
+  const client = useQueryClient();
+  return useMutation((data: LooseObject) => api.system.updateSettings(data), {
+    onSuccess: () => {
+      client.invalidateQueries(QueryKeys.settings);
+      client.invalidateQueries(QueryKeys.languages);
+      client.invalidateQueries(QueryKeys.languagesProfiles);
+    },
+  });
 }
 
 export function useLanguages(history?: boolean) {
   return useQuery(
-    [QueryKeys.system, QueryKeys.settings, QueryKeys.languages, history],
-    () => api.system.languages(history)
+    [QueryKeys.languages, history],
+    () => api.system.languages(history),
+    {
+      keepPreviousData: true,
+      staleTime: Infinity,
+    }
   );
 }
 
 export function useLanguageProfiles() {
   return useQuery(
-    [QueryKeys.system, QueryKeys.settings, QueryKeys.languagesProfiles],
-    () => api.system.languagesProfileList()
+    QueryKeys.languagesProfiles,
+    () => api.system.languagesProfileList(),
+    {
+      keepPreviousData: true,
+      staleTime: Infinity,
+    }
   );
 }
 

@@ -10,8 +10,10 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import api from "src/apis/raw";
-import { useSystemSettings } from "../../apis/queries/client";
+import {
+  useSettingsMutation,
+  useSystemSettings,
+} from "../../apis/queries/client";
 import { ContentHeader, LoadingIndicator } from "../../components";
 import { log } from "../../utilities/logger";
 import { useUpdateLocalStorage } from "../../utilities/storage";
@@ -55,25 +57,25 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   const updateStorage = useUpdateLocalStorage();
 
   const [stagedChange, setChange] = useState<LooseObject>({});
-  const [updating, setUpdating] = useState(false);
   const [dispatcher, setDispatcher] = useState<SettingDispatcher>({});
 
-  // TODO: Handling refresh
-  const { isLoading } = useSystemSettings();
-  // useEffect(() => {
-  //   // Will be updated by websocket
-  //   if (!isRefetching) {
-  //     setChange({});
-  //     setUpdating(false);
-  //   }
-  // }, [isRefetching]);
+  const { isLoading, isRefetching } = useSystemSettings();
+  const { mutate, isLoading: isMutating } = useSettingsMutation();
 
-  const saveSettings = useCallback((settings: LooseObject) => {
-    submitHooks(settings);
-    setUpdating(true);
-    log("info", "submitting settings", settings);
-    api.system.setSettings(settings);
-  }, []);
+  useEffect(() => {
+    if (isRefetching === false) {
+      setChange({});
+    }
+  }, [isRefetching]);
+
+  const saveSettings = useCallback(
+    (settings: LooseObject) => {
+      submitHooks(settings);
+      log("info", "submitting settings", settings);
+      mutate(settings);
+    },
+    [mutate]
+  );
 
   const saveLocalStorage = useCallback(
     (settings: LooseObject) => {
@@ -144,7 +146,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
       <ContentHeader>
         <ContentHeader.Button
           icon={faSave}
-          updating={updating}
+          updating={isMutating}
           disabled={Object.keys(stagedChange).length === 0}
           onClick={submit}
         >
