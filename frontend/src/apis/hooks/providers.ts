@@ -62,7 +62,7 @@ export function useDownloadEpisodeSubtitles() {
       ),
     {
       onSuccess: (_, param) => {
-        client.invalidateQueries([QueryKeys.Episodes, param.episodeId]);
+        client.invalidateQueries([QueryKeys.Series, param.seriesId]);
       },
     }
   );

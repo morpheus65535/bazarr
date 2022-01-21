@@ -1,14 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "react-query";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
+
+const cacheMovies = (client: QueryClient, movies: Item.Movie[]) => {
+  movies.forEach((item) => {
+    client.setQueryData([QueryKeys.Movies, item.radarrId], item);
+  });
+};
 
 export function useMoviesByIds(ids: number[]) {
   const client = useQueryClient();
   return useQuery([QueryKeys.Movies, ...ids], () => api.movies.movies(ids), {
     onSuccess: (data) => {
-      data.forEach((v) => {
-        client.setQueryData([QueryKeys.Movies, v.radarrId], data);
-      });
+      cacheMovies(client, data);
     },
   });
 }
@@ -22,13 +31,15 @@ export function useMovieById(id: number) {
 
 export function useMovies() {
   const client = useQueryClient();
-  return useQuery([QueryKeys.Movies], () => api.movies.movies(), {
-    onSuccess: (data) => {
-      data.forEach((v) => {
-        client.setQueryData([QueryKeys.Movies, v.radarrId], data);
-      });
-    },
-  });
+  return useQuery(
+    [QueryKeys.Movies, QueryKeys.All],
+    () => api.movies.movies(),
+    {
+      onSuccess: (data) => {
+        cacheMovies(client, data);
+      },
+    }
+  );
 }
 
 export function useMovieModification() {
@@ -38,6 +49,9 @@ export function useMovieModification() {
       form.id.forEach((v) => {
         client.invalidateQueries([QueryKeys.Movies, v]);
       });
+      client.invalidateQueries([QueryKeys.Movies, QueryKeys.Range]);
+      client.invalidateQueries([QueryKeys.Movies, QueryKeys.History]);
+      client.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
     },
   });
 }

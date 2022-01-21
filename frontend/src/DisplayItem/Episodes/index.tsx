@@ -16,7 +16,11 @@ import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useEpisodeBySeriesId, useSeriesById } from "../../apis/hooks";
+import {
+  useEpisodeBySeriesId,
+  useSeriesById,
+  useSeriesModification,
+} from "../../apis/hooks";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -38,7 +42,9 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
   const { data: series } = useSeriesById(id);
-  const { data: episodes } = useEpisodeBySeriesId([id]);
+  const { data: episodes } = useEpisodeBySeriesId(id);
+
+  const { mutateAsync } = useSeriesModification();
 
   const available = episodes?.length !== 0;
 
@@ -162,10 +168,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           disabled={hasTask}
         ></Table>
       </Row>
-      <ItemEditorModal
-        modalKey="edit"
-        submit={(form) => api.series.modify(form)}
-      ></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"
         episodes={episodes ?? []}

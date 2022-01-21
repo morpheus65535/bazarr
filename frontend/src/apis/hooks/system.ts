@@ -35,14 +35,14 @@ export function useServerSearch(query: string) {
 }
 
 export function useSystemLogs() {
-  return useQuery([QueryKeys.System, "logs"], () => api.system.logs());
+  return useQuery([QueryKeys.System, QueryKeys.Logs], () => api.system.logs());
 }
 
 export function useDeleteLogs() {
   const client = useQueryClient();
   return useMutation(() => api.system.deleteLogs(), {
     onSuccess: () => {
-      client.invalidateQueries([QueryKeys.System, "logs"]);
+      client.invalidateQueries([QueryKeys.System, QueryKeys.Logs]);
     },
   });
 }

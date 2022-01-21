@@ -11,7 +11,9 @@ export enum QueryKeys {
   Blacklist = "blacklist",
   Search = "search",
   Tasks = "tasks",
+  Logs = "logs",
   History = "history",
   Wanted = "wanted",
   Range = "range",
+  All = "all",
 }

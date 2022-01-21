@@ -7,7 +7,10 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
-import { useLanguageProfiles } from "../../apis/queries/client";
+import {
+  useLanguageProfiles,
+  useMovieModification,
+} from "../../apis/queries/client";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
 import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
@@ -16,6 +19,7 @@ interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
+  const { mutateAsync } = useMovieModification();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
@@ -109,7 +113,7 @@ const MovieView: FunctionComponent<Props> = () => {
       keys={[QueryKeys.Movies]}
       query={(param) => api.movies.moviesBy(param)}
       columns={columns}
-      modify={(form) => api.movies.modify(form)}
+      modify={mutateAsync}
     ></BaseItemView>
   );
 };

@@ -5,7 +5,10 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
-import { useLanguageProfiles } from "../../apis/queries/client";
+import {
+  useLanguageProfiles,
+  useSeriesModification,
+} from "../../apis/queries/client";
 import { ActionBadge } from "../../components";
 import { BuildKey } from "../../utilities";
 import BaseItemView from "../generic/BaseItemView";
@@ -14,6 +17,8 @@ interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
+  const { mutateAsync } = useSeriesModification();
+
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
       {
@@ -109,7 +114,7 @@ const SeriesView: FunctionComponent<Props> = () => {
       keys={[QueryKeys.Series]}
       query={(params) => api.series.seriesBy(params)}
       columns={columns}
-      modify={(form) => api.series.modify(form)}
+      modify={mutateAsync}
     ></BaseItemView>
   );
 };
