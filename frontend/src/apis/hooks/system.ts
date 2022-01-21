@@ -48,7 +48,9 @@ export function useDeleteLogs() {
 }
 
 export function useSystemTasks() {
-  return useQuery([QueryKeys.System, "tasks"], () => api.system.tasks());
+  return useQuery([QueryKeys.System, QueryKeys.Tasks], () =>
+    api.system.tasks()
+  );
 }
 
 export function useSystemStatus() {

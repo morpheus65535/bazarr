@@ -1,4 +1,5 @@
 import { ActionCreator } from "@reduxjs/toolkit";
+import { QueryKeys } from "src/apis/queries/keys";
 import {
   siteAddNotifications,
   siteAddProgress,
@@ -8,11 +9,6 @@ import {
 } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import queryClient from "../../apis/queries";
-import {
-  createEpisodeId,
-  createMovieId,
-  createSeriesId,
-} from "../../utilities";
 
 function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {
@@ -80,111 +76,123 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "series",
       update: (ids) => {
-        const queries = ids.map(createSeriesId);
-        queryClient.invalidateQueries(queries);
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Series, id]);
+        });
       },
-      delete: () => {
-        queryClient.invalidateQueries("series");
+      delete: (ids) => {
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Series, id]);
+        });
       },
     },
     {
       key: "movie",
       update: (ids) => {
-        const queries = ids.map(createMovieId);
-        queryClient.invalidateQueries(queries);
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Movies, id]);
+        });
       },
-      delete: () => {
-        queryClient.invalidateQueries("movies");
+      delete: (ids) => {
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Movies, id]);
+        });
       },
     },
     {
       key: "episode",
       update: (ids) => {
-        const queries = ids.map(createEpisodeId);
-        queryClient.invalidateQueries(queries);
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Episodes, id]);
+        });
       },
-      delete: () => {
-        queryClient.invalidateQueries("episodes");
+      delete: (ids) => {
+        ids.forEach((id) => {
+          queryClient.invalidateQueries([QueryKeys.Episodes, id]);
+        });
       },
     },
     {
       key: "episode-wanted",
       update: (ids) => {
         // Find a better way to update wanted
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Episodes, QueryKeys.Wanted]);
       },
       delete: () => {
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Episodes, QueryKeys.Wanted]);
       },
     },
     {
       key: "movie-wanted",
       update: (ids) => {
         // Find a better way to update wanted
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
       },
       delete: () => {
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
       },
     },
     {
       key: "settings",
       any: () => {
-        queryClient.invalidateQueries("settings");
+        queryClient.invalidateQueries([QueryKeys.System]);
       },
     },
     {
       key: "languages",
       any: () => {
-        queryClient.invalidateQueries("languages");
+        queryClient.invalidateQueries([QueryKeys.System, QueryKeys.Languages]);
       },
     },
     {
       key: "badges",
       any: () => {
-        queryClient.invalidateQueries("badges");
+        queryClient.invalidateQueries([QueryKeys.System, QueryKeys.Badges]);
       },
     },
     {
       key: "movie-history",
       any: () => {
-        queryClient.invalidateQueries("history");
+        queryClient.invalidateQueries([QueryKeys.Movies, QueryKeys.History]);
       },
     },
     {
       key: "movie-blacklist",
       any: () => {
-        queryClient.invalidateQueries("blacklist");
+        queryClient.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
       },
     },
     {
       key: "episode-history",
       any: () => {
-        queryClient.invalidateQueries("history");
+        queryClient.invalidateQueries([QueryKeys.Episodes, QueryKeys.History]);
       },
     },
     {
       key: "episode-blacklist",
       any: () => {
-        queryClient.invalidateQueries("blacklist");
+        queryClient.invalidateQueries([
+          QueryKeys.Episodes,
+          QueryKeys.Blacklist,
+        ]);
       },
     },
     {
       key: "reset-episode-wanted",
       any: () => {
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Episodes, QueryKeys.Wanted]);
       },
     },
     {
       key: "reset-movie-wanted",
       any: () => {
-        queryClient.invalidateQueries("wanted");
+        queryClient.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
       },
     },
     {
       key: "task",
       any: () => {
-        queryClient.invalidateQueries("tasks");
+        queryClient.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
       },
     },
   ];
