@@ -16,20 +16,23 @@ import { UseQueryResult } from "react-query";
 import { useTimeoutWhen } from "rooks";
 import { LoadingIndicator } from ".";
 
-export function QueryOverlay<T>(
-  props: UseQueryResult<T, unknown> & {
-    children: (result: UseQueryResult<T, unknown>) => React.ReactElement;
-  }
-) {
-  const { isLoading, isError, error, children } = props;
+interface QueryOverlayProps {
+  result: UseQueryResult<unknown, unknown>;
+  children: React.ReactElement;
+}
+
+export const QueryOverlay: FunctionComponent<QueryOverlayProps> = ({
+  children,
+  result: { isLoading, isError, error },
+}) => {
   if (isLoading) {
     return <LoadingIndicator></LoadingIndicator>;
   } else if (isError) {
     return <p>{error as string}</p>;
-  } else {
-    return children(props);
   }
-}
+
+  return children;
+};
 
 interface PromiseProps<T> {
   promise: () => Promise<T>;

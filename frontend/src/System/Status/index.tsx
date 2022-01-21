@@ -100,10 +100,8 @@ const SystemStatusView: FunctionComponent<Props> = () => {
       </Helmet>
       <Row>
         <InfoContainer title="Health">
-          <QueryOverlay {...health}>
-            {({ data }) => {
-              return <Table health={data ?? []}></Table>;
-            }}
+          <QueryOverlay result={health}>
+            <Table health={health.data ?? []}></Table>
           </QueryOverlay>
         </InfoContainer>
       </Row>

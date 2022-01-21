@@ -12,34 +12,34 @@ interface Props {}
 const SystemProvidersView: FunctionComponent<Props> = () => {
   const providers = useSystemProviders();
 
+  const { isFetching, data, refetch } = providers;
+
   return (
-    <QueryOverlay {...providers}>
-      {({ data, isFetching, refetch }) => (
-        <Container fluid>
-          <Helmet>
-            <title>Providers - Bazarr (System)</title>
-          </Helmet>
-          <ContentHeader>
-            <ContentHeader.Button
-              updating={isFetching}
-              icon={faSync}
-              onClick={() => refetch()}
-            >
-              Refresh
-            </ContentHeader.Button>
-            <ContentHeader.AsyncButton
-              icon={faTrash}
-              promise={() => api.providers.reset()}
-              onSuccess={() => refetch()}
-            >
-              Reset
-            </ContentHeader.AsyncButton>
-          </ContentHeader>
-          <Row>
-            <Table providers={data ?? []}></Table>
-          </Row>
-        </Container>
-      )}
+    <QueryOverlay result={providers}>
+      <Container fluid>
+        <Helmet>
+          <title>Providers - Bazarr (System)</title>
+        </Helmet>
+        <ContentHeader>
+          <ContentHeader.Button
+            updating={isFetching}
+            icon={faSync}
+            onClick={() => refetch()}
+          >
+            Refresh
+          </ContentHeader.Button>
+          <ContentHeader.AsyncButton
+            icon={faTrash}
+            promise={() => api.providers.reset()}
+            onSuccess={() => refetch()}
+          >
+            Reset
+          </ContentHeader.AsyncButton>
+        </ContentHeader>
+        <Row>
+          <Table providers={data ?? []}></Table>
+        </Row>
+      </Container>
     </QueryOverlay>
   );
 };

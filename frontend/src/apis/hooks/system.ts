@@ -4,7 +4,6 @@ import api from "../raw";
 
 export function useSystemSettings() {
   return useQuery(QueryKeys.settings, () => api.system.settings(), {
-    keepPreviousData: true,
     staleTime: Infinity,
   });
 }
@@ -25,7 +24,6 @@ export function useLanguages(history?: boolean) {
     [QueryKeys.languages, history],
     () => api.system.languages(history),
     {
-      keepPreviousData: true,
       staleTime: Infinity,
     }
   );
@@ -36,16 +34,13 @@ export function useLanguageProfiles() {
     QueryKeys.languagesProfiles,
     () => api.system.languagesProfileList(),
     {
-      keepPreviousData: true,
       staleTime: Infinity,
     }
   );
 }
 
 export function useServerSearch(query: string) {
-  return useQuery(["search", query], () => api.system.search(query), {
-    keepPreviousData: true,
-  });
+  return useQuery(["search", query], () => api.system.search(query));
 }
 
 export function useSystemLogs() {

@@ -24,6 +24,8 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
     }
   });
 
+  const { data } = history;
+
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
       {
@@ -89,14 +91,12 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
-      <QueryOverlay {...history}>
-        {({ data }) => (
-          <PageTable
-            emptyText="No History Found"
-            columns={columns}
-            data={data ?? []}
-          ></PageTable>
-        )}
+      <QueryOverlay result={history}>
+        <PageTable
+          emptyText="No History Found"
+          columns={columns}
+          data={data ?? []}
+        ></PageTable>
       </QueryOverlay>
     </BaseModal>
   );
@@ -114,6 +114,8 @@ export const EpisodeHistoryModal: FunctionComponent<
       api.episodes.historyBy(episode.sonarrEpisodeId);
     }
   });
+
+  const { data } = history;
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [
@@ -181,14 +183,12 @@ export const EpisodeHistoryModal: FunctionComponent<
 
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
-      <QueryOverlay {...history}>
-        {({ data }) => (
-          <PageTable
-            emptyText="No History Found"
-            columns={columns}
-            data={data ?? []}
-          ></PageTable>
-        )}
+      <QueryOverlay result={history}>
+        <PageTable
+          emptyText="No History Found"
+          columns={columns}
+          data={data ?? []}
+        ></PageTable>
       </QueryOverlay>
     </BaseModal>
   );

@@ -9,6 +9,7 @@ interface Props {}
 
 const SystemReleasesView: FunctionComponent<Props> = () => {
   const releases = useSystemReleases();
+  const { data } = releases;
 
   return (
     <Container fluid className="px-3 py-4 bg-light">
@@ -16,18 +17,14 @@ const SystemReleasesView: FunctionComponent<Props> = () => {
         <title>Releases - Bazarr (System)</title>
       </Helmet>
       <Row>
-        <QueryOverlay {...releases}>
-          {({ data }) => {
-            return (
-              <React.Fragment>
-                {data?.map((v, idx) => (
-                  <Col xs={12} key={BuildKey(idx, v.date)}>
-                    <InfoElement {...v}></InfoElement>
-                  </Col>
-                ))}
-              </React.Fragment>
-            );
-          }}
+        <QueryOverlay result={releases}>
+          <React.Fragment>
+            {data?.map((v, idx) => (
+              <Col xs={12} key={BuildKey(idx, v.date)}>
+                <InfoElement {...v}></InfoElement>
+              </Col>
+            ))}
+          </React.Fragment>
         </QueryOverlay>
       </Row>
     </Container>

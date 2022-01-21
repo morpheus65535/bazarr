@@ -11,6 +11,7 @@ interface Props {}
 
 const SystemLogsView: FunctionComponent<Props> = () => {
   const logs = useSystemLogs();
+  const { isFetching, data, refetch } = logs;
 
   const { mutate, isLoading } = useDeleteLogs();
 
@@ -19,36 +20,34 @@ const SystemLogsView: FunctionComponent<Props> = () => {
   }, []);
 
   return (
-    <QueryOverlay {...logs}>
-      {({ data, isFetching, refetch }) => (
-        <Container fluid>
-          <Helmet>
-            <title>Logs - Bazarr (System)</title>
-          </Helmet>
-          <ContentHeader>
-            <ContentHeader.Button
-              updating={isFetching}
-              icon={faSync}
-              onClick={() => refetch()}
-            >
-              Refresh
-            </ContentHeader.Button>
-            <ContentHeader.Button icon={faDownload} onClick={download}>
-              Download
-            </ContentHeader.Button>
-            <ContentHeader.Button
-              updating={isLoading}
-              icon={faTrash}
-              onClick={() => mutate()}
-            >
-              Empty
-            </ContentHeader.Button>
-          </ContentHeader>
-          <Row>
-            <Table logs={data ?? []}></Table>
-          </Row>
-        </Container>
-      )}
+    <QueryOverlay result={logs}>
+      <Container fluid>
+        <Helmet>
+          <title>Logs - Bazarr (System)</title>
+        </Helmet>
+        <ContentHeader>
+          <ContentHeader.Button
+            updating={isFetching}
+            icon={faSync}
+            onClick={() => refetch()}
+          >
+            Refresh
+          </ContentHeader.Button>
+          <ContentHeader.Button icon={faDownload} onClick={download}>
+            Download
+          </ContentHeader.Button>
+          <ContentHeader.Button
+            updating={isLoading}
+            icon={faTrash}
+            onClick={() => mutate()}
+          >
+            Empty
+          </ContentHeader.Button>
+        </ContentHeader>
+        <Row>
+          <Table logs={data ?? []}></Table>
+        </Row>
+      </Container>
     </QueryOverlay>
   );
 };

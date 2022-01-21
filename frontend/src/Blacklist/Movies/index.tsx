@@ -11,27 +11,26 @@ interface Props {}
 
 const BlacklistMoviesView: FunctionComponent<Props> = () => {
   const blacklist = useMovieBlacklist();
+  const { data } = blacklist;
   return (
-    <QueryOverlay {...blacklist}>
-      {({ data }) => (
-        <Container fluid>
-          <Helmet>
-            <title>Movies Blacklist - Bazarr</title>
-          </Helmet>
-          <ContentHeader>
-            <ContentHeader.AsyncButton
-              icon={faTrash}
-              disabled={data?.length === 0}
-              promise={() => api.movies.deleteBlacklist(true)}
-            >
-              Remove All
-            </ContentHeader.AsyncButton>
-          </ContentHeader>
-          <Row>
-            <Table blacklist={data ?? []}></Table>
-          </Row>
-        </Container>
-      )}
+    <QueryOverlay result={blacklist}>
+      <Container fluid>
+        <Helmet>
+          <title>Movies Blacklist - Bazarr</title>
+        </Helmet>
+        <ContentHeader>
+          <ContentHeader.AsyncButton
+            icon={faTrash}
+            disabled={data?.length === 0}
+            promise={() => api.movies.deleteBlacklist(true)}
+          >
+            Remove All
+          </ContentHeader.AsyncButton>
+        </ContentHeader>
+        <Row>
+          <Table blacklist={data ?? []}></Table>
+        </Row>
+      </Container>
     </QueryOverlay>
   );
 };
