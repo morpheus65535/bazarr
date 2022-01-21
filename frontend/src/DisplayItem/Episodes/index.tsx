@@ -16,7 +16,7 @@ import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useEpisodeBySeriesId, useSeriesById } from "../../apis/hooks/series";
+import { useEpisodeBySeriesId, useSeriesById } from "../../apis/hooks";
 import {
   ContentHeader,
   ItemEditorModal,

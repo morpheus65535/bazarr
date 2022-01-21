@@ -12,6 +12,7 @@ import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
+  keys: string[];
   query: RangeQuery<T>;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
@@ -96,8 +97,10 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
     };
     dirtyItems.forEach((v) => {
       const id = GetItemId(v);
-      form.id.push(id);
-      form.profileid.push(v.profileId);
+      if (id) {
+        form.id.push(id);
+        form.profileid.push(v.profileId);
+      }
     });
     return shared.modify(form);
   }, [dirtyItems, shared]);

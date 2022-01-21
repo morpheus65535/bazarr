@@ -25,7 +25,7 @@ export function submodProcessColor(s: string) {
   return `color(name=${s})`;
 }
 
-export function GetItemId<T extends object>(item: T): number {
+export function GetItemId<T extends object>(item: T): number | undefined {
   if (isMovie(item)) {
     return item.radarrId;
   } else if (isEpisode(item)) {
@@ -33,7 +33,7 @@ export function GetItemId<T extends object>(item: T): number {
   } else if (isSeries(item)) {
     return item.sonarrSeriesId;
   } else {
-    return -1;
+    return undefined;
   }
 }
 
@@ -75,5 +75,4 @@ export async function waitFor(time: number) {
 
 export * from "./env";
 export * from "./hooks";
-export * from "./id";
 export * from "./validate";

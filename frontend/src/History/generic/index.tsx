@@ -7,6 +7,7 @@ import { AsyncPageTable } from "../../components";
 
 interface Props<T extends History.Base> {
   type: "movies" | "series";
+  keys: string[];
   query: RangeQuery<T>;
   columns: Column<T>[];
 }
@@ -14,6 +15,7 @@ interface Props<T extends History.Base> {
 function HistoryGenericView<T extends History.Base = History.Base>({
   columns,
   type,
+  keys,
   query,
 }: Props<T>) {
   const typeName = capitalize(type);
@@ -26,7 +28,7 @@ function HistoryGenericView<T extends History.Base = History.Base>({
         <AsyncPageTable
           emptyText={`Nothing Found in ${typeName} History`}
           columns={columns}
-          keys={[type]}
+          keys={keys}
           query={query}
           data={[]}
         ></AsyncPageTable>

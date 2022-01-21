@@ -3,7 +3,7 @@ import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import api from "src/apis/raw";
-import { useEpisodeBlacklist } from "../../apis/hooks/series";
+import { useEpisodeBlacklist } from "../../apis/hooks";
 import { ContentHeader, QueryOverlay } from "../../components";
 import Table from "./table";
 

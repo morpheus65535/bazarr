@@ -16,10 +16,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import {
-  siteChangeSidebarVisibility,
-  siteRedirectToAuth,
-} from "../@redux/actions";
+import { siteChangeSidebarVisibility } from "../@redux/actions";
 import { useIsOffline } from "../@redux/hooks";
 import { useReduxAction } from "../@redux/hooks/base";
 import logo from "../@static/logo64.png";
@@ -32,8 +29,6 @@ import NotificationCenter from "./Notification";
 interface Props {}
 
 const Header: FunctionComponent<Props> = () => {
-  const setNeedAuth = useReduxAction(siteRedirectToAuth);
-
   const { data: settings } = useSystemSettings();
 
   const hasLogout = (settings?.auth.type ?? "none") === "form";

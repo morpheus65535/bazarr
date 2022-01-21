@@ -22,6 +22,7 @@ function Table<T extends Item.Base>({
   columns,
   name,
   query,
+  keys,
 }: Props<T>) {
   const showModal = useShowModal();
 
@@ -47,7 +48,7 @@ function Table<T extends Item.Base>({
       <AsyncPageTable
         {...options}
         columns={columns}
-        keys={[name]}
+        keys={keys}
         query={query}
         data={[]}
       ></AsyncPageTable>

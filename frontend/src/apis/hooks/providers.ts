@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { createEpisodeId, createMovieId, createSeriesId } from "src/utilities";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -11,9 +10,8 @@ export function useSystemProviders(history?: boolean) {
 }
 
 export function useMoviesProvider(radarrId?: number) {
-  const movieKey = createMovieId(radarrId ?? -1);
   return useQuery(
-    [QueryKeys.System, QueryKeys.Providers, movieKey],
+    [QueryKeys.System, QueryKeys.Providers, QueryKeys.Movies, radarrId],
     () => {
       if (radarrId) {
         return api.providers.movies(radarrId);
@@ -26,9 +24,8 @@ export function useMoviesProvider(radarrId?: number) {
 }
 
 export function useEpisodesProvider(episodeId?: number) {
-  const episodeKey = createEpisodeId(episodeId ?? -1);
   return useQuery(
-    [QueryKeys.System, QueryKeys.Providers, episodeKey],
+    [QueryKeys.System, QueryKeys.Providers, QueryKeys.Episodes, episodeId],
     () => {
       if (episodeId) {
         return api.providers.episodes(episodeId);
@@ -65,11 +62,7 @@ export function useDownloadEpisodeSubtitles() {
       ),
     {
       onSuccess: (_, param) => {
-        const seriesKey = createSeriesId(param.seriesId);
-        const episodeKey = createEpisodeId(param.episodeId);
-
-        client.invalidateQueries(seriesKey);
-        client.invalidateQueries(episodeKey);
+        client.invalidateQueries([QueryKeys.Episodes, param.episodeId]);
       },
     }
   );
@@ -83,9 +76,7 @@ export function useDownloadMovieSubtitles() {
       api.providers.downloadMovieSubtitle(param.radarrId, param.form),
     {
       onSuccess: (_, param) => {
-        const movieKey = createSeriesId(param.radarrId);
-
-        client.invalidateQueries(movieKey);
+        client.invalidateQueries([QueryKeys.Movies, param.radarrId]);
       },
     }
   );

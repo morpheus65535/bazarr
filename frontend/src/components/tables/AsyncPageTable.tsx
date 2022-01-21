@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, useQueryClient } from "react-query";
 import { PluginHook, TableOptions, useTable } from "react-table";
+import { QueryKeys } from "src/apis/queries/keys";
 import { LoadingIndicator } from "..";
-import { createRangeId, ScrollToTop } from "../../utilities";
+import { GetItemId, ScrollToTop } from "../../utilities";
 import { usePageSize } from "../../utilities/storage";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -29,12 +30,19 @@ export default function AsyncPageTable<T extends object>(props: Props<T>) {
     length: pageSize,
   };
 
-  const paramKey = createRangeId(keys[0], param);
+  const client = useQueryClient();
   const { data, isLoading } = useQuery(
-    [...keys, paramKey],
+    [...keys, QueryKeys.Range, param],
     () => query(param),
     {
-      keepPreviousData: true,
+      onSuccess: ({ data }) => {
+        data.forEach((item) => {
+          const id = GetItemId(item);
+          if (id) {
+            client.setQueryData([...keys, id], item);
+          }
+        });
+      },
     }
   );
 

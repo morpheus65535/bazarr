@@ -13,4 +13,5 @@ export enum QueryKeys {
   Tasks = "tasks",
   History = "history",
   Wanted = "wanted",
+  Range = "range",
 }

@@ -22,7 +22,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   );
 
   // TODO: Separate movies and series
-  const hasTask = useIsAnyTaskRunningWithId([GetItemId(payload ?? {})]);
+  const itemId = GetItemId(payload ?? {}) ?? -1;
+  const hasTask = useIsAnyTaskRunningWithId([itemId]);
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
@@ -43,6 +44,10 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       promise={() => {
         if (payload) {
           const itemId = GetItemId(payload);
+          if (!itemId) {
+            return null;
+          }
+
           return submit({
             id: [itemId],
             profileid: [id],

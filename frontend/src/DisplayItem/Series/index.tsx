@@ -3,6 +3,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
 import { useLanguageProfiles } from "../../apis/queries/client";
 import { ActionBadge } from "../../components";
@@ -105,6 +106,7 @@ const SeriesView: FunctionComponent<Props> = () => {
   return (
     <BaseItemView
       name="Series"
+      keys={[QueryKeys.Series]}
       query={(params) => api.series.seriesBy(params)}
       columns={columns}
       modify={(form) => api.series.modify(form)}

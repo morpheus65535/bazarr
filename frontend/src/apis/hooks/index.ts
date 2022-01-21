@@ -1,3 +1,4 @@
+export * from "./episodes";
 export * from "./languages";
 export * from "./movies";
 export * from "./providers";

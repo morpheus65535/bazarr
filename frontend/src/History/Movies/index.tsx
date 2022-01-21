@@ -4,6 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
+import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
@@ -124,6 +125,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
   return (
     <HistoryGenericView
       type="movies"
+      keys={[QueryKeys.Movies, QueryKeys.History]}
       query={(param) => api.movies.history(param)}
       columns={columns}
     ></HistoryGenericView>
