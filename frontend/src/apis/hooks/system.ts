@@ -49,25 +49,34 @@ export function useServerSearch(query: string) {
 }
 
 export function useSystemLogs() {
-  return useQuery(["logs"], () => api.system.logs());
+  return useQuery("logs", () => api.system.logs());
+}
+
+export function useDeleteLogs() {
+  const client = useQueryClient();
+  return useMutation(() => api.system.deleteLogs(), {
+    onSuccess: () => {
+      client.invalidateQueries("logs");
+    },
+  });
 }
 
 export function useSystemTasks() {
-  return useQuery(["tasks"], () => api.system.tasks());
+  return useQuery("tasks", () => api.system.tasks());
 }
 
 export function useSystemStatus() {
-  return useQuery(["status"], () => api.system.status());
+  return useQuery("status", () => api.system.status());
 }
 
 export function useSystemHealth() {
-  return useQuery(["health"], () => api.system.health());
+  return useQuery("health", () => api.system.health());
 }
 
 export function useSystemProviders(history?: boolean) {
-  return useQuery(["providers"], () => api.providers.providers(history));
+  return useQuery("providers", () => api.providers.providers(history));
 }
 
 export function useSystemReleases() {
-  return useQuery(["releases"], () => api.system.releases());
+  return useQuery("releases", () => api.system.releases());
 }

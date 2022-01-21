@@ -1,9 +1,8 @@
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, { FunctionComponent, useCallback } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import api from "src/apis/raw";
-import { useSystemLogs } from "../../apis/queries/client";
+import { useDeleteLogs, useSystemLogs } from "../../apis/queries/client";
 import { ContentHeader, QueryOverlay } from "../../components";
 import { Environment } from "../../utilities";
 import Table from "./table";
@@ -13,7 +12,7 @@ interface Props {}
 const SystemLogsView: FunctionComponent<Props> = () => {
   const logs = useSystemLogs();
 
-  const [resetting, setReset] = useState(false);
+  const { mutate, isLoading } = useDeleteLogs();
 
   const download = useCallback(() => {
     window.open(`${Environment.baseUrl}/bazarr.log`);
@@ -38,15 +37,9 @@ const SystemLogsView: FunctionComponent<Props> = () => {
               Download
             </ContentHeader.Button>
             <ContentHeader.Button
-              updating={resetting}
+              updating={isLoading}
               icon={faTrash}
-              onClick={() => {
-                setReset(true);
-                api.system.deleteLogs().finally(() => {
-                  setReset(false);
-                  refetch();
-                });
-              }}
+              onClick={() => mutate()}
             >
               Empty
             </ContentHeader.Button>
