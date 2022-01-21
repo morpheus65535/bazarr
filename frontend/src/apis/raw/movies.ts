@@ -24,7 +24,7 @@ class MovieApi extends BaseApi {
     const response = await this.get<DataWrapperWithTotal<Item.Movie>>("", {
       radarrid,
     });
-    return response;
+    return response.data;
   }
 
   async moviesBy(params: Parameter.Range) {

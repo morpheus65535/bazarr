@@ -16,7 +16,7 @@ import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useMovieModification, useMoviesByIds } from "../../apis/hooks/movies";
+import { useMovieById, useMovieModification } from "../../apis/hooks/movies";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -50,10 +50,9 @@ interface Props extends RouteComponentProps<Params> {}
 
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
-  const { data: movies } = useMoviesByIds([id]);
-  const item = movies && movies.data.length > 0 ? movies.data[0] : undefined;
+  const { data: movie } = useMovieById(id);
 
-  const profile = useLanguageProfileBy(item?.profileId);
+  const profile = useLanguageProfileBy(movie?.profileId);
 
   const showModal = useShowModal();
 
@@ -67,16 +66,16 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 
-  if (!item) {
+  if (!movie) {
     return <LoadingIndicator></LoadingIndicator>;
   }
 
-  const allowEdit = item.profileId !== undefined;
+  const allowEdit = movie.profileId !== undefined;
 
   return (
     <Container fluid>
       <Helmet>
-        <title>{item.title} - Bazarr (Movies)</title>
+        <title>{movie.title} - Bazarr (Movies)</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Group pos="start">
@@ -84,7 +83,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSync}
             disabled={hasTask}
             onClick={() => {
-              const task = createTask(item.title, id, api.movies.action, {
+              const task = createTask(movie.title, id, api.movies.action, {
                 action: "scan-disk",
                 radarrid: id,
               });
@@ -95,9 +94,9 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faSearch}
-            disabled={item.profileId === null}
+            disabled={movie.profileId === null}
             onClick={() => {
-              const task = createTask(item.title, id, api.movies.action, {
+              const task = createTask(movie.title, id, api.movies.action, {
                 action: "search-missing",
                 radarrid: id,
               });
@@ -108,21 +107,21 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faUser}
-            disabled={item.profileId === null || hasTask}
-            onClick={() => showModal<Item.Movie>("manual-search", item)}
+            disabled={movie.profileId === null || hasTask}
+            onClick={() => showModal<Item.Movie>("manual-search", movie)}
           >
             Manual
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}
-            onClick={() => showModal("history", item)}
+            onClick={() => showModal("history", movie)}
           >
             History
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
             disabled={hasTask}
-            onClick={() => showModal("tools", [item])}
+            onClick={() => showModal("tools", [movie])}
           >
             Tools
           </ContentHeader.Button>
@@ -130,16 +129,16 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
         <ContentHeader.Group pos="end">
           <ContentHeader.Button
-            disabled={!allowEdit || item.profileId === null || hasTask}
+            disabled={!allowEdit || movie.profileId === null || hasTask}
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", item)}
+            onClick={() => showModal("upload", movie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", item)}
+            onClick={() => showModal("edit", movie)}
           >
             Edit Movie
           </ContentHeader.Button>
@@ -156,10 +155,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
         </Alert>
       </Row>
       <Row>
-        <ItemOverview item={item} details={[]}></ItemOverview>
+        <ItemOverview item={movie} details={[]}></ItemOverview>
       </Row>
       <Row>
-        <Table movie={item} profile={profile} disabled={hasTask}></Table>
+        <Table movie={movie} profile={profile} disabled={hasTask}></Table>
       </Row>
       <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
