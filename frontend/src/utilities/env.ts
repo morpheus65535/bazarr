@@ -42,4 +42,10 @@ export const Environment = {
       return url;
     }
   },
+  get queryDev(): boolean {
+    if (isDevEnv) {
+      return process.env["REACT_APP_QUERY_DEV"] === "true";
+    }
+    return false;
+  },
 };

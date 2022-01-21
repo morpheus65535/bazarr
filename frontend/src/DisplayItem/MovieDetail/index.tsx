@@ -16,7 +16,7 @@ import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
-import { useMoviesByIds } from "../../apis/hooks/movies";
+import { useMovieModification, useMoviesByIds } from "../../apis/hooks/movies";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -56,6 +56,8 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const profile = useLanguageProfileBy(item?.profileId);
 
   const showModal = useShowModal();
+
+  const { mutateAsync } = useMovieModification();
 
   const [valid, setValid] = useState(true);
 
@@ -159,10 +161,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <Row>
         <Table movie={item} profile={profile} disabled={hasTask}></Table>
       </Row>
-      <ItemEditorModal
-        modalKey="edit"
-        submit={(form) => api.movies.modify(form)}
-      ></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>

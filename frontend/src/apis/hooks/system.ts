@@ -2,71 +2,75 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { siteRedirectToAuth } from "../../@redux/actions";
 import store from "../../@redux/store";
-import QueryKeys from "../queries/keys";
+import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
 export function useBadges() {
-  return useQuery(QueryKeys.badges, () => api.badges.all());
+  return useQuery([QueryKeys.System, QueryKeys.Badges], () => api.badges.all());
 }
 
 export function useSystemSettings() {
-  return useQuery(QueryKeys.settings, () => api.system.settings(), {
-    staleTime: Infinity,
-  });
+  return useQuery(
+    [QueryKeys.System, QueryKeys.Settings],
+    () => api.system.settings(),
+    {
+      staleTime: Infinity,
+    }
+  );
 }
 
 export function useSettingsMutation() {
   const client = useQueryClient();
   return useMutation((data: LooseObject) => api.system.updateSettings(data), {
     onSuccess: () => {
-      client.invalidateQueries(QueryKeys.settings);
-      client.invalidateQueries(QueryKeys.languages);
-      client.invalidateQueries(QueryKeys.languagesProfiles);
+      client.invalidateQueries([QueryKeys.System]);
     },
   });
 }
 
 export function useServerSearch(query: string) {
-  return useQuery(["search", query], () =>
+  return useQuery([QueryKeys.System, QueryKeys.Search, query], () =>
     query.length > 0 ? api.system.search(query) : null
   );
 }
 
 export function useSystemLogs() {
-  return useQuery("logs", () => api.system.logs());
+  return useQuery([QueryKeys.System, "logs"], () => api.system.logs());
 }
 
 export function useDeleteLogs() {
   const client = useQueryClient();
   return useMutation(() => api.system.deleteLogs(), {
     onSuccess: () => {
-      client.invalidateQueries("logs");
+      client.invalidateQueries([QueryKeys.System, "logs"]);
     },
   });
 }
 
 export function useSystemTasks() {
-  return useQuery("tasks", () => api.system.tasks());
+  return useQuery([QueryKeys.System, "tasks"], () => api.system.tasks());
 }
 
 export function useSystemStatus() {
-  return useQuery("status", () => api.system.status());
+  return useQuery([QueryKeys.System, "status"], () => api.system.status());
 }
 
 export function useSystemHealth() {
-  return useQuery("health", () => api.system.health());
+  return useQuery([QueryKeys.System, "health"], () => api.system.health());
 }
 
 export function useSystemReleases() {
-  return useQuery("releases", () => api.system.releases());
+  return useQuery([QueryKeys.System, "releases"], () => api.system.releases());
 }
 
 export function useSystem() {
+  const client = useQueryClient();
   const { mutate: logout, isLoading: isLoggingOut } = useMutation(
     () => api.system.logout(),
     {
       onSuccess: () => {
         store.dispatch(siteRedirectToAuth());
+        client.clear();
       },
     }
   );
@@ -74,13 +78,19 @@ export function useSystem() {
   const { mutate: shutdown, isLoading: isShuttingDown } = useMutation(
     () => api.system.shutdown(),
     {
-      onSuccess: () => {},
+      onSuccess: () => {
+        client.clear();
+      },
     }
   );
 
   const { mutate: restart, isLoading: isRestarting } = useMutation(
     () => api.system.restart(),
-    {}
+    {
+      onSuccess: () => {
+        client.clear();
+      },
+    }
   );
 
   return useMemo(

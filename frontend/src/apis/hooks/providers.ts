@@ -1,18 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { createEpisodeId, createMovieId, createSeriesId } from "src/utilities";
-import QueryKeys from "../queries/keys";
+import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
 export function useSystemProviders(history?: boolean) {
-  return useQuery([QueryKeys.providers, history], () =>
-    api.providers.providers(history)
+  return useQuery(
+    [QueryKeys.System, QueryKeys.Providers, history ?? false],
+    () => api.providers.providers(history)
   );
 }
 
 export function useMoviesProvider(radarrId?: number) {
   const movieKey = createMovieId(radarrId ?? -1);
   return useQuery(
-    [QueryKeys.providers, movieKey],
+    [QueryKeys.System, QueryKeys.Providers, movieKey],
     () => {
       if (radarrId) {
         return api.providers.movies(radarrId);
@@ -27,7 +28,7 @@ export function useMoviesProvider(radarrId?: number) {
 export function useEpisodesProvider(episodeId?: number) {
   const episodeKey = createEpisodeId(episodeId ?? -1);
   return useQuery(
-    [QueryKeys.providers, episodeKey],
+    [QueryKeys.System, QueryKeys.Providers, episodeKey],
     () => {
       if (episodeId) {
         return api.providers.episodes(episodeId);
@@ -43,7 +44,7 @@ export function useResetProvider() {
   const client = useQueryClient();
   return useMutation(() => api.providers.reset(), {
     onSuccess: () => {
-      client.invalidateQueries(QueryKeys.providers);
+      client.invalidateQueries([QueryKeys.System, QueryKeys.Providers]);
     },
   });
 }

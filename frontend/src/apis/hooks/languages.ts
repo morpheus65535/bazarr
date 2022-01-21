@@ -1,10 +1,10 @@
 import { useQuery } from "react-query";
-import QueryKeys from "../queries/keys";
+import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
 export function useLanguages(history?: boolean) {
   return useQuery(
-    [QueryKeys.languages, history],
+    [QueryKeys.System, QueryKeys.Languages, history ?? false],
     () => api.system.languages(history),
     {
       staleTime: Infinity,
@@ -14,7 +14,7 @@ export function useLanguages(history?: boolean) {
 
 export function useLanguageProfiles() {
   return useQuery(
-    QueryKeys.languagesProfiles,
+    [QueryKeys.System, QueryKeys.LanguagesProfiles],
     () => api.system.languagesProfileList(),
     {
       staleTime: Infinity,

@@ -1,12 +1,13 @@
-const QueryKeys = {
-  movies: "movies",
-  episodes: "episodes",
-  series: "series",
-  badges: "badges",
-  settings: "settings",
-  providers: "providers",
-  languages: "languages",
-  languagesProfiles: "languages-profiles",
-};
-
-export default QueryKeys;
+export enum QueryKeys {
+  Movies = "movies",
+  Episodes = "episodes",
+  Series = "series",
+  Badges = "badges",
+  System = "system",
+  Settings = "settings",
+  Providers = "providers",
+  Languages = "languages",
+  LanguagesProfiles = "languages-profiles",
+  Blacklist = "blacklist",
+  Search = "search",
+}
