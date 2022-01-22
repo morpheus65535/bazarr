@@ -4,8 +4,8 @@ import {
   siteRemoveProgress,
   siteUpdateNotifier,
   siteUpdateProgressCount,
-} from "../../@redux/actions";
-import store from "../../@redux/store";
+} from "../redux/actions";
+import store from "../redux/store";
 
 // A background task manager, use for dispatching task one by one
 class BackgroundTask {

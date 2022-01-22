@@ -1,7 +1,7 @@
-import { useIsAnyActionRunning, useLanguageProfiles } from "apis/hooks";
+import { useIsAnyActionRunning, useLanguageProfiles } from "@/apis/hooks";
+import { GetItemId } from "@/utilities";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
-import { GetItemId } from "utilities";
 import { AsyncButton, Selector } from "../";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";

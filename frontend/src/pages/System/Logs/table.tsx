@@ -1,3 +1,4 @@
+import { ActionButton, PageTable, useShowModal } from "@/components";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -8,7 +9,6 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionButton, PageTable, useShowModal } from "components";
 import { isUndefined } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column, Row } from "react-table";

@@ -1,8 +1,9 @@
+import { setSidebar } from "@/modules/redux/actions";
+import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { BuildKey } from "@/utilities";
+import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { setSidebar } from "@redux/actions";
-import { useReduxAction, useReduxStore } from "@redux/hooks/base";
-import logo from "@static/logo64.png";
 import React, {
   createContext,
   FunctionComponent,
@@ -19,8 +20,6 @@ import {
   ListGroupItem,
 } from "react-bootstrap";
 import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
-import { BuildKey } from "utilities";
-import { useGotoHomepage } from "utilities/hooks";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import "./style.scss";
@@ -55,7 +54,7 @@ const Sidebar: FunctionComponent = () => {
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image
             alt="brand"
-            src={logo}
+            src="/static/logo64.png"
             width="32"
             height="32"
             onClick={goHome}

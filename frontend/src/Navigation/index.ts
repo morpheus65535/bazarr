@@ -1,3 +1,31 @@
+import { useBadges } from "@/apis/hooks";
+import { useIsRadarrEnabled, useIsSonarrEnabled } from "@/modules/redux/hooks";
+import EmptyPage, { RouterEmptyPath } from "@/pages/404";
+import BlacklistMoviesView from "@/pages/Blacklist/Movies";
+import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import Episodes from "@/pages/Episodes";
+import MoviesHistoryView from "@/pages/History/Movies";
+import SeriesHistoryView from "@/pages/History/Series";
+import HistoryStats from "@/pages/History/Statistics";
+import MovieView from "@/pages/Movies";
+import MovieDetail from "@/pages/Movies/Details";
+import SeriesView from "@/pages/Series";
+import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsLanguagesView from "@/pages/Settings/Languages";
+import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsProvidersView from "@/pages/Settings/Providers";
+import SettingsRadarrView from "@/pages/Settings/Radarr";
+import SettingsSchedulerView from "@/pages/Settings/Scheduler";
+import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsUIView from "@/pages/Settings/UI";
+import SystemLogsView from "@/pages/System/Logs";
+import SystemProvidersView from "@/pages/System/Providers";
+import SystemReleasesView from "@/pages/System/Releases";
+import SystemStatusView from "@/pages/System/Status";
+import SystemTasksView from "@/pages/System/Tasks";
+import WantedMoviesView from "@/pages/Wanted/Movies";
+import WantedSeriesView from "@/pages/Wanted/Series";
 import {
   faClock,
   faCogs,
@@ -7,34 +35,6 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "@redux/hooks";
-import { useBadges } from "apis/hooks";
-import EmptyPage, { RouterEmptyPath } from "pages/404";
-import BlacklistMoviesView from "pages/Blacklist/Movies";
-import BlacklistSeriesView from "pages/Blacklist/Series";
-import Episodes from "pages/Episodes";
-import MoviesHistoryView from "pages/History/Movies";
-import SeriesHistoryView from "pages/History/Series";
-import HistoryStats from "pages/History/Statistics";
-import MovieView from "pages/Movies";
-import MovieDetail from "pages/Movies/Details";
-import SeriesView from "pages/Series";
-import SettingsGeneralView from "pages/Settings/General";
-import SettingsLanguagesView from "pages/Settings/Languages";
-import SettingsNotificationsView from "pages/Settings/Notifications";
-import SettingsProvidersView from "pages/Settings/Providers";
-import SettingsRadarrView from "pages/Settings/Radarr";
-import SettingsSchedulerView from "pages/Settings/Scheduler";
-import SettingsSonarrView from "pages/Settings/Sonarr";
-import SettingsSubtitlesView from "pages/Settings/Subtitles";
-import SettingsUIView from "pages/Settings/UI";
-import SystemLogsView from "pages/System/Logs";
-import SystemProvidersView from "pages/System/Providers";
-import SystemReleasesView from "pages/System/Releases";
-import SystemStatusView from "pages/System/Status";
-import SystemTasksView from "pages/System/Tasks";
-import WantedMoviesView from "pages/Wanted/Movies";
-import WantedSeriesView from "pages/Wanted/Series";
 import { useMemo } from "react";
 import { Navigation } from "./nav";
 import RootRedirect from "./RootRedirect";

@@ -27,16 +27,14 @@ declare namespace SocketIO {
 
   type ActionType = "update" | "delete";
 
-  type ReducerCreator<E extends EventType, U, D = U> = ValueOf<
-    {
-      [P in E]: {
-        key: P;
-        any?: ActionHandler<null>;
-        update?: ActionHandler<U>;
-        delete?: ActionHandler<D>;
-      };
-    }
-  >;
+  type ReducerCreator<E extends EventType, U, D = U> = ValueOf<{
+    [P in E]: {
+      key: P;
+      any?: ActionHandler<null>;
+      update?: ActionHandler<U>;
+      delete?: ActionHandler<D>;
+    };
+  }>;
 
   type Event = {
     type: EventType;

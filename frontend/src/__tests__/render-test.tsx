@@ -1,4 +1,4 @@
-import { Entrance } from "index";
+import { Entrance } from "@/index";
 import {} from "jest";
 import ReactDOM from "react-dom";
 

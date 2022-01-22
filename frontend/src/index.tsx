@@ -1,14 +1,15 @@
+import queryClient from "@/apis/queries";
+import store from "@/modules/redux/store";
+import "@/styles/index.scss";
 import "@fontsource/roboto/300.css";
 import React from "react";
 import ReactDOM from "react-dom";
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { Provider } from "react-redux";
-import store from "./@redux/store";
-import "./@scss/index.scss";
-import queryClient from "./apis/queries";
 import App from "./App";
-import { Environment, isTestEnv } from "./utilities";
+import { Environment } from "./utilities";
+
 export const Entrance = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
@@ -21,6 +22,4 @@ export const Entrance = () => (
   </Provider>
 );
 
-if (!isTestEnv) {
-  ReactDOM.render(<Entrance />, document.getElementById("root"));
-}
+ReactDOM.render(<Entrance />, document.getElementById("root"));

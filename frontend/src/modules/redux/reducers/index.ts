@@ -1,7 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit";
 import { intersectionWith, pullAllWith, remove, sortBy, uniqBy } from "lodash";
-import apis from "../../apis/queries/client";
-import { isProdEnv } from "../../utilities";
+import apis from "../../../apis/queries/client";
+import { isProdEnv } from "../../../utilities";
 import {
   addNotifications,
   removeNotification,

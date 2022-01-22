@@ -1,3 +1,4 @@
+import { copyToClipboard, Environment, toggleState } from "@/utilities";
 import {
   faCheck,
   faClipboard,
@@ -6,7 +7,6 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
-import { copyToClipboard, Environment, toggleState } from "utilities";
 import {
   Button,
   Check,

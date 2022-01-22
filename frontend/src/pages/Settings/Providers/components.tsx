@@ -4,7 +4,8 @@ import {
   useModalInformation,
   useOnModalShow,
   useShowModal,
-} from "components";
+} from "@/components";
+import { BuildKey, isReactText } from "@/utilities";
 import { capitalize, isArray, isBoolean } from "lodash";
 import React, {
   FunctionComponent,
@@ -16,7 +17,6 @@ import React, {
 import { Button, Col, Container, Row } from "react-bootstrap";
 import { components } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
-import { BuildKey, isReactText } from "utilities";
 import {
   Check,
   ColCard,

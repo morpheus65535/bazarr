@@ -1,4 +1,4 @@
-import { useSystemSettings } from "apis/hooks";
+import { useSystemSettings } from "@/apis/hooks";
 import { useCallback } from "react";
 import { addNotifications } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";

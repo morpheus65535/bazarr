@@ -1,13 +1,13 @@
+import { useMovieSubtitleModification } from "@/apis/hooks";
+import { AsyncButton, LanguageText, SimpleTable } from "@/components";
+import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import { filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useShowOnlyDesired } from "@redux/hooks";
-import { useMovieSubtitleModification } from "apis/hooks";
-import { AsyncButton, LanguageText, SimpleTable } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
-import { filterSubtitleBy } from "utilities";
-import { useProfileItemsToLanguages } from "utilities/languages";
 
 const missingText = "Missing Subtitles";
 

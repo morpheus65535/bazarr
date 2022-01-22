@@ -1,4 +1,4 @@
-import { SimpleTable } from "components";
+import { SimpleTable } from "@/components";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 

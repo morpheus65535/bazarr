@@ -1,7 +1,12 @@
+import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
+import {
+  AsyncButton,
+  LanguageText,
+  PageTable,
+  TextPopover,
+} from "@/components";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEpisodeDeleteBlacklist } from "apis/hooks";
-import { AsyncButton, LanguageText, PageTable, TextPopover } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";

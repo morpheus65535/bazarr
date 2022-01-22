@@ -1,3 +1,7 @@
+import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
+import { dispatchTask } from "@/modules/task";
+import { createTask } from "@/modules/task/utilities";
+import { GetItemId, isMovie } from "@/utilities";
 import {
   faCaretDown,
   faCheck,
@@ -6,9 +10,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useEpisodesProvider, useMoviesProvider } from "apis/hooks";
 import React, {
   FunctionComponent,
   useCallback,
@@ -26,7 +27,6 @@ import {
   Row,
 } from "react-bootstrap";
 import { Column } from "react-table";
-import { GetItemId, isMovie } from "utilities";
 import {
   BaseModal,
   BaseModalProps,

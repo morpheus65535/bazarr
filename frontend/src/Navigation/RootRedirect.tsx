@@ -1,5 +1,5 @@
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "@redux/hooks";
-import { FunctionComponent } from "react";
+import { useIsRadarrEnabled, useIsSonarrEnabled } from "@/modules/redux/hooks";
+import React, { FunctionComponent } from "react";
 import { Redirect } from "react-router-dom";
 
 const RootRedirect: FunctionComponent = () => {

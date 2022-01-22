@@ -1,3 +1,11 @@
 {
-  "extends": "react-app"
+  "rules": {
+    "@typescript-eslint/explicit-module-boundary-types": "off"
+  },
+  "extends": [
+    "react-app",
+    "plugin:react-hooks/recommended",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ]
 }

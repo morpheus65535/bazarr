@@ -1,4 +1,4 @@
-import { BaseModal, BaseModalProps, useModalPayload } from "components";
+import { BaseModal, BaseModalProps, useModalPayload } from "@/components";
 import React, { FunctionComponent, useMemo } from "react";
 
 interface Props extends BaseModalProps {}

@@ -1,4 +1,4 @@
-import UIError from "pages/UIError";
+import UIError from "@/pages/UIError";
 import React from "react";
 
 interface State {

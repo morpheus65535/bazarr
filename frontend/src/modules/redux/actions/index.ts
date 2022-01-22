@@ -1,5 +1,5 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { waitFor } from "../../utilities";
+import { waitFor } from "../../../utilities";
 
 export const setSiteStatus = createAction<Site.Status>("site/status/update");
 

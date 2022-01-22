@@ -1,3 +1,8 @@
+import { BuildKey, isMovie } from "@/utilities";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
 import {
   faBookmark as farBookmark,
   faClone as fasClone,
@@ -22,11 +27,6 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { BuildKey, isMovie } from "utilities";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "utilities/languages";
 import { LanguageText } from ".";
 
 interface Props {

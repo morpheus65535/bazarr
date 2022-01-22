@@ -1,4 +1,4 @@
-import { useLanguageProfiles, useLanguages } from "apis/hooks";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useMemo } from "react";
 
 export function useLanguageProfileBy(id: number | null | undefined) {

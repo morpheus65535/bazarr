@@ -1,6 +1,6 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { setUnauthenticated } from "../../@redux/actions";
-import { AppDispatch } from "../../@redux/store";
+import { setUnauthenticated } from "../../modules/redux/actions";
+import { AppDispatch } from "../../modules/redux/store";
 import { Environment, isProdEnv } from "../../utilities";
 class BazarrClient {
   axios!: AxiosInstance;

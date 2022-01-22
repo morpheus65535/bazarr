@@ -1,4 +1,4 @@
-import { LanguageSelector as CLanguageSelector } from "components";
+import { LanguageSelector as CLanguageSelector } from "@/components";
 import React, { FunctionComponent, useMemo } from "react";
 import { useEnabledLanguagesContext, useProfilesContext } from ".";
 import { BaseInput, Selector, useSingleUpdate } from "../components";

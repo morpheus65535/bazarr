@@ -1,10 +1,14 @@
-import { useHistoryStats, useLanguages, useSystemProviders } from "apis/hooks";
+import {
+  useHistoryStats,
+  useLanguages,
+  useSystemProviders,
+} from "@/apis/hooks";
 import {
   ContentHeader,
   LanguageSelector,
   QueryOverlay,
   Selector,
-} from "components";
+} from "@/components";
 import { merge } from "lodash";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Col, Container } from "react-bootstrap";

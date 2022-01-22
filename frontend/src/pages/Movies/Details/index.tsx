@@ -1,20 +1,12 @@
 import {
-  faCloudUploadAlt,
-  faHistory,
-  faSearch,
-  faSync,
-  faToolbox,
-  faUser,
-  faWrench,
-} from "@fortawesome/free-solid-svg-icons";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useDownloadMovieSubtitles, useIsMovieActionRunning } from "apis/hooks";
+  useDownloadMovieSubtitles,
+  useIsMovieActionRunning,
+} from "@/apis/hooks";
 import {
   useMovieAction,
   useMovieById,
   useMovieModification,
-} from "apis/hooks/movies";
+} from "@/apis/hooks/movies";
 import {
   ContentHeader,
   ItemEditorModal,
@@ -23,15 +15,26 @@ import {
   MovieUploadModal,
   SubtitleToolModal,
   useShowModal,
-} from "components";
-import ItemOverview from "components/ItemOverview";
-import { ManualSearchModal } from "components/modals/ManualSearchModal";
-import { RouterEmptyPath } from "pages/404";
+} from "@/components";
+import ItemOverview from "@/components/ItemOverview";
+import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { dispatchTask } from "@/modules/task";
+import { createTask } from "@/modules/task/utilities";
+import { RouterEmptyPath } from "@/pages/404";
+import { useLanguageProfileBy } from "@/utilities/languages";
+import {
+  faCloudUploadAlt,
+  faHistory,
+  faSearch,
+  faSync,
+  faToolbox,
+  faUser,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useCallback } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useLanguageProfileBy } from "utilities/languages";
 import Table from "./table";
 
 interface Params {

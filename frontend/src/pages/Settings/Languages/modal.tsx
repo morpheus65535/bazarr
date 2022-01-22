@@ -1,4 +1,3 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   ActionButton,
   BaseModal,
@@ -8,7 +7,9 @@ import {
   Selector,
   SimpleTable,
   useModalInformation,
-} from "components";
+} from "@/components";
+import { BuildKey } from "@/utilities";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import React, {
   FunctionComponent,
   useCallback,
@@ -18,7 +19,6 @@ import React, {
 } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { BuildKey } from "utilities";
 import { useEnabledLanguagesContext } from ".";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";

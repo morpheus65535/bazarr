@@ -1,5 +1,5 @@
-@import "../@scss/variable.scss";
-@import "../@scss/bazarr.scss";
+@import "@/styles/variable.scss";
+@import "@/styles/bazarr.scss";
 
 @function theme-color($key: "primary") {
   @return map-get($theme-colors, $key);

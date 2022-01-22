@@ -1,6 +1,6 @@
+import { ActionButton, FileBrowser, SimpleTable } from "@/components";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionButton, FileBrowser, SimpleTable } from "components";
 import { capitalize, isArray, isBoolean } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";

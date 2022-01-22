@@ -1,4 +1,23 @@
 import {
+  useEpisodesBySeriesId,
+  useIsAnyActionRunning,
+  useSeriesAction,
+  useSeriesById,
+  useSeriesModification,
+} from "@/apis/hooks";
+import {
+  ContentHeader,
+  ItemEditorModal,
+  LoadingIndicator,
+  SeriesUploadModal,
+  useShowModal,
+} from "@/components";
+import ItemOverview from "@/components/ItemOverview";
+import { dispatchTask } from "@/modules/task";
+import { createTask } from "@/modules/task/utilities";
+import { RouterEmptyPath } from "@/pages/404";
+import { useLanguageProfileBy } from "@/utilities/languages";
+import {
   faAdjust,
   faBriefcase,
   faCloudUploadAlt,
@@ -7,29 +26,10 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import {
-  useEpisodesBySeriesId,
-  useIsAnyActionRunning,
-  useSeriesAction,
-  useSeriesById,
-  useSeriesModification,
-} from "apis/hooks";
-import {
-  ContentHeader,
-  ItemEditorModal,
-  LoadingIndicator,
-  SeriesUploadModal,
-  useShowModal,
-} from "components";
-import ItemOverview from "components/ItemOverview";
-import { RouterEmptyPath } from "pages/404";
 import React, { FunctionComponent, useMemo } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useLanguageProfileBy } from "utilities/languages";
 import Table from "./table";
 
 interface Params {

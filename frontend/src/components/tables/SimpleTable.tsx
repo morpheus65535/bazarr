@@ -13,13 +13,8 @@ export default function SimpleTable<T extends object>(props: Props<T>) {
 
   const instance = useTable(options, useDefaultSettings, ...(plugins ?? []));
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-  } = instance;
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
+    instance;
 
   return (
     <BaseTable

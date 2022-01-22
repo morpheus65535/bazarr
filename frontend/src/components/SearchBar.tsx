@@ -1,4 +1,4 @@
-import { useServerSearch } from "apis/hooks";
+import { useServerSearch } from "@/apis/hooks";
 import { uniqueId } from "lodash";
 import React, {
   FunctionComponent,

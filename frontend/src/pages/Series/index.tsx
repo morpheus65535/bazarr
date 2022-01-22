@@ -1,17 +1,17 @@
-import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import {
   useLanguageProfiles,
   useSeries,
   useSeriesModification,
   useSeriesPagination,
-} from "apis/hooks";
-import { ActionBadge } from "components";
-import ItemView from "components/views/ItemView";
+} from "@/apis/hooks";
+import { ActionBadge } from "@/components";
+import ItemView from "@/components/views/ItemView";
+import { BuildKey } from "@/utilities";
+import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { BuildKey } from "utilities";
 
 interface Props {}
 

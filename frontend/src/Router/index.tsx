@@ -1,7 +1,7 @@
-import { FunctionComponent } from "react";
+import { BuildKey, ScrollToTop } from "@/utilities";
+import React, { FunctionComponent } from "react";
 import { Redirect, Route, Switch, useHistory } from "react-router";
 import { useDidMount } from "rooks";
-import { BuildKey, ScrollToTop } from "utilities";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import { RouterEmptyPath } from "../pages/404";

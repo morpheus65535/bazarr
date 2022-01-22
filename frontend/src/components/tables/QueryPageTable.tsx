@@ -1,7 +1,7 @@
-import { UsePaginationQueryResult } from "apis/queries/hooks";
+import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { ScrollToTop } from "@/utilities";
 import React, { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
-import { ScrollToTop } from "utilities";
 import { LoadingIndicator } from "..";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";

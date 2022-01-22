@@ -1,6 +1,8 @@
+import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import { ContentHeader, LoadingIndicator } from "@/components";
+import { log } from "@/utilities/logger";
+import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { useSettingsMutation, useSystemSettings } from "apis/hooks";
-import { ContentHeader, LoadingIndicator } from "components";
 import { merge } from "lodash";
 import React, {
   FunctionComponent,
@@ -12,8 +14,6 @@ import React, {
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Prompt } from "react-router";
-import { log } from "utilities/logger";
-import { useUpdateLocalStorage } from "utilities/storage";
 import {
   enabledLanguageKey,
   languageProfileKey,

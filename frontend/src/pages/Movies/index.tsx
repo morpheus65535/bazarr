@@ -1,19 +1,19 @@
-import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useLanguageProfiles,
   useMovieModification,
   useMovies,
   useMoviesPagination,
-} from "apis/hooks";
-import { ActionBadge, LanguageText, TextPopover } from "components";
-import ItemView from "components/views/ItemView";
+} from "@/apis/hooks";
+import { ActionBadge, LanguageText, TextPopover } from "@/components";
+import ItemView from "@/components/views/ItemView";
+import { BuildKey } from "@/utilities";
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { BuildKey } from "utilities";
 
 interface Props {}
 

@@ -1,3 +1,4 @@
+import { BuildKey } from "@/utilities";
 import {
   faCheck,
   faCircleNotch,
@@ -9,7 +10,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { BuildKey } from "utilities";
 import { LanguageSelector, MessageIcon } from "..";
 import { FileForm } from "../inputs";
 import { SimpleTable } from "../tables";

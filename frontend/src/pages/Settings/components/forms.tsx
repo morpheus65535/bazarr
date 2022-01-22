@@ -5,7 +5,8 @@ import {
   SelectorProps as CSelectorProps,
   Slider as CSlider,
   SliderProps as CSliderProps,
-} from "components";
+} from "@/components";
+import { isReactText } from "@/utilities";
 import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import React, { FunctionComponent, useEffect } from "react";
 import {
@@ -13,7 +14,6 @@ import {
   ButtonProps as BSButtonProps,
   Form,
 } from "react-bootstrap";
-import { isReactText } from "utilities";
 import { useCollapse, useLatest } from ".";
 import { OverrideFuncType, useSingleUpdate } from "./hooks";
 

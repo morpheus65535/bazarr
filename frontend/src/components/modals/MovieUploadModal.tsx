@@ -1,11 +1,11 @@
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useMovieSubtitleModification } from "apis/hooks";
-import React, { FunctionComponent, useCallback } from "react";
+import { useMovieSubtitleModification } from "@/apis/hooks";
+import { dispatchTask } from "@/modules/task";
+import { createTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
-} from "utilities/languages";
+} from "@/utilities/languages";
+import React, { FunctionComponent, useCallback } from "react";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {

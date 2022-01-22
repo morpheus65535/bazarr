@@ -3,7 +3,7 @@ import {
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
-} from "apis/hooks";
+} from "@/apis/hooks";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import {

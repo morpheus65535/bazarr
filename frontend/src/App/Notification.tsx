@@ -1,3 +1,5 @@
+import { useReduxStore } from "@/modules/redux/hooks/base";
+import { BuildKey, useIsArrayExtended } from "@/utilities";
 import {
   faBug,
   faCircleNotch,
@@ -10,7 +12,6 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import { useReduxStore } from "@redux/hooks/base";
 import React, {
   FunctionComponent,
   useCallback,
@@ -27,7 +28,6 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
-import { BuildKey, useIsArrayExtended } from "utilities";
 import "./notification.scss";
 
 enum State {

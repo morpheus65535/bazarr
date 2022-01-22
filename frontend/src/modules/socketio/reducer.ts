@@ -1,14 +1,14 @@
+import { QueryKeys } from "@/apis/queries/keys";
 import { ActionCreator } from "@reduxjs/toolkit";
-import { QueryKeys } from "apis/queries/keys";
+import queryClient from "../../apis/queries";
 import {
   addNotifications,
   setOfflineStatus,
   setSiteStatus,
   siteAddProgress,
   siteRemoveProgress,
-} from "../../@redux/actions";
-import reduxStore from "../../@redux/store";
-import queryClient from "../../apis/queries";
+} from "../redux/actions";
+import reduxStore from "../redux/store";
 
 function bindReduxAction<T extends ActionCreator<any>>(action: T) {
   return (...args: Parameters<T>) => {

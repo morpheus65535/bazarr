@@ -1,5 +1,5 @@
+import { ActionButton, SimpleTable, useShowModal } from "@/components";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { ActionButton, SimpleTable, useShowModal } from "components";
 import { cloneDeep } from "lodash";
 import React, {
   FunctionComponent,

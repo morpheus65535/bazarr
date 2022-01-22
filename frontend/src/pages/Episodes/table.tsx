@@ -1,3 +1,16 @@
+import { useDownloadEpisodeSubtitles } from "@/apis/hooks";
+import {
+  ActionButton,
+  EpisodeHistoryModal,
+  GroupTable,
+  SubtitleToolModal,
+  TextPopover,
+  useShowModal,
+} from "@/components";
+import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import { BuildKey, filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,
@@ -6,22 +19,9 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useShowOnlyDesired } from "@redux/hooks";
-import { useDownloadEpisodeSubtitles } from "apis/hooks";
-import {
-  ActionButton,
-  EpisodeHistoryModal,
-  GroupTable,
-  SubtitleToolModal,
-  TextPopover,
-  useShowModal,
-} from "components";
-import { ManualSearchModal } from "components/modals/ManualSearchModal";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { BuildKey, filterSubtitleBy } from "utilities";
-import { useProfileItemsToLanguages } from "utilities/languages";
 import { SubtitleAction } from "./components";
 
 interface Props {

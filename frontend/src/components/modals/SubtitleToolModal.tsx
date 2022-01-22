@@ -1,3 +1,9 @@
+import { useSubtitleAction } from "@/apis/hooks";
+import { dispatchTask } from "@/modules/task";
+import { createTask } from "@/modules/task/utilities";
+import { isMovie, submodProcessColor } from "@/utilities";
+import { useEnabledLanguages } from "@/utilities/languages";
+import { log } from "@/utilities/logger";
 import {
   faClock,
   faCode,
@@ -14,9 +20,6 @@ import {
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useSubtitleAction } from "apis/hooks";
 import React, {
   FunctionComponent,
   useCallback,
@@ -32,9 +35,6 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
-import { isMovie, submodProcessColor } from "utilities";
-import { useEnabledLanguages } from "utilities/languages";
-import { log } from "utilities/logger";
 import {
   ActionButton,
   ActionButtonItem,

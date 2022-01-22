@@ -1,6 +1,6 @@
+import { log } from "@/utilities/logger";
 import { useCallback, useContext, useMemo } from "react";
 import { useDidUpdate } from "rooks";
-import { log } from "utilities/logger";
 import { ModalContext } from "./provider";
 
 interface ModalInformation<T> {

@@ -1,4 +1,4 @@
-import api from "apis/raw";
+import api from "@/apis/raw";
 import {
   AsyncButton,
   BaseModal,
@@ -7,7 +7,8 @@ import {
   useModalInformation,
   useOnModalShow,
   useShowModal,
-} from "components";
+} from "@/components";
+import { BuildKey } from "@/utilities";
 import React, {
   FunctionComponent,
   useCallback,
@@ -15,7 +16,6 @@ import React, {
   useState,
 } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import { BuildKey } from "utilities";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 

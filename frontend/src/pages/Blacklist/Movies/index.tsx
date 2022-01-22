@@ -1,6 +1,9 @@
+import {
+  useMovieBlacklist,
+  useMovieDeleteBlacklist,
+} from "@/apis/hooks/movies";
+import { ContentHeader, QueryOverlay } from "@/components";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useMovieBlacklist, useMovieDeleteBlacklist } from "apis/hooks/movies";
-import { ContentHeader, QueryOverlay } from "components";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
