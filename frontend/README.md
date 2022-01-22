@@ -20,17 +20,17 @@
    $ npm install
    ```
 
-3. Duplicate `.env.development` file and rename to `.env.local`
+3. Duplicate `.env.development` file and rename to `.env.development.local`
 
    ```
-   $ cp .env .env.local
+   $ cp .env.development .env.development.local
    ```
 
-4. Update your backend server's API key in `.env.local`
+4. Update your backend server's API key in `.env.development.local`
 
    ```
    # API key of your backend
-   REACT_APP_APIKEY="YOUR_SERVER_API_KEY"
+   VITE_APIKEY="YOUR_SERVER_API_KEY"
    ```
 
 5. Change the address of your backend server (Optional)
@@ -39,7 +39,7 @@
 
    ```
    # Address of your backend
-   REACT_APP_PROXY_URL=http://localhost:6767
+   VITE_PROXY_URL=http://localhost:6767
    ```
 
 6. Run Bazarr backend
