@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from "react-query";
+import { usePaginationQuery } from "../queries/hooks";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -42,6 +43,12 @@ export function useMovies() {
   );
 }
 
+export function useMoviesPagination() {
+  return usePaginationQuery([QueryKeys.Movies], (param) =>
+    api.movies.moviesBy(param)
+  );
+}
+
 export function useMovieModification() {
   const client = useQueryClient();
   return useMutation(
@@ -70,6 +77,12 @@ export function useMovieAction() {
         client.invalidateQueries([QueryKeys.Movies]);
       },
     }
+  );
+}
+
+export function useMovieWantedPagination() {
+  return usePaginationQuery([QueryKeys.Movies, QueryKeys.Wanted], (param) =>
+    api.movies.wanted(param)
   );
 }
 
@@ -107,6 +120,12 @@ export function useMovieDeleteBlacklist() {
         client.invalidateQueries([QueryKeys.Movies, QueryKeys.Blacklist]);
       },
     }
+  );
+}
+
+export function useMovieHistoryPagination() {
+  return usePaginationQuery([QueryKeys.Movies, QueryKeys.History], (param) =>
+    api.movies.history(param)
   );
 }
 

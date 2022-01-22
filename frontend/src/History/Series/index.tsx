@@ -4,9 +4,10 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useEpisodeAddBlacklist } from "src/apis/hooks";
-import { QueryKeys } from "src/apis/queries/keys";
-import api from "../../apis/raw";
+import {
+  useEpisodeAddBlacklist,
+  useEpisodeHistoryPagination,
+} from "src/apis/hooks";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import HistoryGenericView from "../generic";
@@ -137,11 +138,12 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
     []
   );
 
+  const query = useEpisodeHistoryPagination();
+
   return (
     <HistoryGenericView
       name="Series"
-      keys={[QueryKeys.Episodes, QueryKeys.History]}
-      query={(param) => api.episodes.history(param)}
+      query={query}
       columns={columns}
     ></HistoryGenericView>
   );

@@ -2,19 +2,18 @@ import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { AsyncPageTable } from "../../components";
+import { PaginationQuery } from "src/apis/queries/hooks";
+import { QueryPageTable } from "../../components";
 
 interface Props<T extends History.Base> {
   name: string;
-  keys: string[];
-  query: RangeQuery<T>;
+  query: PaginationQuery<T>;
   columns: Column<T>[];
 }
 
 function HistoryGenericView<T extends History.Base = History.Base>({
   columns,
   name,
-  keys,
   query,
 }: Props<T>) {
   return (
@@ -23,13 +22,12 @@ function HistoryGenericView<T extends History.Base = History.Base>({
         <title>{name} History - Bazarr</title>
       </Helmet>
       <Row>
-        <AsyncPageTable
+        <QueryPageTable
           emptyText={`Nothing Found in ${name} History`}
           columns={columns}
-          keys={keys}
           query={query}
           data={[]}
-        ></AsyncPageTable>
+        ></QueryPageTable>
       </Row>
     </Container>
   );

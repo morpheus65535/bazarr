@@ -4,15 +4,15 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useIsAnyActionRunning } from "src/apis/hooks";
+import { PaginationQuery } from "src/apis/queries/hooks";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { AsyncPageTable, ContentHeader } from "../../components";
+import { ContentHeader, QueryPageTable } from "../../components";
 
 interface Props<T extends Wanted.Base> {
   name: string;
-  keys: string[];
   columns: Column<T>[];
-  query: RangeQuery<T>;
+  query: PaginationQuery<T>;
   searchAll: () => Promise<void>;
 }
 
@@ -20,14 +20,12 @@ const TaskGroupName = "Searching wanted subtitles...";
 
 function GenericWantedView<T extends Wanted.Base>({
   name,
-  keys,
   columns,
   query,
   searchAll,
 }: Props<T>) {
   // TODO
-  const dataCount = 0;
-
+  const dataCount = query.paginationStatus.totalCount;
   const hasTask = useIsAnyActionRunning();
 
   return (
@@ -48,13 +46,12 @@ function GenericWantedView<T extends Wanted.Base>({
         </ContentHeader.Button>
       </ContentHeader>
       <Row>
-        <AsyncPageTable
+        <QueryPageTable
           emptyText={`No Missing ${name} Subtitles`}
-          keys={keys}
           query={query}
           columns={columns}
           data={[]}
-        ></AsyncPageTable>
+        ></QueryPageTable>
       </Row>
     </Container>
   );

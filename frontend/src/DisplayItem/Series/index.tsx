@@ -3,11 +3,10 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { QueryKeys } from "src/apis/queries/keys";
-import api from "src/apis/raw";
 import {
   useLanguageProfiles,
   useSeriesModification,
+  useSeriesPagination,
 } from "../../apis/queries/client";
 import { ActionBadge } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -18,6 +17,8 @@ interface Props {}
 const SeriesView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
   const { mutateAsync } = useSeriesModification();
+
+  const query = useSeriesPagination();
 
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -111,8 +112,7 @@ const SeriesView: FunctionComponent<Props> = () => {
   return (
     <BaseItemView
       name="Series"
-      keys={[QueryKeys.Series]}
-      query={(params) => api.series.seriesBy(params)}
+      query={query}
       columns={columns}
       modify={mutateAsync}
     ></BaseItemView>

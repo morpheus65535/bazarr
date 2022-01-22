@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
+import { PaginationQuery } from "src/apis/queries/hooks";
 import {
   useIsAnyMutationRunning,
   useLanguageProfiles,
@@ -14,8 +15,7 @@ import Table from "./table";
 
 export interface SharedProps<T extends Item.Base> {
   name: string;
-  keys: string[];
-  query: RangeQuery<T>;
+  query: PaginationQuery<T>;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
 }
@@ -77,13 +77,13 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
   );
 
   const startEdit = useCallback(() => {
-    // if (shared.state.content.ids.every(isNonNullable)) {
-    //   setEdit(true);
-    // } else {
-    //   update();
-    // }
-    // setPendingEdit(true);
-  }, []);
+    if (shared.query.paginationStatus.totalCount > 0) {
+      setEdit(true);
+    } else {
+      update();
+    }
+    setPendingEdit(true);
+  }, [shared.query.paginationStatus.totalCount, update]);
 
   const endEdit = useCallback(() => {
     setEdit(false);

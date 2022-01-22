@@ -2,8 +2,8 @@ import React, { useCallback } from "react";
 import { TableOptions, TableUpdater } from "react-table";
 import { SharedProps } from ".";
 import {
-  AsyncPageTable,
   ItemEditorModal,
+  QueryPageTable,
   useShowModal,
 } from "../../../components";
 import { TableStyleProps } from "../../../components/tables/BaseTable";
@@ -22,7 +22,6 @@ function Table<T extends Item.Base>({
   columns,
   name,
   query,
-  keys,
 }: Props<T>) {
   const showModal = useShowModal();
 
@@ -45,13 +44,12 @@ function Table<T extends Item.Base>({
 
   return (
     <React.Fragment>
-      <AsyncPageTable
+      <QueryPageTable
         {...options}
         columns={columns}
-        keys={keys}
         query={query}
         data={[]}
-      ></AsyncPageTable>
+      ></QueryPageTable>
       <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
     </React.Fragment>
   );

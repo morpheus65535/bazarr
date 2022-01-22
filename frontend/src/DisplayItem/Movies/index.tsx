@@ -5,11 +5,10 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { QueryKeys } from "src/apis/queries/keys";
-import api from "src/apis/raw";
 import {
   useLanguageProfiles,
   useMovieModification,
+  useMoviesPagination,
 } from "../../apis/queries/client";
 import { ActionBadge, LanguageText, TextPopover } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -20,6 +19,8 @@ interface Props {}
 const MovieView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
   const { mutateAsync } = useMovieModification();
+
+  const query = useMoviesPagination();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
@@ -110,8 +111,7 @@ const MovieView: FunctionComponent<Props> = () => {
   return (
     <BaseItemView
       name="Movies"
-      keys={[QueryKeys.Movies]}
-      query={(param) => api.movies.moviesBy(param)}
+      query={query}
       columns={columns}
       modify={mutateAsync}
     ></BaseItemView>

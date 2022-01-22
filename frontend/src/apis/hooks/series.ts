@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { usePaginationQuery } from "../queries/hooks";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -32,6 +33,12 @@ export function useSeries() {
         });
       },
     }
+  );
+}
+
+export function useSeriesPagination() {
+  return usePaginationQuery([QueryKeys.Series], (param) =>
+    api.series.seriesBy(param)
   );
 }
 

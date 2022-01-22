@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from "react-query";
+import { usePaginationQuery } from "../queries/hooks";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -47,6 +48,12 @@ export function useEpisodeBySeriesId(id: number) {
   );
 }
 
+export function useEpisodeWantedPagination() {
+  return usePaginationQuery([QueryKeys.Series, QueryKeys.Wanted], (param) =>
+    api.episodes.wanted(param)
+  );
+}
+
 export function useEpisodeBlacklist() {
   return useQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
@@ -86,6 +93,13 @@ export function useEpisodeDeleteBlacklist() {
         client.invalidateQueries([QueryKeys.Series, QueryKeys.Blacklist]);
       },
     }
+  );
+}
+
+export function useEpisodeHistoryPagination() {
+  return usePaginationQuery(
+    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History],
+    (param) => api.episodes.history(param)
   );
 }
 

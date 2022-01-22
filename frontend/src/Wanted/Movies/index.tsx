@@ -4,20 +4,18 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useMovieAction, useMovieSubtitleModification } from "src/apis/hooks";
-import { QueryKeys } from "src/apis/queries/keys";
-import api from "src/apis/raw";
+import {
+  useMovieAction,
+  useMovieSubtitleModification,
+  useMovieWantedPagination,
+} from "src/apis/hooks";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
 
 interface Props {}
 
-const Keys = [QueryKeys.Movies, QueryKeys.Wanted];
-
 const WantedMoviesView: FunctionComponent<Props> = () => {
-  const { mutateAsync } = useMovieAction();
-
   const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
     () => [
       {
@@ -68,12 +66,14 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
     []
   );
 
+  const { mutateAsync } = useMovieAction();
+  const query = useMovieWantedPagination();
+
   return (
     <GenericWantedView
       name="Movies"
       columns={columns}
-      keys={Keys}
-      query={(param) => api.movies.wanted(param)}
+      query={query}
       searchAll={() => mutateAsync({ action: "search-wanted" })}
     ></GenericWantedView>
   );

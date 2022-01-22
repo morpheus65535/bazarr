@@ -4,9 +4,10 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useMovieAddBlacklist } from "src/apis/hooks";
-import { QueryKeys } from "src/apis/queries/keys";
-import api from "src/apis/raw";
+import {
+  useMovieAddBlacklist,
+  useMovieHistoryPagination,
+} from "src/apis/hooks";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
 import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
 import HistoryGenericView from "../generic";
@@ -122,11 +123,12 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
     []
   );
 
+  const query = useMovieHistoryPagination();
+
   return (
     <HistoryGenericView
       name="Movies"
-      keys={[QueryKeys.Movies, QueryKeys.History]}
-      query={(param) => api.movies.history(param)}
+      query={query}
       columns={columns}
     ></HistoryGenericView>
   );
