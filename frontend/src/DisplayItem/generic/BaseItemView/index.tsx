@@ -4,8 +4,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { useIsAnyTaskRunning } from "../../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../../apis/queries/client";
+import {
+  useIsAnyMutationRunning,
+  useLanguageProfiles,
+} from "../../../apis/queries/client";
 import { ContentHeader } from "../../../components";
 import { GetItemId } from "../../../utilities";
 import Table from "./table";
@@ -105,7 +107,7 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
     return shared.modify(form);
   }, [dirtyItems, shared]);
 
-  const hasTask = useIsAnyTaskRunning();
+  const hasTask = useIsAnyMutationRunning();
 
   return (
     <Container fluid>

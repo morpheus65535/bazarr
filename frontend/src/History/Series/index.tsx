@@ -139,7 +139,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
 
   return (
     <HistoryGenericView
-      type="series"
+      name="Series"
       keys={[QueryKeys.Episodes, QueryKeys.History]}
       query={(param) => api.episodes.history(param)}
       columns={columns}

@@ -1,8 +1,10 @@
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector } from "../";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../apis/queries/client";
+import {
+  useIsAnyActionRunning,
+  useLanguageProfiles,
+} from "../../apis/queries/client";
 import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
@@ -21,9 +23,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
     modal.modalKey
   );
 
-  // TODO: Separate movies and series
-  const itemId = GetItemId(payload ?? {}) ?? -1;
-  const hasTask = useIsAnyTaskRunningWithId([itemId]);
+  const hasTask = useIsAnyActionRunning();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>

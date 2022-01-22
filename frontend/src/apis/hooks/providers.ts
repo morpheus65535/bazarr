@@ -39,17 +39,27 @@ export function useEpisodesProvider(episodeId?: number) {
 
 export function useResetProvider() {
   const client = useQueryClient();
-  return useMutation(() => api.providers.reset(), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.System, QueryKeys.Providers]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Providers],
+    () => api.providers.reset(),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Providers]);
+      },
+    }
+  );
 }
 
 export function useDownloadEpisodeSubtitles() {
   const client = useQueryClient();
 
   return useMutation(
+    [
+      QueryKeys.System,
+      QueryKeys.Providers,
+      QueryKeys.Subtitles,
+      QueryKeys.Episodes,
+    ],
     (param: {
       seriesId: number;
       episodeId: number;
@@ -72,6 +82,12 @@ export function useDownloadMovieSubtitles() {
   const client = useQueryClient();
 
   return useMutation(
+    [
+      QueryKeys.System,
+      QueryKeys.Providers,
+      QueryKeys.Subtitles,
+      QueryKeys.Movies,
+    ],
     (param: { radarrId: number; form: FormType.ManualDownload }) =>
       api.providers.downloadMovieSubtitle(param.radarrId, param.form),
     {

@@ -8,12 +8,15 @@ import {
   useEpisodeSubtitleModification,
   useSeriesAction,
 } from "src/apis/hooks";
+import { QueryKeys } from "src/apis/queries/keys";
 import api from "../../apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
 
 interface Props {}
+
+const Keys = [QueryKeys.Series, QueryKeys.Wanted];
 
 const WantedSeriesView: FunctionComponent<Props> = () => {
   const { mutateAsync } = useSeriesAction();
@@ -80,8 +83,9 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
 
   return (
     <GenericWantedView
-      type="series"
+      name="Series"
       columns={columns}
+      keys={Keys}
       query={(params) => api.episodes.wanted(params)}
       searchAll={() => mutateAsync({ action: "search-wanted" })}
     ></GenericWantedView>

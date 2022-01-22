@@ -1,16 +1,16 @@
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { capitalize } from "lodash";
 import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
+import { useIsAnyActionRunning } from "src/apis/hooks";
 import { dispatchTask } from "../../@modules/task";
-import { useIsGroupTaskRunning } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
 import { AsyncPageTable, ContentHeader } from "../../components";
 
 interface Props<T extends Wanted.Base> {
-  type: "movies" | "series";
+  name: string;
+  keys: string[];
   columns: Column<T>[];
   query: RangeQuery<T>;
   searchAll: () => Promise<void>;
@@ -19,28 +19,27 @@ interface Props<T extends Wanted.Base> {
 const TaskGroupName = "Searching wanted subtitles...";
 
 function GenericWantedView<T extends Wanted.Base>({
-  type,
+  name,
+  keys,
   columns,
   query,
   searchAll,
 }: Props<T>) {
-  const typeName = capitalize(type);
-
   // TODO
-  const dataCount = 1;
+  const dataCount = 0;
 
-  const hasTask = useIsGroupTaskRunning(TaskGroupName);
+  const hasTask = useIsAnyActionRunning();
 
   return (
     <Container fluid>
       <Helmet>
-        <title>Wanted {typeName} - Bazarr</title>
+        <title>Wanted {name} - Bazarr</title>
       </Helmet>
       <ContentHeader>
         <ContentHeader.Button
-          // disabled={dataCount === 0 || hasTask}
+          disabled={hasTask || dataCount === 0}
           onClick={() => {
-            const task = createTask(type, undefined, searchAll);
+            const task = createTask(name, undefined, searchAll);
             dispatchTask(TaskGroupName, [task], "Searching...");
           }}
           icon={faSearch}
@@ -50,8 +49,8 @@ function GenericWantedView<T extends Wanted.Base>({
       </ContentHeader>
       <Row>
         <AsyncPageTable
-          emptyText={`No Missing ${typeName} Subtitles`}
-          keys={[`${type}-wanted`]}
+          emptyText={`No Missing ${name} Subtitles`}
+          keys={keys}
           query={query}
           columns={columns}
           data={[]}

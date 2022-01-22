@@ -57,6 +57,7 @@ export function useEpisodeBlacklist() {
 export function useEpisodeAddBlacklist() {
   const client = useQueryClient();
   return useMutation(
+    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
     (param: {
       seriesId: number;
       episodeId: number;
@@ -77,6 +78,7 @@ export function useEpisodeAddBlacklist() {
 export function useEpisodeDeleteBlacklist() {
   const client = useQueryClient();
   return useMutation(
+    [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
     (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.episodes.deleteBlacklist(param.all, param.form),
     {

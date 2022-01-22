@@ -124,7 +124,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
 
   return (
     <HistoryGenericView
-      type="movies"
+      name="Movies"
       keys={[QueryKeys.Movies, QueryKeys.History]}
       query={(param) => api.movies.history(param)}
       columns={columns}

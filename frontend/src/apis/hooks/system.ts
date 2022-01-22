@@ -21,11 +21,15 @@ export function useSystemSettings() {
 
 export function useSettingsMutation() {
   const client = useQueryClient();
-  return useMutation((data: LooseObject) => api.system.updateSettings(data), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.System]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Settings],
+    (data: LooseObject) => api.system.updateSettings(data),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System]);
+      },
+    }
+  );
 }
 
 export function useServerSearch(query: string) {
@@ -40,11 +44,15 @@ export function useSystemLogs() {
 
 export function useDeleteLogs() {
   const client = useQueryClient();
-  return useMutation(() => api.system.deleteLogs(), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.System, QueryKeys.Logs]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Logs],
+    () => api.system.deleteLogs(),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Logs]);
+      },
+    }
+  );
 }
 
 export function useSystemTasks() {
@@ -55,11 +63,15 @@ export function useSystemTasks() {
 
 export function useRunTask() {
   const client = useQueryClient();
-  return useMutation((id: string) => api.system.runTask(id), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Tasks],
+    (id: string) => api.system.runTask(id),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
+      },
+    }
+  );
 }
 
 export function useSystemStatus() {
@@ -77,6 +89,7 @@ export function useSystemReleases() {
 export function useSystem() {
   const client = useQueryClient();
   const { mutate: logout, isLoading: isLoggingOut } = useMutation(
+    [QueryKeys.System, QueryKeys.Actions],
     () => api.system.logout(),
     {
       onSuccess: () => {
@@ -87,6 +100,7 @@ export function useSystem() {
   );
 
   const { mutate: login, isLoading: isLoggingIn } = useMutation(
+    [QueryKeys.System, QueryKeys.Actions],
     (param: { username: string; password: string }) =>
       api.system.login(param.username, param.password),
     {
@@ -97,6 +111,7 @@ export function useSystem() {
   );
 
   const { mutate: shutdown, isLoading: isShuttingDown } = useMutation(
+    [QueryKeys.System, QueryKeys.Actions],
     () => api.system.shutdown(),
     {
       onSuccess: () => {
@@ -106,6 +121,7 @@ export function useSystem() {
   );
 
   const { mutate: restart, isLoading: isRestarting } = useMutation(
+    [QueryKeys.System, QueryKeys.Actions],
     () => api.system.restart(),
     {
       onSuccess: () => {

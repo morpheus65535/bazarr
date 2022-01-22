@@ -5,12 +5,15 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 import { useMovieAction, useMovieSubtitleModification } from "src/apis/hooks";
+import { QueryKeys } from "src/apis/queries/keys";
 import api from "src/apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
 import GenericWantedView from "../generic";
 
 interface Props {}
+
+const Keys = [QueryKeys.Movies, QueryKeys.Wanted];
 
 const WantedMoviesView: FunctionComponent<Props> = () => {
   const { mutateAsync } = useMovieAction();
@@ -67,8 +70,9 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
 
   return (
     <GenericWantedView
-      type="movies"
+      name="Movies"
       columns={columns}
+      keys={Keys}
       query={(param) => api.movies.wanted(param)}
       searchAll={() => mutateAsync({ action: "search-wanted" })}
     ></GenericWantedView>

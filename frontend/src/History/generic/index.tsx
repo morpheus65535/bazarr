@@ -1,4 +1,3 @@
-import { capitalize } from "lodash";
 import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
@@ -6,7 +5,7 @@ import { Column } from "react-table";
 import { AsyncPageTable } from "../../components";
 
 interface Props<T extends History.Base> {
-  type: "movies" | "series";
+  name: string;
   keys: string[];
   query: RangeQuery<T>;
   columns: Column<T>[];
@@ -14,19 +13,18 @@ interface Props<T extends History.Base> {
 
 function HistoryGenericView<T extends History.Base = History.Base>({
   columns,
-  type,
+  name,
   keys,
   query,
 }: Props<T>) {
-  const typeName = capitalize(type);
   return (
     <Container fluid>
       <Helmet>
-        <title>{typeName} History - Bazarr</title>
+        <title>{name} History - Bazarr</title>
       </Helmet>
       <Row>
         <AsyncPageTable
-          emptyText={`Nothing Found in ${typeName} History`}
+          emptyText={`Nothing Found in ${name} History`}
           columns={columns}
           keys={keys}
           query={query}

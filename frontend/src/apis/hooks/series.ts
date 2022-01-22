@@ -37,23 +37,31 @@ export function useSeries() {
 
 export function useSeriesModification() {
   const client = useQueryClient();
-  return useMutation((form: FormType.ModifyItem) => api.series.modify(form), {
-    onSuccess: (_, form) => {
-      form.id.forEach((v) => {
-        client.invalidateQueries([QueryKeys.Series, v]);
-      });
-      client.invalidateQueries([QueryKeys.Series, QueryKeys.Range]);
-      client.invalidateQueries([QueryKeys.Series, QueryKeys.History]);
-      client.invalidateQueries([QueryKeys.Series, QueryKeys.Wanted]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.Series],
+    (form: FormType.ModifyItem) => api.series.modify(form),
+    {
+      onSuccess: (_, form) => {
+        form.id.forEach((v) => {
+          client.invalidateQueries([QueryKeys.Series, v]);
+        });
+        client.invalidateQueries([QueryKeys.Series, QueryKeys.Range]);
+        client.invalidateQueries([QueryKeys.Series, QueryKeys.History]);
+        client.invalidateQueries([QueryKeys.Series, QueryKeys.Wanted]);
+      },
+    }
+  );
 }
 
 export function useSeriesAction() {
   const client = useQueryClient();
-  return useMutation((form: FormType.SeriesAction) => api.series.action(form), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.Series]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.Actions, QueryKeys.Series],
+    (form: FormType.SeriesAction) => api.series.action(form),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.Series]);
+      },
+    }
+  );
 }

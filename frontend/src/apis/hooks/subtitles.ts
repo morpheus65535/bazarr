@@ -9,6 +9,7 @@ export function useSubtitleAction() {
     form: FormType.ModifySubtitle;
   }
   return useMutation(
+    [QueryKeys.Subtitles],
     (param: Param) => api.subtitles.modify(param.action, param.form),
     {
       onSuccess: () => {
@@ -28,6 +29,7 @@ export function useEpisodeSubtitleModification() {
   }
 
   const download = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Episodes],
     (param: Param<FormType.Subtitle>) =>
       api.episodes.downloadSubtitles(
         param.seriesId,
@@ -42,6 +44,7 @@ export function useEpisodeSubtitleModification() {
   );
 
   const remove = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Episodes],
     (param: Param<FormType.DeleteSubtitle>) =>
       api.episodes.deleteSubtitles(param.seriesId, param.episodeId, param.form),
     {
@@ -52,6 +55,7 @@ export function useEpisodeSubtitleModification() {
   );
 
   const upload = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Episodes],
     (param: Param<FormType.UploadSubtitle>) =>
       api.episodes.uploadSubtitles(param.seriesId, param.episodeId, param.form),
     {
@@ -73,6 +77,7 @@ export function useMovieSubtitleModification() {
   }
 
   const download = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Movies],
     (param: Param<FormType.Subtitle>) =>
       api.movies.downloadSubtitles(param.radarrId, param.form),
     {
@@ -83,6 +88,7 @@ export function useMovieSubtitleModification() {
   );
 
   const remove = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Movies],
     (param: Param<FormType.DeleteSubtitle>) =>
       api.movies.deleteSubtitles(param.radarrId, param.form),
     {
@@ -93,6 +99,7 @@ export function useMovieSubtitleModification() {
   );
 
   const upload = useMutation(
+    [QueryKeys.Subtitles, QueryKeys.Movies],
     (param: Param<FormType.UploadSubtitle>) =>
       api.movies.uploadSubtitles(param.radarrId, param.form),
     {

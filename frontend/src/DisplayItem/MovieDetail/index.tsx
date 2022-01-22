@@ -7,14 +7,16 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import React, { FunctionComponent, useCallback } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useDownloadMovieSubtitles } from "src/apis/hooks";
+import {
+  useDownloadMovieSubtitles,
+  useIsMovieActionRunning,
+} from "src/apis/hooks";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
 import {
   useMovieAction,
@@ -43,7 +45,7 @@ interface Props extends RouteComponentProps<Params> {}
 
 const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const id = Number.parseInt(match.params.id);
-  const { data: movie } = useMovieById(id);
+  const { data: movie, isFetched } = useMovieById(id);
 
   const profile = useLanguageProfileBy(movie?.profileId);
 
@@ -78,11 +80,9 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
     [downloadAsync]
   );
 
-  const [valid, setValid] = useState(true);
+  const hasTask = useIsMovieActionRunning();
 
-  const hasTask = useIsAnyTaskRunningWithId([id]);
-
-  if (isNaN(id) || !valid) {
+  if (isNaN(id) || (isFetched && !movie)) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 

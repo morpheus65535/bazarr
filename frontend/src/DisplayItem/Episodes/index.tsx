@@ -7,16 +7,16 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
 import { createTask } from "../../@modules/task/utilities";
 import {
   useEpisodeBySeriesId,
+  useIsAnyActionRunning,
   useSeriesAction,
   useSeriesById,
   useSeriesModification,
@@ -41,7 +41,7 @@ interface Props extends RouteComponentProps<Params> {}
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
-  const { data: series } = useSeriesById(id);
+  const { data: series, isFetched } = useSeriesById(id);
   const { data: episodes } = useEpisodeBySeriesId(id);
 
   const { mutateAsync } = useSeriesModification();
@@ -65,16 +65,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   const showModal = useShowModal();
 
-  const [valid, setValid] = useState(true);
-
   const profile = useLanguageProfileBy(series?.profileId);
 
-  const hasTask = useIsAnyTaskRunningWithId([
-    ...(episodes?.map((v) => v.sonarrEpisodeId) ?? []),
-    id,
-  ]);
+  const hasTask = useIsAnyActionRunning();
 
-  if (isNaN(id) || !valid) {
+  if (isNaN(id) || (isFetched && !series)) {
     return <Redirect to={RouterEmptyPath}></Redirect>;
   }
 

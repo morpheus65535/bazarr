@@ -44,25 +44,33 @@ export function useMovies() {
 
 export function useMovieModification() {
   const client = useQueryClient();
-  return useMutation((form: FormType.ModifyItem) => api.movies.modify(form), {
-    onSuccess: (_, form) => {
-      form.id.forEach((v) => {
-        client.invalidateQueries([QueryKeys.Movies, v]);
-      });
-      client.invalidateQueries([QueryKeys.Movies, QueryKeys.Range]);
-      client.invalidateQueries([QueryKeys.Movies, QueryKeys.History]);
-      client.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.Movies],
+    (form: FormType.ModifyItem) => api.movies.modify(form),
+    {
+      onSuccess: (_, form) => {
+        form.id.forEach((v) => {
+          client.invalidateQueries([QueryKeys.Movies, v]);
+        });
+        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Range]);
+        client.invalidateQueries([QueryKeys.Movies, QueryKeys.History]);
+        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
+      },
+    }
+  );
 }
 
 export function useMovieAction() {
   const client = useQueryClient();
-  return useMutation((form: FormType.MoviesAction) => api.movies.action(form), {
-    onSuccess: () => {
-      client.invalidateQueries([QueryKeys.Movies]);
-    },
-  });
+  return useMutation(
+    [QueryKeys.Actions, QueryKeys.Movies],
+    (form: FormType.MoviesAction) => api.movies.action(form),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.Movies]);
+      },
+    }
+  );
 }
 
 export function useMovieBlacklist() {
@@ -74,6 +82,7 @@ export function useMovieBlacklist() {
 export function useMovieAddBlacklist() {
   const client = useQueryClient();
   return useMutation(
+    [QueryKeys.Movies, QueryKeys.Blacklist],
     (param: { id: number; form: FormType.AddBlacklist }) => {
       const { id, form } = param;
       return api.movies.addBlacklist(id, form);
@@ -90,6 +99,7 @@ export function useMovieAddBlacklist() {
 export function useMovieDeleteBlacklist() {
   const client = useQueryClient();
   return useMutation(
+    [QueryKeys.Movies, QueryKeys.Blacklist],
     (param: { all?: boolean; form?: FormType.DeleteBlacklist }) =>
       api.movies.deleteBlacklist(param.all, param.form),
     {
