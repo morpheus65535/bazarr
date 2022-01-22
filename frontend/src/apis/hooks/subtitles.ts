@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -51,17 +51,8 @@ export function useEpisodeSubtitleModification() {
     }
   );
 
-  return { download, remove };
-}
-
-export function useEpisodeUploadSubtitle() {
-  const client = useQueryClient();
-  return useMutation(
-    (param: {
-      seriesId: number;
-      episodeId: number;
-      form: FormType.UploadSubtitle;
-    }) =>
+  const upload = useMutation(
+    (param: Param<FormType.UploadSubtitle>) =>
       api.episodes.uploadSubtitles(param.seriesId, param.episodeId, param.form),
     {
       onSuccess: (_, { seriesId }) => {
@@ -69,6 +60,8 @@ export function useEpisodeUploadSubtitle() {
       },
     }
   );
+
+  return { download, remove, upload };
 }
 
 export function useMovieSubtitleModification() {
@@ -99,18 +92,21 @@ export function useMovieSubtitleModification() {
     }
   );
 
-  return { download, remove };
-}
-
-export function useMovieUploadSubtitle() {
-  const client = useQueryClient();
-  return useMutation(
-    (param: { id: number; form: FormType.UploadSubtitle }) =>
-      api.movies.uploadSubtitles(param.id, param.form),
+  const upload = useMutation(
+    (param: Param<FormType.UploadSubtitle>) =>
+      api.movies.uploadSubtitles(param.radarrId, param.form),
     {
-      onSuccess: (_, { id }) => {
-        client.invalidateQueries([QueryKeys.Movies, id]);
+      onSuccess: (_, { radarrId }) => {
+        client.invalidateQueries([QueryKeys.Movies, radarrId]);
       },
     }
+  );
+
+  return { download, remove, upload };
+}
+
+export function useSubtitleInfos(names: string[]) {
+  return useQuery([QueryKeys.Subtitles, QueryKeys.Infos, names], () =>
+    api.subtitles.info(names)
   );
 }

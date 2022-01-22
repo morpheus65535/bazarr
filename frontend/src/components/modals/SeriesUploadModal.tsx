@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { useEpisodeUploadSubtitle } from "src/apis/hooks";
+import { useEpisodeSubtitleModification } from "src/apis/hooks";
 import api from "src/apis/raw";
 import {
   useLanguageProfileBy,
@@ -36,7 +36,9 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
-  const { mutateAsync } = useEpisodeUploadSubtitle();
+  const {
+    upload: { mutateAsync },
+  } = useEpisodeSubtitleModification();
 
   const update = useCallback(
     async (list: PendingSubtitle<Payload>[]) => {
