@@ -1,9 +1,9 @@
+import { useReduxStore } from "@redux/hooks/base";
+import logo from "@static/logo128.png";
+import { useSystem } from "apis/hooks";
 import React, { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
-import { useSystem } from "src/apis/hooks";
-import { useReduxStore } from "../@redux/hooks/base";
-import logo from "../@static/logo128.png";
 import "./AuthPage.scss";
 
 interface Props {}

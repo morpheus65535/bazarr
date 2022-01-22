@@ -1,18 +1,18 @@
+import Socketio from "@modules/socketio";
+import { useNotification } from "@redux/hooks";
+import { useReduxStore } from "@redux/hooks/base";
+import { LoadingIndicator, ModalProvider } from "components";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { Route, Switch } from "react-router";
 import { BrowserRouter, Redirect } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
-import Socketio from "../@modules/socketio";
-import { useNotification } from "../@redux/hooks";
-import { useReduxStore } from "../@redux/hooks/base";
-import { LoadingIndicator, ModalProvider } from "../components";
+import { Environment } from "utilities";
 import Router from "../Router";
 import Sidebar from "../Sidebar";
 import Auth from "../special-pages/AuthPage";
 import ErrorBoundary from "../special-pages/ErrorBoundary";
 import LaunchError from "../special-pages/LaunchError";
-import { Environment } from "../utilities";
 import Header from "./Header";
 
 // Sidebar Toggle

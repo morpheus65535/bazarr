@@ -14,6 +14,9 @@ import {
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useSubtitleAction } from "apis/hooks";
 import React, {
   FunctionComponent,
   useCallback,
@@ -29,8 +32,9 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
-import { useSubtitleAction } from "src/apis/hooks";
-import { useEnabledLanguages } from "src/utilities/languages";
+import { isMovie, submodProcessColor } from "utilities";
+import { useEnabledLanguages } from "utilities/languages";
+import { log } from "utilities/logger";
 import {
   ActionButton,
   ActionButtonItem,
@@ -41,10 +45,6 @@ import {
   useModalPayload,
   useShowModal,
 } from "..";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
-import { isMovie, submodProcessColor } from "../../utilities";
-import { log } from "../../utilities/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./hooks";

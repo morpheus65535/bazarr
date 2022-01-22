@@ -22,12 +22,12 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
+import { BuildKey, isMovie } from "utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
-} from "src/utilities/languages";
+} from "utilities/languages";
 import { LanguageText } from ".";
-import { BuildKey, isMovie } from "../utilities";
 
 interface Props {
   item: Item.Base;

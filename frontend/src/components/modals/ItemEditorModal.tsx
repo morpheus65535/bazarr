@@ -1,11 +1,11 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
-import { Container, Form } from "react-bootstrap";
-import { AsyncButton, Selector } from "../";
 import {
   useIsAnyActionRunning,
   useLanguageProfiles,
-} from "../../apis/queries/client";
-import { GetItemId } from "../../utilities";
+} from "apis/queries/client";
+import React, { FunctionComponent, useMemo, useState } from "react";
+import { Container, Form } from "react-bootstrap";
+import { GetItemId } from "utilities";
+import { AsyncButton, Selector } from "../";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 

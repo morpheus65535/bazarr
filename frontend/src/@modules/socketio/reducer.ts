@@ -1,5 +1,5 @@
 import { ActionCreator } from "@reduxjs/toolkit";
-import { QueryKeys } from "src/apis/queries/keys";
+import { QueryKeys } from "apis/queries/keys";
 import {
   siteAddNotifications,
   siteAddProgress,

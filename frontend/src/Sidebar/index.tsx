@@ -1,5 +1,8 @@
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { siteChangeSidebarVisibility } from "@redux/actions";
+import { useReduxAction, useReduxStore } from "@redux/hooks/base";
+import logo from "@static/logo64.png";
 import React, {
   createContext,
   FunctionComponent,
@@ -16,13 +19,10 @@ import {
   ListGroupItem,
 } from "react-bootstrap";
 import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
-import { siteChangeSidebarVisibility } from "../@redux/actions";
-import { useReduxAction, useReduxStore } from "../@redux/hooks/base";
-import logo from "../@static/logo64.png";
+import { BuildKey } from "utilities";
+import { useGotoHomepage } from "utilities/hooks";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
-import { BuildKey } from "../utilities";
-import { useGotoHomepage } from "../utilities/hooks";
 import "./style.scss";
 
 const SelectionContext = createContext<{

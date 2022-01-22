@@ -2,7 +2,7 @@ import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Alert, Button, Container } from "react-bootstrap";
-import { Reload } from "../utilities";
+import { Reload } from "utilities";
 
 interface Props {
   children: string;

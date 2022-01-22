@@ -1,11 +1,11 @@
-import React, { FunctionComponent, useMemo } from "react";
-import { Column } from "react-table";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
-} from "src/apis/hooks";
+} from "apis/hooks";
+import React, { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
 import {
   HistoryIcon,
   LanguageText,

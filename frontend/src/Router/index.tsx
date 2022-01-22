@@ -1,10 +1,10 @@
 import { FunctionComponent } from "react";
 import { Redirect, Route, Switch, useHistory } from "react-router";
 import { useDidMount } from "rooks";
+import { BuildKey, ScrollToTop } from "utilities";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import { RouterEmptyPath } from "../special-pages/404";
-import { BuildKey, ScrollToTop } from "../utilities";
 
 const Router: FunctionComponent = () => {
   const navItems = useNavigationItems();

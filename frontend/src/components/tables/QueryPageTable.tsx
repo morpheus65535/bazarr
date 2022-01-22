@@ -1,8 +1,8 @@
+import { PaginationQuery } from "apis/queries/hooks";
 import React, { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
-import { PaginationQuery } from "src/apis/queries/hooks";
+import { ScrollToTop } from "utilities";
 import { LoadingIndicator } from "..";
-import { ScrollToTop } from "../../utilities";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";

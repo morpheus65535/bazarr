@@ -1,3 +1,4 @@
+import { useServerSearch } from "apis/hooks";
 import { uniqueId } from "lodash";
 import React, {
   FunctionComponent,
@@ -9,7 +10,6 @@ import React, {
 import { Dropdown, Form } from "react-bootstrap";
 import { useHistory } from "react-router";
 import { useThrottle } from "rooks";
-import { useServerSearch } from "src/apis/hooks";
 
 function useSearch(query: string) {
   const { data } = useServerSearch(query);

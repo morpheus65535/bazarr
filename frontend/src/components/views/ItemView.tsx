@@ -1,22 +1,22 @@
 import { faCheck, faList, faUndo } from "@fortawesome/free-solid-svg-icons";
+import {
+  useIsAnyMutationRunning,
+  useLanguageProfiles,
+} from "apis/queries/client";
+import { PaginationQuery } from "apis/queries/hooks";
+import { TableStyleProps } from "components/tables/BaseTable";
 import { uniqBy } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column, TableOptions, TableUpdater } from "react-table";
-import { PaginationQuery } from "src/apis/queries/hooks";
-import { TableStyleProps } from "src/components/tables/BaseTable";
+import { GetItemId } from "utilities";
 import {
   ContentHeader,
   ItemEditorModal,
   QueryPageTable,
   useShowModal,
 } from "..";
-import {
-  useIsAnyMutationRunning,
-  useLanguageProfiles,
-} from "../../apis/queries/client";
-import { GetItemId } from "../../utilities";
 
 interface Props<T extends Item.Base = Item.Base> {
   name: string;

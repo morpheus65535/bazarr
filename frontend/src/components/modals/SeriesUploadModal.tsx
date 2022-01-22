@@ -1,13 +1,13 @@
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useEpisodeSubtitleModification } from "apis/hooks";
+import api from "apis/raw";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { useEpisodeSubtitleModification } from "src/apis/hooks";
-import api from "src/apis/raw";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
-} from "src/utilities/languages";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
+} from "utilities/languages";
 import { Selector } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";

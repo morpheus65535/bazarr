@@ -5,6 +5,11 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { siteChangeSidebarVisibility } from "@redux/actions";
+import { useIsOffline } from "@redux/hooks";
+import { useReduxAction } from "@redux/hooks/base";
+import logo from "@static/logo64.png";
+import { ActionButton, SearchBar } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   Button,
@@ -16,13 +21,8 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { siteChangeSidebarVisibility } from "../@redux/actions";
-import { useIsOffline } from "../@redux/hooks";
-import { useReduxAction } from "../@redux/hooks/base";
-import logo from "../@static/logo64.png";
+import { useGotoHomepage, useIsMobile } from "utilities";
 import { useSystem, useSystemSettings } from "../apis/queries/client";
-import { ActionButton, SearchBar } from "../components";
-import { useGotoHomepage, useIsMobile } from "../utilities";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 

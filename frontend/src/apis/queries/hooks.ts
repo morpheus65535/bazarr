@@ -5,8 +5,8 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "react-query";
-import { GetItemId } from "src/utilities";
-import { usePageSize } from "src/utilities/storage";
+import { GetItemId } from "utilities";
+import { usePageSize } from "utilities/storage";
 
 export type PaginationQuery<T extends object> = UseQueryResult<
   DataWrapperWithTotal<T>
