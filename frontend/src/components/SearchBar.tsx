@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Dropdown, Form } from "react-bootstrap";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useThrottle } from "rooks";
 
 function useSearch(query: string) {
@@ -66,7 +66,7 @@ export const SearchBar: FunctionComponent<Props> = ({
 
   const results = useSearch(query);
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const clear = useCallback(() => {
     setDisplay("");
@@ -100,7 +100,7 @@ export const SearchBar: FunctionComponent<Props> = ({
       onSelect={(link) => {
         if (link) {
           clear();
-          history.push(link);
+          navigate(link);
         }
       }}
     >

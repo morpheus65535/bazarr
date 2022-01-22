@@ -1,26 +1,26 @@
 import { LoadingIndicator, ModalProvider } from "@/components";
 import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
-import Socketio from "@/modules/socketio";
-import Authentication from "@/pages/Authentication";
+import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
-import { Route, Switch } from "react-router";
-import { BrowserRouter, Redirect } from "react-router-dom";
+import { BrowserRouter as Router, useRoutes } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import ErrorBoundary from "../components/ErrorBoundary";
-import Router from "../Router";
+import { routes } from "../Router";
 import Sidebar from "../Sidebar";
 import Header from "./Header";
 
-// Sidebar Toggle
+const RouteApp: FunctionComponent = () => useRoutes(routes);
 
-interface Props {}
-
-const App: FunctionComponent<Props> = () => {
+const App: FunctionComponent = () => {
   const { status } = useReduxStore((s) => s);
+
+  useEffect(() => {
+    SocketIO.initialize();
+  }, []);
 
   const notify = useNotification("has-update", 10 * 1000);
 
@@ -36,7 +36,8 @@ const App: FunctionComponent<Props> = () => {
   }, status === "initialized");
 
   if (status === "unauthenticated") {
-    return <Redirect to="/login"></Redirect>;
+    return <div>TODO: Login Windows</div>;
+    // return <Navigate to="/login"></Navigate>;
   } else if (status === "uninitialized") {
     return (
       <LoadingIndicator>
@@ -49,36 +50,19 @@ const App: FunctionComponent<Props> = () => {
 
   return (
     <ErrorBoundary>
-      <Row noGutters className="header-container">
-        <Header></Header>
-      </Row>
-      <Row noGutters className="flex-nowrap">
-        <Sidebar></Sidebar>
-        <ModalProvider>
-          <Router></Router>
-        </ModalProvider>
-      </Row>
+      <Router>
+        <Row noGutters className="header-container">
+          <Header></Header>
+        </Row>
+        <Row noGutters className="flex-nowrap">
+          <Sidebar></Sidebar>
+          <ModalProvider>
+            <RouteApp></RouteApp>
+          </ModalProvider>
+        </Row>
+      </Router>
     </ErrorBoundary>
   );
 };
 
-const MainRouter: FunctionComponent = () => {
-  useEffect(() => {
-    Socketio.initialize();
-  }, []);
-
-  return (
-    <BrowserRouter basename={Environment.baseUrl}>
-      <Switch>
-        <Route exact path="/login">
-          <Authentication></Authentication>
-        </Route>
-        <Route path="/">
-          <App></App>
-        </Route>
-      </Switch>
-    </BrowserRouter>
-  );
-};
-
-export default MainRouter;
+export default App;

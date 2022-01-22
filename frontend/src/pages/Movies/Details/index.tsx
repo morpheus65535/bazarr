@@ -34,17 +34,12 @@ import {
 import React, { FunctionComponent, useCallback } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
-interface Params {
-  id: string;
-}
-
-interface Props extends RouteComponentProps<Params> {}
-
-const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
-  const id = Number.parseInt(match.params.id);
+const MovieDetailView: FunctionComponent = () => {
+  const param = useParams();
+  const id = Number.parseInt(param.id ?? "");
   const { data: movie, isFetched } = useMovieById(id);
 
   const profile = useLanguageProfileBy(movie?.profileId);
@@ -83,7 +78,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const hasTask = useIsMovieActionRunning();
 
   if (isNaN(id) || (isFetched && !movie)) {
-    return <Redirect to={RouterEmptyPath}></Redirect>;
+    return <Navigate to={RouterEmptyPath}></Navigate>;
   }
 
   if (!movie) {
@@ -192,4 +187,4 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   );
 };
 
-export default withRouter(MovieDetailView);
+export default MovieDetailView;

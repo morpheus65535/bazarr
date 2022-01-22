@@ -1,8 +1,8 @@
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "@/modules/redux/hooks";
 import React, { FunctionComponent } from "react";
-import { Redirect } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-const RootRedirect: FunctionComponent = () => {
+const Navigator: FunctionComponent = () => {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
 
@@ -10,10 +10,10 @@ const RootRedirect: FunctionComponent = () => {
   if (sonarr) {
     path = "/series";
   } else if (radarr) {
-    path = "movies";
+    path = "/movies";
   }
 
-  return <Redirect to={path}></Redirect>;
+  return <Navigate to={path}></Navigate>;
 };
 
-export default RootRedirect;
+export default Navigator;

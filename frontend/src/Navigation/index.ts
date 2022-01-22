@@ -36,8 +36,8 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { useMemo } from "react";
+import Navigator from "../Router/Navigator";
 import { Navigation } from "./nav";
-import RootRedirect from "./RootRedirect";
 
 export function useNavigationItems() {
   const sonarr = useIsSonarrEnabled();
@@ -55,7 +55,7 @@ export function useNavigationItems() {
       {
         name: "Redirect",
         path: "/",
-        component: RootRedirect,
+        component: Navigator,
         routeOnly: true,
       },
       {

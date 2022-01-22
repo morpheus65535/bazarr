@@ -29,18 +29,12 @@ import {
 import React, { FunctionComponent, useMemo } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
-interface Params {
-  id: string;
-}
-
-interface Props extends RouteComponentProps<Params> {}
-
-const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
-  const { match } = props;
-  const id = Number.parseInt(match.params.id);
+const SeriesEpisodesView: FunctionComponent = () => {
+  const params = useParams();
+  const id = Number.parseInt(params.id);
   const { data: series, isFetched } = useSeriesById(id);
   const { data: episodes } = useEpisodesBySeriesId(id);
 
@@ -70,7 +64,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const hasTask = useIsAnyActionRunning();
 
   if (isNaN(id) || (isFetched && !series)) {
-    return <Redirect to={RouterEmptyPath}></Redirect>;
+    return <Navigate to={RouterEmptyPath}></Navigate>;
   }
 
   if (!series) {
@@ -177,4 +171,4 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default withRouter(SeriesEpisodesView);
+export default SeriesEpisodesView;

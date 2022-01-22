@@ -19,7 +19,7 @@ import {
   ListGroup,
   ListGroupItem,
 } from "react-bootstrap";
-import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
+import { NavLink, useMatch, useNavigate } from "react-router-dom";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
 import "./style.scss";
@@ -123,7 +123,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
 
   const { selection, select } = useContext(SelectionContext);
 
-  const match = useRouteMatch({ path });
+  const match = useMatch(path);
   const open = match !== null || selection === path;
 
   const collapseBoxClass = useMemo(
@@ -131,7 +131,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
     [open]
   );
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   if (enabled === false) {
     return null;
@@ -168,7 +168,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
             select(path);
           }
           if (component !== undefined) {
-            history.push(path);
+            navigate(path);
           }
         }}
       >

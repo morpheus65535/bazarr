@@ -2,7 +2,7 @@ import { useSystem } from "@/apis/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import React, { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
-import { Redirect } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import "./Authentication.scss";
 
 interface Props {}
@@ -16,7 +16,7 @@ const Authentication: FunctionComponent<Props> = () => {
   const authenticated = useReduxStore((s) => s.status !== "unauthenticated");
 
   if (authenticated) {
-    return <Redirect to="/"></Redirect>;
+    return <Navigate to="/"></Navigate>;
   }
 
   return (

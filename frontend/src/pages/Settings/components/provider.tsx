@@ -13,7 +13,6 @@ import React, {
 } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Prompt } from "react-router";
 import {
   enabledLanguageKey,
   languageProfileKey,
@@ -136,10 +135,11 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
       <Helmet>
         <title>{title}</title>
       </Helmet>
-      <Prompt
+      {/* TODO */}
+      {/* <Prompt
         when={Object.keys(stagedChange).length > 0}
         message="You have unsaved changes, are you sure you want to leave?"
-      ></Prompt>
+      ></Prompt> */}
       <ContentHeader>
         <ContentHeader.Button
           icon={faSave}

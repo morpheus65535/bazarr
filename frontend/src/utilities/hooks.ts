@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDidUpdate, useMediaMatch } from "rooks";
 
 export function useGotoHomepage() {
-  const history = useHistory();
-  return useCallback(() => history.push("/"), [history]);
+  const navigate = useNavigate();
+  return useCallback(() => navigate("/"), [navigate]);
 }
 
 export function useIsMobile() {
