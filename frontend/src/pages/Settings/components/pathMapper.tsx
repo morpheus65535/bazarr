@@ -1,6 +1,5 @@
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import api from "apis/raw";
 import { ActionButton, FileBrowser, SimpleTable } from "components";
 import { capitalize, isArray, isBoolean } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
@@ -73,14 +72,6 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     [items]
   );
 
-  const request = useMemo(() => {
-    if (type === "sonarr") {
-      return (path: string) => api.files.sonarr(path);
-    } else {
-      return (path: string) => api.files.radarr(path);
-    }
-  }, [type]);
-
   const updateCell = useCallback<TableUpdater<PathMappingItem>>(
     (row, item?: PathMappingItem) => {
       const newItems = [...data];
@@ -102,8 +93,8 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         Cell: ({ value, row, update }) => (
           <FileBrowser
             drop="up"
+            type={type}
             defaultValue={value}
-            load={request}
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.from = path;
@@ -126,7 +117,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           <FileBrowser
             drop="up"
             defaultValue={value}
-            load={(path) => api.files.bazarr(path)}
+            type="bazarr"
             onChange={(path) => {
               const newItem = { ...row.original };
               newItem.to = path;
@@ -148,7 +139,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         ),
       },
     ],
-    [type, request]
+    [type]
   );
 
   if (enabled) {

@@ -1,6 +1,7 @@
 import { faFile, faFolder } from "@fortawesome/free-regular-svg-icons";
 import { faReply } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFileSystem } from "apis/hooks";
 import React, {
   FunctionComponent,
   useEffect,
@@ -9,7 +10,6 @@ import React, {
   useState,
 } from "react";
 import { Dropdown, DropdownProps, Form, Spinner } from "react-bootstrap";
-import { useQuery } from "react-query";
 
 const backKey = "--back--";
 
@@ -32,29 +32,22 @@ function extractPath(raw: string) {
 
 interface Props {
   defaultValue?: string;
-  load: (path: string) => Promise<FileTree[]>;
+  type: "sonarr" | "radarr" | "bazarr";
   onChange?: (path: string) => void;
   drop?: DropdownProps["drop"];
 }
 
 export const FileBrowser: FunctionComponent<Props> = ({
   defaultValue,
+  type,
   onChange,
-  load,
   drop,
 }) => {
   const [show, canShow] = useState(false);
   const [text, setText] = useState(defaultValue ?? "");
   const [path, setPath] = useState(() => extractPath(text));
 
-  const { data: tree, isLoading } = useQuery(
-    ["FileBrowser", path],
-    () => load(path),
-    {
-      enabled: show,
-      staleTime: 1000 * 60,
-    }
-  );
+  const { data: tree, isFetching } = useFileSystem(type, path, show);
 
   const filter = useMemo(() => {
     const idx = getLastSeparator(text);
@@ -66,8 +59,8 @@ export const FileBrowser: FunctionComponent<Props> = ({
     return path.slice(0, idx + 1);
   }, [path]);
 
-  const requestItems = useMemo(() => {
-    if (isLoading) {
+  const requestItems = () => {
+    if (isFetching) {
       return (
         <Dropdown.Item>
           <Spinner size="sm" animation="border"></Spinner>
@@ -109,7 +102,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
     } else {
       return elements;
     }
-  }, [isLoading, tree, previous.length, filter]);
+  };
 
   useEffect(() => {
     if (text === path) {
@@ -163,7 +156,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
         className="w-100"
         style={{ maxHeight: 256, overflowY: "auto" }}
       >
-        {requestItems}
+        {requestItems()}
       </Dropdown.Menu>
     </Dropdown>
   );

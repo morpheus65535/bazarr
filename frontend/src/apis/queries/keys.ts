@@ -3,6 +3,7 @@ export enum QueryKeys {
   Episodes = "episodes",
   Series = "series",
   Badges = "badges",
+  FileSystem = "file-system",
   System = "system",
   Settings = "settings",
   Subtitles = "subtitles",

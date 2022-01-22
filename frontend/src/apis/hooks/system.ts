@@ -9,6 +9,28 @@ export function useBadges() {
   return useQuery([QueryKeys.System, QueryKeys.Badges], () => api.badges.all());
 }
 
+export function useFileSystem(
+  type: "bazarr" | "sonarr" | "radarr",
+  path: string,
+  enabled: boolean
+) {
+  return useQuery(
+    [QueryKeys.FileSystem, type, path],
+    () => {
+      if (type === "bazarr") {
+        return api.files.bazarr(path);
+      } else if (type === "radarr") {
+        return api.files.radarr(path);
+      } else if (type === "sonarr") {
+        return api.files.sonarr(path);
+      }
+    },
+    {
+      enabled,
+    }
+  );
+}
+
 export function useSystemSettings() {
   return useQuery(
     [QueryKeys.System, QueryKeys.Settings],
