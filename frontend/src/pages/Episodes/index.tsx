@@ -10,7 +10,7 @@ import {
 import { dispatchTask } from "@modules/task";
 import { createTask } from "@modules/task/utilities";
 import {
-  useEpisodeBySeriesId,
+  useEpisodesBySeriesId,
   useIsAnyActionRunning,
   useSeriesAction,
   useSeriesById,
@@ -42,7 +42,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const { match } = props;
   const id = Number.parseInt(match.params.id);
   const { data: series, isFetched } = useSeriesById(id);
-  const { data: episodes } = useEpisodeBySeriesId(id);
+  const { data: episodes } = useEpisodesBySeriesId(id);
 
   const { mutateAsync } = useSeriesModification();
   const { mutateAsync: action } = useSeriesAction();
@@ -157,12 +157,16 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         <ItemOverview item={series} details={details}></ItemOverview>
       </Row>
       <Row>
-        <Table
-          series={series}
-          episodes={episodes ?? []}
-          profile={profile}
-          disabled={hasTask}
-        ></Table>
+        {episodes === undefined ? (
+          <LoadingIndicator></LoadingIndicator>
+        ) : (
+          <Table
+            series={series}
+            episodes={episodes}
+            profile={profile}
+            disabled={hasTask}
+          ></Table>
+        )}
       </Row>
       <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
       <SeriesUploadModal

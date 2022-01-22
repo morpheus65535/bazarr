@@ -22,7 +22,7 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
   });
 };
 
-export function useEpisodeByIds(ids: number[]) {
+export function useEpisodesByIds(ids: number[]) {
   const client = useQueryClient();
   return useQuery(
     [QueryKeys.Series, QueryKeys.Episodes, ids],
@@ -35,7 +35,7 @@ export function useEpisodeByIds(ids: number[]) {
   );
 }
 
-export function useEpisodeBySeriesId(id: number) {
+export function useEpisodesBySeriesId(id: number) {
   const client = useQueryClient();
   return useQuery(
     [QueryKeys.Series, id, QueryKeys.Episodes, QueryKeys.All],
