@@ -68,4 +68,3 @@ class BazarrClient {
 }
 
 export default new BazarrClient();
-export * from "../hooks";

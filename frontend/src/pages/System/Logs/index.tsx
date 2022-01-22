@@ -1,5 +1,5 @@
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useDeleteLogs, useSystemLogs } from "apis/queries/client";
+import { useDeleteLogs, useSystemLogs } from "apis/hooks";
 import { ContentHeader, QueryOverlay } from "components";
 import React, { FunctionComponent, useCallback } from "react";
 import { Container, Row } from "react-bootstrap";

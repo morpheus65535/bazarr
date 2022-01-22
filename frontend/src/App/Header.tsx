@@ -22,7 +22,7 @@ import {
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useGotoHomepage, useIsMobile } from "utilities";
-import { useSystem, useSystemSettings } from "../apis/queries/client";
+import { useSystem, useSystemSettings } from "../apis/hooks";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 

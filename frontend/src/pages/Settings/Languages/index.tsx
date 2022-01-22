@@ -1,4 +1,4 @@
-import { useLanguageProfiles, useLanguages } from "apis/queries/client";
+import { useLanguageProfiles, useLanguages } from "apis/hooks";
 import { isArray } from "lodash";
 import React, { FunctionComponent, useContext } from "react";
 import { useEnabledLanguages } from "utilities/languages";

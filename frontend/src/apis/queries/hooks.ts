@@ -9,7 +9,7 @@ import { GetItemId } from "utilities";
 import { usePageSize } from "utilities/storage";
 import { QueryKeys } from "./keys";
 
-export type PaginationQuery<T extends object> = UseQueryResult<
+export type UsePaginationQueryResult<T extends object> = UseQueryResult<
   DataWrapperWithTotal<T>
 > & {
   controls: {
@@ -30,7 +30,10 @@ export type PaginationQuery<T extends object> = UseQueryResult<
 export function usePaginationQuery<
   TObject extends object = object,
   TQueryKey extends QueryKey = QueryKey
->(queryKey: TQueryKey, queryFn: RangeQuery<TObject>): PaginationQuery<TObject> {
+>(
+  queryKey: TQueryKey,
+  queryFn: RangeQuery<TObject>
+): UsePaginationQueryResult<TObject> {
   const client = useQueryClient();
 
   const [page, setIndex] = useState(0);

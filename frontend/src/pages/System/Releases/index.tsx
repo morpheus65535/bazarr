@@ -1,4 +1,4 @@
-import { useSystemReleases } from "apis/queries/client";
+import { useSystemReleases } from "apis/hooks";
 import { QueryOverlay } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";

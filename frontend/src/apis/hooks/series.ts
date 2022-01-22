@@ -27,6 +27,7 @@ export function useSeries() {
     [QueryKeys.Series, QueryKeys.All],
     () => api.series.series(),
     {
+      enabled: false,
       onSuccess: (data) => {
         data.forEach((v) => {
           client.setQueryData([QueryKeys.Series, v.sonarrSeriesId], data);
@@ -52,9 +53,7 @@ export function useSeriesModification() {
         form.id.forEach((v) => {
           client.invalidateQueries([QueryKeys.Series, v]);
         });
-        client.invalidateQueries([QueryKeys.Series, QueryKeys.Range]);
-        client.invalidateQueries([QueryKeys.Series, QueryKeys.History]);
-        client.invalidateQueries([QueryKeys.Series, QueryKeys.Wanted]);
+        client.invalidateQueries([QueryKeys.Series]);
       },
     }
   );

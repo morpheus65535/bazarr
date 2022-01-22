@@ -1,4 +1,4 @@
-import { PaginationQuery } from "apis/queries/hooks";
+import { UsePaginationQueryResult } from "apis/queries/hooks";
 import React, { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { ScrollToTop } from "utilities";
@@ -10,7 +10,7 @@ import { useDefaultSettings } from "./plugins";
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
     plugins?: PluginHook<T>[];
-    query: PaginationQuery<T>;
+    query: UsePaginationQueryResult<T>;
   };
 
 export default function QueryPageTable<T extends object>(props: Props<T>) {

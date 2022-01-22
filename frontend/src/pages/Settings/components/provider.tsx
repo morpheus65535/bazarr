@@ -1,5 +1,5 @@
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { useSettingsMutation, useSystemSettings } from "apis/queries/client";
+import { useSettingsMutation, useSystemSettings } from "apis/hooks";
 import { ContentHeader, LoadingIndicator } from "components";
 import { merge } from "lodash";
 import React, {

@@ -2,7 +2,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { dispatchTask } from "@modules/task";
 import { createTask } from "@modules/task/utilities";
 import { useIsAnyActionRunning } from "apis/hooks";
-import { PaginationQuery } from "apis/queries/hooks";
+import { UsePaginationQueryResult } from "apis/queries/hooks";
 import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
@@ -12,7 +12,7 @@ import { ContentHeader, QueryPageTable } from "..";
 interface Props<T extends Wanted.Base> {
   name: string;
   columns: Column<T>[];
-  query: PaginationQuery<T>;
+  query: UsePaginationQueryResult<T>;
   searchAll: () => Promise<void>;
 }
 

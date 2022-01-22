@@ -1,9 +1,10 @@
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import {
   useLanguageProfiles,
+  useSeries,
   useSeriesModification,
   useSeriesPagination,
-} from "apis/queries/client";
+} from "apis/hooks";
 import { ActionBadge } from "components";
 import ItemView from "components/views/ItemView";
 import React, { FunctionComponent, useMemo } from "react";
@@ -16,9 +17,10 @@ interface Props {}
 
 const SeriesView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
-  const { mutateAsync } = useSeriesModification();
+  const mutation = useSeriesModification();
 
   const query = useSeriesPagination();
+  const full = useSeries();
 
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -112,9 +114,10 @@ const SeriesView: FunctionComponent<Props> = () => {
   return (
     <ItemView
       name="Series"
+      fullQuery={full}
       query={query}
       columns={columns}
-      modify={mutateAsync}
+      mutation={mutation}
     ></ItemView>
   );
 };

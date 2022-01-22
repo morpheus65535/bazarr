@@ -54,9 +54,13 @@ export function useSettingsMutation() {
   );
 }
 
-export function useServerSearch(query: string) {
-  return useQuery([QueryKeys.System, QueryKeys.Search, query], () =>
-    query.length > 0 ? api.system.search(query) : null
+export function useServerSearch(query: string, enabled: boolean) {
+  return useQuery(
+    [QueryKeys.System, QueryKeys.Search, query],
+    () => api.system.search(query),
+    {
+      enabled,
+    }
   );
 }
 

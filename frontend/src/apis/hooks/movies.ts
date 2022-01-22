@@ -36,6 +36,7 @@ export function useMovies() {
     [QueryKeys.Movies, QueryKeys.All],
     () => api.movies.movies(),
     {
+      enabled: false,
       onSuccess: (data) => {
         cacheMovies(client, data);
       },
@@ -59,9 +60,8 @@ export function useMovieModification() {
         form.id.forEach((v) => {
           client.invalidateQueries([QueryKeys.Movies, v]);
         });
-        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Range]);
-        client.invalidateQueries([QueryKeys.Movies, QueryKeys.History]);
-        client.invalidateQueries([QueryKeys.Movies, QueryKeys.Wanted]);
+        // TODO: query less
+        client.invalidateQueries([QueryKeys.Movies]);
       },
     }
   );

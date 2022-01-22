@@ -1,4 +1,4 @@
-import { useSystemSettings } from "apis/queries/client";
+import { useSystemSettings } from "apis/hooks";
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
 import { log } from "utilities/logger";

@@ -1,8 +1,4 @@
-import {
-  useHistoryStats,
-  useLanguages,
-  useSystemProviders,
-} from "apis/queries/client";
+import { useHistoryStats, useLanguages, useSystemProviders } from "apis/hooks";
 import {
   ContentHeader,
   LanguageSelector,

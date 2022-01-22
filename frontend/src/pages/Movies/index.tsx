@@ -4,8 +4,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useLanguageProfiles,
   useMovieModification,
+  useMovies,
   useMoviesPagination,
-} from "apis/queries/client";
+} from "apis/hooks";
 import { ActionBadge, LanguageText, TextPopover } from "components";
 import ItemView from "components/views/ItemView";
 import React, { FunctionComponent, useMemo } from "react";
@@ -18,9 +19,10 @@ interface Props {}
 
 const MovieView: FunctionComponent<Props> = () => {
   const { data: profiles } = useLanguageProfiles();
-  const { mutateAsync } = useMovieModification();
+  const mutation = useMovieModification();
 
   const query = useMoviesPagination();
+  const full = useMovies();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
@@ -111,9 +113,10 @@ const MovieView: FunctionComponent<Props> = () => {
   return (
     <ItemView
       name="Movies"
+      fullQuery={full}
       query={query}
       columns={columns}
-      modify={mutateAsync}
+      mutation={mutation}
     ></ItemView>
   );
 };

@@ -12,7 +12,7 @@ import { useHistory } from "react-router";
 import { useThrottle } from "rooks";
 
 function useSearch(query: string) {
-  const { data } = useServerSearch(query);
+  const { data } = useServerSearch(query, query.length > 0);
 
   return useMemo(
     () =>

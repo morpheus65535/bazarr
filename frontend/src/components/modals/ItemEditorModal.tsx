@@ -1,7 +1,4 @@
-import {
-  useIsAnyActionRunning,
-  useLanguageProfiles,
-} from "apis/queries/client";
+import { useIsAnyActionRunning, useLanguageProfiles } from "apis/hooks";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { GetItemId } from "utilities";

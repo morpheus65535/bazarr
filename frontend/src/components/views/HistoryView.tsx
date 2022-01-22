@@ -1,4 +1,4 @@
-import { PaginationQuery } from "apis/queries/hooks";
+import { UsePaginationQueryResult } from "apis/queries/hooks";
 import React from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
@@ -7,7 +7,7 @@ import { QueryPageTable } from "..";
 
 interface Props<T extends History.Base> {
   name: string;
-  query: PaginationQuery<T>;
+  query: UsePaginationQueryResult<T>;
   columns: Column<T>[];
 }
 
