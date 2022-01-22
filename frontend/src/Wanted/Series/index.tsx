@@ -4,7 +4,10 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useSeriesAction } from "src/apis/hooks";
+import {
+  useEpisodeSubtitleModification,
+  useSeriesAction,
+} from "src/apis/hooks";
 import api from "../../apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -39,11 +42,13 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, update, value }) => {
+        Cell: ({ row, value }) => {
           const wanted = row.original;
           const hi = wanted.hearing_impaired;
-          const seriesid = wanted.sonarrSeriesId;
-          const episodeid = wanted.sonarrEpisodeId;
+          const seriesId = wanted.sonarrSeriesId;
+          const episodeId = wanted.sonarrEpisodeId;
+
+          const { download } = useEpisodeSubtitleModification();
 
           return value.map((item, idx) => (
             <AsyncButton
@@ -52,13 +57,16 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
               className="mx-1 mr-2"
               variant="secondary"
               promise={() =>
-                api.episodes.downloadSubtitles(seriesid, episodeid, {
-                  language: item.code2,
-                  hi,
-                  forced: false,
+                download.mutateAsync({
+                  seriesId,
+                  episodeId,
+                  form: {
+                    language: item.code2,
+                    hi,
+                    forced: false,
+                  },
                 })
               }
-              onSuccess={() => update && update(row, episodeid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>

@@ -7,11 +7,11 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useCallback, useState } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import api from "src/apis/raw";
+import { useDownloadMovieSubtitles } from "src/apis/hooks";
 import { useLanguageProfileBy } from "src/utilities/languages";
 import { dispatchTask } from "../../@modules/task";
 import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
@@ -35,17 +35,6 @@ import { RouterEmptyPath } from "../../special-pages/404";
 import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
-const download = (item: Item.Movie, result: SearchResultType) => {
-  const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return api.providers.downloadMovieSubtitle(item.radarrId, {
-    language,
-    hi: hearing_impaired,
-    forced,
-    provider,
-    subtitle,
-  });
-};
-
 interface Params {
   id: string;
 }
@@ -62,6 +51,32 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const { mutateAsync } = useMovieModification();
   const { mutateAsync: action } = useMovieAction();
+  const { mutateAsync: downloadAsync } = useDownloadMovieSubtitles();
+
+  const download = useCallback(
+    (item: Item.Movie, result: SearchResultType) => {
+      const {
+        language,
+        hearing_impaired: hi,
+        forced,
+        provider,
+        subtitle,
+      } = result;
+      const { radarrId } = item;
+
+      return downloadAsync({
+        radarrId,
+        form: {
+          language,
+          hi,
+          forced,
+          provider,
+          subtitle,
+        },
+      });
+    },
+    [downloadAsync]
+  );
 
   const [valid, setValid] = useState(true);
 

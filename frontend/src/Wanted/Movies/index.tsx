@@ -4,7 +4,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { useMovieAction } from "src/apis/hooks";
+import { useMovieAction, useMovieSubtitleModification } from "src/apis/hooks";
 import api from "src/apis/raw";
 import { AsyncButton, LanguageText } from "../../components";
 import { BuildKey } from "../../utilities";
@@ -32,10 +32,11 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
       {
         Header: "Missing",
         accessor: "missing_subtitles",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const wanted = row.original;
-          const hi = wanted.hearing_impaired;
-          const movieid = wanted.radarrId;
+          const { hearing_impaired: hi, radarrId } = wanted;
+
+          const { download } = useMovieSubtitleModification();
 
           return value.map((item, idx) => (
             <AsyncButton
@@ -44,13 +45,15 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
               className="mx-1 mr-2"
               variant="secondary"
               promise={() =>
-                api.movies.downloadSubtitles(movieid, {
-                  language: item.code2,
-                  hi,
-                  forced: false,
+                download.mutateAsync({
+                  radarrId,
+                  form: {
+                    language: item.code2,
+                    hi,
+                    forced: false,
+                  },
                 })
               }
-              onSuccess={() => update && update(row, movieid)}
             >
               <LanguageText className="pr-1" text={item}></LanguageText>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>

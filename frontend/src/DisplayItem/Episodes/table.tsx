@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import api from "src/apis/raw";
+import { useDownloadEpisodeSubtitles } from "src/apis/hooks";
 import { useProfileItemsToLanguages } from "src/utilities/languages";
 import { useShowOnlyDesired } from "../../@redux/hooks";
 import {
@@ -25,29 +25,14 @@ import { BuildKey, filterSubtitleBy } from "../../utilities";
 import { SubtitleAction } from "./components";
 
 interface Props {
-  tvShow?: Item.Series;
+  series?: Item.Series;
   episodes: Item.Episode[];
   disabled?: boolean;
   profile?: Language.Profile;
 }
 
-const download = (item: Item.Episode, result: SearchResultType) => {
-  const { language, hearing_impaired, forced, provider, subtitle } = result;
-  return api.providers.downloadEpisodeSubtitle(
-    item.sonarrSeriesId,
-    item.sonarrEpisodeId,
-    {
-      language,
-      hi: hearing_impaired,
-      forced,
-      provider,
-      subtitle,
-    }
-  );
-};
-
 const Table: FunctionComponent<Props> = ({
-  tvShow,
+  series,
   episodes,
   profile,
   disabled,
@@ -57,6 +42,33 @@ const Table: FunctionComponent<Props> = ({
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
+  const { mutateAsync } = useDownloadEpisodeSubtitles();
+
+  const download = useCallback(
+    (item: Item.Episode, result: SearchResultType) => {
+      const {
+        language,
+        hearing_impaired: hi,
+        forced,
+        provider,
+        subtitle,
+      } = result;
+      const { sonarrSeriesId: seriesId, sonarrEpisodeId: episodeId } = item;
+
+      return mutateAsync({
+        seriesId,
+        episodeId,
+        form: {
+          language,
+          hi,
+          forced,
+          provider,
+          subtitle,
+        },
+      });
+    },
+    [mutateAsync]
+  );
 
   const columns: Column<Item.Episode>[] = useMemo<Column<Item.Episode>[]>(
     () => [
@@ -117,8 +129,8 @@ const Table: FunctionComponent<Props> = ({
               <SubtitleAction
                 missing
                 key={BuildKey(idx, val.code2, "missing")}
-                seriesid={seriesid}
-                episodeid={episodeid}
+                seriesId={seriesid}
+                episodeId={episodeid}
                 subtitle={val}
               ></SubtitleAction>
             ));
@@ -131,8 +143,8 @@ const Table: FunctionComponent<Props> = ({
             const subtitles = raw_subtitles.map((val, idx) => (
               <SubtitleAction
                 key={BuildKey(idx, val.code2, "valid")}
-                seriesid={seriesid}
-                episodeid={episodeid}
+                seriesId={seriesid}
+                episodeId={episodeid}
                 subtitle={val}
               ></SubtitleAction>
             ));
@@ -151,7 +163,7 @@ const Table: FunctionComponent<Props> = ({
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
-                disabled={tvShow?.profileId === null || disabled}
+                disabled={series?.profileId === null || disabled}
                 onClick={() => {
                   update && update(row, "manual-search");
                 }}
@@ -175,7 +187,7 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, tvShow, disabled]
+    [onlyDesired, profileItems, series, disabled]
   );
 
   const updateRow = useCallback<TableUpdater<Item.Episode>>(

@@ -29,7 +29,7 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
-import api from "src/apis/raw";
+import { useSubtitleAction } from "src/apis/hooks";
 import { useEnabledLanguages } from "src/utilities/languages";
 import {
   ActionButton,
@@ -305,6 +305,8 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
   const closeModal = useCloseModal();
 
+  const { mutateAsync } = useSubtitleAction();
+
   const process = useCallback(
     (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       log("info", "executing action", action);
@@ -318,12 +320,12 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
           path: s.path,
           ...override,
         };
-        return createTask(s.path, s.id, api.subtitles.modify, action, form);
+        return createTask(s.path, s.id, mutateAsync, { action, form });
       });
 
       dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");
     },
-    [closeModal, selections, props.modalKey]
+    [closeModal, props.modalKey, selections, mutateAsync]
   );
 
   const showModal = useShowModal();

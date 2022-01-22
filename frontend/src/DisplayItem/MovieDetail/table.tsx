@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
-import api from "src/apis/raw";
+import { useMovieSubtitleModification } from "src/apis/hooks";
 import { useProfileItemsToLanguages } from "src/utilities/languages";
 import { useShowOnlyDesired } from "../../@redux/hooks";
 import { AsyncButton, LanguageText, SimpleTable } from "../../components";
@@ -59,18 +59,27 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
       {
         accessor: "code2",
         Cell: (row) => {
-          const { original } = row.row;
-          if (original.path === null || original.path.length === 0) {
+          const {
+            original: { code2, hi, forced, path },
+          } = row.row;
+
+          const { download, remove } = useMovieSubtitleModification();
+          const { radarrId } = movie;
+
+          if (path === null || path.length === 0) {
             return null;
-          } else if (original.path === missingText) {
+          } else if (path === missingText) {
             return (
               <AsyncButton
                 disabled={disabled}
                 promise={() =>
-                  api.movies.downloadSubtitles(movie.radarrId, {
-                    language: original.code2,
-                    hi: original.hi,
-                    forced: original.forced,
+                  download.mutateAsync({
+                    radarrId,
+                    form: {
+                      language: code2,
+                      hi,
+                      forced,
+                    },
                   })
                 }
                 variant="light"
@@ -86,11 +95,14 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 variant="light"
                 size="sm"
                 promise={() =>
-                  api.movies.deleteSubtitles(movie.radarrId, {
-                    language: original.code2,
-                    hi: original.hi,
-                    forced: original.forced,
-                    path: original.path ?? "",
+                  remove.mutateAsync({
+                    radarrId,
+                    form: {
+                      language: code2,
+                      hi,
+                      forced,
+                      path,
+                    },
                   })
                 }
               >

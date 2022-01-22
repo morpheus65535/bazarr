@@ -163,7 +163,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       </Row>
       <Row>
         <Table
-          tvShow={series}
+          series={series}
           episodes={episodes ?? []}
           profile={profile}
           disabled={hasTask}

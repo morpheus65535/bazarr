@@ -97,20 +97,3 @@ export function useEpisodeHistory(episodeId?: number) {
     }
   );
 }
-
-export function useEpisodeUploadSubtitle() {
-  const client = useQueryClient();
-  return useMutation(
-    (param: {
-      seriesId: number;
-      episodeId: number;
-      form: FormType.UploadSubtitle;
-    }) =>
-      api.episodes.uploadSubtitles(param.seriesId, param.episodeId, param.form),
-    {
-      onSuccess: (_, { seriesId }) => {
-        client.invalidateQueries([QueryKeys.Series, seriesId]);
-      },
-    }
-  );
-}

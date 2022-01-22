@@ -2,19 +2,19 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
-import api from "src/apis/raw";
+import { useEpisodeSubtitleModification } from "src/apis/hooks";
 import { AsyncButton, LanguageText } from "../../components";
 
 interface Props {
-  seriesid: number;
-  episodeid: number;
+  seriesId: number;
+  episodeId: number;
   missing?: boolean;
   subtitle: Subtitle;
 }
 
 export const SubtitleAction: FunctionComponent<Props> = ({
-  seriesid,
-  episodeid,
+  seriesId,
+  episodeId,
   missing,
   subtitle,
 }) => {
@@ -22,22 +22,27 @@ export const SubtitleAction: FunctionComponent<Props> = ({
 
   const path = subtitle.path;
 
+  const { download, remove } = useEpisodeSubtitleModification();
+
   if (missing || path) {
     return (
       <AsyncButton
         promise={() => {
           if (missing) {
-            return api.episodes.downloadSubtitles(seriesid, episodeid, {
-              hi,
-              forced,
-              language: subtitle.code2,
+            return download.mutateAsync({
+              seriesId,
+              episodeId,
+              form: {
+                hi,
+                forced,
+                language: subtitle.code2,
+              },
             });
           } else if (path) {
-            return api.episodes.deleteSubtitles(seriesid, episodeid, {
-              hi,
-              forced,
-              path: path,
-              language: subtitle.code2,
+            return remove.mutateAsync({
+              seriesId,
+              episodeId,
+              form: { hi, forced, path, language: subtitle.code2 },
             });
           } else {
             return null;
