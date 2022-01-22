@@ -1,9 +1,8 @@
+import { useIsAnyActionRunning, useLanguageProfiles } from "apis/hooks";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
+import { GetItemId } from "utilities";
 import { AsyncButton, Selector } from "../";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../@redux/hooks";
-import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 
@@ -15,14 +14,13 @@ interface Props {
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
   const { onSuccess, submit, ...modal } = props;
 
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
 
   const { payload, closeModal } = useModalInformation<Item.Base>(
     modal.modalKey
   );
 
-  // TODO: Separate movies and series
-  const hasTask = useIsAnyTaskRunningWithId([GetItemId(payload ?? {})]);
+  const hasTask = useIsAnyActionRunning();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
@@ -43,6 +41,10 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       promise={() => {
         if (payload) {
           const itemId = GetItemId(payload);
+          if (!itemId) {
+            return null;
+          }
+
           return submit({
             id: [itemId],
             profileid: [id],

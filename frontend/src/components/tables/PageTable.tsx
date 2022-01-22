@@ -6,7 +6,7 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
-import { ScrollToTop } from "../../utilities";
+import { ScrollToTop } from "utilities";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useCustomSelection, useDefaultSettings } from "./plugins";

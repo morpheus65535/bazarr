@@ -29,7 +29,7 @@ interface DataWrapper<T> {
   data: T;
 }
 
-interface AsyncDataWrapper<T> {
+interface DataWrapperWithTotal<T> {
   data: T[];
   total: number;
 }

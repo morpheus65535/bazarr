@@ -6,10 +6,12 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useEpisodesProvider, useMoviesProvider } from "apis/hooks";
 import React, {
   FunctionComponent,
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -24,6 +26,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { Column } from "react-table";
+import { GetItemId, isMovie } from "utilities";
 import {
   BaseModal,
   BaseModalProps,
@@ -32,19 +35,9 @@ import {
   PageTable,
   useModalPayload,
 } from "..";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
-import { ProvidersApi } from "../../apis";
-import { GetItemId, isMovie } from "../../utilities";
 import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
-
-enum SearchState {
-  Ready,
-  Searching,
-  Finished,
-}
 
 interface Props<T extends SupportType> {
   download: (item: T, result: SearchResultType) => Promise<void>;
@@ -55,30 +48,35 @@ export function ManualSearchModal<T extends SupportType>(
 ) {
   const { download, ...modal } = props;
 
-  const [result, setResult] = useState<SearchResultType[]>([]);
-  const [searchState, setSearchState] = useState(SearchState.Ready);
-
   const item = useModalPayload<T>(modal.modalKey);
 
-  const search = useCallback(async () => {
-    if (item) {
-      setSearchState(SearchState.Searching);
-      let results: SearchResultType[] = [];
-      if (isMovie(item)) {
-        results = await ProvidersApi.movies(item.radarrId);
-      } else {
-        results = await ProvidersApi.episodes(item.sonarrEpisodeId);
-      }
-      setResult(results);
-      setSearchState(SearchState.Finished);
-    }
-  }, [item]);
+  const [episodeId, setEpisodeId] = useState<number | undefined>(undefined);
+  const [radarrId, setRadarrId] = useState<number | undefined>(undefined);
 
-  useEffect(() => {
-    if (item !== null) {
-      setSearchState(SearchState.Ready);
+  const episodes = useEpisodesProvider(episodeId);
+  const movies = useMoviesProvider(radarrId);
+
+  const isInitial = episodeId === undefined && radarrId === undefined;
+  const isFetching = episodes.isFetching || movies.isFetching;
+
+  const results = useMemo(
+    () => [...(episodes.data ?? []), ...(movies.data ?? [])],
+    [episodes.data, movies.data]
+  );
+
+  const search = useCallback(() => {
+    setEpisodeId(undefined);
+    setRadarrId(undefined);
+    if (item) {
+      if (isMovie(item)) {
+        setRadarrId(item.radarrId);
+        movies.refetch();
+      } else {
+        setEpisodeId(item.sonarrEpisodeId);
+        episodes.refetch();
+      }
     }
-  }, [item]);
+  }, [episodes, item, movies]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -214,8 +212,8 @@ export function ManualSearchModal<T extends SupportType>(
     [download, item]
   );
 
-  const content = useMemo<JSX.Element>(() => {
-    if (searchState === SearchState.Ready) {
+  const content = () => {
+    if (isInitial) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
@@ -224,7 +222,7 @@ export function ManualSearchModal<T extends SupportType>(
           </Button>
         </div>
       );
-    } else if (searchState === SearchState.Searching) {
+    } else if (isFetching) {
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
@@ -233,24 +231,21 @@ export function ManualSearchModal<T extends SupportType>(
           <PageTable
             emptyText="No Result"
             columns={columns}
-            data={result}
+            data={results}
           ></PageTable>
         </React.Fragment>
       );
     }
-  }, [searchState, columns, result, search, item?.path]);
+  };
 
-  const footer = useMemo(
-    () => (
-      <Button
-        variant="light"
-        hidden={searchState !== SearchState.Finished}
-        onClick={search}
-      >
-        Search Again
-      </Button>
-    ),
-    [searchState, search]
+  const footer = (
+    <Button
+      variant="light"
+      hidden={isFetching === true || isInitial === true}
+      onClick={search}
+    >
+      Search Again
+    </Button>
   );
 
   const title = useMemo(() => {
@@ -270,13 +265,13 @@ export function ManualSearchModal<T extends SupportType>(
 
   return (
     <BaseModal
-      closeable={searchState !== SearchState.Searching}
+      closeable={isFetching === false}
       size="xl"
       title={title}
       footer={footer}
       {...modal}
     >
-      {content}
+      {content()}
     </BaseModal>
   );
 }
