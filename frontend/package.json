@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@types/bootstrap": "^5",
-    "@types/jest": "~26.0.24",
     "@types/lodash": "^4",
     "@types/node": "^15",
     "@types/react": "^17",
@@ -60,7 +59,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "test": "exit 0",
     "lint": "prettier --write --ignore-unknown .",
     "prepare": "cd .. && husky install frontend/.husky"
