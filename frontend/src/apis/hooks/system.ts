@@ -65,7 +65,11 @@ export function useServerSearch(query: string, enabled: boolean) {
 }
 
 export function useSystemLogs() {
-  return useQuery([QueryKeys.System, QueryKeys.Logs], () => api.system.logs());
+  return useQuery([QueryKeys.System, QueryKeys.Logs], () => api.system.logs(), {
+    refetchOnWindowFocus: "always",
+    refetchInterval: 1000 * 60,
+    staleTime: 1000,
+  });
 }
 
 export function useDeleteLogs() {
@@ -82,8 +86,14 @@ export function useDeleteLogs() {
 }
 
 export function useSystemTasks() {
-  return useQuery([QueryKeys.System, QueryKeys.Tasks], () =>
-    api.system.tasks()
+  return useQuery(
+    [QueryKeys.System, QueryKeys.Tasks],
+    () => api.system.tasks(),
+    {
+      refetchOnWindowFocus: "always",
+      refetchInterval: 1000 * 60,
+      staleTime: 1000 * 10,
+    }
   );
 }
 
