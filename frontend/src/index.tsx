@@ -8,9 +8,8 @@ import store from "./@redux/store";
 import "./@scss/index.scss";
 import queryClient from "./apis/queries";
 import App from "./App";
-import { Environment } from "./utilities";
-
-ReactDOM.render(
+import { Environment, isTestEnv } from "./utilities";
+export const Entrance = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
       {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
@@ -19,6 +18,9 @@ ReactDOM.render(
       <App></App>
       {/* </React.StrictMode> */}
     </QueryClientProvider>
-  </Provider>,
-  document.getElementById("root")
+  </Provider>
 );
+
+if (!isTestEnv) {
+  ReactDOM.render(<Entrance />, document.getElementById("root"));
+}
