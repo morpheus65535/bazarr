@@ -2,17 +2,17 @@ import Socketio from "@modules/socketio";
 import { useNotification } from "@redux/hooks";
 import { useReduxStore } from "@redux/hooks/base";
 import { LoadingIndicator, ModalProvider } from "components";
+import Authentication from "pages/Authentication";
+import LaunchError from "pages/LaunchError";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { Route, Switch } from "react-router";
 import { BrowserRouter, Redirect } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import { Environment } from "utilities";
+import ErrorBoundary from "../components/ErrorBoundary";
 import Router from "../Router";
 import Sidebar from "../Sidebar";
-import Auth from "../special-pages/AuthPage";
-import ErrorBoundary from "../special-pages/ErrorBoundary";
-import LaunchError from "../special-pages/LaunchError";
 import Header from "./Header";
 
 // Sidebar Toggle
@@ -72,7 +72,7 @@ const MainRouter: FunctionComponent = () => {
     <BrowserRouter basename={Environment.baseUrl}>
       <Switch>
         <Route exact path="/login">
-          <Auth></Auth>
+          <Authentication></Authentication>
         </Route>
         <Route path="/">
           <App></App>

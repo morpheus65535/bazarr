@@ -4,11 +4,11 @@ import { useSystem } from "apis/hooks";
 import React, { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
-import "./AuthPage.scss";
+import "./Authentication.scss";
 
 interface Props {}
 
-const AuthPage: FunctionComponent<Props> = () => {
+const Authentication: FunctionComponent<Props> = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -76,4 +76,4 @@ const AuthPage: FunctionComponent<Props> = () => {
   );
 };
 
-export default AuthPage;
+export default Authentication;

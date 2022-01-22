@@ -1,5 +1,5 @@
+import UIError from "pages/UIError";
 import React from "react";
-import UIError from "./UIError";
 
 interface State {
   error: Error | null;

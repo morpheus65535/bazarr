@@ -4,7 +4,7 @@ import { useDidMount } from "rooks";
 import { BuildKey, ScrollToTop } from "utilities";
 import { useNavigationItems } from "../Navigation";
 import { Navigation } from "../Navigation/nav";
-import { RouterEmptyPath } from "../special-pages/404";
+import { RouterEmptyPath } from "../pages/404";
 
 const Router: FunctionComponent = () => {
   const navItems = useNavigationItems();

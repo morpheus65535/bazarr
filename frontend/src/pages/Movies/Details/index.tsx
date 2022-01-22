@@ -26,11 +26,11 @@ import {
 } from "components";
 import ItemOverview from "components/ItemOverview";
 import { ManualSearchModal } from "components/modals/ManualSearchModal";
+import { RouterEmptyPath } from "pages/404";
 import React, { FunctionComponent, useCallback } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { RouterEmptyPath } from "special-pages/404";
 import { useLanguageProfileBy } from "utilities/languages";
 import Table from "./table";
 

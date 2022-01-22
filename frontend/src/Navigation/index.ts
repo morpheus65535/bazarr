@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "@redux/hooks";
 import { useBadges } from "apis/hooks";
+import EmptyPage, { RouterEmptyPath } from "pages/404";
 import BlacklistMoviesView from "pages/Blacklist/Movies";
 import BlacklistSeriesView from "pages/Blacklist/Series";
 import Episodes from "pages/Episodes";
@@ -35,7 +36,6 @@ import SystemTasksView from "pages/System/Tasks";
 import WantedMoviesView from "pages/Wanted/Movies";
 import WantedSeriesView from "pages/Wanted/Series";
 import { useMemo } from "react";
-import EmptyPage, { RouterEmptyPath } from "special-pages/404";
 import { Navigation } from "./nav";
 import RootRedirect from "./RootRedirect";
 
