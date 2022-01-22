@@ -1,11 +1,11 @@
 import { ActionCreator } from "@reduxjs/toolkit";
 import { QueryKeys } from "apis/queries/keys";
 import {
-  siteAddNotifications,
+  addNotifications,
+  setOfflineStatus,
+  setSiteStatus,
   siteAddProgress,
   siteRemoveProgress,
-  siteUpdateInitialization,
-  siteUpdateOffline,
 } from "../../@redux/actions";
 import reduxStore from "../../@redux/store";
 import queryClient from "../../apis/queries";
@@ -29,29 +29,24 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
     {
       key: "connect",
-      any: bindReduxActionWithParam(siteUpdateOffline, false),
+      any: bindReduxActionWithParam(setOfflineStatus, false),
     },
     {
       key: "connect",
       any: () => {
         // init
-        reduxStore.dispatch(siteUpdateInitialization(true));
+        reduxStore.dispatch(setSiteStatus("initialized"));
       },
     },
     {
       key: "connect_error",
       any: () => {
-        const initialized = reduxStore.getState().initialized;
-        if (initialized === true) {
-          reduxStore.dispatch(siteUpdateOffline(true));
-        } else {
-          reduxStore.dispatch(siteUpdateInitialization("Socket.IO Error"));
-        }
+        reduxStore.dispatch(setSiteStatus("error"));
       },
     },
     {
       key: "disconnect",
-      any: bindReduxActionWithParam(siteUpdateOffline, true),
+      any: bindReduxActionWithParam(setOfflineStatus, true),
     },
     {
       key: "message",
@@ -64,7 +59,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
             timeout: 5 * 1000,
           }));
 
-          reduxStore.dispatch(siteAddNotifications(notifications));
+          reduxStore.dispatch(addNotifications(notifications));
         }
       },
     },

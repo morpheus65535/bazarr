@@ -1,6 +1,6 @@
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { siteChangeSidebarVisibility } from "@redux/actions";
+import { setSidebar } from "@redux/actions";
 import { useReduxAction, useReduxStore } from "@redux/hooks/base";
 import logo from "@static/logo64.png";
 import React, {
@@ -33,7 +33,7 @@ const SelectionContext = createContext<{
 const Sidebar: FunctionComponent = () => {
   const open = useReduxStore((s) => s.showSidebar);
 
-  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const changeSidebar = useReduxAction(setSidebar);
 
   const cls = ["sidebar-container"];
   const overlay = ["sidebar-overlay"];
@@ -120,7 +120,7 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
     [routes]
   );
 
-  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const changeSidebar = useReduxAction(setSidebar);
 
   const { selection, select } = useContext(SelectionContext);
 
@@ -201,7 +201,7 @@ interface SidebarChildProps {
 const SidebarChild: FunctionComponent<
   SidebarChildProps & Navigation.RouteWithoutChild
 > = ({ icon, name, path, badge, enabled, routeOnly, parent }) => {
-  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const changeSidebar = useReduxAction(setSidebar);
   const { select } = useContext(SelectionContext);
 
   if (enabled === false || routeOnly === true) {

@@ -5,7 +5,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { siteChangeSidebarVisibility } from "@redux/actions";
+import { setSidebar } from "@redux/actions";
 import { useIsOffline } from "@redux/hooks";
 import { useReduxAction } from "@redux/hooks/base";
 import logo from "@static/logo64.png";
@@ -33,7 +33,7 @@ const Header: FunctionComponent<Props> = () => {
 
   const hasLogout = (settings?.auth.type ?? "none") === "form";
 
-  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const changeSidebar = useReduxAction(setSidebar);
 
   const offline = useIsOffline();
 

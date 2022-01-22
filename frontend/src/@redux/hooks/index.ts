@@ -1,10 +1,10 @@
 import { useSystemSettings } from "apis/hooks";
 import { useCallback } from "react";
-import { siteAddNotifications } from "../actions";
+import { addNotifications } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
 export function useNotification(id: string, timeout: number = 5000) {
-  const add = useReduxAction(siteAddNotifications);
+  const add = useReduxAction(addNotifications);
 
   return useCallback(
     (msg: Omit<Server.Notification, "id" | "timeout">) => {

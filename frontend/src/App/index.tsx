@@ -20,7 +20,7 @@ import Header from "./Header";
 interface Props {}
 
 const App: FunctionComponent<Props> = () => {
-  const { initialized, auth } = useReduxStore((s) => s);
+  const { status } = useReduxStore((s) => s);
 
   const notify = useNotification("has-update", 10 * 1000);
 
@@ -33,21 +33,20 @@ const App: FunctionComponent<Props> = () => {
         // TODO: Restart action
       });
     }
-  }, initialized === true);
+  }, status === "initialized");
 
-  if (!auth) {
+  if (status === "unauthenticated") {
     return <Redirect to="/login"></Redirect>;
-  }
-
-  if (typeof initialized === "boolean" && initialized === false) {
+  } else if (status === "uninitialized") {
     return (
       <LoadingIndicator>
         <span>Please wait</span>
       </LoadingIndicator>
     );
-  } else if (typeof initialized === "string") {
-    return <LaunchError>{initialized}</LaunchError>;
+  } else if (status === "error") {
+    return <LaunchError>Cannot Initialize Bazarr</LaunchError>;
   }
+
   return (
     <ErrorBoundary>
       <Row noGutters className="header-container">

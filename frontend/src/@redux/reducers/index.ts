@@ -3,23 +3,22 @@ import { intersectionWith, pullAllWith, remove, sortBy, uniqBy } from "lodash";
 import apis from "../../apis/queries/client";
 import { isProdEnv } from "../../utilities";
 import {
-  siteAddNotifications,
+  addNotifications,
+  removeNotification,
+  setOfflineStatus,
+  setSidebar,
+  setSiteStatus,
+  setUnauthenticated,
   siteAddProgress,
-  siteChangeSidebarVisibility,
-  siteRedirectToAuth,
-  siteRemoveNotifications,
   siteRemoveProgress,
-  siteUpdateInitialization,
   siteUpdateNotifier,
-  siteUpdateOffline,
   siteUpdateProgressCount,
 } from "../actions";
 
 interface Site {
   // Initialization state or error message
-  initialized: boolean | string;
+  status: Site.Status;
   offline: boolean;
-  auth: boolean;
   progress: Site.Progress[];
   notifier: {
     content: string | null;
@@ -30,8 +29,7 @@ interface Site {
 }
 
 const defaultSite: Site = {
-  initialized: false,
-  auth: true,
+  status: "uninitialized",
   progress: [],
   notifier: {
     content: null,
@@ -44,25 +42,25 @@ const defaultSite: Site = {
 
 const reducer = createReducer(defaultSite, (builder) => {
   builder
-    .addCase(siteRedirectToAuth, (state) => {
+    .addCase(setUnauthenticated, (state) => {
       if (!isProdEnv) {
         apis._resetApi("NEED_AUTH");
       }
-      state.auth = false;
+      state.status = "unauthenticated";
     })
-    .addCase(siteUpdateInitialization, (state, action) => {
-      state.initialized = action.payload;
+    .addCase(setSiteStatus, (state, action) => {
+      state.status = action.payload;
     });
 
   builder
-    .addCase(siteAddNotifications, (state, action) => {
+    .addCase(addNotifications, (state, action) => {
       state.notifications = uniqBy(
         [...action.payload, ...state.notifications],
         (v) => v.id
       );
       state.notifications = sortBy(state.notifications, (v) => v.id);
     })
-    .addCase(siteRemoveNotifications, (state, action) => {
+    .addCase(removeNotification, (state, action) => {
       remove(state.notifications, (n) => n.id === action.payload);
     });
 
@@ -101,10 +99,10 @@ const reducer = createReducer(defaultSite, (builder) => {
   });
 
   builder
-    .addCase(siteChangeSidebarVisibility, (state, action) => {
+    .addCase(setSidebar, (state, action) => {
       state.showSidebar = action.payload;
     })
-    .addCase(siteUpdateOffline, (state, action) => {
+    .addCase(setOfflineStatus, (state, action) => {
       state.offline = action.payload;
     });
 });

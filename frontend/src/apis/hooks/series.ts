@@ -1,15 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "react-query";
 import { usePaginationQuery } from "../queries/hooks";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
+
+function cacheSeries(client: QueryClient, series: Item.Series[]) {
+  series.forEach((item) => {
+    client.setQueryData([QueryKeys.Series, item.sonarrSeriesId], item);
+  });
+}
 
 export function useSeriesByIds(ids: number[]) {
   const client = useQueryClient();
   return useQuery([QueryKeys.Series, ...ids], () => api.series.series(ids), {
     onSuccess: (data) => {
-      data.forEach((v) => {
-        client.setQueryData([QueryKeys.Series, v.sonarrSeriesId], data);
-      });
+      cacheSeries(client, data);
     },
   });
 }
@@ -29,9 +38,7 @@ export function useSeries() {
     {
       enabled: false,
       onSuccess: (data) => {
-        data.forEach((v) => {
-          client.setQueryData([QueryKeys.Series, v.sonarrSeriesId], data);
-        });
+        cacheSeries(client, data);
       },
     }
   );

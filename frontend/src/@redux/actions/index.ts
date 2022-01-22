@@ -1,17 +1,17 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { waitFor } from "../../utilities";
 
-export const siteUpdateInitialization = createAction<string | true>(
-  "site/initialization/update"
-);
+export const setSiteStatus = createAction<Site.Status>("site/status/update");
 
-export const siteRedirectToAuth = createAction("site/redirect_auth");
+export const setUnauthenticated = createAction("site/unauthenticated");
 
-export const siteAddNotifications = createAction<Server.Notification[]>(
+export const setOfflineStatus = createAction<boolean>("site/offline/update");
+
+export const addNotifications = createAction<Server.Notification[]>(
   "site/notifications/add"
 );
 
-export const siteRemoveNotifications = createAction<string>(
+export const removeNotification = createAction<string>(
   "site/notifications/remove"
 );
 
@@ -35,8 +35,4 @@ export const siteUpdateNotifier = createAction<string>(
   "site/progress/update_notifier"
 );
 
-export const siteChangeSidebarVisibility = createAction<boolean>(
-  "site/sidebar/visibility"
-);
-
-export const siteUpdateOffline = createAction<boolean>("site/offline/update");
+export const setSidebar = createAction<boolean>("site/sidebar/update");

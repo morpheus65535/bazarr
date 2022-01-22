@@ -1,5 +1,5 @@
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { siteRedirectToAuth } from "../../@redux/actions";
+import { setUnauthenticated } from "../../@redux/actions";
 import { AppDispatch } from "../../@redux/store";
 import { Environment, isProdEnv } from "../../utilities";
 class BazarrClient {
@@ -57,7 +57,7 @@ class BazarrClient {
   handleError(code: number) {
     switch (code) {
       case 401:
-        this.dispatch(siteRedirectToAuth());
+        this.dispatch(setUnauthenticated());
         break;
       case 500:
         break;

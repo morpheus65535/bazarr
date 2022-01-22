@@ -14,9 +14,9 @@ const Authentication: FunctionComponent<Props> = () => {
 
   const { login, isWorking } = useSystem();
 
-  const authState = useReduxStore((s) => s.auth);
+  const authenticated = useReduxStore((s) => s.status !== "unauthenticated");
 
-  if (authState) {
+  if (authenticated) {
     return <Redirect to="/"></Redirect>;
   }
 

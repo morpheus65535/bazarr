@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { siteRedirectToAuth } from "../../@redux/actions";
+import { setUnauthenticated } from "../../@redux/actions";
 import store from "../../@redux/store";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
@@ -119,7 +119,7 @@ export function useSystem() {
     () => api.system.logout(),
     {
       onSuccess: () => {
-        store.dispatch(siteRedirectToAuth());
+        store.dispatch(setUnauthenticated());
         client.clear();
       },
     }
