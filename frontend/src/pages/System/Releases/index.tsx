@@ -64,9 +64,11 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
       <Card.Body>
         <Card.Text>
           From newest to oldest:
-          {infos.map((v, idx) => (
-            <li key={idx}>{v}</li>
-          ))}
+          <div className="mx-4">
+            {infos.map((v, idx) => (
+              <li key={idx}>{v}</li>
+            ))}
+          </div>
         </Card.Text>
       </Card.Body>
     </Card>

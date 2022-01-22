@@ -7,6 +7,7 @@ import {
 } from "react-query";
 import { GetItemId } from "utilities";
 import { usePageSize } from "utilities/storage";
+import { QueryKeys } from "./keys";
 
 export type PaginationQuery<T extends object> = UseQueryResult<
   DataWrapperWithTotal<T>
@@ -38,7 +39,7 @@ export function usePaginationQuery<
   const start = page * pageSize;
 
   const results = useQuery(
-    queryKey,
+    [...queryKey, QueryKeys.Range, { start, size: pageSize }],
     () => {
       const param: Parameter.Range = {
         start,
