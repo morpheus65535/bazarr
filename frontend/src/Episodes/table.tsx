@@ -11,7 +11,7 @@ import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useDownloadEpisodeSubtitles } from "src/apis/hooks";
 import { useProfileItemsToLanguages } from "src/utilities/languages";
-import { useShowOnlyDesired } from "../../@redux/hooks";
+import { useShowOnlyDesired } from "../@redux/hooks";
 import {
   ActionButton,
   EpisodeHistoryModal,
@@ -19,9 +19,9 @@ import {
   SubtitleToolModal,
   TextPopover,
   useShowModal,
-} from "../../components";
-import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
-import { BuildKey, filterSubtitleBy } from "../../utilities";
+} from "../components";
+import { ManualSearchModal } from "../components/modals/ManualSearchModal";
+import { BuildKey, filterSubtitleBy } from "../utilities";
 import { SubtitleAction } from "./components";
 
 interface Props {

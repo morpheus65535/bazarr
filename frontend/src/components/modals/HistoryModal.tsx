@@ -13,7 +13,7 @@ import {
   QueryOverlay,
   TextPopover,
 } from "..";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
+import { BlacklistButton } from "../inputs/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
 

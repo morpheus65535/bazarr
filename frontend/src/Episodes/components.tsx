@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
 import { useEpisodeSubtitleModification } from "src/apis/hooks";
-import { AsyncButton, LanguageText } from "../../components";
+import { AsyncButton, LanguageText } from "../components";
 
 interface Props {
   seriesId: number;

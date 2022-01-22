@@ -26,8 +26,8 @@ import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "src/utilities/languages";
-import { LanguageText } from "../../components";
-import { BuildKey, isMovie } from "../../utilities";
+import { LanguageText } from ".";
+import { BuildKey, isMovie } from "../utilities";
 
 interface Props {
   item: Item.Base;

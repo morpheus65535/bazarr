@@ -9,8 +9,8 @@ import {
   useEpisodeHistoryPagination,
 } from "src/apis/hooks";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
-import HistoryGenericView from "../generic";
+import { BlacklistButton } from "../../components/inputs/blacklist";
+import HistoryView from "../../components/views/HistoryView";
 
 interface Props {}
 
@@ -141,11 +141,7 @@ const SeriesHistoryView: FunctionComponent<Props> = () => {
   const query = useEpisodeHistoryPagination();
 
   return (
-    <HistoryGenericView
-      name="Series"
-      query={query}
-      columns={columns}
-    ></HistoryGenericView>
+    <HistoryView name="Series" query={query} columns={columns}></HistoryView>
   );
 };
 

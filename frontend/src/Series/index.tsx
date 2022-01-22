@@ -7,10 +7,10 @@ import {
   useLanguageProfiles,
   useSeriesModification,
   useSeriesPagination,
-} from "../../apis/queries/client";
-import { ActionBadge } from "../../components";
-import { BuildKey } from "../../utilities";
-import BaseItemView from "../generic/BaseItemView";
+} from "../apis/queries/client";
+import { ActionBadge } from "../components";
+import ItemView from "../components/views/ItemView";
+import { BuildKey } from "../utilities";
 
 interface Props {}
 
@@ -110,12 +110,12 @@ const SeriesView: FunctionComponent<Props> = () => {
   );
 
   return (
-    <BaseItemView
+    <ItemView
       name="Series"
       query={query}
       columns={columns}
       modify={mutateAsync}
-    ></BaseItemView>
+    ></ItemView>
   );
 };
 

@@ -9,10 +9,10 @@ import {
   useLanguageProfiles,
   useMovieModification,
   useMoviesPagination,
-} from "../../apis/queries/client";
-import { ActionBadge, LanguageText, TextPopover } from "../../components";
-import { BuildKey } from "../../utilities";
-import BaseItemView from "../generic/BaseItemView";
+} from "../apis/queries/client";
+import { ActionBadge, LanguageText, TextPopover } from "../components";
+import ItemView from "../components/views/ItemView";
+import { BuildKey } from "../utilities";
 
 interface Props {}
 
@@ -109,12 +109,12 @@ const MovieView: FunctionComponent<Props> = () => {
   );
 
   return (
-    <BaseItemView
+    <ItemView
       name="Movies"
       query={query}
       columns={columns}
       modify={mutateAsync}
-    ></BaseItemView>
+    ></ItemView>
   );
 };
 

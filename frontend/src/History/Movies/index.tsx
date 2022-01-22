@@ -9,8 +9,8 @@ import {
   useMovieHistoryPagination,
 } from "src/apis/hooks";
 import { HistoryIcon, LanguageText, TextPopover } from "../../components";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
-import HistoryGenericView from "../generic";
+import { BlacklistButton } from "../../components/inputs/blacklist";
+import HistoryView from "../../components/views/HistoryView";
 
 interface Props {}
 
@@ -126,11 +126,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
   const query = useMovieHistoryPagination();
 
   return (
-    <HistoryGenericView
-      name="Movies"
-      query={query}
-      columns={columns}
-    ></HistoryGenericView>
+    <HistoryView name="Movies" query={query} columns={columns}></HistoryView>
   );
 };
 

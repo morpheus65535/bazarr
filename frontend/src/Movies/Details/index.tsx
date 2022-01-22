@@ -32,9 +32,9 @@ import {
   SubtitleToolModal,
   useShowModal,
 } from "../../components";
+import ItemOverview from "../../components/ItemOverview";
 import { ManualSearchModal } from "../../components/modals/ManualSearchModal";
 import { RouterEmptyPath } from "../../special-pages/404";
-import ItemOverview from "../generic/ItemOverview";
 import Table from "./table";
 
 interface Params {

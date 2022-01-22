@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { PaginationQuery } from "src/apis/queries/hooks";
-import { QueryPageTable } from "../../components";
+import { QueryPageTable } from "..";
 
 interface Props<T extends History.Base> {
   name: string;
@@ -11,7 +11,7 @@ interface Props<T extends History.Base> {
   columns: Column<T>[];
 }
 
-function HistoryGenericView<T extends History.Base = History.Base>({
+function HistoryView<T extends History.Base = History.Base>({
   columns,
   name,
   query,
@@ -33,4 +33,4 @@ function HistoryGenericView<T extends History.Base = History.Base>({
   );
 }
 
-export default HistoryGenericView;
+export default HistoryView;

@@ -10,8 +10,8 @@ import {
   useMovieWantedPagination,
 } from "src/apis/hooks";
 import { AsyncButton, LanguageText } from "../../components";
+import WantedView from "../../components/views/WantedView";
 import { BuildKey } from "../../utilities";
-import GenericWantedView from "../generic";
 
 interface Props {}
 
@@ -70,12 +70,12 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
   const query = useMovieWantedPagination();
 
   return (
-    <GenericWantedView
+    <WantedView
       name="Movies"
       columns={columns}
       query={query}
       searchAll={() => mutateAsync({ action: "search-wanted" })}
-    ></GenericWantedView>
+    ></WantedView>
   );
 };
 

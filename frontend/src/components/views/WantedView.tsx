@@ -5,9 +5,9 @@ import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { useIsAnyActionRunning } from "src/apis/hooks";
 import { PaginationQuery } from "src/apis/queries/hooks";
+import { ContentHeader, QueryPageTable } from "..";
 import { dispatchTask } from "../../@modules/task";
 import { createTask } from "../../@modules/task/utilities";
-import { ContentHeader, QueryPageTable } from "../../components";
 
 interface Props<T extends Wanted.Base> {
   name: string;
@@ -18,7 +18,7 @@ interface Props<T extends Wanted.Base> {
 
 const TaskGroupName = "Searching wanted subtitles...";
 
-function GenericWantedView<T extends Wanted.Base>({
+function WantedView<T extends Wanted.Base>({
   name,
   columns,
   query,
@@ -57,4 +57,4 @@ function GenericWantedView<T extends Wanted.Base>({
   );
 }
 
-export default GenericWantedView;
+export default WantedView;

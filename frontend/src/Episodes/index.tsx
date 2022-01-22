@@ -12,24 +12,24 @@ import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
 import { useLanguageProfileBy } from "src/utilities/languages";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
+import { dispatchTask } from "../@modules/task";
+import { createTask } from "../@modules/task/utilities";
 import {
   useEpisodeBySeriesId,
   useIsAnyActionRunning,
   useSeriesAction,
   useSeriesById,
   useSeriesModification,
-} from "../../apis/hooks";
+} from "../apis/hooks";
 import {
   ContentHeader,
   ItemEditorModal,
   LoadingIndicator,
   SeriesUploadModal,
   useShowModal,
-} from "../../components";
-import { RouterEmptyPath } from "../../special-pages/404";
-import ItemOverview from "../generic/ItemOverview";
+} from "../components";
+import ItemOverview from "../components/ItemOverview";
+import { RouterEmptyPath } from "../special-pages/404";
 import Table from "./table";
 
 interface Params {

@@ -3,26 +3,34 @@ import { uniqBy } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Column } from "react-table";
+import { Column, TableOptions, TableUpdater } from "react-table";
 import { PaginationQuery } from "src/apis/queries/hooks";
+import { TableStyleProps } from "src/components/tables/BaseTable";
+import {
+  ContentHeader,
+  ItemEditorModal,
+  QueryPageTable,
+  useShowModal,
+} from "..";
 import {
   useIsAnyMutationRunning,
   useLanguageProfiles,
-} from "../../../apis/queries/client";
-import { ContentHeader } from "../../../components";
-import { GetItemId } from "../../../utilities";
-import Table from "./table";
+} from "../../apis/queries/client";
+import { GetItemId } from "../../utilities";
 
-export interface SharedProps<T extends Item.Base> {
+interface Props<T extends Item.Base = Item.Base> {
   name: string;
   query: PaginationQuery<T>;
   columns: Column<T>[];
   modify: (form: FormType.ModifyItem) => Promise<void>;
 }
 
-interface Props<T extends Item.Base = Item.Base> extends SharedProps<T> {}
-
-function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
+function ItemView<T extends Item.Base>({
+  name,
+  query,
+  columns,
+  modify,
+}: Props<T>) {
   const [pendingEditMode, setPendingEdit] = useState(false);
   const [editMode, setEdit] = useState(false);
 
@@ -77,13 +85,13 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
   );
 
   const startEdit = useCallback(() => {
-    if (shared.query.paginationStatus.totalCount > 0) {
+    if (query.paginationStatus.totalCount > 0) {
       setEdit(true);
     } else {
       update();
     }
     setPendingEdit(true);
-  }, [shared.query.paginationStatus.totalCount, update]);
+  }, [query.paginationStatus.totalCount, update]);
 
   const endEdit = useCallback(() => {
     setEdit(false);
@@ -104,15 +112,29 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
         form.profileid.push(v.profileId);
       }
     });
-    return shared.modify(form);
-  }, [dirtyItems, shared]);
+    return modify(form);
+  }, [dirtyItems, modify]);
 
   const hasTask = useIsAnyMutationRunning();
+
+  const showModal = useShowModal();
+
+  const updateRow = useCallback<TableUpdater<T>>(
+    (row, modalKey: string) => {
+      showModal(modalKey, row.original);
+    },
+    [showModal]
+  );
+
+  const options: Partial<TableOptions<T> & TableStyleProps<T>> = {
+    emptyText: `No ${name} Found`,
+    update: updateRow,
+  };
 
   return (
     <Container fluid>
       <Helmet>
-        <title>{shared.name} - Bazarr</title>
+        <title>{name} - Bazarr</title>
       </Helmet>
       <ContentHeader scroll={false}>
         {editMode ? (
@@ -157,15 +179,16 @@ function BaseItemView<T extends Item.Base>({ ...shared }: Props<T>) {
         )}
       </ContentHeader>
       <Row>
-        <Table
-          {...shared}
-          dirtyItems={dirtyItems}
-          editMode={editMode}
-          select={setSelections}
-        ></Table>
+        <QueryPageTable
+          {...options}
+          columns={columns}
+          query={query}
+          data={[]}
+        ></QueryPageTable>
+        <ItemEditorModal modalKey="edit" submit={modify}></ItemEditorModal>
       </Row>
     </Container>
   );
 }
 
-export default BaseItemView;
+export default ItemView;
