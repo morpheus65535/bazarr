@@ -37,7 +37,7 @@ export function GetItemId<T extends object>(item: T): number | undefined {
   }
 }
 
-export function BuildKey(...args: any[]) {
+export function BuildKey(...args: unknown[]) {
   return args.join("-");
 }
 
@@ -47,6 +47,12 @@ export function Reload() {
 
 export function ScrollToTop() {
   window.scrollTo(0, 0);
+}
+
+const pathReplaceReg = new RegExp("/{1,}", "g");
+export function pathJoin(...parts: string[]) {
+  const separator = "/";
+  return parts.join(separator).replace(pathReplaceReg, separator);
 }
 
 export function filterSubtitleBy(

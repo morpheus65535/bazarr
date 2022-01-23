@@ -8,7 +8,7 @@ import Sidebar from "@/Sidebar";
 import { Environment } from "@/utilities";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import Header from "./Header";
 
@@ -33,8 +33,7 @@ const App: FunctionComponent = () => {
   }, status === "initialized");
 
   if (status === "unauthenticated") {
-    return <div>TODO: Login Windows</div>;
-    // return <Navigate to="/login"></Navigate>;
+    return <Navigate to="/login"></Navigate>;
   } else if (status === "uninitialized") {
     return (
       <LoadingIndicator>

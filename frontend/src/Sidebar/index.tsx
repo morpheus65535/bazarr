@@ -1,18 +1,14 @@
 import { setSidebar } from "@/modules/redux/actions";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
-import { useNavigationItems } from "@/Navigation";
-import { Navigation } from "@/Navigation/nav";
-import { BuildKey } from "@/utilities";
+import { useRouteItems } from "@/Router";
+import { CustomRouteObject, Route } from "@/Router/type";
+import { BuildKey, pathJoin } from "@/utilities";
 import { useGotoHomepage } from "@/utilities/hooks";
+import { log } from "@/utilities/logger";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  createContext,
-  FunctionComponent,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import clsx from "clsx";
+import React, { FunctionComponent, useEffect, useMemo } from "react";
 import {
   Badge,
   Collapse,
@@ -21,36 +17,68 @@ import {
   ListGroup,
   ListGroupItem,
 } from "react-bootstrap";
-import { NavLink, useMatch, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./style.scss";
 
-const SelectionContext = createContext<{
+const Selection = React.createContext<{
   selection: string | null;
-  select: (selection: string | null) => void;
+  select: (path: string | null) => void;
 }>({ selection: null, select: () => {} });
 
+function useSelection() {
+  return React.useContext(Selection);
+}
+
+function useBadgeValue(route: Route.Item) {
+  const { badge, children } = route;
+  return useMemo(() => {
+    let value = badge ?? 0;
+
+    if (children === undefined) {
+      return value;
+    }
+
+    value +=
+      children.reduce((acc, child: Route.Item) => {
+        if (child.badge) {
+          return acc + (child.badge ?? 0);
+        }
+        return acc;
+      }, 0) ?? 0;
+
+    return value === 0 ? undefined : value;
+  }, [badge, children]);
+}
+
+function useIsActive(link: string) {
+  const { pathname } = useLocation();
+  const selection = useSelection().selection;
+  return useMemo(() => {
+    const match = pathname.includes(link);
+    const selected = selection?.includes(link);
+    return match || selected;
+  }, [pathname, link, selection]);
+}
+
+// Actual sidebar
 const Sidebar: FunctionComponent = () => {
-  const open = useReduxStore((s) => s.showSidebar);
+  const [selection, select] = React.useState<string | null>(null);
+  const isShow = useReduxStore((s) => s.showSidebar);
 
-  const changeSidebar = useReduxAction(setSidebar);
-
-  const cls = ["sidebar-container"];
-  const overlay = ["sidebar-overlay"];
-
-  if (open) {
-    cls.push("open");
-    overlay.push("open");
-  }
+  const showSidebar = useReduxAction(setSidebar);
 
   const goHome = useGotoHomepage();
 
-  const [selection, setSelection] = useState<string | null>(null);
+  const routes = useRouteItems();
+
+  const { pathname } = useLocation();
+  useEffect(() => {
+    select(null);
+  }, [pathname]);
 
   return (
-    <SelectionContext.Provider
-      value={{ selection: selection, select: setSelection }}
-    >
-      <aside className={cls.join(" ")}>
+    <Selection.Provider value={{ selection, select }}>
+      <nav className={clsx("sidebar-container", { open: isShow })}>
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image
             alt="brand"
@@ -61,191 +89,141 @@ const Sidebar: FunctionComponent = () => {
             className="cursor-pointer"
           ></Image>
         </Container>
-        <SidebarNavigation></SidebarNavigation>
-      </aside>
+        <ListGroup variant="flush">
+          {routes.map((route, idx) => (
+            <RouteItem
+              key={BuildKey("nav", idx)}
+              parent="/"
+              route={route}
+            ></RouteItem>
+          ))}
+        </ListGroup>
+      </nav>
       <div
-        className={overlay.join(" ")}
-        onClick={() => changeSidebar(false)}
+        className={clsx("sidebar-overlay", { open: isShow })}
+        onClick={() => showSidebar(false)}
       ></div>
-    </SelectionContext.Provider>
+    </Selection.Provider>
   );
 };
 
-const SidebarNavigation: FunctionComponent = () => {
-  const navItems = useNavigationItems();
+const RouteItem: FunctionComponent<{
+  route: CustomRouteObject;
+  parent: string;
+}> = ({ route, parent }) => {
+  const { children, name, path, icon, hidden, element } = route;
 
-  return (
-    <ListGroup variant="flush">
-      {navItems.map((v, idx) => {
-        if ("routes" in v) {
-          return (
-            <SidebarParent key={BuildKey(idx, v.name)} {...v}></SidebarParent>
-          );
-        } else {
-          return (
-            <SidebarChild
-              parent=""
-              key={BuildKey(idx, v.name)}
-              {...v}
-            ></SidebarChild>
-          );
-        }
-      })}
-    </ListGroup>
-  );
-};
-
-const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
-  icon,
-  badge,
-  name,
-  path,
-  routes,
-  enabled,
-  component,
-}) => {
-  const computedBadge = useMemo(() => {
-    let computed = badge ?? 0;
-
-    computed += routes.reduce((prev, curr) => {
-      return prev + (curr.badge ?? 0);
-    }, 0);
-
-    return computed !== 0 ? computed : undefined;
-  }, [badge, routes]);
-
-  const enabledRoutes = useMemo(
-    () => routes.filter((v) => v.enabled !== false && v.routeOnly !== true),
-    [routes]
+  const isValidated = useMemo(
+    () =>
+      element !== undefined ||
+      children?.find((v) => v.index === true) !== undefined,
+    [element, children]
   );
 
-  const changeSidebar = useReduxAction(setSidebar);
-
-  const { selection, select } = useContext(SelectionContext);
-
-  const match = useMatch(path);
-  const open = match !== null || selection === path;
-
-  const collapseBoxClass = useMemo(
-    () => `sidebar-collapse-box ${open ? "active" : ""}`,
-    [open]
-  );
+  const { select } = useSelection();
 
   const navigate = useNavigate();
 
-  if (enabled === false) {
+  const link = useMemo(() => pathJoin(parent, path ?? ""), [parent, path]);
+
+  const badge = useBadgeValue(route);
+
+  const isOpen = useIsActive(link);
+
+  if (hidden === true) {
     return null;
-  } else if (enabledRoutes.length === 0) {
-    if (component) {
+  }
+
+  // Ignore path if it is using match
+  if (path === undefined || path.includes(":")) {
+    return null;
+  }
+
+  if (children !== undefined) {
+    const elements = children.map((child, idx) => (
+      <RouteItem
+        parent={link}
+        key={BuildKey(link, "nav", idx)}
+        route={child}
+      ></RouteItem>
+    ));
+
+    if (name) {
       return (
-        <NavLink
-          className={({ isActive }) =>
-            `list-group-item list-group-item-action sidebar-button ${
-              isActive ? "sb-active" : ""
-            }`
-          }
-          to={path}
-          onClick={() => changeSidebar(false)}
-        >
-          <SidebarContent
-            icon={icon}
-            name={name}
-            badge={computedBadge}
-          ></SidebarContent>
-        </NavLink>
+        <div className={clsx("sidebar-collapse-box", { active: isOpen })}>
+          <ListGroupItem
+            action
+            className="sidebar-button"
+            onClick={() => {
+              log("info", "clicked", link);
+
+              if (isValidated) {
+                navigate(link);
+              }
+
+              if (isOpen) {
+                select(null);
+              } else {
+                select(link);
+              }
+            }}
+          >
+            <RouteItemContent
+              name={name ?? link}
+              icon={icon}
+              badge={badge}
+            ></RouteItemContent>
+          </ListGroupItem>
+          <Collapse in={isOpen}>
+            <div className="sidebar-collapse">{elements}</div>
+          </Collapse>
+        </div>
       );
     } else {
-      return null;
+      return <>{elements}</>;
     }
-  }
-
-  return (
-    <div className={collapseBoxClass}>
-      <ListGroupItem
-        action
-        className="sidebar-button"
-        onClick={() => {
-          if (open) {
-            select(null);
-          } else {
-            select(path);
-          }
-          if (component !== undefined) {
-            navigate(path);
-          }
-        }}
+  } else {
+    return (
+      <NavLink
+        to={link}
+        className={({ isActive }) =>
+          clsx(
+            "list-group-item list-group-item-action sidebar-button sb-collapse",
+            { "sb-active": isActive }
+          )
+        }
       >
-        <SidebarContent
+        <RouteItemContent
+          name={name ?? link}
           icon={icon}
-          name={name}
-          badge={computedBadge}
-        ></SidebarContent>
-      </ListGroupItem>
-      <Collapse in={open}>
-        <div className="sidebar-collapse">
-          {enabledRoutes.map((v, idx) => (
-            <SidebarChild
-              key={BuildKey(idx, v.name, "child")}
-              parent={path}
-              {...v}
-            ></SidebarChild>
-          ))}
-        </div>
-      </Collapse>
-    </div>
-  );
+          badge={badge}
+        ></RouteItemContent>
+      </NavLink>
+    );
+  }
 };
 
-interface SidebarChildProps {
-  parent: string;
+interface ItemComponentProps {
+  name: string;
+  icon?: IconDefinition;
+  badge?: number;
 }
 
-const SidebarChild: FunctionComponent<
-  SidebarChildProps & Navigation.RouteWithoutChild
-> = ({ icon, name, path, badge, enabled, routeOnly, parent }) => {
-  const changeSidebar = useReduxAction(setSidebar);
-  const { select } = useContext(SelectionContext);
-
-  if (enabled === false || routeOnly === true) {
-    return null;
-  }
-
+const RouteItemContent: FunctionComponent<ItemComponentProps> = ({
+  icon,
+  name,
+  badge,
+}) => {
   return (
-    <NavLink
-      className={({ isActive }) =>
-        `list-group-item list-group-item-action sidebar-button sb-collapse ${
-          isActive ? "sb-active" : ""
-        }`
-      }
-      to={parent + path}
-      onClick={() => {
-        select(null);
-        changeSidebar(false);
-      }}
-    >
-      <SidebarContent icon={icon} name={name} badge={badge}></SidebarContent>
-    </NavLink>
-  );
-};
-
-const SidebarContent: FunctionComponent<{
-  icon?: IconDefinition;
-  name: string;
-  badge?: number;
-}> = ({ icon, name, badge }) => {
-  return (
-    <React.Fragment>
-      {icon && (
-        <FontAwesomeIcon
-          size="1x"
-          className="icon"
-          icon={icon}
-        ></FontAwesomeIcon>
-      )}
+    <>
+      {icon && <FontAwesomeIcon size="1x" className="icon" icon={icon} />}
       <span className="d-flex flex-grow-1 justify-content-between">
-        {name} <Badge variant="secondary">{badge !== 0 ? badge : null}</Badge>
+        {name}
+        <Badge variant="secondary" hidden={badge === undefined || badge === 0}>
+          {badge}
+        </Badge>
       </span>
-    </React.Fragment>
+    </>
   );
 };
 

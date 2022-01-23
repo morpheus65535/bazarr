@@ -1,5 +1,7 @@
+import { useBadges } from "@/apis/hooks";
 import App from "@/App";
 import NotFound from "@/pages/404";
+import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
@@ -24,154 +26,232 @@ import SystemStatusView from "@/pages/System/Status";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
-import React from "react";
-import Navigator from "./Navigator";
-import { Route } from "./type";
+import { Environment } from "@/utilities";
+import {
+  faClock,
+  faExclamationTriangle,
+  faFileExcel,
+  faFilm,
+  faLaptop,
+  faPlay,
+} from "@fortawesome/free-solid-svg-icons";
+import React, { FunctionComponent, useMemo } from "react";
+import { BrowserRouter } from "react-router-dom";
+import Redirector from "./Navigator";
+import { CustomRouteObject } from "./type";
 
-export const routes: Route[] = [
-  {
-    path: "/",
-    element: <App></App>,
-    children: [
+function useRoutes(): CustomRouteObject[] {
+  const { data } = useBadges();
+
+  return useMemo(
+    () => [
       {
-        index: true,
-        element: <Navigator></Navigator>,
-      },
-      {
-        path: "/series",
+        path: "/",
+        element: <App></App>,
         children: [
           {
             index: true,
-            element: <SeriesView></SeriesView>,
+            element: <Redirector></Redirector>,
           },
           {
-            path: ":id",
-            element: <Episodes></Episodes>,
-          },
-        ],
-      },
-      {
-        path: "/movies",
-        children: [
-          {
-            index: true,
-            element: <MovieView></MovieView>,
-          },
-          {
-            path: ":id",
-            element: <MovieDetail></MovieDetail>,
-          },
-        ],
-      },
-      {
-        path: "/history",
-        children: [
-          {
+            icon: faPlay,
+            name: "Series",
             path: "series",
-            element: <SeriesHistoryView></SeriesHistoryView>,
+            children: [
+              {
+                index: true,
+                element: <SeriesView></SeriesView>,
+              },
+              {
+                path: ":id",
+                element: <Episodes></Episodes>,
+              },
+            ],
           },
           {
+            icon: faFilm,
+            name: "Movies",
             path: "movies",
-            element: <MoviesHistoryView></MoviesHistoryView>,
+            children: [
+              {
+                index: true,
+                element: <MovieView></MovieView>,
+              },
+              {
+                path: ":id",
+                element: <MovieDetail></MovieDetail>,
+              },
+            ],
+          },
+          {
+            icon: faClock,
+            name: "History",
+            path: "history",
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                element: <SeriesHistoryView></SeriesHistoryView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                element: <MoviesHistoryView></MoviesHistoryView>,
+              },
+            ],
+          },
+          {
+            icon: faExclamationTriangle,
+            name: "Wanted",
+            path: "wanted",
+            children: [
+              {
+                name: "Episodes",
+                path: "series",
+                badge: data?.episodes,
+                element: <WantedSeriesView></WantedSeriesView>,
+              },
+              {
+                name: "Movies",
+                path: "movies",
+                badge: data?.movies,
+                element: <WantedMoviesView></WantedMoviesView>,
+              },
+            ],
+          },
+          {
+            icon: faFileExcel,
+            name: "Blacklist",
+            path: "blacklist",
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                element: <BlacklistSeriesView></BlacklistSeriesView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+            ],
+          },
+          {
+            icon: faExclamationTriangle,
+            name: "Settings",
+            path: "settings",
+            children: [
+              {
+                path: "general",
+                name: "General",
+                element: <SettingsGeneralView></SettingsGeneralView>,
+              },
+              {
+                path: "languages",
+                name: "Languages",
+                element: <SettingsLanguagesView></SettingsLanguagesView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                element: <SettingsProvidersView></SettingsProvidersView>,
+              },
+              {
+                path: "subtitles",
+                name: "Subtitles",
+                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+              },
+              {
+                path: "sonarr",
+                name: "Sonarr",
+                element: <SettingsSonarrView></SettingsSonarrView>,
+              },
+              {
+                path: "radarr",
+                name: "Radarr",
+                element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "notifications",
+                name: "Notifications",
+                element: (
+                  <SettingsNotificationsView></SettingsNotificationsView>
+                ),
+              },
+              {
+                path: "scheduler",
+                name: "Scheduler",
+                element: <SettingsSchedulerView></SettingsSchedulerView>,
+              },
+              {
+                path: "ui",
+                name: "UI",
+                element: <SettingsUIView></SettingsUIView>,
+              },
+            ],
+          },
+          {
+            icon: faLaptop,
+            name: "System",
+            path: "system",
+            children: [
+              {
+                path: "tasks",
+                name: "Tasks",
+                element: <SystemTasksView></SystemTasksView>,
+              },
+              {
+                path: "logs",
+                name: "Logs",
+                element: <SystemLogsView></SystemLogsView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                badge: data?.providers,
+                element: <SystemProvidersView></SystemProvidersView>,
+              },
+              {
+                path: "status",
+                name: "Status",
+                element: <SystemStatusView></SystemStatusView>,
+              },
+              {
+                path: "releases",
+                name: "Releases",
+                element: <SystemReleasesView></SystemReleasesView>,
+              },
+            ],
           },
         ],
       },
       {
-        path: "/blacklist",
-        children: [
-          {
-            path: "series",
-            element: <BlacklistSeriesView></BlacklistSeriesView>,
-          },
-          {
-            path: "movies",
-            element: <BlacklistMoviesView></BlacklistMoviesView>,
-          },
-        ],
+        path: "/login",
+        hidden: true,
+        element: <Authentication></Authentication>,
       },
       {
-        path: "/wanted",
-        children: [
-          {
-            path: "series",
-            element: <WantedSeriesView></WantedSeriesView>,
-          },
-          {
-            path: "movies",
-            element: <WantedMoviesView></WantedMoviesView>,
-          },
-        ],
-      },
-      {
-        path: "/settings",
-        children: [
-          {
-            path: "general",
-            element: <SettingsGeneralView></SettingsGeneralView>,
-          },
-          {
-            path: "languages",
-            element: <SettingsLanguagesView></SettingsLanguagesView>,
-          },
-          {
-            path: "providers",
-            element: <SettingsProvidersView></SettingsProvidersView>,
-          },
-          {
-            path: "subtitles",
-            element: <SettingsSubtitlesView></SettingsSubtitlesView>,
-          },
-          {
-            path: "sonarr",
-            element: <SettingsSonarrView></SettingsSonarrView>,
-          },
-          {
-            path: "radarr",
-            element: <SettingsRadarrView></SettingsRadarrView>,
-          },
-          {
-            path: "notifications",
-            element: <SettingsNotificationsView></SettingsNotificationsView>,
-          },
-          {
-            path: "scheduler",
-            element: <SettingsSchedulerView></SettingsSchedulerView>,
-          },
-          {
-            path: "ui",
-            element: <SettingsUIView></SettingsUIView>,
-          },
-        ],
-      },
-      {
-        path: "/system",
-        children: [
-          {
-            path: "tasks",
-            element: <SystemTasksView></SystemTasksView>,
-          },
-          {
-            path: "logs",
-            element: <SystemLogsView></SystemLogsView>,
-          },
-          {
-            path: "providers",
-            element: <SystemProvidersView></SystemProvidersView>,
-          },
-          {
-            path: "status",
-            element: <SystemStatusView></SystemStatusView>,
-          },
-          {
-            path: "releases",
-            element: <SystemReleasesView></SystemReleasesView>,
-          },
-        ],
+        path: "*",
+        hidden: true,
+        element: <NotFound></NotFound>,
       },
     ],
-  },
-  {
-    path: "*",
-    element: <NotFound></NotFound>,
-  },
-];
+    [data]
+  );
+}
+
+const RouterItemContext = React.createContext<CustomRouteObject[]>([]);
+
+export const Router: FunctionComponent = ({ children }) => {
+  const routes = useRoutes();
+
+  return (
+    <RouterItemContext.Provider value={routes}>
+      <BrowserRouter basename={Environment.baseUrl}>{children}</BrowserRouter>
+    </RouterItemContext.Provider>
+  );
+};
+
+export function useRouteItems() {
+  return React.useContext(RouterItemContext);
+}
