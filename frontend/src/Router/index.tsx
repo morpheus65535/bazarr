@@ -1,3 +1,4 @@
+import App from "@/App";
 import NotFound from "@/pages/404";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
@@ -24,137 +25,153 @@ import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
 import React from "react";
-import { RouteObject } from "react-router";
 import Navigator from "./Navigator";
+import { Route } from "./type";
 
-export const routes: RouteObject[] = [
+export const routes: Route[] = [
   {
     path: "/",
-    element: <Navigator></Navigator>,
+    element: <App></App>,
+    children: [
+      {
+        index: true,
+        element: <Navigator></Navigator>,
+      },
+      {
+        path: "/series",
+        children: [
+          {
+            index: true,
+            element: <SeriesView></SeriesView>,
+          },
+          {
+            path: ":id",
+            element: <Episodes></Episodes>,
+          },
+        ],
+      },
+      {
+        path: "/movies",
+        children: [
+          {
+            index: true,
+            element: <MovieView></MovieView>,
+          },
+          {
+            path: ":id",
+            element: <MovieDetail></MovieDetail>,
+          },
+        ],
+      },
+      {
+        path: "/history",
+        children: [
+          {
+            path: "series",
+            element: <SeriesHistoryView></SeriesHistoryView>,
+          },
+          {
+            path: "movies",
+            element: <MoviesHistoryView></MoviesHistoryView>,
+          },
+        ],
+      },
+      {
+        path: "/blacklist",
+        children: [
+          {
+            path: "series",
+            element: <BlacklistSeriesView></BlacklistSeriesView>,
+          },
+          {
+            path: "movies",
+            element: <BlacklistMoviesView></BlacklistMoviesView>,
+          },
+        ],
+      },
+      {
+        path: "/wanted",
+        children: [
+          {
+            path: "series",
+            element: <WantedSeriesView></WantedSeriesView>,
+          },
+          {
+            path: "movies",
+            element: <WantedMoviesView></WantedMoviesView>,
+          },
+        ],
+      },
+      {
+        path: "/settings",
+        children: [
+          {
+            path: "general",
+            element: <SettingsGeneralView></SettingsGeneralView>,
+          },
+          {
+            path: "languages",
+            element: <SettingsLanguagesView></SettingsLanguagesView>,
+          },
+          {
+            path: "providers",
+            element: <SettingsProvidersView></SettingsProvidersView>,
+          },
+          {
+            path: "subtitles",
+            element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+          },
+          {
+            path: "sonarr",
+            element: <SettingsSonarrView></SettingsSonarrView>,
+          },
+          {
+            path: "radarr",
+            element: <SettingsRadarrView></SettingsRadarrView>,
+          },
+          {
+            path: "notifications",
+            element: <SettingsNotificationsView></SettingsNotificationsView>,
+          },
+          {
+            path: "scheduler",
+            element: <SettingsSchedulerView></SettingsSchedulerView>,
+          },
+          {
+            path: "ui",
+            element: <SettingsUIView></SettingsUIView>,
+          },
+        ],
+      },
+      {
+        path: "/system",
+        children: [
+          {
+            path: "tasks",
+            element: <SystemTasksView></SystemTasksView>,
+          },
+          {
+            path: "logs",
+            element: <SystemLogsView></SystemLogsView>,
+          },
+          {
+            path: "providers",
+            element: <SystemProvidersView></SystemProvidersView>,
+          },
+          {
+            path: "status",
+            element: <SystemStatusView></SystemStatusView>,
+          },
+          {
+            path: "releases",
+            element: <SystemReleasesView></SystemReleasesView>,
+          },
+        ],
+      },
+    ],
   },
   {
     path: "*",
     element: <NotFound></NotFound>,
-  },
-  {
-    path: "/series",
-    element: <SeriesView></SeriesView>,
-  },
-  {
-    path: "/series/:id",
-    element: <Episodes></Episodes>,
-  },
-  {
-    path: "/movies",
-    element: <MovieView></MovieView>,
-  },
-  {
-    path: "/movies/:id",
-    element: <MovieDetail></MovieDetail>,
-  },
-  {
-    path: "/history",
-    children: [
-      {
-        path: "/history/series",
-        element: <SeriesHistoryView></SeriesHistoryView>,
-      },
-      {
-        path: "/history/movies",
-        element: <MoviesHistoryView></MoviesHistoryView>,
-      },
-    ],
-  },
-  {
-    path: "/blacklist",
-    children: [
-      {
-        path: "/blacklist/series",
-        element: <BlacklistSeriesView></BlacklistSeriesView>,
-      },
-      {
-        path: "/blacklist/movies",
-        element: <BlacklistMoviesView></BlacklistMoviesView>,
-      },
-    ],
-  },
-  {
-    path: "/wanted",
-    children: [
-      {
-        path: "/wanted/series",
-        element: <WantedSeriesView></WantedSeriesView>,
-      },
-      {
-        path: "/wanted/movies",
-        element: <WantedMoviesView></WantedMoviesView>,
-      },
-    ],
-  },
-  {
-    path: "/settings",
-    children: [
-      {
-        path: "/settings/general",
-        element: <SettingsGeneralView></SettingsGeneralView>,
-      },
-      {
-        path: "/settings/languages",
-        element: <SettingsLanguagesView></SettingsLanguagesView>,
-      },
-      {
-        path: "/settings/providers",
-        element: <SettingsProvidersView></SettingsProvidersView>,
-      },
-      {
-        path: "/settings/subtitles",
-        element: <SettingsSubtitlesView></SettingsSubtitlesView>,
-      },
-      {
-        path: "/settings/sonarr",
-        element: <SettingsSonarrView></SettingsSonarrView>,
-      },
-      {
-        path: "/settings/radarr",
-        element: <SettingsRadarrView></SettingsRadarrView>,
-      },
-      {
-        path: "/settings/notifications",
-        element: <SettingsNotificationsView></SettingsNotificationsView>,
-      },
-      {
-        path: "/settings/scheduler",
-        element: <SettingsSchedulerView></SettingsSchedulerView>,
-      },
-      {
-        path: "/settings/ui",
-        element: <SettingsUIView></SettingsUIView>,
-      },
-    ],
-  },
-  {
-    path: "/system",
-    children: [
-      {
-        path: "/system/tasks",
-        element: <SystemTasksView></SystemTasksView>,
-      },
-      {
-        path: "/system/logs",
-        element: <SystemLogsView></SystemLogsView>,
-      },
-      {
-        path: "/system/providers",
-        element: <SystemProvidersView></SystemProvidersView>,
-      },
-      {
-        path: "/system/status",
-        element: <SystemStatusView></SystemStatusView>,
-      },
-      {
-        path: "/system/releases",
-        element: <SystemReleasesView></SystemReleasesView>,
-      },
-    ],
   },
 ];

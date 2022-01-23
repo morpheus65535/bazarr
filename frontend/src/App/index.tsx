@@ -4,16 +4,13 @@ import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
-import { routes } from "@/Router";
 import Sidebar from "@/Sidebar";
 import { Environment } from "@/utilities";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
-import { BrowserRouter as Router, useRoutes } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import Header from "./Header";
-
-const RouteApp: FunctionComponent = () => useRoutes(routes);
 
 const App: FunctionComponent = () => {
   const { status } = useReduxStore((s) => s);
@@ -50,17 +47,15 @@ const App: FunctionComponent = () => {
 
   return (
     <ErrorBoundary>
-      <Router>
-        <Row noGutters className="header-container">
-          <Header></Header>
-        </Row>
-        <Row noGutters className="flex-nowrap">
-          <Sidebar></Sidebar>
-          <ModalProvider>
-            <RouteApp></RouteApp>
-          </ModalProvider>
-        </Row>
-      </Router>
+      <Row noGutters className="header-container">
+        <Header></Header>
+      </Row>
+      <Row noGutters className="flex-nowrap">
+        <Sidebar></Sidebar>
+        <ModalProvider>
+          <Outlet></Outlet>
+        </ModalProvider>
+      </Row>
     </ErrorBoundary>
   );
 };
