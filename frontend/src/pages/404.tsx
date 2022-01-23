@@ -3,8 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
 import { Container } from "react-bootstrap";
 
-export const RouterEmptyPath = "/empty-page";
-
 const NotFound: FunctionComponent = () => {
   return (
     <Container className="d-flex flex-column align-items-center my-5">

@@ -5,6 +5,7 @@ import { dependencies } from "./package.json";
 
 const groupedDeps = [
   "react",
+  "react-redux",
   "react-router-dom",
   "react-dom",
   "react-query",

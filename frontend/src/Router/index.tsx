@@ -1,30 +1,16 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
+import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
-import NotFound from "@/pages/404";
-import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
-import Episodes from "@/pages/Episodes";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
-import HistoryStats from "@/pages/History/Statistics";
 import MovieView from "@/pages/Movies";
-import MovieDetail from "@/pages/Movies/Details";
 import SeriesView from "@/pages/Series";
-import SettingsGeneralView from "@/pages/Settings/General";
-import SettingsLanguagesView from "@/pages/Settings/Languages";
-import SettingsNotificationsView from "@/pages/Settings/Notifications";
-import SettingsProvidersView from "@/pages/Settings/Providers";
-import SettingsRadarrView from "@/pages/Settings/Radarr";
-import SettingsSchedulerView from "@/pages/Settings/Scheduler";
-import SettingsSonarrView from "@/pages/Settings/Sonarr";
-import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
-import SettingsUIView from "@/pages/Settings/UI";
 import SystemLogsView from "@/pages/System/Logs";
 import SystemProvidersView from "@/pages/System/Providers";
 import SystemReleasesView from "@/pages/System/Releases";
-import SystemStatusView from "@/pages/System/Status";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
@@ -41,6 +27,34 @@ import React, { FunctionComponent, useMemo } from "react";
 import { BrowserRouter } from "react-router-dom";
 import Redirector from "./Redirector";
 import { CustomRouteObject } from "./type";
+
+const HistoryStats = React.lazy(() => import("@/pages/History/Statistics"));
+const SystemStatusView = React.lazy(() => import("@/pages/System/Status"));
+const Authentication = React.lazy(() => import("@/pages/Authentication"));
+const NotFound = React.lazy(() => import("@/pages/404"));
+const Episodes = React.lazy(() => import("@/pages/Episodes"));
+const MovieDetail = React.lazy(() => import("@/pages/Movies/Details"));
+const SettingsGeneralView = React.lazy(
+  () => import("@/pages/Settings/General")
+);
+const SettingsLanguagesView = React.lazy(
+  () => import("@/pages/Settings/Languages")
+);
+const SettingsProvidersView = React.lazy(
+  () => import("@/pages/Settings/Providers")
+);
+const SettingsRadarrView = React.lazy(() => import("@/pages/Settings/Radarr"));
+const SettingsSonarrView = React.lazy(() => import("@/pages/Settings/Sonarr"));
+const SettingsSubtitlesView = React.lazy(
+  () => import("@/pages/Settings/Subtitles")
+);
+const SettingsNotificationsView = React.lazy(
+  () => import("@/pages/Settings/Notifications")
+);
+const SettingsSchedulerView = React.lazy(
+  () => import("@/pages/Settings/Scheduler")
+);
+const SettingsUIView = React.lazy(() => import("@/pages/Settings/UI"));
 
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
@@ -68,7 +82,11 @@ function useRoutes(): CustomRouteObject[] {
               },
               {
                 path: ":id",
-                element: <Episodes></Episodes>,
+                element: (
+                  <Lazy>
+                    <Episodes></Episodes>
+                  </Lazy>
+                ),
               },
             ],
           },
@@ -84,7 +102,11 @@ function useRoutes(): CustomRouteObject[] {
               },
               {
                 path: ":id",
-                element: <MovieDetail></MovieDetail>,
+                element: (
+                  <Lazy>
+                    <MovieDetail></MovieDetail>
+                  </Lazy>
+                ),
               },
             ],
           },
@@ -109,7 +131,11 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "stats",
                 name: "Statistics",
-                element: <HistoryStats></HistoryStats>,
+                element: (
+                  <Lazy>
+                    <HistoryStats></HistoryStats>
+                  </Lazy>
+                ),
               },
             ],
           },
@@ -163,49 +189,83 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "general",
                 name: "General",
-                element: <SettingsGeneralView></SettingsGeneralView>,
+                element: (
+                  <Lazy>
+                    <SettingsGeneralView></SettingsGeneralView>
+                  </Lazy>
+                ),
               },
               {
                 path: "languages",
                 name: "Languages",
-                element: <SettingsLanguagesView></SettingsLanguagesView>,
+                element: (
+                  <Lazy>
+                    <SettingsLanguagesView></SettingsLanguagesView>
+                  </Lazy>
+                ),
               },
               {
                 path: "providers",
                 name: "Providers",
-                element: <SettingsProvidersView></SettingsProvidersView>,
+                element: (
+                  <Lazy>
+                    <SettingsProvidersView></SettingsProvidersView>
+                  </Lazy>
+                ),
               },
               {
                 path: "subtitles",
                 name: "Subtitles",
-                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+                element: (
+                  <Lazy>
+                    <SettingsSubtitlesView></SettingsSubtitlesView>
+                  </Lazy>
+                ),
               },
               {
                 path: "sonarr",
                 name: "Sonarr",
-                element: <SettingsSonarrView></SettingsSonarrView>,
+                element: (
+                  <Lazy>
+                    <SettingsSonarrView></SettingsSonarrView>
+                  </Lazy>
+                ),
               },
               {
                 path: "radarr",
                 name: "Radarr",
-                element: <SettingsRadarrView></SettingsRadarrView>,
+                element: (
+                  <Lazy>
+                    <SettingsRadarrView></SettingsRadarrView>
+                  </Lazy>
+                ),
               },
               {
                 path: "notifications",
                 name: "Notifications",
                 element: (
-                  <SettingsNotificationsView></SettingsNotificationsView>
+                  <Lazy>
+                    <SettingsNotificationsView></SettingsNotificationsView>
+                  </Lazy>
                 ),
               },
               {
                 path: "scheduler",
                 name: "Scheduler",
-                element: <SettingsSchedulerView></SettingsSchedulerView>,
+                element: (
+                  <Lazy>
+                    <SettingsSchedulerView></SettingsSchedulerView>
+                  </Lazy>
+                ),
               },
               {
                 path: "ui",
                 name: "UI",
-                element: <SettingsUIView></SettingsUIView>,
+                element: (
+                  <Lazy>
+                    <SettingsUIView></SettingsUIView>
+                  </Lazy>
+                ),
               },
             ],
           },
@@ -233,7 +293,11 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "status",
                 name: "Status",
-                element: <SystemStatusView></SystemStatusView>,
+                element: (
+                  <Lazy>
+                    <SystemStatusView></SystemStatusView>
+                  </Lazy>
+                ),
               },
               {
                 path: "releases",
@@ -247,12 +311,20 @@ function useRoutes(): CustomRouteObject[] {
       {
         path: "/login",
         hidden: true,
-        element: <Authentication></Authentication>,
+        element: (
+          <Lazy>
+            <Authentication></Authentication>
+          </Lazy>
+        ),
       },
       {
         path: "*",
         hidden: true,
-        element: <NotFound></NotFound>,
+        element: (
+          <Lazy>
+            <NotFound></NotFound>
+          </Lazy>
+        ),
       },
     ],
     [data?.episodes, data?.movies, data?.providers, radarr, sonarr]
