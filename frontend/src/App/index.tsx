@@ -1,16 +1,16 @@
 import { LoadingIndicator, ModalProvider } from "@/components";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
+import { routes } from "@/Router";
+import Sidebar from "@/Sidebar";
 import { Environment } from "@/utilities";
 import React, { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { BrowserRouter as Router, useRoutes } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
-import ErrorBoundary from "../components/ErrorBoundary";
-import { routes } from "../Router";
-import Sidebar from "../Sidebar";
 import Header from "./Header";
 
 const RouteApp: FunctionComponent = () => useRoutes(routes);

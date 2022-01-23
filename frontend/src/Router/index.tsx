@@ -1,4 +1,4 @@
-import EmptyPage from "@/pages/404";
+import NotFound from "@/pages/404";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
@@ -34,7 +34,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: "*",
-    element: <EmptyPage></EmptyPage>,
+    element: <NotFound></NotFound>,
   },
   {
     path: "/series",

@@ -1,6 +1,6 @@
 import { useBadges } from "@/apis/hooks";
 import { useIsRadarrEnabled, useIsSonarrEnabled } from "@/modules/redux/hooks";
-import EmptyPage, { RouterEmptyPath } from "@/pages/404";
+import NotFound, { RouterEmptyPath } from "@/pages/404";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
@@ -49,7 +49,7 @@ export function useNavigationItems() {
       {
         name: "404",
         path: RouterEmptyPath,
-        component: EmptyPage,
+        component: NotFound,
         routeOnly: true,
       },
       {

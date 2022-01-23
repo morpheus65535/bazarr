@@ -5,7 +5,7 @@ import { Container } from "react-bootstrap";
 
 export const RouterEmptyPath = "/empty-page";
 
-const EmptyPage: FunctionComponent = () => {
+const NotFound: FunctionComponent = () => {
   return (
     <Container className="d-flex flex-column align-items-center my-5">
       <h1>
@@ -17,4 +17,4 @@ const EmptyPage: FunctionComponent = () => {
   );
 };
 
-export default EmptyPage;
+export default NotFound;

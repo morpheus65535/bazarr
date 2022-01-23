@@ -1,5 +1,7 @@
 import { setSidebar } from "@/modules/redux/actions";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { useNavigationItems } from "@/Navigation";
+import { Navigation } from "@/Navigation/nav";
 import { BuildKey } from "@/utilities";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -20,8 +22,6 @@ import {
   ListGroupItem,
 } from "react-bootstrap";
 import { NavLink, useMatch, useNavigate } from "react-router-dom";
-import { useNavigationItems } from "../Navigation";
-import { Navigation } from "../Navigation/nav";
 import "./style.scss";
 
 const SelectionContext = createContext<{
@@ -139,8 +139,11 @@ const SidebarParent: FunctionComponent<Navigation.RouteWithChild> = ({
     if (component) {
       return (
         <NavLink
-          activeClassName="sb-active"
-          className="list-group-item list-group-item-action sidebar-button"
+          className={({ isActive }) =>
+            `list-group-item list-group-item-action sidebar-button ${
+              isActive ? "sb-active" : ""
+            }`
+          }
           to={path}
           onClick={() => changeSidebar(false)}
         >
@@ -209,8 +212,11 @@ const SidebarChild: FunctionComponent<
 
   return (
     <NavLink
-      activeClassName="sb-active"
-      className="list-group-item list-group-item-action sidebar-button sb-collapse"
+      className={({ isActive }) =>
+        `list-group-item list-group-item-action sidebar-button sb-collapse ${
+          isActive ? "sb-active" : ""
+        }`
+      }
       to={parent + path}
       onClick={() => {
         select(null);

@@ -1,3 +1,4 @@
+import { useSystem, useSystemSettings } from "@/apis/hooks";
 import { ActionButton, SearchBar } from "@/components";
 import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
@@ -21,7 +22,6 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useSystem, useSystemSettings } from "../apis/hooks";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 
