@@ -23,14 +23,13 @@ export function useIsOffline() {
   return useReduxStore((s) => s.offline);
 }
 
-export function useIsSonarrEnabled() {
+export function useEnabledStatus() {
   const { data } = useSystemSettings();
-  return data?.general.use_sonarr ?? true;
-}
 
-export function useIsRadarrEnabled() {
-  const { data } = useSystemSettings();
-  return data?.general.use_radarr ?? true;
+  return {
+    sonarr: data?.general.use_sonarr ?? false,
+    radarr: data?.general.use_radarr ?? false,
+  };
 }
 
 export function useShowOnlyDesired() {

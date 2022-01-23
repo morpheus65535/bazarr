@@ -17,7 +17,13 @@ import {
   ListGroup,
   ListGroupItem,
 } from "react-bootstrap";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  matchPath,
+  NavLink,
+  RouteObject,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import "./style.scss";
 
 const Selection = React.createContext<{
@@ -40,7 +46,7 @@ function useBadgeValue(route: Route.Item) {
 
     value +=
       children.reduce((acc, child: Route.Item) => {
-        if (child.badge) {
+        if (child.badge && child.hidden !== true) {
           return acc + (child.badge ?? 0);
         }
         return acc;
@@ -50,14 +56,24 @@ function useBadgeValue(route: Route.Item) {
   }, [badge, children]);
 }
 
-function useIsActive(link: string) {
+function useIsActive(parent: string, route: RouteObject) {
+  const { path, children } = route;
+
   const { pathname } = useLocation();
+  const root = useMemo(() => pathJoin(parent, path ?? ""), [parent, path]);
+
+  const paths = useMemo(
+    () => [root, ...(children?.map((v) => pathJoin(root, v.path ?? "")) ?? [])],
+    [root, children]
+  );
+
   const selection = useSelection().selection;
-  return useMemo(() => {
-    const match = pathname.includes(link);
-    const selected = selection?.includes(link);
-    return match || selected;
-  }, [pathname, link, selection]);
+  return useMemo(
+    () =>
+      selection?.includes(root) ||
+      paths.some((path) => matchPath(path, pathname)),
+    [pathname, paths, root, selection]
+  );
 }
 
 // Actual sidebar
@@ -89,7 +105,7 @@ const Sidebar: FunctionComponent = () => {
             className="cursor-pointer"
           ></Image>
         </Container>
-        <ListGroup variant="flush">
+        <ListGroup variant="flush" style={{ paddingBottom: "16rem" }}>
           {routes.map((route, idx) => (
             <RouteItem
               key={BuildKey("nav", idx)}
@@ -128,7 +144,7 @@ const RouteItem: FunctionComponent<{
 
   const badge = useBadgeValue(route);
 
-  const isOpen = useIsActive(link);
+  const isOpen = useIsActive(parent, route);
 
   if (hidden === true) {
     return null;

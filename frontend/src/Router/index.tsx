@@ -1,5 +1,6 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
+import { useEnabledStatus } from "@/modules/redux/hooks";
 import NotFound from "@/pages/404";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
@@ -7,6 +8,7 @@ import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
+import HistoryStats from "@/pages/History/Statistics";
 import MovieView from "@/pages/Movies";
 import MovieDetail from "@/pages/Movies/Details";
 import SeriesView from "@/pages/Series";
@@ -37,11 +39,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
 import { BrowserRouter } from "react-router-dom";
-import Redirector from "./Navigator";
+import Redirector from "./Redirector";
 import { CustomRouteObject } from "./type";
 
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
+  const { sonarr, radarr } = useEnabledStatus();
 
   return useMemo(
     () => [
@@ -57,6 +60,7 @@ function useRoutes(): CustomRouteObject[] {
             icon: faPlay,
             name: "Series",
             path: "series",
+            hidden: !sonarr,
             children: [
               {
                 index: true,
@@ -72,6 +76,7 @@ function useRoutes(): CustomRouteObject[] {
             icon: faFilm,
             name: "Movies",
             path: "movies",
+            hidden: !radarr,
             children: [
               {
                 index: true,
@@ -87,16 +92,24 @@ function useRoutes(): CustomRouteObject[] {
             icon: faClock,
             name: "History",
             path: "history",
+            hidden: !sonarr && !radarr,
             children: [
               {
                 path: "series",
                 name: "Episodes",
+                hidden: !sonarr,
                 element: <SeriesHistoryView></SeriesHistoryView>,
               },
               {
                 path: "movies",
                 name: "Movies",
+                hidden: !radarr,
                 element: <MoviesHistoryView></MoviesHistoryView>,
+              },
+              {
+                path: "stats",
+                name: "Statistics",
+                element: <HistoryStats></HistoryStats>,
               },
             ],
           },
@@ -104,17 +117,20 @@ function useRoutes(): CustomRouteObject[] {
             icon: faExclamationTriangle,
             name: "Wanted",
             path: "wanted",
+            hidden: !sonarr && !radarr,
             children: [
               {
                 name: "Episodes",
                 path: "series",
                 badge: data?.episodes,
+                hidden: !sonarr,
                 element: <WantedSeriesView></WantedSeriesView>,
               },
               {
                 name: "Movies",
                 path: "movies",
                 badge: data?.movies,
+                hidden: !radarr,
                 element: <WantedMoviesView></WantedMoviesView>,
               },
             ],
@@ -123,15 +139,18 @@ function useRoutes(): CustomRouteObject[] {
             icon: faFileExcel,
             name: "Blacklist",
             path: "blacklist",
+            hidden: !sonarr && !radarr,
             children: [
               {
                 path: "series",
                 name: "Episodes",
+                hidden: !sonarr,
                 element: <BlacklistSeriesView></BlacklistSeriesView>,
               },
               {
                 path: "movies",
                 name: "Movies",
+                hidden: !radarr,
                 element: <BlacklistMoviesView></BlacklistMoviesView>,
               },
             ],
@@ -236,7 +255,7 @@ function useRoutes(): CustomRouteObject[] {
         element: <NotFound></NotFound>,
       },
     ],
-    [data]
+    [data?.episodes, data?.movies, data?.providers, radarr, sonarr]
   );
 }
 

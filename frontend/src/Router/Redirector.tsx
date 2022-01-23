@@ -1,10 +1,9 @@
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "@/modules/redux/hooks";
+import { useEnabledStatus } from "@/modules/redux/hooks";
 import React, { FunctionComponent } from "react";
 import { Navigate } from "react-router-dom";
 
 const Redirector: FunctionComponent = () => {
-  const sonarr = useIsSonarrEnabled();
-  const radarr = useIsRadarrEnabled();
+  const { sonarr, radarr } = useEnabledStatus();
 
   let path = "/settings";
   if (sonarr) {
