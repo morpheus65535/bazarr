@@ -1,6 +1,28 @@
 import reactRefresh from "@vitejs/plugin-react-refresh";
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
+import { dependencies } from "./package.json";
+
+const groupedDeps = [
+  "react",
+  "react-router-dom",
+  "react-dom",
+  "react-query",
+  "axios",
+  "socket.io-client",
+];
+
+function renderChunks(deps: Record<string, string>) {
+  const chunks: Record<string, string[]> = {};
+
+  for (const key in deps) {
+    if (!groupedDeps.includes(key)) {
+      chunks[key] = [key];
+    }
+  }
+
+  return chunks;
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
@@ -18,8 +40,16 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       manifest: true,
-      sourcemap: true,
+      sourcemap: mode === "development",
       outDir: "./build",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: groupedDeps,
+            ...renderChunks(dependencies),
+          },
+        },
+      },
     },
     server: {
       proxy: {

@@ -15,8 +15,8 @@ on:
     branches: [development]
 
 env:
-    UI_DIRECTORY: ./frontend
-    UI_ARTIFACT_NAME: ui
+  UI_DIRECTORY: ./frontend
+  UI_ARTIFACT_NAME: ui
 
 jobs:
   Frontend:
@@ -37,14 +37,14 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: "15.x"
+          node-version: '16'
 
       - name: Install dependencies
         run: npm install
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Build
-        run: npm run build
+        run: npm run build:ci
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Unit Test
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
-          path: "${{ env.UI_DIRECTORY }}/build"
+          path: '${{ env.UI_DIRECTORY }}/build'
 
   Backend:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
-          path: "${{ env.UI_DIRECTORY }}/build"
+          path: '${{ env.UI_DIRECTORY }}/build'
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
