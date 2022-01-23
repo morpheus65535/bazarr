@@ -147,7 +147,7 @@ export function Selector<
   );
 }
 
-type SliderProps = {} & BaseInput<number> &
+type SliderProps = BaseInput<number> &
   Omit<CSliderProps, "onChange" | "onAfterChange">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
@@ -168,7 +168,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
   );
 };
 
-type ChipsProp = {} & BaseInput<string[]> &
+type ChipsProp = BaseInput<string[]> &
   Omit<CChipsProps, "onChange" | "defaultValue">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {

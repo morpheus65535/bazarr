@@ -15,7 +15,6 @@ import {
 import ItemOverview from "@/components/ItemOverview";
 import { dispatchTask } from "@/modules/task";
 import { createTask } from "@/modules/task/utilities";
-import { RouterEmptyPath } from "@/pages/404";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,
@@ -64,7 +63,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const hasTask = useIsAnyActionRunning();
 
   if (isNaN(id) || (isFetched && !series)) {
-    return <Navigate to={RouterEmptyPath}></Navigate>;
+    return <Navigate to="/not-found"></Navigate>;
   }
 
   if (!series) {

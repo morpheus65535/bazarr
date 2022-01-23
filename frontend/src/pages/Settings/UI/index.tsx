@@ -1,12 +1,12 @@
 import { uiPageSizeKey, usePageSize } from "@/utilities/storage";
 import React, { FunctionComponent } from "react";
-import { Group, Input, Selector, SettingsProvider } from "../components";
+import { Group, Input, Layout, Selector } from "../components";
 import { pageSizeOptions } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {
   const [pageSize] = usePageSize();
   return (
-    <SettingsProvider title="Interface - Bazarr (Settings)">
+    <Layout name="Interface">
       <Group header="UI">
         <Input name="Page Size">
           <Selector
@@ -16,7 +16,7 @@ const SettingsUIView: FunctionComponent = () => {
           ></Selector>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

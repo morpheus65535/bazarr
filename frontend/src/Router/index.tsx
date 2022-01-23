@@ -34,6 +34,7 @@ const Authentication = React.lazy(() => import("@/pages/Authentication"));
 const NotFound = React.lazy(() => import("@/pages/404"));
 const Episodes = React.lazy(() => import("@/pages/Episodes"));
 const MovieDetail = React.lazy(() => import("@/pages/Movies/Details"));
+
 const SettingsGeneralView = React.lazy(
   () => import("@/pages/Settings/General")
 );

@@ -1,11 +1,11 @@
 import React, { FunctionComponent } from "react";
 import { Alert } from "react-bootstrap";
-import { Check, Group, Input, Message, SettingsProvider } from "../components";
+import { Check, Group, Input, Layout, Message } from "../components";
 import { NotificationView } from "./components";
 
 const SettingsNotificationsView: FunctionComponent = () => {
   return (
-    <SettingsProvider title="Notifications - Bazarr (Settings)">
+    <Layout name="Notifications">
       <Alert variant="secondary">
         Thanks to caronc for his work on{" "}
         <a
@@ -42,7 +42,7 @@ const SettingsNotificationsView: FunctionComponent = () => {
           </Message>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

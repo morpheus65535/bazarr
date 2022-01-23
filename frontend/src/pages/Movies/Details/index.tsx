@@ -20,7 +20,6 @@ import ItemOverview from "@/components/ItemOverview";
 import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
 import { dispatchTask } from "@/modules/task";
 import { createTask } from "@/modules/task/utilities";
-import { RouterEmptyPath } from "@/pages/404";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faCloudUploadAlt,
@@ -78,7 +77,7 @@ const MovieDetailView: FunctionComponent = () => {
   const hasTask = useIsMovieActionRunning();
 
   if (isNaN(id) || (isFetched && !movie)) {
-    return <Navigate to={RouterEmptyPath}></Navigate>;
+    return <Navigate to="/not-found"></Navigate>;
   }
 
   if (!movie) {

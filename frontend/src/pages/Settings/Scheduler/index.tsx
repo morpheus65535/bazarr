@@ -4,9 +4,9 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
 } from "../components";
 import {
   dayOptions,
@@ -28,7 +28,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
   }, []);
 
   return (
-    <SettingsProvider title="Scheduler - Bazarr (Settings)">
+    <Layout name="Scheduler">
       <Group header="Sonarr/Radarr Sync">
         <Input name="Update Series List from Sonarr">
           <Selector
@@ -143,7 +143,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           ></Selector>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

@@ -67,6 +67,6 @@ export { default as CollapseBox } from "./collapse";
 export * from "./container";
 export * from "./forms";
 export * from "./hooks";
+export * from "./Layout";
+export { default as Layout } from "./Layout";
 export * from "./pathMapper";
-export * from "./provider";
-export { default as SettingsProvider } from "./provider";

@@ -13,7 +13,7 @@ export function useEnabledLanguages() {
     const data =
       query.data
         ?.filter((v) => v.enabled)
-        .map((v) => ({ code2: v.code2, name: v.name })) ?? [];
+        .map<Language.Info>((v) => ({ code2: v.code2, name: v.name })) ?? [];
 
     return {
       ...query,

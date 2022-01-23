@@ -6,9 +6,9 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
@@ -23,7 +23,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
   }, []);
 
   return (
-    <SettingsProvider title="Radarr - Bazarr (Settings)">
+    <Layout name="Radarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Radarr">
@@ -90,7 +90,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

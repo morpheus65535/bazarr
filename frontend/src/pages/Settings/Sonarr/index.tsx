@@ -6,10 +6,10 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
   Selector,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
@@ -25,7 +25,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
   }, []);
 
   return (
-    <SettingsProvider title="Sonarr - Bazarr (Settings)">
+    <Layout name="Sonarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Sonarr">
@@ -113,7 +113,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

@@ -43,12 +43,12 @@ function submitHooks(settings: LooseObject) {
 }
 
 interface Props {
-  title: string;
+  name: string;
   children: JSX.Element | JSX.Element[];
 }
 
-const SettingsProvider: FunctionComponent<Props> = (props) => {
-  const { children, title } = props;
+const Layout: FunctionComponent<Props> = (props) => {
+  const { children, name } = props;
 
   const updateStorage = useUpdateLocalStorage();
 
@@ -133,7 +133,7 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   return (
     <Container fluid>
       <Helmet>
-        <title>{title}</title>
+        <title>{name} - Bazarr (Settings)</title>
       </Helmet>
       {/* TODO */}
       {/* <Prompt
@@ -159,4 +159,4 @@ const SettingsProvider: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default SettingsProvider;
+export default Layout;

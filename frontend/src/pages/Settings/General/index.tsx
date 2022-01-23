@@ -14,9 +14,9 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
   Text,
 } from "../components";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
@@ -38,7 +38,7 @@ const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
 
   return (
-    <SettingsProvider title="General - Bazarr (Settings)">
+    <Layout name="General">
       <Group header="Host">
         <Input name="Address">
           <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
@@ -188,7 +188,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           </Message>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 
