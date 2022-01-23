@@ -63,8 +63,11 @@
     "start": "vite",
     "build": "vite build",
     "build:ci": "vite build -m development",
+    "check": "eslint --ext .ts,.tsx src",
+    "check:ts": "tsc --noEmit --incremental false",
+    "check:fmt": "prettier -c .",
     "test": "exit 0",
-    "lint": "prettier --write --ignore-unknown .",
+    "format": "prettier -w .",
     "prepare": "cd .. && husky install frontend/.husky"
   },
   "browserslist": {
