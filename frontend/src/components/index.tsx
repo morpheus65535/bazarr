@@ -11,7 +11,7 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { isNull, isUndefined } from "lodash";
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent } from "react";
 import {
   OverlayTrigger,
   OverlayTriggerProps,
@@ -94,42 +94,6 @@ export const LoadingIndicator: FunctionComponent<{
       <Spinner animation={style ?? "border"} className="mb-2"></Spinner>
       {children}
     </div>
-  );
-};
-
-interface LanguageTextProps {
-  text: Language.Info;
-  className?: string;
-  long?: boolean;
-}
-
-export const LanguageText: FunctionComponent<LanguageTextProps> = ({
-  text,
-  className,
-  long,
-}) => {
-  const result = useMemo(() => {
-    let lang = text.code2;
-    let hi = ":HI";
-    let forced = ":Forced";
-    if (long) {
-      lang = text.name;
-      hi = " HI";
-      forced = " Forced";
-    }
-
-    let res = lang;
-    if (text.hi) {
-      res += hi;
-    } else if (text.forced) {
-      res += forced;
-    }
-    return res;
-  }, [text, long]);
-  return (
-    <span title={text.name} className={className}>
-      {result}
-    </span>
   );
 };
 

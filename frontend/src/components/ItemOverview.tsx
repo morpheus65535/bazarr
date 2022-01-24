@@ -27,7 +27,7 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { LanguageText } from ".";
+import Language from "./bazarr/Language";
 
 interface Props {
   item: Item.Base;
@@ -102,7 +102,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             icon={faLanguage}
             desc="Language"
           >
-            <LanguageText long text={v}></LanguageText>
+            <Language long text={v}></Language>
           </DetailBadge>
         ))
       );

@@ -1,5 +1,6 @@
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
-import { HistoryIcon, LanguageText, TextPopover } from "@/components";
+import { HistoryIcon, TextPopover } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { BlacklistButton } from "@/components/inputs/blacklist";
 import HistoryView from "@/components/views/HistoryView";
 import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
@@ -40,7 +41,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
           if (value) {
             return (
               <Badge variant="secondary">
-                <LanguageText text={value} long></LanguageText>
+                <Language value={value} long></Language>
               </Badge>
             );
           } else {

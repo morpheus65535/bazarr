@@ -1,5 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { AsyncButton, LanguageText, SimpleTable } from "@/components";
+import { AsyncButton, SimpleTable } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
@@ -44,13 +45,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           if (row.original.path === missingText) {
             return (
               <Badge variant="primary">
-                <LanguageText text={row.original} long></LanguageText>
+                <Language value={row.original} long></Language>
               </Badge>
             );
           } else {
             return (
               <Badge variant="secondary">
-                <LanguageText text={row.original} long></LanguageText>
+                <Language value={row.original} long></Language>
               </Badge>
             );
           }

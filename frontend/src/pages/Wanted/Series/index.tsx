@@ -3,7 +3,8 @@ import {
   useEpisodeWantedPagination,
   useSeriesAction,
 } from "@/apis/hooks";
-import { AsyncButton, LanguageText } from "@/components";
+import { AsyncButton } from "@/components";
+import Language from "@/components/bazarr/Language";
 import WantedView from "@/components/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -66,7 +67,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
                 })
               }
             >
-              <LanguageText className="pr-1" text={item}></LanguageText>
+              <Language className="pr-1" value={item}></Language>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

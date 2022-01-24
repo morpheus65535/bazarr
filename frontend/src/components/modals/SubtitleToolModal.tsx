@@ -39,12 +39,12 @@ import {
   ActionButton,
   ActionButtonItem,
   LanguageSelector,
-  LanguageText,
   Selector,
   SimpleTable,
   useModalPayload,
   useShowModal,
 } from "..";
+import Language from "../bazarr/Language";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./hooks";
@@ -337,7 +337,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         accessor: "_language",
         Cell: ({ value }) => (
           <Badge variant="secondary">
-            <LanguageText text={value} long></LanguageText>
+            <Language value={value} long></Language>
           </Badge>
         ),
       },

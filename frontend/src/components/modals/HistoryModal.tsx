@@ -6,13 +6,8 @@ import {
 } from "@/apis/hooks";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import {
-  HistoryIcon,
-  LanguageText,
-  PageTable,
-  QueryOverlay,
-  TextPopover,
-} from "..";
+import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
+import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
@@ -40,7 +35,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language value={value} long></Language>;
           } else {
             return null;
           }
@@ -126,7 +121,7 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language value={value} long></Language>;
           } else {
             return null;
           }

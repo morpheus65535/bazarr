@@ -3,7 +3,8 @@ import {
   useMovieModification,
   useMoviesPagination,
 } from "@/apis/hooks";
-import { ActionBadge, LanguageText, TextPopover } from "@/components";
+import { ActionBadge, TextPopover } from "@/components";
+import Language from "@/components/bazarr/Language";
 import ItemView from "@/components/views/ItemView";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -86,7 +87,7 @@ const MovieView: FunctionComponent = () => {
               variant="warning"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
-              <LanguageText text={v}></LanguageText>
+              <Language value={v}></Language>
             </Badge>
           ));
         },

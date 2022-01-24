@@ -30,11 +30,11 @@ import { Column } from "react-table";
 import {
   BaseModal,
   BaseModalProps,
-  LanguageText,
   LoadingIndicator,
   PageTable,
   useModalPayload,
 } from "..";
+import Language from "../bazarr/Language";
 import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -95,7 +95,7 @@ export function ManualSearchModal<T extends SupportType>(
           };
           return (
             <Badge variant="secondary">
-              <LanguageText text={lang}></LanguageText>
+              <Language value={lang}></Language>
             </Badge>
           );
         },

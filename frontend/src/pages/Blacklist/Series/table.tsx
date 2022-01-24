@@ -1,10 +1,6 @@
 import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
-import {
-  AsyncButton,
-  LanguageText,
-  PageTable,
-  TextPopover,
-} from "@/components";
+import { AsyncButton, PageTable, TextPopover } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
@@ -43,7 +39,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language value={value} long></Language>;
           } else {
             return null;
           }

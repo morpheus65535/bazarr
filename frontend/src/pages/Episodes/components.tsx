@@ -1,5 +1,6 @@
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
-import { AsyncButton, LanguageText } from "@/components";
+import { AsyncButton } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent } from "react";
@@ -52,7 +53,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
         className="mr-1"
         variant={missing ? "primary" : "secondary"}
       >
-        <LanguageText className="pr-1" text={subtitle}></LanguageText>
+        <Language className="pr-1" text={subtitle}></Language>
         <FontAwesomeIcon
           size="sm"
           icon={missing ? faSearch : faTrash}
@@ -62,7 +63,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
   } else {
     return (
       <Badge className="mr-1" variant="secondary">
-        <LanguageText text={subtitle} long={false}></LanguageText>
+        <Language value={subtitle} long={false}></Language>
       </Badge>
     );
   }
