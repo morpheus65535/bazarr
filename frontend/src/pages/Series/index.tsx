@@ -1,9 +1,6 @@
-import {
-  useLanguageProfiles,
-  useSeriesModification,
-  useSeriesPagination,
-} from "@/apis/hooks";
+import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { ActionBadge } from "@/components";
+import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import ItemView from "@/components/views/ItemView";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -14,7 +11,6 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const SeriesView: FunctionComponent = () => {
-  const { data: profiles } = useLanguageProfiles();
   const mutation = useSeriesModification();
 
   const query = useSeriesPagination();
@@ -57,7 +53,7 @@ const SeriesView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return profiles?.find((v) => v.profileId === value)?.name ?? null;
+          return <LanguageProfile index={value}></LanguageProfile>;
         },
       },
       {
@@ -105,7 +101,7 @@ const SeriesView: FunctionComponent = () => {
         ),
       },
     ],
-    [profiles]
+    []
   );
 
   return (

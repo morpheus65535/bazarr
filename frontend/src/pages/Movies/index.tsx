@@ -1,10 +1,7 @@
-import {
-  useLanguageProfiles,
-  useMovieModification,
-  useMoviesPagination,
-} from "@/apis/hooks";
+import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { ActionBadge, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
+import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import ItemView from "@/components/views/ItemView";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -17,7 +14,6 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
-  const { data: profiles } = useLanguageProfiles();
   const mutation = useMovieModification();
 
   const query = useMoviesPagination();
@@ -72,7 +68,7 @@ const MovieView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return profiles?.find((v) => v.profileId === value)?.name ?? null;
+          return <LanguageProfile index={value}></LanguageProfile>;
         },
       },
       {
@@ -105,7 +101,7 @@ const MovieView: FunctionComponent = () => {
         },
       },
     ],
-    [profiles]
+    []
   );
 
   return (
