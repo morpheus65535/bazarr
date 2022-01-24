@@ -10,10 +10,10 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from unittest import mock
+
 from stevedore import named
 from stevedore.tests import utils
-
-import mock
 
 
 class TestNamed(utils.TestCase):

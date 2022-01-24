@@ -3,6 +3,7 @@ import requests
 from .constants import BASE_URLS, QCRI_LANGUAGE_TO_CODE
 from .exceptions import (ServerException, TranslationNotFound)
 
+
 class QCRI(object):
     """
     class that wraps functions, which use the QRCI translator under the hood to translate word(s)

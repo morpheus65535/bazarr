@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth2.rfc6749.grant_types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
-from __future__ import absolute_import, unicode_literals
-
 import json
 import logging
 
 from .. import errors
-from ..request_validator import RequestValidator
 from .base import GrantTypeBase
 
 log = logging.getLogger(__name__)
@@ -53,6 +49,11 @@ class ClientCredentialsGrant(GrantTypeBase):
     def create_token_response(self, request, token_handler):
         """Return token or error in JSON format.
 
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+
         If the access token request is valid and authorized, the
         authorization server issues an access token as described in
         `Section 5.1`_.  A refresh token SHOULD NOT be included.  If the request
@@ -62,22 +63,20 @@ class ClientCredentialsGrant(GrantTypeBase):
         .. _`Section 5.1`: https://tools.ietf.org/html/rfc6749#section-5.1
         .. _`Section 5.2`: https://tools.ietf.org/html/rfc6749#section-5.2
         """
-        headers = {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-            'Pragma': 'no-cache',
-        }
+        headers = self._get_default_headers()
         try:
             log.debug('Validating access token request, %r.', request)
             self.validate_token_request(request)
         except errors.OAuth2Error as e:
             log.debug('Client error in token request. %s.', e)
+            headers.update(e.headers)
             return headers, e.json, e.status_code
 
-        token = token_handler.create_token(request, refresh_token=False, save_token=False)
+        token = token_handler.create_token(request, refresh_token=False)
 
         for modifier in self._token_modifiers:
             token = modifier(token)
+
         self.request_validator.save_token(token, request)
 
         log.debug('Issuing token to client id %r (%r), %r.',
@@ -85,6 +84,10 @@ class ClientCredentialsGrant(GrantTypeBase):
         return headers, json.dumps(token), 200
 
     def validate_token_request(self, request):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         for validator in self.custom_validators.pre_token:
             validator(request)
 
@@ -112,8 +115,8 @@ class ClientCredentialsGrant(GrantTypeBase):
         # Ensure client is authorized use of this grant type
         self.validate_grant_type(request)
 
-        log.debug('Authorizing access to user %r.', request.user)
         request.client_id = request.client_id or request.client.client_id
+        log.debug('Authorizing access to client %r.', request.client_id)
         self.validate_scopes(request)
 
         for validator in self.custom_validators.post_token:

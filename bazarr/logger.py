@@ -7,6 +7,8 @@ import platform
 import warnings
 
 from logging.handlers import TimedRotatingFileHandler
+from pytz_deprecation_shim import PytzUsageWarning
+
 from get_args import args
 from config import settings
 
@@ -55,6 +57,7 @@ class NoExceptionFormatter(logging.Formatter):
 
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
+    warnings.simplefilter('ignore', category=PytzUsageWarning)
 
     if not debug:
         log_level = "INFO"

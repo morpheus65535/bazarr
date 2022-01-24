@@ -1,14 +1,22 @@
-import operator
-from ..util.compat import py3k
+import abc
+import pickle
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Mapping
+from typing import NamedTuple
+from typing import Optional
+from typing import Sequence
+from typing import Union
 
 
-class NoValue(object):
+class NoValue:
     """Describe a missing cache value.
 
-    The :attr:`.NO_VALUE` module global
-    should be used.
+    The :data:`.NO_VALUE` constant should be used.
 
     """
+
     @property
     def payload(self):
         return self
@@ -18,49 +26,125 @@ class NoValue(object):
         fill another cache key.
 
         """
-        return '<dogpile.cache.api.NoValue object>'
+        return "<dogpile.cache.api.NoValue object>"
 
-    if py3k:
-        def __bool__(self):  # pragma NO COVERAGE
-            return False
-    else:
-        def __nonzero__(self):  # pragma NO COVERAGE
-            return False
+    def __bool__(self):  # pragma NO COVERAGE
+        return False
 
 
 NO_VALUE = NoValue()
 """Value returned from ``get()`` that describes
 a  key not present."""
 
+MetaDataType = Mapping[str, Any]
 
-class CachedValue(tuple):
+
+KeyType = str
+"""A cache key."""
+
+ValuePayload = Any
+"""An object to be placed in the cache against a key."""
+
+
+KeyManglerType = Callable[[KeyType], KeyType]
+Serializer = Callable[[ValuePayload], bytes]
+Deserializer = Callable[[bytes], ValuePayload]
+
+
+class CacheMutex(abc.ABC):
+    """Describes a mutexing object with acquire and release methods.
+
+    This is an abstract base class; any object that has acquire/release
+    methods may be used.
+
+    .. versionadded:: 1.1
+
+
+    .. seealso::
+
+        :meth:`.CacheBackend.get_mutex` - the backend method that optionally
+        returns this locking object.
+
+    """
+
+    @abc.abstractmethod
+    def acquire(self, wait: bool = True) -> bool:
+        """Acquire the mutex.
+
+        :param wait: if True, block until available, else return True/False
+         immediately.
+
+        :return: True if the lock succeeded.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def release(self) -> None:
+        """Release the mutex."""
+
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def locked(self) -> bool:
+        """Check if the mutex was acquired.
+
+        :return: true if the lock is acquired.
+
+        .. versionadded:: 1.1.2
+
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        return hasattr(C, "acquire") and hasattr(C, "release")
+
+
+class CachedValue(NamedTuple):
     """Represent a value stored in the cache.
 
     :class:`.CachedValue` is a two-tuple of
     ``(payload, metadata)``, where ``metadata``
     is dogpile.cache's tracking information (
-    currently the creation time).  The metadata
-    and tuple structure is pickleable, if
-    the backend requires serialization.
+    currently the creation time).
 
     """
-    payload = property(operator.itemgetter(0))
-    """Named accessor for the payload."""
 
-    metadata = property(operator.itemgetter(1))
-    """Named accessor for the dogpile.cache metadata dictionary."""
+    payload: ValuePayload
 
-    def __new__(cls, payload, metadata):
-        return tuple.__new__(cls, (payload, metadata))
-
-    def __reduce__(self):
-        return CachedValue, (self.payload, self.metadata)
+    metadata: MetaDataType
 
 
-class CacheBackend(object):
-    """Base class for backend implementations."""
+CacheReturnType = Union[CachedValue, NoValue]
+"""The non-serialized form of what may be returned from a backend
+get method.
 
-    key_mangler = None
+"""
+
+SerializedReturnType = Union[bytes, NoValue]
+"""the serialized form of what may be returned from a backend get method."""
+
+BackendFormatted = Union[CacheReturnType, SerializedReturnType]
+"""Describes the type returned from the :meth:`.CacheBackend.get` method."""
+
+BackendSetType = Union[CachedValue, bytes]
+"""Describes the value argument passed to the :meth:`.CacheBackend.set`
+method."""
+
+BackendArguments = Mapping[str, Any]
+
+
+class CacheBackend:
+    """Base class for backend implementations.
+
+    Backends which set and get Python object values should subclass this
+    backend.   For backends in which the value that's stored is ultimately
+    a stream of bytes, the :class:`.BytesBackend` should be used.
+
+    """
+
+    key_mangler: Optional[Callable[[KeyType], KeyType]] = None
     """Key mangling function.
 
     May be None, or otherwise declared
@@ -68,7 +152,23 @@ class CacheBackend(object):
 
     """
 
-    def __init__(self, arguments):  # pragma NO COVERAGE
+    serializer: Union[None, Serializer] = None
+    """Serializer function that will be used by default if not overridden
+    by the region.
+
+    .. versionadded:: 1.1
+
+    """
+
+    deserializer: Union[None, Deserializer] = None
+    """deserializer function that will be used by default if not overridden
+    by the region.
+
+    .. versionadded:: 1.1
+
+    """
+
+    def __init__(self, arguments: BackendArguments):  # pragma NO COVERAGE
         """Construct a new :class:`.CacheBackend`.
 
         Subclasses should override this to
@@ -91,10 +191,10 @@ class CacheBackend(object):
             )
         )
 
-    def has_lock_timeout(self):
+    def has_lock_timeout(self) -> bool:
         return False
 
-    def get_mutex(self, key):
+    def get_mutex(self, key: KeyType) -> Optional[CacheMutex]:
         """Return an optional mutexing object for the given key.
 
         This object need only provide an ``acquire()``
@@ -127,48 +227,141 @@ class CacheBackend(object):
         """
         return None
 
-    def get(self, key):  # pragma NO COVERAGE
-        """Retrieve a value from the cache.
+    def get(self, key: KeyType) -> BackendFormatted:  # pragma NO COVERAGE
+        """Retrieve an optionally serialized value from the cache.
 
-        The returned value should be an instance of
-        :class:`.CachedValue`, or ``NO_VALUE`` if
-        not present.
+        :param key: String key that was passed to the :meth:`.CacheRegion.get`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :return: the Python object that corresponds to
+         what was established via the :meth:`.CacheBackend.set` method,
+         or the :data:`.NO_VALUE` constant if not present.
+
+        If a serializer is in use, this method will only be called if the
+        :meth:`.CacheBackend.get_serialized` method is not overridden.
 
         """
         raise NotImplementedError()
 
-    def get_multi(self, keys):  # pragma NO COVERAGE
-        """Retrieve multiple values from the cache.
+    def get_multi(
+        self, keys: Sequence[KeyType]
+    ) -> Sequence[BackendFormatted]:  # pragma NO COVERAGE
+        """Retrieve multiple optionally serialized values from the cache.
 
-        The returned value should be a list, corresponding
-        to the list of keys given.
+        :param keys: sequence of string keys that was passed to the
+         :meth:`.CacheRegion.get_multi` method, which will also be processed
+         by the "key mangling" function if one was present.
+
+        :return a list of values as would be returned
+         individually via the :meth:`.CacheBackend.get` method, corresponding
+         to the list of keys given.
+
+        If a serializer is in use, this method will only be called if the
+        :meth:`.CacheBackend.get_serialized_multi` method is not overridden.
 
         .. versionadded:: 0.5.0
 
         """
         raise NotImplementedError()
 
-    def set(self, key, value):  # pragma NO COVERAGE
-        """Set a value in the cache.
+    def get_serialized(self, key: KeyType) -> SerializedReturnType:
+        """Retrieve a serialized value from the cache.
 
-        The key will be whatever was passed
-        to the registry, processed by the
-        "key mangling" function, if any.
-        The value will always be an instance
-        of :class:`.CachedValue`.
+        :param key: String key that was passed to the :meth:`.CacheRegion.get`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :return: a bytes object, or :data:`.NO_VALUE`
+         constant if not present.
+
+        The default implementation of this method for :class:`.CacheBackend`
+        returns the value of the :meth:`.CacheBackend.get` method.
+
+        .. versionadded:: 1.1
+
+        .. seealso::
+
+            :class:`.BytesBackend`
+
+        """
+        return cast(SerializedReturnType, self.get(key))
+
+    def get_serialized_multi(
+        self, keys: Sequence[KeyType]
+    ) -> Sequence[SerializedReturnType]:  # pragma NO COVERAGE
+        """Retrieve multiple serialized values from the cache.
+
+        :param keys: sequence of string keys that was passed to the
+         :meth:`.CacheRegion.get_multi` method, which will also be processed
+         by the "key mangling" function if one was present.
+
+        :return: list of bytes objects
+
+        The default implementation of this method for :class:`.CacheBackend`
+        returns the value of the :meth:`.CacheBackend.get_multi` method.
+
+        .. versionadded:: 1.1
+
+        .. seealso::
+
+            :class:`.BytesBackend`
+
+        """
+        return cast(Sequence[SerializedReturnType], self.get_multi(keys))
+
+    def set(
+        self, key: KeyType, value: BackendSetType
+    ) -> None:  # pragma NO COVERAGE
+        """Set an optionally serialized value in the cache.
+
+        :param key: String key that was passed to the :meth:`.CacheRegion.set`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :param value: The optionally serialized :class:`.CachedValue` object.
+         May be an instance of :class:`.CachedValue` or a bytes object
+         depending on if a serializer is in use with the region and if the
+         :meth:`.CacheBackend.set_serialized` method is not overridden.
+
+        .. seealso::
+
+            :meth:`.CacheBackend.set_serialized`
 
         """
         raise NotImplementedError()
 
-    def set_multi(self, mapping):  # pragma NO COVERAGE
+    def set_serialized(
+        self, key: KeyType, value: bytes
+    ) -> None:  # pragma NO COVERAGE
+        """Set a serialized value in the cache.
+
+        :param key: String key that was passed to the :meth:`.CacheRegion.set`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :param value: a bytes object to be stored.
+
+        The default implementation of this method for :class:`.CacheBackend`
+        calls upon the :meth:`.CacheBackend.set` method.
+
+        .. versionadded:: 1.1
+
+        .. seealso::
+
+            :class:`.BytesBackend`
+
+        """
+        self.set(key, value)
+
+    def set_multi(
+        self, mapping: Mapping[KeyType, BackendSetType]
+    ) -> None:  # pragma NO COVERAGE
         """Set multiple values in the cache.
 
-        ``mapping`` is a dict in which
-        the key will be whatever was passed
-        to the registry, processed by the
-        "key mangling" function, if any.
-        The value will always be an instance
-        of :class:`.CachedValue`.
+        :param mapping: a dict in which the key will be whatever was passed to
+         the :meth:`.CacheRegion.set_multi` method, processed by the "key
+         mangling" function, if any.
 
         When implementing a new :class:`.CacheBackend` or cutomizing via
         :class:`.ProxyBackend`, be aware that when this method is invoked by
@@ -178,17 +371,52 @@ class CacheBackend(object):
         -- that will have the undesirable effect of modifying the returned
         values as well.
 
+        If a serializer is in use, this method will only be called if the
+        :meth:`.CacheBackend.set_serialized_multi` method is not overridden.
+
+
         .. versionadded:: 0.5.0
 
         """
         raise NotImplementedError()
 
-    def delete(self, key):  # pragma NO COVERAGE
+    def set_serialized_multi(
+        self, mapping: Mapping[KeyType, bytes]
+    ) -> None:  # pragma NO COVERAGE
+        """Set multiple serialized values in the cache.
+
+        :param mapping: a dict in which the key will be whatever was passed to
+         the :meth:`.CacheRegion.set_multi` method, processed by the "key
+         mangling" function, if any.
+
+        When implementing a new :class:`.CacheBackend` or cutomizing via
+        :class:`.ProxyBackend`, be aware that when this method is invoked by
+        :meth:`.Region.get_or_create_multi`, the ``mapping`` values are the
+        same ones returned to the upstream caller. If the subclass alters the
+        values in any way, it must not do so 'in-place' on the ``mapping`` dict
+        -- that will have the undesirable effect of modifying the returned
+        values as well.
+
+        .. versionadded:: 1.1
+
+        The default implementation of this method for :class:`.CacheBackend`
+        calls upon the :meth:`.CacheBackend.set_multi` method.
+
+        .. seealso::
+
+            :class:`.BytesBackend`
+
+
+        """
+        self.set_multi(mapping)
+
+    def delete(self, key: KeyType) -> None:  # pragma NO COVERAGE
         """Delete a value from the cache.
 
-        The key will be whatever was passed
-        to the registry, processed by the
-        "key mangling" function, if any.
+        :param key: String key that was passed to the
+         :meth:`.CacheRegion.delete`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
 
         The behavior here should be idempotent,
         that is, can be called any number of times
@@ -197,12 +425,14 @@ class CacheBackend(object):
         """
         raise NotImplementedError()
 
-    def delete_multi(self, keys):  # pragma NO COVERAGE
+    def delete_multi(
+        self, keys: Sequence[KeyType]
+    ) -> None:  # pragma NO COVERAGE
         """Delete multiple values from the cache.
 
-        The key will be whatever was passed
-        to the registry, processed by the
-        "key mangling" function, if any.
+        :param keys: sequence of string keys that was passed to the
+         :meth:`.CacheRegion.delete_multi` method, which will also be processed
+         by the "key mangling" function if one was present.
 
         The behavior here should be idempotent,
         that is, can be called any number of times
@@ -210,6 +440,98 @@ class CacheBackend(object):
         key exists.
 
         .. versionadded:: 0.5.0
+
+        """
+        raise NotImplementedError()
+
+
+class DefaultSerialization:
+    serializer: Union[None, Serializer] = staticmethod(  # type: ignore
+        pickle.dumps
+    )
+    deserializer: Union[None, Deserializer] = staticmethod(  # type: ignore
+        pickle.loads
+    )
+
+
+class BytesBackend(DefaultSerialization, CacheBackend):
+    """A cache backend that receives and returns series of bytes.
+
+    This backend only supports the "serialized" form of values; subclasses
+    should implement :meth:`.BytesBackend.get_serialized`,
+    :meth:`.BytesBackend.get_serialized_multi`,
+    :meth:`.BytesBackend.set_serialized`,
+    :meth:`.BytesBackend.set_serialized_multi`.
+
+    .. versionadded:: 1.1
+
+    """
+
+    def get_serialized(self, key: KeyType) -> SerializedReturnType:
+        """Retrieve a serialized value from the cache.
+
+        :param key: String key that was passed to the :meth:`.CacheRegion.get`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :return: a bytes object, or :data:`.NO_VALUE`
+         constant if not present.
+
+        .. versionadded:: 1.1
+
+        """
+        raise NotImplementedError()
+
+    def get_serialized_multi(
+        self, keys: Sequence[KeyType]
+    ) -> Sequence[SerializedReturnType]:  # pragma NO COVERAGE
+        """Retrieve multiple serialized values from the cache.
+
+        :param keys: sequence of string keys that was passed to the
+         :meth:`.CacheRegion.get_multi` method, which will also be processed
+         by the "key mangling" function if one was present.
+
+        :return: list of bytes objects
+
+        .. versionadded:: 1.1
+
+        """
+        raise NotImplementedError()
+
+    def set_serialized(
+        self, key: KeyType, value: bytes
+    ) -> None:  # pragma NO COVERAGE
+        """Set a serialized value in the cache.
+
+        :param key: String key that was passed to the :meth:`.CacheRegion.set`
+         method, which will also be processed by the "key mangling" function
+         if one was present.
+
+        :param value: a bytes object to be stored.
+
+        .. versionadded:: 1.1
+
+        """
+        raise NotImplementedError()
+
+    def set_serialized_multi(
+        self, mapping: Mapping[KeyType, bytes]
+    ) -> None:  # pragma NO COVERAGE
+        """Set multiple serialized values in the cache.
+
+        :param mapping: a dict in which the key will be whatever was passed to
+         the :meth:`.CacheRegion.set_multi` method, processed by the "key
+         mangling" function, if any.
+
+        When implementing a new :class:`.CacheBackend` or cutomizing via
+        :class:`.ProxyBackend`, be aware that when this method is invoked by
+        :meth:`.Region.get_or_create_multi`, the ``mapping`` values are the
+        same ones returned to the upstream caller. If the subclass alters the
+        values in any way, it must not do so 'in-place' on the ``mapping`` dict
+        -- that will have the undesirable effect of modifying the returned
+        values as well.
+
+        .. versionadded:: 1.1
 
         """
         raise NotImplementedError()

@@ -10,10 +10,11 @@ caching for a region that is otherwise used normally.
 
 """
 
-from ..api import CacheBackend, NO_VALUE
+from ..api import CacheBackend
+from ..api import NO_VALUE
 
 
-__all__ = ['NullBackend']
+__all__ = ["NullBackend"]
 
 
 class NullLock(object):
@@ -22,6 +23,9 @@ class NullLock(object):
 
     def release(self):
         pass
+
+    def locked(self):
+        return False
 
 
 class NullBackend(CacheBackend):

@@ -94,7 +94,7 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                 async with self.listener_queue.iterator() as queue_iter:
                     async for message in queue_iter:
                         with message.process():
-                            return pickle.loads(message.body)
+                            yield pickle.loads(message.body)
             except Exception:
                 self._get_logger().error('Cannot receive from rabbitmq... '
                                          'retrying in '

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,30 +22,39 @@
 
 #                             * Code review nav *
 #==============================================================================
-# ← Prev: _delegating_mixins.py  Current: _frozenbidict.py      Next: _mut.py →
+# ← Prev: _base.py         Current: _frozenbidict.py           Next: _mut.py →
 #==============================================================================
 
-"""Provides :class:`frozenbidict`, an immutable, hashable bidirectional mapping type."""
+"""Provide :class:`frozenbidict`, an immutable, hashable bidirectional mapping type."""
 
-from ._base import BidictBase
-from ._delegating_mixins import _DelegateKeysAndItemsToFwdm
-from .compat import ItemsView
+import typing as _t
+
+from ._delegating import _DelegatingBidict
+from ._typing import KT, VT
 
 
-class frozenbidict(_DelegateKeysAndItemsToFwdm, BidictBase):  # noqa: N801,E501; pylint: disable=invalid-name
+class frozenbidict(_DelegatingBidict[KT, VT]):
     """Immutable, hashable bidict type."""
 
-    __slots__ = ()
+    __slots__ = ('_hash',)
 
-    def __hash__(self):  # lgtm [py/equals-hash-mismatch]
+    _hash: int
+
+    # Work around lack of support for higher-kinded types in mypy.
+    # Ref: https://github.com/python/typing/issues/548#issuecomment-621571821
+    # Remove this and similar type stubs from other classes if support is ever added.
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'frozenbidict[VT, KT]': ...
+
+    def __hash__(self) -> int:
         """The hash of this bidict as determined by its items."""
         if getattr(self, '_hash', None) is None:
-            # pylint: disable=protected-access,attribute-defined-outside-init
-            self._hash = ItemsView(self)._hash()
+            self._hash = _t.ItemsView(self)._hash()  # type: ignore [attr-defined]
         return self._hash
 
 
 #                             * Code review nav *
 #==============================================================================
-# ← Prev: _delegating_mixins.py  Current: _frozenbidict.py      Next: _mut.py →
+# ← Prev: _base.py         Current: _frozenbidict.py           Next: _mut.py →
 #==============================================================================

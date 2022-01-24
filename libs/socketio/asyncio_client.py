@@ -21,7 +21,7 @@ class AsyncClient(client.Client):
                          reconnect to the server after an interruption, or
                          ``False`` to not reconnect. The default is ``True``.
     :param reconnection_attempts: How many reconnection attempts to issue
-                                  before giving up, or 0 for infinity attempts.
+                                  before giving up, or 0 for infinite attempts.
                                   The default is 0.
     :param reconnection_delay: How long to wait in seconds before the first
                                reconnection attempt. Each successive attempt
@@ -40,6 +40,11 @@ class AsyncClient(client.Client):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
 
     The Engine.IO configuration supports the following settings:
 
@@ -62,15 +67,25 @@ class AsyncClient(client.Client):
     def is_asyncio_based(self):
         return True
 
-    async def connect(self, url, headers={}, transports=None,
+    async def connect(self, url, headers={}, auth=None, transports=None,
                       namespaces=None, socketio_path='socket.io', wait=True,
                       wait_timeout=1):
         """Connect to a Socket.IO server.
 
         :param url: The URL of the Socket.IO server. It can include custom
-                    query string parameters if required by the server.
+                    query string parameters if required by the server. If a
+                    function is provided, the client will invoke it to obtain
+                    the URL each time a connection or reconnection is
+                    attempted.
         :param headers: A dictionary with custom headers to send with the
-                        connection request.
+                        connection request. If a function is provided, the
+                        client will invoke it to obtain the headers dictionary
+                        each time a connection or reconnection is attempted.
+        :param auth: Authentication data passed to the server with the
+                     connection request, normally a dictionary with one or
+                     more string key/value pairs. If a function is provided,
+                     the client will invoke it to obtain the authentication
+                     data each time a connection or reconnection is attempted.
         :param transports: The list of allowed transports. Valid transports
                            are ``'polling'`` and ``'websocket'``. If not
                            given, the polling transport is connected first,
@@ -103,6 +118,7 @@ class AsyncClient(client.Client):
 
         self.connection_url = url
         self.connection_headers = headers
+        self.connection_auth = auth
         self.connection_transports = transports
         self.connection_namespaces = namespaces
         self.socketio_path = socketio_path
@@ -120,8 +136,10 @@ class AsyncClient(client.Client):
             self._connect_event = self.eio.create_event()
         else:
             self._connect_event.clear()
+        real_url = await self._get_real_value(self.connection_url)
+        real_headers = await self._get_real_value(self.connection_headers)
         try:
-            await self.eio.connect(url, headers=headers,
+            await self.eio.connect(real_url, headers=real_headers,
                                    transports=transports,
                                    engineio_path=socketio_path)
         except engineio.exceptions.ConnectionError as exc:
@@ -207,7 +225,7 @@ class AsyncClient(client.Client):
             data = [data]
         else:
             data = []
-        await self._send_packet(packet.Packet(
+        await self._send_packet(self.packet_class(
             packet.EVENT, namespace=namespace, data=[event] + data, id=id))
 
     async def send(self, data, namespace=None, callback=None):
@@ -235,6 +253,12 @@ class AsyncClient(client.Client):
 
     async def call(self, event, data=None, namespace=None, timeout=60):
         """Emit a custom event to a client and wait for the response.
+
+        This method issues an emit with a callback and waits for the callback
+        to be invoked before returning. If the callback isn't invoked before
+        the timeout, then a ``TimeoutError`` exception is raised. If the
+        Socket.IO connection drops during the wait, this method still waits
+        until the specified timeout.
 
         :param event: The event name. It can be any string. The event names
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
@@ -283,7 +307,7 @@ class AsyncClient(client.Client):
         # here we just request the disconnection
         # later in _handle_eio_disconnect we invoke the disconnect handler
         for n in self.namespaces:
-            await self._send_packet(packet.Packet(packet.DISCONNECT,
+            await self._send_packet(self.packet_class(packet.DISCONNECT,
                                     namespace=n))
         await self.eio.disconnect(abort=True)
 
@@ -298,9 +322,7 @@ class AsyncClient(client.Client):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        The return value is a ``asyncio.Task`` object.
         """
         return self.eio.start_background_task(target, *args, **kwargs)
 
@@ -315,6 +337,15 @@ class AsyncClient(client.Client):
         Note: this method is a coroutine.
         """
         return await self.eio.sleep(seconds)
+
+    async def _get_real_value(self, value):
+        """Return the actual value, for parameters that can also be given as
+        callables."""
+        if not callable(value):
+            return value
+        if asyncio.iscoroutinefunction(value):
+            return await value()
+        return value()
 
     async def _send_packet(self, pkt):
         """Send a Socket.IO packet to the server."""
@@ -357,7 +388,7 @@ class AsyncClient(client.Client):
                 data = list(r)
             else:
                 data = [r]
-            await self._send_packet(packet.Packet(
+            await self._send_packet(self.packet_class(
                 packet.ACK, namespace=namespace, id=id, data=data))
 
     async def _handle_ack(self, namespace, id, data):
@@ -396,15 +427,23 @@ class AsyncClient(client.Client):
     async def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers and event in self.handlers[namespace]:
-            if asyncio.iscoroutinefunction(self.handlers[namespace][event]):
-                try:
-                    ret = await self.handlers[namespace][event](*args)
-                except asyncio.CancelledError:  # pragma: no cover
-                    ret = None
-            else:
-                ret = self.handlers[namespace][event](*args)
-            return ret
+        if namespace in self.handlers:
+            handler = None
+            if event in self.handlers[namespace]:
+                handler = self.handlers[namespace][event]
+            elif event not in self.reserved_events and \
+                    '*' in self.handlers[namespace]:
+                handler = self.handlers[namespace]['*']
+                args = (event, *args)
+            if handler:
+                if asyncio.iscoroutinefunction(handler):
+                    try:
+                        ret = await handler(*args)
+                    except asyncio.CancelledError:  # pragma: no cover
+                        ret = None
+                else:
+                    ret = handler(*args)
+                return ret
 
         # or else, forward the event to a namepsace handler if one exists
         elif namespace in self.namespace_handlers:
@@ -437,6 +476,7 @@ class AsyncClient(client.Client):
             try:
                 await self.connect(self.connection_url,
                                    headers=self.connection_headers,
+                                   auth=self.connection_auth,
                                    transports=self.connection_transports,
                                    namespaces=self.connection_namespaces,
                                    socketio_path=self.socketio_path)
@@ -457,8 +497,10 @@ class AsyncClient(client.Client):
         """Handle the Engine.IO connection event."""
         self.logger.info('Engine.IO connection established')
         self.sid = self.eio.sid
+        real_auth = await self._get_real_value(self.connection_auth)
         for n in self.connection_namespaces:
-            await self._send_packet(packet.Packet(packet.CONNECT, namespace=n))
+            await self._send_packet(self.packet_class(
+                packet.CONNECT, data=real_auth, namespace=n))
 
     async def _handle_eio_message(self, data):
         """Dispatch Engine.IO messages."""
@@ -471,7 +513,7 @@ class AsyncClient(client.Client):
                 else:
                     await self._handle_ack(pkt.namespace, pkt.id, pkt.data)
         else:
-            pkt = packet.Packet(encoded_packet=data)
+            pkt = self.packet_class(encoded_packet=data)
             if pkt.packet_type == packet.CONNECT:
                 await self._handle_connect(pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:

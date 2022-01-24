@@ -332,7 +332,7 @@ class Scanner:
         ## }
         #if self.flow_level and self.indent > column:
         #    raise ScannerError(None, None,
-        #            "invalid intendation or unclosed '[' or '{'",
+        #            "invalid indentation or unclosed '[' or '{'",
         #            self.get_mark())
 
         # In the flow context, indentation is ignored. We make the scanner less
@@ -370,7 +370,7 @@ class Scanner:
 
     def fetch_stream_end(self):
 
-        # Set the current intendation to -1.
+        # Set the current indentation to -1.
         self.unwind_indent(-1)
 
         # Reset simple keys.
@@ -389,7 +389,7 @@ class Scanner:
 
     def fetch_directive(self):
         
-        # Set the current intendation to -1.
+        # Set the current indentation to -1.
         self.unwind_indent(-1)
 
         # Reset simple keys.
@@ -407,7 +407,7 @@ class Scanner:
 
     def fetch_document_indicator(self, TokenClass):
 
-        # Set the current intendation to -1.
+        # Set the current indentation to -1.
         self.unwind_indent(-1)
 
         # Reset simple keys. Note that there could not be a block collection
@@ -1211,7 +1211,7 @@ class Scanner:
                     for k in range(length):
                         if self.peek(k) not in '0123456789ABCDEFabcdef':
                             raise ScannerError("while scanning a double-quoted scalar", start_mark,
-                                    "expected escape sequence of %d hexdecimal numbers, but found %r" %
+                                    "expected escape sequence of %d hexadecimal numbers, but found %r" %
                                         (length, self.peek(k)), self.get_mark())
                     code = int(self.prefix(length), 16)
                     chunks.append(chr(code))
@@ -1403,7 +1403,7 @@ class Scanner:
             for k in range(2):
                 if self.peek(k) not in '0123456789ABCDEFabcdef':
                     raise ScannerError("while scanning a %s" % name, start_mark,
-                            "expected URI escape sequence of 2 hexdecimal numbers, but found %r"
+                            "expected URI escape sequence of 2 hexadecimal numbers, but found %r"
                             % self.peek(k), self.get_mark())
             codes.append(int(self.prefix(2), 16))
             self.forward(2)

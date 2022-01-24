@@ -8,10 +8,10 @@ dogpile.core installation is present.
 
 """
 
-from .util import nameregistry  # noqa
-from .util import readwrite_lock  # noqa
-from .util.readwrite_lock import ReadWriteMutex  # noqa
-from .util.nameregistry import NameRegistry  # noqa
+from . import __version__  # noqa
 from .lock import Lock  # noqa
 from .lock import NeedRegenerationException  # noqa
-from . import __version__ # noqa
+from .util import nameregistry  # noqa
+from .util import readwrite_lock  # noqa
+from .util.nameregistry import NameRegistry  # noqa
+from .util.readwrite_lock import ReadWriteMutex  # noqa

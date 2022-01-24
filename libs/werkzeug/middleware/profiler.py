@@ -11,20 +11,24 @@ that may be slowing down your application.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
-from __future__ import print_function
-
 import os.path
 import sys
 import time
+import typing as t
 from pstats import Stats
 
 try:
     from cProfile import Profile
 except ImportError:
-    from profile import Profile
+    from profile import Profile  # type: ignore
+
+if t.TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
-class ProfilerMiddleware(object):
+class ProfilerMiddleware:
     """Wrap a WSGI application and profile the execution of each
     request. Responses are buffered so that timings are more exact.
 
@@ -72,13 +76,13 @@ class ProfilerMiddleware(object):
 
     def __init__(
         self,
-        app,
-        stream=sys.stdout,
-        sort_by=("time", "calls"),
-        restrictions=(),
-        profile_dir=None,
-        filename_format="{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
-    ):
+        app: "WSGIApplication",
+        stream: t.IO[str] = sys.stdout,
+        sort_by: t.Iterable[str] = ("time", "calls"),
+        restrictions: t.Iterable[t.Union[str, int, float]] = (),
+        profile_dir: t.Optional[str] = None,
+        filename_format: str = "{method}.{path}.{elapsed:.0f}ms.{time:.0f}.prof",
+    ) -> None:
         self._app = app
         self._stream = stream
         self._sort_by = sort_by
@@ -86,19 +90,23 @@ class ProfilerMiddleware(object):
         self._profile_dir = profile_dir
         self._filename_format = filename_format
 
-    def __call__(self, environ, start_response):
-        response_body = []
+    def __call__(
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
+        response_body: t.List[bytes] = []
 
-        def catching_start_response(status, headers, exc_info=None):
+        def catching_start_response(status, headers, exc_info=None):  # type: ignore
             start_response(status, headers, exc_info)
             return response_body.append
 
-        def runapp():
-            app_iter = self._app(environ, catching_start_response)
+        def runapp() -> None:
+            app_iter = self._app(
+                environ, t.cast("StartResponse", catching_start_response)
+            )
             response_body.extend(app_iter)
 
             if hasattr(app_iter, "close"):
-                app_iter.close()
+                app_iter.close()  # type: ignore
 
         profile = Profile()
         start = time.time()
@@ -112,9 +120,7 @@ class ProfilerMiddleware(object):
             else:
                 filename = self._filename_format.format(
                     method=environ["REQUEST_METHOD"],
-                    path=(
-                        environ.get("PATH_INFO").strip("/").replace("/", ".") or "root"
-                    ),
+                    path=environ["PATH_INFO"].strip("/").replace("/", ".") or "root",
                     elapsed=elapsed * 1000.0,
                     time=time.time(),
                 )
@@ -125,8 +131,9 @@ class ProfilerMiddleware(object):
             stats = Stats(profile, stream=self._stream)
             stats.sort_stats(*self._sort_by)
             print("-" * 80, file=self._stream)
-            print("PATH: {!r}".format(environ.get("PATH_INFO", "")), file=self._stream)
+            path_info = environ.get("PATH_INFO", "")
+            print(f"PATH: {path_info!r}", file=self._stream)
             stats.print_stats(*self._restrictions)
-            print("-" * 80 + "\n", file=self._stream)
+            print(f"{'-' * 80}\n", file=self._stream)
 
         return [body]

@@ -5,11 +5,12 @@ from commonmark.blocks import Parser
 from . import box
 from ._loop import loop_first
 from ._stack import Stack
-from .console import Console, ConsoleOptions, JustifyMethod, RenderResult, Segment
+from .console import Console, ConsoleOptions, JustifyMethod, RenderResult
 from .containers import Renderables
 from .jupyter import JupyterMixin
 from .panel import Panel
 from .rule import Rule
+from .segment import Segment
 from .style import Style, StyleStack
 from .syntax import Syntax
 from .text import Text, TextType
@@ -32,7 +33,7 @@ class MarkdownElement:
         """
         return cls()
 
-    def on_enter(self, context: "MarkdownContext"):
+    def on_enter(self, context: "MarkdownContext") -> None:
         """Called when the node is entered.
 
         Args:
@@ -107,7 +108,7 @@ class Paragraph(TextElement):
     justify: JustifyMethod
 
     @classmethod
-    def create(cls, markdown: "Markdown", node) -> "Paragraph":
+    def create(cls, markdown: "Markdown", node: MarkdownElement) -> "Paragraph":
         return cls(justify=markdown.justify or "left")
 
     def __init__(self, justify: JustifyMethod) -> None:
@@ -176,7 +177,7 @@ class CodeBlock(TextElement):
     ) -> RenderResult:
         code = str(self.text).rstrip()
         syntax = Panel(
-            Syntax(code, self.lexer_name, theme=self.theme),
+            Syntax(code, self.lexer_name, theme=self.theme, word_wrap=True),
             border_style="dim",
             box=box.SQUARE,
         )
@@ -348,7 +349,7 @@ class MarkdownContext:
         console: Console,
         options: ConsoleOptions,
         style: Style,
-        inline_code_lexer: str = None,
+        inline_code_lexer: Optional[str] = None,
         inline_code_theme: str = "monokai",
     ) -> None:
         self.console = console
@@ -398,7 +399,7 @@ class Markdown(JupyterMixin):
         style (Union[str, Style], optional): Optional style to apply to markdown.
         hyperlinks (bool, optional): Enable hyperlinks. Defaults to ``True``.
         inline_code_lexer: (str, optional): Lexer to use if inline code highlighting is
-            enabled. Defaults to "python".
+            enabled. Defaults to None.
         inline_code_theme: (Optional[str], optional): Pygments theme for inline code
             highlighting, or None for no highlighting. Defaults to None.
     """
@@ -419,17 +420,17 @@ class Markdown(JupyterMixin):
         self,
         markup: str,
         code_theme: str = "monokai",
-        justify: JustifyMethod = None,
+        justify: Optional[JustifyMethod] = None,
         style: Union[str, Style] = "none",
         hyperlinks: bool = True,
-        inline_code_lexer: str = None,
-        inline_code_theme: str = None,
+        inline_code_lexer: Optional[str] = None,
+        inline_code_theme: Optional[str] = None,
     ) -> None:
         self.markup = markup
         parser = Parser()
         self.parsed = parser.parse(markup)
         self.code_theme = code_theme
-        self.justify = justify
+        self.justify: Optional[JustifyMethod] = justify
         self.style = style
         self.hyperlinks = hyperlinks
         self.inline_code_lexer = inline_code_lexer
@@ -440,6 +441,7 @@ class Markdown(JupyterMixin):
     ) -> RenderResult:
         """Render markdown to the console."""
         style = console.get_style(self.style, default="none")
+        options = options.update(height=None)
         context = MarkdownContext(
             console,
             options,

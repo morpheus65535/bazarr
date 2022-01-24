@@ -8,8 +8,6 @@
     :license: BSD, see LICENSE for details.
 """
 
-import re
-
 from pygments.lexer import RegexLexer
 from pygments.token import String, Number, Name, Keyword, Operator, Text, Comment
 
@@ -23,7 +21,7 @@ class RtsLexer(RegexLexer):
     .. versionadded:: 2.1
     """
     name = 'TrafficScript'
-    aliases = ['rts','trafficscript']
+    aliases = ['trafficscript', 'rts']
     filenames = ['*.rts']
 
     tokens = {

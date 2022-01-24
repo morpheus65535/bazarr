@@ -272,7 +272,9 @@ class HtmlFormatter(Formatter):
         125%``).
 
     `hl_lines`
-        Specify a list of lines to be highlighted.
+        Specify a list of lines to be highlighted. The line numbers are always
+        relative to the input (i.e. the first line is line 1) and are
+        independent of `linenostart`.
 
         .. versionadded:: 0.11
 
@@ -303,7 +305,7 @@ class HtmlFormatter(Formatter):
 
     `lineanchors`
         If set to a nonempty string, e.g. ``foo``, the formatter will wrap each
-        output line in an anchor tag with a ``name`` of ``foo-linenumber``.
+        output line in an anchor tag with an ``id`` (and `name`) of ``foo-linenumber``.
         This allows easy linking to certain lines.
 
         .. versionadded:: 0.9
@@ -335,7 +337,9 @@ class HtmlFormatter(Formatter):
 
     `filename`
         A string used to generate a filename when rendering ``<pre>`` blocks,
-        for example if displaying source code.
+        for example if displaying source code. If `linenos` is set to
+        ``'table'`` then the filename will be rendered in an initial row
+        containing a single `<th>` which spans both columns.
 
         .. versionadded:: 2.1
 
@@ -344,6 +348,12 @@ class HtmlFormatter(Formatter):
         by the HTML5 specification.
 
         .. versionadded:: 2.4
+
+    `debug_token_types`
+        Add ``title`` attributes to all token ``<span>`` tags that show the
+        name of the token.
+
+        .. versionadded:: 2.10
 
 
     **Subclassing the HTML formatter**
@@ -415,6 +425,7 @@ class HtmlFormatter(Formatter):
         self.filename = self._decodeifneeded(options.get('filename', ''))
         self.wrapcode = get_bool_opt(options, 'wrapcode', False)
         self.span_element_openers = {}
+        self.debug_token_types = get_bool_opt(options, 'debug_token_types', False)
 
         if self.tagsfile:
             if not ctags:
@@ -691,11 +702,20 @@ class HtmlFormatter(Formatter):
 
         ls = '\n'.join(lines)
 
+        # If a filename was specified, we can't put it into the code table as it
+        # would misalign the line numbers. Hence we emit a separate row for it.
+        filename_tr = ""
+        if self.filename:
+            filename_tr = (
+                '<tr><th colspan="2" class="filename"><div class="highlight">'
+                '<span class="filename">' + self.filename + '</span></div>'
+                '</th></tr>')
+
         # in case you wonder about the seemingly redundant <div> here: since the
         # content in the other cell also is wrapped in a div, some browsers in
         # some configurations seem to mess up the formatting...
         yield 0, (
-            '<table class="%stable">' % self.cssclass +
+            '<table class="%stable">' % self.cssclass + filename_tr +
             '<tr><td class="linenos"><div class="linenodiv"><pre>' +
             ls + '</pre></div></td><td class="code">'
         )
@@ -752,7 +772,8 @@ class HtmlFormatter(Formatter):
         for t, line in inner:
             if t:
                 i += 1
-                yield 1, '<a name="%s-%d"></a>' % (s, i) + line
+                href = "" if self.linenos else ' href="#%s-%d"' % (s, i)
+                yield 1, '<a id="%s-%d" name="%s-%d"%s></a>' % (s, i, s, i, href) + line
             else:
                 yield 0, line
 
@@ -788,7 +809,7 @@ class HtmlFormatter(Formatter):
             style.append(self._pre_style)
         style = '; '.join(style)
 
-        if self.filename:
+        if self.filename and self.linenos != 1:
             yield 0, ('<span class="filename">' + self.filename + '</span>')
 
         # the empty span here is to keep leading empty lines from being
@@ -822,12 +843,20 @@ class HtmlFormatter(Formatter):
             try:
                 cspan = self.span_element_openers[ttype]
             except KeyError:
+                title = ' title="%s"' % '.'.join(ttype) if self.debug_token_types else ''
                 if nocls:
                     css_style = self._get_css_inline_styles(ttype)
-                    cspan = css_style and '<span style="%s">' % self.class2style[css_style][0] or ''
+                    if css_style:
+                        css_style = self.class2style[css_style][0]
+                        cspan = '<span style="%s"%s>' % (css_style, title)
+                    else:
+                        cspan = ''
                 else:
                     css_class = self._get_css_classes(ttype)
-                    cspan = css_class and '<span class="%s">' % css_class or ''
+                    if css_class:
+                        cspan = '<span class="%s"%s>' % (css_class, title)
+                    else:
+                        cspan = ''
                 self.span_element_openers[ttype] = cspan
 
             parts = self._translate_parts(value)
@@ -877,7 +906,7 @@ class HtmlFormatter(Formatter):
 
     def _lookup_ctag(self, token):
         entry = ctags.TagEntry()
-        if self._ctags.find(entry, token, 0):
+        if self._ctags.find(entry, token.encode(), 0):
             return entry['file'], entry['lineNumber']
         else:
             return None, None

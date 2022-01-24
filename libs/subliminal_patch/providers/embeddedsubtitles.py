@@ -222,7 +222,8 @@ class EmbeddedSubtitlesProvider(Provider):
 
 
 class _MemoizedFFprobeVideoContainer(FFprobeVideoContainer):
-    @functools.lru_cache
+    # 128 is the default value for maxsize since Python 3.8. We ste it here for previous versions.
+    @functools.lru_cache(maxsize=128)
     def get_subtitles(self, *args, **kwargs):
         return super().get_subtitles(*args, **kwargs)
 

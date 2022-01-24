@@ -1,59 +1,58 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth2.rfc6749.grant_types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 from itertools import chain
 
 from oauthlib.common import add_params_to_uri
 from oauthlib.oauth2.rfc6749 import errors, utils
+from oauthlib.uri_validate import is_absolute_uri
 
 from ..request_validator import RequestValidator
 
 log = logging.getLogger(__name__)
 
-class ValidatorsContainer(object):
+
+class ValidatorsContainer:
     """
-        Container object for holding custom validator callables to be invoked
-        as part of the grant type `validate_authorization_request()` or
-        `validate_authorization_request()` methods on the various grant types.
+    Container object for holding custom validator callables to be invoked
+    as part of the grant type `validate_authorization_request()` or
+    `validate_authorization_request()` methods on the various grant types.
 
-        Authorization validators must be callables that take a request object and
-        return a dict, which may contain items to be added to the `request_info`
-        returned from the grant_type after validation.
+    Authorization validators must be callables that take a request object and
+    return a dict, which may contain items to be added to the `request_info`
+    returned from the grant_type after validation.
 
-        Token validators must be callables that take a request object and
-        return None.
+    Token validators must be callables that take a request object and
+    return None.
 
-        Both authorization validators and token validators may raise OAuth2
-        exceptions if validation conditions fail.
+    Both authorization validators and token validators may raise OAuth2
+    exceptions if validation conditions fail.
 
-        Authorization validators added to `pre_auth` will be run BEFORE
-        the standard validations (but after the critical ones that raise
-        fatal errors) as part of `validate_authorization_request()`
+    Authorization validators added to `pre_auth` will be run BEFORE
+    the standard validations (but after the critical ones that raise
+    fatal errors) as part of `validate_authorization_request()`
 
-        Authorization validators added to `post_auth` will be run AFTER
-        the standard validations as part of `validate_authorization_request()`
+    Authorization validators added to `post_auth` will be run AFTER
+    the standard validations as part of `validate_authorization_request()`
 
-        Token validators added to `pre_token` will be run BEFORE
-        the standard validations as part of `validate_token_request()`
+    Token validators added to `pre_token` will be run BEFORE
+    the standard validations as part of `validate_token_request()`
 
-        Token validators added to `post_token` will be run AFTER
-        the standard validations as part of `validate_token_request()`
+    Token validators added to `post_token` will be run AFTER
+    the standard validations as part of `validate_token_request()`
 
-        For example:
+    For example:
 
-        >>> def my_auth_validator(request):
-        ...    return {'myval': True}
-        >>> auth_code_grant = AuthorizationCodeGrant(request_validator)
-        >>> auth_code_grant.custom_validators.pre_auth.append(my_auth_validator)
-        >>> def my_token_validator(request):
-        ...     if not request.everything_okay:
-        ...         raise errors.OAuth2Error("uh-oh")
-        >>> auth_code_grant.custom_validators.post_token.append(my_token_validator)
+    >>> def my_auth_validator(request):
+    ...    return {'myval': True}
+    >>> auth_code_grant = AuthorizationCodeGrant(request_validator)
+    >>> auth_code_grant.custom_validators.pre_auth.append(my_auth_validator)
+    >>> def my_token_validator(request):
+    ...     if not request.everything_okay:
+    ...         raise errors.OAuth2Error("uh-oh")
+    >>> auth_code_grant.custom_validators.post_token.append(my_token_validator)
     """
 
     def __init__(self, post_auth, post_token,
@@ -72,7 +71,7 @@ class ValidatorsContainer(object):
         return chain(self.post_auth, self.post_token)
 
 
-class GrantTypeBase(object):
+class GrantTypeBase:
     error_uri = None
     request_validator = None
     default_response_mode = 'fragment'
@@ -116,14 +115,32 @@ class GrantTypeBase(object):
     def register_token_modifier(self, modifier):
         self._token_modifiers.append(modifier)
 
-
     def create_authorization_response(self, request, token_handler):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+        """
         raise NotImplementedError('Subclasses must implement this method.')
 
     def create_token_response(self, request, token_handler):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+        """
         raise NotImplementedError('Subclasses must implement this method.')
 
     def add_token(self, token, token_handler, request):
+        """
+        :param token:
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         # Only add a hybrid access token on auth step if asked for
         if not request.response_type in ["token", "code token", "id_token token", "code id_token token"]:
             return token
@@ -132,6 +149,10 @@ class GrantTypeBase(object):
         return token
 
     def validate_grant_type(self, request):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         client_id = getattr(request, 'client_id', None)
         if not self.request_validator.validate_grant_type(client_id,
                                                           request.grant_type, request.client, request):
@@ -140,6 +161,10 @@ class GrantTypeBase(object):
             raise errors.UnauthorizedClientError(request=request)
 
     def validate_scopes(self, request):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         if not request.scopes:
             request.scopes = utils.scope_to_list(request.scope) or utils.scope_to_list(
                 self.request_validator.get_default_scopes(request.client_id, request))
@@ -154,6 +179,13 @@ class GrantTypeBase(object):
 
         Base classes can define a default response mode for their authorization
         response by overriding the static `default_response_mode` member.
+
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token:
+        :param headers:
+        :param body:
+        :param status:
         """
         request.response_mode = request.response_mode or self.default_response_mode
 
@@ -183,3 +215,36 @@ class GrantTypeBase(object):
 
         raise NotImplementedError(
             'Subclasses must set a valid default_response_mode')
+
+    def _get_default_headers(self):
+        """Create default headers for grant responses."""
+        return {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            'Pragma': 'no-cache',
+        }
+
+    def _handle_redirects(self, request):
+        if request.redirect_uri is not None:
+            request.using_default_redirect_uri = False
+            log.debug('Using provided redirect_uri %s', request.redirect_uri)
+            if not is_absolute_uri(request.redirect_uri):
+                raise errors.InvalidRedirectURIError(request=request)
+
+            # The authorization server MUST verify that the redirection URI
+            # to which it will redirect the access token matches a
+            # redirection URI registered by the client as described in
+            # Section 3.1.2.
+            # https://tools.ietf.org/html/rfc6749#section-3.1.2
+            if not self.request_validator.validate_redirect_uri(
+                    request.client_id, request.redirect_uri, request):
+                raise errors.MismatchingRedirectURIError(request=request)
+        else:
+            request.redirect_uri = self.request_validator.get_default_redirect_uri(
+                request.client_id, request)
+            request.using_default_redirect_uri = True
+            log.debug('Using default redirect_uri %s.', request.redirect_uri)
+            if not request.redirect_uri:
+                raise errors.MissingRedirectURIError(request=request)
+            if not is_absolute_uri(request.redirect_uri):
+                raise errors.InvalidRedirectURIError(request=request)

@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from stevedore.tests import utils
 from stevedore import dispatch
+from stevedore.tests import utils
 
 
 def check_dispatch(ep, *args, **kwds):

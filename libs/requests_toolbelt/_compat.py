@@ -143,8 +143,8 @@ class HTTPHeaderDict(MutableMapping):
             return False
         if not isinstance(other, type(self)):
             other = type(self)(other)
-        return ({k.lower(): v for k, v in self.itermerged()} ==
-                {k.lower(): v for k, v in other.itermerged()})
+        return (dict((k.lower(), v) for k, v in self.itermerged()) ==
+                dict((k.lower(), v) for k, v in other.itermerged()))
 
     def __ne__(self, other):
         return not self.__eq__(other)

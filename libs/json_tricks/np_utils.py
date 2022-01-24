@@ -4,7 +4,7 @@ This file exists for backward compatibility reasons.
 """
 
 from .utils import hashodict, get_scalar_repr, encode_scalars_inplace
-from .nonp import NoNumpyException
+from .utils import NoNumpyException
 from . import np
 
 # try:

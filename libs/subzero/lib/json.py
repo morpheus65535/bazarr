@@ -3,7 +3,8 @@ from __future__ import absolute_import
 from gzip import GzipFile
 
 from json_tricks import TricksEncoder
-from json_tricks.nonp import DEFAULT_ENCODERS, ENCODING, is_py3, BytesIO
+from json_tricks.nonp import DEFAULT_ENCODERS, ENCODING
+from io import BytesIO
 
 
 def dumps(obj, sort_keys=None, cls=TricksEncoder, obj_encoders=DEFAULT_ENCODERS, extra_obj_encoders=(),
@@ -27,8 +28,6 @@ def dumps(obj, sort_keys=None, cls=TricksEncoder, obj_encoders=DEFAULT_ENCODERS,
     encoders = tuple(extra_obj_encoders) + tuple(obj_encoders)
     txt = cls(sort_keys=sort_keys, obj_encoders=encoders, allow_nan=allow_nan,
               primitives=primitives, **jsonkwargs).encode(obj)
-    #if not is_py3 and isinstance(txt, str):
-    #    txt = unicode(txt, ENCODING)
     if not compression:
         return txt
     if compression is True:

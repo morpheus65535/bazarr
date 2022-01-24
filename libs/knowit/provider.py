@@ -1,27 +1,38 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import os
+import typing
 from logging import NullHandler, getLogger
 
-from . import OrderedDict
-from .properties import Quantity
-from .units import units
+import knowit.config
+from knowit.core import Property, Rule
+from knowit.properties import Quantity
+from knowit.units import units
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
-size_property = Quantity('size', units.byte, description='media size')
+size_property = Quantity('size', unit=units.byte, description='media size')
+
+PropertyMap = typing.Mapping[str, Property]
+PropertyConfig = typing.Mapping[str, PropertyMap]
+
+RuleMap = typing.Mapping[str, Rule]
+RuleConfig = typing.Mapping[str, RuleMap]
 
 
-class Provider(object):
+class Provider:
     """Base class for all providers."""
 
     min_fps = 10
     max_fps = 200
 
-    def __init__(self, config, mapping, rules=None):
+    def __init__(
+            self,
+            config: knowit.config.Config,
+            mapping: PropertyConfig,
+            rules: typing.Optional[RuleConfig] = None,
+    ):
         """Init method."""
         self.config = config
         self.mapping = mapping
@@ -82,7 +93,7 @@ class Provider(object):
         :param track_type:
         :rtype: dict
         """
-        props = OrderedDict()
+        props = {}
         pv_props = {}
         for name, prop in self.mapping[track_type].items():
             if not prop:

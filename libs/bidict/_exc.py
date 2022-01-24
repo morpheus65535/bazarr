@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-"""Provides all bidict exceptions."""
+"""Provide all bidict exceptions."""
 
 
 class BidictException(Exception):
@@ -15,7 +15,7 @@ class BidictException(Exception):
 
 class DuplicationError(BidictException):
     """Base class for exceptions raised when uniqueness is violated
-    as per the RAISE duplication policy.
+    as per the :attr:~bidict.RAISE` :class:`~bidict.OnDupAction`.
     """
 
 

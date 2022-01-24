@@ -122,7 +122,7 @@ class X509Adapter(HTTPAdapter):
         if PyOpenSSLContext is None:
             raise exc.VersionMismatchError(
                 "The X509Adapter requires at least Requests 2.12.0 to be "
-                "installed. Version {} was found instead.".format(
+                "installed. Version {0} was found instead.".format(
                     requests.__version__
                 )
             )
@@ -134,8 +134,8 @@ def check_cert_dates(cert):
     now = datetime.utcnow()
     if cert.not_valid_after < now or cert.not_valid_before > now:
         raise ValueError('Client certificate expired: Not After: '
-                         '{:%Y-%m-%d %H:%M:%SZ} '
-                         'Not Before: {:%Y-%m-%d %H:%M:%SZ}'
+                         '{0:%Y-%m-%d %H:%M:%SZ} '
+                         'Not Before: {1:%Y-%m-%d %H:%M:%SZ}'
                          .format(cert.not_valid_after, cert.not_valid_before))
 
 

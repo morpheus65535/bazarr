@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth2.rfc6749
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -6,8 +5,6 @@ oauthlib.oauth2.rfc6749
 This module is an implementation of various logic needed
 for consuming and providing OAuth 2.0 RFC6749.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from oauthlib.common import Request
@@ -39,7 +36,6 @@ class TokenEndpoint(BaseEndpoint):
         https://example.com/path?query=component             # OK
         https://example.com/path?query=component#fragment    # Not OK
 
-    Since requests to the authorization endpoint result in user
     Since requests to the token endpoint result in the transmission of
     clear-text credentials (in the HTTP request and response), the
     authorization server MUST require the use of TLS as described in
@@ -61,6 +57,8 @@ class TokenEndpoint(BaseEndpoint):
 
     .. _`Appendix B`: https://tools.ietf.org/html/rfc6749#appendix-B
     """
+
+    valid_request_methods = ('POST',)
 
     def __init__(self, default_grant_type, default_token_type, grant_types):
         BaseEndpoint.__init__(self)
@@ -85,13 +83,13 @@ class TokenEndpoint(BaseEndpoint):
         return self._default_token_type
 
     @catch_errors_and_unavailability
-    def create_token_response(self, uri, http_method='GET', body=None,
+    def create_token_response(self, uri, http_method='POST', body=None,
                               headers=None, credentials=None, grant_type_for_scope=None,
                               claims=None):
         """Extract grant_type and route to the designated handler."""
         request = Request(
             uri, http_method=http_method, body=body, headers=headers)
-
+        self.validate_token_request(request)
         # 'scope' is an allowed Token Request param in both the "Resource Owner Password Credentials Grant"
         # and "Client Credentials Grant" flows
         # https://tools.ietf.org/html/rfc6749#section-4.3.2
@@ -115,3 +113,7 @@ class TokenEndpoint(BaseEndpoint):
                   request.grant_type, grant_type_handler)
         return grant_type_handler.create_token_response(
             request, self.default_token_type)
+
+    def validate_token_request(self, request):
+        self._raise_on_bad_method(request)
+        self._raise_on_bad_post_request(request)

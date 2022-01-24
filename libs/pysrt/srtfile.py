@@ -290,7 +290,7 @@ class SubRipFile(UserList, object):
     @classmethod
     def _open_unicode_file(cls, path, claimed_encoding=None):
         encoding = claimed_encoding or cls._detect_encoding(path)
-        source_file = codecs.open(path, 'rU', encoding=encoding)
+        source_file = codecs.open(path, 'r', encoding=encoding)
 
         # get rid of BOM if any
         possible_bom = CODECS_BOMS.get(encoding, None)

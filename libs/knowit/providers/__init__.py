@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Provider package."""
-from __future__ import unicode_literals
 
-from .enzyme import EnzymeProvider
-from .ffmpeg import FFmpegProvider
-#from .mediainfo import MediaInfoProvider
+from knowit.providers.enzyme import EnzymeProvider
+from knowit.providers.ffmpeg import FFmpegProvider
+from knowit.providers.mediainfo import MediaInfoProvider
+from knowit.providers.mkvmerge import MkvMergeProvider

@@ -4,6 +4,7 @@
 Base builder class for Rebulk
 """
 from abc import ABCMeta, abstractmethod
+from contextlib import contextmanager
 from copy import deepcopy
 from logging import getLogger
 
@@ -11,6 +12,24 @@ from .loose import set_defaults
 from .pattern import RePattern, StringPattern, FunctionalPattern
 
 log = getLogger(__name__).log
+
+
+@contextmanager
+def overrides(kwargs):
+    """
+    Implements override kwarg to restore initial kwarg arguments from overrides list after set_defaults calls.
+    :param kwargs:
+    :return:
+    """
+    override_keys = kwargs.pop('overrides', None)
+    backup = {}
+    if override_keys:
+        for override_key in override_keys:
+            backup[override_key] = kwargs[override_key]
+
+    yield backup
+
+    kwargs.update(backup)
 
 
 class Builder(metaclass=ABCMeta):
@@ -99,8 +118,10 @@ class Builder(metaclass=ABCMeta):
         :return:
         :rtype:
         """
-        set_defaults(self._regex_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
+        with overrides(kwargs):
+            set_defaults(self._regex_defaults, kwargs)
+            set_defaults(self._defaults, kwargs)
+
         return RePattern(*pattern, **kwargs)
 
     def build_string(self, *pattern, **kwargs):
@@ -114,8 +135,10 @@ class Builder(metaclass=ABCMeta):
         :return:
         :rtype:
         """
-        set_defaults(self._string_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
+        with overrides(kwargs):
+            set_defaults(self._string_defaults, kwargs)
+            set_defaults(self._defaults, kwargs)
+
         return StringPattern(*pattern, **kwargs)
 
     def build_functional(self, *pattern, **kwargs):
@@ -129,8 +152,10 @@ class Builder(metaclass=ABCMeta):
         :return:
         :rtype:
         """
-        set_defaults(self._functional_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
+        with overrides(kwargs):
+            set_defaults(self._functional_defaults, kwargs)
+            set_defaults(self._defaults, kwargs)
+
         return FunctionalPattern(*pattern, **kwargs)
 
     def build_chain(self, **kwargs):
@@ -145,14 +170,18 @@ class Builder(metaclass=ABCMeta):
         :rtype:
         """
         from .chain import Chain  # pylint:disable=import-outside-toplevel
-        set_defaults(self._chain_defaults, kwargs)
-        set_defaults(self._defaults, kwargs)
+
+        with overrides(kwargs):
+            set_defaults(self._chain_defaults, kwargs)
+            set_defaults(self._defaults, kwargs)
+
         chain = Chain(self, **kwargs)
         chain._defaults = deepcopy(self._defaults)  # pylint: disable=protected-access
         chain._regex_defaults = deepcopy(self._regex_defaults)  # pylint: disable=protected-access
         chain._functional_defaults = deepcopy(self._functional_defaults)  # pylint: disable=protected-access
         chain._string_defaults = deepcopy(self._string_defaults)  # pylint: disable=protected-access
         chain._chain_defaults = deepcopy(self._chain_defaults)  # pylint: disable=protected-access
+
         return chain
 
     @abstractmethod

@@ -32,7 +32,7 @@ class HookManager(NamedExtensionManager):
         is True.
     :type invoke_kwds: dict
     :param on_load_failure_callback: Callback function that will be called when
-        a entrypoint can not be loaded. The arguments that will be provided
+        an entrypoint can not be loaded. The arguments that will be provided
         when this is called (when an entrypoint fails to load) are
         (manager, entrypoint, exception)
     :type on_load_failure_callback: function
@@ -40,8 +40,6 @@ class HookManager(NamedExtensionManager):
         dependencies of the plugin(s) being loaded. Defaults to False.
     :type verify_requirements: bool
     :type on_missing_entrypoints_callback: function
-    :param verify_requirements: Use setuptools to enforce the
-        dependencies of the plugin(s) being loaded. Defaults to False.
     :param warn_on_missing_entrypoint: Flag to control whether failing
         to load a plugin is reported via a log mess. Only applies if
         on_missing_entrypoints_callback is None.

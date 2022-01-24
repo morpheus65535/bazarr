@@ -24,6 +24,13 @@ class Server(object):
                    use. To disable logging set to ``False``. The default is
                    ``False``. Note that fatal errors are logged even when
                    ``logger`` is ``False``.
+    :param serializer: The serialization method to use when transmitting
+                       packets. Valid values are ``'default'``, ``'pickle'``,
+                       ``'msgpack'`` and ``'cbor'``. Alternatively, a subclass
+                       of the :class:`Packet` class with custom implementations
+                       of the ``encode()`` and ``decode()`` methods can be
+                       provided. Client and server must use compatible
+                       serializers.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
@@ -48,10 +55,11 @@ class Server(object):
 
     :param async_mode: The asynchronous model to use. See the Deployment
                        section in the documentation for a description of the
-                       available options. Valid async modes are "threading",
-                       "eventlet", "gevent" and "gevent_uwsgi". If this
-                       argument is not given, "eventlet" is tried first, then
-                       "gevent_uwsgi", then "gevent", and finally "threading".
+                       available options. Valid async modes are
+                       ``'threading'``, ``'eventlet'``, ``'gevent'`` and
+                       ``'gevent_uwsgi'``. If this argument is not given,
+                       ``'eventlet'`` is tried first, then ``'gevent_uwsgi'``,
+                       then ``'gevent'``, and finally ``'threading'``.
                        The first async mode that has all its dependencies
                        installed is then one that is chosen.
     :param ping_interval: The interval in seconds at which the server pings
@@ -98,14 +106,24 @@ class Server(object):
                             fatal errors are logged even when
                             ``engineio_logger`` is ``False``.
     """
-    def __init__(self, client_manager=None, logger=False, json=None,
-                 async_handlers=True, always_connect=False, **kwargs):
+    reserved_events = ['connect', 'disconnect']
+
+    def __init__(self, client_manager=None, logger=False, serializer='default',
+                 json=None, async_handlers=True, always_connect=False,
+                 **kwargs):
         engineio_options = kwargs
         engineio_logger = engineio_options.pop('engineio_logger', None)
         if engineio_logger is not None:
             engineio_options['logger'] = engineio_logger
+        if serializer == 'default':
+            self.packet_class = packet.Packet
+        elif serializer == 'msgpack':
+            from . import msgpack_packet
+            self.packet_class = msgpack_packet.MsgPackPacket
+        else:
+            self.packet_class = serializer
         if json is not None:
-            packet.Packet.json = json
+            self.packet_class.json = json
             engineio_options['json'] = json
         engineio_options['async_handlers'] = False
         self.eio = self._engineio_server_class()(**engineio_options)
@@ -255,10 +273,11 @@ class Server(object):
                      multiple arguments, use a tuple where each element is of
                      one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
-                   session ID of a client to address only that client, or to
-                   to any custom room created by the application to address all
-                   the clients in that room, If this argument is omitted the
-                   event is broadcasted to all connected clients.
+                   session ID of a client to address only that client, to any
+                   any custom room created by the application to address all
+                   the clients in that room, or to a list of custom room
+                   names. If this argument is omitted the event is broadcasted
+                   to all connected clients.
         :param room: Alias for the ``to`` parameter.
         :param skip_sid: The session ID of a client to skip when broadcasting
                          to a room or to all clients. This can be used to
@@ -305,10 +324,11 @@ class Server(object):
                      multiple arguments, use a tuple where each element is of
                      one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
-                   session ID of a client to address only that client, or to
-                   to any custom room created by the application to address all
-                   the clients in that room, If this argument is omitted the
-                   event is broadcasted to all connected clients.
+                   session ID of a client to address only that client, to any
+                   any custom room created by the application to address all
+                   the clients in that room, or to a list of custom room
+                   names. If this argument is omitted the event is broadcasted
+                   to all connected clients.
         :param room: Alias for the ``to`` parameter.
         :param skip_sid: The session ID of a client to skip when broadcasting
                          to a room or to all clients. This can be used to
@@ -336,6 +356,12 @@ class Server(object):
     def call(self, event, data=None, to=None, sid=None, namespace=None,
              timeout=60, **kwargs):
         """Emit a custom event to a client and wait for the response.
+
+        This method issues an emit with a callback and waits for the callback
+        to be invoked before returning. If the callback isn't invoked before
+        the timeout, then a ``TimeoutError`` exception is raised. If the
+        Socket.IO connection drops during the wait, this method still waits
+        until the specified timeout.
 
         :param event: The event name. It can be any string. The event names
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
@@ -529,7 +555,7 @@ class Server(object):
         if delete_it:
             self.logger.info('Disconnecting %s [%s]', sid, namespace)
             eio_sid = self.manager.pre_disconnect(sid, namespace=namespace)
-            self._send_packet(eio_sid, packet.Packet(
+            self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
             self._trigger_event('disconnect', namespace, sid)
             self.manager.disconnect(sid, namespace=namespace)
@@ -581,9 +607,9 @@ class Server(object):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        This function returns an object that represents the background task,
+        on which the ``join()`` methond can be invoked to wait for the task to
+        complete.
         """
         return self.eio.start_background_task(target, *args, **kwargs)
 
@@ -607,7 +633,7 @@ class Server(object):
             data = [data]
         else:
             data = []
-        self._send_packet(eio_sid, packet.Packet(
+        self._send_packet(eio_sid, self.packet_class(
             packet.EVENT, namespace=namespace, data=[event] + data, id=id))
 
     def _send_packet(self, eio_sid, pkt):
@@ -623,8 +649,14 @@ class Server(object):
         """Handle a client connection request."""
         namespace = namespace or '/'
         sid = self.manager.connect(eio_sid, namespace)
+        if sid is None:
+            self._send_packet(eio_sid, self.packet_class(
+                packet.CONNECT_ERROR, data='Unable to connect',
+                namespace=namespace))
+            return
+
         if self.always_connect:
-            self._send_packet(eio_sid, packet.Packet(
+            self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
         fail_reason = exceptions.ConnectionRefusedError().error_args
         try:
@@ -645,15 +677,15 @@ class Server(object):
         if success is False:
             if self.always_connect:
                 self.manager.pre_disconnect(sid, namespace)
-                self._send_packet(eio_sid, packet.Packet(
+                self._send_packet(eio_sid, self.packet_class(
                     packet.DISCONNECT, data=fail_reason, namespace=namespace))
             else:
-                self._send_packet(eio_sid, packet.Packet(
+                self._send_packet(eio_sid, self.packet_class(
                     packet.CONNECT_ERROR, data=fail_reason,
                     namespace=namespace))
             self.manager.disconnect(sid, namespace)
         elif not self.always_connect:
-            self._send_packet(eio_sid, packet.Packet(
+            self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
 
     def _handle_disconnect(self, eio_sid, namespace):
@@ -695,7 +727,7 @@ class Server(object):
                 data = list(r)
             else:
                 data = [r]
-            server._send_packet(eio_sid, packet.Packet(
+            server._send_packet(eio_sid, self.packet_class(
                 packet.ACK, namespace=namespace, id=id, data=data))
 
     def _handle_ack(self, eio_sid, namespace, id, data):
@@ -708,8 +740,12 @@ class Server(object):
     def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers and event in self.handlers[namespace]:
-            return self.handlers[namespace][event](*args)
+        if namespace in self.handlers:
+            if event in self.handlers[namespace]:
+                return self.handlers[namespace][event](*args)
+            elif event not in self.reserved_events and \
+                    '*' in self.handlers[namespace]:
+                return self.handlers[namespace]['*'](event, *args)
 
         # or else, forward the event to a namespace handler if one exists
         elif namespace in self.namespace_handlers:
@@ -735,7 +771,7 @@ class Server(object):
                 else:
                     self._handle_ack(eio_sid, pkt.namespace, pkt.id, pkt.data)
         else:
-            pkt = packet.Packet(encoded_packet=data)
+            pkt = self.packet_class(encoded_packet=data)
             if pkt.packet_type == packet.CONNECT:
                 self._handle_connect(eio_sid, pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:

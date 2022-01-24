@@ -112,7 +112,7 @@ def argspec_args(argspec, constructor, *args, **kwargs):
     if argspec.varkw:
         call_kwarg = kwargs
     else:
-        call_kwarg = dict((k, kwargs[k]) for k in kwargs if k in argspec.args)  # Python 2.6 dict comprehension
+        call_kwarg = dict((k, kwargs[k]) for k in kwargs if k in argspec.args) # pylint:disable=consider-using-dict-items
     if argspec.varargs:
         call_args = args
     else:
@@ -139,7 +139,7 @@ if not _fullargspec_supported:
         if argspec.keywords:
             call_kwarg = kwargs
         else:
-            call_kwarg = dict((k, kwargs[k]) for k in kwargs if k in argspec.args)  # Python 2.6 dict comprehension
+            call_kwarg = dict((k, kwargs[k]) for k in kwargs if k in argspec.args) # pylint:disable=consider-using-dict-items
         if argspec.varargs:
             call_args = args
         else:

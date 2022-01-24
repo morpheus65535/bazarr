@@ -33,9 +33,9 @@ class RubyLexer(ExtendedRegexLexer):
     """
 
     name = 'Ruby'
-    aliases = ['rb', 'ruby', 'duby']
+    aliases = ['ruby', 'rb', 'duby']
     filenames = ['*.rb', '*.rbw', 'Rakefile', '*.rake', '*.gemspec',
-                 '*.rbx', '*.duby', 'Gemfile']
+                 '*.rbx', '*.duby', 'Gemfile', 'Vagrantfile']
     mimetypes = ['text/x-ruby', 'application/x-ruby']
 
     flags = re.DOTALL | re.MULTILINE

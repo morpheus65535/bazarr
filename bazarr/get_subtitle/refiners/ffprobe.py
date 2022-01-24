@@ -52,7 +52,10 @@ def refine_from_ffprobe(path, video):
                 if isinstance(data['ffprobe']['video'][0]['frame_rate'], float):
                     video.fps = data['ffprobe']['video'][0]['frame_rate']
                 else:
-                    video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
+                    try:
+                        video.fps = data['ffprobe']['video'][0]['frame_rate'].magnitude
+                    except AttributeError:
+                        video.fps = data['ffprobe']['video'][0]['frame_rate']
 
     if 'audio' not in data['ffprobe']:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')

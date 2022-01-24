@@ -5,20 +5,13 @@ Classes and functions related to matches
 """
 import copy
 import itertools
+from collections import OrderedDict
 from collections import defaultdict
-try:
-    from collections.abc import MutableSequence
-except ImportError:
-    from collections import MutableSequence
+from collections.abc import MutableSequence
 
-try:
-    from collections import OrderedDict  # pylint:disable=ungrouped-imports
-except ImportError:  # pragma: no cover
-    from ordereddict import OrderedDict  # pylint:disable=import-error
-
+from .debug import defined_at
 from .loose import ensure_list, filter_index
 from .utils import is_iterable
-from .debug import defined_at
 
 
 class MatchesDict(OrderedDict):
@@ -792,8 +785,8 @@ class Match(object):
         current_match = split_match
         ret = []
 
-        for i in range(0, len(self.raw)):
-            if self.raw[i] in seps:
+        for i, char in enumerate(self.raw):
+            if char in seps:
                 if not split_match:
                     split_match = copy.deepcopy(current_match)
                     current_match.end = self.start + i
@@ -870,13 +863,13 @@ class Match(object):
         defined = ""
         initiator = ""
         if self.initiator.value != self.value:
-            initiator = "+initiator=" + self.initiator.value
+            initiator = f"+initiator={self.initiator.value}"
         if self.private:
             flags += '+private'
         if self.name:
-            name = "+name=%s" % (self.name,)
+            name = f"+name={self.name}"
         if self.tags:
-            tags = "+tags=%s" % (self.tags,)
+            tags = f"+tags={self.tags}"
         if self.defined_at:
-            defined += "@%s" % (self.defined_at,)
-        return "<%s:%s%s%s%s%s%s>" % (self.value, self.span, flags, name, tags, initiator, defined)
+            defined += f"@{self.defined_at}"
+        return f"<{self.value}:{self.span}{flags}{name}{tags}{initiator}{defined}>"

@@ -36,8 +36,8 @@ def DaylightSavingTA(t):
         return t
     try:
         return int(
-            LOCAL_ZONE.dst(datetime.datetime.utcfromtimestamp(
-                t // 1000)).seconds) * 1000
+            LOCAL_ZONE.dst(datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                seconds=t // 1000)).seconds) * 1000
     except:
         warnings.warn(
             'Invalid datetime date, assumed DST time, may be inaccurate...',

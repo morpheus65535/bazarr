@@ -13,10 +13,10 @@
 """ExtensionManager
 """
 
-import pkg_resources
-
 import logging
+import operator
 
+from . import _cache
 from .exception import NoMatches
 
 LOG = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Extension(object):
     :param name: The entry point name.
     :type name: str
     :param entry_point: The EntryPoint instance returned by
-        :mod:`pkg_resources`.
+        :mod:`entrypoints`.
     :type entry_point: EntryPoint
     :param plugin: The value returned by entry_point.load()
     :param obj: The object returned by ``plugin(*args, **kwds)`` if the
@@ -48,14 +48,45 @@ class Extension(object):
         self.obj = obj
 
     @property
+    def module_name(self):
+        """The name of the module from which the entry point is loaded.
+
+        :return: A string in 'dotted.module' format.
+        """
+        # NOTE: importlib_metadata from PyPI includes this but the
+        # Python 3.8 standard library does not.
+        match = self.entry_point.pattern.match(self.entry_point.value)
+        return match.group('module')
+
+    @property
+    def extras(self):
+        """The 'extras' settings for the plugin."""
+        # NOTE: The underlying package returns re.Match objects for
+        # some reason. Translate those to the matched strings, which
+        # seem more useful.
+        return [
+            # Python 3.6 returns _sre.SRE_Match objects. Later
+            # versions of python return re.Match objects. Both types
+            # have a 'string' attribute containing the text that
+            # matched the pattern.
+            getattr(e, 'string', e)
+            for e in self.entry_point.extras
+        ]
+
+    @property
+    def attr(self):
+        """The attribute of the module to be loaded."""
+        match = self.entry_point.pattern.match(self.entry_point.value)
+        return match.group('attr')
+
+    @property
     def entry_point_target(self):
         """The module and attribute referenced by this extension's entry_point.
 
         :return: A string representation of the target of the entry point in
             'dotted.module:object' format.
         """
-        return '%s:%s' % (self.entry_point.module_name,
-                          self.entry_point.attrs[0])
+        return self.entry_point.value
 
 
 class ExtensionManager(object):
@@ -79,7 +110,7 @@ class ExtensionManager(object):
         then ignored
     :type propagate_map_exceptions: bool
     :param on_load_failure_callback: Callback function that will be called when
-        a entrypoint can not be loaded. The arguments that will be provided
+        an entrypoint can not be loaded. The arguments that will be provided
         when this is called (when an entrypoint fails to load) are
         (manager, entrypoint, exception)
     :type on_load_failure_callback: function
@@ -125,7 +156,7 @@ class ExtensionManager(object):
             are logged and then ignored
         :type propagate_map_exceptions: bool
         :param on_load_failure_callback: Callback function that will
-            be called when a entrypoint can not be loaded. The
+            be called when an entrypoint can not be loaded. The
             arguments that will be provided when this is called (when
             an entrypoint fails to load) are (manager, entrypoint,
             exception)
@@ -152,20 +183,39 @@ class ExtensionManager(object):
 
     def _init_plugins(self, extensions):
         self.extensions = extensions
-        self._extensions_by_name = None
+        self._extensions_by_name_cache = None
+
+    @property
+    def _extensions_by_name(self):
+        if self._extensions_by_name_cache is None:
+            d = {}
+            for e in self.extensions:
+                d[e.name] = e
+            self._extensions_by_name_cache = d
+        return self._extensions_by_name_cache
 
     ENTRY_POINT_CACHE = {}
 
-    def _find_entry_points(self, namespace):
-        if namespace not in self.ENTRY_POINT_CACHE:
-            eps = list(pkg_resources.iter_entry_points(namespace))
-            self.ENTRY_POINT_CACHE[namespace] = eps
-        return self.ENTRY_POINT_CACHE[namespace]
+    def list_entry_points(self):
+        """Return the list of entry points for this namespace.
+
+        The entry points are not actually loaded, their list is just read and
+        returned.
+
+        """
+        if self.namespace not in self.ENTRY_POINT_CACHE:
+            eps = list(_cache.get_group_all(self.namespace))
+            self.ENTRY_POINT_CACHE[self.namespace] = eps
+        return self.ENTRY_POINT_CACHE[self.namespace]
+
+    def entry_points_names(self):
+        """Return the list of entry points names for this namespace."""
+        return list(map(operator.attrgetter("name"), self.list_entry_points()))
 
     def _load_plugins(self, invoke_on_load, invoke_args, invoke_kwds,
                       verify_requirements):
         extensions = []
-        for ep in self._find_entry_points(self.namespace):
+        for ep in self.list_entry_points():
             LOG.debug('found extension %r', ep)
             try:
                 ext = self._load_one_plugin(ep,
@@ -202,7 +252,7 @@ class ExtensionManager(object):
                 ep.require()
             plugin = ep.resolve()
         else:
-            plugin = ep.load(require=verify_requirements)
+            plugin = ep.load()
         if invoke_on_load:
             obj = plugin(*invoke_args, **invoke_kwds)
         else:
@@ -280,6 +330,13 @@ class ExtensionManager(object):
                 LOG.error('error calling %r: %s', e.name, err)
                 LOG.exception(err)
 
+    def items(self):
+        """Return an iterator of tuples of the form (name, extension).
+
+        This is analogous to the Mapping.items() method.
+        """
+        return self._extensions_by_name.items()
+
     def __iter__(self):
         """Produce iterator for the manager.
 
@@ -295,14 +352,8 @@ class ExtensionManager(object):
         produces the :class:`Extension` instance with the
         specified name.
         """
-        if self._extensions_by_name is None:
-            d = {}
-            for e in self.extensions:
-                d[e.name] = e
-            self._extensions_by_name = d
         return self._extensions_by_name[name]
 
     def __contains__(self, name):
-        """Return true if name is in list of enabled extensions.
-        """
+        """Return true if name is in list of enabled extensions."""
         return any(extension.name == name for extension in self.extensions)

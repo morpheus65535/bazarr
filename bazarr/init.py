@@ -184,9 +184,6 @@ def init_binaries():
     except Exception:
         logging.debug("custom check failed for: %s", exe)
 
-    rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
-    rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
-    rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
 

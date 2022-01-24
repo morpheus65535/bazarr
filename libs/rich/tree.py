@@ -1,4 +1,4 @@
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 from ._loop import loop_first, loop_last
 from .console import Console, ConsoleOptions, RenderableType, RenderResult
@@ -26,8 +26,9 @@ class Tree(JupyterMixin):
         *,
         style: StyleType = "tree",
         guide_style: StyleType = "tree.line",
-        expanded=True,
-        highlight=False,
+        expanded: bool = True,
+        highlight: bool = False,
+        hide_root: bool = False,
     ) -> None:
         self.label = label
         self.style = style
@@ -35,15 +36,16 @@ class Tree(JupyterMixin):
         self.children: List[Tree] = []
         self.expanded = expanded
         self.highlight = highlight
+        self.hide_root = hide_root
 
     def add(
         self,
         label: RenderableType,
         *,
-        style: StyleType = None,
-        guide_style: StyleType = None,
-        expanded=True,
-        highlight=False,
+        style: Optional[StyleType] = None,
+        guide_style: Optional[StyleType] = None,
+        expanded: bool = True,
+        highlight: bool = False,
     ) -> "Tree":
         """Add a child tree.
 
@@ -105,6 +107,8 @@ class Tree(JupyterMixin):
         style_stack = StyleStack(get_style(self.style))
         remove_guide_styles = Style(bold=False, underline2=False)
 
+        depth = 0
+
         while stack:
             stack_node = pop()
             try:
@@ -123,7 +127,7 @@ class Tree(JupyterMixin):
 
             guide_style = guide_style_stack.current + get_style(node.guide_style)
             style = style_stack.current + get_style(node.style)
-            prefix = levels[1:]
+            prefix = levels[(2 if self.hide_root else 1) :]
             renderable_lines = console.render_lines(
                 Styled(node.label, style),
                 options.update(
@@ -133,19 +137,21 @@ class Tree(JupyterMixin):
                     height=None,
                 ),
             )
-            for first, line in loop_first(renderable_lines):
-                if prefix:
-                    yield from _Segment.apply_style(
-                        prefix,
-                        style.background_style,
-                        post_style=remove_guide_styles,
-                    )
-                yield from line
-                yield new_line
-                if first and prefix:
-                    prefix[-1] = make_guide(
-                        SPACE if last else CONTINUE, prefix[-1].style or null_style
-                    )
+
+            if not (depth == 0 and self.hide_root):
+                for first, line in loop_first(renderable_lines):
+                    if prefix:
+                        yield from _Segment.apply_style(
+                            prefix,
+                            style.background_style,
+                            post_style=remove_guide_styles,
+                        )
+                    yield from line
+                    yield new_line
+                    if first and prefix:
+                        prefix[-1] = make_guide(
+                            SPACE if last else CONTINUE, prefix[-1].style or null_style
+                        )
 
             if node.expanded and node.children:
                 levels[-1] = make_guide(
@@ -157,6 +163,7 @@ class Tree(JupyterMixin):
                 style_stack.push(get_style(node.style))
                 guide_style_stack.push(get_style(node.guide_style))
                 push(iter(loop_last(node.children)))
+                depth += 1
 
     def __rich_measure__(
         self, console: "Console", options: "ConsoleOptions"
@@ -188,7 +195,7 @@ class Tree(JupyterMixin):
 
 if __name__ == "__main__":  # pragma: no cover
 
-    from rich.console import RenderGroup
+    from rich.console import Group
     from rich.markdown import Markdown
     from rich.panel import Panel
     from rich.syntax import Syntax
@@ -222,21 +229,21 @@ class Segment(NamedTuple):
 """
     )
 
-    root = Tree("🌲 [b green]Rich Tree", highlight=True)
+    root = Tree("🌲 [b green]Rich Tree", highlight=True, hide_root=True)
 
     node = root.add(":file_folder: Renderables", guide_style="red")
     simple_node = node.add(":file_folder: [bold yellow]Atomic", guide_style="uu green")
-    simple_node.add(RenderGroup("📄 Syntax", syntax))
-    simple_node.add(RenderGroup("📄 Markdown", Panel(markdown, border_style="green")))
+    simple_node.add(Group("📄 Syntax", syntax))
+    simple_node.add(Group("📄 Markdown", Panel(markdown, border_style="green")))
 
     containers_node = node.add(
         ":file_folder: [bold magenta]Containers", guide_style="bold magenta"
     )
     containers_node.expanded = True
     panel = Panel.fit("Just a panel", border_style="red")
-    containers_node.add(RenderGroup("📄 Panels", panel))
+    containers_node.add(Group("📄 Panels", panel))
 
-    containers_node.add(RenderGroup("📄 [b magenta]Table", table))
+    containers_node.add(Group("📄 [b magenta]Table", table))
 
     console = Console()
     console.print(root)

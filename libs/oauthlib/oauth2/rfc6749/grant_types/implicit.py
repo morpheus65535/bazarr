@@ -1,17 +1,12 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth2.rfc6749.grant_types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from oauthlib import common
-from oauthlib.uri_validate import is_absolute_uri
 
 from .. import errors
-from ..request_validator import RequestValidator
 from .base import GrantTypeBase
 
 log = logging.getLogger(__name__)
@@ -122,6 +117,12 @@ class ImplicitGrant(GrantTypeBase):
 
     def create_authorization_response(self, request, token_handler):
         """Create an authorization response.
+
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+
         The client constructs the request URI by adding the following
         parameters to the query component of the authorization endpoint URI
         using the "application/x-www-form-urlencoded" format, per `Appendix B`_:
@@ -164,6 +165,11 @@ class ImplicitGrant(GrantTypeBase):
     def create_token_response(self, request, token_handler):
         """Return token or error embedded in the URI fragment.
 
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
+
         If the resource owner grants the access request, the authorization
         server issues an access token and delivers it to the client by adding
         the following parameters to the fragment component of the redirection
@@ -201,11 +207,6 @@ class ImplicitGrant(GrantTypeBase):
         .. _`Section 7.1`: https://tools.ietf.org/html/rfc6749#section-7.1
         """
         try:
-            # request.scopes is only mandated in post auth and both pre and
-            # post auth use validate_authorization_request
-            if not request.scopes:
-                raise ValueError('Scopes must be set on post auth.')
-
             self.validate_token_request(request)
 
         # If the request fails due to a missing, invalid, or mismatching
@@ -229,25 +230,40 @@ class ImplicitGrant(GrantTypeBase):
             return {'Location': common.add_params_to_uri(request.redirect_uri, e.twotuples,
                                                          fragment=True)}, None, 302
 
-        # In OIDC implicit flow it is possible to have a request_type that does not include the access token!
+        # In OIDC implicit flow it is possible to have a request_type that does not include the access_token!
         # "id_token token" - return the access token and the id token
         # "id_token" - don't return the access token
         if "token" in request.response_type.split():
-            token = token_handler.create_token(request, refresh_token=False, save_token=False)
+            token = token_handler.create_token(request, refresh_token=False)
         else:
             token = {}
 
+        if request.state is not None:
+            token['state'] = request.state
+
         for modifier in self._token_modifiers:
             token = modifier(token, token_handler, request)
-        self.request_validator.save_token(token, request)
+
+        # In OIDC implicit flow it is possible to have a request_type that does
+        # not include the access_token! In this case there is no need to save a token.
+        if "token" in request.response_type.split():
+            self.request_validator.save_token(token, request)
+
         return self.prepare_authorization_response(
             request, token, {}, None, 302)
 
     def validate_authorization_request(self, request):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         return self.validate_token_request(request)
 
     def validate_token_request(self, request):
         """Check the token request for normal and fatal errors.
+
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
 
         This method is very similar to validate_authorization_request in
         the AuthorizationCodeGrant but differ in a few subtle areas.
@@ -290,35 +306,12 @@ class ImplicitGrant(GrantTypeBase):
 
         # OPTIONAL. As described in Section 3.1.2.
         # https://tools.ietf.org/html/rfc6749#section-3.1.2
-        if request.redirect_uri is not None:
-            request.using_default_redirect_uri = False
-            log.debug('Using provided redirect_uri %s', request.redirect_uri)
-            if not is_absolute_uri(request.redirect_uri):
-                raise errors.InvalidRedirectURIError(request=request)
-
-            # The authorization server MUST verify that the redirection URI
-            # to which it will redirect the access token matches a
-            # redirection URI registered by the client as described in
-            # Section 3.1.2.
-            # https://tools.ietf.org/html/rfc6749#section-3.1.2
-            if not self.request_validator.validate_redirect_uri(
-                    request.client_id, request.redirect_uri, request):
-                raise errors.MismatchingRedirectURIError(request=request)
-        else:
-            request.redirect_uri = self.request_validator.get_default_redirect_uri(
-                request.client_id, request)
-            request.using_default_redirect_uri = True
-            log.debug('Using default redirect_uri %s.', request.redirect_uri)
-            if not request.redirect_uri:
-                raise errors.MissingRedirectURIError(request=request)
-            if not is_absolute_uri(request.redirect_uri):
-                raise errors.InvalidRedirectURIError(request=request)
+        self._handle_redirects(request)
 
         # Then check for normal errors.
 
         request_info = self._run_custom_validators(request,
-                                self.custom_validators.all_pre)
-
+                                                   self.custom_validators.all_pre)
 
         # If the resource owner denies the access request or if the request
         # fails for reasons other than a missing or invalid redirection URI,
@@ -352,19 +345,20 @@ class ImplicitGrant(GrantTypeBase):
         self.validate_scopes(request)
 
         request_info.update({
-                'client_id': request.client_id,
-                'redirect_uri': request.redirect_uri,
-                'response_type': request.response_type,
-                'state': request.state,
-                'request': request,
+            'client_id': request.client_id,
+            'redirect_uri': request.redirect_uri,
+            'response_type': request.response_type,
+            'state': request.state,
+            'request': request,
         })
 
-        request_info = self._run_custom_validators(request,
-                            self.custom_validators.all_post,
-                            request_info)
+        request_info = self._run_custom_validators(
+            request,
+            self.custom_validators.all_post,
+            request_info
+        )
 
         return request.scopes, request_info
-
 
     def _run_custom_validators(self,
                                request,
