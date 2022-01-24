@@ -5,7 +5,7 @@ export const isTestEnv = false;
 export const Environment = {
   get apiKey(): string | undefined {
     if (isDevEnv) {
-      return import.meta.env.VITE_APIKEY;
+      return import.meta.env.VITE_API_KEY;
     } else if (isTestEnv) {
       return undefined;
     } else {

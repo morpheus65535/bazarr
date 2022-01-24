@@ -12,7 +12,6 @@
     "url": "https://github.com/morpheus65535/bazarr/issues"
   },
   "private": true,
-  "homepage": "./",
   "dependencies": {
     "axios": "^0.24",
     "react": "^17",
