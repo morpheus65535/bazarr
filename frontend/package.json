@@ -22,7 +22,7 @@
     "@fortawesome/react-fontawesome": "^0.1.16",
     "@reduxjs/toolkit": "^1.6",
     "axios": "^0.24",
-    "bootstrap": "^4",
+    "bootstrap": "^5",
     "lodash": "^4",
     "moment": "^2.29.1",
     "rc-slider": "^9.7",
