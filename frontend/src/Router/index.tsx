@@ -7,7 +7,9 @@ import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
+import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
+import SeriesMassEditor from "@/pages/Series/Editor";
 import SystemLogsView from "@/pages/System/Logs";
 import SystemProvidersView from "@/pages/System/Providers";
 import SystemReleasesView from "@/pages/System/Releases";
@@ -82,6 +84,11 @@ function useRoutes(): CustomRouteObject[] {
                 element: <SeriesView></SeriesView>,
               },
               {
+                path: "edit",
+                hidden: true,
+                element: <SeriesMassEditor></SeriesMassEditor>,
+              },
+              {
                 path: ":id",
                 element: (
                   <Lazy>
@@ -100,6 +107,11 @@ function useRoutes(): CustomRouteObject[] {
               {
                 index: true,
                 element: <MovieView></MovieView>,
+              },
+              {
+                path: "edit",
+                hidden: true,
+                element: <MovieMassEditor></MovieMassEditor>,
               },
               {
                 path: ":id",

@@ -1,7 +1,6 @@
 import {
   useLanguageProfiles,
   useMovieModification,
-  useMovies,
   useMoviesPagination,
 } from "@/apis/hooks";
 import { ActionBadge, LanguageText, TextPopover } from "@/components";
@@ -11,18 +10,16 @@ import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
+import { Badge, Container } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const MovieView: FunctionComponent<Props> = () => {
+const MovieView: FunctionComponent = () => {
   const { data: profiles } = useLanguageProfiles();
   const mutation = useMovieModification();
 
   const query = useMoviesPagination();
-  const full = useMovies();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
     () => [
@@ -111,13 +108,12 @@ const MovieView: FunctionComponent<Props> = () => {
   );
 
   return (
-    <ItemView
-      name="Movies"
-      fullQuery={full}
-      query={query}
-      columns={columns}
-      mutation={mutation}
-    ></ItemView>
+    <Container fluid>
+      <Helmet>
+        <title>Movies - Bazarr</title>
+      </Helmet>
+      <ItemView query={query} columns={columns} mutation={mutation}></ItemView>
+    </Container>
   );
 };
 

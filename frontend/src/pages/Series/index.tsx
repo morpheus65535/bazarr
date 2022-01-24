@@ -1,6 +1,5 @@
 import {
   useLanguageProfiles,
-  useSeries,
   useSeriesModification,
   useSeriesPagination,
 } from "@/apis/hooks";
@@ -9,18 +8,16 @@ import ItemView from "@/components/views/ItemView";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import React, { FunctionComponent, useMemo } from "react";
-import { Badge, ProgressBar } from "react-bootstrap";
+import { Badge, Container, ProgressBar } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const SeriesView: FunctionComponent<Props> = () => {
+const SeriesView: FunctionComponent = () => {
   const { data: profiles } = useLanguageProfiles();
   const mutation = useSeriesModification();
 
   const query = useSeriesPagination();
-  const full = useSeries();
 
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -112,13 +109,12 @@ const SeriesView: FunctionComponent<Props> = () => {
   );
 
   return (
-    <ItemView
-      name="Series"
-      fullQuery={full}
-      query={query}
-      columns={columns}
-      mutation={mutation}
-    ></ItemView>
+    <Container fluid>
+      <Helmet>
+        <title>Series - Bazarr</title>
+      </Helmet>
+      <ItemView query={query} columns={columns} mutation={mutation}></ItemView>
+    </Container>
   );
 };
 
