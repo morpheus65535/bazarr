@@ -43,20 +43,14 @@ declare module "react-table" {
   type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
 
   interface useSelectionProps<D extends Record<string, unknown>> {
-    isSelecting?: boolean;
     onSelect?: (items: D[]) => void;
     canSelect?: (item: D) => boolean;
   }
-
-  interface useSelectionState<D extends Record<string, unknown>> {}
 
   interface CustomTableProps<D extends Record<string, unknown>>
     extends useSelectionProps<D> {
     update?: TableUpdater<D>;
   }
-
-  interface CustomTableState<D extends Record<string, unknown>>
-    extends useSelectionState<D> {}
 
   export interface TableOptions<
     D extends Record<string, unknown>
@@ -104,8 +98,7 @@ declare module "react-table" {
       // UseResizeColumnsState<D>,
       UseRowSelectState<D>,
       // UseRowStateState<D>,
-      UseSortByState<D>,
-      CustomTableState<D> {}
+      UseSortByState<D> {}
 
   export interface ColumnInterface<
     D extends Record<string, unknown> = Record<string, unknown>
@@ -114,7 +107,6 @@ declare module "react-table" {
       UseGroupByColumnOptions<D>,
       // UseResizeColumnsColumnOptions<D>,
       UseSortByColumnOptions<D> {
-    selectHide?: boolean;
     className?: string;
   }
 

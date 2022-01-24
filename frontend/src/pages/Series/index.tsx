@@ -21,17 +21,13 @@ const SeriesView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, isSelecting: select }) => {
-          if (select) {
-            return value;
-          } else {
-            const target = `/series/${row.original.sonarrSeriesId}`;
-            return (
-              <Link to={target}>
-                <span>{value}</span>
-              </Link>
-            );
-          }
+        Cell: ({ row, value }) => {
+          const target = `/series/${row.original.sonarrSeriesId}`;
+          return (
+            <Link to={target}>
+              <span>{value}</span>
+            </Link>
+          );
         },
       },
       {
@@ -59,7 +55,6 @@ const SeriesView: FunctionComponent = () => {
       {
         Header: "Episodes",
         accessor: "episodeFileCount",
-        selectHide: true,
         Cell: (row) => {
           const { episodeFileCount, episodeMissingCount, profileId } =
             row.row.original;
@@ -90,7 +85,6 @@ const SeriesView: FunctionComponent = () => {
       },
       {
         accessor: "sonarrSeriesId",
-        selectHide: true,
         Cell: ({ row, update }) => (
           <ActionBadge
             icon={faWrench}

@@ -22,7 +22,6 @@ const MovieView: FunctionComponent = () => {
     () => [
       {
         accessor: "monitored",
-        selectHide: true,
         Cell: ({ value }) => (
           <FontAwesomeIcon
             title={value ? "monitored" : "unmonitored"}
@@ -34,19 +33,15 @@ const MovieView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, isSelecting: select }) => {
-          if (select) {
-            return value;
-          } else {
-            const target = `/movies/${row.original.radarrId}`;
-            return (
-              <TextPopover text={row.original.sceneName} delay={1}>
-                <Link to={target}>
-                  <span>{value}</span>
-                </Link>
-              </TextPopover>
-            );
-          }
+        Cell: ({ row, value }) => {
+          const target = `/movies/${row.original.radarrId}`;
+          return (
+            <TextPopover text={row.original.sceneName} delay={1}>
+              <Link to={target}>
+                <span>{value}</span>
+              </Link>
+            </TextPopover>
+          );
         },
       },
       {
@@ -74,7 +69,6 @@ const MovieView: FunctionComponent = () => {
       {
         Header: "Missing Subtitles",
         accessor: "missing_subtitles",
-        selectHide: true,
         Cell: (row) => {
           const missing = row.value;
           return missing.map((v) => (
@@ -90,7 +84,6 @@ const MovieView: FunctionComponent = () => {
       },
       {
         accessor: "radarrId",
-        selectHide: true,
         Cell: ({ row, update }) => {
           return (
             <ActionBadge

@@ -111,7 +111,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           columns={columns}
           data={data}
           onSelect={setSelections}
-          isSelecting
           plugins={[useRowSelect, useCustomSelection]}
         ></SimpleTable>
       </Row>

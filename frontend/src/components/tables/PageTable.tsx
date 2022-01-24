@@ -1,32 +1,21 @@
 import { ScrollToTop } from "@/utilities";
 import React, { useEffect } from "react";
-import {
-  PluginHook,
-  TableOptions,
-  usePagination,
-  useRowSelect,
-  useTable,
-} from "react-table";
+import { PluginHook, TableOptions, usePagination, useTable } from "react-table";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
-import { useCustomSelection, useDefaultSettings } from "./plugins";
+import { useDefaultSettings } from "./plugins";
 
 type Props<T extends object> = TableOptions<T> &
   TableStyleProps<T> & {
-    canSelect?: boolean;
     autoScroll?: boolean;
     plugins?: PluginHook<T>[];
   };
 
 export default function PageTable<T extends object>(props: Props<T>) {
-  const { autoScroll, canSelect, plugins, ...remain } = props;
+  const { autoScroll, plugins, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
   const allPlugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
-
-  if (canSelect) {
-    allPlugins.push(useRowSelect, useCustomSelection);
-  }
 
   if (plugins) {
     allPlugins.push(...plugins);

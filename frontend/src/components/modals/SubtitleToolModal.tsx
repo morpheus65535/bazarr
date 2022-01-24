@@ -453,7 +453,6 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
     <React.Fragment>
       <BaseModal title={"Subtitle Tools"} footer={footer} {...props}>
         <SimpleTable
-          isSelecting={data.length !== 0}
           emptyText="No External Subtitles Found"
           plugins={plugins}
           columns={columns}
