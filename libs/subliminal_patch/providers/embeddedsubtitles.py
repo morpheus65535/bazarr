@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import functools
 import logging
 import os
 import shutil
@@ -8,9 +9,9 @@ import tempfile
 from babelfish import language_converters
 import fese
 from fese import check_integrity
-from fese import InvalidFile
 from fese import FFprobeSubtitleStream
 from fese import FFprobeVideoContainer
+from fese import InvalidFile
 from fese import to_srt
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.core import Episode
@@ -67,6 +68,7 @@ class EmbeddedSubtitlesProvider(Provider):
 
     video_types = (Episode, Movie)
     subtitle_class = EmbeddedSubtitle
+    _blacklist = set()
 
     def __init__(
         self,
@@ -102,12 +104,17 @@ class EmbeddedSubtitlesProvider(Provider):
         shutil.rmtree(self._cache_dir, ignore_errors=True)
 
     def query(self, path: str, languages, media_type):
-        video = FFprobeVideoContainer(path)
+        if path in self._blacklist:
+            logger.debug("Ignoring blacklisted path: %s", path)
+            return []
+
+        video = _get_memoized_video_container(path)
 
         try:
             streams = filter(_check_allowed_extensions, video.get_subtitles())
         except fese.InvalidSource as error:
             logger.error("Error trying to get subtitles for %s: %s", video, error)
+            self._blacklist.add(path)
             streams = []
 
         if not streams:
@@ -147,6 +154,8 @@ class EmbeddedSubtitlesProvider(Provider):
 
         if self._hi_fallback:
             _check_hi_fallback(allowed_streams, languages)
+
+        logger.debug("Cache info: %s", _get_memoized_video_container.cache_info())
 
         return [
             EmbeddedSubtitle(stream, video, {"hash"}, media_type)
@@ -197,6 +206,17 @@ class EmbeddedSubtitlesProvider(Provider):
             cached_path[subtitle.stream.index] = new_subtitle_path
 
         return new_subtitle_path
+
+
+class _MemoizedFFprobeVideoContainer(FFprobeVideoContainer):
+    @functools.lru_cache
+    def get_subtitles(self, *args, **kwargs):
+        return super().get_subtitles(*args, **kwargs)
+
+
+@functools.lru_cache(maxsize=8096)
+def _get_memoized_video_container(path: str):
+    return _MemoizedFFprobeVideoContainer(path)
 
 
 def _check_allowed_extensions(subtitle: FFprobeSubtitleStream):
