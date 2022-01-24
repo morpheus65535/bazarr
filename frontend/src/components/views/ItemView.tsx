@@ -36,8 +36,6 @@ function ItemView<T extends Item.Base>({
 }: Props<T>) {
   const [editMode, setEditMode] = useState(false);
 
-  const { mutateAsync } = mutation;
-
   const showModal = useShowModal();
 
   const updateRow = useCallback<TableUpdater<T>>(
@@ -77,7 +75,7 @@ function ItemView<T extends Item.Base>({
           query={query}
           data={[]}
         ></QueryPageTable>
-        <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
+        <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
       </Row>
     </>
   );

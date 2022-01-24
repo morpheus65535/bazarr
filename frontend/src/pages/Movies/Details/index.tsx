@@ -48,7 +48,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
 
   const showModal = useShowModal();
 
-  const { mutateAsync } = useMovieModification();
+  const mutation = useMovieModification();
   const { mutateAsync: action } = useMovieAction();
   const { mutateAsync: downloadAsync } = useDownloadMovieSubtitles();
 
@@ -177,7 +177,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
       <Row>
         <Table movie={movie} profile={profile} disabled={hasTask}></Table>
       </Row>
-      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
       <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
       <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
       <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
