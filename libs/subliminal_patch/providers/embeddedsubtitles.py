@@ -106,10 +106,6 @@ class EmbeddedSubtitlesProvider(Provider):
         shutil.rmtree(self._cache_dir, ignore_errors=True)
 
     def query(self, path: str, languages, media_type):
-        if path in self._blacklist:
-            logger.debug("Ignoring blacklisted path: %s", path)
-            return []
-
         video = _get_memoized_video_container(path)
 
         try:
