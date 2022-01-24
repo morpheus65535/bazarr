@@ -337,7 +337,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         accessor: "_language",
         Cell: ({ value }) => (
           <Badge variant="secondary">
-            <Language value={value} long></Language>
+            <Language.Text value={value} long></Language.Text>
           </Badge>
         ),
       },

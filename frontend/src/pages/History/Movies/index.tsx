@@ -41,7 +41,7 @@ const MoviesHistoryView: FunctionComponent<Props> = () => {
           if (value) {
             return (
               <Badge variant="secondary">
-                <Language value={value} long></Language>
+                <Language.Text value={value} long></Language.Text>
               </Badge>
             );
           } else {

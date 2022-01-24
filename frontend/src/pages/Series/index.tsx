@@ -1,5 +1,5 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
-import { ActionBadge } from "@/components";
+import { ActionBadge, ItemEditorModal, useShowModal } from "@/components";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import ItemView from "@/components/views/ItemView";
 import { BuildKey } from "@/utilities";
@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const SeriesView: FunctionComponent = () => {
-  const mutation = useSeriesModification();
+  const { mutateAsync } = useSeriesModification();
 
   const query = useSeriesPagination();
 
@@ -85,14 +85,15 @@ const SeriesView: FunctionComponent = () => {
       },
       {
         accessor: "sonarrSeriesId",
-        Cell: ({ row, update }) => (
-          <ActionBadge
-            icon={faWrench}
-            onClick={() => {
-              update && update(row, "edit");
-            }}
-          ></ActionBadge>
-        ),
+        Cell: ({ row: { original } }) => {
+          const show = useShowModal();
+          return (
+            <ActionBadge
+              icon={faWrench}
+              onClick={() => show("edit", original)}
+            ></ActionBadge>
+          );
+        },
       },
     ],
     []
@@ -103,7 +104,8 @@ const SeriesView: FunctionComponent = () => {
       <Helmet>
         <title>Series - Bazarr</title>
       </Helmet>
-      <ItemView query={query} columns={columns} mutation={mutation}></ItemView>
+      <ItemView query={query} columns={columns}></ItemView>
+      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
     </Container>
   );
 };

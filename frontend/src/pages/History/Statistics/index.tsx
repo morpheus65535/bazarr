@@ -3,12 +3,8 @@ import {
   useLanguages,
   useSystemProviders,
 } from "@/apis/hooks";
-import {
-  ContentHeader,
-  LanguageSelector,
-  QueryOverlay,
-  Selector,
-} from "@/components";
+import { ContentHeader, QueryOverlay, Selector } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { merge } from "lodash";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Col, Container } from "react-bootstrap";
@@ -102,12 +98,12 @@ const HistoryStats: FunctionComponent = () => {
               ></Selector>
             </SelectorContainer>
             <SelectorContainer>
-              <LanguageSelector
+              <Language.Selector
                 clearable
-                options={languages ?? []}
                 value={lang}
                 onChange={setLanguage}
-              ></LanguageSelector>
+                history
+              ></Language.Selector>
             </SelectorContainer>
           </ContentHeader>
           <ResponsiveContainer height="100%">

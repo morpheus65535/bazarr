@@ -95,7 +95,7 @@ export function ManualSearchModal<T extends SupportType>(
           };
           return (
             <Badge variant="secondary">
-              <Language value={lang}></Language>
+              <Language.Text value={lang}></Language.Text>
             </Badge>
           );
         },

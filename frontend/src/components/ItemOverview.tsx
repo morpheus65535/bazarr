@@ -102,7 +102,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             icon={faLanguage}
             desc="Language"
           >
-            <Language long text={v}></Language>
+            <Language.Text long value={v}></Language.Text>
           </DetailBadge>
         ))
       );

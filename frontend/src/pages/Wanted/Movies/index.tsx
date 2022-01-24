@@ -57,7 +57,7 @@ const WantedMoviesView: FunctionComponent<Props> = () => {
                 })
               }
             >
-              <Language className="pr-1" value={item}></Language>
+              <Language.Text className="pr-1" value={item}></Language.Text>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

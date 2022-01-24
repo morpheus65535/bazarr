@@ -77,7 +77,7 @@ const MovieView: FunctionComponent = () => {
               variant="warning"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
-              <Language value={v}></Language>
+              <Language.Text value={v}></Language.Text>
             </Badge>
           ));
         },
