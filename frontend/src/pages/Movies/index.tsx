@@ -1,4 +1,4 @@
-import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
+import { useMoviesPagination } from "@/apis/hooks";
 import { ActionBadge, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
@@ -14,8 +14,6 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
-  const mutation = useMovieModification();
-
   const query = useMoviesPagination();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
@@ -63,7 +61,7 @@ const MovieView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value}></LanguageProfile>;
+          return <LanguageProfile index={value} empty=""></LanguageProfile>;
         },
       },
       {
@@ -102,7 +100,7 @@ const MovieView: FunctionComponent = () => {
       <Helmet>
         <title>Movies - Bazarr</title>
       </Helmet>
-      <ItemView query={query} columns={columns} mutation={mutation}></ItemView>
+      <ItemView query={query} columns={columns}></ItemView>
     </Container>
   );
 };

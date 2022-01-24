@@ -49,7 +49,7 @@ const SeriesView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value}></LanguageProfile>;
+          return <LanguageProfile index={value} empty=""></LanguageProfile>;
         },
       },
       {

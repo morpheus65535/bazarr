@@ -169,7 +169,7 @@ const RouteItem: FunctionComponent<{
         <div className={clsx("sidebar-collapse-box", { active: isOpen })}>
           <ListGroupItem
             action
-            className="sidebar-button"
+            className={clsx("sidebar-button", { "sb-active": isOpen })}
             onClick={() => {
               log("info", "clicked", link);
 
