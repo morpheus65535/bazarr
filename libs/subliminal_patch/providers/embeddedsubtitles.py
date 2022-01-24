@@ -78,6 +78,7 @@ class EmbeddedSubtitlesProvider(Provider):
         ffprobe_path=None,
         ffmpeg_path=None,
         hi_fallback=False,
+        mergerfs_mode=False,
     ):
         self._include_ass = include_ass
         self._include_srt = include_srt
@@ -86,6 +87,7 @@ class EmbeddedSubtitlesProvider(Provider):
         )
         self._hi_fallback = hi_fallback
         self._cached_paths = {}
+        self._mergerfs_mode = mergerfs_mode
 
         fese.FFPROBE_PATH = ffprobe_path or fese.FFPROBE_PATH
         fese.FFMPEG_PATH = ffmpeg_path or fese.FFMPEG_PATH
@@ -163,8 +165,8 @@ class EmbeddedSubtitlesProvider(Provider):
         ]
 
     def list_subtitles(self, video, languages):
-        if not os.path.isfile(video.original_path):
-            logger.debug("Ignoring inexistent file: %s", video.original_path)
+        if not self._is_path_valid(video.original_path):
+            logger.debug("Ignoring video: %s", video)
             return []
 
         return self.query(
@@ -207,6 +209,21 @@ class EmbeddedSubtitlesProvider(Provider):
 
         return new_subtitle_path
 
+    def _is_path_valid(self, path):
+        if path in self._blacklist:
+            logger.debug("Blacklisted path: %s", path)
+            return False
+
+        if not os.path.isfile(path):
+            logger.debug("Inexistent file: %s", path)
+            return False
+
+        if self._mergerfs_mode and _is_fuse_rclone_mount(path):
+            logger.debug("Potential cloud file: %s", path)
+            return False
+
+        return True
+
 
 class _MemoizedFFprobeVideoContainer(FFprobeVideoContainer):
     @functools.lru_cache
@@ -240,3 +257,17 @@ def _check_hi_fallback(streams, languages):
 
         else:
             logger.debug("HI fallback not needed: %s", compatible_streams)
+
+
+def _is_fuse_rclone_mount(path: str):
+    # Experimental!
+
+    # This function only makes sense if you are combining a rclone mount with a local mount
+    # with mergerfs or similar tools. Don't use it otherwise.
+
+    # It tries to guess whether a file is a cloud mount by the length
+    # of the inode number. See the following links for reference.
+
+    # https://forum.rclone.org/t/fuse-inode-number-aufs/215/5
+    # https://pkg.go.dev/bazil.org/fuse/fs?utm_source=godoc#GenerateDynamicInode
+    return len(str(os.stat(path).st_ino)) > 18

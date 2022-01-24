@@ -211,6 +211,7 @@ def get_providers_auth():
             'include_ass': settings.embeddedsubtitles.getboolean('include_ass'),
             'include_srt': settings.embeddedsubtitles.getboolean('include_srt'),
             'hi_fallback': settings.embeddedsubtitles.getboolean('hi_fallback'),
+            'mergerfs_mode': settings.embeddedsubtitles.getboolean('mergerfs_mode'),
             'cache_dir': os.path.join(args.config_dir, "cache"),
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
