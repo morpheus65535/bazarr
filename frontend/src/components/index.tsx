@@ -98,7 +98,7 @@ export const LoadingIndicator: FunctionComponent<{
 };
 
 interface TextPopoverProps {
-  children: React.ReactElement<any, any>;
+  children: React.ReactElement;
   text: string | undefined | null;
   placement?: OverlayTriggerProps["placement"];
   delay?: number;

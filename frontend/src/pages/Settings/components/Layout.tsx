@@ -23,7 +23,12 @@ type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
 
 export const StagedChangesContext = React.createContext<
   SimpleStateType<LooseObject>
->([{}, () => {}]);
+>([
+  {},
+  () => {
+    throw new Error("StagedChangesContext not initialized");
+  },
+]);
 
 function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {

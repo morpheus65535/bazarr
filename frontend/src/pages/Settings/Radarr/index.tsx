@@ -15,9 +15,7 @@ import {
 } from "../components";
 import { moviesEnabledKey } from "../keys";
 
-interface Props {}
-
-const SettingsRadarrView: FunctionComponent<Props> = () => {
+const SettingsRadarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.radarr.base_url?.slice(1) ?? "";
   }, []);

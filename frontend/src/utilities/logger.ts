@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { isProdEnv } from ".";
 
 type LoggerType = "info" | "warning" | "error";

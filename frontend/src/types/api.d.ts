@@ -249,7 +249,7 @@ interface SearchResultType {
   release_info: string[];
   score: number;
   score_without_hash: number;
-  subtitle: any;
+  subtitle: unknown;
   uploader?: string;
   url?: string;
 }

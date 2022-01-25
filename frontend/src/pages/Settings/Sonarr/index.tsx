@@ -17,9 +17,7 @@ import {
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
 
-interface Props {}
-
-const SettingsSonarrView: FunctionComponent<Props> = () => {
+const SettingsSonarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.sonarr.base_url?.slice(1) ?? "";
   }, []);

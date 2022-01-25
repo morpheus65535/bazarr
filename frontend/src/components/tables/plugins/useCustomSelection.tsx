@@ -90,13 +90,13 @@ function visibleColumns<T extends object>(
   const { instance } = meta;
   const checkbox: Column<T> = {
     id: checkboxId,
-    Header: ({ getToggleAllRowsSelectedProps }: HeaderProps<any>) => (
+    Header: ({ getToggleAllRowsSelectedProps }: HeaderProps<T>) => (
       <Checkbox
         idIn="table-header-selection"
         {...getToggleAllRowsSelectedProps()}
       ></Checkbox>
     ),
-    Cell: ({ row }: CellProps<any>) => {
+    Cell: ({ row }: CellProps<T>) => {
       const canSelect = instance.canSelect;
       const disabled = (canSelect && !canSelect(row.original)) ?? false;
       return (

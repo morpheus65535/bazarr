@@ -119,18 +119,15 @@ const FrameRateModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
 
   const submit = useCallback(() => {
     if (canSave) {
-      const action = submodProcessFrameRate(from!, to!);
+      const action = submodProcessFrameRate(from, to);
       process(action);
     }
   }, [canSave, from, to, process]);
 
-  const footer = useMemo(
-    () => (
-      <Button disabled={!canSave} onClick={submit}>
-        Save
-      </Button>
-    ),
-    [submit, canSave]
+  const footer = (
+    <Button disabled={!canSave} onClick={submit}>
+      Save
+    </Button>
   );
 
   return (
@@ -176,8 +173,8 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
   ]);
 
   const updateOffset = useCallback(
-    (idx: number) => {
-      return (e: any) => {
+    (idx: number): React.ChangeEventHandler<HTMLInputElement> => {
+      return (e) => {
         let value = parseFloat(e.currentTarget.value);
         if (isNaN(value)) {
           value = 0;
@@ -345,8 +342,8 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         id: "file",
         Header: "File",
         accessor: "path",
-        Cell: (row) => {
-          const path = row.value!;
+        Cell: ({ value }) => {
+          const path = value;
 
           let idx = path.lastIndexOf("/");
 

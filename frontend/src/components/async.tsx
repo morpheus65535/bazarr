@@ -43,9 +43,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   const [item, setItem] = useState<T | null>(null);
 
   useEffect(() => {
-    promise()
-      .then(setItem)
-      .catch(() => {});
+    promise().then(setItem);
   }, [promise]);
 
   if (item === null) {

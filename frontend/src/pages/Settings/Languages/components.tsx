@@ -25,27 +25,24 @@ export const LanguageSelector: FunctionComponent<
   );
 };
 
-interface ProfileSelectorProps {}
+export const ProfileSelector: FunctionComponent<BaseInput<Language.Profile>> =
+  ({ settingKey }) => {
+    const profiles = useProfilesContext();
 
-export const ProfileSelector: FunctionComponent<
-  ProfileSelectorProps & BaseInput<Language.Profile>
-> = ({ settingKey }) => {
-  const profiles = useProfilesContext();
+    const profileOptions = useMemo<SelectorOption<number>[]>(
+      () =>
+        profiles.map((v) => {
+          return { label: v.name, value: v.profileId };
+        }),
+      [profiles]
+    );
 
-  const profileOptions = useMemo<SelectorOption<number>[]>(
-    () =>
-      profiles.map((v) => {
-        return { label: v.name, value: v.profileId };
-      }),
-    [profiles]
-  );
-
-  return (
-    <Selector
-      clearable
-      options={profileOptions}
-      settingKey={settingKey}
-      beforeStaged={(v) => (v === null ? "" : v)}
-    ></Selector>
-  );
-};
+    return (
+      <Selector
+        clearable
+        options={profileOptions}
+        settingKey={settingKey}
+        beforeStaged={(v) => (v === null ? "" : v)}
+      ></Selector>
+    );
+  };

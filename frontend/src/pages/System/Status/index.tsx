@@ -65,9 +65,7 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   );
 };
 
-interface Props {}
-
-const SystemStatusView: FunctionComponent<Props> = () => {
+const SystemStatusView: FunctionComponent = () => {
   const health = useSystemHealth();
   const { data: status } = useSystemStatus();
 

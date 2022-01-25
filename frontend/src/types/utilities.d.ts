@@ -1,10 +1,11 @@
 type ValueOf<D> = D[keyof D];
 
-type Unpacked<D> = D extends any[] | readonly any[] ? D[number] : D;
+type Unpacked<D> = D extends unknown[] | readonly unknown[] ? D[number] : D;
 
 type Nullable<D> = D | null;
 
 type LooseObject = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
 

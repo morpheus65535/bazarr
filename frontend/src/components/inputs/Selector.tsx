@@ -1,6 +1,6 @@
 import { isArray } from "lodash";
 import React, { useCallback, useMemo } from "react";
-import Select from "react-select";
+import Select, { GroupBase } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
 import "./selector.scss";
 
@@ -17,7 +17,7 @@ export interface SelectorProps<T, M extends boolean> {
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;
-  components?: Partial<SelectComponents<T, M, any>>;
+  components?: Partial<SelectComponents<T, M, GroupBase<T>>>;
 }
 
 export function Selector<T = string, M extends boolean = false>(
@@ -103,7 +103,7 @@ export function Selector<T = string, M extends boolean = false>(
             res = (v as SelectorOption<T>)?.value ?? null;
           }
           // TODO: Force as any
-          onChange(res as any);
+          onChange(res as SelectorValueType<T, M>);
         }
       }}
     ></Select>

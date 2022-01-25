@@ -39,7 +39,7 @@ declare namespace SocketIO {
   type Event = {
     type: EventType;
     action: ActionType;
-    payload: any;
+    payload: unknown;
   };
 
   type ActionHandler<T> = T extends null ? () => void : (payload: T[]) => void;
@@ -52,6 +52,7 @@ declare namespace SocketIO {
 
   type ActionRecord = {
     [P in EventType]?: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [R in ActionType]?: any[];
     };
   };

@@ -30,7 +30,7 @@ export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
   override?: OverrideFuncType<T>;
-  beforeStaged?: (v: T) => any;
+  beforeStaged?: (v: T) => unknown;
 }
 
 export interface TextProps extends BaseInput<React.ReactText> {
@@ -106,7 +106,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-function selectorValidator<T>(v: any): v is T {
+function selectorValidator<T>(v: unknown): v is T {
   return isString(v) || isNumber(v) || isArray(v);
 }
 
@@ -137,11 +137,10 @@ export function Selector<
   return (
     <CSelector
       {...selector}
-      // TODO: Force as any
-      defaultValue={value as any}
+      defaultValue={value as SelectorValueType<T, M>}
       onChange={(v) => {
-        v = beforeStaged ? beforeStaged(v) : v;
-        update(v, settingKey);
+        const result = beforeStaged ? beforeStaged(v) : v;
+        update(result, settingKey);
       }}
     ></CSelector>
   );
@@ -191,7 +190,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
 
 type ButtonProps = {
   onClick?: (
-    update: (v: any, key: string) => void,
+    update: (v: unknown, key: string) => void,
     key: string,
     value?: string
   ) => void;

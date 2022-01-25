@@ -10,9 +10,7 @@ import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const MoviesHistoryView: FunctionComponent<Props> = () => {
+const MoviesHistoryView: FunctionComponent = () => {
   const columns: Column<History.Movie>[] = useMemo<Column<History.Movie>[]>(
     () => [
       {

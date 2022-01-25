@@ -25,9 +25,7 @@ import { Helmet } from "react-helmet";
 import "./header.scss";
 import NotificationCenter from "./Notification";
 
-interface Props {}
-
-const Header: FunctionComponent<Props> = () => {
+const Header: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
 
   const hasLogout = (settings?.auth.type ?? "none") === "form";

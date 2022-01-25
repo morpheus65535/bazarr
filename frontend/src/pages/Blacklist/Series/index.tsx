@@ -6,9 +6,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const BlacklistSeriesView: FunctionComponent<Props> = () => {
+const BlacklistSeriesView: FunctionComponent = () => {
   const blacklist = useEpisodeBlacklist();
   const { mutateAsync } = useEpisodeDeleteBlacklist();
 

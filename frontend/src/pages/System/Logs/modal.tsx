@@ -1,9 +1,7 @@
 import { BaseModal, BaseModalProps, useModalPayload } from "@/components";
 import React, { FunctionComponent, useMemo } from "react";
 
-interface Props extends BaseModalProps {}
-
-const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
+const SystemLogModal: FunctionComponent<BaseModalProps> = ({ ...modal }) => {
   const stack = useModalPayload<string>(modal.modalKey);
   const result = useMemo(
     () =>
@@ -17,7 +15,7 @@ const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
   return (
     <BaseModal title="Stack traceback" {...modal}>
       <pre>
-        <code className="zmdi-language-python-alt">{result}</code>
+        <code>{result}</code>
       </pre>
     </BaseModal>
   );

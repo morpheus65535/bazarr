@@ -14,9 +14,7 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const WantedMoviesView: FunctionComponent<Props> = () => {
+const WantedMoviesView: FunctionComponent = () => {
   const columns: Column<Wanted.Movie>[] = useMemo<Column<Wanted.Movie>[]>(
     () => [
       {

@@ -96,11 +96,9 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 };
 
-interface EpisodeHistoryProps {}
-
-export const EpisodeHistoryModal: FunctionComponent<
-  BaseModalProps & EpisodeHistoryProps
-> = (props) => {
+export const EpisodeHistoryModal: FunctionComponent<BaseModalProps> = (
+  props
+) => {
   const episode = useModalPayload<Item.Episode>(props.modalKey);
 
   const history = useEpisodeHistory(episode?.sonarrEpisodeId);

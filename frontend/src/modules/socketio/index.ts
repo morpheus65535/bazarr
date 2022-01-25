@@ -33,16 +33,6 @@ class SocketIOClient {
   initialize() {
     this.reducers.push(...createDefaultReducer());
     this.socket.connect();
-
-    // Debug Command
-    window._socketio = {
-      dump: this.dump.bind(this),
-      emit: this.onEvent.bind(this),
-    };
-  }
-
-  private dump() {
-    console.log("SocketIO reducers", this.reducers);
   }
 
   addReducer(reducer: SocketIO.Reducer) {
@@ -65,7 +55,10 @@ class SocketIOClient {
         records[e.type] = {};
       }
 
-      const record = records[e.type]!;
+      const record = records[e.type];
+      if (record === undefined) {
+        return;
+      }
       if (!(e.action in record)) {
         record[e.action] = [];
       }
@@ -78,7 +71,7 @@ class SocketIOClient {
       if (element) {
         const handlers = this.reducers.filter((v) => v.key === type);
         if (handlers.length === 0) {
-          log("warning", "Unhandle SocketIO event", type);
+          log("warning", "Unhandled SocketIO event", type);
           return;
         }
 

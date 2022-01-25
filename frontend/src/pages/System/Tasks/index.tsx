@@ -6,9 +6,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemTasksView: FunctionComponent<Props> = () => {
+const SystemTasksView: FunctionComponent = () => {
   const tasks = useSystemTasks();
 
   const { isFetching, data, refetch } = tasks;

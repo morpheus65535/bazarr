@@ -11,7 +11,7 @@ export function useIsMobile() {
   return useMediaMatch("(max-width: 576px)");
 }
 
-export function useIsArrayExtended(arr: any[]) {
+export function useIsArrayExtended(arr: unknown[]) {
   const [size, setSize] = useState(arr.length);
   const [isExtended, setExtended] = useState(arr.length !== 0);
 

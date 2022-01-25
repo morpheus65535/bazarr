@@ -29,7 +29,12 @@ import "./style.scss";
 const Selection = React.createContext<{
   selection: string | null;
   select: (path: string | null) => void;
-}>({ selection: null, select: () => {} });
+}>({
+  selection: null,
+  select: () => {
+    log("error", "Selection context not initialized");
+  },
+});
 
 function useSelection() {
   return React.useContext(Selection);

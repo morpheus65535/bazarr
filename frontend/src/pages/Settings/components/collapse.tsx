@@ -11,9 +11,16 @@ type SupportType = string | boolean;
 
 const CollapseContext = React.createContext<
   [SupportType, Dispatch<SupportType>]
->(["", (s) => {}]);
+>([
+  "",
+  (s) => {
+    throw new Error("CollapseContext not initialized");
+  },
+]);
 const CollapseUpdateContext = React.createContext<Dispatch<SupportType>>(
-  (s) => {}
+  (s) => {
+    throw new Error("CollapseUpdateContext not initialized");
+  }
 );
 
 export function useCollapse() {

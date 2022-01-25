@@ -98,9 +98,19 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
       const tasks = items
         .filter((v) => v.payload.instance !== undefined)
         .map((v) => {
-          const { hi, forced, payload, language } = v;
-          const { code2 } = language!;
-          const { sonarrEpisodeId: episodeId } = payload.instance!;
+          const {
+            hi,
+            forced,
+            payload: { instance },
+            language,
+          } = v;
+
+          if (language === null || instance === null) {
+            throw new Error("Invalid state");
+          }
+
+          const { code2 } = language;
+          const { sonarrEpisodeId: episodeId } = instance;
 
           const form: FormType.UploadSubtitle = {
             file: v.file,

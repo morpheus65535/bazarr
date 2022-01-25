@@ -6,9 +6,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemProvidersView: FunctionComponent<Props> = () => {
+const SystemProvidersView: FunctionComponent = () => {
   const providers = useSystemProviders();
 
   const { isFetching, data, refetch } = providers;

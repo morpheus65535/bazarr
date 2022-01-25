@@ -13,9 +13,7 @@ import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const SeriesHistoryView: FunctionComponent<Props> = () => {
+const SeriesHistoryView: FunctionComponent = () => {
   const columns: Column<History.Episode>[] = useMemo<Column<History.Episode>[]>(
     () => [
       {

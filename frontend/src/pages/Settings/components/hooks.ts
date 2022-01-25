@@ -12,7 +12,7 @@ export function useStagedValues(): LooseObject {
 export function useSingleUpdate() {
   const [, update] = useContext(StagedChangesContext);
   return useCallback(
-    (v: any, key: string) => {
+    (v: unknown, key: string) => {
       update((staged) => {
         const changes = { ...staged };
         changes[key] = v;
@@ -42,7 +42,7 @@ export function useMultiUpdate() {
   );
 }
 
-type ValidateFuncType<T> = (v: any) => v is T;
+type ValidateFuncType<T> = (v: unknown) => v is T;
 
 export type OverrideFuncType<T> = (settings: Settings) => T;
 

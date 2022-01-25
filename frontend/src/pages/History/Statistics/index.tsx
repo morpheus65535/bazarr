@@ -1,8 +1,4 @@
-import {
-  useHistoryStats,
-  useLanguages,
-  useSystemProviders,
-} from "@/apis/hooks";
+import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
 import { ContentHeader, QueryOverlay, Selector } from "@/components";
 import Language from "@/components/bazarr/Language";
 import { merge } from "lodash";
@@ -28,8 +24,6 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const { data: languages } = useLanguages(true);
-
   const { data: providers } = useSystemProviders(true);
 
   const providerOptions = useMemo<SelectorOption<System.Provider>[]>(

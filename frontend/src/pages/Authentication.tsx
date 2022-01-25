@@ -5,9 +5,7 @@ import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Navigate } from "react-router-dom";
 import "./Authentication.scss";
 
-interface Props {}
-
-const Authentication: FunctionComponent<Props> = () => {
+const Authentication: FunctionComponent = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 

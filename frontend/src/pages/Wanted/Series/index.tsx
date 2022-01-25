@@ -14,9 +14,7 @@ import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
-interface Props {}
-
-const WantedSeriesView: FunctionComponent<Props> = () => {
+const WantedSeriesView: FunctionComponent = () => {
   const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(
     () => [
       {

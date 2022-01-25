@@ -7,9 +7,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemLogsView: FunctionComponent<Props> = () => {
+const SystemLogsView: FunctionComponent = () => {
   const logs = useSystemLogs();
   const { isFetching, data, refetch } = logs;
 

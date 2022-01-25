@@ -5,9 +5,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
-interface Props {}
-
-const SystemReleasesView: FunctionComponent<Props> = () => {
+const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
   const { data } = releases;
 

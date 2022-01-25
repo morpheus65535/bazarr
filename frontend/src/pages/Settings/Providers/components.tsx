@@ -15,7 +15,7 @@ import React, {
   useState,
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
-import { components } from "react-select";
+import { components, GroupBase } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
 import {
   Check,
@@ -218,7 +218,7 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   const selectorComponents = useMemo<
-    Partial<SelectComponents<ProviderInfo, false, any>>
+    Partial<SelectComponents<ProviderInfo, false, GroupBase<ProviderInfo>>>
   >(
     () => ({
       Option: ({ data, ...other }) => {

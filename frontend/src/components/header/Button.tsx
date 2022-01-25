@@ -46,7 +46,7 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   );
 };
 
-type CHAsyncButtonProps<T extends () => Promise<any>> = {
+type CHAsyncButtonProps<T extends () => Promise<unknown>> = {
   promise: T;
   onSuccess?: (item: PromiseType<ReturnType<T>>) => void;
 } & Omit<CHButtonProps, "updating" | "updatingIcon" | "onClick">;
