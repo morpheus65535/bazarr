@@ -1,6 +1,7 @@
 import reactRefresh from "@vitejs/plugin-react-refresh";
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
+import checker from "vite-plugin-checker";
 import { findApiKey } from "./config/api-key";
 import chunks from "./config/chunks";
 
@@ -16,7 +17,17 @@ export default defineConfig(async ({ mode, command }) => {
   }
 
   return {
-    plugins: [reactRefresh()],
+    plugins: [
+      reactRefresh(),
+      checker({
+        typescript: true,
+        eslint: {
+          files: ["./src"],
+          extensions: [".ts", ".tsx"],
+        },
+        enableBuild: false,
+      }),
+    ],
     base: "./",
     resolve: {
       alias: {
