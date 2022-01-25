@@ -30,31 +30,43 @@ jobs:
       - name: Cache node_modules
         uses: actions/cache@v2
         with:
-          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          path: "${{ env.UI_DIRECTORY }}/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-modules-
 
       - name: Setup NodeJS
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Install dependencies
         run: npm install
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Build
-        run: npm run build:ci
+      - name: Check Types
+        run: npm run check:ts
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Check Styles
+        run: npm run check
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+      - name: Check Format
+        run: npm run check:fmt
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Unit Test
         run: npm test
         working-directory: ${{ env.UI_DIRECTORY }}
 
+      - name: Build
+        run: npm run build:ci
+        working-directory: ${{ env.UI_DIRECTORY }}
+
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
-          path: '${{ env.UI_DIRECTORY }}/build'
+          path: "${{ env.UI_DIRECTORY }}/build"
 
   Backend:
     runs-on: ubuntu-latest
@@ -69,13 +81,13 @@ jobs:
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
 
       - name: Install UI
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
-          path: '${{ env.UI_DIRECTORY }}/build'
+          path: "${{ env.UI_DIRECTORY }}/build"
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
