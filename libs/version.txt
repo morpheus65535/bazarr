@@ -45,6 +45,7 @@ markdown==3.3.6
 requests_oauthlib==1.3.0
 
 # Required-by: apscheduler
+tzdata==2021.5
 tzlocal==4.1
 
 # Required-by: beautifulsoup4
