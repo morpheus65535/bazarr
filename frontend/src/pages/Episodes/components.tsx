@@ -53,7 +53,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
         className="mr-1"
         variant={missing ? "primary" : "secondary"}
       >
-        <Language.Text className="pr-1" text={subtitle}></Language.Text>
+        <Language.Text className="pr-1" value={subtitle}></Language.Text>
         <FontAwesomeIcon
           size="sm"
           icon={missing ? faSearch : faTrash}

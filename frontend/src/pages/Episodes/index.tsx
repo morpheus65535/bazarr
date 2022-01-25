@@ -33,7 +33,7 @@ import Table from "./table";
 
 const SeriesEpisodesView: FunctionComponent = () => {
   const params = useParams();
-  const id = Number.parseInt(params.id);
+  const id = Number.parseInt(params.id as string);
   const { data: series, isFetched } = useSeriesById(id);
   const { data: episodes } = useEpisodesBySeriesId(id);
 
