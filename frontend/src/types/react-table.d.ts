@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck: custom type information of react-table
 // TODO: Fine a better solution for this
 
 import {

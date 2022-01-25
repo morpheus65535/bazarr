@@ -77,7 +77,7 @@ const SystemStatusView: FunctionComponent<Props> = () => {
   useIntervalWhen(
     () => {
       if (status) {
-        let duration = moment.duration(
+        const duration = moment.duration(
             moment().utc().unix() - status.start_time,
             "seconds"
           ),

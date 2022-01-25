@@ -5,8 +5,8 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<{}, State> {
-  constructor(props: {}) {
+class ErrorBoundary extends React.Component<object, State> {
+  constructor(props: object) {
     super(props);
     this.state = { error: null };
   }

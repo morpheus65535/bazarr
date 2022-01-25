@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { addNotifications } from "../actions";
 import { useReduxAction, useReduxStore } from "./base";
 
-export function useNotification(id: string, timeout: number = 5000) {
+export function useNotification(id: string, timeout = 5000) {
   const add = useReduxAction(addNotifications);
 
   return useCallback(

@@ -13,7 +13,10 @@ import {
 import { TableStyleProps } from "./BaseTable";
 import SimpleTable from "./SimpleTable";
 
-function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
+function renderCell<T extends object = object>(
+  cell: Cell<T, unknown>,
+  row: Row<T>
+) {
   if (cell.isGrouped) {
     return (
       <span {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</span>
@@ -79,7 +82,7 @@ function renderHeaders<T extends object>(
 
 type Props<T extends object> = TableOptions<T> & TableStyleProps<T>;
 
-function GroupTable<T extends object = {}>(props: Props<T>) {
+function GroupTable<T extends object = object>(props: Props<T>) {
   const plugins = [useGroupBy, useSortBy, useExpanded];
   return (
     <SimpleTable

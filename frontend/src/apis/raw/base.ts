@@ -10,7 +10,7 @@ class BaseApi {
 
   private createFormdata(object?: LooseObject) {
     if (object) {
-      let form = new FormData();
+      const form = new FormData();
 
       for (const key in object) {
         const data = object[key];
