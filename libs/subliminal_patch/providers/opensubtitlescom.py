@@ -4,7 +4,7 @@ import os
 import time
 import datetime
 
-from requests import Session, ConnectionError, Timeout, ReadTimeout
+from requests import Session, ConnectionError, Timeout, ReadTimeout, RequestException
 from subzero.language import Language
 
 from babelfish import language_converters
@@ -161,30 +161,22 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         return self._started and (time.time() - self._started) < TOKEN_EXPIRATION_TIME
 
     def login(self):
+        r = self.retry(
+            lambda: checked(
+                lambda: self.session.post(self.server_url + 'login',
+                                          json={"username": self.username, "password": self.password},
+                                          allow_redirects=False,
+                                          timeout=30)
+            )
+        )
+
         try:
-            r = self.session.post(self.server_url + 'login',
-                                  json={"username": self.username, "password": self.password},
-                                  allow_redirects=False,
-                                  timeout=30)
-        except (ConnectionError, Timeout, ReadTimeout):
-            raise ServiceUnavailable('Unknown Error, empty response: %s: %r' % (r.status_code, r))
+            self.token = r.json()['token']
+        except ValueError:
+            raise ProviderError('Invalid JSON returned by provider')
         else:
-            if r.status_code == 200:
-                try:
-                    self.token = r.json()['token']
-                except ValueError:
-                    raise ProviderError('Invalid JSON returned by provider')
-                else:
-                    region.set("oscom_token", self.token)
-                    return
-            elif r.status_code == 401:
-                raise AuthenticationError('Login failed: {}'.format(r.reason))
-            elif r.status_code == 429:
-                raise TooManyRequests()
-            elif 500 <= r.status_code <= 599:
-                raise ProviderError(r.reason)
-            else:
-                raise ProviderError('Bad status code: {}'.format(r.status_code))
+            region.set("oscom_token", self.token)
+            return
 
     @staticmethod
     def sanitize_external_ids(external_id):
@@ -200,23 +192,23 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         parameters = {'query': title.lower()}
         logging.debug('Searching using this title: {}'.format(title))
 
-        results = self.session.get(self.server_url + 'features', params=parameters, timeout=30)
+        results = self.retry(
+            lambda: checked(
+                lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30),
+                validate_token=True
+            )
+        )
 
-        if results.status_code == 401:
+        if results == 401:
             logging.debug('Authentification failed: clearing cache and attempting to login.')
             region.delete("oscom_token")
             self.login()
 
-            results = self.session.get(self.server_url + 'features', params=parameters, timeout=30)
-
-            if results.status_code == 429:
-                raise TooManyRequests()
-            elif 500 <= results.status_code <= 599:
-                raise ProviderError(results.reason)
-        elif results.status_code == 429:
-            raise TooManyRequests()
-        elif 500 <= results.status_code <= 599:
-            raise ProviderError(results.reason)
+            results = self.retry(
+                lambda: checked(
+                    lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30)
+                )
+            )
 
         # deserialize results
         try:
@@ -287,29 +279,31 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         # query the server
         if isinstance(self.video, Episode):
-            res = self.session.get(self.server_url + 'subtitles',
-                                   params=(('episode_number', self.video.episode),
-                                           ('foreign_parts_only', forced),
-                                           ('languages', langs.lower()),
-                                           ('moviehash', file_hash),
-                                           ('parent_feature_id', title_id) if title_id else ('imdb_id', imdb_id),
-                                           ('season_number', self.video.season),
-                                           ('query', os.path.basename(self.video.name))),
-                                   timeout=30)
+            res = self.retry(
+                lambda: checked(
+                    lambda: self.session.get(self.server_url + 'subtitles',
+                                             params=(('episode_number', self.video.episode),
+                                                     ('foreign_parts_only', forced),
+                                                     ('languages', langs.lower()),
+                                                     ('moviehash', file_hash),
+                                                     ('parent_feature_id', title_id) if title_id else ('imdb_id', imdb_id),
+                                                     ('season_number', self.video.season),
+                                                     ('query', os.path.basename(self.video.name))),
+                                             timeout=30)
+                )
+            )
         else:
-            res = self.session.get(self.server_url + 'subtitles',
-                                   params=(('foreign_parts_only', forced),
-                                           ('id', title_id) if title_id else ('imdb_id', imdb_id),
-                                           ('languages', langs.lower()),
-                                           ('moviehash', file_hash),
-                                           ('query', os.path.basename(self.video.name))),
-                                   timeout=30)
-
-        if res.status_code == 429:
-            raise TooManyRequests()
-
-        elif 500 <= res.status_code <= 599:
-            raise ProviderError(res.reason)
+            res = self.retry(
+                lambda: checked(
+                    lambda: self.session.get(self.server_url + 'subtitles',
+                                             params=(('foreign_parts_only', forced),
+                                                     ('id', title_id) if title_id else ('imdb_id', imdb_id),
+                                                     ('languages', langs.lower()),
+                                                     ('moviehash', file_hash),
+                                                     ('query', os.path.basename(self.video.name))),
+                                             timeout=30)
+                )
+            )
 
         subtitles = []
 
@@ -374,34 +368,73 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
                    'Authorization': 'Beaker ' + self.token}
-        res = self.session.post(self.server_url + 'download',
-                                json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
-                                headers=headers,
-                                timeout=30)
-        if res.status_code == 429:
-            raise TooManyRequests()
-        elif res.status_code == 406:
-            raise DownloadLimitExceeded("Daily download limit reached")
-        elif 500 <= res.status_code <= 599:
-            raise ProviderError(res.reason)
+        res = self.retry(
+            lambda: checked(
+                lambda: self.session.post(self.server_url + 'download',
+                                          json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
+                                          headers=headers,
+                                          timeout=30)
+            )
+        )
+
+        try:
+            download_data = res.json()
+        except ValueError:
+            raise ProviderError('Invalid JSON returned by provider')
         else:
-            try:
-                subtitle.download_link = res.json()['link']
-            except ValueError:
-                raise ProviderError('Invalid JSON returned by provider')
+            if 'link' not in download_data:
+                return False
+
+            subtitle.download_link = download_data['link']
+
+            r = self.retry(
+                lambda: checked(
+                    lambda: self.session.get(subtitle.download_link, timeout=30)
+                )
+            )
+
+            subtitle_content = r.content
+
+            if subtitle_content:
+                subtitle.content = fix_line_ending(subtitle_content)
             else:
-                r = self.session.get(subtitle.download_link, timeout=30)
+                logger.debug('Could not download subtitle from {}'.format(subtitle.download_link))
 
-                if res.status_code == 429:
-                    raise TooManyRequests()
-                elif res.status_code == 406:
-                    raise DownloadLimitExceeded("Daily download limit reached")
-                elif 500 <= res.status_code <= 599:
-                    raise ProviderError(res.reason)
 
-                subtitle_content = r.content
+def checked(fn, validate_token=False):
+    """Run :fn: and check the response status before returning it.
 
-                if subtitle_content:
-                    subtitle.content = fix_line_ending(subtitle_content)
-                else:
-                    logger.debug('Could not download subtitle from {}'.format(subtitle.download_link))
+    :param fn: the function to make an API call to OpenSubtitles.com.
+    :param validate_token: test if token is valid and return 401 if not.
+    :return: the response.
+
+    """
+    response = None
+    try:
+        try:
+            response = fn()
+        except (ConnectionError, Timeout, ReadTimeout):
+            raise ServiceUnavailable('Unknown Error, empty response: %s: %r' % (response.status_code, response))
+        except RequestException as e:
+            status_code = e.response.status_code
+        else:
+            status_code = int(response['status'][:3])
+    except Exception:
+        status_code = None
+    else:
+        if status_code == 401:
+            if validate_token:
+                return 401
+            else:
+                raise AuthenticationError('Login failed: {}'.format(response.reason))
+        elif status_code == 406:
+            raise DownloadLimitExceeded("Daily download limit reached")
+        elif status_code == 429:
+            raise TooManyRequests()
+        elif 500 <= status_code <= 599:
+            raise ProviderError(response.reason)
+
+        if status_code != 200:
+            raise ProviderError('Bad status code: {}'.format(response.status_code))
+
+    return response
