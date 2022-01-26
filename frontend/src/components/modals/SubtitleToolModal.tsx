@@ -2,8 +2,8 @@ import { useSubtitleAction } from "@/apis/hooks";
 import { dispatchTask } from "@/modules/task";
 import { createTask } from "@/modules/task/utilities";
 import { isMovie, submodProcessColor } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { log } from "@/utilities/logger";
 import {
   faClock,
   faCode,
@@ -306,7 +306,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
   const process = useCallback(
     (action: string, override?: Partial<FormType.ModifySubtitle>) => {
-      log("info", "executing action", action);
+      LOG("info", "executing action", action);
       closeModal(props.modalKey);
 
       const tasks = selections.map((s) => {

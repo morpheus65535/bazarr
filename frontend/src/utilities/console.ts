@@ -1,9 +1,11 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { isProdEnv } from ".";
 
 type LoggerType = "info" | "warning" | "error";
 
-export function log(type: LoggerType, msg: string, ...payload: any[]) {
+export function LOG(type: LoggerType, msg: string, ...payload: any[]) {
   if (!isProdEnv) {
     let logger = console.log;
     if (type === "warning") {
@@ -15,12 +17,8 @@ export function log(type: LoggerType, msg: string, ...payload: any[]) {
   }
 }
 
-export function conditionalLog(
-  condition: boolean,
-  msg: string,
-  ...payload: any[]
-) {
+export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
   if (condition) {
-    log("error", msg, payload);
+    LOG("error", msg, payload);
   }
 }

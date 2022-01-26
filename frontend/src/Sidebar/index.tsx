@@ -3,8 +3,8 @@ import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
 import { BuildKey, pathJoin } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
-import { log } from "@/utilities/logger";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
@@ -32,7 +32,7 @@ const Selection = React.createContext<{
 }>({
   selection: null,
   select: () => {
-    log("error", "Selection context not initialized");
+    LOG("error", "Selection context not initialized");
   },
 });
 
@@ -176,7 +176,7 @@ const RouteItem: FunctionComponent<{
             action
             className={clsx("sidebar-button", { "sb-active": isOpen })}
             onClick={() => {
-              log("info", "clicked", link);
+              LOG("info", "clicked", link);
 
               if (isValidated) {
                 navigate(link);

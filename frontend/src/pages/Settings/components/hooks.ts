@@ -1,5 +1,5 @@
 import { useSystemSettings } from "@/apis/hooks";
-import { log } from "@/utilities/logger";
+import { LOG } from "@/utilities/console";
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
 import { StagedChangesContext } from "./Layout";
@@ -17,7 +17,7 @@ export function useSingleUpdate() {
         const changes = { ...staged };
         changes[key] = v;
 
-        log("info", "stage settings", changes);
+        LOG("info", "stage settings", changes);
 
         return changes;
       });
@@ -33,7 +33,7 @@ export function useMultiUpdate() {
       update((staged) => {
         const changes = { ...staged, ...obj };
 
-        log("info", "stage settings", changes);
+        LOG("info", "stage settings", changes);
 
         return changes;
       });

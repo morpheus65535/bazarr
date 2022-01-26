@@ -1,6 +1,6 @@
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
 import { ContentHeader, LoadingIndicator } from "@/components";
-import { log } from "@/utilities/logger";
+import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { merge } from "lodash";
@@ -72,7 +72,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   const saveSettings = useCallback(
     (settings: LooseObject) => {
       submitHooks(settings);
-      log("info", "submitting settings", settings);
+      LOG("info", "submitting settings", settings);
       mutate(settings);
     },
     [mutate]

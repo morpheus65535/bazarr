@@ -1,4 +1,4 @@
-import { log } from "@/utilities/logger";
+import { LOG } from "@/utilities/console";
 import { useCallback, useContext, useMemo } from "react";
 import { useDidUpdate } from "rooks";
 import { ModalContext } from "./provider";
@@ -31,7 +31,7 @@ export function useShowModal() {
 
   return useCallback(
     <T,>(key: string, payload?: T) => {
-      log("info", `modal ${key} sending payload`, payload);
+      LOG("info", `modal ${key} sending payload`, payload);
 
       push({ key, payload });
     },

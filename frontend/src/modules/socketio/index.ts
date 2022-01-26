@@ -1,7 +1,7 @@
 import { debounce, forIn, remove, uniq } from "lodash";
 import { io, Socket } from "socket.io-client";
 import { Environment } from "../../utilities";
-import { conditionalLog, log } from "../../utilities/logger";
+import { ENSURE, LOG } from "../../utilities/console";
 import { createDefaultReducer } from "./reducer";
 
 class SocketIOClient {
@@ -41,7 +41,7 @@ class SocketIOClient {
 
   removeReducer(reducer: SocketIO.Reducer) {
     const removed = remove(this.reducers, (r) => r === reducer);
-    conditionalLog(removed.length === 0, "Fail to remove reducer", reducer);
+    ENSURE(removed.length === 0, "Fail to remove reducer", reducer);
   }
 
   private reduce() {
@@ -71,7 +71,7 @@ class SocketIOClient {
       if (element) {
         const handlers = this.reducers.filter((v) => v.key === type);
         if (handlers.length === 0) {
-          log("warning", "Unhandled SocketIO event", type);
+          LOG("warning", "Unhandled SocketIO event", type);
           return;
         }
 
@@ -88,7 +88,7 @@ class SocketIOClient {
             if (action) {
               action(ids);
             } else if (anyAction === undefined) {
-              log("warning", "Unhandled SocketIO event", key, type);
+              LOG("warning", "Unhandled SocketIO event", key, type);
             }
           });
         });
@@ -97,22 +97,22 @@ class SocketIOClient {
   }
 
   private onConnect() {
-    log("info", "Socket.IO has connected");
+    LOG("info", "Socket.IO has connected");
     this.onEvent({ type: "connect", action: "update", payload: null });
   }
 
   private onConnectError() {
-    log("warning", "Socket.IO has error connecting backend");
+    LOG("warning", "Socket.IO has error connecting backend");
     this.onEvent({ type: "connect_error", action: "update", payload: null });
   }
 
   private onDisconnect() {
-    log("warning", "Socket.IO has disconnected");
+    LOG("warning", "Socket.IO has disconnected");
     this.onEvent({ type: "disconnect", action: "update", payload: null });
   }
 
   private onEvent(event: SocketIO.Event) {
-    log("info", "Socket.IO receives", event);
+    LOG("info", "Socket.IO receives", event);
     this.events.push(event);
     this.debounceReduce();
   }

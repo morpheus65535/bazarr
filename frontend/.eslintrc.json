@@ -1,5 +1,6 @@
 {
   "rules": {
+    "no-console": "error",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": "warn",
     "@typescript-eslint/no-empty-interface": "warn",
