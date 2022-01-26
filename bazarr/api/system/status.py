@@ -24,4 +24,6 @@ class SystemStatus(Resource):
         system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         system_status.update({'start_time': startTime})
+        if "PACKAGE_VERSION" in os.environ:
+            system_status.update({'package_version': os.environ["PACKAGE_VERSION"]})
         return jsonify(data=system_status)

@@ -103,6 +103,8 @@ def configure_logging(debug=False):
         logging.getLogger("srt").setLevel(logging.DEBUG)
         logging.debug('Bazarr version: %s', os.environ["BAZARR_VERSION"])
         logging.debug('Bazarr branch: %s', settings.general.branch)
+        if "PACKAGE_VERSION" in os.environ:
+            logging.debug('Package version: %s', os.environ["PACKAGE_VERSION"])
         logging.debug('Operating system: %s', platform.platform())
         logging.debug('Python version: %s', platform.python_version())
     else:

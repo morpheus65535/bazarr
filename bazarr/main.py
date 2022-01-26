@@ -3,12 +3,25 @@
 import os
 
 bazarr_version = 'unknown'
+package_version = package_author = ''
 
 version_file = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
 if os.path.isfile(version_file):
     with open(version_file, 'r') as f:
         bazarr_version = f.readline()
         bazarr_version = bazarr_version.rstrip('\n')
+
+package_info_file = os.path.join(os.path.dirname(__file__), '..', 'package_info')
+if os.path.isfile(package_info_file):
+    with open(package_info_file, 'r') as f:
+        try:
+            package_info = {key: str(val).strip() for key, val in (l.split('=', 1) for l in f)}
+            package_version = package_info.get('PackageVersion')
+            package_author = package_info.get('PackageAuthor')
+            os.environ["PACKAGE_VERSION"] = f'{package_version} by {package_author}'
+        except:
+            # On whatever error, skip setting package info
+            pass
 
 os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
