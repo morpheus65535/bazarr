@@ -121,7 +121,8 @@ if isinstance(settings.general.enabled_providers, str) and not settings.general.
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
-# make sure settings.general.branch is properly set when running inside a docker container
+# Read package_info (if exists) to override some settings by package maintainers
+# This file can also provide some info about the package version and author
 package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
 if os.path.isfile(package_info_file):
     try:
@@ -137,8 +138,16 @@ if os.path.isfile(package_info_file):
                     package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
                 else:
                     continue
+        # package author can force a branch to follow
         if 'branch' in package_info:
             settings.general.branch = package_info['branch']
+        # package author can disable update
+        if package_info.get('updatemethod', '') == 'External':
+            os.environ['BAZARR_UPDATE_ALLOWED'] = '0'
+            os.environ['BAZARR_UPDATE_MESSAGE'] = package_info.get('updatemethodmessage')
+        # package author can provide version and contact info
+        os.environ['BAZARR_PACKAGE_VERSION'] = package_info.get('packageversion')
+        os.environ['BAZARR_PACKAGE_AUTHOR'] = package_info.get('packageauthor')
     except Exception:
         pass
     else:
