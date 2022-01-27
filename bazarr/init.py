@@ -133,7 +133,7 @@ if os.path.isfile(package_info_file):
             for line in lines:
                 splitted_lines += line.split(r'\n')
             for line in splitted_lines:
-                splitted_line = line.split('=')
+                splitted_line = line.split('=', 1)
                 if len(splitted_line) == 2:
                     package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
                 else:
