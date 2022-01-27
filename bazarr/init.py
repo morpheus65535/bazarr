@@ -144,10 +144,10 @@ if os.path.isfile(package_info_file):
         # package author can disable update
         if package_info.get('updatemethod', '') == 'External':
             os.environ['BAZARR_UPDATE_ALLOWED'] = '0'
-            os.environ['BAZARR_UPDATE_MESSAGE'] = package_info.get('updatemethodmessage')
+            os.environ['BAZARR_UPDATE_MESSAGE'] = package_info.get('updatemethodmessage', '')
         # package author can provide version and contact info
-        os.environ['BAZARR_PACKAGE_VERSION'] = package_info.get('packageversion')
-        os.environ['BAZARR_PACKAGE_AUTHOR'] = package_info.get('packageauthor')
+        os.environ['BAZARR_PACKAGE_VERSION'] = package_info.get('packageversion', '')
+        os.environ['BAZARR_PACKAGE_AUTHOR'] = package_info.get('packageauthor', '')
     except Exception:
         pass
     else:
