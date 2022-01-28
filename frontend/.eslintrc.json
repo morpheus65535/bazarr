@@ -4,16 +4,7 @@
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": "warn",
     "@typescript-eslint/no-empty-interface": "warn",
-    "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/ban-ts-comment": [
-      "warn",
-      {
-        "ts-expect-error": "allow-with-description",
-        "ts-ignore": "allow-with-description",
-        "ts-nocheck": "allow-with-description",
-        "ts-check": "allow-with-description"
-      }
-    ]
+    "@typescript-eslint/no-unused-vars": "warn"
   },
   "extends": [
     "react-app",

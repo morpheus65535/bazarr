@@ -1,5 +1,5 @@
 import { QueryKeys } from "@/apis/queries/keys";
-import { ActionCreator } from "@reduxjs/toolkit";
+import { ActionCreator, AnyAction } from "@reduxjs/toolkit";
 import queryClient from "../../apis/queries";
 import {
   addNotifications,
@@ -10,13 +10,13 @@ import {
 } from "../redux/actions";
 import reduxStore from "../redux/store";
 
-function bindReduxAction<T extends ActionCreator<any>>(action: T) {
+function bindReduxAction<T extends ActionCreator<AnyAction>>(action: T) {
   return (...args: Parameters<T>) => {
     reduxStore.dispatch(action(...args));
   };
 }
 
-function bindReduxActionWithParam<T extends ActionCreator<any>>(
+function bindReduxActionWithParam<T extends ActionCreator<AnyAction>>(
   action: T,
   ...param: Parameters<T>
 ) {

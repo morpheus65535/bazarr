@@ -46,13 +46,13 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   );
 };
 
-type CHAsyncButtonProps<T extends () => Promise<unknown>> = {
+type CHAsyncButtonProps<R, T extends () => Promise<R>> = {
   promise: T;
-  onSuccess?: (item: PromiseType<ReturnType<T>>) => void;
+  onSuccess?: (item: R) => void;
 } & Omit<CHButtonProps, "updating" | "updatingIcon" | "onClick">;
 
-export function ContentHeaderAsyncButton<T extends () => Promise<any>>(
-  props: PropsWithChildren<CHAsyncButtonProps<T>>
+export function ContentHeaderAsyncButton<R, T extends () => Promise<R>>(
+  props: PropsWithChildren<CHAsyncButtonProps<R, T>>
 ): JSX.Element {
   const { promise, onSuccess, ...button } = props;
 

@@ -46,7 +46,6 @@ export function Selector<T = string, M extends boolean = false>(
     [options]
   );
 
-  // TODO: Force as any
   const wrapper = useCallback(
     (value: SelectorValueType<T, M> | undefined | null): any => {
       if (value !== null && value !== undefined) {

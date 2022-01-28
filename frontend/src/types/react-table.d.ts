@@ -1,6 +1,3 @@
-// @ts-nocheck: custom type information of react-table
-// TODO: Fine a better solution for this
-
 import {
   UseColumnOrderInstanceProps,
   UseColumnOrderState,
@@ -117,9 +114,9 @@ declare module "react-table" {
       // UseResizeColumnsColumnProps<D>,
       UseSortByColumnProps<D> {}
 
-  export interface Cell<
+  export type Cell<
     D extends Record<string, unknown> = Record<string, unknown>
-  > extends UseGroupByCellProps<D> {}
+  > = UseGroupByCellProps<D>;
 
   export interface Row<
     D extends Record<string, unknown> = Record<string, unknown>

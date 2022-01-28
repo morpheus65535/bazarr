@@ -1,11 +1,11 @@
 declare namespace Task {
-  type Callable = (...args: any[]) => Promise<void>;
+  type Callable<P> = (...args: P) => Promise<void>;
 
-  interface Task<FN extends Callable> {
+  interface Task<P, FN extends Callable<P>> {
     name: string;
     id?: number;
     callable: FN;
-    parameters: Parameters<FN>;
+    parameters: P;
   }
 
   type Group = {

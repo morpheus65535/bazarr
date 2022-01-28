@@ -7,7 +7,7 @@ import React, {
 
 interface Modal {
   key: string;
-  payload: any;
+  payload: unknown;
 }
 
 interface ModalControl {

@@ -59,6 +59,7 @@ class SocketIOClient {
       if (record === undefined) {
         return;
       }
+
       if (!(e.action in record)) {
         record[e.action] = [];
       }

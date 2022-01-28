@@ -1,9 +1,9 @@
-export function createTask<T extends Task.Callable>(
+export function createTask<R, T extends Task.Callable<R>>(
   name: string,
   id: number | undefined,
   callable: T,
-  ...parameters: Parameters<T>
-): Task.Task<T> {
+  parameters: R
+): Task.Task<R, T> {
   return {
     name,
     id,
