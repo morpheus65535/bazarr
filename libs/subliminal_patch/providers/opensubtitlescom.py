@@ -5,13 +5,14 @@ import time
 import datetime
 
 from requests import Session, ConnectionError, Timeout, ReadTimeout, RequestException
+from requests.exceptions import JSONDecodeError
 from subzero.language import Language
 
 from babelfish import language_converters
 from subliminal import Episode, Movie
 from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group, sanitize
-from subliminal_patch.exceptions import TooManyRequests
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
 from .mixins import ProviderRetryMixin
@@ -28,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
 TOKEN_EXPIRATION_TIME = datetime.timedelta(hours=12).total_seconds()
+
+retry_amount=5
 
 
 def fix_tv_naming(title):
@@ -166,17 +169,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 lambda: self.session.post(self.server_url + 'login',
                                           json={"username": self.username, "password": self.password},
                                           allow_redirects=False,
-                                          timeout=30)
-            )
+                                          timeout=30),
+                validate_json=True,
+                json_key_name='token'
+            ),
+            amount=retry_amount
         )
 
-        try:
-            self.token = r.json()['token']
-        except ValueError:
-            raise ProviderError('Invalid JSON returned by provider')
-        else:
-            region.set("oscom_token", self.token)
-            return
+        self.token = r.json()['token']
+        region.set("oscom_token", self.token)
+        return
 
     @staticmethod
     def sanitize_external_ids(external_id):
@@ -190,13 +192,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         title_id = None
 
         parameters = {'query': title.lower()}
-        logging.debug('Searching using this title: {}'.format(title))
+        logging.debug(f'Searching using this title: {title}')
 
         results = self.retry(
             lambda: checked(
                 lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30),
-                validate_token=True
-            )
+                validate_token=True,
+                validate_json=True,
+                json_key_name='data'
+            ),
+            amount=retry_amount
         )
 
         if results == 401:
@@ -206,44 +211,44 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
             results = self.retry(
                 lambda: checked(
-                    lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30)
-                )
+                    lambda: self.session.get(self.server_url + 'features', params=parameters, timeout=30),
+                    validate_json=True,
+                    json_key_name='data'
+                ),
+                amount=retry_amount
             )
 
         # deserialize results
-        try:
-            results_dict = results.json()['data']
-        except ValueError:
-            raise ProviderError('Invalid JSON returned by provider')
-        else:
-            # loop over results
-            for result in results_dict:
-                if 'title' in result['attributes']:
-                    if isinstance(self.video, Episode):
-                        if fix_tv_naming(title).lower() == result['attributes']['title'].lower() and \
-                                (not self.video.year or self.video.year == int(result['attributes']['year'])):
-                            title_id = result['id']
-                            break
-                    else:
-                        if fix_movie_naming(title).lower() == result['attributes']['title'].lower() and \
-                                (not self.video.year or self.video.year == int(result['attributes']['year'])):
-                            title_id = result['id']
-                            break
-                else:
-                    continue
+        results_dict = results.json()['data']
 
-            if title_id:
-                logging.debug('Found this title ID: {}'.format(title_id))
-                return self.sanitize_external_ids(title_id)
-        finally:
-            if not title_id:
-                logger.debug('No match found for {}'.format(title))
+        # loop over results
+        for result in results_dict:
+            if 'title' in result['attributes']:
+                if isinstance(self.video, Episode):
+                    if fix_tv_naming(title).lower() == result['attributes']['title'].lower() and \
+                            (not self.video.year or self.video.year == int(result['attributes']['year'])):
+                        title_id = result['id']
+                        break
+                else:
+                    if fix_movie_naming(title).lower() == result['attributes']['title'].lower() and \
+                            (not self.video.year or self.video.year == int(result['attributes']['year'])):
+                        title_id = result['id']
+                        break
+            else:
+                continue
+
+        if title_id:
+            logging.debug(f'Found this title ID: {title_id}')
+            return self.sanitize_external_ids(title_id)
+
+        if not title_id:
+            logger.debug(f'No match found for {title}')
 
     def query(self, languages, video):
         self.video = video
         if self.use_hash:
             file_hash = self.video.hashes.get('opensubtitlescom')
-            logging.debug('Searching using this hash: {}'.format(hash))
+            logging.debug(f'Searching using this hash: {hash}')
         else:
             file_hash = None
 
@@ -275,7 +280,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             forced = 'exclude'
 
         langs = ','.join(lang_strings)
-        logging.debug('Searching for this languages: {}'.format(lang_strings))
+        logging.debug(f'Searching for this languages: {lang_strings}')
 
         # query the server
         if isinstance(self.video, Episode):
@@ -289,8 +294,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                                      ('parent_feature_id', title_id) if title_id else ('imdb_id', imdb_id),
                                                      ('season_number', self.video.season),
                                                      ('query', os.path.basename(self.video.name))),
-                                             timeout=30)
-                )
+                                             timeout=30),
+                    validate_json=True,
+                    json_key_name='data'
+                ),
+                amount=retry_amount
             )
         else:
             res = self.retry(
@@ -301,55 +309,53 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                                      ('languages', langs.lower()),
                                                      ('moviehash', file_hash),
                                                      ('query', os.path.basename(self.video.name))),
-                                             timeout=30)
-                )
+                                             timeout=30),
+                    validate_json=True,
+                    json_key_name='data'
+                ),
+                amount=retry_amount
             )
 
         subtitles = []
 
-        try:
-            result = res.json()
-            if 'data' not in result:
-                raise ValueError
-        except ValueError:
-            raise ProviderError('Invalid JSON returned by provider')
-        else:
-            logging.debug('Query returned {} subtitles'.format(len(result['data'])))
+        result = res.json()
 
-            if len(result['data']):
-                for item in result['data']:
-                    if 'season_number' in item['attributes']['feature_details']:
-                        season_number = item['attributes']['feature_details']['season_number']
-                    else:
-                        season_number = None
+        logging.debug(f"Query returned {len(result['data'])} subtitles")
 
-                    if 'episode_number' in item['attributes']['feature_details']:
-                        episode_number = item['attributes']['feature_details']['episode_number']
-                    else:
-                        episode_number = None
+        if len(result['data']):
+            for item in result['data']:
+                if 'season_number' in item['attributes']['feature_details']:
+                    season_number = item['attributes']['feature_details']['season_number']
+                else:
+                    season_number = None
 
-                    if 'moviehash_match' in item['attributes']:
-                        moviehash_match = item['attributes']['moviehash_match']
-                    else:
-                        moviehash_match = False
+                if 'episode_number' in item['attributes']['feature_details']:
+                    episode_number = item['attributes']['feature_details']['episode_number']
+                else:
+                    episode_number = None
 
-                    if len(item['attributes']['files']):
-                        subtitle = OpenSubtitlesComSubtitle(
-                            language=Language.fromietf(item['attributes']['language']),
-                            forced=item['attributes']['foreign_parts_only'],
-                            hearing_impaired=item['attributes']['hearing_impaired'],
-                            page_link=item['attributes']['url'],
-                            file_id=item['attributes']['files'][0]['file_id'],
-                            releases=item['attributes']['release'],
-                            uploader=item['attributes']['uploader']['name'],
-                            title=item['attributes']['feature_details']['movie_name'],
-                            year=item['attributes']['feature_details']['year'],
-                            season=season_number,
-                            episode=episode_number,
-                            hash_matched=moviehash_match
-                        )
-                        subtitle.get_matches(self.video)
-                        subtitles.append(subtitle)
+                if 'moviehash_match' in item['attributes']:
+                    moviehash_match = item['attributes']['moviehash_match']
+                else:
+                    moviehash_match = False
+
+                if len(item['attributes']['files']):
+                    subtitle = OpenSubtitlesComSubtitle(
+                        language=Language.fromietf(item['attributes']['language']),
+                        forced=item['attributes']['foreign_parts_only'],
+                        hearing_impaired=item['attributes']['hearing_impaired'],
+                        page_link=item['attributes']['url'],
+                        file_id=item['attributes']['files'][0]['file_id'],
+                        releases=item['attributes']['release'],
+                        uploader=item['attributes']['uploader']['name'],
+                        title=item['attributes']['feature_details']['movie_name'],
+                        year=item['attributes']['feature_details']['year'],
+                        season=season_number,
+                        episode=episode_number,
+                        hash_matched=moviehash_match
+                    )
+                    subtitle.get_matches(self.video)
+                    subtitles.append(subtitle)
 
         return subtitles
 
@@ -373,39 +379,43 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 lambda: self.session.post(self.server_url + 'download',
                                           json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
                                           headers=headers,
-                                          timeout=30)
-            )
+                                          timeout=30),
+                validate_json=True,
+                json_key_name='link'
+            ),
+            amount=retry_amount
         )
 
-        try:
-            download_data = res.json()
-        except ValueError:
-            raise ProviderError('Invalid JSON returned by provider')
+        download_data = res.json()
+        subtitle.download_link = download_data['link']
+
+        r = self.retry(
+            lambda: checked(
+                lambda: self.session.get(subtitle.download_link, timeout=30),
+                validate_content=True
+            ),
+            amount=retry_amount
+        )
+
+        if not r:
+            logger.debug(f'Could not download subtitle from {subtitle.download_link}')
+            subtitle.content = None
+            return
         else:
-            if 'link' not in download_data:
-                return False
-
-            subtitle.download_link = download_data['link']
-
-            r = self.retry(
-                lambda: checked(
-                    lambda: self.session.get(subtitle.download_link, timeout=30)
-                )
-            )
-
             subtitle_content = r.content
-
-            if subtitle_content:
-                subtitle.content = fix_line_ending(subtitle_content)
-            else:
-                logger.debug('Could not download subtitle from {}'.format(subtitle.download_link))
+            subtitle.content = fix_line_ending(subtitle_content)
 
 
-def checked(fn, validate_token=False):
+def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False, json_key_name=None,
+            validate_content=False):
     """Run :fn: and check the response status before returning it.
 
     :param fn: the function to make an API call to OpenSubtitles.com.
+    :param raise_api_limit: if True we wait a little bit longer before running the call again.
     :param validate_token: test if token is valid and return 401 if not.
+    :param validate_json: test if response is valid json.
+    :param json_key_name: test if returned json contain a specific key.
+    :param validate_content: test if response have a content (used with download).
     :return: the response.
 
     """
@@ -413,12 +423,19 @@ def checked(fn, validate_token=False):
     try:
         try:
             response = fn()
+        except APIThrottled:
+            if not raise_api_limit:
+                logger.info("API request limit hit, waiting and trying again once.")
+                time.sleep(2)
+                return checked(fn, raise_api_limit=True)
+            raise
         except (ConnectionError, Timeout, ReadTimeout):
-            raise ServiceUnavailable('Unknown Error, empty response: %s: %r' % (response.status_code, response))
-        except RequestException as e:
-            status_code = e.response.status_code
+            raise ServiceUnavailable(f'Unknown Error, empty response: {response.status_code}: {response}')
+        except Exception:
+            logging.exception('Unhandled exception raised.')
+            raise ProviderError('Unhandled exception raised. Check log.')
         else:
-            status_code = int(response['status'][:3])
+            status_code = response.status_code
     except Exception:
         status_code = None
     else:
@@ -426,15 +443,34 @@ def checked(fn, validate_token=False):
             if validate_token:
                 return 401
             else:
-                raise AuthenticationError('Login failed: {}'.format(response.reason))
+                raise AuthenticationError(f'Login failed: {response.reason}')
         elif status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
         elif status_code == 429:
             raise TooManyRequests()
+        elif status_code == 502:
+            raise APIThrottled()
         elif 500 <= status_code <= 599:
             raise ProviderError(response.reason)
 
         if status_code != 200:
-            raise ProviderError('Bad status code: {}'.format(response.status_code))
+            raise ProviderError(f'Bad status code: {response.status_code}')
+
+        if validate_json:
+            try:
+                json_test = response.json()
+            except JSONDecodeError:
+                raise ProviderError('Invalid JSON returned by provider')
+            else:
+                if json_key_name not in json_test:
+                    raise ProviderError(f'Invalid JSON returned by provider: no {json_key_name} key in returned json.')
+
+        if validate_content:
+            if not hasattr(response, 'content'):
+                logging.error('Download link returned no content attribute.')
+                return False
+            elif not response.content:
+                logging.error(f'This download link returned empty content: {response.url}')
+                return False
 
     return response
