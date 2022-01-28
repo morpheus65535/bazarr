@@ -137,7 +137,7 @@ def wanted_search_missing_subtitles_series():
             wanted_download_subtitles(episode['sonarrEpisodeId'])
         else:
             logging.info("BAZARR All providers are throttled")
-            return
+            break
 
     hide_progress(id='wanted_episodes_progress')
 

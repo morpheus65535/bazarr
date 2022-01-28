@@ -124,7 +124,7 @@ def wanted_search_missing_subtitles_movies():
             wanted_download_subtitles_movie(movie['radarrId'])
         else:
             logging.info("BAZARR All providers are throttled")
-            return
+            break
 
     hide_progress(id='wanted_movies_progress')
 
