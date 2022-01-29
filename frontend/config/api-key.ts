@@ -14,9 +14,13 @@ async function parseConfig(path: string) {
   const section = targetSection[0];
 
   for (const line of section.split("\n")) {
-    const matches = line.match(/^apikey.*(?<key>[a-z0-9]{32})$/);
-    if (matches) {
-      return matches.groups.key;
+    const matched = line.startsWith("apikey");
+    if (matched) {
+      const results = line.split("=");
+      if (results.length === 2) {
+        const key = results[1].trim();
+        return key;
+      }
     }
   }
 
