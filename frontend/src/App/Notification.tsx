@@ -28,7 +28,6 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
-import "./notification.scss";
 
 enum State {
   Idle,
@@ -170,7 +169,7 @@ const NotificationCenter: FunctionComponent = () => {
         ref={dropdownRef}
         alignRight
       >
-        <Dropdown.Toggle as={Button} className="dropdown-hidden">
+        <Dropdown.Toggle as={Button} className="hide-arrow">
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>

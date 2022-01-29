@@ -34,7 +34,6 @@ import {
   useModalPayload,
 } from "..";
 import Language from "../bazarr/Language";
-import "./msmStyle.scss";
 
 type SupportType = Item.Movie | Item.Episode;
 

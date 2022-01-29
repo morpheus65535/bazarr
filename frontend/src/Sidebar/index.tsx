@@ -24,7 +24,6 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import "./style.scss";
 
 const Selection = React.createContext<{
   selection: string | null;
@@ -174,7 +173,7 @@ const RouteItem: FunctionComponent<{
         <div className={clsx("sidebar-collapse-box", { active: isOpen })}>
           <ListGroupItem
             action
-            className={clsx("sidebar-button", { "sb-active": isOpen })}
+            className={clsx("button", { active: isOpen })}
             onClick={() => {
               LOG("info", "clicked", link);
 
@@ -208,10 +207,9 @@ const RouteItem: FunctionComponent<{
       <NavLink
         to={link}
         className={({ isActive }) =>
-          clsx(
-            "list-group-item list-group-item-action sidebar-button sb-collapse",
-            { "sb-active": isActive }
-          )
+          clsx("list-group-item list-group-item-action button sb-collapse", {
+            active: isActive,
+          })
         }
       >
         <RouteItemContent

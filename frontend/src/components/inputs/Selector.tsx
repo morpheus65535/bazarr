@@ -2,7 +2,6 @@ import clsx from "clsx";
 import React, { useCallback, useMemo, useRef } from "react";
 import Select, { GroupBase, OnChangeValue } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
-import "./selector.scss";
 
 export type SelectorOption<T> = {
   label: string;

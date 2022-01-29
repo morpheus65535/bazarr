@@ -1,55 +1,15 @@
-@import "./global.scss";
-@import "./variable.scss";
-@import "./bazarr.scss";
+@use "variables";
+@use "custom-bootstrap";
+@use "global";
+@use "layout";
 
-@import "../../node_modules/bootstrap/scss/bootstrap.scss";
+// Components
 
-@mixin sidebar-animation {
-  transition: {
-    duration: 0.2s;
-    timing-function: ease-in-out;
-  }
-}
-
-@include media-breakpoint-up(sm) {
-  .sidebar-container {
-    position: sticky;
-  }
-
-  .main-router {
-    max-width: calc(100% - #{$sidebar-width});
-  }
-
-  .header-icon {
-    min-width: $sidebar-width;
-  }
-}
-
-@include media-breakpoint-down(sm) {
-  .sidebar-container {
-    position: fixed !important;
-    transform: translateX(-100%);
-
-    @include sidebar-animation();
-
-    &.open {
-      transform: translateX(0) !important;
-    }
-  }
-
-  .main-router {
-    max-width: 100%;
-  }
-
-  .sidebar-overlay {
-    @include sidebar-animation();
-    &.open {
-      display: block !important;
-      opacity: 0.6;
-    }
-  }
-
-  .header-icon {
-    min-width: 0;
-  }
-}
+@use "components/header";
+@use "components/content-header";
+@use "components/chip";
+@use "components/notification";
+@use "components/selector";
+@use "components/slider";
+@use "components/flat-card";
+@use "components/search-modal";

@@ -1,7 +1,6 @@
 import RcSlider from "rc-slider";
 import "rc-slider/assets/index.css";
 import React, { FunctionComponent, useMemo, useState } from "react";
-import "./slider.scss";
 
 type TooltipsOptions = boolean | "Always";
 

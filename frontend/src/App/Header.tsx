@@ -22,7 +22,6 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import "./header.scss";
 import NotificationCenter from "./Notification";
 
 const Header: FunctionComponent = () => {
@@ -41,7 +40,7 @@ const Header: FunctionComponent = () => {
   const serverActions = useMemo(
     () => (
       <Dropdown alignRight>
-        <Dropdown.Toggle className="dropdown-hidden" as={Button}>
+        <Dropdown.Toggle className="hide-arrow" as={Button}>
           <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu>

@@ -3,7 +3,6 @@ import { useReduxStore } from "@/modules/redux/hooks/base";
 import React, { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Navigate } from "react-router-dom";
-import "./Authentication.scss";
 
 const Authentication: FunctionComponent = () => {
   const [username, setUsername] = useState("");

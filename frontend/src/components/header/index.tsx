@@ -2,7 +2,6 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Row } from "react-bootstrap";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
-import "./style.scss";
 
 interface Props {
   scroll?: boolean;

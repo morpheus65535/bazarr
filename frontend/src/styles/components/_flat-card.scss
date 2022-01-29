@@ -1,3 +1,5 @@
+@use "../custom-bootstrap" as bs;
+
 .settings-card {
   cursor: pointer;
 
@@ -9,6 +11,6 @@
   }
 
   &:hover {
-    border-color: var(--primary);
+    border-color: bs.$primary;
   }
 }

@@ -1,4 +1,5 @@
-@import "@/styles/variable.scss";
+@use "../variables.scss";
+@use "../custom-bootstrap" as bs;
 
 .custom-selector {
   .selector__control {
@@ -7,24 +8,24 @@
     border-radius: 0.25rem;
   }
   .selector__control--is-focused {
-    border-color: var(--primary) !important;
+    border-color: bs.$primary !important;
   }
   .selector__menu {
     z-index: 1000;
   }
 
   .selector__option--is-focused {
-    background-color: $theme-color-transparent;
+    background-color: transparentize(bs.$primary, 0.85);
     &:focus,
     &:active {
-      background-color: $theme-color-less-transparent;
+      background-color: transparentize(bs.$primary, 0.65);
     }
   }
 
   .selector__option--is-selected {
-    background-color: var(--primary);
+    background-color: bs.$primary;
     &:active {
-      background-color: $theme-color-darked;
+      background-color: darken(bs.$primary, 10);
     }
   }
 }

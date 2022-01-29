@@ -14,7 +14,6 @@ import React, { FunctionComponent, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
-import "./style.scss";
 import Table from "./table";
 
 interface InfoProps {

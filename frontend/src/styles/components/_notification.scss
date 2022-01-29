@@ -1,9 +1,5 @@
-@import "@/styles/variable.scss";
-@import "@/styles/bazarr.scss";
-
-@function theme-color($key: "primary") {
-  @return map-get($theme-colors, $key);
-}
+@use "../variables";
+@use "../custom-bootstrap" as bs;
 
 .notification-btn {
   &.new-item {
@@ -36,9 +32,8 @@
     }
 
     .progress .progress-bar {
-      text-shadow: -2px -2px 5px theme-color("primary"),
-        2px -2px 5px theme-color("primary"), -2px 2px 5px theme-color("primary"),
-        2px 2px 5px theme-color("primary");
+      text-shadow: -2px -2px 5px bs.$primary, 2px -2px 5px bs.$primary,
+        -2px 2px 5px bs.$primary, 2px 2px 5px bs.$primary;
       overflow: visible;
     }
   }
