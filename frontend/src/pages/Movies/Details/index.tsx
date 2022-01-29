@@ -18,8 +18,7 @@ import {
 } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
 import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faCloudUploadAlt,
@@ -97,7 +96,7 @@ const MovieDetailView: FunctionComponent = () => {
             icon={faSync}
             disabled={hasTask}
             onClick={() => {
-              const task = createTask(movie.title, id, action, {
+              const task = createTask(movie.title, action, {
                 action: "scan-disk",
                 radarrid: id,
               });
@@ -110,7 +109,7 @@ const MovieDetailView: FunctionComponent = () => {
             icon={faSearch}
             disabled={movie.profileId === null}
             onClick={() => {
-              const task = createTask(movie.title, id, action, {
+              const task = createTask(movie.title, action, {
                 action: "search-missing",
                 radarrid: id,
               });

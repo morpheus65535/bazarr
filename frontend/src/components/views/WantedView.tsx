@@ -1,7 +1,6 @@
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
 import { Container, Row } from "react-bootstrap";
@@ -37,7 +36,7 @@ function WantedView<T extends Wanted.Base>({
         <ContentHeader.Button
           disabled={hasTask || dataCount === 0}
           onClick={() => {
-            const task = createTask(name, undefined, searchAll);
+            const task = createTask(name, searchAll);
             dispatchTask(TaskGroupName, [task], "Searching...");
           }}
           icon={faSearch}

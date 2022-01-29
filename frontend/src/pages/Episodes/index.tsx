@@ -13,8 +13,7 @@ import {
   useShowModal,
 } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,
@@ -81,7 +80,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
             icon={faSync}
             disabled={!available || hasTask}
             onClick={() => {
-              const task = createTask(series.title, id, action, {
+              const task = createTask(series.title, action, {
                 action: "scan-disk",
                 seriesid: id,
               });
@@ -93,7 +92,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
-              const task = createTask(series.title, id, action, {
+              const task = createTask(series.title, action, {
                 action: "search-missing",
                 seriesid: id,
               });

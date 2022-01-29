@@ -1,7 +1,6 @@
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import api from "@/apis/raw";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -119,7 +118,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
             forced: forced,
           };
 
-          return createTask(v.file.name, episodeId, mutateAsync, {
+          return createTask(v.file.name, mutateAsync, {
             seriesId,
             episodeId,
             form,

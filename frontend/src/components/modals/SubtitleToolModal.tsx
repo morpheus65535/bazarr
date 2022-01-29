@@ -1,6 +1,5 @@
 import { useSubtitleAction } from "@/apis/hooks";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { isMovie, submodProcessColor } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { useEnabledLanguages } from "@/utilities/languages";
@@ -317,7 +316,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
           path: s.path,
           ...override,
         };
-        return createTask(s.path, s.id, mutateAsync, { action, form });
+        return createTask(s.path, mutateAsync, { action, form });
       });
 
       dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");

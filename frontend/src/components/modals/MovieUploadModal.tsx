@@ -1,6 +1,5 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
@@ -73,7 +72,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
             throw new Error("Language is not selected");
           }
 
-          return createTask(file.name, radarrId, mutateAsync, {
+          return createTask(file.name, mutateAsync, {
             radarrId,
             form: {
               file,

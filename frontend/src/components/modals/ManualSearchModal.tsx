@@ -1,7 +1,6 @@
 import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
-import { dispatchTask } from "@/modules/task";
-import { createTask } from "@/modules/task/utilities";
-import { GetItemId, isMovie } from "@/utilities";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { isMovie } from "@/utilities";
 import {
   faCaretDown,
   faCheck,
@@ -194,8 +193,7 @@ export function ManualSearchModal<T extends SupportType>(
               onClick={() => {
                 if (!item) return;
 
-                const id = GetItemId(item);
-                const task = createTask(item.title, id, download, item, result);
+                const task = createTask(item.title, download, item, result);
                 dispatchTask(
                   "Downloading subtitles...",
                   [task],
