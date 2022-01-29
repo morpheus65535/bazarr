@@ -1,4 +1,3 @@
-import React from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import { useDefaultSettings } from "./plugins";

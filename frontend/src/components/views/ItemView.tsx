@@ -1,7 +1,6 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { TableStyleProps } from "@/components/tables/BaseTable";
 import { faList } from "@fortawesome/free-solid-svg-icons";
-import React from "react";
 import { Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { Column, TableOptions } from "react-table";
