@@ -2,7 +2,7 @@ import { ActionButton, FileBrowser, SimpleTable } from "@/components";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize, isArray, isBoolean } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import {
@@ -144,7 +144,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   if (enabled) {
     return (
-      <React.Fragment>
+      <>
         <SimpleTable
           emptyText="No Mapping"
           responsive={false}
@@ -155,7 +155,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
         <Button block variant="light" onClick={addRow}>
           Add
         </Button>
-      </React.Fragment>
+      </>
     );
   } else {
     return (

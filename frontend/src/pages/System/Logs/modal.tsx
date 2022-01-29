@@ -1,5 +1,5 @@
 import { BaseModal, BaseModalProps, useModalPayload } from "@/components";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 
 const SystemLogModal: FunctionComponent<BaseModalProps> = ({ ...modal }) => {
   const stack = useModalPayload<string>(modal.modalKey);

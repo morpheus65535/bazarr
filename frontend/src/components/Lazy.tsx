@@ -1,4 +1,4 @@
-import React, { FunctionComponent, Suspense } from "react";
+import { FunctionComponent, Suspense } from "react";
 import { LoadingIndicator } from ".";
 
 const Lazy: FunctionComponent = ({ children }) => {

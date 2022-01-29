@@ -3,7 +3,7 @@ import { QueryOverlay } from "@/components";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
 import { BuildKey } from "@/utilities";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";

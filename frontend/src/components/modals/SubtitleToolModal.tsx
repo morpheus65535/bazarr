@@ -19,7 +19,8 @@ import {
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
+import {
+  ChangeEventHandler,
   FunctionComponent,
   useCallback,
   useMemo,
@@ -172,7 +173,7 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
   ]);
 
   const updateOffset = useCallback(
-    (idx: number): React.ChangeEventHandler<HTMLInputElement> => {
+    (idx: number): ChangeEventHandler<HTMLInputElement> => {
       return (e) => {
         let value = parseFloat(e.currentTarget.value);
         if (isNaN(value)) {
@@ -446,7 +447,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <BaseModal title={"Subtitle Tools"} footer={footer} {...props}>
         <SimpleTable
           emptyText="No External Subtitles Found"
@@ -470,7 +471,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         process={process}
         modalKey="translate-sub"
       ></TranslateModal>
-    </React.Fragment>
+    </>
   );
 };
 

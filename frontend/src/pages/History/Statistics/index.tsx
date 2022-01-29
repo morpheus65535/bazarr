@@ -2,7 +2,7 @@ import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
 import { ContentHeader, QueryOverlay, Selector } from "@/components";
 import Language from "@/components/bazarr/Language";
 import { merge } from "lodash";
-import React, { FunctionComponent, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
@@ -63,7 +63,7 @@ const HistoryStats: FunctionComponent = () => {
         <title>History Statistics - Bazarr</title>
       </Helmet>
       <QueryOverlay result={stats}>
-        <React.Fragment>
+        <>
           <ContentHeader scroll={false}>
             <SelectorContainer>
               <Selector
@@ -111,7 +111,7 @@ const HistoryStats: FunctionComponent = () => {
               <Bar name="Movies" dataKey="movies" fill="#FFC22F"></Bar>
             </BarChart>
           </ResponsiveContainer>
-        </React.Fragment>
+        </>
       </QueryOverlay>
     </Container>
   );

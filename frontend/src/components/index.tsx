@@ -11,7 +11,7 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { isNull, isUndefined } from "lodash";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent, ReactElement } from "react";
 import {
   OverlayTrigger,
   OverlayTriggerProps,
@@ -98,7 +98,7 @@ export const LoadingIndicator: FunctionComponent<{
 };
 
 interface TextPopoverProps {
-  children: React.ReactElement;
+  children: ReactElement;
   text: string | undefined | null;
   placement?: OverlayTriggerProps["placement"];
   delay?: number;

@@ -9,12 +9,7 @@ import {
   useShowModal,
 } from "@/components";
 import { BuildKey } from "@/utilities";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
@@ -72,7 +67,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 
   const footer = useMemo(
     () => (
-      <React.Fragment>
+      <>
         <AsyncButton
           className="mr-auto"
           disabled={!canSave}
@@ -110,7 +105,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
         >
           Save
         </Button>
-      </React.Fragment>
+      </>
     ),
     [canSave, closeModal, current, update, payload]
   );

@@ -3,7 +3,7 @@ import { AsyncButton, PageTable, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 

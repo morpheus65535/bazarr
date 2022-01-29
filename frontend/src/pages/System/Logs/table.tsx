@@ -10,7 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isUndefined } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column, Row } from "react-table";
 import SystemLogModal from "./modal";
 
@@ -77,10 +77,10 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <PageTable columns={columns} data={logs} update={show}></PageTable>
       <SystemLogModal size="xl" modalKey="system-log"></SystemLogModal>
-    </React.Fragment>
+    </>
   );
 };
 

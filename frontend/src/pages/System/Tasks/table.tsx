@@ -2,7 +2,7 @@ import { useRunTask } from "@/apis/hooks";
 import { AsyncButton, SimpleTable } from "@/components";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
 
 interface Props {

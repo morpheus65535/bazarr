@@ -7,13 +7,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { LanguageSelector, MessageIcon } from "..";

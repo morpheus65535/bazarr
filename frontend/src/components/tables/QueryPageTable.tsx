@@ -1,6 +1,6 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { ScrollToTop } from "@/utilities";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
 import { LoadingIndicator } from "..";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
@@ -52,7 +52,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   }
 
   return (
-    <React.Fragment>
+    <>
       <BaseTable
         {...style}
         headers={headerGroups}
@@ -72,6 +72,6 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
         next={nextPage}
         goto={gotoPage}
       ></PageControl>
-    </React.Fragment>
+    </>
   );
 }

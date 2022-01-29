@@ -9,12 +9,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -223,14 +218,14 @@ export function ManualSearchModal<T extends SupportType>(
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
-        <React.Fragment>
+        <>
           <p className="mb-3 small">{item?.path ?? ""}</p>
           <PageTable
             emptyText="No Result"
             columns={columns}
             data={results}
           ></PageTable>
-        </React.Fragment>
+        </>
       );
     }
   };

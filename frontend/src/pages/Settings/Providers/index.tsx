@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Group, Input, Layout } from "../components";
 import { ProviderModal, ProviderView } from "./components";
 

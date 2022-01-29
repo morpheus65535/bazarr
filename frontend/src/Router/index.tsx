@@ -25,39 +25,35 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent, useMemo } from "react";
+import React, {
+  createContext,
+  FunctionComponent,
+  lazy,
+  useContext,
+  useMemo,
+} from "react";
 import { BrowserRouter } from "react-router-dom";
 import Redirector from "./Redirector";
 import { CustomRouteObject } from "./type";
 
-const HistoryStats = React.lazy(() => import("@/pages/History/Statistics"));
-const SystemStatusView = React.lazy(() => import("@/pages/System/Status"));
-const Authentication = React.lazy(() => import("@/pages/Authentication"));
-const NotFound = React.lazy(() => import("@/pages/404"));
-const Episodes = React.lazy(() => import("@/pages/Episodes"));
-const MovieDetail = React.lazy(() => import("@/pages/Movies/Details"));
+const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
+const SystemStatusView = lazy(() => import("@/pages/System/Status"));
+const Authentication = lazy(() => import("@/pages/Authentication"));
+const NotFound = lazy(() => import("@/pages/404"));
+const Episodes = lazy(() => import("@/pages/Episodes"));
+const MovieDetail = lazy(() => import("@/pages/Movies/Details"));
 
-const SettingsGeneralView = React.lazy(
-  () => import("@/pages/Settings/General")
-);
-const SettingsLanguagesView = React.lazy(
-  () => import("@/pages/Settings/Languages")
-);
-const SettingsProvidersView = React.lazy(
-  () => import("@/pages/Settings/Providers")
-);
-const SettingsRadarrView = React.lazy(() => import("@/pages/Settings/Radarr"));
-const SettingsSonarrView = React.lazy(() => import("@/pages/Settings/Sonarr"));
-const SettingsSubtitlesView = React.lazy(
-  () => import("@/pages/Settings/Subtitles")
-);
-const SettingsNotificationsView = React.lazy(
+const SettingsGeneralView = lazy(() => import("@/pages/Settings/General"));
+const SettingsLanguagesView = lazy(() => import("@/pages/Settings/Languages"));
+const SettingsProvidersView = lazy(() => import("@/pages/Settings/Providers"));
+const SettingsRadarrView = lazy(() => import("@/pages/Settings/Radarr"));
+const SettingsSonarrView = lazy(() => import("@/pages/Settings/Sonarr"));
+const SettingsSubtitlesView = lazy(() => import("@/pages/Settings/Subtitles"));
+const SettingsNotificationsView = lazy(
   () => import("@/pages/Settings/Notifications")
 );
-const SettingsSchedulerView = React.lazy(
-  () => import("@/pages/Settings/Scheduler")
-);
-const SettingsUIView = React.lazy(() => import("@/pages/Settings/UI"));
+const SettingsSchedulerView = lazy(() => import("@/pages/Settings/Scheduler"));
+const SettingsUIView = lazy(() => import("@/pages/Settings/UI"));
 
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
@@ -344,7 +340,7 @@ function useRoutes(): CustomRouteObject[] {
   );
 }
 
-const RouterItemContext = React.createContext<CustomRouteObject[]>([]);
+const RouterItemContext = createContext<CustomRouteObject[]>([]);
 
 export const Router: FunctionComponent = ({ children }) => {
   const routes = useRoutes();
@@ -357,5 +353,5 @@ export const Router: FunctionComponent = ({ children }) => {
 };
 
 export function useRouteItems() {
-  return React.useContext(RouterItemContext);
+  return useContext(RouterItemContext);
 }

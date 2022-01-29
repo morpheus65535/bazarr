@@ -5,7 +5,7 @@ import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Selector } from "../inputs";
 import { BaseModalProps } from "./BaseModal";

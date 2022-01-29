@@ -1,7 +1,7 @@
 import { useSystemReleases } from "@/apis/hooks";
 import { QueryOverlay } from "@/components";
 import { BuildKey } from "@/utilities";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
@@ -16,13 +16,13 @@ const SystemReleasesView: FunctionComponent = () => {
       </Helmet>
       <Row>
         <QueryOverlay result={releases}>
-          <React.Fragment>
+          <>
             {data?.map((v, idx) => (
               <Col xs={12} key={BuildKey(idx, v.date)}>
                 <InfoElement {...v}></InfoElement>
               </Col>
             ))}
-          </React.Fragment>
+          </>
         </QueryOverlay>
       </Row>
     </Container>

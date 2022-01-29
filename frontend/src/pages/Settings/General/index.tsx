@@ -5,7 +5,7 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
   Button,

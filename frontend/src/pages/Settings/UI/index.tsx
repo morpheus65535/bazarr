@@ -1,5 +1,5 @@
 import { uiPageSizeKey, usePageSize } from "@/utilities/storage";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Group, Input, Layout, Selector } from "../components";
 import { pageSizeOptions } from "./options";
 

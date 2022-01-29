@@ -1,5 +1,5 @@
 import { ScrollToTop } from "@/utilities";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { PluginHook, TableOptions, usePagination, useTable } from "react-table";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
@@ -49,7 +49,7 @@ export default function PageTable<T extends object>(props: Props<T>) {
   }, [pageIndex, autoScroll]);
 
   return (
-    <React.Fragment>
+    <>
       <BaseTable
         {...style}
         headers={headerGroups}
@@ -69,6 +69,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
         next={nextPage}
         goto={gotoPage}
       ></PageControl>
-    </React.Fragment>
+    </>
   );
 }

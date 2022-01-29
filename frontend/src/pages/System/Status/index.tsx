@@ -10,7 +10,7 @@ import {
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import moment from "moment";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, ReactNode, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
@@ -18,7 +18,7 @@ import Table from "./table";
 
 interface InfoProps {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function CRow(props: InfoProps): JSX.Element {
@@ -42,12 +42,12 @@ interface IconProps {
 function Label(props: IconProps): JSX.Element {
   const { icon, link, children } = props;
   return (
-    <React.Fragment>
+    <>
       <FontAwesomeIcon icon={icon} style={{ width: "2rem" }}></FontAwesomeIcon>
       <a href={link} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
-    </React.Fragment>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 import api from "@/apis/raw";
 import { isBoolean, isNumber, isString } from "lodash";
-import React, { FunctionComponent, useCallback, useState } from "react";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Button } from "react-bootstrap";
 import { useLatest } from "./hooks";
 

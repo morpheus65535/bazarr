@@ -1,4 +1,5 @@
-import React, {
+import {
+  createContext,
   Dispatch,
   FunctionComponent,
   useContext,
@@ -9,19 +10,15 @@ import { Collapse } from "react-bootstrap";
 
 type SupportType = string | boolean;
 
-const CollapseContext = React.createContext<
-  [SupportType, Dispatch<SupportType>]
->([
+const CollapseContext = createContext<[SupportType, Dispatch<SupportType>]>([
   "",
   (s) => {
     throw new Error("CollapseContext not initialized");
   },
 ]);
-const CollapseUpdateContext = React.createContext<Dispatch<SupportType>>(
-  (s) => {
-    throw new Error("CollapseUpdateContext not initialized");
-  }
-);
+const CollapseUpdateContext = createContext<Dispatch<SupportType>>((s) => {
+  throw new Error("CollapseUpdateContext not initialized");
+});
 
 export function useCollapse() {
   return useContext(CollapseUpdateContext);

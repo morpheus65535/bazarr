@@ -1,4 +1,5 @@
-import React, {
+import {
+  createContext,
   FunctionComponent,
   useCallback,
   useMemo,
@@ -21,7 +22,7 @@ interface ModalContextType {
   control: ModalControl;
 }
 
-export const ModalContext = React.createContext<ModalContextType>({
+export const ModalContext = createContext<ModalContextType>({
   modals: [],
   control: {
     push: () => {

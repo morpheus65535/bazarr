@@ -10,7 +10,7 @@ import {
 } from "@/components";
 import { BuildKey } from "@/utilities";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import React, {
+import {
   FunctionComponent,
   useCallback,
   useEffect,

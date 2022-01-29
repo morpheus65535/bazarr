@@ -8,7 +8,14 @@ import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import React, { FunctionComponent, useEffect, useMemo } from "react";
+import {
+  createContext,
+  FunctionComponent,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Badge,
   Collapse,
@@ -25,7 +32,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-const Selection = React.createContext<{
+const Selection = createContext<{
   selection: string | null;
   select: (path: string | null) => void;
 }>({
@@ -36,7 +43,7 @@ const Selection = React.createContext<{
 });
 
 function useSelection() {
-  return React.useContext(Selection);
+  return useContext(Selection);
 }
 
 function useBadgeValue(route: Route.Item) {
@@ -82,7 +89,7 @@ function useIsActive(parent: string, route: RouteObject) {
 
 // Actual sidebar
 const Sidebar: FunctionComponent = () => {
-  const [selection, select] = React.useState<string | null>(null);
+  const [selection, select] = useState<string | null>(null);
   const isShow = useReduxStore((s) => s.showSidebar);
 
   const showSidebar = useReduxAction(setSidebar);

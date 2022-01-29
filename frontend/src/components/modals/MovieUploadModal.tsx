@@ -4,7 +4,7 @@ import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {

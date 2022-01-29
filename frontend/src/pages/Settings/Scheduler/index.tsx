@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import {
   Check,
   CollapseBox,

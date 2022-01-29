@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Col, Container, Pagination, Row } from "react-bootstrap";
 import { PageControlAction } from "./types";
 interface Props {

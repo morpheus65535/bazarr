@@ -22,10 +22,10 @@ export const Entrance = () => (
     <QueryClientProvider client={queryClient}>
       <Router>
         {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
-        {/* <React.StrictMode> */}
+        {/* <StrictMode> */}
         {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
         <RouteApp></RouteApp>
-        {/* </React.StrictMode> */}
+        {/* </StrictMode> */}
       </Router>
     </QueryClientProvider>
   </Provider>

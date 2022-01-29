@@ -3,7 +3,7 @@ import { AsyncButton } from "@/components";
 import Language from "@/components/bazarr/Language";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
 
 interface Props {

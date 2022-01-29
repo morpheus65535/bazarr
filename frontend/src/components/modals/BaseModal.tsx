@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useState } from "react";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { useModalInformation } from "./hooks";
 

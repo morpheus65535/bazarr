@@ -1,11 +1,11 @@
 import UIError from "@/pages/UIError";
-import React from "react";
+import { Component } from "react";
 
 interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<object, State> {
+class ErrorBoundary extends Component<object, State> {
   constructor(props: object) {
     super(props);
     this.state = { error: null };

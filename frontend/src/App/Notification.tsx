@@ -12,8 +12,10 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import React, {
+import {
+  Fragment,
   FunctionComponent,
+  ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -114,7 +116,7 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [btnState]);
 
-  const content = useMemo<React.ReactNode>(() => {
+  const content = useMemo<ReactNode>(() => {
     const nodes: JSX.Element[] = [];
 
     nodes.push(
@@ -162,7 +164,7 @@ const NotificationCenter: FunctionComponent = () => {
   }, [notifier.timestamp]);
 
   return (
-    <React.Fragment>
+    <Fragment>
       <Dropdown
         onClick={onToggleClick}
         className={`notification-btn ${hasNew ? "new-item" : ""}`}
@@ -183,7 +185,7 @@ const NotificationCenter: FunctionComponent = () => {
           );
         }}
       </Overlay>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

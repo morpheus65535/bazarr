@@ -6,7 +6,7 @@ import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
 import Sidebar from "@/Sidebar";
 import { Environment } from "@/utilities";
-import React, { FunctionComponent, useEffect } from "react";
+import { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";

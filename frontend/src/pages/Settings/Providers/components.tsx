@@ -7,7 +7,7 @@ import {
 } from "@/components";
 import { BuildKey, isReactText } from "@/utilities";
 import { capitalize, isArray, isBoolean } from "lodash";
-import React, {
+import {
   FunctionComponent,
   useCallback,
   useEffect,
@@ -125,14 +125,14 @@ export const ProviderModal: FunctionComponent = () => {
 
   const footer = useMemo(
     () => (
-      <React.Fragment>
+      <>
         <Button hidden={!payload} variant="danger" onClick={deletePayload}>
           Delete
         </Button>
         <Button disabled={!canSave} onClick={addProvider}>
           Save
         </Button>
-      </React.Fragment>
+      </>
     ),
     [canSave, payload, deletePayload, addProvider]
   );

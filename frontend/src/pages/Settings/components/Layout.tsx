@@ -4,7 +4,8 @@ import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { merge } from "lodash";
-import React, {
+import {
+  createContext,
   FunctionComponent,
   useCallback,
   useEffect,
@@ -21,14 +22,14 @@ import {
 
 type SettingDispatcher = Record<string, (settings: LooseObject) => void>;
 
-export const StagedChangesContext = React.createContext<
-  SimpleStateType<LooseObject>
->([
-  {},
-  () => {
-    throw new Error("StagedChangesContext not initialized");
-  },
-]);
+export const StagedChangesContext = createContext<SimpleStateType<LooseObject>>(
+  [
+    {},
+    () => {
+      throw new Error("StagedChangesContext not initialized");
+    },
+  ]
+);
 
 function submitHooks(settings: LooseObject) {
   if (languageProfileKey in settings) {

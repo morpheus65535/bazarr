@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { useCallback, useMemo, useRef } from "react";
+import { FocusEvent, useCallback, useMemo, useRef } from "react";
 import Select, { GroupBase, OnChangeValue } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
 
@@ -21,7 +21,7 @@ export interface SelectorProps<T, M extends boolean> {
   loading?: boolean;
   multiple?: M;
   onChange?: (k: SelectorValueType<T, M>) => void;
-  onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
+  onFocus?: (e: FocusEvent<HTMLElement>) => void;
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;

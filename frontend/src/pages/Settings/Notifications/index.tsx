@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Alert } from "react-bootstrap";
 import { Check, Group, Input, Layout, Message } from "../components";
 import { NotificationView } from "./components";

@@ -1,6 +1,6 @@
 import { useSystem } from "@/apis/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Navigate } from "react-router-dom";
 

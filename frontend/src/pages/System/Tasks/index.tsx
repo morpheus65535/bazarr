@@ -1,7 +1,7 @@
 import { useSystemTasks } from "@/apis/hooks";
 import { ContentHeader, QueryOverlay } from "@/components";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";

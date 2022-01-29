@@ -1,6 +1,6 @@
 import { useLanguages } from "@/apis/hooks";
 import { Selector, SelectorOption, SelectorProps } from "@/components";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 
 interface TextProps {
   value: Language.Info;

@@ -19,7 +19,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { SubtitleAction } from "./components";
@@ -208,7 +208,7 @@ const Table: FunctionComponent<Props> = ({
   );
 
   return (
-    <React.Fragment>
+    <>
       <GroupTable
         columns={columns}
         data={episodes}
@@ -231,7 +231,7 @@ const Table: FunctionComponent<Props> = ({
         modalKey="manual-search"
         download={download}
       ></ManualSearchModal>
-    </React.Fragment>
+    </>
   );
 };
 

@@ -1,12 +1,7 @@
 import { ActionButton, SimpleTable, useShowModal } from "@/components";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep } from "lodash";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useEnabledLanguagesContext, useProfilesContext } from ".";
@@ -156,7 +151,7 @@ const Table: FunctionComponent = () => {
   const canAdd = languages.length !== 0;
 
   return (
-    <React.Fragment>
+    <>
       <SimpleTable
         columns={columns}
         data={profiles}
@@ -181,7 +176,7 @@ const Table: FunctionComponent = () => {
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
       <Modal update={updateProfile} modalKey="profile"></Modal>
-    </React.Fragment>
+    </>
   );
 };
 

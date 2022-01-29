@@ -2,7 +2,7 @@ import { Reload } from "@/utilities";
 import { GithubRepoRoot } from "@/utilities/constants";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Button, Container } from "react-bootstrap";
 
 interface Props {

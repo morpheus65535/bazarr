@@ -8,7 +8,7 @@ import { BlacklistButton } from "@/components/inputs/blacklist";
 import HistoryView from "@/components/views/HistoryView";
 import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Badge, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";

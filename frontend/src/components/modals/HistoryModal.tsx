@@ -4,7 +4,7 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
 import Language from "../bazarr/Language";

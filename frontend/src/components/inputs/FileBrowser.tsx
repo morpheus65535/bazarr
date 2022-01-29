@@ -2,7 +2,8 @@ import { useFileSystem } from "@/apis/hooks";
 import { faFile, faFolder } from "@fortawesome/free-regular-svg-icons";
 import { faReply } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
+import {
+  ChangeEvent,
   FunctionComponent,
   useEffect,
   useMemo,
@@ -147,7 +148,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
         placeholder="Click to start"
         type="text"
         value={text}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
           setText(e.currentTarget.value);
         }}
         ref={input}

@@ -2,7 +2,7 @@ import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GetItemId } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { uniqBy } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Container, Dropdown, Row } from "react-bootstrap";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";

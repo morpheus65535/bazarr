@@ -1,5 +1,5 @@
 import { useEnabledStatus } from "@/modules/redux/hooks";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Navigate } from "react-router-dom";
 
 const Redirector: FunctionComponent = () => {

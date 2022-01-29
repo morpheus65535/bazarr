@@ -3,12 +3,13 @@ import {
   ChipsProps as CChipsProps,
   Selector as CSelector,
   SelectorProps as CSelectorProps,
+  SelectorValueType,
   Slider as CSlider,
   SliderProps as CSliderProps,
 } from "@/components";
 import { isReactText } from "@/utilities";
 import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
-import React, { FunctionComponent, useEffect } from "react";
+import { FunctionComponent, ReactText, useEffect } from "react";
 import {
   Button as BSButton,
   ButtonProps as BSButtonProps,
@@ -33,8 +34,8 @@ export interface BaseInput<T> {
   beforeStaged?: (v: T) => unknown;
 }
 
-export interface TextProps extends BaseInput<React.ReactText> {
-  placeholder?: React.ReactText;
+export interface TextProps extends BaseInput<ReactText> {
+  placeholder?: ReactText;
   password?: boolean;
   controlled?: boolean;
 }
@@ -48,7 +49,7 @@ export const Text: FunctionComponent<TextProps> = ({
   password,
   settingKey,
 }) => {
-  const value = useLatest<React.ReactText>(settingKey, isReactText, override);
+  const value = useLatest<ReactText>(settingKey, isReactText, override);
 
   const update = useSingleUpdate();
   const collapse = useCollapse();
