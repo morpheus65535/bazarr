@@ -444,11 +444,16 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
                 return 401
             else:
                 raise AuthenticationError(f'Login failed: {response.reason}')
+        elif status_code == 403:
+            raise ProviderError("Bazarr API key seems to be in problem")
         elif status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
+        elif status_code == 410:
+            raise ProviderError("Download as expired")
         elif status_code == 429:
             raise TooManyRequests()
         elif status_code == 502:
+            # this one should deal with Bad Gateway issue on their side.
             raise APIThrottled()
         elif 500 <= status_code <= 599:
             raise ProviderError(response.reason)
