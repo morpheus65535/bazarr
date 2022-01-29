@@ -1,5 +1,5 @@
 import { useLanguages } from "@/apis/hooks";
-import { Selector, SelectorProps } from "@/components";
+import { Selector, SelectorOption, SelectorProps } from "@/components";
 import React, { FunctionComponent, useMemo } from "react";
 
 interface TextProps {

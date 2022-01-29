@@ -1,8 +1,17 @@
-import { isArray } from "lodash";
-import React, { useCallback, useMemo } from "react";
-import Select, { GroupBase } from "react-select";
+import clsx from "clsx";
+import React, { useCallback, useMemo, useRef } from "react";
+import Select, { GroupBase, OnChangeValue } from "react-select";
 import { SelectComponents } from "react-select/dist/declarations/src/components";
 import "./selector.scss";
+
+export type SelectorOption<T> = {
+  label: string;
+  value: T;
+};
+
+export type SelectorValueType<T, M extends boolean> = M extends true
+  ? ReadonlyArray<T>
+  : Nullable<T>;
 
 export interface SelectorProps<T, M extends boolean> {
   className?: string;
@@ -17,7 +26,9 @@ export interface SelectorProps<T, M extends boolean> {
   label?: (item: T) => string;
   defaultValue?: SelectorValueType<T, M>;
   value?: SelectorValueType<T, M>;
-  components?: Partial<SelectComponents<T, M, GroupBase<T>>>;
+  components?: Partial<
+    SelectComponents<SelectorOption<T>, M, GroupBase<SelectorOption<T>>>
+  >;
 }
 
 export function Selector<T = string, M extends boolean = false>(
@@ -39,33 +50,45 @@ export function Selector<T = string, M extends boolean = false>(
     value,
   } = props;
 
-  const nameFromItems = useCallback(
+  const labelRef = useRef(label);
+
+  const getName = useCallback(
     (item: T) => {
-      return options.find((v) => v.value === item)?.label;
+      if (labelRef.current) {
+        return labelRef.current(item);
+      }
+
+      return options.find((v) => v.value === item)?.label ?? "Unknown";
     },
     [options]
   );
 
   const wrapper = useCallback(
-    (value: SelectorValueType<T, M> | undefined | null): any => {
-      if (value !== null && value !== undefined) {
-        if (multiple) {
+    (
+      value: SelectorValueType<T, M> | undefined | null
+    ):
+      | SelectorOption<T>
+      | ReadonlyArray<SelectorOption<T>>
+      | null
+      | undefined => {
+      if (value === null || value === undefined) {
+        return value as null | undefined;
+      } else {
+        if (multiple === true) {
           return (value as SelectorValueType<T, true>).map((v) => ({
-            label: label ? label(v) : nameFromItems(v) ?? "Unknown",
+            label: getName(v),
             value: v,
           }));
         } else {
           const v = value as T;
           return {
-            label: label ? label(v) : nameFromItems(v) ?? "Unknown",
+            label: getName(v),
             value: v,
           };
         }
       }
-
-      return value;
     },
-    [label, multiple, nameFromItems]
+    [multiple, getName]
   );
 
   const defaultWrapper = useMemo(
@@ -88,21 +111,23 @@ export function Selector<T = string, M extends boolean = false>(
       isDisabled={disabled}
       options={options}
       components={components}
-      className={`custom-selector w-100 ${className ?? ""}`}
+      className={clsx("custom-selector w-100", className)}
       classNamePrefix="selector"
       onFocus={onFocus}
-      onChange={(v: SelectorOption<T>[]) => {
+      onChange={(newValue) => {
         if (onChange) {
-          let res: T | T[] | null = null;
-          if (isArray(v)) {
-            res = (v as ReadonlyArray<SelectorOption<T>>).map(
-              (val) => val.value
-            );
+          if (multiple === true) {
+            const values = (
+              newValue as OnChangeValue<SelectorOption<T>, true>
+            ).map((v) => v.value) as ReadonlyArray<T>;
+
+            onChange(values as SelectorValueType<T, M>);
           } else {
-            res = (v as SelectorOption<T>)?.value ?? null;
+            const value = (newValue as OnChangeValue<SelectorOption<T>, false>)
+              ?.value;
+
+            onChange(value as SelectorValueType<T, M>);
           }
-          // TODO: Force as any
-          onChange(res as SelectorValueType<T, M>);
         }
       }}
     ></Select>

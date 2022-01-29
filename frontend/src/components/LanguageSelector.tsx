@@ -1,4 +1,4 @@
-import { Selector, SelectorProps } from "@/components";
+import { Selector, SelectorOption, SelectorProps } from "@/components";
 import React, { useMemo } from "react";
 
 interface Props {
