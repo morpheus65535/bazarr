@@ -1,5 +1,5 @@
 import { QueryKeys } from "@/apis/queries/keys";
-import { ActionCreator, AnyAction } from "@reduxjs/toolkit";
+import { ActionCreator } from "@reduxjs/toolkit";
 import queryClient from "../../apis/queries";
 import {
   addNotifications,
@@ -10,13 +10,16 @@ import {
 } from "../redux/actions";
 import reduxStore from "../redux/store";
 
-function bindReduxAction<T extends ActionCreator<AnyAction>>(action: T) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyActionCreator = ActionCreator<any>;
+
+function bindReduxAction<T extends AnyActionCreator>(action: T) {
   return (...args: Parameters<T>) => {
     reduxStore.dispatch(action(...args));
   };
 }
 
-function bindReduxActionWithParam<T extends ActionCreator<AnyAction>>(
+function bindReduxActionWithParam<T extends AnyActionCreator>(
   action: T,
   ...param: Parameters<T>
 ) {
