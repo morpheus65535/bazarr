@@ -7,6 +7,7 @@ import time
 from babelfish import language_converters
 from subzero.language import Language
 from requests import Session
+from requests.exceptions import JSONDecodeError
 import urllib.parse
 from random import randint
 
@@ -383,7 +384,11 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         if episode:
             url += "&rtol=" + str(episode)
 
-        results = self.session.get(url, timeout=10).json()
+        try:
+            results = self.session.get(url, timeout=10).json()
+        except JSONDecodeError:
+            # provider returned improper JSON
+            results = None
 
         '''
         The result will be a JSON like this:
