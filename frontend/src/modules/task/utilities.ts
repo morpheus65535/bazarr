@@ -1,4 +1,5 @@
 import taskManager from ".";
+import { GroupName } from "./group";
 
 export function createTask<T extends Task.AnyCallable>(
   name: string,
@@ -13,13 +14,16 @@ export function createTask<T extends Task.AnyCallable>(
   };
 }
 
-export function dispatchTask(task: Task.Task) {}
+export function dispatchTask(task: Task.Task[], group: GroupName) {
+  // TODO
+}
 
 export function createAndDispatchTask<T extends Task.AnyCallable>(
   name: string,
+  group: GroupName,
   callable: T,
   ...parameters: Parameters<T>
 ) {
   const task = createTask(name, callable, ...parameters);
-  dispatchTask(task);
+  dispatchTask([task], group);
 }

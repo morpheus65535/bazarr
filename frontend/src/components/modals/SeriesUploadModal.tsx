@@ -125,7 +125,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
           });
         });
 
-      dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
+      dispatchTask(tasks, "upload-subtitles");
     },
     [mutateAsync, payload]
   );

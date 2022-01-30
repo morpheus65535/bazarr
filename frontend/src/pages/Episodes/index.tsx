@@ -13,7 +13,7 @@ import {
   useShowModal,
 } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
-import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,
@@ -80,11 +80,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
             icon={faSync}
             disabled={!available || hasTask}
             onClick={() => {
-              const task = createTask(series.title, action, {
+              createAndDispatchTask(series.title, "scan-disk", action, {
                 action: "scan-disk",
                 seriesid: id,
               });
-              dispatchTask("Scanning disk...", [task], "Scanning...");
             }}
           >
             Scan Disk
@@ -92,11 +91,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
-              const task = createTask(series.title, action, {
+              createAndDispatchTask(series.title, "search-subtitles", action, {
                 action: "search-missing",
                 seriesid: id,
               });
-              dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
             disabled={
               series.episodeFileCount === 0 ||

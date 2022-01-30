@@ -1,5 +1,5 @@
 import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
-import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { createAndDispatchTask } from "@/modules/task/utilities";
 import { isMovie } from "@/utilities";
 import {
   faCaretDown,
@@ -187,11 +187,12 @@ export function ManualSearchModal<T extends SupportType>(
               onClick={() => {
                 if (!item) return;
 
-                const task = createTask(item.title, download, item, result);
-                dispatchTask(
-                  "Downloading subtitles...",
-                  [task],
-                  "Downloading..."
+                createAndDispatchTask(
+                  item.title,
+                  "download-subtitles",
+                  download,
+                  item,
+                  result
                 );
               }}
             >

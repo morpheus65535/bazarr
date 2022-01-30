@@ -320,7 +320,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
         return createTask(s.path, mutateAsync, { action, form });
       });
 
-      dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");
+      dispatchTask(tasks, "modify-subtitles");
     },
     [closeModal, props.modalKey, selections, mutateAsync]
   );

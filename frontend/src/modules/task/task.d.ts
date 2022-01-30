@@ -14,4 +14,9 @@ declare namespace Task {
     callableId: string;
     description?: string;
   }
+
+  export interface Group {
+    description: string;
+    notify: string;
+  }
 }

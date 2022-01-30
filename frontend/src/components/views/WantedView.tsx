@@ -1,6 +1,6 @@
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { createAndDispatchTask } from "@/modules/task/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
@@ -13,8 +13,6 @@ interface Props<T extends Wanted.Base> {
   query: UsePaginationQueryResult<T>;
   searchAll: () => Promise<void>;
 }
-
-const TaskGroupName = "Searching wanted subtitles...";
 
 function WantedView<T extends Wanted.Base>({
   name,
@@ -35,8 +33,7 @@ function WantedView<T extends Wanted.Base>({
         <ContentHeader.Button
           disabled={hasTask || dataCount === 0}
           onClick={() => {
-            const task = createTask(name, searchAll);
-            dispatchTask(TaskGroupName, [task], "Searching...");
+            createAndDispatchTask(name, "search-subtitles", searchAll);
           }}
           icon={faSearch}
         >
