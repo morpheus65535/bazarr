@@ -1,4 +1,5 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
+import { usePayload } from "@/modules/redux/hooks/modal";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
@@ -6,7 +7,6 @@ import {
 } from "@/utilities/languages";
 import { FunctionComponent, useCallback } from "react";
 import { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {
   PendingSubtitle,
   Validator,
@@ -15,7 +15,7 @@ import SubtitleUploadModal, {
 const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;
 
-  const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
+  const payload = usePayload<Item.Movie>(modal.modalKey);
 
   const profile = useLanguageProfileBy(payload?.profileId);
 

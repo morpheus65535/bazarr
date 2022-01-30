@@ -14,10 +14,10 @@ import {
   MovieHistoryModal,
   MovieUploadModal,
   SubtitleToolModal,
-  useShowModal,
 } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
 import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -42,7 +42,7 @@ const MovieDetailView: FunctionComponent = () => {
 
   const profile = useLanguageProfileBy(movie?.profileId);
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const { mutateAsync } = useMovieModification();
   const { mutateAsync: action } = useMovieAction();
@@ -119,20 +119,20 @@ const MovieDetailView: FunctionComponent = () => {
           <ContentHeader.Button
             icon={faUser}
             disabled={movie.profileId === null || hasTask}
-            onClick={() => showModal<Item.Movie>("manual-search", movie)}
+            onClick={() => show("manual-search", movie)}
           >
             Manual
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}
-            onClick={() => showModal("history", movie)}
+            onClick={() => show("history", movie)}
           >
             History
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
             disabled={hasTask}
-            onClick={() => showModal("tools", [movie])}
+            onClick={() => show("tools", [movie])}
           >
             Tools
           </ContentHeader.Button>
@@ -142,14 +142,14 @@ const MovieDetailView: FunctionComponent = () => {
           <ContentHeader.Button
             disabled={!allowEdit || movie.profileId === null || hasTask}
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", movie)}
+            onClick={() => show("upload", movie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", movie)}
+            onClick={() => show("edit", movie)}
           >
             Edit Movie
           </ContentHeader.Button>

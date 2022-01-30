@@ -7,8 +7,8 @@ import {
   Selector,
   SelectorOption,
   SimpleTable,
-  useModalInformation,
 } from "@/components";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { BuildKey } from "@/utilities";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -43,8 +43,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const { payload: profile, closeModal } =
-    useModalInformation<Language.Profile>(modal.modalKey);
+  const profile = usePayload<Language.Profile>(modal.modalKey);
+
+  const { hide } = useModalControl();
 
   const languages = useEnabledLanguagesContext();
 
@@ -122,7 +123,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     <Button
       disabled={!canSave}
       onClick={() => {
-        closeModal();
+        hide();
         update(current);
       }}
     >

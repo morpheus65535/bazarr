@@ -1,10 +1,10 @@
 import { useIsAnyActionRunning, useLanguageProfiles } from "@/apis/hooks";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { GetItemId } from "@/utilities";
 import { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { AsyncButton, Selector, SelectorOption } from "..";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
 
 interface Props {
   submit: (form: FormType.ModifyItem) => Promise<void>;
@@ -16,9 +16,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const { data: profiles } = useLanguageProfiles();
 
-  const { payload, closeModal } = useModalInformation<Item.Base>(
-    modal.modalKey
-  );
+  const payload = usePayload<Item.Base>(modal.modalKey);
+  const { hide } = useModalControl();
 
   const hasTask = useIsAnyActionRunning();
 
@@ -54,7 +53,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
         }
       }}
       onSuccess={() => {
-        closeModal();
+        hide();
         onSuccess && payload && onSuccess(payload);
       }}
     >

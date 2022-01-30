@@ -20,7 +20,7 @@ export function useNotification(id: string, timeout = 5000) {
 }
 
 export function useIsOffline() {
-  return useReduxStore((s) => s.offline);
+  return useReduxStore((s) => s.site.offline);
 }
 
 export function useEnabledStatus() {

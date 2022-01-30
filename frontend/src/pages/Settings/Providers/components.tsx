@@ -3,10 +3,8 @@ import {
   Selector,
   SelectorComponents,
   SelectorOption,
-  useModalInformation,
-  useOnModalShow,
-  useShowModal,
 } from "@/components";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { BuildKey, isReactText } from "@/utilities";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
@@ -35,13 +33,13 @@ const ProviderKey = "settings-general-enabled_providers";
 export const ProviderView: FunctionComponent = () => {
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      showModal(ModalKey, v ?? null);
+      show(ModalKey, v ?? null);
     },
-    [showModal]
+    [show]
   );
 
   const cards = useMemo(() => {
@@ -79,7 +77,8 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 export const ProviderModal: FunctionComponent = () => {
-  const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
+  const payload = usePayload<ProviderInfo>(ModalKey);
+  const { hide } = useModalControl();
 
   const [staged, setChange] = useState<LooseObject>({});
 
@@ -88,8 +87,6 @@ export const ProviderModal: FunctionComponent = () => {
   }, [payload]);
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
-
-  useOnModalShow<ProviderInfo>((p) => setInfo(p), ModalKey);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
@@ -102,10 +99,10 @@ export const ProviderModal: FunctionComponent = () => {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
         updateGlobal({ [ProviderKey]: newProviders });
-        closeModal();
+        hide();
       }
     }
-  }, [payload, providers, updateGlobal, closeModal]);
+  }, [payload, providers, updateGlobal, hide]);
 
   const addProvider = useCallback(() => {
     if (info && providers) {
@@ -118,9 +115,9 @@ export const ProviderModal: FunctionComponent = () => {
       }
 
       updateGlobal(changes);
-      closeModal();
+      hide();
     }
-  }, [info, providers, staged, closeModal, updateGlobal]);
+  }, [info, providers, staged, updateGlobal, hide]);
 
   const canSave = info !== null;
 

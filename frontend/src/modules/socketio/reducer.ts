@@ -1,5 +1,4 @@
 import { QueryKeys } from "@/apis/queries/keys";
-import { ActionCreator } from "@reduxjs/toolkit";
 import queryClient from "../../apis/queries";
 import {
   addNotifications,
@@ -8,10 +7,8 @@ import {
   siteAddProgress,
   siteRemoveProgress,
 } from "../redux/actions";
+import { AnyActionCreator } from "../redux/actions/types";
 import reduxStore from "../redux/store";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyActionCreator = ActionCreator<any>;
 
 function bindReduxAction<T extends AnyActionCreator>(action: T) {
   return (...args: Parameters<T>) => {

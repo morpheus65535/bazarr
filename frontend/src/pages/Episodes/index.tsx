@@ -10,9 +10,9 @@ import {
   ItemEditorModal,
   LoadingIndicator,
   SeriesUploadModal,
-  useShowModal,
 } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -55,7 +55,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
     [series]
   );
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const profile = useLanguageProfileBy(series?.profileId);
 
@@ -109,7 +109,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ContentHeader.Button
             disabled={series.episodeFileCount === 0 || !available || hasTask}
             icon={faBriefcase}
-            onClick={() => showModal("tools", episodes)}
+            onClick={() => show("tools", episodes)}
           >
             Tools
           </ContentHeader.Button>
@@ -120,14 +120,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", series)}
+            onClick={() => show("upload", series)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", series)}
+            onClick={() => show("edit", series)}
           >
             Edit Series
           </ContentHeader.Button>

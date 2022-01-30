@@ -1,8 +1,9 @@
-import { BaseModal, BaseModalProps, useModalPayload } from "@/components";
+import { BaseModal, BaseModalProps } from "@/components";
+import { usePayload } from "@/modules/redux/hooks/modal";
 import { FunctionComponent, useMemo } from "react";
 
 const SystemLogModal: FunctionComponent<BaseModalProps> = ({ ...modal }) => {
-  const stack = useModalPayload<string>(modal.modalKey);
+  const stack = usePayload<string>(modal.modalKey);
   const result = useMemo(
     () =>
       stack?.split("\\n").map((v, idx) => (

@@ -4,18 +4,18 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
+import { usePayload } from "@/modules/redux/hooks/modal";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
 import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useModalPayload } from "./hooks";
 
 export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   const { ...modal } = props;
 
-  const movie = useModalPayload<Item.Movie>(modal.modalKey);
+  const movie = usePayload<Item.Movie>(modal.modalKey);
 
   const history = useMovieHistory(movie?.radarrId);
 
@@ -99,7 +99,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 export const EpisodeHistoryModal: FunctionComponent<BaseModalProps> = (
   props
 ) => {
-  const episode = useModalPayload<Item.Episode>(props.modalKey);
+  const episode = usePayload<Item.Episode>(props.modalKey);
 
   const history = useEpisodeHistory(episode?.sonarrEpisodeId);
 

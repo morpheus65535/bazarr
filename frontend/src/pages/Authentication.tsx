@@ -10,7 +10,9 @@ const Authentication: FunctionComponent = () => {
 
   const { login, isWorking } = useSystem();
 
-  const authenticated = useReduxStore((s) => s.status !== "unauthenticated");
+  const authenticated = useReduxStore(
+    (s) => s.site.status !== "unauthenticated"
+  );
 
   if (authenticated) {
     return <Navigate to="/"></Navigate>;

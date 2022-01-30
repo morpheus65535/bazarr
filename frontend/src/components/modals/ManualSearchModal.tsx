@@ -1,4 +1,5 @@
 import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
+import { usePayload } from "@/modules/redux/hooks/modal";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { isMovie } from "@/utilities";
 import {
@@ -21,13 +22,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { Column } from "react-table";
-import {
-  BaseModal,
-  BaseModalProps,
-  LoadingIndicator,
-  PageTable,
-  useModalPayload,
-} from "..";
+import { BaseModal, BaseModalProps, LoadingIndicator, PageTable } from "..";
 import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -41,7 +36,7 @@ export function ManualSearchModal<T extends SupportType>(
 ) {
   const { download, ...modal } = props;
 
-  const item = useModalPayload<T>(modal.modalKey);
+  const item = usePayload<T>(modal.modalKey);
 
   const [episodeId, setEpisodeId] = useState<number | undefined>(undefined);
   const [radarrId, setRadarrId] = useState<number | undefined>(undefined);

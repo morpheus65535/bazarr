@@ -5,10 +5,10 @@ import {
   GroupTable,
   SubtitleToolModal,
   TextPopover,
-  useShowModal,
 } from "@/components";
 import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -37,7 +37,7 @@ const Table: FunctionComponent<Props> = ({
   profile,
   disabled,
 }) => {
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const onlyDesired = useShowOnlyDesired();
 
@@ -193,12 +193,12 @@ const Table: FunctionComponent<Props> = ({
   const updateRow = useCallback<TableUpdater<Item.Episode>>(
     (row, modalKey: string) => {
       if (modalKey === "tools") {
-        showModal(modalKey, [row.original]);
+        show(modalKey, [row.original]);
       } else {
-        showModal(modalKey, row.original);
+        show(modalKey, row.original);
       }
     },
-    [showModal]
+    [show]
   );
 
   const maxSeason = useMemo(

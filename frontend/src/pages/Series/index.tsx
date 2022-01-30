@@ -1,7 +1,8 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
-import { ActionBadge, ItemEditorModal, useShowModal } from "@/components";
+import { ActionBadge, ItemEditorModal } from "@/components";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import ItemView from "@/components/views/ItemView";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FunctionComponent, useMemo } from "react";
@@ -86,7 +87,7 @@ const SeriesView: FunctionComponent = () => {
       {
         accessor: "sonarrSeriesId",
         Cell: ({ row: { original } }) => {
-          const show = useShowModal();
+          const { show } = useModalControl();
           return (
             <ActionBadge
               icon={faWrench}

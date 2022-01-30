@@ -1,5 +1,6 @@
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import api from "@/apis/raw";
+import { usePayload } from "@/modules/redux/hooks/modal";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
@@ -9,7 +10,6 @@ import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Selector, SelectorOption } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {
   PendingSubtitle,
   Validator,
@@ -27,7 +27,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
   episodes,
   ...modal
 }) => {
-  const { payload } = useModalInformation<Item.Series>(modal.modalKey);
+  const payload = usePayload<Item.Series>(modal.modalKey);
 
   const profile = useLanguageProfileBy(payload?.profileId);
 

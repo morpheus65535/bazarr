@@ -1,4 +1,5 @@
-import { ActionButton, SimpleTable, useShowModal } from "@/components";
+import { ActionButton, SimpleTable } from "@/components";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep } from "lodash";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
@@ -26,7 +27,7 @@ const Table: FunctionComponent = () => {
 
   const update = useSingleUpdate();
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
@@ -54,14 +55,14 @@ const Table: FunctionComponent = () => {
   const updateRow = useCallback<TableUpdater<Language.Profile>>(
     (row, item?: Language.Profile) => {
       if (item) {
-        showModal("profile", cloneDeep(item));
+        show("profile", cloneDeep(item));
       } else {
         const list = [...profiles];
         list.splice(row.index, 1);
         submitProfiles(list);
       }
     },
-    [submitProfiles, showModal, profiles]
+    [show, profiles, submitProfiles]
   );
 
   const columns = useMemo<Column<Language.Profile>[]>(
@@ -170,7 +171,7 @@ const Table: FunctionComponent = () => {
             mustContain: [],
             mustNotContain: [],
           };
-          showModal("profile", profile);
+          show("profile", profile);
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}

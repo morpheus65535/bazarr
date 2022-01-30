@@ -1,4 +1,5 @@
-import { ActionButton, PageTable, useShowModal } from "@/components";
+import { ActionButton, PageTable } from "@/components";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -34,10 +35,9 @@ function mapTypeToIcon(type: System.LogType): IconDefinition {
 }
 
 const Table: FunctionComponent<Props> = ({ logs }) => {
-  const showModal = useShowModal();
+  const { show: showModal } = useModalControl();
   const show = useCallback(
-    (row: Row<System.Log>, text: string) =>
-      showModal<string>("system-log", text),
+    (row: Row<System.Log>, text: string) => showModal("system-log", text),
     [showModal]
   );
   const columns: Column<System.Log>[] = useMemo<Column<System.Log>[]>(

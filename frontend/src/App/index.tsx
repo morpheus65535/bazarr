@@ -1,4 +1,4 @@
-import { LoadingIndicator, ModalProvider } from "@/components";
+import { LoadingIndicator } from "@/components";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
@@ -13,7 +13,7 @@ import { useEffectOnceWhen } from "rooks";
 import Header from "./Header";
 
 const App: FunctionComponent = () => {
-  const { status } = useReduxStore((s) => s);
+  const { status } = useReduxStore((s) => s.site);
 
   useEffect(() => {
     SocketIO.initialize();
@@ -51,9 +51,7 @@ const App: FunctionComponent = () => {
       </Row>
       <Row noGutters className="flex-nowrap">
         <Sidebar></Sidebar>
-        <ModalProvider>
-          <Outlet></Outlet>
-        </ModalProvider>
+        <Outlet></Outlet>
       </Row>
     </ErrorBoundary>
   );

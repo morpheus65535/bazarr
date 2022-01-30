@@ -90,7 +90,7 @@ function useIsActive(parent: string, route: RouteObject) {
 // Actual sidebar
 const Sidebar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
-  const isShow = useReduxStore((s) => s.showSidebar);
+  const isShow = useReduxStore((s) => s.site.showSidebar);
 
   const showSidebar = useReduxAction(setSidebar);
 

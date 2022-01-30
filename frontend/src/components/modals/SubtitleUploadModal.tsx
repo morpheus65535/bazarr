@@ -1,3 +1,4 @@
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { BuildKey } from "@/utilities";
 import {
   faCheck,
@@ -14,7 +15,6 @@ import { LanguageSelector, MessageIcon } from "..";
 import { FileForm } from "../inputs";
 import { SimpleTable } from "../tables";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal } from "./hooks";
 
 export interface PendingSubtitle<P> {
   file: File;
@@ -53,7 +53,7 @@ export default function SubtitleUploadModal<T>(
     hideAllLanguages,
   } = props;
 
-  const closeModal = useCloseModal();
+  const { hide } = useModalControl();
 
   const [pending, setPending] = useState<PendingSubtitle<T>[]>([]);
 
@@ -280,7 +280,7 @@ export default function SubtitleUploadModal<T>(
           onClick={() => {
             upload(pending);
             setFiles([]);
-            closeModal();
+            hide();
           }}
         >
           Upload

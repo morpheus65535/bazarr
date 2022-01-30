@@ -1,4 +1,5 @@
 import { useSubtitleAction } from "@/apis/hooks";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { isMovie, submodProcessColor } from "@/utilities";
 import { LOG } from "@/utilities/console";
@@ -41,13 +42,10 @@ import {
   LanguageSelector,
   Selector,
   SimpleTable,
-  useModalPayload,
-  useShowModal,
 } from "..";
 import Language from "../bazarr/Language";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal } from "./hooks";
 import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
@@ -295,17 +293,17 @@ const CanSelectSubtitle = (item: TableColumnType) => {
 };
 
 const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
-  const payload = useModalPayload<SupportType[]>(props.modalKey);
+  const payload = usePayload<SupportType[]>(props.modalKey);
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
-  const closeModal = useCloseModal();
+  const { hide } = useModalControl();
 
   const { mutateAsync } = useSubtitleAction();
 
   const process = useCallback(
     (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       LOG("info", "executing action", action);
-      closeModal(props.modalKey);
+      hide(props.modalKey);
 
       const tasks = selections.map((s) => {
         const form: FormType.ModifySubtitle = {
@@ -320,10 +318,10 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
       dispatchTask(tasks, "modify-subtitles");
     },
-    [closeModal, props.modalKey, selections, mutateAsync]
+    [hide, props.modalKey, selections, mutateAsync]
   );
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const columns: Column<TableColumnType>[] = useMemo<Column<TableColumnType>[]>(
     () => [
@@ -426,22 +424,22 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
               Reverse RTL
             </ActionButtonItem>
           </Dropdown.Item>
-          <Dropdown.Item onSelect={() => showModal("add-color")}>
+          <Dropdown.Item onSelect={() => show("add-color")}>
             <ActionButtonItem icon={faPaintBrush}>Add Color</ActionButtonItem>
           </Dropdown.Item>
-          <Dropdown.Item onSelect={() => showModal("change-frame-rate")}>
+          <Dropdown.Item onSelect={() => show("change-frame-rate")}>
             <ActionButtonItem icon={faFilm}>Change Frame Rate</ActionButtonItem>
           </Dropdown.Item>
-          <Dropdown.Item onSelect={() => showModal("adjust-times")}>
+          <Dropdown.Item onSelect={() => show("adjust-times")}>
             <ActionButtonItem icon={faClock}>Adjust Times</ActionButtonItem>
           </Dropdown.Item>
-          <Dropdown.Item onSelect={() => showModal("translate-sub")}>
+          <Dropdown.Item onSelect={() => show("translate-sub")}>
             <ActionButtonItem icon={faLanguage}>Translate</ActionButtonItem>
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
     ),
-    [showModal, selections.length, process]
+    [selections.length, process, show]
   );
 
   return (
