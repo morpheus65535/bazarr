@@ -63,7 +63,7 @@ export const Text: FunctionComponent<TextProps> = ({
       value={controlled ? value ?? undefined : undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
-        collapse(val.toString());
+        collapse && collapse(val.toString());
         const value = beforeStaged ? beforeStaged(val) : val;
         update(value, settingKey);
       }}
@@ -88,7 +88,7 @@ export const Check: FunctionComponent<CheckProps> = ({
 
   const value = useLatest<boolean>(settingKey, isBoolean, override);
 
-  useEffect(() => collapse(value ?? false), [collapse, value]);
+  useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
   return (
     <Form.Check
@@ -131,7 +131,7 @@ export function Selector<
 
   useEffect(() => {
     if (isString(value) || isNull(value)) {
-      collapse(value ?? "");
+      collapse && collapse(value ?? "");
     }
   });
 

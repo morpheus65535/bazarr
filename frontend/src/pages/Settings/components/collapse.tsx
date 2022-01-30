@@ -10,15 +10,13 @@ import { Collapse } from "react-bootstrap";
 
 type SupportType = string | boolean;
 
-const CollapseContext = createContext<[SupportType, Dispatch<SupportType>]>([
-  "",
-  (s) => {
-    throw new Error("CollapseContext not initialized");
-  },
-]);
-const CollapseUpdateContext = createContext<Dispatch<SupportType>>((s) => {
-  throw new Error("CollapseUpdateContext not initialized");
-});
+const CollapseContext = createContext<
+  [SupportType, Dispatch<SupportType> | undefined]
+>([false, undefined]);
+
+const CollapseUpdateContext = createContext<Dispatch<SupportType> | undefined>(
+  undefined
+);
 
 export function useCollapse() {
   return useContext(CollapseUpdateContext);
