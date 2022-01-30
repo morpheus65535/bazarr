@@ -1,3 +1,5 @@
+import { SelectorOption } from "..";
+
 export const availableTranslation = {
   af: "afrikaans",
   sq: "albanian",

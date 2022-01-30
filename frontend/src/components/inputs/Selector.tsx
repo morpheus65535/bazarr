@@ -8,6 +8,12 @@ export type SelectorOption<T> = {
   value: T;
 };
 
+export type SelectorComponents<T, M extends boolean> = SelectComponents<
+  SelectorOption<T>,
+  M,
+  GroupBase<SelectorOption<T>>
+>;
+
 export type SelectorValueType<T, M extends boolean> = M extends true
   ? ReadonlyArray<T>
   : Nullable<T>;

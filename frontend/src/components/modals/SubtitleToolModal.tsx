@@ -290,8 +290,6 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   );
 };
 
-const TaskGroupName = "Modifying Subtitles";
-
 const CanSelectSubtitle = (item: TableColumnType) => {
   return item.path.endsWith(".srt");
 };

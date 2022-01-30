@@ -1,6 +1,8 @@
 import {
   BaseModal,
   Selector,
+  SelectorComponents,
+  SelectorOption,
   useModalInformation,
   useOnModalShow,
   useShowModal,
@@ -15,8 +17,7 @@ import {
   useState,
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
-import { components, GroupBase } from "react-select";
-import { SelectComponents } from "react-select/dist/declarations/src/components";
+import { components } from "react-select";
 import {
   Check,
   ColCard,
@@ -218,12 +219,11 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   const selectorComponents = useMemo<
-    Partial<SelectComponents<ProviderInfo, false, GroupBase<ProviderInfo>>>
+    Partial<SelectorComponents<ProviderInfo, false>>
   >(
     () => ({
       Option: ({ data, ...other }) => {
-        const { label, value } =
-          data as unknown as SelectorOption<ProviderInfo>;
+        const { label, value } = data;
         return (
           <components.Option data={data} {...other}>
             {label}

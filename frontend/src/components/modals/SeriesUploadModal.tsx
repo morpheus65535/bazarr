@@ -7,7 +7,7 @@ import {
 } from "@/utilities/languages";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { Selector } from "../inputs";
+import { Selector, SelectorOption } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {
@@ -22,8 +22,6 @@ interface Payload {
 interface SeriesProps {
   episodes: readonly Item.Episode[];
 }
-
-export const TaskGroupName = "Uploading Subtitles...";
 
 const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
   episodes,

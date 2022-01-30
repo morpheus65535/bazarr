@@ -12,8 +12,6 @@ import SubtitleUploadModal, {
   Validator,
 } from "./SubtitleUploadModal";
 
-export const TaskGroupName = "Uploading Subtitles...";
-
 const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   const modal = props;
 

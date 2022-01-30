@@ -1,5 +1,10 @@
 import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay, Selector } from "@/components";
+import {
+  ContentHeader,
+  QueryOverlay,
+  Selector,
+  SelectorOption,
+} from "@/components";
 import Language from "@/components/bazarr/Language";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";

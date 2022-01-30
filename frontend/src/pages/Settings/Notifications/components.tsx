@@ -4,6 +4,7 @@ import {
   BaseModal,
   BaseModalProps,
   Selector,
+  SelectorOption,
   useModalInformation,
   useOnModalShow,
   useShowModal,

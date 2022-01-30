@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const hiExtensionOptions: SelectorOption<string>[] = [
   {
     label: ".hi (Hearing-Impaired)",
