@@ -67,9 +67,10 @@ const SeriesView: FunctionComponent<Props> = () => {
         Header: "Episodes",
         accessor: "episodeFileCount",
         selectHide: true,
-        Cell: (row) => {
-          const { episodeFileCount, episodeMissingCount, profileId } =
-            row.row.original;
+        Cell: ({ row }) => {
+          const { episodeFileCount, episodeMissingCount, profileId, title } =
+            row.original;
+
           let progress = 0;
           let label = "";
           if (episodeFileCount === 0 || !profileId) {
@@ -86,6 +87,7 @@ const SeriesView: FunctionComponent<Props> = () => {
           return (
             <ProgressBar
               className="my-a"
+              key={title}
               variant={color}
               min={0}
               max={episodeFileCount}
