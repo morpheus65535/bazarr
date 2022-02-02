@@ -28,7 +28,8 @@ class SystemStatus(Resource):
         system_status.update({'radarr_version': get_radarr_info.version()})
         system_status.update({'operating_system': platform.platform()})
         system_status.update({'python_version': platform.python_version()})
-        system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
+        system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.dirname(__file__))))})
         system_status.update({'bazarr_config_directory': args.config_dir})
         system_status.update({'start_time': startTime})
 
