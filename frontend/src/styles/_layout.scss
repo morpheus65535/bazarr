@@ -126,6 +126,10 @@ $sidebar-active-color: #252833;
     }
   }
 
+  .indent > * {
+    padding-left: 2.5rem;
+  }
+
   .button {
     display: flex;
     align-items: center;

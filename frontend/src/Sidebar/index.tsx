@@ -202,7 +202,7 @@ const RouteItem: FunctionComponent<{
             ></RouteItemContent>
           </ListGroupItem>
           <Collapse in={isOpen}>
-            <div className="sidebar-collapse">{elements}</div>
+            <div className="indent">{elements}</div>
           </Collapse>
         </div>
       );
