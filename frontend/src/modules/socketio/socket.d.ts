@@ -27,10 +27,16 @@ declare namespace SocketIO {
 
   type ActionType = "update" | "delete";
 
-  type ReducerCreator<E extends EventType, U, D = U> = ValueOf<{
+  type PayloadType = number | string | CustomEvent.Progress;
+
+  type ReducerGroup<
+    E extends EventType,
+    U extends PayloadType | undefined,
+    D = U
+  > = ValueOf<{
     [P in E]: {
       key: P;
-      any?: ActionHandler<null>;
+      any?: ActionHandler<undefined>;
       update?: ActionHandler<U>;
       delete?: ActionHandler<D>;
     };
@@ -39,21 +45,22 @@ declare namespace SocketIO {
   type Event = {
     type: EventType;
     action: ActionType;
-    payload: unknown;
+    payload?: PayloadType;
   };
 
-  type ActionHandler<T> = T extends null ? () => void : (payload: T[]) => void;
+  type ActionHandler<T> = T extends undefined
+    ? () => void
+    : (payload: T[]) => void;
 
   type Reducer =
-    | ReducerCreator<NumEventType, number>
-    | ReducerCreator<NullEventType, null>
-    | ReducerCreator<"message", string>
-    | ReducerCreator<"progress", CustomEvent.Progress, string>;
+    | ReducerGroup<NumEventType, number>
+    | ReducerGroup<NullEventType, undefined>
+    | ReducerGroup<"message", string>
+    | ReducerGroup<"progress", CustomEvent.Progress, string>;
 
   type ActionRecord = {
     [P in EventType]?: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      [R in ActionType]?: any[];
+      [R in ActionType]?: PayloadType[];
     };
   };
 

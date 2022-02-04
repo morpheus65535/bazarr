@@ -1,10 +1,17 @@
 import { ActionButton, FileBrowser, SimpleTable } from "@/components";
+import { LOG } from "@/utilities/console";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize, isArray, isBoolean } from "lodash";
-import { FunctionComponent, useCallback, useMemo } from "react";
+import {
+  createContext,
+  FunctionComponent,
+  useCallback,
+  useContext,
+  useMemo,
+} from "react";
 import { Button } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
+import { Column } from "react-table";
 import {
   moviesEnabledKey,
   pathMappingsKey,
@@ -35,6 +42,16 @@ function getEnabledKey(type: SupportType) {
 interface PathMappingItem {
   from: string;
   to: string;
+}
+
+type ModifyFn = (index: number, item?: PathMappingItem) => void;
+
+const RowContext = createContext<ModifyFn>(() => {
+  LOG("error", "RowContext not initialized");
+});
+
+function useRowMutation() {
+  return useContext(RowContext);
 }
 
 interface TableProps {
@@ -72,13 +89,13 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     [items]
   );
 
-  const updateCell = useCallback<TableUpdater<PathMappingItem>>(
-    (row, item?: PathMappingItem) => {
+  const updateCell = useCallback<ModifyFn>(
+    (index, item) => {
       const newItems = [...data];
       if (item) {
-        newItems[row.index] = item;
+        newItems[index] = item;
       } else {
-        newItems.splice(row.index, 1);
+        newItems.splice(index, 1);
       }
       updateRow(newItems);
     },
@@ -90,18 +107,22 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: capitalize(type),
         accessor: "from",
-        Cell: ({ value, row, update }) => (
-          <FileBrowser
-            drop="up"
-            type={type}
-            defaultValue={value}
-            onChange={(path) => {
-              const newItem = { ...row.original };
-              newItem.from = path;
-              update && update(row, newItem);
-            }}
-          ></FileBrowser>
-        ),
+        Cell: ({ value, row }) => {
+          const mutate = useRowMutation();
+
+          return (
+            <FileBrowser
+              drop="up"
+              type={type}
+              defaultValue={value}
+              onChange={(path) => {
+                const newItem = { ...row.original };
+                newItem.from = path;
+                mutate(row.index, newItem);
+              }}
+            ></FileBrowser>
+          );
+        },
       },
       {
         id: "arrow",
@@ -113,30 +134,35 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       {
         Header: "Bazarr",
         accessor: "to",
-        Cell: ({ value, row, update }) => (
-          <FileBrowser
-            drop="up"
-            defaultValue={value}
-            type="bazarr"
-            onChange={(path) => {
-              const newItem = { ...row.original };
-              newItem.to = path;
-              update && update(row, newItem);
-            }}
-          ></FileBrowser>
-        ),
+        Cell: ({ value, row }) => {
+          const mutate = useRowMutation();
+          return (
+            <FileBrowser
+              drop="up"
+              defaultValue={value}
+              type="bazarr"
+              onChange={(path) => {
+                const newItem = { ...row.original };
+                newItem.to = path;
+                mutate(row.index, newItem);
+              }}
+            ></FileBrowser>
+          );
+        },
       },
       {
         id: "action",
         accessor: "to",
-        Cell: ({ row, update }) => (
-          <ActionButton
-            icon={faTrash}
-            onClick={() => {
-              update && update(row);
-            }}
-          ></ActionButton>
-        ),
+        Cell: ({ row }) => {
+          const mutate = useRowMutation();
+
+          return (
+            <ActionButton
+              icon={faTrash}
+              onClick={() => mutate(row.index)}
+            ></ActionButton>
+          );
+        },
       },
     ],
     [type]
@@ -144,18 +170,17 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
   if (enabled) {
     return (
-      <>
+      <RowContext.Provider value={updateCell}>
         <SimpleTable
           emptyText="No Mapping"
           responsive={false}
           columns={columns}
           data={data}
-          update={updateCell}
         ></SimpleTable>
         <Button block variant="light" onClick={addRow}>
           Add
         </Button>
-      </>
+      </RowContext.Provider>
     );
   } else {
     return (

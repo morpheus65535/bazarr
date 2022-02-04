@@ -36,18 +36,14 @@ import {} from "../components/tables/plugins";
 declare module "react-table" {
   // take this file as-is, or comment out the sections that don't apply to your plugin configuration
 
-  // Customize of React Table
-  type TableUpdater<D extends object> = (row: Row<D>, ...others: any[]) => void;
-
   interface useSelectionProps<D extends Record<string, unknown>> {
     onSelect?: (items: D[]) => void;
     canSelect?: (item: D) => boolean;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface CustomTableProps<D extends Record<string, unknown>>
-    extends useSelectionProps<D> {
-    update?: TableUpdater<D>;
-  }
+    extends useSelectionProps<D> {}
 
   export interface TableOptions<
     D extends Record<string, unknown>

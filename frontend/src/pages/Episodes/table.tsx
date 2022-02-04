@@ -21,7 +21,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
+import { Column } from "react-table";
 import { SubtitleAction } from "./components";
 
 interface Props {
@@ -37,8 +37,6 @@ const Table: FunctionComponent<Props> = ({
   profile,
   disabled,
 }) => {
-  const { show } = useModalControl();
-
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -158,28 +156,29 @@ const Table: FunctionComponent<Props> = ({
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row }) => {
+          const { show } = useModalControl();
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
-                  update && update(row, "manual-search");
+                  show("manual-search", row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
                 disabled={disabled}
                 onClick={() => {
-                  update && update(row, "history");
+                  show("manual-search", row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
                 disabled={disabled}
                 onClick={() => {
-                  update && update(row, "tools");
+                  show("tools", [row.original]);
                 }}
               ></ActionButton>
             </ButtonGroup>
@@ -188,17 +187,6 @@ const Table: FunctionComponent<Props> = ({
       },
     ],
     [onlyDesired, profileItems, series, disabled]
-  );
-
-  const updateRow = useCallback<TableUpdater<Item.Episode>>(
-    (row, modalKey: string) => {
-      if (modalKey === "tools") {
-        show(modalKey, [row.original]);
-      } else {
-        show(modalKey, row.original);
-      }
-    },
-    [show]
   );
 
   const maxSeason = useMemo(
@@ -212,7 +200,6 @@ const Table: FunctionComponent<Props> = ({
       <GroupTable
         columns={columns}
         data={episodes}
-        update={updateRow}
         initialState={{
           sortBy: [
             { id: "season", desc: true },

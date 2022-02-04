@@ -63,8 +63,9 @@ class SocketIOClient {
       if (!(e.action in record)) {
         record[e.action] = [];
       }
+
       if (e.payload) {
-        record[e.action]!.push(e.payload);
+        record[e.action]?.push(e.payload);
       }
     });
 
@@ -76,7 +77,6 @@ class SocketIOClient {
           return;
         }
 
-        // eslint-disable-next-line no-loop-func
         handlers.forEach((handler) => {
           const anyAction = handler.any;
           if (anyAction) {
@@ -87,7 +87,9 @@ class SocketIOClient {
             ids = uniq(ids);
             const action = handler[key as SocketIO.ActionType];
             if (action) {
-              action(ids);
+              // FIXME: type
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              action(ids as any[]);
             } else if (anyAction === undefined) {
               LOG("warning", "Unhandled SocketIO event", key, type);
             }
@@ -99,17 +101,17 @@ class SocketIOClient {
 
   private onConnect() {
     LOG("info", "Socket.IO has connected");
-    this.onEvent({ type: "connect", action: "update", payload: null });
+    this.onEvent({ type: "connect", action: "update" });
   }
 
   private onConnectError() {
     LOG("warning", "Socket.IO has error connecting backend");
-    this.onEvent({ type: "connect_error", action: "update", payload: null });
+    this.onEvent({ type: "connect_error", action: "update" });
   }
 
   private onDisconnect() {
     LOG("warning", "Socket.IO has disconnected");
-    this.onEvent({ type: "disconnect", action: "update", payload: null });
+    this.onEvent({ type: "disconnect", action: "update" });
   }
 
   private onEvent(event: SocketIO.Event) {

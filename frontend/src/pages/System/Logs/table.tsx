@@ -11,8 +11,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { isUndefined } from "lodash";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column, Row } from "react-table";
+import { FunctionComponent, useMemo } from "react";
+import { Column } from "react-table";
 import SystemLogModal from "./modal";
 
 interface Props {
@@ -35,11 +35,6 @@ function mapTypeToIcon(type: System.LogType): IconDefinition {
 }
 
 const Table: FunctionComponent<Props> = ({ logs }) => {
-  const { show: showModal } = useModalControl();
-  const show = useCallback(
-    (row: Row<System.Log>, text: string) => showModal("system-log", text),
-    [showModal]
-  );
   const columns: Column<System.Log>[] = useMemo<Column<System.Log>[]>(
     () => [
       {
@@ -59,12 +54,13 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       },
       {
         accessor: "exception",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ value }) => {
+          const { show } = useModalControl();
           if (!isUndefined(value)) {
             return (
               <ActionButton
                 icon={faLayerGroup}
-                onClick={() => update && update(row, value)}
+                onClick={() => show("system-log", value)}
               ></ActionButton>
             );
           } else {
@@ -78,7 +74,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
 
   return (
     <>
-      <PageTable columns={columns} data={logs} update={show}></PageTable>
+      <PageTable columns={columns} data={logs}></PageTable>
       <SystemLogModal size="xl" modalKey="system-log"></SystemLogModal>
     </>
   );

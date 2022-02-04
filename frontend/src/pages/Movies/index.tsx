@@ -1,8 +1,9 @@
-import { useMoviesPagination } from "@/apis/hooks";
-import { ActionBadge, TextPopover } from "@/components";
+import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
+import { ActionBadge, ItemEditorModal, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import ItemView from "@/components/views/ItemView";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -14,6 +15,8 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
+  const { mutateAsync } = useMovieModification();
+
   const query = useMoviesPagination();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
@@ -82,11 +85,12 @@ const MovieView: FunctionComponent = () => {
       },
       {
         accessor: "radarrId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row }) => {
+          const { show } = useModalControl();
           return (
             <ActionBadge
               icon={faWrench}
-              onClick={() => update && update(row, "edit")}
+              onClick={() => show("edit", row.original)}
             ></ActionBadge>
           );
         },
@@ -101,6 +105,7 @@ const MovieView: FunctionComponent = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
+      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
     </Container>
   );
 };

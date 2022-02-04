@@ -11,7 +11,15 @@ const reducer = createReducer<ModalReducer>({ stack: [] }, (builder) => {
   });
 
   builder.addCase(hideModalAction, (state, action) => {
-    state.stack = state.stack.filter((frame) => frame.key !== action.payload);
+    const { payload } = action;
+    if (payload === undefined) {
+      state.stack.pop();
+    } else {
+      const index = state.stack.findIndex((fr) => fr.key === payload);
+      if (index !== -1) {
+        state.stack.splice(index);
+      }
+    }
   });
 });
 

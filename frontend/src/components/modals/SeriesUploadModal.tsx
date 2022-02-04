@@ -135,7 +135,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
         Header: "Episode",
         accessor: "payload",
         className: "vw-1",
-        Cell: ({ value, row, update }) => {
+        Cell: ({ value, row }) => {
           const options = episodes.map<SelectorOption<Item.Episode>>((ep) => ({
             label: `(${ep.season}x${ep.episode}) ${ep.title}`,
             value: ep,
@@ -146,10 +146,10 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
               if (ep) {
                 const newInfo = { ...row.original };
                 newInfo.payload.instance = ep;
-                update && update(row, newInfo);
+                // update && update(row, newInfo);
               }
             },
-            [row, update]
+            [row]
           );
 
           return (
