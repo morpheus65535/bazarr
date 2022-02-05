@@ -31,7 +31,7 @@ const RowContext = createContext<ModifyFn<unknown>>(() => {
   LOG("error", "RowContext not initialized");
 });
 
-function useRowMutation() {
+export function useRowMutation() {
   return useContext(RowContext);
 }
 

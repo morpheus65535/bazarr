@@ -12,6 +12,7 @@ import { Selector, SelectorOption } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
 import SubtitleUploadModal, {
   PendingSubtitle,
+  useRowMutation,
   Validator,
 } from "./SubtitleUploadModal";
 
@@ -141,23 +142,20 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
             value: ep,
           }));
 
-          const change = useCallback(
-            (ep: Nullable<Item.Episode>) => {
-              if (ep) {
-                const newInfo = { ...row.original };
-                newInfo.payload.instance = ep;
-                // update && update(row, newInfo);
-              }
-            },
-            [row]
-          );
+          const mutate = useRowMutation();
 
           return (
             <Selector
               disabled={row.original.state === "fetching"}
               options={options}
               value={value.instance}
-              onChange={change}
+              onChange={(ep: Nullable<Item.Episode>) => {
+                if (ep) {
+                  const newInfo = { ...row.original };
+                  newInfo.payload.instance = ep;
+                  mutate(row.index, newInfo);
+                }
+              }}
             ></Selector>
           );
         },

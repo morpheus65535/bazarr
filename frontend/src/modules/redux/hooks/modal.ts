@@ -23,14 +23,14 @@ export function useModalControl() {
 export function useIsShowed(key: string) {
   const stack = useReduxStore((s) => s.modal.stack);
 
-  return useMemo(() => stack.some((m) => m.key === key), [stack, key]);
+  return useMemo(() => stack.findIndex((m) => m.key === key), [stack, key]);
 }
 
-export function usePayload<T>(key: string) {
+export function usePayload<T>(key: string): T | null {
   const stack = useReduxStore((s) => s.modal.stack);
 
   return useMemo(
-    () => stack.find((m) => m.key === key)?.payload as T,
+    () => (stack.find((m) => m.key === key)?.payload as T) ?? null,
     [stack, key]
   );
 }

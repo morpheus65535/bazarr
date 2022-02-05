@@ -1,4 +1,5 @@
 import { debounce, forIn, remove, uniq } from "lodash";
+import { onlineManager } from "react-query";
 import { io, Socket } from "socket.io-client";
 import { Environment } from "../../utilities";
 import { ENSURE, LOG } from "../../utilities/console";
@@ -28,6 +29,8 @@ class SocketIOClient {
     this.events = [];
     this.debounceReduce = debounce(this.reduce, 20);
     this.reducers = [];
+
+    onlineManager.setOnline(false);
   }
 
   initialize() {
@@ -101,16 +104,19 @@ class SocketIOClient {
 
   private onConnect() {
     LOG("info", "Socket.IO has connected");
+    onlineManager.setOnline(true);
     this.onEvent({ type: "connect", action: "update" });
   }
 
   private onConnectError() {
     LOG("warning", "Socket.IO has error connecting backend");
+    onlineManager.setOnline(false);
     this.onEvent({ type: "connect_error", action: "update" });
   }
 
   private onDisconnect() {
     LOG("warning", "Socket.IO has disconnected");
+    onlineManager.setOnline(false);
     this.onEvent({ type: "disconnect", action: "update" });
   }
 
