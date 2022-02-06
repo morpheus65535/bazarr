@@ -90,6 +90,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                 if language:
                     if hasattr(language, 'alpha3'):
                         valid_language = alpha2_from_alpha3(language.alpha3)
+                else:
+                    logging.debug(f"Skipping subtitles because we are unable to define language: {subtitle}")
+                    continue
+
                 if not valid_language:
                     logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
@@ -197,6 +201,10 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                 if language:
                     if hasattr(language, 'alpha3'):
                         valid_language = alpha2_from_alpha3(language.alpha3)
+                else:
+                    logging.debug(f"Skipping subtitles because we are unable to define language: {subtitle}")
+                    continue
+
                 if not valid_language:
                     logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
