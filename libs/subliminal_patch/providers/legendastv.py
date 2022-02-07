@@ -77,7 +77,7 @@ class LegendasTVProvider(_LegendasTVProvider):
 
         # Provider needs UNRAR installed. If not available raise ConfigurationError
         try:
-            rarfile.custom_check([rarfile.UNRAR_TOOL], True)
+            rarfile.tool_setup()
         except rarfile.RarExecError:
             raise ConfigurationError('UNRAR tool not available')
 
