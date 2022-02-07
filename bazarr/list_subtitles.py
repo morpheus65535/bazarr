@@ -308,17 +308,19 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if cutoff_language in actual_subtitles_list:
+                    if language_from_alpha2(cutoff_temp['language']) in \
+                            ast.literal_eval(episode_subtitles['audio_language']):
                         cutoff_met = True
-                        missing_subtitles_text = str([])
+                    elif cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
                     elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
                     elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
 
-            if not cutoff_met:
+            if cutoff_met:
+                missing_subtitles_text = str([])
+            else:
                 # if cutoff isn't met or None, we continue
 
                 # get difference between desired and existing subtitles
@@ -412,17 +414,19 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if cutoff_language in actual_subtitles_list:
+                    if language_from_alpha2(cutoff_temp['language']) in \
+                            ast.literal_eval(movie_subtitles['audio_language']):
                         cutoff_met = True
-                        missing_subtitles_text = str([])
+                    elif cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
                     elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
                     elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
 
-            if not cutoff_met:
+            if cutoff_met:
+                missing_subtitles_text = str([])
+            else:
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
