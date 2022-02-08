@@ -126,9 +126,21 @@ class FFprobeSubtitleStream:
         self.avg_frame_rate = stream.get("avg_frame_rate")
         self.time_base = stream.get("time_base")
         self.tags = stream.get("tags", {})
-        self.duration = float(stream.get("duration", 0))
         self.start_time = float(stream.get("start_time", 0))
-        self.duration_ts = int(stream.get("duration_ts", 0))
+
+        # some subtitles streams miss the duration_ts field and only have tags->DURATION field
+        if "DURATION" in self.tags:
+            h, m, s = self.tags["DURATION"].split(':')
+            logger.debug("h, m, s: %f, %f, %f", float(h)*60*60, float(m)*60, float(s) )
+            self.duration = float(s) + float(m)*60 + float(h)*60*60
+            self.duration_ts = int(self.duration*1000)
+        elif stream.get("duration_ts") == "N/A": # some subtitles streams miss a duration completely
+            self.duration = None
+            self.duration_ts = None
+        else:
+            self.duration = float(stream.get("duration", 0))
+            self.duration_ts = int(stream.get("duration_ts", 0))
+
         self.start_pts = int(stream.get("start_pts", 0))
 
         self.disposition = FFprobeSubtitleDisposition(stream.get("disposition", {}))
@@ -320,14 +332,15 @@ def check_integrity(
     except (pysubs2.Pysubs2Error, UnicodeError, OSError, FileNotFoundError) as error:
         raise InvalidFile(error) from error
     else:
-        off = abs(int(sub[-1].end) - subtitle.duration_ts)
-        if off > abs(sec_offset_threshold) * 1000:
-            raise InvalidFile(
-                f"The last subtitle timestamp ({sub[-1].end/1000} sec) is {off/1000} sec ahead"
-                f" from the subtitle stream total duration ({subtitle.duration} sec)"
-            )
+        if subtitle.duration_ts is not None: # ignore the duration check if the stream has no duration listed at all
+            off = abs(int(sub[-1].end) - subtitle.duration_ts)
+            if off > abs(sec_offset_threshold) * 1000:
+                raise InvalidFile(
+                        f"The last subtitle timestamp ({sub[-1].end/1000} sec) is {off/1000} sec ahead"
+                        f" from the subtitle stream total duration ({subtitle.duration} sec)"
+                        )
 
-        logger.debug("Integrity check passed (%d sec offset)", off / 1000)
+                logger.debug("Integrity check passed (%d sec offset)", off / 1000)
 
 
 def to_srt(
