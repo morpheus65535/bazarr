@@ -3,7 +3,7 @@
 import os
 import requests
 import logging
-from peewee import DoesNotExist, IntegrityError
+from peewee import IntegrityError
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -142,13 +142,10 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    try:
-        existing_series = TableShows.select(TableShows.path)\
-            .where(TableShows.sonarrSeriesId == series_id)\
-            .dicts()\
-            .get()
-    except DoesNotExist:
-        existing_series = None
+    existing_series = TableShows.select(TableShows.path)\
+        .where(TableShows.sonarrSeriesId == series_id)\
+        .dicts()\
+        .get_or_none()
 
     # Delete series from DB
     if action == 'deleted' and existing_series:

@@ -18,7 +18,6 @@ from helper import path_mappings, get_subtitle_destination_folder
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
-from peewee import DoesNotExist
 
 gc.enable()
 
@@ -32,12 +31,11 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-                    .where(TableEpisodes.path == original_path)\
-                    .dicts()\
-                    .get()
-            except DoesNotExist:
+            item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
+                .where(TableEpisodes.path == original_path)\
+                .dicts()\
+                .get_or_none()
+            if not item:
                 logging.exception(f"BAZARR error when trying to select this episode from database: {reversed_path}")
             else:
                 try:
@@ -141,12 +139,11 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
-                    .where(TableMovies.path == original_path)\
-                    .dicts()\
-                    .get()
-            except DoesNotExist:
+            item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
+                .where(TableMovies.path == original_path)\
+                .dicts()\
+                .get_or_none()
+            if not item:
                 logging.exception(f"BAZARR error when trying to select this movie from database: {reversed_path}")
             else:
                 try:

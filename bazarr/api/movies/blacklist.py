@@ -55,7 +55,10 @@ class MoviesBlacklist(Resource):
         forced = False
         hi = False
 
-        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get()
+        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get_or_none()
+
+        if not data:
+            return 'Movie not found', 501
 
         media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')

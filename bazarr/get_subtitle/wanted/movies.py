@@ -32,7 +32,10 @@ def _wanted_movie(movie):
         confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
             .where(TableMovies.radarrId == movie['radarrId']) \
             .dicts() \
-            .get()
+            .get_or_none()
+        if not confirmed_missing_subs:
+            continue
+
         if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
             continue
 

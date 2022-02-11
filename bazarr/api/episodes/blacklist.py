@@ -59,7 +59,10 @@ class EpisodesBlacklist(Resource):
         episodeInfo = TableEpisodes.select(TableEpisodes.path)\
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 501
 
         media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')

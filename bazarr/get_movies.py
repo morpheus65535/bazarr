@@ -3,7 +3,7 @@
 import os
 import requests
 import logging
-from peewee import DoesNotExist, IntegrityError
+from peewee import IntegrityError
 
 from config import settings, url_radarr
 from helper import path_mappings
@@ -170,13 +170,10 @@ def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
-    try:
-        existing_movie = TableMovies.select(TableMovies.path)\
-            .where(TableMovies.radarrId == movie_id)\
-            .dicts()\
-            .get()
-    except DoesNotExist:
-        existing_movie = None
+    existing_movie = TableMovies.select(TableMovies.path)\
+        .where(TableMovies.radarrId == movie_id)\
+        .dicts()\
+        .get_or_none()
 
     # Remove movie from DB
     if action == 'deleted':

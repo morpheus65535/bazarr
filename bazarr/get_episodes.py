@@ -3,7 +3,7 @@
 import os
 import requests
 import logging
-from peewee import DoesNotExist, IntegrityError
+from peewee import IntegrityError
 
 from database import TableEpisodes, TableShows
 from config import settings, url_sonarr
@@ -93,7 +93,9 @@ def sync_episodes(series_id=None, send_event=True):
                                                  TableEpisodes.sonarrEpisodeId)\
             .where(TableEpisodes.sonarrEpisodeId == removed_episode)\
             .dicts()\
-            .get()
+            .get_or_none()
+        if not episode_to_delete:
+            continue
         try:
             TableEpisodes.delete().where(TableEpisodes.sonarrEpisodeId == removed_episode).execute()
         except Exception as e:
@@ -169,13 +171,10 @@ def sync_one_episode(episode_id):
     apikey_sonarr = settings.sonarr.apikey
 
     # Check if there's a row in database for this episode ID
-    try:
-        existing_episode = TableEpisodes.select(TableEpisodes.path, TableEpisodes.episode_file_id)\
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)\
-            .dicts()\
-            .get()
-    except DoesNotExist:
-        existing_episode = None
+    existing_episode = TableEpisodes.select(TableEpisodes.path, TableEpisodes.episode_file_id)\
+        .where(TableEpisodes.sonarrEpisodeId == episode_id)\
+        .dicts()\
+        .get_or_none()
 
     try:
         # Get episode data from sonarr api

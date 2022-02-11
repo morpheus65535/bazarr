@@ -30,11 +30,19 @@ class Subtitles(Resource):
             metadata = TableEpisodes.select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)\
                 .where(TableEpisodes.sonarrEpisodeId == id)\
                 .dicts()\
-                .get()
+                .get_or_none()
+
+            if not metadata:
+                return 'Episode not found', 501
+
             video_path = path_mappings.path_replace(metadata['path'])
         else:
             subtitles_path = path_mappings.path_replace_movie(subtitles_path)
-            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get()
+            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get_or_none()
+
+            if not metadata:
+                return 'Movie not found', 501
+
             video_path = path_mappings.path_replace_movie(metadata['path'])
 
         if action == 'sync':

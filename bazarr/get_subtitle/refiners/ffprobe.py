@@ -15,14 +15,14 @@ def refine_from_ffprobe(path, video):
         file_id = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))\
             .dicts()\
-            .get()
+            .get_or_none()
     else:
         file_id = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path))\
             .dicts()\
-            .get()
+            .get_or_none()
 
-    if not isinstance(file_id, dict):
+    if not file_id:
         return video
 
     if isinstance(video, Movie):

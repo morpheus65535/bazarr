@@ -26,7 +26,10 @@ class ProviderMovies(Resource):
                                        TableMovies.profileId) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 501
 
         title = movieInfo['title']
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
@@ -50,7 +53,10 @@ class ProviderMovies(Resource):
                                        TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 501
 
         title = movieInfo['title']
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
