@@ -30,7 +30,7 @@ class ProviderEpisodes(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 501
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -58,7 +58,7 @@ class ProviderEpisodes(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 501
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])

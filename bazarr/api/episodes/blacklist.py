@@ -62,7 +62,7 @@ class EpisodesBlacklist(Resource):
             .get_or_none()
 
         if not episodeInfo:
-            return 'Episode not found', 501
+            return 'Episode not found', 500
 
         media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')
