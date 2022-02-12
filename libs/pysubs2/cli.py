@@ -25,7 +25,7 @@ def character_encoding(s: str) -> str:
         codecs.lookup(s)
         return s
     except LookupError:
-        raise argparse.ArgumentError
+        raise argparse.ArgumentError(None, "unknown character encoding: {}".format(s))
 
 
 def time(s: str) -> int:

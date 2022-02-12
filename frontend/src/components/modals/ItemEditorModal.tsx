@@ -1,28 +1,28 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import { useIsAnyActionRunning, useLanguageProfiles } from "apis/hooks";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
+import { UseMutationResult } from "react-query";
+import { GetItemId } from "utilities";
 import { AsyncButton, Selector } from "../";
-import { useIsAnyTaskRunningWithId } from "../../@modules/task/hooks";
-import { useLanguageProfiles } from "../../@redux/hooks";
-import { GetItemId } from "../../utilities";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 
 interface Props {
-  submit: (form: FormType.ModifyItem) => Promise<void>;
-  onSuccess?: (item: Item.Base) => void;
+  mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
 }
 
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
-  const { onSuccess, submit, ...modal } = props;
+  const { mutation, ...modal } = props;
 
-  const profiles = useLanguageProfiles();
+  const { data: profiles } = useLanguageProfiles();
 
   const { payload, closeModal } = useModalInformation<Item.Base>(
     modal.modalKey
   );
 
-  // TODO: Separate movies and series
-  const hasTask = useIsAnyTaskRunningWithId([GetItemId(payload ?? {})]);
+  const { mutateAsync, isLoading } = mutation;
+
+  const hasTask = useIsAnyActionRunning();
 
   const profileOptions = useMemo<SelectorOption<number>[]>(
     () =>
@@ -31,19 +31,25 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       }) ?? [],
     [profiles]
   );
-  const [id, setId] = useState<Nullable<number>>(null);
 
-  const [updating, setUpdating] = useState(false);
+  const [id, setId] = useState<Nullable<number>>(payload?.profileId ?? null);
+
+  useEffect(() => {
+    setId(payload?.profileId ?? null);
+  }, [payload]);
 
   const footer = (
     <AsyncButton
       noReset
-      onChange={setUpdating}
       disabled={hasTask}
       promise={() => {
         if (payload) {
           const itemId = GetItemId(payload);
-          return submit({
+          if (!itemId) {
+            return null;
+          }
+
+          return mutateAsync({
             id: [itemId],
             profileid: [id],
           });
@@ -51,10 +57,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
           return null;
         }
       }}
-      onSuccess={() => {
-        closeModal();
-        onSuccess && payload && onSuccess(payload);
-      }}
+      onSuccess={() => closeModal()}
     >
       Save
     </AsyncButton>
@@ -62,7 +65,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   return (
     <BaseModal
-      closeable={!updating}
+      closeable={!isLoading}
       footer={footer}
       title={payload?.title}
       {...modal}
@@ -85,7 +88,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
               clearable
               disabled={hasTask}
               options={profileOptions}
-              defaultValue={payload?.profileId}
+              value={id}
               onChange={(v) => setId(v === undefined ? null : v)}
             ></Selector>
           </Form.Group>

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,32 +26,31 @@
 #==============================================================================
 
 
-"""Provides :class:`bidict`."""
+"""Provide :class:`MutableBidict`."""
 
+import typing as _t
+
+from ._abc import MutableBidirectionalMapping
 from ._base import BidictBase
-from ._dup import OVERWRITE, RAISE, _OnDup
-from ._miss import _MISS
-from .compat import MutableMapping
+from ._dup import OnDup, ON_DUP_RAISE, ON_DUP_DROP_OLD
+from ._typing import _NONE, KT, VT, VDT, IterItems, MapOrIterItems
 
 
-# Extend MutableMapping explicitly because it doesn't implement __subclasshook__, as well as to
-# inherit method implementations it provides that we can reuse (namely `setdefault`).
-class MutableBidict(BidictBase, MutableMapping):
+class MutableBidict(BidictBase[KT, VT], MutableBidirectionalMapping[KT, VT]):
     """Base class for mutable bidirectional mappings."""
 
     __slots__ = ()
 
-    __hash__ = None  # since this class is mutable; explicit > implicit.
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'MutableBidict[VT, KT]': ...
 
-    _ON_DUP_OVERWRITE = _OnDup(key=OVERWRITE, val=OVERWRITE, kv=OVERWRITE)
-
-    def __delitem__(self, key):
-        u"""*x.__delitem__(y)　⟺　del x[y]*"""
+    def __delitem__(self, key: KT) -> None:
+        """*x.__delitem__(y)　⟺　del x[y]*"""
         self._pop(key)
 
-    def __setitem__(self, key, val):
-        """
-        Set the value for *key* to *val*.
+    def __setitem__(self, key: KT, val: VT) -> None:
+        """Set the value for *key* to *val*.
 
         If *key* is already associated with *val*, this is a no-op.
 
@@ -64,7 +63,7 @@ class MutableBidict(BidictBase, MutableMapping):
         to protect against accidental removal of the key
         that's currently associated with *val*.
 
-        Use :meth:`put` instead if you want to specify different policy in
+        Use :meth:`put` instead if you want to specify different behavior in
         the case that the provided key or value duplicates an existing one.
         Or use :meth:`forceput` to unconditionally associate *key* with *val*,
         replacing any existing items as necessary to preserve uniqueness.
@@ -76,16 +75,12 @@ class MutableBidict(BidictBase, MutableMapping):
             existing item and *val* duplicates the value of a different
             existing item.
         """
-        on_dup = self._get_on_dup()
-        self._put(key, val, on_dup)
+        self._put(key, val, self.on_dup)
 
-    def put(self, key, val, on_dup_key=RAISE, on_dup_val=RAISE, on_dup_kv=None):
-        """
-        Associate *key* with *val* with the specified duplication policies.
+    def put(self, key: KT, val: VT, on_dup: OnDup = ON_DUP_RAISE) -> None:
+        """Associate *key* with *val*, honoring the :class:`OnDup` given in *on_dup*.
 
-        If *on_dup_kv* is ``None``, the *on_dup_val* policy will be used for it.
-
-        For example, if all given duplication policies are :attr:`~bidict.RAISE`,
+        For example, if *on_dup* is :attr:`~bidict.ON_DUP_RAISE`,
         then *key* will be associated with *val* if and only if
         *key* is not already associated with an existing value and
         *val* is not already associated with an existing key,
@@ -94,37 +89,39 @@ class MutableBidict(BidictBase, MutableMapping):
         If *key* is already associated with *val*, this is a no-op.
 
         :raises bidict.KeyDuplicationError: if attempting to insert an item
-            whose key only duplicates an existing item's, and *on_dup_key* is
+            whose key only duplicates an existing item's, and *on_dup.key* is
             :attr:`~bidict.RAISE`.
 
         :raises bidict.ValueDuplicationError: if attempting to insert an item
-            whose value only duplicates an existing item's, and *on_dup_val* is
+            whose value only duplicates an existing item's, and *on_dup.val* is
             :attr:`~bidict.RAISE`.
 
         :raises bidict.KeyAndValueDuplicationError: if attempting to insert an
             item whose key duplicates one existing item's, and whose value
-            duplicates another existing item's, and *on_dup_kv* is
+            duplicates another existing item's, and *on_dup.kv* is
             :attr:`~bidict.RAISE`.
         """
-        on_dup = self._get_on_dup((on_dup_key, on_dup_val, on_dup_kv))
         self._put(key, val, on_dup)
 
-    def forceput(self, key, val):
-        """
-        Associate *key* with *val* unconditionally.
+    def forceput(self, key: KT, val: VT) -> None:
+        """Associate *key* with *val* unconditionally.
 
         Replace any existing mappings containing key *key* or value *val*
         as necessary to preserve uniqueness.
         """
-        self._put(key, val, self._ON_DUP_OVERWRITE)
+        self._put(key, val, ON_DUP_DROP_OLD)
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all items."""
         self._fwdm.clear()
         self._invm.clear()
 
-    def pop(self, key, default=_MISS):
-        u"""*x.pop(k[, d]) → v*
+    @_t.overload
+    def pop(self, key: KT) -> VT: ...
+    @_t.overload
+    def pop(self, key: KT, default: VDT = ...) -> VDT: ...
+    def pop(self, key: KT, default: VDT = _NONE) -> VDT:
+        """*x.pop(k[, d]) → v*
 
         Remove specified key and return the corresponding value.
 
@@ -133,12 +130,12 @@ class MutableBidict(BidictBase, MutableMapping):
         try:
             return self._pop(key)
         except KeyError:
-            if default is _MISS:
+            if default is _NONE:
                 raise
             return default
 
-    def popitem(self):
-        u"""*x.popitem() → (k, v)*
+    def popitem(self) -> _t.Tuple[KT, VT]:
+        """*x.popitem() → (k, v)*
 
         Remove and return some item as a (key, value) pair.
 
@@ -150,24 +147,38 @@ class MutableBidict(BidictBase, MutableMapping):
         del self._invm[val]
         return key, val
 
-    def update(self, *args, **kw):
-        """Like :meth:`putall` with default duplication policies."""
+    @_t.overload
+    def update(self, __arg: _t.Mapping[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def update(self, __arg: IterItems[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def update(self, **kw: VT) -> None: ...
+    def update(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
+        """Like calling :meth:`putall` with *self.on_dup* passed for *on_dup*."""
         if args or kw:
-            self._update(False, None, *args, **kw)
+            self._update(False, self.on_dup, *args, **kw)
 
-    def forceupdate(self, *args, **kw):
+    @_t.overload
+    def forceupdate(self, __arg: _t.Mapping[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def forceupdate(self, __arg: IterItems[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def forceupdate(self, **kw: VT) -> None: ...
+    def forceupdate(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
         """Like a bulk :meth:`forceput`."""
-        self._update(False, self._ON_DUP_OVERWRITE, *args, **kw)
+        self._update(False, ON_DUP_DROP_OLD, *args, **kw)
 
-    def putall(self, items, on_dup_key=RAISE, on_dup_val=RAISE, on_dup_kv=None):
-        """
-        Like a bulk :meth:`put`.
+    @_t.overload
+    def putall(self, items: _t.Mapping[KT, VT], on_dup: OnDup) -> None: ...
+    @_t.overload
+    def putall(self, items: IterItems[KT, VT], on_dup: OnDup = ON_DUP_RAISE) -> None: ...
+    def putall(self, items: MapOrIterItems[KT, VT], on_dup: OnDup = ON_DUP_RAISE) -> None:
+        """Like a bulk :meth:`put`.
 
         If one of the given items causes an exception to be raised,
         none of the items is inserted.
         """
         if items:
-            on_dup = self._get_on_dup((on_dup_key, on_dup_val, on_dup_kv))
             self._update(False, on_dup, items)
 
 

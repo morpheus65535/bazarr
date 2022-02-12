@@ -16,6 +16,11 @@ STDOUT_BYTESTREAM = getattr(sys.stdout, "buffer", sys.stdout)
 
 DASH_STREAM_MAP = {"input": STDIN_BYTESTREAM, "output": STDOUT_BYTESTREAM}
 
+try:  # Python 2
+    range = xrange  # pytype: disable=name-error
+except NameError:
+    pass
+
 log = logging.getLogger(__name__)
 
 
@@ -206,13 +211,26 @@ def compose_suggest_on_fail(subs, strict=True):
         raise
 
 
-def sliding_window(seq, width=2):
+def sliding_window(seq, width=2, inclusive=True):
+    """
+    If inclusive is True, we also include final elements where len(sliced) <
+    width.
+    """
     seq_iter = iter(seq)
+
+    # Consume seq_iter up to width
     sliced = tuple(itertools.islice(seq_iter, width))
 
-    if len(sliced) == width:
-        yield sliced
+    if not inclusive and len(sliced) != width:
+        return
+
+    yield sliced
 
     for elem in seq_iter:
         sliced = sliced[1:] + (elem,)
         yield sliced
+
+    if inclusive:
+        for idx in range(len(sliced)):
+            if idx != 0:
+                yield sliced[idx:]

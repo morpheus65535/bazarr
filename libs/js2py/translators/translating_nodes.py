@@ -108,6 +108,13 @@ def to_key(literal_or_identifier):
         else:
             return unicode(k)
 
+def is_iteration_statement(cand):
+    if not isinstance(cand, dict):
+        # Multiple statements.
+        return False
+    return cand.get("type", "?") in {"ForStatement", "ForInStatement", "WhileStatement", "DoWhileStatement"}
+
+
 
 def trans(ele, standard=False):
     """Translates esprima syntax tree to python by delegating to appropriate translating node"""
@@ -218,27 +225,36 @@ def ArrayExpression(type, elements):  # todo fix null inside problem
 
 
 def ObjectExpression(type, properties):
-    name = inline_stack.require('Object')
+    name = None
     elems = []
     after = ''
     for p in properties:
         if p['kind'] == 'init':
             elems.append('%s:%s' % Property(**p))
-        elif p['kind'] == 'set':
-            k, setter = Property(
-                **p
-            )  # setter is just a lval referring to that function, it will be defined in InlineStack automatically
-            after += '%s.define_own_property(%s, {"set":%s, "configurable":True, "enumerable":True})\n' % (
-                name, k, setter)
-        elif p['kind'] == 'get':
-            k, getter = Property(**p)
-            after += '%s.define_own_property(%s, {"get":%s, "configurable":True, "enumerable":True})\n' % (
-                name, k, getter)
         else:
-            raise RuntimeError('Unexpected object propery kind')
-    obj = '%s = Js({%s})\n' % (name, ','.join(elems))
-    inline_stack.define(name, obj + after)
-    return name
+            if name is None:
+                name = inline_stack.require('Object')
+            if p['kind'] == 'set':
+                k, setter = Property(
+                    **p
+                )  # setter is just a lval referring to that function, it will be defined in InlineStack automatically
+                after += '%s.define_own_property(%s, {"set":%s, "configurable":True, "enumerable":True})\n' % (
+                    name, k, setter)
+            elif p['kind'] == 'get':
+                k, getter = Property(**p)
+                after += '%s.define_own_property(%s, {"get":%s, "configurable":True, "enumerable":True})\n' % (
+                    name, k, getter)
+            else:
+                raise RuntimeError('Unexpected object propery kind')
+    definition = 'Js({%s})' % ','.join(elems)
+    if name is None:
+        return definition
+    body = '%s = %s\n' % (name, definition)
+    body += after
+    body += 'return %s\n' % name
+    code = 'def %s():\n%s' % (name, indent(body))
+    inline_stack.define(name, code)
+    return name + '()'
 
 
 def Property(type, kind, key, computed, value, method, shorthand):
@@ -431,8 +447,8 @@ def LabeledStatement(type, label, body):
     # todo consider using smarter approach!
     inside = trans(body)
     defs = ''
-    if inside.startswith('while ') or inside.startswith(
-            'for ') or inside.startswith('#for'):
+    if is_iteration_statement(body) and (inside.startswith('while ') or inside.startswith(
+            'for ') or inside.startswith('#for')):
         # we have to add contine label as well...
         # 3 or 1 since #for loop type has more lines before real for.
         sep = 1 if not inside.startswith('#for') else 3

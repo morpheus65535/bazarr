@@ -1,16 +1,16 @@
-__author__ = 'Artur Barseghyan'
-__copyright__ = '2013-2020 Artur Barseghyan'
-__license__ = 'MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later'
+__author__ = "Artur Barseghyan"
+__copyright__ = "2013-2021 Artur Barseghyan"
+__license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
-    'Trie',
-    'TrieNode',
+    "Trie",
+    "TrieNode",
 )
 
 
 class TrieNode(object):
     """Class representing a single Trie node."""
 
-    __slots__ = ('children', 'exception', 'leaf', 'private')
+    __slots__ = ("children", "exception", "leaf", "private")
 
     def __init__(self):
         self.children = None
@@ -34,11 +34,11 @@ class Trie(object):
 
         # Iterating over the tld parts in reverse order
         # for part in reversed(tld.split('.')):
-        tld_split = tld.split('.')
+        tld_split = tld.split(".")
         tld_split.reverse()
         for part in tld_split:
 
-            if part.startswith('!'):
+            if part.startswith("!"):
                 node.exception = part[1:]
                 break
 

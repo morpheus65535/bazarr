@@ -3,9 +3,9 @@
 This file exists for backward compatibility reasons.
 """
 
-from logging import warning
+import warnings
 from .nonp import NoNumpyException, DEFAULT_ENCODERS, DEFAULT_HOOKS, dumps, dump, loads, load  # keep 'unused' imports
-from .utils import hashodict, NoPandasException
+from .utils import hashodict, NoPandasException, JsonTricksDeprecation
 from .comment import strip_comment_line_with_symbol, strip_comments  # keep 'unused' imports
 from .encoders import TricksEncoder, json_date_time_encode, class_instance_encode, ClassInstanceEncoder, \
 	numpy_encode, NumpyEncoder # keep 'unused' imports
@@ -19,7 +19,7 @@ except ImportError:
 		'or decoding, you can import the functions from json_tricks.nonp instead, which do not need numpy.')
 
 
-# todo: warning('`json_tricks.np` is deprecated, you can import directly from `json_tricks`')
+warnings.warn('`json_tricks.np` is deprecated, you can import directly from `json_tricks`', JsonTricksDeprecation)
 
 
 DEFAULT_NP_ENCODERS = [numpy_encode,] + DEFAULT_ENCODERS    # DEPRECATED

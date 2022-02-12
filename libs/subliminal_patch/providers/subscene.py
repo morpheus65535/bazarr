@@ -245,7 +245,17 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
         self._create_filters(languages)
         self._enable_filters()
-        return [s for s in self.query(video) if s.language in languages]
+
+        if isinstance(video, Episode):
+            international_titles = list(set([video.series] + video.alternative_series[:1]))
+            subtitles = [s for s in self.query(video, international_titles) if s.language in languages]
+            if not len(subtitles):
+                us_titles = [x + ' (US)' for x in international_titles]
+                subtitles = [s for s in self.query(video, us_titles) if s.language in languages]
+            return subtitles
+        else:
+            titles = list(set([video.title] + video.alternative_titles[:1]))
+            return [s for s in self.query(video, titles) if s.language in languages]
 
     def download_subtitle(self, subtitle):
         if subtitle.pack_data:
@@ -319,10 +329,9 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             raise
 
     @reinitialize_on_error((RequestException,), attempts=1)
-    def query(self, video):
+    def query(self, video, titles):
         subtitles = []
         if isinstance(video, Episode):
-            titles = list(set([video.series] + video.alternative_series[:1]))
             more_than_one = len(titles) > 1
             for series in titles:
                 term = u"%s - %s Season" % (series, p.number_to_words("%sth" % video.season).capitalize())
@@ -343,7 +352,6 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                 if more_than_one:
                     time.sleep(self.search_throttle)
         else:
-            titles = list(set([video.title] + video.alternative_titles[:1]))
             more_than_one = len(titles) > 1
             for title in titles:
                 logger.debug('Searching for movie results: %r', title)

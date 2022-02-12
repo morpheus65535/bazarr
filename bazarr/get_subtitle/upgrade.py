@@ -158,7 +158,7 @@ def upgrade_subtitles():
                                              [(language, is_hi, is_forced)],
                                              audio_language,
                                              str(episode['scene_name']),
-                                             episode['title'],
+                                             episode['seriesTitle'],
                                              'series',
                                              forced_minimum_score=int(episode['score']),
                                              is_upgrade=True))

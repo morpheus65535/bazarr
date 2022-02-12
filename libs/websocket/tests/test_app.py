@@ -1,42 +1,41 @@
 # -*- coding: utf-8 -*-
 #
 """
+test_app.py
 websocket - WebSocket client library for Python
 
-Copyright (C) 2010 Hiroki Ohtani(liris)
+Copyright 2021 engn33r
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 import os
 import os.path
 import websocket as ws
-import sys
 import ssl
 import unittest
-sys.path[0:0] = [""]
 
-# Skip test to access the internet.
+# Skip test to access the internet unless TEST_WITH_INTERNET == 1
 TEST_WITH_INTERNET = os.environ.get('TEST_WITH_INTERNET', '0') == '1'
+# Skip tests relying on local websockets server unless LOCAL_WS_SERVER_PORT != -1
+LOCAL_WS_SERVER_PORT = os.environ.get('LOCAL_WS_SERVER_PORT', '-1')
+TEST_WITH_LOCAL_SERVER = LOCAL_WS_SERVER_PORT != '-1'
 TRACEABLE = True
 
 
 class WebSocketAppTest(unittest.TestCase):
 
-    class NotSetYet(object):
+    class NotSetYet:
         """ A marker class for signalling that a value hasn't been set yet.
         """
 
@@ -52,7 +51,7 @@ class WebSocketAppTest(unittest.TestCase):
         WebSocketAppTest.keep_running_close = WebSocketAppTest.NotSetYet()
         WebSocketAppTest.get_mask_key_id = WebSocketAppTest.NotSetYet()
 
-    @unittest.skipUnless(TEST_WITH_INTERNET, "Internet-requiring tests are disabled")
+    @unittest.skipUnless(TEST_WITH_LOCAL_SERVER, "Tests using local websocket server are disabled")
     def testKeepRunning(self):
         """ A WebSocketApp should keep running as long as its self.keep_running
         is not False (in the boolean context).
@@ -62,16 +61,20 @@ class WebSocketAppTest(unittest.TestCase):
             """ Set the keep_running flag for later inspection and immediately
             close the connection.
             """
+            self.send("hello!")
             WebSocketAppTest.keep_running_open = self.keep_running
+            self.keep_running = False
+
+        def on_message(wsapp, message):
+            print(message)
             self.close()
 
         def on_close(self, *args, **kwargs):
             """ Set the keep_running flag for the test to use.
             """
             WebSocketAppTest.keep_running_close = self.keep_running
-            self.send("connection should be closed here")
 
-        app = ws.WebSocketApp('ws://echo.websocket.org/', on_open=on_open, on_close=on_close)
+        app = ws.WebSocketApp('ws://127.0.0.1:' + LOCAL_WS_SERVER_PORT, on_open=on_open, on_close=on_close, on_message=on_message)
         app.run_forever()
 
     @unittest.skipUnless(TEST_WITH_INTERNET, "Internet-requiring tests are disabled")

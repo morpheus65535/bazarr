@@ -192,13 +192,20 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
                      '^venv' + separator,
                      '^WinPython' + separator,
                      separator + '__pycache__' + separator + '$']
-    if os.path.abspath(bazarr_dir).lower() in os.path.abspath(config_dir).lower():
+    if os.path.abspath(bazarr_dir).lower() == os.path.abspath(config_dir).lower():
+        # for users who installed Bazarr inside the config directory (ie: `%programdata%\Bazarr` on windows)
+        with os.scandir(config_dir) as directories:
+            for directory in directories:
+                if directory.is_dir():
+                    dir_to_ignore.append('^' + directory.name + os.path.sep)
+    elif os.path.abspath(bazarr_dir).lower() in os.path.abspath(config_dir).lower():
+        # when config directory is a child of Bazarr installation directory
         dir_to_ignore.append('^' + os.path.relpath(config_dir, bazarr_dir) + os.path.sep)
     dir_to_ignore_regex = re.compile('(?:% s)' % '|'.join(dir_to_ignore))
     logging.debug(f'BAZARR upgrade leftover cleaner will ignore directories matching this '
                   f'regex: {dir_to_ignore_regex.pattern}')
 
-    file_to_ignore = ['nssm.exe', '7za.exe']
+    file_to_ignore = ['nssm.exe', '7za.exe', 'unins000.exe', 'unins000.dat']
     logging.debug('BAZARR upgrade leftover cleaner will ignore those files: {}'.format(', '.join(file_to_ignore)))
     extension_to_ignore = ['.pyc']
     logging.debug('BAZARR upgrade leftover cleaner will ignore files with those extensions: '

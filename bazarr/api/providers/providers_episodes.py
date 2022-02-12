@@ -20,14 +20,17 @@ class ProviderEpisodes(Resource):
     def get(self):
         # Manual Search
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
                                            TableEpisodes.scene_name,
+                                           TableShows.title,
                                            TableShows.profileId) \
             .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId))\
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -46,12 +49,16 @@ class ProviderEpisodes(Resource):
         # Manual Download
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
-                                           TableEpisodes.scene_name) \
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
+                                           TableEpisodes.scene_name,
+                                           TableShows.title) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])

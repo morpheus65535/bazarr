@@ -32,7 +32,10 @@ def _wanted_episode(episode):
         confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
             .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
             .dicts() \
-            .get()
+            .get_or_none()
+        if not confirmed_missing_subs:
+            continue
+
         if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
             continue
 
@@ -137,7 +140,7 @@ def wanted_search_missing_subtitles_series():
             wanted_download_subtitles(episode['sonarrEpisodeId'])
         else:
             logging.info("BAZARR All providers are throttled")
-            return
+            break
 
     hide_progress(id='wanted_episodes_progress')
 

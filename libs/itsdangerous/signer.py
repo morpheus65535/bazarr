@@ -1,28 +1,32 @@
 import hashlib
 import hmac
+import typing as _t
 
-from ._compat import constant_time_compare
 from .encoding import _base64_alphabet
 from .encoding import base64_decode
 from .encoding import base64_encode
 from .encoding import want_bytes
 from .exc import BadSignature
 
+_t_str_bytes = _t.Union[str, bytes]
+_t_opt_str_bytes = _t.Optional[_t_str_bytes]
+_t_secret_key = _t.Union[_t.Iterable[_t_str_bytes], _t_str_bytes]
 
-class SigningAlgorithm(object):
+
+class SigningAlgorithm:
     """Subclasses must implement :meth:`get_signature` to provide
     signature generation functionality.
     """
 
-    def get_signature(self, key, value):
+    def get_signature(self, key: bytes, value: bytes) -> bytes:
         """Returns the signature for the given key and value."""
         raise NotImplementedError()
 
-    def verify_signature(self, key, value, sig):
+    def verify_signature(self, key: bytes, value: bytes, sig: bytes) -> bool:
         """Verifies the given signature matches the expected
         signature.
         """
-        return constant_time_compare(sig, self.get_signature(key, value))
+        return hmac.compare_digest(sig, self.get_signature(key, value))
 
 
 class NoneAlgorithm(SigningAlgorithm):
@@ -30,7 +34,7 @@ class NoneAlgorithm(SigningAlgorithm):
     returns an empty signature.
     """
 
-    def get_signature(self, key, value):
+    def get_signature(self, key: bytes, value: bytes) -> bytes:
         return b""
 
 
@@ -40,135 +44,209 @@ class HMACAlgorithm(SigningAlgorithm):
     #: The digest method to use with the MAC algorithm. This defaults to
     #: SHA1, but can be changed to any other function in the hashlib
     #: module.
-    default_digest_method = staticmethod(hashlib.sha1)
+    default_digest_method: _t.Any = staticmethod(hashlib.sha1)
 
-    def __init__(self, digest_method=None):
+    def __init__(self, digest_method: _t.Any = None):
         if digest_method is None:
             digest_method = self.default_digest_method
-        self.digest_method = digest_method
 
-    def get_signature(self, key, value):
+        self.digest_method: _t.Any = digest_method
+
+    def get_signature(self, key: bytes, value: bytes) -> bytes:
         mac = hmac.new(key, msg=value, digestmod=self.digest_method)
         return mac.digest()
 
 
-class Signer(object):
-    """This class can sign and unsign bytes, validating the signature
-    provided.
+def _make_keys_list(secret_key: _t_secret_key) -> _t.List[bytes]:
+    if isinstance(secret_key, (str, bytes)):
+        return [want_bytes(secret_key)]
 
-    Salt can be used to namespace the hash, so that a signed string is
-    only valid for a given namespace. Leaving this at the default value
-    or re-using a salt value across different parts of your application
-    where the same signed value in one part can mean something different
-    in another part is a security risk.
+    return [want_bytes(s) for s in secret_key]
 
-    See :ref:`the-salt` for an example of what the salt is doing and how
-    you can utilize it.
 
-    .. versionadded:: 0.14
+class Signer:
+    """A signer securely signs bytes, then unsigns them to verify that
+    the value hasn't been changed.
+
+    The secret key should be a random string of ``bytes`` and should not
+    be saved to code or version control. Different salts should be used
+    to distinguish signing in different contexts. See :doc:`/concepts`
+    for information about the security of the secret key and salt.
+
+    :param secret_key: The secret key to sign and verify with. Can be a
+        list of keys, oldest to newest, to support key rotation.
+    :param salt: Extra key to combine with ``secret_key`` to distinguish
+        signatures in different contexts.
+    :param sep: Separator between the signature and value.
+    :param key_derivation: How to derive the signing key from the secret
+        key and salt. Possible values are ``concat``, ``django-concat``,
+        or ``hmac``. Defaults to :attr:`default_key_derivation`, which
+        defaults to ``django-concat``.
+    :param digest_method: Hash function to use when generating the HMAC
+        signature. Defaults to :attr:`default_digest_method`, which
+        defaults to :func:`hashlib.sha1`. Note that the security of the
+        hash alone doesn't apply when used intermediately in HMAC.
+    :param algorithm: A :class:`SigningAlgorithm` instance to use
+        instead of building a default :class:`HMACAlgorithm` with the
+        ``digest_method``.
+
+    .. versionchanged:: 2.0
+        Added support for key rotation by passing a list to
+        ``secret_key``.
+
+    .. versionchanged:: 0.18
+        ``algorithm`` was added as an argument to the class constructor.
+
+    .. versionchanged:: 0.14
         ``key_derivation`` and ``digest_method`` were added as arguments
         to the class constructor.
-
-    .. versionadded:: 0.18
-        ``algorithm`` was added as an argument to the class constructor.
     """
 
-    #: The digest method to use for the signer.  This defaults to
-    #: SHA1 but can be changed to any other function in the hashlib
-    #: module.
+    #: The default digest method to use for the signer. The default is
+    #: :func:`hashlib.sha1`, but can be changed to any :mod:`hashlib` or
+    #: compatible object. Note that the security of the hash alone
+    #: doesn't apply when used intermediately in HMAC.
     #:
     #: .. versionadded:: 0.14
-    default_digest_method = staticmethod(hashlib.sha1)
+    default_digest_method: _t.Any = staticmethod(hashlib.sha1)
 
-    #: Controls how the key is derived. The default is Django-style
-    #: concatenation. Possible values are ``concat``, ``django-concat``
-    #: and ``hmac``. This is used for deriving a key from the secret key
-    #: with an added salt.
+    #: The default scheme to use to derive the signing key from the
+    #: secret key and salt. The default is ``django-concat``. Possible
+    #: values are ``concat``, ``django-concat``, and ``hmac``.
     #:
     #: .. versionadded:: 0.14
-    default_key_derivation = "django-concat"
+    default_key_derivation: str = "django-concat"
 
     def __init__(
         self,
-        secret_key,
-        salt=None,
-        sep=".",
-        key_derivation=None,
-        digest_method=None,
-        algorithm=None,
+        secret_key: _t_secret_key,
+        salt: _t_opt_str_bytes = b"itsdangerous.Signer",
+        sep: _t_str_bytes = b".",
+        key_derivation: _t.Optional[str] = None,
+        digest_method: _t.Optional[_t.Any] = None,
+        algorithm: _t.Optional[SigningAlgorithm] = None,
     ):
-        self.secret_key = want_bytes(secret_key)
-        self.sep = want_bytes(sep)
+        #: The list of secret keys to try for verifying signatures, from
+        #: oldest to newest. The newest (last) key is used for signing.
+        #:
+        #: This allows a key rotation system to keep a list of allowed
+        #: keys and remove expired ones.
+        self.secret_keys: _t.List[bytes] = _make_keys_list(secret_key)
+        self.sep: bytes = want_bytes(sep)
+
         if self.sep in _base64_alphabet:
             raise ValueError(
                 "The given separator cannot be used because it may be"
-                " contained in the signature itself. Alphanumeric"
-                " characters and `-_=` must not be used."
+                " contained in the signature itself. ASCII letters,"
+                " digits, and '-_=' must not be used."
             )
-        self.salt = "itsdangerous.Signer" if salt is None else salt
+
+        if salt is not None:
+            salt = want_bytes(salt)
+        else:
+            salt = b"itsdangerous.Signer"
+
+        self.salt = salt
+
         if key_derivation is None:
             key_derivation = self.default_key_derivation
-        self.key_derivation = key_derivation
+
+        self.key_derivation: str = key_derivation
+
         if digest_method is None:
             digest_method = self.default_digest_method
-        self.digest_method = digest_method
+
+        self.digest_method: _t.Any = digest_method
+
         if algorithm is None:
             algorithm = HMACAlgorithm(self.digest_method)
-        self.algorithm = algorithm
 
-    def derive_key(self):
+        self.algorithm: SigningAlgorithm = algorithm
+
+    @property
+    def secret_key(self) -> bytes:
+        """The newest (last) entry in the :attr:`secret_keys` list. This
+        is for compatibility from before key rotation support was added.
+        """
+        return self.secret_keys[-1]
+
+    def derive_key(self, secret_key: _t_opt_str_bytes = None) -> bytes:
         """This method is called to derive the key. The default key
         derivation choices can be overridden here. Key derivation is not
         intended to be used as a security method to make a complex key
         out of a short password. Instead you should use large random
         secret keys.
+
+        :param secret_key: A specific secret key to derive from.
+            Defaults to the last item in :attr:`secret_keys`.
+
+        .. versionchanged:: 2.0
+            Added the ``secret_key`` parameter.
         """
-        salt = want_bytes(self.salt)
+        if secret_key is None:
+            secret_key = self.secret_keys[-1]
+        else:
+            secret_key = want_bytes(secret_key)
+
         if self.key_derivation == "concat":
-            return self.digest_method(salt + self.secret_key).digest()
+            return _t.cast(bytes, self.digest_method(self.salt + secret_key).digest())
         elif self.key_derivation == "django-concat":
-            return self.digest_method(salt + b"signer" + self.secret_key).digest()
+            return _t.cast(
+                bytes, self.digest_method(self.salt + b"signer" + secret_key).digest()
+            )
         elif self.key_derivation == "hmac":
-            mac = hmac.new(self.secret_key, digestmod=self.digest_method)
-            mac.update(salt)
+            mac = hmac.new(secret_key, digestmod=self.digest_method)
+            mac.update(self.salt)
             return mac.digest()
         elif self.key_derivation == "none":
-            return self.secret_key
+            return secret_key
         else:
             raise TypeError("Unknown key derivation method")
 
-    def get_signature(self, value):
+    def get_signature(self, value: _t_str_bytes) -> bytes:
         """Returns the signature for the given value."""
         value = want_bytes(value)
         key = self.derive_key()
         sig = self.algorithm.get_signature(key, value)
         return base64_encode(sig)
 
-    def sign(self, value):
+    def sign(self, value: _t_str_bytes) -> bytes:
         """Signs the given string."""
-        return want_bytes(value) + want_bytes(self.sep) + self.get_signature(value)
+        value = want_bytes(value)
+        return value + self.sep + self.get_signature(value)
 
-    def verify_signature(self, value, sig):
+    def verify_signature(self, value: _t_str_bytes, sig: _t_str_bytes) -> bool:
         """Verifies the signature for the given value."""
-        key = self.derive_key()
         try:
             sig = base64_decode(sig)
         except Exception:
             return False
-        return self.algorithm.verify_signature(key, value, sig)
 
-    def unsign(self, signed_value):
+        value = want_bytes(value)
+
+        for secret_key in reversed(self.secret_keys):
+            key = self.derive_key(secret_key)
+
+            if self.algorithm.verify_signature(key, value, sig):
+                return True
+
+        return False
+
+    def unsign(self, signed_value: _t_str_bytes) -> bytes:
         """Unsigns the given string."""
         signed_value = want_bytes(signed_value)
-        sep = want_bytes(self.sep)
-        if sep not in signed_value:
-            raise BadSignature("No %r found in value" % self.sep)
-        value, sig = signed_value.rsplit(sep, 1)
+
+        if self.sep not in signed_value:
+            raise BadSignature(f"No {self.sep!r} found in value")
+
+        value, sig = signed_value.rsplit(self.sep, 1)
+
         if self.verify_signature(value, sig):
             return value
-        raise BadSignature("Signature %r does not match" % sig, payload=value)
 
-    def validate(self, signed_value):
+        raise BadSignature(f"Signature {sig!r} does not match", payload=value)
+
+    def validate(self, signed_value: _t_str_bytes) -> bool:
         """Only validates the given signed value. Returns ``True`` if
         the signature exists and is valid.
         """

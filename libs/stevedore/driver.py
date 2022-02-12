@@ -10,7 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from .exception import NoMatches, MultipleMatches
+from .exception import MultipleMatches
+from .exception import NoMatches
 from .named import NamedExtensionManager
 
 
@@ -33,19 +34,21 @@ class DriverManager(NamedExtensionManager):
         is True.
     :type invoke_kwds: dict
     :param on_load_failure_callback: Callback function that will be called when
-        a entrypoint can not be loaded. The arguments that will be provided
+        an entrypoint can not be loaded. The arguments that will be provided
         when this is called (when an entrypoint fails to load) are
         (manager, entrypoint, exception)
     :type on_load_failure_callback: function
     :param verify_requirements: Use setuptools to enforce the
         dependencies of the plugin(s) being loaded. Defaults to False.
     :type verify_requirements: bool
+    :type warn_on_missing_entrypoint: bool
     """
 
     def __init__(self, namespace, name,
                  invoke_on_load=False, invoke_args=(), invoke_kwds={},
                  on_load_failure_callback=None,
-                 verify_requirements=False):
+                 verify_requirements=False,
+                 warn_on_missing_entrypoint=True):
         on_load_failure_callback = on_load_failure_callback \
             or self._default_on_load_failure
         super(DriverManager, self).__init__(
@@ -56,6 +59,7 @@ class DriverManager(NamedExtensionManager):
             invoke_kwds=invoke_kwds,
             on_load_failure_callback=on_load_failure_callback,
             verify_requirements=verify_requirements,
+            warn_on_missing_entrypoint=warn_on_missing_entrypoint
         )
 
     @staticmethod
@@ -82,7 +86,7 @@ class DriverManager(NamedExtensionManager):
             and then ignored
         :type propagate_map_exceptions: bool
         :param on_load_failure_callback: Callback function that will
-            be called when a entrypoint can not be loaded. The
+            be called when an entrypoint can not be loaded. The
             arguments that will be provided when this is called (when
             an entrypoint fails to load) are (manager, entrypoint,
             exception)
@@ -139,7 +143,6 @@ class DriverManager(NamedExtensionManager):
 
     @property
     def driver(self):
-        """Returns the driver being used by this manager.
-        """
+        """Returns the driver being used by this manager."""
         ext = self.extensions[0]
         return ext.obj if ext.obj else ext.plugin

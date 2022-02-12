@@ -37,19 +37,20 @@ class Namespace(BaseNamespace):
     def _set_server(self, server):
         self.server = server
 
-    def emit(self, event, data=None, room=None, skip_sid=None, namespace=None,
-             callback=None):
+    def emit(self, event, data=None, to=None, room=None, skip_sid=None,
+             namespace=None, callback=None):
         """Emit a custom event to one or more connected clients.
 
         The only difference with the :func:`socketio.Server.emit` method is
         that when the ``namespace`` argument is not given the namespace
         associated with the class is used.
         """
-        return self.server.emit(event, data=data, room=room, skip_sid=skip_sid,
+        return self.server.emit(event, data=data, to=to, room=room,
+                                skip_sid=skip_sid,
                                 namespace=namespace or self.namespace,
                                 callback=callback)
 
-    def send(self, data, room=None, skip_sid=None, namespace=None,
+    def send(self, data, to=None, room=None, skip_sid=None, namespace=None,
              callback=None):
         """Send a message to one or more connected clients.
 
@@ -57,9 +58,21 @@ class Namespace(BaseNamespace):
         that when the ``namespace`` argument is not given the namespace
         associated with the class is used.
         """
-        return self.server.send(data, room=room, skip_sid=skip_sid,
+        return self.server.send(data, to=to, room=room, skip_sid=skip_sid,
                                 namespace=namespace or self.namespace,
                                 callback=callback)
+
+    def call(self, event, data=None, to=None, sid=None, namespace=None,
+             timeout=None):
+        """Emit a custom event to a client and wait for the response.
+
+        The only difference with the :func:`socketio.Server.call` method is
+        that when the ``namespace`` argument is not given the namespace
+        associated with the class is used.
+        """
+        return self.server.call(event, data=data, to=to, sid=sid,
+                                namespace=namespace or self.namespace,
+                                timeout=timeout)
 
     def enter_room(self, sid, room, namespace=None):
         """Enter a room.
@@ -170,8 +183,7 @@ class ClientNamespace(BaseNamespace):
                                 namespace=namespace or self.namespace,
                                 callback=callback)
 
-    def send(self, data, room=None, skip_sid=None, namespace=None,
-             callback=None):
+    def send(self, data, room=None, namespace=None, callback=None):
         """Send a message to the server.
 
         The only difference with the :func:`socketio.Client.send` method is
@@ -180,6 +192,17 @@ class ClientNamespace(BaseNamespace):
         """
         return self.client.send(data, namespace=namespace or self.namespace,
                                 callback=callback)
+
+    def call(self, event, data=None, namespace=None, timeout=None):
+        """Emit a custom event to the server and wait for the response.
+
+        The only difference with the :func:`socketio.Client.call` method is
+        that when the ``namespace`` argument is not given the namespace
+        associated with the class is used.
+        """
+        return self.client.call(event, data=data,
+                                namespace=namespace or self.namespace,
+                                timeout=timeout)
 
     def disconnect(self):
         """Disconnect from the server.

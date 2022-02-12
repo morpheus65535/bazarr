@@ -1,7 +1,8 @@
+import asyncio
 from functools import partial
 import uuid
 
-import json
+from engineio import json
 import pickle
 
 from .asyncio_manager import AsyncManager
@@ -147,33 +148,34 @@ class AsyncPubSubManager(AsyncManager):
     async def _thread(self):
         while True:
             try:
-                message = await self._listen()
-            except:
+                async for message in self._listen():  # pragma: no branch
+                    data = None
+                    if isinstance(message, dict):
+                        data = message
+                    else:
+                        if isinstance(message, bytes):  # pragma: no cover
+                            try:
+                                data = pickle.loads(message)
+                            except:
+                                pass
+                        if data is None:
+                            try:
+                                data = json.loads(message)
+                            except:
+                                pass
+                    if data and 'method' in data:
+                        self._get_logger().info('pubsub message: {}'.format(
+                            data['method']))
+                        if data['method'] == 'emit':
+                            await self._handle_emit(data)
+                        elif data['method'] == 'callback':
+                            await self._handle_callback(data)
+                        elif data['method'] == 'disconnect':
+                            await self._handle_disconnect(data)
+                        elif data['method'] == 'close_room':
+                            await self._handle_close_room(data)
+            except asyncio.CancelledError:  # pragma: no cover
+                break
+            except:  # pragma: no cover
                 import traceback
                 traceback.print_exc()
-                break
-            data = None
-            if isinstance(message, dict):
-                data = message
-            else:
-                if isinstance(message, bytes):  # pragma: no cover
-                    try:
-                        data = pickle.loads(message)
-                    except:
-                        pass
-                if data is None:
-                    try:
-                        data = json.loads(message)
-                    except:
-                        pass
-            if data and 'method' in data:
-                self._get_logger().info('pubsub message: {}'.format(
-                    data['method']))
-                if data['method'] == 'emit':
-                    await self._handle_emit(data)
-                elif data['method'] == 'callback':
-                    await self._handle_callback(data)
-                elif data['method'] == 'disconnect':
-                    await self._handle_disconnect(data)
-                elif data['method'] == 'close_room':
-                    await self._handle_close_room(data)

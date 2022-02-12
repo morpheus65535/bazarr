@@ -1,6 +1,9 @@
+import threading
+
 from peewee import *
 from peewee import Alias
 from peewee import CompoundSelectQuery
+from peewee import Metadata
 from peewee import SENTINEL
 from peewee import callable_
 
@@ -192,6 +195,7 @@ class ReconnectMixin(object):
         (OperationalError, '2006'),  # MySQL server has gone away.
         (OperationalError, '2013'),  # Lost connection to MySQL server.
         (OperationalError, '2014'),  # Commands out of sync.
+        (OperationalError, '4031'),  # Client interaction timeout.
 
         # mysql-connector raises a slightly different error when an idle
         # connection is terminated by the server. This is equivalent to 2013.
@@ -250,3 +254,27 @@ def resolve_multimodel_query(query, key='_model_identifier'):
             yield model(**row)
 
     return wrapped_iterator()
+
+
+class ThreadSafeDatabaseMetadata(Metadata):
+    """
+    Metadata class to allow swapping database at run-time in a multi-threaded
+    application. To use:
+
+    class Base(Model):
+        class Meta:
+            model_metadata_class = ThreadSafeDatabaseMetadata
+    """
+    def __init__(self, *args, **kwargs):
+        # The database attribute is stored in a thread-local.
+        self._database = None
+        self._local = threading.local()
+        super(ThreadSafeDatabaseMetadata, self).__init__(*args, **kwargs)
+
+    def _get_db(self):
+        return getattr(self._local, 'database', self._database)
+    def _set_db(self, db):
+        if self._database is None:
+            self._database = db
+        self._local.database = db
+    database = property(_get_db, _set_db)

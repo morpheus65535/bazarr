@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,18 +26,23 @@
 #==============================================================================
 
 
-"""Provides :class:`bidict`."""
+"""Provide :class:`bidict`."""
 
+import typing as _t
+
+from ._delegating import _DelegatingBidict
 from ._mut import MutableBidict
-from ._delegating_mixins import _DelegateKeysAndItemsToFwdm
+from ._typing import KT, VT
 
 
-class bidict(_DelegateKeysAndItemsToFwdm, MutableBidict):  # noqa: N801,E501; pylint: disable=invalid-name
+class bidict(_DelegatingBidict[KT, VT], MutableBidict[KT, VT]):
     """Base class for mutable bidirectional mappings."""
 
     __slots__ = ()
 
-    __hash__ = None  # since this class is mutable; explicit > implicit.
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'bidict[VT, KT]': ...
 
 
 #                             * Code review nav *

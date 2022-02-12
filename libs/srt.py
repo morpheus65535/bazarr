@@ -18,9 +18,26 @@ LOG = logging.getLogger(__name__)
 # accept it, so we do too.
 RGX_TIMESTAMP_MAGNITUDE_DELIM = r"[,.:，．。：]"
 RGX_TIMESTAMP_FIELD = r"[0-9]+"
-RGX_TIMESTAMP = RGX_TIMESTAMP_MAGNITUDE_DELIM.join([RGX_TIMESTAMP_FIELD] * 4)
+RGX_TIMESTAMP_FIELD_OPTIONAL = r"[0-9]*"
+RGX_TIMESTAMP = "".join(
+    [
+        RGX_TIMESTAMP_MAGNITUDE_DELIM.join([RGX_TIMESTAMP_FIELD] * 3),
+        RGX_TIMESTAMP_MAGNITUDE_DELIM,
+        "?",
+        RGX_TIMESTAMP_FIELD_OPTIONAL,
+    ]
+)
 RGX_TIMESTAMP_PARSEABLE = r"^{}$".format(
-    RGX_TIMESTAMP_MAGNITUDE_DELIM.join(["(" + RGX_TIMESTAMP_FIELD + ")"] * 4)
+    "".join(
+        [
+            RGX_TIMESTAMP_MAGNITUDE_DELIM.join(["(" + RGX_TIMESTAMP_FIELD + ")"] * 3),
+            RGX_TIMESTAMP_MAGNITUDE_DELIM,
+            "?",
+            "(",
+            RGX_TIMESTAMP_FIELD_OPTIONAL,
+            ")",
+        ]
+    )
 )
 RGX_INDEX = r"-?[0-9]+\.?[0-9]*"
 RGX_PROPRIETARY = r"[^\r\n]*"
@@ -126,7 +143,7 @@ class Subtitle(object):
 
         :param bool strict: If disabled, will allow blank lines in the content
                             of the SRT block, which is a violation of the SRT
-                            standard and may case your media player to explode
+                            standard and may cause your media player to explode
         :param str eol: The end of line string to use (default "\\n")
         :returns: The metadata of the current :py:class:`Subtitle` object as an
                   SRT formatted subtitle block
@@ -228,7 +245,7 @@ def srt_timestamp_to_timedelta(timestamp):
     match = TS_REGEX.match(timestamp)
     if match is None:
         raise TimestampParseError("Unparseable timestamp: {}".format(timestamp))
-    hrs, mins, secs, msecs = map(int, match.groups())
+    hrs, mins, secs, msecs = [int(m) if m else 0 for m in match.groups()]
     return timedelta(hours=hrs, minutes=mins, seconds=secs, milliseconds=msecs)
 
 

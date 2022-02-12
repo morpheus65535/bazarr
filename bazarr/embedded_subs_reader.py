@@ -79,12 +79,12 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             cache_key = TableEpisodes.select(TableEpisodes.ffprobe_cache)\
                 .where(TableEpisodes.path == path_mappings.path_replace_reverse(file))\
                 .dicts()\
-                .get()
+                .get_or_none()
         elif movie_file_id:
             cache_key = TableMovies.select(TableMovies.ffprobe_cache)\
                 .where(TableMovies.path == path_mappings.path_replace_reverse_movie(file))\
                 .dicts()\
-                .get()
+                .get_or_none()
         else:
             cache_key = None
 

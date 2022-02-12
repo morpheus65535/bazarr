@@ -10,7 +10,16 @@ base backend.
 
 """
 
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+
+from .api import BackendFormatted
+from .api import BackendSetType
 from .api import CacheBackend
+from .api import CacheMutex
+from .api import KeyType
+from .api import SerializedReturnType
 
 
 class ProxyBackend(CacheBackend):
@@ -55,17 +64,17 @@ class ProxyBackend(CacheBackend):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        self.proxied = None
+    def __init__(self, *arg, **kw):
+        pass
 
-    def wrap(self, backend):
-        ''' Take a backend as an argument and setup the self.proxied property.
+    def wrap(self, backend: CacheBackend) -> "ProxyBackend":
+        """Take a backend as an argument and setup the self.proxied property.
         Return an object that be used as a backend by a :class:`.CacheRegion`
         object.
-        '''
-        assert(
-            isinstance(backend, CacheBackend) or
-            isinstance(backend, ProxyBackend))
+        """
+        assert isinstance(backend, CacheBackend) or isinstance(
+            backend, ProxyBackend
+        )
         self.proxied = backend
         return self
 
@@ -73,23 +82,37 @@ class ProxyBackend(CacheBackend):
     # Delegate any functions that are not already overridden to
     # the proxies backend
     #
-    def get(self, key):
+    def get(self, key: KeyType) -> BackendFormatted:
         return self.proxied.get(key)
 
-    def set(self, key, value):
+    def set(self, key: KeyType, value: BackendSetType) -> None:
         self.proxied.set(key, value)
 
-    def delete(self, key):
+    def delete(self, key: KeyType) -> None:
         self.proxied.delete(key)
 
-    def get_multi(self, keys):
+    def get_multi(self, keys: Sequence[KeyType]) -> Sequence[BackendFormatted]:
         return self.proxied.get_multi(keys)
 
-    def set_multi(self, mapping):
+    def set_multi(self, mapping: Mapping[KeyType, BackendSetType]) -> None:
         self.proxied.set_multi(mapping)
 
-    def delete_multi(self, keys):
+    def delete_multi(self, keys: Sequence[KeyType]) -> None:
         self.proxied.delete_multi(keys)
 
-    def get_mutex(self, key):
+    def get_mutex(self, key: KeyType) -> Optional[CacheMutex]:
         return self.proxied.get_mutex(key)
+
+    def get_serialized(self, key: KeyType) -> SerializedReturnType:
+        return self.proxied.get_serialized(key)
+
+    def get_serialized_multi(
+        self, keys: Sequence[KeyType]
+    ) -> Sequence[SerializedReturnType]:
+        return self.proxied.get_serialized_multi(keys)
+
+    def set_serialized(self, key: KeyType, value: bytes) -> None:
+        self.proxied.set_serialized(key, value)
+
+    def set_serialized_multi(self, mapping: Mapping[KeyType, bytes]) -> None:
+        self.proxied.set_serialized_multi(mapping)

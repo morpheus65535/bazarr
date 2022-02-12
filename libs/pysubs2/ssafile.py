@@ -7,7 +7,7 @@ from io import open
 from itertools import chain
 import os.path
 import logging
-from typing import Optional, List, Dict, Iterable, Any
+from typing import Optional, List, Dict, Iterable, Any, overload, Iterator
 
 from .common import IntOrFloat
 from .formats import autodetect_format, get_format_class, get_format_identifier
@@ -462,19 +462,52 @@ class SSAFile(abc.MutableSequence):
         """Sort subtitles time-wise, in-place."""
         self.events.sort()
 
-    def __iter__(self) -> Iterable[SSAEvent]:
+    def __iter__(self) -> Iterator[SSAEvent]:
         return iter(self.events)
 
-    def __getitem__(self, item: int):
+    @overload
+    def __getitem__(self, item: int) -> SSAEvent:
         return self.events[item]
 
-    def __setitem__(self, key: int, value: SSAEvent):
-        if isinstance(value, SSAEvent):
-            self.events[key] = value
-        else:
-            raise TypeError("SSAFile.events must contain only SSAEvent objects")
+    @overload
+    def __getitem__(self, s: slice) -> List[SSAEvent]:
+        return self.events[s]
 
+    def __getitem__(self, item):
+        return self.events[item]
+
+    @overload
+    def __setitem__(self, key: int, value: SSAEvent):
+        pass
+
+    @overload
+    def __setitem__(self, keys: slice, values: Iterable[SSAEvent]):
+        pass
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            if isinstance(value, SSAEvent):
+                self.events[key] = value
+            else:
+                raise TypeError("SSAFile.events must contain only SSAEvent objects")
+        elif isinstance(key, slice):
+            values = list(value)
+            if all(isinstance(v, SSAEvent) for v in values):
+                self.events[key] = values
+            else:
+                raise TypeError("SSAFile.events must contain only SSAEvent objects")
+        else:
+            raise TypeError("Bad key type")
+
+    @overload
     def __delitem__(self, key: int):
+        pass
+
+    @overload
+    def __delitem__(self, s: slice):
+        pass
+
+    def __delitem__(self, key):
         del self.events[key]
 
     def __len__(self):

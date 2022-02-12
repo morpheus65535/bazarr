@@ -68,7 +68,10 @@ def series_download_subtitles(no):
                 confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
                     .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
                     .dicts() \
-                    .get()
+                    .get_or_none()
+                if not confirmed_missing_subs:
+                    continue
+
                 if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
                     continue
 
@@ -159,7 +162,10 @@ def episode_download_subtitles(no, send_progress=False):
                 confirmed_missing_subs = TableEpisodes.select(TableEpisodes.missing_subtitles) \
                     .where(TableEpisodes.sonarrEpisodeId == episode['sonarrEpisodeId']) \
                     .dicts() \
-                    .get()
+                    .get_or_none()
+                if not confirmed_missing_subs:
+                    continue
+
                 if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
                     continue
 

@@ -3,7 +3,7 @@
 import os
 import requests
 import logging
-from peewee import DoesNotExist
+from peewee import IntegrityError
 
 from config import settings, url_radarr
 from helper import path_mappings
@@ -93,7 +93,11 @@ def update_movies(send_event=True):
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                TableMovies.delete().where(TableMovies.tmdbId == removed_movie).execute()
+                try:
+                    TableMovies.delete().where(TableMovies.tmdbId == removed_movie).execute()
+                except Exception as e:
+                    logging.error(f"BAZARR cannot remove movie tmdbId {removed_movie} because of {e}")
+                    continue
 
             # Update movies in DB
             movies_in_db_list = []
@@ -125,25 +129,35 @@ def update_movies(send_event=True):
             movies_to_update_list = [i for i in movies_to_update if i not in movies_in_db_list]
 
             for updated_movie in movies_to_update_list:
-                TableMovies.update(updated_movie).where(TableMovies.tmdbId == updated_movie['tmdbId']).execute()
-                altered_movies.append([updated_movie['tmdbId'],
-                                       updated_movie['path'],
-                                       updated_movie['radarrId'],
-                                       updated_movie['monitored']])
+                try:
+                    TableMovies.update(updated_movie).where(TableMovies.tmdbId == updated_movie['tmdbId']).execute()
+                except IntegrityError as e:
+                    logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
+                    continue
+                else:
+                    altered_movies.append([updated_movie['tmdbId'],
+                                           updated_movie['path'],
+                                           updated_movie['radarrId'],
+                                           updated_movie['monitored']])
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                result = TableMovies.insert(added_movie).on_conflict(action='IGNORE').execute()
-                if result > 0:
-                    altered_movies.append([added_movie['tmdbId'],
-                                           added_movie['path'],
-                                           added_movie['radarrId'],
-                                           added_movie['monitored']])
-                    if send_event:
-                        event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
+                try:
+                    result = TableMovies.insert(added_movie).on_conflict(action='IGNORE').execute()
+                except IntegrityError as e:
+                    logging.error(f"BAZARR cannot insert movie {added_movie['path']} because of {e}")
+                    continue
                 else:
-                    logging.debug('BAZARR unable to insert this movie into the database:',
-                                  path_mappings.path_replace_movie(added_movie['path']))
+                    if result > 0:
+                        altered_movies.append([added_movie['tmdbId'],
+                                               added_movie['path'],
+                                               added_movie['radarrId'],
+                                               added_movie['monitored']])
+                        if send_event:
+                            event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
+                    else:
+                        logging.debug('BAZARR unable to insert this movie into the database:',
+                                      path_mappings.path_replace_movie(added_movie['path']))
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
@@ -156,21 +170,22 @@ def update_one_movie(movie_id, action):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
-    try:
-        existing_movie = TableMovies.select(TableMovies.path)\
-            .where(TableMovies.radarrId == movie_id)\
-            .dicts()\
-            .get()
-    except DoesNotExist:
-        existing_movie = None
+    existing_movie = TableMovies.select(TableMovies.path)\
+        .where(TableMovies.radarrId == movie_id)\
+        .dicts()\
+        .get_or_none()
 
     # Remove movie from DB
     if action == 'deleted':
         if existing_movie:
-            TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
-            event_stream(type='movie', action='delete', payload=int(movie_id))
-            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-                existing_movie['path'])))
+            try:
+                TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
+            except Exception as e:
+                logging.error(f"BAZARR cannot delete movie {existing_movie['path']} because of {e}")
+            else:
+                event_stream(type='movie', action='delete', payload=int(movie_id))
+                logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
+                    existing_movie['path'])))
         return
 
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
@@ -209,25 +224,37 @@ def update_one_movie(movie_id, action):
 
     # Remove movie from DB
     if not movie and existing_movie:
-        TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
-        event_stream(type='movie', action='delete', payload=int(movie_id))
-        logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
-            existing_movie['path'])))
-        return
+        try:
+            TableMovies.delete().where(TableMovies.radarrId == movie_id).execute()
+        except Exception as e:
+            logging.error(f"BAZARR cannot insert episode {existing_movie['path']} because of {e}")
+        else:
+            event_stream(type='movie', action='delete', payload=int(movie_id))
+            logging.debug('BAZARR deleted this movie from the database:{}'.format(path_mappings.path_replace_movie(
+                existing_movie['path'])))
+            return
 
     # Update existing movie in DB
     elif movie and existing_movie:
-        TableMovies.update(movie).where(TableMovies.radarrId == movie['radarrId']).execute()
-        event_stream(type='movie', action='update', payload=int(movie_id))
-        logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+        try:
+            TableMovies.update(movie).where(TableMovies.radarrId == movie['radarrId']).execute()
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert episode {movie['path']} because of {e}")
+        else:
+            event_stream(type='movie', action='update', payload=int(movie_id))
+            logging.debug('BAZARR updated this movie into the database:{}'.format(path_mappings.path_replace_movie(
+                movie['path'])))
 
     # Insert new movie in DB
     elif movie and not existing_movie:
-        TableMovies.insert(movie).on_conflict(action='IGNORE').execute()
-        event_stream(type='movie', action='update', payload=int(movie_id))
-        logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
-            movie['path'])))
+        try:
+            TableMovies.insert(movie).on_conflict(action='IGNORE').execute()
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert movie {movie['path']} because of {e}")
+        else:
+            event_stream(type='movie', action='update', payload=int(movie_id))
+            logging.debug('BAZARR inserted this movie into the database:{}'.format(path_mappings.path_replace_movie(
+                movie['path'])))
 
     # Storing existing subtitles
     logging.debug('BAZARR storing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
@@ -365,8 +392,14 @@ def get_tags():
     except requests.exceptions.RequestException:
         logging.exception("BAZARR Error trying to get tags from Radarr.")
         return []
+    except requests.exceptions.HTTPError:
+        logging.exception("BAZARR Exception while trying to get tags from Radarr.")
+        return []
     else:
-        return tagsDict.json()
+        try:
+            return tagsDict.json()
+        except Exception:
+            return []
 
 
 def movieParser(movie, action, tags_dict, movie_default_profile, audio_profiles):

@@ -1,9 +1,8 @@
-from typing import Iterable, List
+from typing import Any, Dict, Iterable, List
 
 from . import get_console
 from .segment import Segment
 from .terminal_theme import DEFAULT_TERMINAL_THEME
-
 
 JUPYTER_HTML_FORMAT = """\
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">{code}</pre>
@@ -17,7 +16,9 @@ class JupyterRenderable:
         self.html = html
         self.text = text
 
-    def _repr_mimebundle_(self, include, exclude, **kwargs):
+    def _repr_mimebundle_(
+        self, include: Iterable[str], exclude: Iterable[str], **kwargs: Any
+    ) -> Dict[str, str]:
         data = {"text/plain": self.text, "text/html": self.html}
         if include:
             data = {k: v for (k, v) in data.items() if k in include}
@@ -29,7 +30,11 @@ class JupyterRenderable:
 class JupyterMixin:
     """Add to an Rich renderable to make it render in Jupyter notebook."""
 
-    def _repr_mimebundle_(self, include, exclude, **kwargs):
+    __slots__ = ()
+
+    def _repr_mimebundle_(
+        self, include: Iterable[str], exclude: Iterable[str], **kwargs: Any
+    ) -> Dict[str, str]:
         console = get_console()
         segments = list(console.render(self, console.options))  # type: ignore
         html = _render_segments(segments)
@@ -69,14 +74,19 @@ def _render_segments(segments: Iterable[Segment]) -> str:
 
 def display(segments: Iterable[Segment], text: str) -> None:
     """Render segments to Jupyter."""
-    from IPython.display import display as ipython_display
-
     html = _render_segments(segments)
     jupyter_renderable = JupyterRenderable(html, text)
-    ipython_display(jupyter_renderable)
+    try:
+        from IPython.display import display as ipython_display
+
+        ipython_display(jupyter_renderable)
+    except ModuleNotFoundError:
+        # Handle the case where the Console has force_jupyter=True,
+        # but IPython is not installed.
+        pass
 
 
-def print(*args, **kwargs) -> None:
+def print(*args: Any, **kwargs: Any) -> None:
     """Proxy for Console print."""
     console = get_console()
     return console.print(*args, **kwargs)

@@ -10,17 +10,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from __future__ import unicode_literals
-
 import inspect
 
 from docutils import nodes
 from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from docutils.statemachine import ViewList
+from sphinx.util import logging
 from sphinx.util.nodes import nested_parse_with_titles
 
 from stevedore import extension
+
+LOG = logging.getLogger(__name__)
 
 
 def _get_docstring(plugin):
@@ -33,29 +34,32 @@ def _simple_list(mgr):
         doc = _get_docstring(ext.plugin) or '\n'
         summary = doc.splitlines()[0].strip()
         yield('* %s -- %s' % (ext.name, summary),
-              ext.entry_point.module_name)
+              ext.module_name)
 
 
 def _detailed_list(mgr, over='', under='-', titlecase=False):
     for name in sorted(mgr.names()):
         ext = mgr[name]
         if over:
-            yield (over * len(ext.name), ext.entry_point.module_name)
+            yield (over * len(ext.name), ext.module_name)
         if titlecase:
-            yield (ext.name.title(), ext.entry_point.module_name)
+            yield (ext.name.title(), ext.module_name)
         else:
-            yield (ext.name, ext.entry_point.module_name)
+            yield (ext.name, ext.module_name)
         if under:
-            yield (under * len(ext.name), ext.entry_point.module_name)
-        yield ('\n', ext.entry_point.module_name)
+            yield (under * len(ext.name), ext.module_name)
+        yield ('\n', ext.module_name)
         doc = _get_docstring(ext.plugin)
         if doc:
-            yield (doc, ext.entry_point.module_name)
+            yield (doc, ext.module_name)
         else:
-            yield ('.. warning:: No documentation found in %s'
-                   % ext.entry_point,
-                   ext.entry_point.module_name)
-        yield ('\n', ext.entry_point.module_name)
+            yield (
+                '.. warning:: No documentation found for {} in {}'.format(
+                    ext.name, ext.entry_point_target,
+                ),
+                ext.module_name,
+            )
+        yield ('\n', ext.module_name)
 
 
 class ListPluginsDirective(rst.Directive):
@@ -72,16 +76,13 @@ class ListPluginsDirective(rst.Directive):
     has_content = True
 
     def run(self):
-        env = self.state.document.settings.env
-        app = env.app
-
         namespace = ' '.join(self.content).strip()
-        app.info('documenting plugins from %r' % namespace)
+        LOG.info('documenting plugins from %r' % namespace)
         overline_style = self.options.get('overline-style', '')
         underline_style = self.options.get('underline-style', '=')
 
         def report_load_failure(mgr, ep, err):
-            app.warn(u'Failed to load %s: %s' % (ep.module_name, err))
+            LOG.warning(u'Failed to load %s: %s' % (ep.module, err))
 
         mgr = extension.ExtensionManager(
             namespace,
@@ -111,5 +112,9 @@ class ListPluginsDirective(rst.Directive):
 
 
 def setup(app):
-    app.info('loading stevedore.sphinxext')
+    LOG.info('loading stevedore.sphinxext')
     app.add_directive('list-plugins', ListPluginsDirective)
+    return {
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }

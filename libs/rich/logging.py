@@ -58,14 +58,14 @@ class RichHandler(Handler):
     def __init__(
         self,
         level: Union[int, str] = logging.NOTSET,
-        console: Console = None,
+        console: Optional[Console] = None,
         *,
         show_time: bool = True,
         omit_repeated_times: bool = True,
         show_level: bool = True,
         show_path: bool = True,
         enable_link_path: bool = True,
-        highlighter: Highlighter = None,
+        highlighter: Optional[Highlighter] = None,
         markup: bool = False,
         rich_tracebacks: bool = False,
         tracebacks_width: Optional[int] = None,
@@ -142,7 +142,7 @@ class RichHandler(Handler):
             if self.formatter:
                 record.message = record.getMessage()
                 formatter = self.formatter
-                if hasattr(formatter, "usesTime") and formatter.usesTime():  # type: ignore
+                if hasattr(formatter, "usesTime") and formatter.usesTime():
                     record.asctime = formatter.formatTime(record, formatter.datefmt)
                 message = formatter.formatMessage(record)
 
@@ -150,23 +150,27 @@ class RichHandler(Handler):
         log_renderable = self.render(
             record=record, traceback=traceback, message_renderable=message_renderable
         )
-        self.console.print(log_renderable)
+        try:
+            self.console.print(log_renderable)
+        except Exception:
+            self.handleError(record)
 
     def render_message(self, record: LogRecord, message: str) -> "ConsoleRenderable":
         """Render message text in to Text.
 
         record (LogRecord): logging Record.
-        message (str): String cotaining log message.
+        message (str): String containing log message.
 
         Returns:
             ConsoleRenderable: Renderable to display log message.
         """
-        use_markup = (
-            getattr(record, "markup") if hasattr(record, "markup") else self.markup
-        )
+        use_markup = getattr(record, "markup", self.markup)
         message_text = Text.from_markup(message) if use_markup else Text(message)
-        if self.highlighter:
-            message_text = self.highlighter(message_text)
+
+        highlighter = getattr(record, "highlighter", self.highlighter)
+        if highlighter:
+            message_text = highlighter(message_text)
+
         if self.KEYWORDS:
             message_text.highlight_words(self.KEYWORDS, "logging.keyword")
         return message_text
@@ -210,7 +214,7 @@ if __name__ == "__main__":  # pragma: no cover
     from time import sleep
 
     FORMAT = "%(message)s"
-    # FORMAT = "%(asctime)-15s - %(level) - %(message)s"
+    # FORMAT = "%(asctime)-15s - %(levelname)s - %(message)s"
     logging.basicConfig(
         level="NOTSET",
         format=FORMAT,
@@ -247,7 +251,7 @@ if __name__ == "__main__":  # pragma: no cover
     log.info("POST /admin/ 401 42234")
     log.warning("password was rejected for admin site.")
 
-    def divide():
+    def divide() -> None:
         number = 1
         divisor = 0
         foos = ["foo"] * 100

@@ -1,12 +1,13 @@
 # coding=utf-8
 
 import os
+import logging
 
 from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from database import TableEpisodes, get_audio_profile_languages, get_profile_id
+from database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
 from get_subtitle.upload import manual_upload_subtitle
@@ -26,13 +27,17 @@ class EpisodesSubtitles(Resource):
     def patch(self):
         sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
-        episodeInfo = TableEpisodes.select(TableEpisodes.title,
-                                           TableEpisodes.path,
+        episodeInfo = TableEpisodes.select(TableEpisodes.path,
                                            TableEpisodes.scene_name,
-                                           TableEpisodes.audio_language)\
+                                           TableEpisodes.audio_language,
+                                           TableShows.title) \
+            .join(TableShows, on=(TableEpisodes.sonarrSeriesId == TableShows.sonarrSeriesId)) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -88,7 +93,10 @@ class EpisodesSubtitles(Resource):
                                            TableEpisodes.audio_language)\
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         title = episodeInfo['title']
         episodePath = path_mappings.path_replace(episodeInfo['path'])
@@ -116,7 +124,9 @@ class EpisodesSubtitles(Resource):
                                             subtitle=subFile,
                                             audio_language=audio_language)
 
-            if result is not None:
+            if not result:
+                logging.debug(f"BAZARR unable to process subtitles for this episode: {episodePath}")
+            else:
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
@@ -149,7 +159,10 @@ class EpisodesSubtitles(Resource):
                                            TableEpisodes.audio_language)\
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         episodePath = path_mappings.path_replace(episodeInfo['path'])
 

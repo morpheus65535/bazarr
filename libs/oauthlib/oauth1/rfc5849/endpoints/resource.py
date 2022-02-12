@@ -6,8 +6,6 @@ oauthlib.oauth1.rfc5849.endpoints.resource
 This module is an implementation of the resource protection provider logic of
 OAuth 1.0 RFC 5849.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from .. import errors

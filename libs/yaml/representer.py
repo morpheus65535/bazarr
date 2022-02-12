@@ -5,7 +5,7 @@ __all__ = ['BaseRepresenter', 'SafeRepresenter', 'Representer',
 from .error import *
 from .nodes import *
 
-import datetime, sys, copyreg, types, base64, collections
+import datetime, copyreg, types, base64, collections
 
 class RepresenterError(YAMLError):
     pass
@@ -369,7 +369,7 @@ Representer.add_representer(complex,
 Representer.add_representer(tuple,
         Representer.represent_tuple)
 
-Representer.add_representer(type,
+Representer.add_multi_representer(type,
         Representer.represent_name)
 
 Representer.add_representer(collections.OrderedDict,

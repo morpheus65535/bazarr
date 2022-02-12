@@ -1,4 +1,23 @@
 """
+Python Markdown
+
+A Python implementation of John Gruber's Markdown.
+
+Documentation: https://python-markdown.github.io/
+GitHub: https://github.com/Python-Markdown/markdown/
+PyPI: https://pypi.org/project/Markdown/
+
+Started by Manfred Stienstra (http://www.dwerg.net/).
+Maintained for a few years by Yuri Takhteyev (http://www.freewisdom.org).
+Currently maintained by Waylan Limberg (https://github.com/waylan),
+Dmitry Shachnev (https://github.com/mitya57) and Isaac Muse (https://github.com/facelessuser).
+
+Copyright 2007-2018 The Python Markdown Project (v. 1.7 and later)
+Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
+Copyright 2004 Manfred Stienstra (the original version)
+
+License: BSD (see LICENSE.md for details).
+
 POST-PROCESSORS
 =============================================================================
 
@@ -8,20 +27,17 @@ processing.
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from collections import OrderedDict
 from . import util
-from . import odict
 import re
 
 
-def build_postprocessors(md_instance, **kwargs):
+def build_postprocessors(md, **kwargs):
     """ Build the default postprocessors for Markdown. """
-    postprocessors = odict.OrderedDict()
-    postprocessors["raw_html"] = RawHtmlPostprocessor(md_instance)
-    postprocessors["amp_substitute"] = AndSubstitutePostprocessor()
-    postprocessors["unescape"] = UnescapePostprocessor()
+    postprocessors = util.Registry()
+    postprocessors.register(RawHtmlPostprocessor(md), 'raw_html', 30)
+    postprocessors.register(AndSubstitutePostprocessor(), 'amp_substitute', 20)
+    postprocessors.register(UnescapePostprocessor(), 'unescape', 10)
     return postprocessors
 
 
@@ -49,46 +65,53 @@ class Postprocessor(util.Processor):
 class RawHtmlPostprocessor(Postprocessor):
     """ Restore raw html to the document. """
 
+    BLOCK_LEVEL_REGEX = re.compile(r'^\<\/?([^ >]+)')
+
     def run(self, text):
-        """ Iterate over html stash and restore "safe" html. """
+        """ Iterate over html stash and restore html. """
         replacements = OrderedDict()
-        for i in range(self.markdown.htmlStash.html_counter):
-            html, safe = self.markdown.htmlStash.rawHtmlBlocks[i]
-            if self.markdown.safeMode and not safe:
-                if str(self.markdown.safeMode).lower() == 'escape':
-                    html = self.escape(html)
-                elif str(self.markdown.safeMode).lower() == 'remove':
-                    html = ''
+        for i in range(self.md.htmlStash.html_counter):
+            html = self.stash_to_string(self.md.htmlStash.rawHtmlBlocks[i])
+            if self.isblocklevel(html):
+                replacements["<p>{}</p>".format(
+                    self.md.htmlStash.get_placeholder(i))] = html
+            replacements[self.md.htmlStash.get_placeholder(i)] = html
+
+        def substitute_match(m):
+            key = m.group(0)
+
+            if key not in replacements:
+                if key[3:-4] in replacements:
+                    return f'<p>{ replacements[key[3:-4]] }</p>'
                 else:
-                    html = self.markdown.html_replacement_text
-            if (self.isblocklevel(html) and
-               (safe or not self.markdown.safeMode)):
-                replacements["<p>%s</p>" %
-                             (self.markdown.htmlStash.get_placeholder(i))] = \
-                    html + "\n"
-            replacements[self.markdown.htmlStash.get_placeholder(i)] = html
+                    return key
+
+            return replacements[key]
 
         if replacements:
-            pattern = re.compile("|".join(re.escape(k) for k in replacements))
-            text = pattern.sub(lambda m: replacements[m.group(0)], text)
+            base_placeholder = util.HTML_PLACEHOLDER % r'([0-9]+)'
+            pattern = re.compile(f'<p>{ base_placeholder }</p>|{ base_placeholder }')
+            processed_text = pattern.sub(substitute_match, text)
+        else:
+            return text
 
-        return text
-
-    def escape(self, html):
-        """ Basic html escaping """
-        html = html.replace('&', '&amp;')
-        html = html.replace('<', '&lt;')
-        html = html.replace('>', '&gt;')
-        return html.replace('"', '&quot;')
+        if processed_text == text:
+            return processed_text
+        else:
+            return self.run(processed_text)
 
     def isblocklevel(self, html):
-        m = re.match(r'^\<\/?([^ >]+)', html)
+        m = self.BLOCK_LEVEL_REGEX.match(html)
         if m:
             if m.group(1)[0] in ('!', '?', '@', '%'):
                 # Comment, php etc...
                 return True
-            return util.isBlockLevel(m.group(1))
+            return self.md.is_block_level(m.group(1))
         return False
+
+    def stash_to_string(self, text):
+        """ Convert a stashed object to a string. """
+        return str(text)
 
 
 class AndSubstitutePostprocessor(Postprocessor):
@@ -102,10 +125,10 @@ class AndSubstitutePostprocessor(Postprocessor):
 class UnescapePostprocessor(Postprocessor):
     """ Restore escaped chars """
 
-    RE = re.compile(r'%s(\d+)%s' % (util.STX, util.ETX))
+    RE = re.compile(r'{}(\d+){}'.format(util.STX, util.ETX))
 
     def unescape(self, m):
-        return util.int2str(int(m.group(1)))
+        return chr(int(m.group(1)))
 
     def run(self, text):
         return self.RE.sub(self.unescape, text)

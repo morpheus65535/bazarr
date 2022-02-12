@@ -30,16 +30,16 @@ class Columns(JupyterMixin):
 
     def __init__(
         self,
-        renderables: Iterable[RenderableType] = None,
+        renderables: Optional[Iterable[RenderableType]] = None,
         padding: PaddingDimensions = (0, 1),
         *,
-        width: int = None,
+        width: Optional[int] = None,
         expand: bool = False,
         equal: bool = False,
         column_first: bool = False,
         right_to_left: bool = False,
-        align: AlignMethod = None,
-        title: TextType = None,
+        align: Optional[AlignMethod] = None,
+        title: Optional[TextType] = None,
     ) -> None:
         self.renderables = list(renderables or [])
         self.width = width
@@ -48,7 +48,7 @@ class Columns(JupyterMixin):
         self.equal = equal
         self.column_first = column_first
         self.right_to_left = right_to_left
-        self.align = align
+        self.align: Optional[AlignMethod] = align
         self.title = title
 
     def add_renderable(self, renderable: RenderableType) -> None:
@@ -175,8 +175,6 @@ if __name__ == "__main__":  # pragma: no cover
     import os
 
     console = Console()
-
-    from rich.panel import Panel
 
     files = [f"{i} {s}" for i, s in enumerate(sorted(os.listdir()))]
     columns = Columns(files, padding=(0, 1), expand=False, equal=False)

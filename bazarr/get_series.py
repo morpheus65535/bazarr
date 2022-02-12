@@ -3,7 +3,7 @@
 import os
 import requests
 import logging
-from peewee import DoesNotExist
+from peewee import IntegrityError
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -76,9 +76,14 @@ def update_series(send_event=True):
         removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
         for series in removed_series:
-            TableShows.delete().where(TableShows.sonarrSeriesId == series).execute()
-            if send_event:
-                event_stream(type='series', action='delete', payload=series)
+            try:
+                TableShows.delete().where(TableShows.sonarrSeriesId == series).execute()
+            except Exception as e:
+                logging.error(f"BAZARR cannot delete series with sonarrSeriesId {series} because of {e}")
+                continue
+            else:
+                if send_event:
+                    event_stream(type='series', action='delete', payload=series)
 
         # Update existing series in DB
         series_in_db_list = []
@@ -103,22 +108,32 @@ def update_series(send_event=True):
         series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
         for updated_series in series_to_update_list:
-            TableShows.update(updated_series).where(TableShows.sonarrSeriesId ==
-                                                    updated_series['sonarrSeriesId']).execute()
-            if send_event:
-                event_stream(type='series', payload=updated_series['sonarrSeriesId'])
+            try:
+                TableShows.update(updated_series).where(TableShows.sonarrSeriesId ==
+                                                        updated_series['sonarrSeriesId']).execute()
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot update series {updated_series['path']} because of {e}")
+                continue
+            else:
+                if send_event:
+                    event_stream(type='series', payload=updated_series['sonarrSeriesId'])
 
         # Insert new series in DB
         for added_series in series_to_add:
-            result = TableShows.insert(added_series).on_conflict(action='IGNORE').execute()
-            if result:
-                list_missing_subtitles(no=added_series['sonarrSeriesId'])
+            try:
+                result = TableShows.insert(added_series).on_conflict(action='IGNORE').execute()
+            except IntegrityError as e:
+                logging.error(f"BAZARR cannot insert series {added_series['path']} because of {e}")
+                continue
             else:
-                logging.debug('BAZARR unable to insert this series into the database:',
-                              path_mappings.path_replace(added_series['path']))
+                if result:
+                    list_missing_subtitles(no=added_series['sonarrSeriesId'])
+                else:
+                    logging.debug('BAZARR unable to insert this series into the database:',
+                                  path_mappings.path_replace(added_series['path']))
 
-            if send_event:
-                event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
+                if send_event:
+                    event_stream(type='series', action='update', payload=added_series['sonarrSeriesId'])
 
         logging.debug('BAZARR All series synced from Sonarr into database.')
 
@@ -127,20 +142,21 @@ def update_one_series(series_id, action):
     logging.debug('BAZARR syncing this specific series from Sonarr: {}'.format(series_id))
 
     # Check if there's a row in database for this series ID
-    try:
-        existing_series = TableShows.select(TableShows.path)\
-            .where(TableShows.sonarrSeriesId == series_id)\
-            .dicts()\
-            .get()
-    except DoesNotExist:
-        existing_series = None
+    existing_series = TableShows.select(TableShows.path)\
+        .where(TableShows.sonarrSeriesId == series_id)\
+        .dicts()\
+        .get_or_none()
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
-        TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
-        TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
-        event_stream(type='series', action='delete', payload=int(series_id))
-        return
+        try:
+            TableShows.delete().where(TableShows.sonarrSeriesId == int(series_id)).execute()
+        except Exception as e:
+            logging.error(f"BAZARR cannot delete series with sonarrSeriesId {series_id} because of {e}")
+        else:
+            TableEpisodes.delete().where(TableEpisodes.sonarrSeriesId == int(series_id)).execute()
+            event_stream(type='series', action='delete', payload=int(series_id))
+            return
 
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
 
@@ -178,18 +194,26 @@ def update_one_series(series_id, action):
 
     # Update existing series in DB
     if action == 'updated' and existing_series:
-        TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
-        sync_episodes(series_id=int(series_id), send_event=True)
-        event_stream(type='series', action='update', payload=int(series_id))
-        logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
-            series['path'])))
+        try:
+            TableShows.update(series).where(TableShows.sonarrSeriesId == series['sonarrSeriesId']).execute()
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
+        else:
+            sync_episodes(series_id=int(series_id), send_event=True)
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug('BAZARR updated this series into the database:{}'.format(path_mappings.path_replace(
+                series['path'])))
 
     # Insert new series in DB
     elif action == 'updated' and not existing_series:
-        TableShows.insert(series).on_conflict(action='IGNORE').execute()
-        event_stream(type='series', action='update', payload=int(series_id))
-        logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
-            series['path'])))
+        try:
+            TableShows.insert(series).on_conflict(action='IGNORE').execute()
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
+        else:
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
+                series['path'])))
 
 
 def get_profile_list():

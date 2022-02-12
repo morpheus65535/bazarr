@@ -12,8 +12,9 @@
 
 """Tests for failure loading callback
 """
+from unittest import mock
+
 from testtools.matchers import GreaterThan
-import mock
 
 from stevedore import extension
 from stevedore import named
@@ -32,7 +33,7 @@ class TestCallback(utils.TestCase):
                                         on_load_failure_callback=
                                         failure_callback)
         extensions = list(em.extensions)
-        self.assertThat(len(extensions), GreaterThan(0))
+        self.assertTrue(len(extensions), GreaterThan(0))
         self.assertEqual(len(errors), 2)
         for manager, entrypoint, error in errors:
             self.assertIs(manager, em)

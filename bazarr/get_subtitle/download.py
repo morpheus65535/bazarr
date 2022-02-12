@@ -97,6 +97,9 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         processed_subtitle = process_subtitle(subtitle=subtitle, media_type=media_type,
                                                               audio_language=audio_language, is_upgrade=is_upgrade,
                                                               is_manual=False, path=path, max_score=max_score)
+                        if not processed_subtitle:
+                            logging.debug(f"BAZARR unable to process this subtitles: {subtitle}")
+                            continue
                         yield processed_subtitle
 
         if not saved_any:

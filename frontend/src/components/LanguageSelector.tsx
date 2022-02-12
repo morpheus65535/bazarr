@@ -1,5 +1,5 @@
+import { Selector, SelectorProps } from "components";
 import React, { useMemo } from "react";
-import { Selector, SelectorProps } from "../components";
 
 interface Props {
   options: readonly Language.Info[];

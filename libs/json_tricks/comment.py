@@ -4,7 +4,7 @@ from re import findall
 
 def strip_comment_line_with_symbol(line, start):
 	parts = line.split(start)
-	counts = [len(findall(r'(?:^|[^"\\]|(?:\\\\|\\")+)(")', part)) for part in parts]
+	counts = [len(findall(r'(?:^|[^"\\]|(?:\\\\|\\")+)(")(?!")', part)) for part in parts]
 	total = 0
 	for nr, count in enumerate(counts):
 		total += count

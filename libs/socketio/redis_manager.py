@@ -27,7 +27,8 @@ class RedisManager(PubSubManager):  # pragma: no cover
         server = socketio.Server(client_manager=socketio.RedisManager(url))
 
     :param url: The connection URL for the Redis server. For a default Redis
-                store running on the same host, use ``redis://``.
+                store running on the same host, use ``redis://``.  To use an
+                SSL connection, use ``rediss://``.
     :param channel: The channel name on which the server sends and receives
                     notifications. Must be the same in all the servers.
     :param write_only: If set to ``True``, only initialize to emit events. The
@@ -69,7 +70,7 @@ class RedisManager(PubSubManager):  # pragma: no cover
     def _redis_connect(self):
         self.redis = redis.Redis.from_url(self.redis_url,
                                           **self.redis_options)
-        self.pubsub = self.redis.pubsub()
+        self.pubsub = self.redis.pubsub(ignore_subscribe_messages=True)
 
     def _publish(self, data):
         retry = True

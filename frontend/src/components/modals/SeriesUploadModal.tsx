@@ -1,9 +1,13 @@
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useEpisodeSubtitleModification } from "apis/hooks";
+import api from "apis/raw";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
-import { EpisodesApi, SubtitlesApi } from "../../apis";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "utilities/languages";
 import { Selector } from "../inputs";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
@@ -28,9 +32,13 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
 }) => {
   const { payload } = useModalInformation<Item.Series>(modal.modalKey);
 
-  const profile = useProfileBy(payload?.profileId);
+  const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
+
+  const {
+    upload: { mutateAsync },
+  } = useEpisodeSubtitleModification();
 
   const update = useCallback(
     async (list: PendingSubtitle<Payload>[]) => {
@@ -38,7 +46,7 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
       const names = list.map((v) => v.file.name);
 
       if (names.length > 0) {
-        const results = await SubtitlesApi.info(names);
+        const results = await api.subtitles.info(names);
 
         // TODO: Optimization
         newList.forEach((v) => {
@@ -85,14 +93,14 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
         return;
       }
 
-      const { sonarrSeriesId: seriesid } = payload;
+      const { sonarrSeriesId: seriesId } = payload;
 
       const tasks = items
         .filter((v) => v.payload.instance !== undefined)
         .map((v) => {
           const { hi, forced, payload, language } = v;
           const { code2 } = language!;
-          const { sonarrEpisodeId: episodeid } = payload.instance!;
+          const { sonarrEpisodeId: episodeId } = payload.instance!;
 
           const form: FormType.UploadSubtitle = {
             file: v.file,
@@ -101,19 +109,16 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
             forced: forced,
           };
 
-          return createTask(
-            v.file.name,
-            episodeid,
-            EpisodesApi.uploadSubtitles.bind(EpisodesApi),
-            seriesid,
-            episodeid,
-            form
-          );
+          return createTask(v.file.name, episodeId, mutateAsync, {
+            seriesId,
+            episodeId,
+            form,
+          });
         });
 
       dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
     },
-    [payload]
+    [mutateAsync, payload]
   );
 
   const columns = useMemo<Column<PendingSubtitle<Payload>>[]>(

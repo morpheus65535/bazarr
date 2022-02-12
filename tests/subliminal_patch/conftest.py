@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import pytest
+import logging
 import os
 
+import pytest
+
 from subliminal_patch.core import Movie, Episode
+
+
+logging.getLogger("vcr").setLevel(logging.WARNING)
+logging.getLogger("rebulk").setLevel(logging.WARNING)
 
 
 @pytest.fixture(scope="module")

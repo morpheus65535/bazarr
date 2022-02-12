@@ -66,7 +66,8 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                                          # formats=("srt", "vtt")
                                          path_decoder=force_unicode)
     except Exception:
-        pass
+        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        return
 
     if len(saved_subtitles) < 1:
         logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
@@ -98,7 +99,9 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         episode_metadata = TableEpisodes.select(TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId) \
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)) \
             .dicts() \
-            .get()
+            .get_or_none()
+        if not episode_metadata:
+            return
         series_id = episode_metadata['sonarrSeriesId']
         episode_id = episode_metadata['sonarrEpisodeId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,
@@ -108,7 +111,9 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
         movie_metadata = TableMovies.select(TableMovies.radarrId) \
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)) \
             .dicts() \
-            .get()
+            .get_or_none()
+        if not movie_metadata:
+            return
         series_id = ""
         episode_id = movie_metadata['radarrId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, media_type=media_type,

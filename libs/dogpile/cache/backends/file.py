@@ -7,16 +7,20 @@ Provides backends that deal with local filesystem access.
 """
 
 from __future__ import with_statement
-from ..api import CacheBackend, NO_VALUE
+
 from contextlib import contextmanager
-from ...util import compat
-from ... import util
+import dbm
 import os
+import threading
 
-__all__ = 'DBMBackend', 'FileLock', 'AbstractFileLock'
+from ..api import BytesBackend
+from ..api import NO_VALUE
+from ... import util
+
+__all__ = ["DBMBackend", "FileLock", "AbstractFileLock"]
 
 
-class DBMBackend(CacheBackend):
+class DBMBackend(BytesBackend):
     """A file-backend using a dbm file to store keys.
 
     Basic usage::
@@ -134,28 +138,25 @@ class DBMBackend(CacheBackend):
 
 
     """
+
     def __init__(self, arguments):
         self.filename = os.path.abspath(
-            os.path.normpath(arguments['filename'])
+            os.path.normpath(arguments["filename"])
         )
         dir_, filename = os.path.split(self.filename)
 
         self.lock_factory = arguments.get("lock_factory", FileLock)
         self._rw_lock = self._init_lock(
-            arguments.get('rw_lockfile'),
-            ".rw.lock", dir_, filename)
+            arguments.get("rw_lockfile"), ".rw.lock", dir_, filename
+        )
         self._dogpile_lock = self._init_lock(
-            arguments.get('dogpile_lockfile'),
+            arguments.get("dogpile_lockfile"),
             ".dogpile.lock",
-            dir_, filename,
-            util.KeyReentrantMutex.factory)
+            dir_,
+            filename,
+            util.KeyReentrantMutex.factory,
+        )
 
-        # TODO: make this configurable
-        if compat.py3k:
-            import dbm
-        else:
-            import anydbm as dbm
-        self.dbmmodule = dbm
         self._init_dbm_file()
 
     def _init_lock(self, argument, suffix, basedir, basefile, wrapper=None):
@@ -163,9 +164,8 @@ class DBMBackend(CacheBackend):
             lock = self.lock_factory(os.path.join(basedir, basefile + suffix))
         elif argument is not False:
             lock = self.lock_factory(
-                os.path.abspath(
-                    os.path.normpath(argument)
-                ))
+                os.path.abspath(os.path.normpath(argument))
+            )
         else:
             return None
         if wrapper:
@@ -175,12 +175,12 @@ class DBMBackend(CacheBackend):
     def _init_dbm_file(self):
         exists = os.access(self.filename, os.F_OK)
         if not exists:
-            for ext in ('db', 'dat', 'pag', 'dir'):
+            for ext in ("db", "dat", "pag", "dir"):
                 if os.access(self.filename + os.extsep + ext, os.F_OK):
                     exists = True
                     break
         if not exists:
-            fh = self.dbmmodule.open(self.filename, 'c')
+            fh = dbm.open(self.filename, "c")
             fh.close()
 
     def get_mutex(self, key):
@@ -210,57 +210,50 @@ class DBMBackend(CacheBackend):
     @contextmanager
     def _dbm_file(self, write):
         with self._use_rw_lock(write):
-            dbm = self.dbmmodule.open(
-                self.filename,
-                "w" if write else "r")
-            yield dbm
-            dbm.close()
+            with dbm.open(self.filename, "w" if write else "r") as dbm_obj:
+                yield dbm_obj
 
-    def get(self, key):
-        with self._dbm_file(False) as dbm:
-            if hasattr(dbm, 'get'):
-                value = dbm.get(key, NO_VALUE)
+    def get_serialized(self, key):
+        with self._dbm_file(False) as dbm_obj:
+            if hasattr(dbm_obj, "get"):
+                value = dbm_obj.get(key, NO_VALUE)
             else:
                 # gdbm objects lack a .get method
                 try:
-                    value = dbm[key]
+                    value = dbm_obj[key]
                 except KeyError:
                     value = NO_VALUE
-            if value is not NO_VALUE:
-                value = compat.pickle.loads(value)
             return value
 
-    def get_multi(self, keys):
-        return [self.get(key) for key in keys]
+    def get_serialized_multi(self, keys):
+        return [self.get_serialized(key) for key in keys]
 
-    def set(self, key, value):
-        with self._dbm_file(True) as dbm:
-            dbm[key] = compat.pickle.dumps(value,
-                                           compat.pickle.HIGHEST_PROTOCOL)
+    def set_serialized(self, key, value):
+        with self._dbm_file(True) as dbm_obj:
+            dbm_obj[key] = value
 
-    def set_multi(self, mapping):
-        with self._dbm_file(True) as dbm:
+    def set_serialized_multi(self, mapping):
+        with self._dbm_file(True) as dbm_obj:
             for key, value in mapping.items():
-                dbm[key] = compat.pickle.dumps(value,
-                                               compat.pickle.HIGHEST_PROTOCOL)
+                dbm_obj[key] = value
 
     def delete(self, key):
-        with self._dbm_file(True) as dbm:
+        with self._dbm_file(True) as dbm_obj:
             try:
-                del dbm[key]
+                del dbm_obj[key]
             except KeyError:
                 pass
 
     def delete_multi(self, keys):
-        with self._dbm_file(True) as dbm:
+        with self._dbm_file(True) as dbm_obj:
             for key in keys:
                 try:
-                    del dbm[key]
+                    del dbm_obj[key]
                 except KeyError:
                     pass
 
 
-class AbstractFileLock(object):
+class AbstractFileLock:
     """Coordinate read/write access to a file.
 
     typically is a file-based lock but doesn't necessarily have to be.
@@ -392,17 +385,18 @@ class FileLock(AbstractFileLock):
     """
 
     def __init__(self, filename):
-        self._filedescriptor = compat.threading.local()
+        self._filedescriptor = threading.local()
         self.filename = filename
 
     @util.memoized_property
     def _module(self):
         import fcntl
+
         return fcntl
 
     @property
     def is_open(self):
-        return hasattr(self._filedescriptor, 'fileno')
+        return hasattr(self._filedescriptor, "fileno")
 
     def acquire_read_lock(self, wait):
         return self._acquire(wait, os.O_RDONLY, self._module.LOCK_SH)

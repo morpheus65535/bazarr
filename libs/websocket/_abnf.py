@@ -3,52 +3,51 @@
 """
 
 """
+_abnf.py
 websocket - WebSocket client library for Python
 
-Copyright (C) 2010 Hiroki Ohtani(liris)
+Copyright 2021 engn33r
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 import array
 import os
 import struct
+import sys
 
 from ._exceptions import *
 from ._utils import validate_utf8
 from threading import Lock
 
 try:
-    import numpy
-except ImportError:
-    numpy = None
+    # If wsaccel is available, use compiled routines to mask data.
+    # wsaccel only provides around a 10% speed boost compared
+    # to the websocket-client _mask() implementation.
+    # Note that wsaccel is unmaintained.
+    from wsaccel.xormask import XorMaskerSimple
 
-try:
-    # If wsaccel is available we use compiled routines to mask data.
-    if not numpy:
-        from wsaccel.xormask import XorMaskerSimple
-
-        def _mask(_m, _d):
-            return XorMaskerSimple(_m).process(_d)
-except ImportError:
-    # wsaccel is not available, we rely on python implementations.
     def _mask(_m, _d):
-        for i in range(len(_d)):
-            _d[i] ^= _m[i % 4]
+        return XorMaskerSimple(_m).process(_d)
 
-        return _d.tobytes()
+except ImportError:
+    # wsaccel is not available, use websocket-client _mask()
+    native_byteorder = sys.byteorder
+
+    def _mask(mask_value, data_value):
+        datalen = len(data_value)
+        data_value = int.from_bytes(data_value, native_byteorder)
+        mask_value = int.from_bytes(mask_value * (datalen // 4) + mask_value[: datalen % 4], native_byteorder)
+        return (data_value ^ mask_value).to_bytes(datalen, native_byteorder)
 
 
 __all__ = [
@@ -97,7 +96,7 @@ VALID_CLOSE_STATUS = (
 )
 
 
-class ABNF(object):
+class ABNF:
     """
     ABNF frame class.
     See http://tools.ietf.org/html/rfc5234
@@ -266,22 +265,10 @@ class ABNF(object):
         if isinstance(data, str):
             data = data.encode('latin-1')
 
-        if numpy:
-            origlen = len(data)
-            _mask_key = mask_key[3] << 24 | mask_key[2] << 16 | mask_key[1] << 8 | mask_key[0]
-
-            # We need data to be a multiple of four...
-            data += b' ' * (4 - (len(data) % 4))
-            a = numpy.frombuffer(data, dtype="uint32")
-            masked = numpy.bitwise_xor(a, [_mask_key]).astype("uint32")
-            if len(data) > origlen:
-                return masked.tobytes()[:origlen]
-            return masked.tobytes()
-        else:
-            return _mask(array.array("B", mask_key), array.array("B", data))
+        return _mask(array.array("B", mask_key), array.array("B", data))
 
 
-class frame_buffer(object):
+class frame_buffer:
     _HEADER_MASK_INDEX = 5
     _HEADER_LENGTH_INDEX = 6
 
@@ -374,7 +361,7 @@ class frame_buffer(object):
         return frame
 
     def recv_strict(self, bufsize):
-        shortage = bufsize - sum(len(x) for x in self.recv_buffer)
+        shortage = bufsize - sum(map(len, self.recv_buffer))
         while shortage > 0:
             # Limit buffer size that we pass to socket.recv() to avoid
             # fragmenting the heap -- the number of bytes recv() actually
@@ -386,7 +373,7 @@ class frame_buffer(object):
             self.recv_buffer.append(bytes_)
             shortage -= len(bytes_)
 
-        unified = bytes("", 'utf-8').join(self.recv_buffer)
+        unified = b"".join(self.recv_buffer)
 
         if shortage == 0:
             self.recv_buffer = []
@@ -396,7 +383,7 @@ class frame_buffer(object):
             return unified[:bufsize]
 
 
-class continuous_frame(object):
+class continuous_frame:
 
     def __init__(self, fire_cont_frame, skip_utf8_validation):
         self.fire_cont_frame = fire_cont_frame

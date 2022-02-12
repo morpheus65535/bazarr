@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module offers a generic easter computing method for any given year, using
+This module offers a generic Easter computing method for any given year, using
 Western, Orthodox or Julian algorithms.
 """
 
@@ -21,15 +21,15 @@ def easter(year, method=EASTER_WESTERN):
     quoted in "Explanatory Supplement to the Astronomical
     Almanac", P.  Kenneth Seidelmann, editor.
 
-    This algorithm implements three different easter
+    This algorithm implements three different Easter
     calculation methods:
 
-    1 - Original calculation in Julian calendar, valid in
-        dates after 326 AD
-    2 - Original method, with date converted to Gregorian
-        calendar, valid in years 1583 to 4099
-    3 - Revised method, in Gregorian calendar, valid in
-        years 1583 to 4099 as well
+    1. Original calculation in Julian calendar, valid in
+       dates after 326 AD
+    2. Original method, with date converted to Gregorian
+       calendar, valid in years 1583 to 4099
+    3. Revised method, in Gregorian calendar, valid in
+       years 1583 to 4099 as well
 
     These methods are represented by the constants:
 
@@ -41,11 +41,11 @@ def easter(year, method=EASTER_WESTERN):
 
     More about the algorithm may be found at:
 
-    http://users.chariot.net.au/~gmarts/eastalg.htm
+    `GM Arts: Easter Algorithms <http://www.gmarts.org/index.php?go=415>`_
 
     and
 
-    http://www.tondering.dk/claus/calendar.html
+    `The Calendar FAQ: Easter <https://www.tondering.dk/claus/cal/easter.php>`_
 
     """
 

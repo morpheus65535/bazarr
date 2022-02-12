@@ -1,32 +1,75 @@
 from __future__ import with_statement
-from .. import Lock, NeedRegenerationException
-from ..util import NameRegistry
-from . import exception
-from ..util import PluginLoader, memoized_property, coerce_string_conf
-from .util import function_key_generator, function_multi_key_generator
-from .api import NO_VALUE, CachedValue
-from .proxy import ProxyBackend
-from ..util import compat
-import time
+
+import contextlib
 import datetime
+from functools import partial
+from functools import wraps
+import json
+import logging
 from numbers import Number
-from functools import wraps, partial
 import threading
+import time
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Type
+from typing import Union
+
 from decorator import decorate
 
-_backend_loader = PluginLoader("dogpile.cache")
-register_backend = _backend_loader.register
-from . import backends  # noqa
+from . import exception
+from .api import BackendArguments
+from .api import BackendFormatted
+from .api import CachedValue
+from .api import CacheMutex
+from .api import CacheReturnType
+from .api import KeyType
+from .api import MetaDataType
+from .api import NO_VALUE
+from .api import SerializedReturnType
+from .api import Serializer
+from .api import ValuePayload
+from .backends import _backend_loader
+from .backends import register_backend  # noqa
+from .proxy import ProxyBackend
+from .util import function_key_generator
+from .util import function_multi_key_generator
+from .util import repr_obj
+from .. import Lock
+from .. import NeedRegenerationException
+from ..util import coerce_string_conf
+from ..util import memoized_property
+from ..util import NameRegistry
+from ..util import PluginLoader
 
-value_version = 1
+value_version = 2
 """An integer placed in the :class:`.CachedValue`
 so that new versions of dogpile.cache can detect cached
 values from a previous, backwards-incompatible version.
 
 """
 
+log = logging.getLogger(__name__)
 
-class RegionInvalidationStrategy(object):
+
+AsyncCreator = Callable[
+    ["CacheRegion", KeyType, Callable[[], ValuePayload], CacheMutex], None
+]
+
+ExpirationTimeCallable = Callable[[], float]
+
+ToStr = Callable[[Any], str]
+
+FunctionKeyGenerator = Callable[..., Callable[..., KeyType]]
+
+FunctionMultiKeyGenerator = Callable[..., Callable[..., Sequence[KeyType]]]
+
+
+class RegionInvalidationStrategy:
     """Region invalidation strategy interface
 
     Implement this interface and pass implementation instance
@@ -74,7 +117,7 @@ class RegionInvalidationStrategy(object):
 
         region = CacheRegion()
 
-        region = region.configure(region_invalidator=CustomInvalidationStrategy())
+        region = region.configure(region_invalidator=CustomInvalidationStrategy())  # noqa
 
     Invalidation strategies that wish to have access to the
     :class:`.CacheRegion` itself should construct the invalidator given the
@@ -98,7 +141,7 @@ class RegionInvalidationStrategy(object):
 
     """
 
-    def invalidate(self, hard=True):
+    def invalidate(self, hard: bool = True) -> None:
         """Region invalidation.
 
         :class:`.CacheRegion` propagated call.
@@ -110,7 +153,7 @@ class RegionInvalidationStrategy(object):
 
         raise NotImplementedError()
 
-    def is_hard_invalidated(self, timestamp):
+    def is_hard_invalidated(self, timestamp: float) -> bool:
         """Check timestamp to determine if it was hard invalidated.
 
         :return: Boolean. True if ``timestamp`` is older than
@@ -121,7 +164,7 @@ class RegionInvalidationStrategy(object):
 
         raise NotImplementedError()
 
-    def is_soft_invalidated(self, timestamp):
+    def is_soft_invalidated(self, timestamp: float) -> bool:
         """Check timestamp to determine if it was soft invalidated.
 
         :return: Boolean. True if ``timestamp`` is older than
@@ -132,7 +175,7 @@ class RegionInvalidationStrategy(object):
 
         raise NotImplementedError()
 
-    def is_invalidated(self, timestamp):
+    def is_invalidated(self, timestamp: float) -> bool:
         """Check timestamp to determine if it was invalidated.
 
         :return: Boolean. True if ``timestamp`` is older than
@@ -142,7 +185,7 @@ class RegionInvalidationStrategy(object):
 
         raise NotImplementedError()
 
-    def was_soft_invalidated(self):
+    def was_soft_invalidated(self) -> bool:
         """Indicate the region was invalidated in soft mode.
 
         :return: Boolean. True if region was invalidated in soft mode.
@@ -151,7 +194,7 @@ class RegionInvalidationStrategy(object):
 
         raise NotImplementedError()
 
-    def was_hard_invalidated(self):
+    def was_hard_invalidated(self) -> bool:
         """Indicate the region was invalidated in hard mode.
 
         :return: Boolean. True if region was invalidated in hard mode.
@@ -162,33 +205,31 @@ class RegionInvalidationStrategy(object):
 
 
 class DefaultInvalidationStrategy(RegionInvalidationStrategy):
-
     def __init__(self):
         self._is_hard_invalidated = None
         self._invalidated = None
 
-    def invalidate(self, hard=True):
+    def invalidate(self, hard: bool = True) -> None:
         self._is_hard_invalidated = bool(hard)
         self._invalidated = time.time()
 
-    def is_invalidated(self, timestamp):
-        return (self._invalidated is not None and
-                timestamp < self._invalidated)
+    def is_invalidated(self, timestamp: float) -> bool:
+        return self._invalidated is not None and timestamp < self._invalidated
 
-    def was_hard_invalidated(self):
+    def was_hard_invalidated(self) -> bool:
         return self._is_hard_invalidated is True
 
-    def is_hard_invalidated(self, timestamp):
+    def is_hard_invalidated(self, timestamp: float) -> bool:
         return self.was_hard_invalidated() and self.is_invalidated(timestamp)
 
-    def was_soft_invalidated(self):
+    def was_soft_invalidated(self) -> bool:
         return self._is_hard_invalidated is False
 
-    def is_soft_invalidated(self, timestamp):
+    def is_soft_invalidated(self, timestamp: float) -> bool:
         return self.was_soft_invalidated() and self.is_invalidated(timestamp)
 
 
-class CacheRegion(object):
+class CacheRegion:
     r"""A front end to a particular cache backend.
 
     :param name: Optional, a string name for the region.
@@ -274,6 +315,21 @@ class CacheRegion(object):
      to convert non-string or Unicode keys to bytestrings, which is
      needed when using a backend such as bsddb or dbm under Python 2.x
      in conjunction with Unicode keys.
+
+    :param serializer: function which will be applied to all values before
+     passing to the backend.  Defaults to ``None``, in which case the
+     serializer recommended by the backend will be used.   Typical
+     serializers include ``pickle.dumps`` and ``json.dumps``.
+
+     .. versionadded:: 1.1.0
+
+    :param deserializer: function which will be applied to all values returned
+     by the backend.  Defaults to ``None``, in which case the
+     deserializer recommended by the backend will be used.   Typical
+     deserializers include ``pickle.dumps`` and ``json.dumps``.
+
+     .. versionadded:: 1.1.0
+
     :param async_creation_runner:  A callable that, when specified,
      will be passed to and called by dogpile.lock when
      there is a stale value present in the cache.  It will be passed the
@@ -328,31 +384,38 @@ class CacheRegion(object):
     """
 
     def __init__(
-            self,
-            name=None,
-            function_key_generator=function_key_generator,
-            function_multi_key_generator=function_multi_key_generator,
-            key_mangler=None,
-            async_creation_runner=None,
+        self,
+        name: Optional[str] = None,
+        function_key_generator: FunctionKeyGenerator = function_key_generator,
+        function_multi_key_generator: FunctionMultiKeyGenerator = function_multi_key_generator,  # noqa E501
+        key_mangler: Optional[Callable[[KeyType], KeyType]] = None,
+        serializer: Optional[Callable[[ValuePayload], bytes]] = None,
+        deserializer: Optional[Callable[[bytes], ValuePayload]] = None,
+        async_creation_runner: Optional[AsyncCreator] = None,
     ):
         """Construct a new :class:`.CacheRegion`."""
         self.name = name
         self.function_key_generator = function_key_generator
         self.function_multi_key_generator = function_multi_key_generator
         self.key_mangler = self._user_defined_key_mangler = key_mangler
+        self.serializer = self._user_defined_serializer = serializer
+        self.deserializer = self._user_defined_deserializer = deserializer
         self.async_creation_runner = async_creation_runner
-        self.region_invalidator = DefaultInvalidationStrategy()
+        self.region_invalidator: RegionInvalidationStrategy = (
+            DefaultInvalidationStrategy()
+        )
 
     def configure(
-            self, backend,
-            expiration_time=None,
-            arguments=None,
-            _config_argument_dict=None,
-            _config_prefix=None,
-            wrap=None,
-            replace_existing_backend=False,
-            region_invalidator=None
-    ):
+        self,
+        backend: str,
+        expiration_time: Optional[Union[float, datetime.timedelta]] = None,
+        arguments: Optional[BackendArguments] = None,
+        _config_argument_dict: Optional[Mapping[str, Any]] = None,
+        _config_prefix: Optional[str] = None,
+        wrap: Sequence[Union[ProxyBackend, Type[ProxyBackend]]] = (),
+        replace_existing_backend: bool = False,
+        region_invalidator: Optional[RegionInvalidationStrategy] = None,
+    ) -> "CacheRegion":
         """Configure a :class:`.CacheRegion`.
 
         The :class:`.CacheRegion` itself
@@ -403,44 +466,53 @@ class CacheRegion(object):
 
          .. versionadded:: 0.6.2
 
-         """
+        """
 
         if "backend" in self.__dict__ and not replace_existing_backend:
             raise exception.RegionAlreadyConfigured(
                 "This region is already "
                 "configured with backend: %s.  "
                 "Specify replace_existing_backend=True to replace."
-                % self.backend)
+                % self.backend
+            )
 
         try:
             backend_cls = _backend_loader.load(backend)
         except PluginLoader.NotFound:
             raise exception.PluginNotFound(
-                "Couldn't find cache plugin to load: %s" % backend)
+                "Couldn't find cache plugin to load: %s" % backend
+            )
 
         if _config_argument_dict:
             self.backend = backend_cls.from_config_dict(
-                _config_argument_dict,
-                _config_prefix
+                _config_argument_dict, _config_prefix
             )
         else:
             self.backend = backend_cls(arguments or {})
 
+        self.expiration_time: Union[float, None]
+
         if not expiration_time or isinstance(expiration_time, Number):
-            self.expiration_time = expiration_time
+            self.expiration_time = cast(Union[None, float], expiration_time)
         elif isinstance(expiration_time, datetime.timedelta):
-            self.expiration_time = int(
-                compat.timedelta_total_seconds(expiration_time))
+            self.expiration_time = int(expiration_time.total_seconds())
         else:
             raise exception.ValidationError(
-                'expiration_time is not a number or timedelta.')
+                "expiration_time is not a number or timedelta."
+            )
 
         if not self._user_defined_key_mangler:
             self.key_mangler = self.backend.key_mangler
 
+        if not self._user_defined_serializer:
+            self.serializer = self.backend.serializer
+
+        if not self._user_defined_deserializer:
+            self.deserializer = self.backend.deserializer
+
         self._lock_registry = NameRegistry(self._create_mutex)
 
-        if getattr(wrap, '__iter__', False):
+        if getattr(wrap, "__iter__", False):
             for wrapper in reversed(wrap):
                 self.wrap(wrapper)
 
@@ -449,26 +521,30 @@ class CacheRegion(object):
 
         return self
 
-    def wrap(self, proxy):
-        ''' Takes a ProxyBackend instance or class and wraps the
-        attached backend. '''
+    def wrap(self, proxy: Union[ProxyBackend, Type[ProxyBackend]]) -> None:
+        """Takes a ProxyBackend instance or class and wraps the
+        attached backend."""
 
         # if we were passed a type rather than an instance then
         # initialize it.
-        if type(proxy) == type:
-            proxy = proxy()
+        if isinstance(proxy, type):
+            proxy_instance = proxy()
+        else:
+            proxy_instance = proxy
 
-        if not issubclass(type(proxy), ProxyBackend):
-            raise TypeError("Type %s is not a valid ProxyBackend"
-                            % type(proxy))
+        if not isinstance(proxy_instance, ProxyBackend):
+            raise TypeError(
+                "%r is not a valid ProxyBackend" % (proxy_instance,)
+            )
 
-        self.backend = proxy.wrap(self.backend)
+        self.backend = proxy_instance.wrap(self.backend)
 
     def _mutex(self, key):
         return self._lock_registry.get(key)
 
-    class _LockWrapper(object):
+    class _LockWrapper(CacheMutex):
         """weakref-capable wrapper for threading.Lock"""
+
         def __init__(self):
             self.lock = threading.Lock()
 
@@ -477,6 +553,9 @@ class CacheRegion(object):
 
         def release(self):
             self.lock.release()
+
+        def locked(self):
+            return self.lock.locked()
 
     def _create_mutex(self, key):
         mutex = self.backend.get_mutex(key)
@@ -500,7 +579,7 @@ class CacheRegion(object):
         """
         if self._actual_backend is None:
             _backend = self.backend
-            while hasattr(_backend, 'proxied'):
+            while hasattr(_backend, "proxied"):
                 _backend = _backend.proxied
             self._actual_backend = _backend
         return self._actual_backend
@@ -583,19 +662,21 @@ class CacheRegion(object):
         return self.configure(
             config_dict["%sbackend" % prefix],
             expiration_time=config_dict.get(
-                "%sexpiration_time" % prefix, None),
+                "%sexpiration_time" % prefix, None
+            ),
             _config_argument_dict=config_dict,
             _config_prefix="%sarguments." % prefix,
-            wrap=config_dict.get(
-                "%swrap" % prefix, None),
+            wrap=config_dict.get("%swrap" % prefix, None),
             replace_existing_backend=config_dict.get(
-                "%sreplace_existing_backend" % prefix, False),
+                "%sreplace_existing_backend" % prefix, False
+            ),
         )
 
     @memoized_property
     def backend(self):
         raise exception.RegionNotConfigured(
-            "No backend is configured on this region.")
+            "No backend is configured on this region."
+        )
 
     @property
     def is_configured(self):
@@ -605,7 +686,7 @@ class CacheRegion(object):
         .. versionadded:: 0.5.1
 
         """
-        return 'backend' in self.__dict__
+        return "backend" in self.__dict__
 
     def get(self, key, expiration_time=None, ignore_expiration=False):
         """Return a value from the cache, based on the given key.
@@ -650,6 +731,13 @@ class CacheRegion(object):
          which will supersede that configured on the :class:`.CacheRegion`
          itself.
 
+         .. note:: The :paramref:`.CacheRegion.get.expiration_time`
+            argument is **not persisted in the cache** and is relevant
+            only to **this specific cache retrieval operation**, relative to
+            the creation time stored with the existing cached value.
+            Subsequent calls to :meth:`.CacheRegion.get` are **not** affected
+            by this value.
+
          .. versionadded:: 0.3.0
 
         :param ignore_expiration: if ``True``, the value is returned
@@ -659,13 +747,25 @@ class CacheRegion(object):
 
          .. versionadded:: 0.3.0
 
+        .. seealso::
+
+            :meth:`.CacheRegion.get_multi`
+
+            :meth:`.CacheRegion.get_or_create`
+
+            :meth:`.CacheRegion.set`
+
+            :meth:`.CacheRegion.delete`
+
+
         """
 
         if self.key_mangler:
             key = self.key_mangler(key)
-        value = self.backend.get(key)
-        value = self._unexpired_value_fn(
-            expiration_time, ignore_expiration)(value)
+        value = self._get_from_backend(key)
+        value = self._unexpired_value_fn(expiration_time, ignore_expiration)(
+            value
+        )
 
         return value.payload
 
@@ -681,11 +781,14 @@ class CacheRegion(object):
             def value_fn(value):
                 if value is NO_VALUE:
                     return value
-                elif expiration_time is not None and \
-                        current_time - value.metadata["ct"] > expiration_time:
+                elif (
+                    expiration_time is not None
+                    and current_time - value.metadata["ct"] > expiration_time
+                ):
                     return NO_VALUE
                 elif self.region_invalidator.is_invalidated(
-                        value.metadata["ct"]):
+                    value.metadata["ct"]
+                ):
                     return NO_VALUE
                 else:
                     return value
@@ -727,25 +830,64 @@ class CacheRegion(object):
         if not keys:
             return []
 
-        if self.key_mangler:
-            keys = list(map(lambda key: self.key_mangler(key), keys))
+        if self.key_mangler is not None:
+            keys = [self.key_mangler(key) for key in keys]
 
-        backend_values = self.backend.get_multi(keys)
+        backend_values = self._get_multi_from_backend(keys)
 
         _unexpired_value_fn = self._unexpired_value_fn(
-            expiration_time, ignore_expiration)
+            expiration_time, ignore_expiration
+        )
         return [
             value.payload if value is not NO_VALUE else value
-            for value in
-            (
-                _unexpired_value_fn(value) for value in
-                backend_values
+            for value in (
+                _unexpired_value_fn(value) for value in backend_values
             )
         ]
 
+    @contextlib.contextmanager
+    def _log_time(self, keys):
+        start_time = time.time()
+        yield
+        seconds = time.time() - start_time
+        log.debug(
+            "Cache value generated in %(seconds).3f seconds for key(s): "
+            "%(keys)r",
+            {"seconds": seconds, "keys": repr_obj(keys)},
+        )
+
+    def _is_cache_miss(self, value, orig_key):
+        if value is NO_VALUE:
+            log.debug("No value present for key: %r", orig_key)
+        elif value.metadata["v"] != value_version:
+            log.debug("Dogpile version update for key: %r", orig_key)
+        elif self.region_invalidator.is_hard_invalidated(value.metadata["ct"]):
+            log.debug("Hard invalidation detected for key: %r", orig_key)
+        else:
+            return False
+
+        return True
+
+    def key_is_locked(self, key: KeyType) -> bool:
+        """Return True if a particular cache key is currently being generated
+        within the dogpile lock.
+
+        .. versionadded:: 1.1.2
+
+        """
+        mutex = self._mutex(key)
+        locked: bool = mutex.locked()
+        return locked
+
     def get_or_create(
-            self, key, creator, expiration_time=None, should_cache_fn=None,
-            creator_args=None):
+        self,
+        key: KeyType,
+        creator: Callable[..., ValuePayload],
+        expiration_time: Optional[float] = None,
+        should_cache_fn: Optional[Callable[[ValuePayload], bool]] = None,
+        creator_args: Optional[Tuple[Any, Mapping[str, Any]]] = None,
+    ) -> ValuePayload:
+
         """Return a cached value based on the given key.
 
         If the value does not exist or is considered to be expired
@@ -786,9 +928,16 @@ class CacheRegion(object):
 
          .. versionadded:: 0.7.0
 
-        :param expiration_time: optional expiration time which will overide
+        :param expiration_time: optional expiration time which will override
          the expiration time already configured on this :class:`.CacheRegion`
          if not None.   To set no expiration, use the value -1.
+
+         .. note:: The :paramref:`.CacheRegion.get_or_create.expiration_time`
+            argument is **not persisted in the cache** and is relevant
+            only to **this specific cache retrieval operation**, relative to
+            the creation time stored with the existing cached value.
+            Subsequent calls to :meth:`.CacheRegion.get_or_create` are **not**
+            affected by this value.
 
         :param should_cache_fn: optional callable function which will receive
          the value returned by the "creator", and will then return True or
@@ -811,11 +960,13 @@ class CacheRegion(object):
 
         .. seealso::
 
+            :meth:`.CacheRegion.get`
+
             :meth:`.CacheRegion.cache_on_arguments` - applies
             :meth:`.get_or_create` to any function using a decorator.
 
             :meth:`.CacheRegion.get_or_create_multi` - multiple key/value
-             version
+            version
 
         """
         orig_key = key
@@ -823,64 +974,87 @@ class CacheRegion(object):
             key = self.key_mangler(key)
 
         def get_value():
-            value = self.backend.get(key)
-            if (value is NO_VALUE or value.metadata['v'] != value_version or
-                    self.region_invalidator.is_hard_invalidated(
-                        value.metadata["ct"])):
+            value = self._get_from_backend(key)
+            if self._is_cache_miss(value, orig_key):
                 raise NeedRegenerationException()
-            ct = value.metadata["ct"]
+
+            ct = cast(CachedValue, value).metadata["ct"]
             if self.region_invalidator.is_soft_invalidated(ct):
-                ct = time.time() - expiration_time - .0001
+                if expiration_time is None:
+                    raise exception.DogpileCacheException(
+                        "Non-None expiration time required "
+                        "for soft invalidation"
+                    )
+                ct = time.time() - expiration_time - 0.0001
 
             return value.payload, ct
 
         def gen_value():
-            if creator_args:
-                created_value = creator(*creator_args[0], **creator_args[1])
-            else:
-                created_value = creator()
+            with self._log_time(orig_key):
+                if creator_args:
+                    created_value = creator(
+                        *creator_args[0], **creator_args[1]
+                    )
+                else:
+                    created_value = creator()
             value = self._value(created_value)
 
-            if not should_cache_fn or \
-                    should_cache_fn(created_value):
-                self.backend.set(key, value)
+            if (
+                expiration_time is None
+                and self.region_invalidator.was_soft_invalidated()
+            ):
+                raise exception.DogpileCacheException(
+                    "Non-None expiration time required "
+                    "for soft invalidation"
+                )
+
+            if not should_cache_fn or should_cache_fn(created_value):
+                self._set_cached_value_to_backend(key, value)
 
             return value.payload, value.metadata["ct"]
 
         if expiration_time is None:
             expiration_time = self.expiration_time
 
-        if (expiration_time is None and
-                self.region_invalidator.was_soft_invalidated()):
-            raise exception.DogpileCacheException(
-                "Non-None expiration time required "
-                "for soft invalidation")
-
         if expiration_time == -1:
             expiration_time = None
 
+        async_creator: Optional[Callable[[CacheMutex], AsyncCreator]]
         if self.async_creation_runner:
+            acr = self.async_creation_runner
+
             def async_creator(mutex):
                 if creator_args:
+
+                    ca = creator_args
+
                     @wraps(creator)
                     def go():
-                        return creator(*creator_args[0], **creator_args[1])
+                        return creator(*ca[0], **ca[1])
+
                 else:
                     go = creator
-                return self.async_creation_runner(self, orig_key, go, mutex)
+                return acr(self, orig_key, go, mutex)
+
         else:
             async_creator = None
 
         with Lock(
-                self._mutex(key),
-                gen_value,
-                get_value,
-                expiration_time,
-                async_creator) as value:
+            self._mutex(key),
+            gen_value,
+            get_value,
+            expiration_time,
+            async_creator,
+        ) as value:
             return value
 
     def get_or_create_multi(
-            self, keys, creator, expiration_time=None, should_cache_fn=None):
+        self,
+        keys: Sequence[KeyType],
+        creator: Callable[[], ValuePayload],
+        expiration_time: Optional[float] = None,
+        should_cache_fn: Optional[Callable[[ValuePayload], bool]] = None,
+    ) -> Sequence[ValuePayload]:
         """Return a sequence of cached values based on a sequence of keys.
 
         The behavior for generation of values based on keys corresponds
@@ -906,7 +1080,7 @@ class CacheRegion(object):
         :param creator: function which accepts a sequence of keys and
          returns a sequence of new values.
 
-        :param expiration_time: optional expiration time which will overide
+        :param expiration_time: optional expiration time which will override
          the expiration time already configured on this :class:`.CacheRegion`
          if not None.   To set no expiration, use the value -1.
 
@@ -929,39 +1103,34 @@ class CacheRegion(object):
         def get_value(key):
             value = values.get(key, NO_VALUE)
 
-            if (value is NO_VALUE or value.metadata['v'] != value_version or
-                    self.region_invalidator.is_hard_invalidated(
-                        value.metadata['ct'])):
+            if self._is_cache_miss(value, orig_key):
                 # dogpile.core understands a 0 here as
                 # "the value is not available", e.g.
                 # _has_value() will return False.
                 return value.payload, 0
             else:
-                ct = value.metadata["ct"]
+                ct = cast(CachedValue, value).metadata["ct"]
                 if self.region_invalidator.is_soft_invalidated(ct):
-                    ct = time.time() - expiration_time - .0001
+                    if expiration_time is None:
+                        raise exception.DogpileCacheException(
+                            "Non-None expiration time required "
+                            "for soft invalidation"
+                        )
+                    ct = time.time() - expiration_time - 0.0001
 
                 return value.payload, ct
 
-        def gen_value():
+        def gen_value() -> ValuePayload:
             raise NotImplementedError()
 
-        def async_creator(key, mutex):
+        def async_creator(mutexes, key, mutex):
             mutexes[key] = mutex
 
         if expiration_time is None:
             expiration_time = self.expiration_time
 
-        if (expiration_time is None and
-                self.region_invalidator.was_soft_invalidated()):
-            raise exception.DogpileCacheException(
-                "Non-None expiration time required "
-                "for soft invalidation")
-
         if expiration_time == -1:
             expiration_time = None
-
-        mutexes = {}
 
         sorted_unique_keys = sorted(set(keys))
 
@@ -972,15 +1141,21 @@ class CacheRegion(object):
 
         orig_to_mangled = dict(zip(sorted_unique_keys, mangled_keys))
 
-        values = dict(zip(mangled_keys, self.backend.get_multi(mangled_keys)))
+        values = dict(
+            zip(mangled_keys, self._get_multi_from_backend(mangled_keys))
+        )
+
+        mutexes: Mapping[KeyType, Any] = {}
 
         for orig_key, mangled_key in orig_to_mangled.items():
             with Lock(
-                    self._mutex(mangled_key),
-                    gen_value,
-                    lambda: get_value(mangled_key),
-                    expiration_time,
-                    async_creator=lambda mutex: async_creator(orig_key, mutex)
+                self._mutex(mangled_key),
+                gen_value,
+                lambda: get_value(mangled_key),
+                expiration_time,
+                async_creator=lambda mutex: async_creator(
+                    mutexes, orig_key, mutex
+                ),
             ):
                 pass
         try:
@@ -988,24 +1163,35 @@ class CacheRegion(object):
                 # sort the keys, the idea is to prevent deadlocks.
                 # though haven't been able to simulate one anyway.
                 keys_to_get = sorted(mutexes)
-                new_values = creator(*keys_to_get)
 
-                values_w_created = dict(
-                    (orig_to_mangled[k], self._value(v))
+                with self._log_time(keys_to_get):
+                    new_values = creator(*keys_to_get)
+
+                values_w_created = {
+                    orig_to_mangled[k]: self._value(v)
                     for k, v in zip(keys_to_get, new_values)
-                )
+                }
 
-                if not should_cache_fn:
-                    self.backend.set_multi(values_w_created)
-                else:
-                    values_to_cache = dict(
-                        (k, v)
-                        for k, v in values_w_created.items()
-                        if should_cache_fn(v[0])
+                if (
+                    expiration_time is None
+                    and self.region_invalidator.was_soft_invalidated()
+                ):
+                    raise exception.DogpileCacheException(
+                        "Non-None expiration time required "
+                        "for soft invalidation"
                     )
 
-                    if values_to_cache:
-                        self.backend.set_multi(values_to_cache)
+                if not should_cache_fn:
+                    self._set_multi_cached_value_to_backend(values_w_created)
+
+                else:
+                    self._set_multi_cached_value_to_backend(
+                        {
+                            k: v
+                            for k, v in values_w_created.items()
+                            if should_cache_fn(v.payload)
+                        }
+                    )
 
                 values.update(values_w_created)
             return [values[orig_to_mangled[k]].payload for k in keys]
@@ -1013,40 +1199,162 @@ class CacheRegion(object):
             for mutex in mutexes.values():
                 mutex.release()
 
-    def _value(self, value):
+    def _value(
+        self, value: Any, metadata: Optional[MetaDataType] = None
+    ) -> CachedValue:
         """Return a :class:`.CachedValue` given a value."""
-        return CachedValue(
-            value,
-            {
-                "ct": time.time(),
-                "v": value_version
-            })
 
-    def set(self, key, value):
+        if metadata is None:
+            metadata = self._gen_metadata()
+        return CachedValue(value, metadata)
+
+    def _parse_serialized_from_backend(
+        self, value: SerializedReturnType
+    ) -> CacheReturnType:
+        if value in (None, NO_VALUE):
+            return NO_VALUE
+
+        assert self.deserializer
+        byte_value = cast(bytes, value)
+
+        bytes_metadata, _, bytes_payload = byte_value.partition(b"|")
+        metadata = json.loads(bytes_metadata)
+        payload = self.deserializer(bytes_payload)
+        return CachedValue(payload, metadata)
+
+    def _serialize_cached_value_elements(
+        self, payload: ValuePayload, metadata: MetaDataType
+    ) -> bytes:
+        serializer = cast(Serializer, self.serializer)
+
+        return b"%b|%b" % (
+            json.dumps(metadata).encode("ascii"),
+            serializer(payload),
+        )
+
+    def _serialized_payload(
+        self, payload: ValuePayload, metadata: Optional[MetaDataType] = None
+    ) -> BackendFormatted:
+        """Return a backend formatted representation of a value.
+
+        If a serializer is in use then this will return a string representation
+        with the value formatted by the serializer.
+
+        """
+        if metadata is None:
+            metadata = self._gen_metadata()
+
+        return self._serialize_cached_value_elements(payload, metadata)
+
+    def _serialized_cached_value(self, value: CachedValue) -> BackendFormatted:
+        """Return a backend formatted representation of a :class:`.CachedValue`.
+
+        If a serializer is in use then this will return a string representation
+        with the value formatted by the serializer.
+
+        """
+
+        assert self.serializer
+        return self._serialize_cached_value_elements(
+            value.payload, value.metadata
+        )
+
+    def _get_from_backend(self, key: KeyType) -> CacheReturnType:
+        if self.deserializer:
+            return self._parse_serialized_from_backend(
+                self.backend.get_serialized(key)
+            )
+        else:
+            return cast(CacheReturnType, self.backend.get(key))
+
+    def _get_multi_from_backend(
+        self, keys: Sequence[KeyType]
+    ) -> Sequence[CacheReturnType]:
+        if self.deserializer:
+            return [
+                self._parse_serialized_from_backend(v)
+                for v in self.backend.get_serialized_multi(keys)
+            ]
+        else:
+            return cast(
+                Sequence[CacheReturnType], self.backend.get_multi(keys)
+            )
+
+    def _set_cached_value_to_backend(
+        self, key: KeyType, value: CachedValue
+    ) -> None:
+        if self.serializer:
+            self.backend.set_serialized(
+                key, self._serialized_cached_value(value)
+            )
+        else:
+            self.backend.set(key, value)
+
+    def _set_multi_cached_value_to_backend(
+        self, mapping: Mapping[KeyType, CachedValue]
+    ) -> None:
+        if not mapping:
+            return
+
+        if self.serializer:
+            self.backend.set_serialized_multi(
+                {
+                    k: self._serialized_cached_value(v)
+                    for k, v in mapping.items()
+                }
+            )
+        else:
+            self.backend.set_multi(mapping)
+
+    def _gen_metadata(self) -> MetaDataType:
+        return {"ct": time.time(), "v": value_version}
+
+    def set(self, key: KeyType, value: ValuePayload) -> None:
         """Place a new value in the cache under the given key."""
 
         if self.key_mangler:
             key = self.key_mangler(key)
-        self.backend.set(key, self._value(value))
 
-    def set_multi(self, mapping):
-        """Place new values in the cache under the given keys.
+        if self.serializer:
+            self.backend.set_serialized(key, self._serialized_payload(value))
+        else:
+            self.backend.set(key, self._value(value))
 
-        .. versionadded:: 0.5.0
-
-        """
+    def set_multi(self, mapping: Mapping[KeyType, ValuePayload]) -> None:
+        """Place new values in the cache under the given keys."""
         if not mapping:
             return
 
-        if self.key_mangler:
-            mapping = dict((
-                self.key_mangler(k), self._value(v))
-                for k, v in mapping.items())
-        else:
-            mapping = dict((k, self._value(v)) for k, v in mapping.items())
-        self.backend.set_multi(mapping)
+        metadata = self._gen_metadata()
 
-    def delete(self, key):
+        if self.serializer:
+            if self.key_mangler:
+                mapping = {
+                    self.key_mangler(k): self._serialized_payload(
+                        v, metadata=metadata
+                    )
+                    for k, v in mapping.items()
+                }
+            else:
+                mapping = {
+                    k: self._serialized_payload(v, metadata=metadata)
+                    for k, v in mapping.items()
+                }
+            self.backend.set_serialized_multi(mapping)
+        else:
+            if self.key_mangler:
+                mapping = {
+                    self.key_mangler(k): self._value(v, metadata=metadata)
+                    for k, v in mapping.items()
+                }
+            else:
+                mapping = {
+                    k: self._value(v, metadata=metadata)
+                    for k, v in mapping.items()
+                }
+            self.backend.set_multi(mapping)
+
+    def delete(self, key: KeyType) -> None:
         """Remove a value from the cache.
 
         This operation is idempotent (can be called multiple times, or on a
@@ -1058,7 +1366,7 @@ class CacheRegion(object):
 
         self.backend.delete(key)
 
-    def delete_multi(self, keys):
+    def delete_multi(self, keys: Sequence[KeyType]) -> None:
         """Remove multiple values from the cache.
 
         This operation is idempotent (can be called multiple times, or on a
@@ -1069,16 +1377,19 @@ class CacheRegion(object):
         """
 
         if self.key_mangler:
-            keys = list(map(lambda key: self.key_mangler(key), keys))
+            km = self.key_mangler
+            keys = [km(key) for key in keys]
 
         self.backend.delete_multi(keys)
 
     def cache_on_arguments(
-            self, namespace=None,
-            expiration_time=None,
-            should_cache_fn=None,
-            to_str=compat.string_type,
-            function_key_generator=None):
+        self,
+        namespace: Optional[str] = None,
+        expiration_time: Union[float, ExpirationTimeCallable, None] = None,
+        should_cache_fn: Optional[Callable[[ValuePayload], bool]] = None,
+        to_str: Callable[[Any], str] = str,
+        function_key_generator: Optional[FunctionKeyGenerator] = None,
+    ) -> Callable[[Callable[..., ValuePayload]], Callable[..., ValuePayload]]:
         """A function decorator that will cache the return
         value of the function using a key derived from the
         function itself and its arguments.
@@ -1171,7 +1482,7 @@ class CacheRegion(object):
         (with caveats) for use with instance or class methods.
         Given the example::
 
-            class MyClass(object):
+            class MyClass:
                 @region.cache_on_arguments(namespace="foo")
                 def one(self, a, b):
                     return a + b
@@ -1185,12 +1496,12 @@ class CacheRegion(object):
         name within the same module, as can occur when decorating
         instance or class methods as below::
 
-            class MyClass(object):
+            class MyClass:
                 @region.cache_on_arguments(namespace='MC')
                 def somemethod(self, x, y):
                     ""
 
-            class MyOtherClass(object):
+            class MyOtherClass:
                 @region.cache_on_arguments(namespace='MOC')
                 def somemethod(self, x, y):
                     ""
@@ -1228,13 +1539,7 @@ class CacheRegion(object):
          end of the day, week or time period" and "cache until a certain date
          or time passes".
 
-         .. versionchanged:: 0.5.0
-            ``expiration_time`` may be passed as a callable to
-            :meth:`.CacheRegion.cache_on_arguments`.
-
         :param should_cache_fn: passed to :meth:`.CacheRegion.get_or_create`.
-
-         .. versionadded:: 0.4.3
 
         :param to_str: callable, will be called on each function argument
          in order to convert to a string.  Defaults to ``str()``.  If the
@@ -1243,13 +1548,9 @@ class CacheRegion(object):
          produce unicode cache keys which may require key mangling before
          reaching the cache.
 
-         .. versionadded:: 0.5.0
-
         :param function_key_generator: a function that will produce a
          "cache key". This function will supersede the one configured on the
          :class:`.CacheRegion` itself.
-
-         .. versionadded:: 0.5.5
 
         .. seealso::
 
@@ -1258,27 +1559,35 @@ class CacheRegion(object):
             :meth:`.CacheRegion.get_or_create`
 
         """
-        expiration_time_is_callable = compat.callable(expiration_time)
+        expiration_time_is_callable = callable(expiration_time)
 
         if function_key_generator is None:
-            function_key_generator = self.function_key_generator
+            _function_key_generator = self.function_key_generator
+        else:
+            _function_key_generator = function_key_generator
 
         def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
             key = key_generator(*arg, **kw)
 
-            timeout = expiration_time() if expiration_time_is_callable \
-                else expiration_time
-            return self.get_or_create(key, user_func, timeout,
-                                      should_cache_fn, (arg, kw))
+            timeout: Optional[float] = (
+                cast(ExpirationTimeCallable, expiration_time)()
+                if expiration_time_is_callable
+                else cast(Optional[float], expiration_time)
+            )
+            return self.get_or_create(
+                key, user_func, timeout, should_cache_fn, (arg, kw)
+            )
 
         def cache_decorator(user_func):
-            if to_str is compat.string_type:
+            if to_str is cast(Callable[[Any], str], str):
                 # backwards compatible
-                key_generator = function_key_generator(namespace, user_func)
+                key_generator = _function_key_generator(
+                    namespace, user_func
+                )  # type: ignore
             else:
-                key_generator = function_key_generator(
-                    namespace, user_func,
-                    to_str=to_str)
+                key_generator = _function_key_generator(
+                    namespace, user_func, to_str
+                )
 
             def refresh(*arg, **kw):
                 """
@@ -1309,16 +1618,28 @@ class CacheRegion(object):
 
             # Use `decorate` to preserve the signature of :param:`user_func`.
 
-            return decorate(user_func, partial(
-                get_or_create_for_user_func, key_generator))
+            return decorate(
+                user_func, partial(get_or_create_for_user_func, key_generator)
+            )
 
         return cache_decorator
 
     def cache_multi_on_arguments(
-            self, namespace=None, expiration_time=None,
-            should_cache_fn=None,
-            asdict=False, to_str=compat.string_type,
-            function_multi_key_generator=None):
+        self,
+        namespace: Optional[str] = None,
+        expiration_time: Union[float, ExpirationTimeCallable, None] = None,
+        should_cache_fn: Optional[Callable[[ValuePayload], bool]] = None,
+        asdict: bool = False,
+        to_str: ToStr = str,
+        function_multi_key_generator: Optional[
+            FunctionMultiKeyGenerator
+        ] = None,
+    ) -> Callable[
+        [Callable[..., Sequence[ValuePayload]]],
+        Callable[
+            ..., Union[Sequence[ValuePayload], Mapping[KeyType, ValuePayload]]
+        ],
+    ]:
         """A function decorator that will cache multiple return
         values from the function using a sequence of keys derived from the
         function itself and the arguments passed to it.
@@ -1435,12 +1756,19 @@ class CacheRegion(object):
             :meth:`.CacheRegion.get_or_create_multi`
 
         """
-        expiration_time_is_callable = compat.callable(expiration_time)
+        expiration_time_is_callable = callable(expiration_time)
 
         if function_multi_key_generator is None:
-            function_multi_key_generator = self.function_multi_key_generator
+            _function_multi_key_generator = self.function_multi_key_generator
+        else:
+            _function_multi_key_generator = function_multi_key_generator
 
-        def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
+        def get_or_create_for_user_func(
+            key_generator: Callable[..., Sequence[KeyType]],
+            user_func: Callable[..., Sequence[ValuePayload]],
+            *arg: Any,
+            **kw: Any,
+        ) -> Union[Sequence[ValuePayload], Mapping[KeyType, ValuePayload]]:
             cache_keys = arg
             keys = key_generator(*arg, **kw)
             key_lookup = dict(zip(keys, cache_keys))
@@ -1449,15 +1777,23 @@ class CacheRegion(object):
             def creator(*keys_to_create):
                 return user_func(*[key_lookup[k] for k in keys_to_create])
 
-            timeout = expiration_time() if expiration_time_is_callable \
-                else expiration_time
+            timeout: Optional[float] = (
+                cast(ExpirationTimeCallable, expiration_time)()
+                if expiration_time_is_callable
+                else cast(Optional[float], expiration_time)
+            )
+
+            result: Union[
+                Sequence[ValuePayload], Mapping[KeyType, ValuePayload]
+            ]
 
             if asdict:
+
                 def dict_create(*keys):
                     d_values = creator(*keys)
                     return [
-                        d_values.get(key_lookup[k], NO_VALUE)
-                        for k in keys]
+                        d_values.get(key_lookup[k], NO_VALUE) for k in keys
+                    ]
 
                 def wrap_cache_fn(value):
                     if value is NO_VALUE:
@@ -1468,21 +1804,24 @@ class CacheRegion(object):
                         return should_cache_fn(value)
 
                 result = self.get_or_create_multi(
-                    keys, dict_create, timeout, wrap_cache_fn)
+                    keys, dict_create, timeout, wrap_cache_fn
+                )
                 result = dict(
-                    (k, v) for k, v in zip(cache_keys, result)
-                    if v is not NO_VALUE)
+                    (k, v)
+                    for k, v in zip(cache_keys, result)
+                    if v is not NO_VALUE
+                )
             else:
                 result = self.get_or_create_multi(
-                    keys, creator, timeout,
-                    should_cache_fn)
+                    keys, creator, timeout, should_cache_fn
+                )
 
             return result
 
         def cache_decorator(user_func):
-            key_generator = function_multi_key_generator(
-                namespace, user_func,
-                to_str=to_str)
+            key_generator = _function_multi_key_generator(
+                namespace, user_func, to_str=to_str
+            )
 
             def invalidate(*arg):
                 keys = key_generator(*arg)
@@ -1491,10 +1830,11 @@ class CacheRegion(object):
             def set_(mapping):
                 keys = list(mapping)
                 gen_keys = key_generator(*keys)
-                self.set_multi(dict(
-                    (gen_key, mapping[key])
-                    for gen_key, key
-                    in zip(gen_keys, keys))
+                self.set_multi(
+                    dict(
+                        (gen_key, mapping[key])
+                        for gen_key, key in zip(gen_keys, keys)
+                    )
                 )
 
             def get(*arg):
@@ -1505,14 +1845,10 @@ class CacheRegion(object):
                 keys = key_generator(*arg)
                 values = user_func(*arg)
                 if asdict:
-                    self.set_multi(
-                        dict(zip(keys, [values[a] for a in arg]))
-                    )
+                    self.set_multi(dict(zip(keys, [values[a] for a in arg])))
                     return values
                 else:
-                    self.set_multi(
-                        dict(zip(keys, values))
-                    )
+                    self.set_multi(dict(zip(keys, values)))
                     return values
 
             user_func.set = set_
@@ -1522,14 +1858,14 @@ class CacheRegion(object):
 
             # Use `decorate` to preserve the signature of :param:`user_func`.
 
-            return decorate(user_func, partial(get_or_create_for_user_func, key_generator))
+            return decorate(
+                user_func, partial(get_or_create_for_user_func, key_generator)
+            )
 
         return cache_decorator
 
 
-
-
-def make_region(*arg, **kw):
+def make_region(*arg: Any, **kw: Any) -> CacheRegion:
     """Instantiate a new :class:`.CacheRegion`.
 
     Currently, :func:`.make_region` is a passthrough

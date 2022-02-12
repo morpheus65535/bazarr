@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -15,34 +17,48 @@
 
 """A place to store TSIG keys."""
 
-from dns._compat import maybe_decode, maybe_encode
-
 import base64
 
 import dns.name
 
 
 def from_text(textring):
-    """Convert a dictionary containing (textual DNS name, base64 secret) pairs
-    into a binary keyring which has (dns.name.Name, binary secret) pairs.
+    """Convert a dictionary containing (textual DNS name, base64 secret)
+    pairs into a binary keyring which has (dns.name.Name, bytes) pairs, or
+    a dictionary containing (textual DNS name, (algorithm, base64 secret))
+    pairs into a binary keyring which has (dns.name.Name, dns.tsig.Key) pairs.
     @rtype: dict"""
 
     keyring = {}
-    for keytext in textring:
-        keyname = dns.name.from_text(keytext)
-        secret = base64.decodestring(maybe_encode(textring[keytext]))
-        keyring[keyname] = secret
+    for (name, value) in textring.items():
+        name = dns.name.from_text(name)
+        if isinstance(value, str):
+            keyring[name] = dns.tsig.Key(name, value).secret
+        else:
+            (algorithm, secret) = value
+            keyring[name] = dns.tsig.Key(name, secret, algorithm)
     return keyring
 
 
 def to_text(keyring):
-    """Convert a dictionary containing (dns.name.Name, binary secret) pairs
-    into a text keyring which has (textual DNS name, base64 secret) pairs.
+    """Convert a dictionary containing (dns.name.Name, dns.tsig.Key) pairs
+    into a text keyring which has (textual DNS name, (textual algorithm,
+    base64 secret)) pairs, or a dictionary containing (dns.name.Name, bytes)
+    pairs into a text keyring which has (textual DNS name, base64 secret) pairs.
     @rtype: dict"""
 
     textring = {}
-    for keyname in keyring:
-        keytext = maybe_decode(keyname.to_text())
-        secret = maybe_decode(base64.encodestring(keyring[keyname]))
-        textring[keytext] = secret
+    def b64encode(secret):
+        return base64.encodebytes(secret).decode().rstrip()
+    for (name, key) in keyring.items():
+        name = name.to_text()
+        if isinstance(key, bytes):
+            textring[name] = b64encode(key)
+        else:
+            if isinstance(key.secret, bytes):
+                text_secret = b64encode(key.secret)
+            else:
+                text_secret = str(key.secret)
+
+            textring[name] = (key.algorithm.to_text(), text_secret)
     return textring

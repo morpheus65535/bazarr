@@ -1,7 +1,7 @@
 from functools import partial
 import uuid
 
-import json
+from engineio import json
 import pickle
 
 from .base_manager import BaseManager
@@ -74,6 +74,10 @@ class PubSubManager(BaseManager):
             # client is in another server, so we post request to the queue
             self._publish({'method': 'disconnect', 'sid': sid,
                            'namespace': namespace or '/'})
+
+    def disconnect(self, sid, namespace=None):
+        self._publish({'method': 'disconnect', 'sid': sid,
+                       'namespace': namespace or '/'})
 
     def close_room(self, room, namespace=None):
         self._publish({'method': 'close_room', 'room': room,

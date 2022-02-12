@@ -512,18 +512,27 @@ def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
 
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
-        profileId = TableShows.get(TableShows.sonarrSeriesId == series_id).profileId
+        data = TableShows.select(TableShows.profileId)\
+            .where(TableShows.sonarrSeriesId == series_id)\
+            .get_or_none()
+        if data:
+            return data.profileId
     elif episode_id:
-        profileId = TableShows.select(TableShows.profileId)\
+        data = TableShows.select(TableShows.profileId)\
             .join(TableEpisodes, on=(TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId))\
             .where(TableEpisodes.sonarrEpisodeId == episode_id)\
-            .get().profileId
-    elif movie_id:
-        profileId = TableMovies.get(TableMovies.radarrId == movie_id).profileId
-    else:
-        return None
+            .get_or_none()
+        if data:
+            return data.profileId
 
-    return profileId
+    elif movie_id:
+        data = TableMovies.select(TableMovies.profileId)\
+            .where(TableMovies.radarrId == movie_id)\
+            .get_or_none()
+        if data:
+            return data.profileId
+
+    return None
 
 
 def convert_list_to_clause(arr: list):

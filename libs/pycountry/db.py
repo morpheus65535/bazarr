@@ -5,15 +5,11 @@ import json
 import logging
 import threading
 
+
 logger = logging.getLogger('pycountry.db')
 
-try:
-    unicode
-except NameError:
-    unicode = str
 
-
-class Data(object):
+class Data:
 
     def __init__(self, **fields):
         self._fields = fields
@@ -46,7 +42,7 @@ def lazy_load(f):
     return load_if_needed
 
 
-class Database(object):
+class Database:
 
     data_class_base = Data
     data_class_name = None
@@ -78,6 +74,9 @@ class Database(object):
             self.objects.append(obj)
             # Inject into index.
             for key, value in entry.items():
+                # Lookups and searches are case insensitive. Normalize
+                # here.
+                value = value.lower()
                 if key in self.no_index:
                     continue
                 index = self.indices.setdefault(key, {})
@@ -102,27 +101,46 @@ class Database(object):
 
     @lazy_load
     def get(self, **kw):
+        kw.setdefault('default', None)
+        default = kw.pop('default')
         if len(kw) != 1:
             raise TypeError('Only one criteria may be given')
         field, value = kw.popitem()
-        return self.indices[field][value]
+        if not isinstance(value, str):
+            raise LookupError()
+        # Normalize for case-insensitivity
+        value = value.lower()
+        index = self.indices[field]
+        try:
+            return index[value]
+        except KeyError:
+            # Pythonic APIs implementing     get() shouldn't raise KeyErrors.
+            # Those are a bit unexpected and they should rather support
+            # returning `None` by default and allow customization.
+            return default
 
     @lazy_load
     def lookup(self, value):
-        # try relatively quick exact matches first
-        if isinstance(value, (str, unicode)):
-            value = value.lower()
+        if not isinstance(value, str):
+            raise LookupError()
 
+        # Normalize for case-insensitivity
+        value = value.lower()
+
+        # Use indexes first
         for key in self.indices:
             try:
                 return self.indices[key][value]
             except LookupError:
                 pass
-        # then try slower case-insensitive lookups
+
+        # Use non-indexed values now. Avoid going through indexed values.
         for candidate in self:
-            for v in candidate._fields.values():
+            for k in self.no_index:
+                v = candidate._fields.get(k)
                 if v is None:
                     continue
                 if v.lower() == value:
                     return candidate
+
         raise LookupError('Could not find a record for %r' % value)

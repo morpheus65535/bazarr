@@ -10,7 +10,7 @@
 
 from pygments.lexer import RegexLexer
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Number, Punctuation
+    Number, Punctuation, Whitespace
 
 __all__ = ['APLLexer']
 
@@ -23,13 +23,16 @@ class APLLexer(RegexLexer):
     """
     name = 'APL'
     aliases = ['apl']
-    filenames = ['*.apl']
+    filenames = [
+        '*.apl', '*.aplf', '*.aplo', '*.apln',  
+        '*.aplc', '*.apli', '*.dyalog',
+    ]
 
     tokens = {
         'root': [
             # Whitespace
             # ==========
-            (r'\s+', Text),
+            (r'\s+', Whitespace),
             #
             # Comment
             # =======
@@ -65,8 +68,8 @@ class APLLexer(RegexLexer):
             #
             # Variables
             # =========
-            # following IBM APL2 standard
-            (r'[A-Za-zΔ∆⍙][A-Za-zΔ∆⍙_¯0-9]*', Name.Variable),
+            # following IBM APL2 standard (with a leading _ ok for GNU APL and Dyalog)
+            (r'[A-Za-zΔ∆⍙_][A-Za-zΔ∆⍙_¯0-9]*', Name.Variable),     
             #
             # Numbers
             # =======

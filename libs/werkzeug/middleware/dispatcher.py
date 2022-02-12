@@ -30,9 +30,15 @@ and the static files would be served directly by the HTTP server.
 :copyright: 2007 Pallets
 :license: BSD-3-Clause
 """
+import typing as t
+
+if t.TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
 
-class DispatcherMiddleware(object):
+class DispatcherMiddleware:
     """Combine multiple applications as a single WSGI application.
     Requests are dispatched to an application based on the path it is
     mounted under.
@@ -42,11 +48,17 @@ class DispatcherMiddleware(object):
     :param mounts: Maps path prefixes to applications for dispatching.
     """
 
-    def __init__(self, app, mounts=None):
+    def __init__(
+        self,
+        app: "WSGIApplication",
+        mounts: t.Optional[t.Dict[str, "WSGIApplication"]] = None,
+    ) -> None:
         self.app = app
         self.mounts = mounts or {}
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
         script = environ.get("PATH_INFO", "")
         path_info = ""
 
@@ -56,7 +68,7 @@ class DispatcherMiddleware(object):
                 break
 
             script, last_item = script.rsplit("/", 1)
-            path_info = "/%s%s" % (last_item, path_info)
+            path_info = f"/{last_item}{path_info}"
         else:
             app = self.mounts.get(script, self.app)
 

@@ -25,7 +25,7 @@ export function submodProcessColor(s: string) {
   return `color(name=${s})`;
 }
 
-export function GetItemId<T extends object>(item: T): number {
+export function GetItemId<T extends object>(item: T): number | undefined {
   if (isMovie(item)) {
     return item.radarrId;
   } else if (isEpisode(item)) {
@@ -33,7 +33,7 @@ export function GetItemId<T extends object>(item: T): number {
   } else if (isSeries(item)) {
     return item.sonarrSeriesId;
   } else {
-    return -1;
+    return undefined;
   }
 }
 
@@ -67,8 +67,12 @@ export function filterSubtitleBy(
   }
 }
 
-export * from "./async";
-export * from "./entity";
+export async function waitFor(time: number) {
+  return new Promise((resolved) => {
+    setTimeout(resolved, time);
+  });
+}
+
 export * from "./env";
 export * from "./hooks";
 export * from "./validate";

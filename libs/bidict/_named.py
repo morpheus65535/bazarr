@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Provides :func:`bidict.namedbidict`."""
+"""Provide :func:`bidict.namedbidict`."""
 
-import re
+import typing as _t
+from sys import _getframe
 
-from ._abc import BidirectionalMapping
+from ._abc import BidirectionalMapping, KT, VT
 from ._bidict import bidict
-from .compat import PY2
 
 
-_isidentifier = (  # pylint: disable=invalid-name
-    re.compile('[A-Za-z_][A-Za-z0-9_]*$').match if PY2 else str.isidentifier
-)
-
-
-def namedbidict(typename, keyname, valname, base_type=bidict):
+def namedbidict(
+    typename: str,
+    keyname: str,
+    valname: str,
+    *,
+    base_type: _t.Type[BidirectionalMapping[KT, VT]] = bidict,
+) -> _t.Type[BidirectionalMapping[KT, VT]]:
     r"""Create a new subclass of *base_type* with custom accessors.
 
-    Analagous to :func:`collections.namedtuple`.
+    Like :func:`collections.namedtuple` for bidicts.
 
-    The new class's ``__name__`` and ``__qualname__``
-    will be set based on *typename*.
+    The new class's ``__name__`` and ``__qualname__`` will be set to *typename*,
+    and its ``__module__`` will be set to the caller's module.
 
-    Instances of it will provide access to their
-    :attr:`inverse <BidirectionalMapping.inverse>`\s
+    Instances of the new class will provide access to their
+    :attr:`inverse <BidirectionalMapping.inverse>` instances
     via the custom *keyname*\_for property,
     and access to themselves
     via the custom *valname*\_for property.
@@ -39,63 +40,58 @@ def namedbidict(typename, keyname, valname, base_type=bidict):
     :raises ValueError: if any of the *typename*, *keyname*, or *valname*
         strings is not a valid Python identifier, or if *keyname == valname*.
 
-    :raises TypeError: if *base_type* is not a subclass of
-        :class:`BidirectionalMapping`.
-        (This function requires slightly more of *base_type*,
-        e.g. the availability of an ``_isinv`` attribute,
-        but all the :ref:`concrete bidict types
-        <other-bidict-types:Bidict Types Diagram>`
-        that the :mod:`bidict` module provides can be passed in.
-        Check out the code if you actually need to pass in something else.)
+    :raises TypeError: if *base_type* is not a :class:`BidirectionalMapping` subclass
+        that provides ``_isinv`` and :meth:`~object.__getstate__` attributes.
+        (Any :class:`~bidict.BidictBase` subclass can be passed in, including all the
+        concrete bidict types pictured in the :ref:`other-bidict-types:Bidict Types Diagram`.
     """
-    # Re the `base_type` docs above:
-    # The additional requirements (providing _isinv and __getstate__) do not belong in the
-    # BidirectionalMapping interface, and it's overkill to create additional interface(s) for this.
-    # On the other hand, it's overkill to require that base_type be a subclass of BidictBase, since
-    # that's too specific. The BidirectionalMapping check along with the docs above should suffice.
-    if not issubclass(base_type, BidirectionalMapping):
+    if not issubclass(base_type, BidirectionalMapping) or not all(hasattr(base_type, i) for i in ('_isinv', '__getstate__')):
         raise TypeError(base_type)
     names = (typename, keyname, valname)
-    if not all(map(_isidentifier, names)) or keyname == valname:
+    if not all(map(str.isidentifier, names)) or keyname == valname:
         raise ValueError(names)
 
-    class _Named(base_type):  # pylint: disable=too-many-ancestors
+    class _Named(base_type):  # type: ignore [valid-type,misc]
 
         __slots__ = ()
 
-        def _getfwd(self):
-            return self.inverse if self._isinv else self
+        def _getfwd(self) -> '_Named':
+            return self.inverse if self._isinv else self  # type: ignore [no-any-return]
 
-        def _getinv(self):
-            return self if self._isinv else self.inverse
+        def _getinv(self) -> '_Named':
+            return self if self._isinv else self.inverse  # type: ignore [no-any-return]
 
         @property
-        def _keyname(self):
+        def _keyname(self) -> str:
             return valname if self._isinv else keyname
 
         @property
-        def _valname(self):
+        def _valname(self) -> str:
             return keyname if self._isinv else valname
 
-        def __reduce__(self):
+        def __reduce__(self) -> '_t.Tuple[_t.Callable[[str, str, str, _t.Type[BidirectionalMapping]], BidirectionalMapping], _t.Tuple[str, str, str, _t.Type[BidirectionalMapping]], dict]':
             return (_make_empty, (typename, keyname, valname, base_type), self.__getstate__())
 
     bname = base_type.__name__
     fname = valname + '_for'
     iname = keyname + '_for'
-    names = dict(typename=typename, bname=bname, keyname=keyname, valname=valname)
-    fdoc = u'{typename} forward {bname}: {keyname} → {valname}'.format(**names)
-    idoc = u'{typename} inverse {bname}: {valname} → {keyname}'.format(**names)
-    setattr(_Named, fname, property(_Named._getfwd, doc=fdoc))  # pylint: disable=protected-access
-    setattr(_Named, iname, property(_Named._getinv, doc=idoc))  # pylint: disable=protected-access
+    fdoc = f'{typename} forward {bname}: {keyname} → {valname}'
+    idoc = f'{typename} inverse {bname}: {valname} → {keyname}'
+    setattr(_Named, fname, property(_Named._getfwd, doc=fdoc))
+    setattr(_Named, iname, property(_Named._getinv, doc=idoc))
 
-    if not PY2:
-        _Named.__qualname__ = _Named.__qualname__[:-len(_Named.__name__)] + typename
     _Named.__name__ = typename
+    _Named.__qualname__ = typename
+    _Named.__module__ = _getframe(1).f_globals.get('__name__')  # type: ignore [assignment]
     return _Named
 
 
-def _make_empty(typename, keyname, valname, base_type):
+def _make_empty(
+    typename: str,
+    keyname: str,
+    valname: str,
+    base_type: _t.Type[BidirectionalMapping] = bidict,
+) -> BidirectionalMapping:
     """Create a named bidict with the indicated arguments and return an empty instance.
     Used to make :func:`bidict.namedbidict` instances picklable.
     """

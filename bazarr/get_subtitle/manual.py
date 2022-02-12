@@ -204,9 +204,14 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                 if saved_subtitles:
                     _, max_score, _ = _get_scores(media_type)
                     for saved_subtitle in saved_subtitles:
-                        return process_subtitle(subtitle=saved_subtitle, media_type=media_type,
-                                                audio_language=audio_language, is_upgrade=False,
-                                                is_manual=True, path=path, max_score=max_score)
+                        processed_subtitle = process_subtitle(subtitle=saved_subtitle, media_type=media_type,
+                                                              audio_language=audio_language, is_upgrade=False,
+                                                              is_manual=True, path=path, max_score=max_score)
+                        if processed_subtitle:
+                            return processed_subtitle
+                        else:
+                            logging.debug(f"BAZARR unable to process this subtitles: {subtitle}")
+                            continue
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path

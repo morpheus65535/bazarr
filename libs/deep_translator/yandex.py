@@ -119,7 +119,7 @@ class YandexTranslator(object):
         @return: translated text
         """
         try:
-            with open(path) as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 text = f.read()
 
             return self.translate(text)

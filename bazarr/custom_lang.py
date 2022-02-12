@@ -206,7 +206,7 @@ class ChineseTraditional(CustomLanguage):
 class LatinAmericanSpanish(CustomLanguage):
     alpha2 = "ea"  # Only one available I can think of
     alpha3 = "spl"
-    language = "es-LA"
+    language = "es-MX"
     official_alpha2 = "es"
     official_alpha3 = "spa"
     name = "Latin American Spanish"

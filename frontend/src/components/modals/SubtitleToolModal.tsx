@@ -14,6 +14,9 @@ import {
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useSubtitleAction } from "apis/hooks";
 import React, {
   FunctionComponent,
   useCallback,
@@ -29,6 +32,9 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
+import { isMovie, submodProcessColor } from "utilities";
+import { useEnabledLanguages } from "utilities/languages";
+import { log } from "utilities/logger";
 import {
   ActionButton,
   ActionButtonItem,
@@ -39,12 +45,6 @@ import {
   useModalPayload,
   useShowModal,
 } from "..";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
-import { useEnabledLanguages } from "../../@redux/hooks";
-import { SubtitlesApi } from "../../apis";
-import { isMovie, submodProcessColor } from "../../utilities";
-import { log } from "../../utilities/logger";
 import { useCustomSelection } from "../tables/plugins";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useCloseModal } from "./hooks";
@@ -255,7 +255,7 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
   process,
   ...modal
 }) => {
-  const languages = useEnabledLanguages();
+  const { data: languages } = useEnabledLanguages();
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in availableTranslation),
@@ -305,6 +305,8 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
   const closeModal = useCloseModal();
 
+  const { mutateAsync } = useSubtitleAction();
+
   const process = useCallback(
     (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       log("info", "executing action", action);
@@ -318,18 +320,12 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
           path: s.path,
           ...override,
         };
-        return createTask(
-          s.path,
-          s.id,
-          SubtitlesApi.modify.bind(SubtitlesApi),
-          action,
-          form
-        );
+        return createTask(s.path, s.id, mutateAsync, { action, form });
       });
 
       dispatchTask(TaskGroupName, tasks, "Modifying subtitles...");
     },
-    [closeModal, selections, props.modalKey]
+    [closeModal, props.modalKey, selections, mutateAsync]
   );
 
   const showModal = useShowModal();
