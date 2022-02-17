@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
-  const { mutateAsync } = useMovieModification();
+  const mutation = useMovieModification();
 
   const query = useMoviesPagination();
 
@@ -105,7 +105,7 @@ const MovieView: FunctionComponent = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };
