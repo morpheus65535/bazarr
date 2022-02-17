@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth1.rfc5849
 ~~~~~~~~~~~~~~
@@ -6,14 +5,10 @@ oauthlib.oauth1.rfc5849
 This module is an implementation of various logic needed
 for signing and checking OAuth 1.0 RFC 5849 requests.
 """
-from __future__ import absolute_import, unicode_literals
-
-import sys
-
 from . import SIGNATURE_METHODS, utils
 
 
-class RequestValidator(object):
+class RequestValidator:
 
     """A validator/datastore interaction base class for OAuth 1 providers.
 
@@ -197,7 +192,7 @@ class RequestValidator(object):
 
     def check_realms(self, realms):
         """Check that the realm is one of a set allowed realms."""
-        return all((r in self.realms for r in realms))
+        return all(r in self.realms for r in realms)
 
     def _subclass_must_implement(self, fn):
         """
@@ -267,7 +262,8 @@ class RequestValidator(object):
         """Retrieves the client secret associated with the client key.
 
         :param client_key: The client/consumer key.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The client secret as a string.
 
         This method must allow the use of a dummy client_key value.
@@ -303,7 +299,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param token: The request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The token secret as a string.
 
         This method must allow the use of a dummy values and the running time
@@ -335,7 +332,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param token: The access token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The token secret as a string.
 
         This method must allow the use of a dummy values and the running time
@@ -366,7 +364,8 @@ class RequestValidator(object):
         """Get the default realms for a client.
 
         :param client_key: The client/consumer key.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The list of default realms associated with the client.
 
         The list of default realms will be set during client registration and
@@ -382,7 +381,8 @@ class RequestValidator(object):
         """Get realms associated with a request token.
 
         :param token: The request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The list of realms associated with the request token.
 
         This method is used by
@@ -396,7 +396,8 @@ class RequestValidator(object):
         """Get the redirect URI associated with a request token.
 
         :param token: The request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The redirect URI associated with the request token.
 
         It may be desirable to return a custom URI if the redirect is set to "oob".
@@ -413,7 +414,8 @@ class RequestValidator(object):
         """Retrieves a previously stored client provided RSA key.
 
         :param client_key: The client/consumer key.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: The rsa public key as a string.
 
         This method must allow the use of a dummy client_key value. Fetching
@@ -437,7 +439,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param request_token: The request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: None
 
         Per `Section 2.3`__ of the spec:
@@ -462,7 +465,8 @@ class RequestValidator(object):
         """Validates that supplied client key is a registered and valid client.
 
         :param client_key: The client/consumer key.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         Note that if the dummy client is supplied it should validate in same
@@ -499,7 +503,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param token: The request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         Note that if the dummy request_token is supplied it should validate in
@@ -533,7 +538,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param token: The access token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         Note that if the dummy access token is supplied it should validate in
@@ -571,7 +577,8 @@ class RequestValidator(object):
         :param nonce: The ``oauth_nonce`` parameter.
         :param request_token: Request token string, if any.
         :param access_token: Access token string, if any.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         Per `Section 3.3`_ of the spec.
@@ -618,7 +625,8 @@ class RequestValidator(object):
         :param client_key: The client/consumer key.
         :param redirect_uri: The URI the client which to redirect back to after
                              authorization is successful.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         It is highly recommended that OAuth providers require their clients
@@ -650,7 +658,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param realms: The list of realms that client is requesting access to.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         This method is invoked when obtaining a request token and should
@@ -669,7 +678,8 @@ class RequestValidator(object):
 
         :param client_key: The client/consumer key.
         :param token: A request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :param uri: The URI the realms is protecting.
         :param realms: A list of realms that must have been granted to
                        the access token.
@@ -703,7 +713,8 @@ class RequestValidator(object):
         :param client_key: The client/consumer key.
         :param token: A request token string.
         :param verifier: The authorization verifier string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         OAuth providers issue a verification code to clients after the
@@ -732,7 +743,8 @@ class RequestValidator(object):
         """Verify that the given OAuth1 request token is valid.
 
         :param token: A request token string.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         This method is used only in AuthorizationEndpoint to check whether the
@@ -751,7 +763,8 @@ class RequestValidator(object):
 
         :param token: An access token string.
         :param realms: A list of realms the client attempts to access.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :returns: True or False
 
         This prevents the list of authorized realms sent by the client during
@@ -773,7 +786,8 @@ class RequestValidator(object):
         """Save an OAuth1 access token.
 
         :param token: A dict with token credentials.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
 
         The token dictionary will at minimum include
 
@@ -796,7 +810,8 @@ class RequestValidator(object):
         """Save an OAuth1 request token.
 
         :param token: A dict with token credentials.
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
 
         The token dictionary will at minimum include
 
@@ -818,7 +833,8 @@ class RequestValidator(object):
         :param token: A request token string.
         :param verifier A dictionary containing the oauth_verifier and
                         oauth_token
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
 
         We need to associate verifiers with tokens for validation during the
         access token request.

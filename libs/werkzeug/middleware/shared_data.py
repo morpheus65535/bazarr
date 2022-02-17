@@ -10,39 +10,48 @@ Serve Shared Static Files
 """
 import mimetypes
 import os
+import pkgutil
 import posixpath
+import typing as t
 from datetime import datetime
+from datetime import timezone
 from io import BytesIO
-from time import mktime
 from time import time
 from zlib import adler32
 
-from .._compat import PY2
-from .._compat import string_types
 from ..filesystem import get_filesystem_encoding
 from ..http import http_date
 from ..http import is_resource_modified
 from ..security import safe_join
+from ..utils import get_content_type
 from ..wsgi import get_path_info
 from ..wsgi import wrap_file
 
+_TOpener = t.Callable[[], t.Tuple[t.IO[bytes], datetime, int]]
+_TLoader = t.Callable[[t.Optional[str]], t.Tuple[t.Optional[str], t.Optional[_TOpener]]]
 
-class SharedDataMiddleware(object):
+if t.TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIApplication
+    from _typeshed.wsgi import WSGIEnvironment
 
-    """A WSGI middleware that provides static content for development
-    environments or simple server setups. Usage is quite simple::
+
+class SharedDataMiddleware:
+
+    """A WSGI middleware which provides static content for development
+    environments or simple server setups. Its usage is quite simple::
 
         import os
-        from werkzeug.wsgi import SharedDataMiddleware
+        from werkzeug.middleware.shared_data import SharedDataMiddleware
 
         app = SharedDataMiddleware(app, {
-            '/static': os.path.join(os.path.dirname(__file__), 'static')
+            '/shared': os.path.join(os.path.dirname(__file__), 'shared')
         })
 
     The contents of the folder ``./shared`` will now be available on
     ``http://example.com/shared/``.  This is pretty useful during development
-    because a standalone media server is not required.  One can also mount
-    files on the root folder and still continue to use the application because
+    because a standalone media server is not required. Files can also be
+    mounted on the root folder and still continue to use the application because
     the shared data middleware forwards all unhandled requests to the
     application, even if the requests are below one of the shared folders.
 
@@ -60,57 +69,65 @@ class SharedDataMiddleware(object):
     rules for files that are not accessible from the web.  If `cache` is set to
     `False` no caching headers are sent.
 
-    Currently the middleware does not support non ASCII filenames.  If the
-    encoding on the file system happens to be the encoding of the URI it may
-    work but this could also be by accident.  We strongly suggest using ASCII
+    Currently the middleware does not support non-ASCII filenames. If the
+    encoding on the file system happens to match the encoding of the URI it may
+    work but this could also be by accident. We strongly suggest using ASCII
     only file names for static files.
 
     The middleware will guess the mimetype using the Python `mimetype`
     module.  If it's unable to figure out the charset it will fall back
     to `fallback_mimetype`.
 
-    .. versionchanged:: 0.5
-       The cache timeout is configurable now.
-
-    .. versionadded:: 0.6
-       The `fallback_mimetype` parameter was added.
-
     :param app: the application to wrap.  If you don't want to wrap an
                 application you can pass it :exc:`NotFound`.
     :param exports: a list or dict of exported files and folders.
     :param disallow: a list of :func:`~fnmatch.fnmatch` rules.
-    :param fallback_mimetype: the fallback mimetype for unknown files.
     :param cache: enable or disable caching headers.
     :param cache_timeout: the cache timeout in seconds for the headers.
+    :param fallback_mimetype: The fallback mimetype for unknown files.
+
+    .. versionchanged:: 1.0
+        The default ``fallback_mimetype`` is
+        ``application/octet-stream``. If a filename looks like a text
+        mimetype, the ``utf-8`` charset is added to it.
+
+    .. versionadded:: 0.6
+        Added ``fallback_mimetype``.
+
+    .. versionchanged:: 0.5
+        Added ``cache_timeout``.
     """
 
     def __init__(
         self,
-        app,
-        exports,
-        disallow=None,
-        cache=True,
-        cache_timeout=60 * 60 * 12,
-        fallback_mimetype="text/plain",
-    ):
+        app: "WSGIApplication",
+        exports: t.Union[
+            t.Dict[str, t.Union[str, t.Tuple[str, str]]],
+            t.Iterable[t.Tuple[str, t.Union[str, t.Tuple[str, str]]]],
+        ],
+        disallow: None = None,
+        cache: bool = True,
+        cache_timeout: int = 60 * 60 * 12,
+        fallback_mimetype: str = "application/octet-stream",
+    ) -> None:
         self.app = app
-        self.exports = []
+        self.exports: t.List[t.Tuple[str, _TLoader]] = []
         self.cache = cache
         self.cache_timeout = cache_timeout
 
-        if hasattr(exports, "items"):
+        if isinstance(exports, dict):
             exports = exports.items()
 
         for key, value in exports:
             if isinstance(value, tuple):
                 loader = self.get_package_loader(*value)
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 if os.path.isfile(value):
                     loader = self.get_file_loader(value)
                 else:
                     loader = self.get_directory_loader(value)
             else:
-                raise TypeError("unknown def %r" % value)
+                raise TypeError(f"unknown def {value!r}")
 
             self.exports.append((key, loader))
 
@@ -121,57 +138,109 @@ class SharedDataMiddleware(object):
 
         self.fallback_mimetype = fallback_mimetype
 
-    def is_allowed(self, filename):
+    def is_allowed(self, filename: str) -> bool:
         """Subclasses can override this method to disallow the access to
         certain files.  However by providing `disallow` in the constructor
         this method is overwritten.
         """
         return True
 
-    def _opener(self, filename):
+    def _opener(self, filename: str) -> _TOpener:
         return lambda: (
             open(filename, "rb"),
-            datetime.utcfromtimestamp(os.path.getmtime(filename)),
+            datetime.fromtimestamp(os.path.getmtime(filename), tz=timezone.utc),
             int(os.path.getsize(filename)),
         )
 
-    def get_file_loader(self, filename):
+    def get_file_loader(self, filename: str) -> _TLoader:
         return lambda x: (os.path.basename(filename), self._opener(filename))
 
-    def get_package_loader(self, package, package_path):
-        from pkg_resources import DefaultProvider, ResourceManager, get_provider
+    def get_package_loader(self, package: str, package_path: str) -> _TLoader:
+        load_time = datetime.now(timezone.utc)
+        provider = pkgutil.get_loader(package)
 
-        loadtime = datetime.utcnow()
-        provider = get_provider(package)
-        manager = ResourceManager()
-        filesystem_bound = isinstance(provider, DefaultProvider)
+        if hasattr(provider, "get_resource_reader"):
+            # Python 3
+            reader = provider.get_resource_reader(package)  # type: ignore
 
-        def loader(path):
-            if path is None:
-                return None, None
+            def loader(
+                path: t.Optional[str],
+            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
+                if path is None:
+                    return None, None
 
-            path = safe_join(package_path, path)
+                path = safe_join(package_path, path)
 
-            if not provider.has_resource(path):
-                return None, None
+                if path is None:
+                    return None, None
 
-            basename = posixpath.basename(path)
+                basename = posixpath.basename(path)
 
-            if filesystem_bound:
+                try:
+                    resource = reader.open_resource(path)
+                except OSError:
+                    return None, None
+
+                if isinstance(resource, BytesIO):
+                    return (
+                        basename,
+                        lambda: (resource, load_time, len(resource.getvalue())),
+                    )
+
                 return (
                     basename,
-                    self._opener(provider.get_resource_filename(manager, path)),
+                    lambda: (
+                        resource,
+                        datetime.fromtimestamp(
+                            os.path.getmtime(resource.name), tz=timezone.utc
+                        ),
+                        os.path.getsize(resource.name),
+                    ),
                 )
 
-            s = provider.get_resource_string(manager, path)
-            return basename, lambda: (BytesIO(s), loadtime, len(s))
+        else:
+            # Python 3.6
+            package_filename = provider.get_filename(package)  # type: ignore
+            is_filesystem = os.path.exists(package_filename)
+            root = os.path.join(os.path.dirname(package_filename), package_path)
+
+            def loader(
+                path: t.Optional[str],
+            ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
+                if path is None:
+                    return None, None
+
+                path = safe_join(root, path)
+
+                if path is None:
+                    return None, None
+
+                basename = posixpath.basename(path)
+
+                if is_filesystem:
+                    if not os.path.isfile(path):
+                        return None, None
+
+                    return basename, self._opener(path)
+
+                try:
+                    data = provider.get_data(path)  # type: ignore
+                except OSError:
+                    return None, None
+
+                return basename, lambda: (BytesIO(data), load_time, len(data))
 
         return loader
 
-    def get_directory_loader(self, directory):
-        def loader(path):
+    def get_directory_loader(self, directory: str) -> _TLoader:
+        def loader(
+            path: t.Optional[str],
+        ) -> t.Tuple[t.Optional[str], t.Optional[_TOpener]]:
             if path is not None:
                 path = safe_join(directory, path)
+
+                if path is None:
+                    return None, None
             else:
                 path = directory
 
@@ -182,22 +251,20 @@ class SharedDataMiddleware(object):
 
         return loader
 
-    def generate_etag(self, mtime, file_size, real_filename):
+    def generate_etag(self, mtime: datetime, file_size: int, real_filename: str) -> str:
         if not isinstance(real_filename, bytes):
-            real_filename = real_filename.encode(get_filesystem_encoding())
+            real_filename = real_filename.encode(  # type: ignore
+                get_filesystem_encoding()
+            )
 
-        return "wzsdm-%d-%s-%s" % (
-            mktime(mtime.timetuple()),
-            file_size,
-            adler32(real_filename) & 0xFFFFFFFF,
-        )
+        timestamp = mtime.timestamp()
+        checksum = adler32(real_filename) & 0xFFFFFFFF  # type: ignore
+        return f"wzsdm-{timestamp}-{file_size}-{checksum}"
 
-    def __call__(self, environ, start_response):
+    def __call__(
+        self, environ: "WSGIEnvironment", start_response: "StartResponse"
+    ) -> t.Iterable[bytes]:
         path = get_path_info(environ)
-
-        if PY2:
-            path = path.encode(get_filesystem_encoding())
-
         file_loader = None
 
         for search_path, loader in self.exports:
@@ -216,21 +283,21 @@ class SharedDataMiddleware(object):
                 if file_loader is not None:
                     break
 
-        if file_loader is None or not self.is_allowed(real_filename):
+        if file_loader is None or not self.is_allowed(real_filename):  # type: ignore
             return self.app(environ, start_response)
 
-        guessed_type = mimetypes.guess_type(real_filename)
-        mime_type = guessed_type[0] or self.fallback_mimetype
+        guessed_type = mimetypes.guess_type(real_filename)  # type: ignore
+        mime_type = get_content_type(guessed_type[0] or self.fallback_mimetype, "utf-8")
         f, mtime, file_size = file_loader()
 
         headers = [("Date", http_date())]
 
         if self.cache:
             timeout = self.cache_timeout
-            etag = self.generate_etag(mtime, file_size, real_filename)
+            etag = self.generate_etag(mtime, file_size, real_filename)  # type: ignore
             headers += [
-                ("Etag", '"%s"' % etag),
-                ("Cache-Control", "max-age=%d, public" % timeout),
+                ("Etag", f'"{etag}"'),
+                ("Cache-Control", f"max-age={timeout}, public"),
             ]
 
             if not is_resource_modified(environ, etag, last_modified=mtime):

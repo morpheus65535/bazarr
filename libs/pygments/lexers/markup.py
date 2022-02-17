@@ -10,7 +10,7 @@
 
 import re
 
-from pygments.lexers.html import HtmlLexer, XmlLexer
+from pygments.lexers.html import XmlLexer
 from pygments.lexers.javascript import JavascriptLexer
 from pygments.lexers.css import CssLexer
 
@@ -121,7 +121,7 @@ class RstLexer(RegexLexer):
         .. versionadded:: 0.8
     """
     name = 'reStructuredText'
-    aliases = ['rst', 'rest', 'restructuredtext']
+    aliases = ['restructuredtext', 'rst', 'rest']
     filenames = ['*.rst', '*.rest']
     mimetypes = ["text/x-rst", "text/prs.fallenstein.rst"]
     flags = re.MULTILINE
@@ -339,7 +339,7 @@ class GroffLexer(RegexLexer):
 
     name = 'Groff'
     aliases = ['groff', 'nroff', 'man']
-    filenames = ['*.[1234567]', '*.man']
+    filenames = ['*.[1-9]', '*.man', '*.1p', '*.3pm']
     mimetypes = ['application/x-troff', 'text/troff']
 
     tokens = {
@@ -501,8 +501,8 @@ class MarkdownLexer(RegexLexer):
 
     .. versionadded:: 2.2
     """
-    name = 'markdown'
-    aliases = ['md', 'markdown']
+    name = 'Markdown'
+    aliases = ['markdown', 'md']
     filenames = ['*.md', '*.markdown']
     mimetypes = ["text/x-markdown"]
     flags = re.MULTILINE

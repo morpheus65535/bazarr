@@ -3,24 +3,22 @@
 """
 
 """
+_app.py
 websocket - WebSocket client library for Python
 
-Copyright (C) 2010 Hiroki Ohtani(liris)
+Copyright 2021 engn33r
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 import selectors
 import sys
@@ -88,7 +86,7 @@ class SSLDispatcher:
             return r[0][0]
 
 
-class WebSocketApp(object):
+class WebSocketApp:
     """
     Higher level of APIs are provided. The interface is like JavaScript WebSocket object.
     """
@@ -105,52 +103,56 @@ class WebSocketApp(object):
 
         Parameters
         ----------
-        url: <type>
-            websocket url.
+        url: str
+            Websocket url.
         header: list or dict
-            custom header for websocket handshake.
-        on_open: <type>
-            callable object which is called at opening websocket.
-            this function has one argument. The argument is this class object.
-        on_message: <type>
-            callable object which is called when received data.
+            Custom header for websocket handshake.
+        on_open: function
+            Callback object which is called at opening websocket.
+            on_open has one argument.
+            The 1st argument is this class object.
+        on_message: function
+            Callback object which is called when received data.
             on_message has 2 arguments.
             The 1st argument is this class object.
-            The 2nd argument is utf-8 string which we get from the server.
-        on_error: <type>
-            callable object which is called when we get error.
+            The 2nd argument is utf-8 data received from the server.
+        on_error: function
+            Callback object which is called when we get error.
             on_error has 2 arguments.
             The 1st argument is this class object.
             The 2nd argument is exception object.
-        on_close: <type>
-            callable object which is called when closed the connection.
-            this function has one argument. The argument is this class object.
-        on_cont_message: <type>
-            callback object which is called when receive continued
-            frame data.
+        on_close: function
+            Callback object which is called when connection is closed.
+            on_close has 3 arguments.
+            The 1st argument is this class object.
+            The 2nd argument is close_status_code.
+            The 3rd argument is close_msg.
+        on_cont_message: function
+            Callback object which is called when a continuation
+            frame is received.
             on_cont_message has 3 arguments.
             The 1st argument is this class object.
             The 2nd argument is utf-8 string which we get from the server.
             The 3rd argument is continue flag. if 0, the data continue
             to next frame data
-        on_data: <type>
-            callback object which is called when a message received.
+        on_data: function
+            Callback object which is called when a message received.
             This is called before on_message or on_cont_message,
             and then on_message or on_cont_message is called.
             on_data has 4 argument.
             The 1st argument is this class object.
             The 2nd argument is utf-8 string which we get from the server.
             The 3rd argument is data type. ABNF.OPCODE_TEXT or ABNF.OPCODE_BINARY will be came.
-            The 4th argument is continue flag. if 0, the data continue
-        keep_running: <type>
-            this parameter is obsolete and ignored.
-        get_mask_key: func
-            a callable to produce new mask keys,
-            see the WebSocket.set_mask_key's docstring for more information
+            The 4th argument is continue flag. If 0, the data continue
+        keep_running: bool
+            This parameter is obsolete and ignored.
+        get_mask_key: function
+            A callable function to get new mask keys, see the
+            WebSocket.set_mask_key's docstring for more information.
         cookie: str
-            cookie value.
-        subprotocols: <type>
-            array of available sub protocols. default is None.
+            Cookie value.
+        subprotocols: list
+            List of available sub protocols. Default is None.
         """
         self.url = url
         self.header = header if header is not None else []
@@ -177,11 +179,11 @@ class WebSocketApp(object):
 
         Parameters
         ----------
-        data: <type>
+        data: str
             Message to send. If you set opcode to OPCODE_TEXT,
             data must be utf-8 string or unicode.
-        opcode: <type>
-            Operation code of data. default is OPCODE_TEXT.
+        opcode: int
+            Operation code of data. Default is OPCODE_TEXT.
         """
 
         if not self.sock or self.sock.send(data, opcode) == 0:
@@ -223,32 +225,32 @@ class WebSocketApp(object):
         Parameters
         ----------
         sockopt: tuple
-            values for socket.setsockopt.
+            Values for socket.setsockopt.
             sockopt must be tuple
             and each element is argument of sock.setsockopt.
         sslopt: dict
-            optional dict object for ssl socket option.
+            Optional dict object for ssl socket option.
         ping_interval: int or float
-            automatically send "ping" command
-            every specified period (in seconds)
-            if set to 0, not send automatically.
+            Automatically send "ping" command
+            every specified period (in seconds).
+            If set to 0, no ping is sent periodically.
         ping_timeout: int or float
-            timeout (in seconds) if the pong message is not received.
+            Timeout (in seconds) if the pong message is not received.
         ping_payload: str
-            payload message to send with each ping.
-        http_proxy_host: <type>
-            http proxy host name.
-        http_proxy_port: <type>
-            http proxy port. If not set, set to 80.
-        http_no_proxy: <type>
-            host names, which doesn't use proxy.
+            Payload message to send with each ping.
+        http_proxy_host: str
+            HTTP proxy host name.
+        http_proxy_port: int or str
+            HTTP proxy port. If not set, set to 80.
+        http_no_proxy: list
+            Whitelisted host names that don't use the proxy.
         skip_utf8_validation: bool
             skip utf8 validation.
         host: str
             update host header.
         origin: str
             update origin header.
-        dispatcher: <type>
+        dispatcher: Dispatcher object
             customize reading data from socket.
         suppress_origin: bool
             suppress outputting origin header.
@@ -280,8 +282,11 @@ class WebSocketApp(object):
             """
             Tears down the connection.
 
-            If close_frame is set, we will invoke the on_close handler with the
-            statusCode and reason from there.
+            Parameters
+            ----------
+            close_frame: ABNF frame
+                If close_frame is set, the on_close handler is invoked
+                with the statusCode and reason from the provided frame.
             """
 
             if thread and thread.is_alive():
@@ -292,15 +297,17 @@ class WebSocketApp(object):
                 self.sock.close()
             close_status_code, close_reason = self._get_close_args(
                 close_frame if close_frame else None)
-            self._callback(self.on_close, close_status_code, close_reason)
             self.sock = None
+
+            # Finally call the callback AFTER all teardown is complete
+            self._callback(self.on_close, close_status_code, close_reason)
 
         try:
             self.sock = WebSocket(
                 self.get_mask_key, sockopt=sockopt, sslopt=sslopt,
                 fire_cont_frame=self.on_cont_message is not None,
                 skip_utf8_validation=skip_utf8_validation,
-                enable_multithread=True if ping_interval else False)
+                enable_multithread=True)
             self.sock.settimeout(getdefaulttimeout())
             self.sock.connect(
                 self.url, header=self.header, cookie=self.cookie,
@@ -401,6 +408,5 @@ class WebSocketApp(object):
 
             except Exception as e:
                 _logging.error("error from callback {}: {}".format(callback, e))
-                if _logging.isEnabledForDebug():
-                    _, _, tb = sys.exc_info()
-                    traceback.print_tb(tb)
+                if self.on_error:
+                    self.on_error(self, e)

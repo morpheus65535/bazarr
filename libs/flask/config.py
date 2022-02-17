@@ -1,32 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-    flask.config
-    ~~~~~~~~~~~~
-
-    Implements the configuration related objects.
-
-    :copyright: 2010 Pallets
-    :license: BSD-3-Clause
-"""
 import errno
 import os
 import types
+import typing as t
 
 from werkzeug.utils import import_string
 
-from . import json
-from ._compat import iteritems
-from ._compat import string_types
 
-
-class ConfigAttribute(object):
+class ConfigAttribute:
     """Makes an attribute forward to the config"""
 
-    def __init__(self, name, get_converter=None):
+    def __init__(self, name: str, get_converter: t.Optional[t.Callable] = None) -> None:
         self.__name__ = name
         self.get_converter = get_converter
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj: t.Any, owner: t.Any = None) -> t.Any:
         if obj is None:
             return self
         rv = obj.config[self.__name__]
@@ -34,7 +21,7 @@ class ConfigAttribute(object):
             rv = self.get_converter(rv)
         return rv
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: t.Any, value: t.Any) -> None:
         obj.config[self.__name__] = value
 
 
@@ -82,11 +69,11 @@ class Config(dict):
     :param defaults: an optional dictionary of default values
     """
 
-    def __init__(self, root_path, defaults=None):
+    def __init__(self, root_path: str, defaults: t.Optional[dict] = None) -> None:
         dict.__init__(self, defaults or {})
         self.root_path = root_path
 
-    def from_envvar(self, variable_name, silent=False):
+    def from_envvar(self, variable_name: str, silent: bool = False) -> bool:
         """Loads a configuration from an environment variable pointing to
         a configuration file.  This is basically just a shortcut with nicer
         error messages for this line of code::
@@ -96,21 +83,21 @@ class Config(dict):
         :param variable_name: name of the environment variable
         :param silent: set to ``True`` if you want silent failure for missing
                        files.
-        :return: bool. ``True`` if able to load config, ``False`` otherwise.
+        :return: ``True`` if the file was loaded successfully.
         """
         rv = os.environ.get(variable_name)
         if not rv:
             if silent:
                 return False
             raise RuntimeError(
-                "The environment variable %r is not set "
-                "and as such configuration could not be "
-                "loaded.  Set this variable and make it "
-                "point to a configuration file" % variable_name
+                f"The environment variable {variable_name!r} is not set"
+                " and as such configuration could not be loaded. Set"
+                " this variable and make it point to a configuration"
+                " file"
             )
         return self.from_pyfile(rv, silent=silent)
 
-    def from_pyfile(self, filename, silent=False):
+    def from_pyfile(self, filename: str, silent: bool = False) -> bool:
         """Updates the values in the config from a Python file.  This function
         behaves as if the file was imported as module with the
         :meth:`from_object` function.
@@ -120,6 +107,7 @@ class Config(dict):
                          root path.
         :param silent: set to ``True`` if you want silent failure for missing
                        files.
+        :return: ``True`` if the file was loaded successfully.
 
         .. versionadded:: 0.7
            `silent` parameter.
@@ -130,15 +118,15 @@ class Config(dict):
         try:
             with open(filename, mode="rb") as config_file:
                 exec(compile(config_file.read(), filename, "exec"), d.__dict__)
-        except IOError as e:
+        except OSError as e:
             if silent and e.errno in (errno.ENOENT, errno.EISDIR, errno.ENOTDIR):
                 return False
-            e.strerror = "Unable to load configuration file (%s)" % e.strerror
+            e.strerror = f"Unable to load configuration file ({e.strerror})"
             raise
         self.from_object(d)
         return True
 
-    def from_object(self, obj):
+    def from_object(self, obj: t.Union[object, str]) -> None:
         """Updates the values from the given object.  An object can be of one
         of the following two types:
 
@@ -170,61 +158,99 @@ class Config(dict):
 
         :param obj: an import name or object
         """
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             obj = import_string(obj)
         for key in dir(obj):
             if key.isupper():
                 self[key] = getattr(obj, key)
 
-    def from_json(self, filename, silent=False):
-        """Updates the values in the config from a JSON file. This function
-        behaves as if the JSON object was a dictionary and passed to the
-        :meth:`from_mapping` function.
+    def from_file(
+        self,
+        filename: str,
+        load: t.Callable[[t.IO[t.Any]], t.Mapping],
+        silent: bool = False,
+    ) -> bool:
+        """Update the values in the config from a file that is loaded
+        using the ``load`` parameter. The loaded data is passed to the
+        :meth:`from_mapping` method.
 
-        :param filename: the filename of the JSON file.  This can either be an
-                         absolute filename or a filename relative to the
-                         root path.
-        :param silent: set to ``True`` if you want silent failure for missing
-                       files.
+        .. code-block:: python
 
-        .. versionadded:: 0.11
+            import toml
+            app.config.from_file("config.toml", load=toml.load)
+
+        :param filename: The path to the data file. This can be an
+            absolute path or relative to the config root path.
+        :param load: A callable that takes a file handle and returns a
+            mapping of loaded data from the file.
+        :type load: ``Callable[[Reader], Mapping]`` where ``Reader``
+            implements a ``read`` method.
+        :param silent: Ignore the file if it doesn't exist.
+        :return: ``True`` if the file was loaded successfully.
+
+        .. versionadded:: 2.0
         """
         filename = os.path.join(self.root_path, filename)
 
         try:
-            with open(filename) as json_file:
-                obj = json.loads(json_file.read())
-        except IOError as e:
+            with open(filename) as f:
+                obj = load(f)
+        except OSError as e:
             if silent and e.errno in (errno.ENOENT, errno.EISDIR):
                 return False
-            e.strerror = "Unable to load configuration file (%s)" % e.strerror
+
+            e.strerror = f"Unable to load configuration file ({e.strerror})"
             raise
+
         return self.from_mapping(obj)
 
-    def from_mapping(self, *mapping, **kwargs):
-        """Updates the config like :meth:`update` ignoring items with non-upper
-        keys.
+    def from_json(self, filename: str, silent: bool = False) -> bool:
+        """Update the values in the config from a JSON file. The loaded
+        data is passed to the :meth:`from_mapping` method.
+
+        :param filename: The path to the JSON file. This can be an
+            absolute path or relative to the config root path.
+        :param silent: Ignore the file if it doesn't exist.
+        :return: ``True`` if the file was loaded successfully.
+
+        .. deprecated:: 2.0.0
+            Will be removed in Flask 2.1. Use :meth:`from_file` instead.
+            This was removed early in 2.0.0, was added back in 2.0.1.
 
         .. versionadded:: 0.11
         """
-        mappings = []
-        if len(mapping) == 1:
-            if hasattr(mapping[0], "items"):
-                mappings.append(mapping[0].items())
-            else:
-                mappings.append(mapping[0])
-        elif len(mapping) > 1:
-            raise TypeError(
-                "expected at most 1 positional argument, got %d" % len(mapping)
-            )
-        mappings.append(kwargs.items())
-        for mapping in mappings:
-            for (key, value) in mapping:
-                if key.isupper():
-                    self[key] = value
+        import warnings
+        from . import json
+
+        warnings.warn(
+            "'from_json' is deprecated and will be removed in Flask"
+            " 2.1. Use 'from_file(path, json.load)' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.from_file(filename, json.load, silent=silent)
+
+    def from_mapping(
+        self, mapping: t.Optional[t.Mapping[str, t.Any]] = None, **kwargs: t.Any
+    ) -> bool:
+        """Updates the config like :meth:`update` ignoring items with non-upper
+        keys.
+        :return: Always returns ``True``.
+
+        .. versionadded:: 0.11
+        """
+        mappings: t.Dict[str, t.Any] = {}
+        if mapping is not None:
+            mappings.update(mapping)
+        mappings.update(kwargs)
+        for key, value in mappings.items():
+            if key.isupper():
+                self[key] = value
         return True
 
-    def get_namespace(self, namespace, lowercase=True, trim_namespace=True):
+    def get_namespace(
+        self, namespace: str, lowercase: bool = True, trim_namespace: bool = True
+    ) -> t.Dict[str, t.Any]:
         """Returns a dictionary containing a subset of configuration options
         that match the specified namespace/prefix. Example usage::
 
@@ -253,7 +279,7 @@ class Config(dict):
         .. versionadded:: 0.11
         """
         rv = {}
-        for k, v in iteritems(self):
+        for k, v in self.items():
             if not k.startswith(namespace):
                 continue
             if trim_namespace:
@@ -265,5 +291,5 @@ class Config(dict):
             rv[key] = v
         return rv
 
-    def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, dict.__repr__(self))
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__} {dict.__repr__(self)}>"

@@ -123,12 +123,15 @@ class ServerException(Exception):
     Default YandexTranslate exception from the official website
     """
     errors = {
+        400: "ERR_BAD_REQUEST",
         401: "ERR_KEY_INVALID",
         402: "ERR_KEY_BLOCKED",
         403: "ERR_DAILY_REQ_LIMIT_EXCEEDED",
         404: "ERR_DAILY_CHAR_LIMIT_EXCEEDED",
         413: "ERR_TEXT_TOO_LONG",
+        429: "ERR_TOO_MANY_REQUESTS",
         422: "ERR_UNPROCESSABLE_TEXT",
+        500: "ERR_INTERNAL_SERVER_ERROR",
         501: "ERR_LANG_NOT_SUPPORTED",
         503: "ERR_SERVICE_NOT_AVAIBLE",
     }

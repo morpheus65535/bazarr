@@ -186,7 +186,7 @@ class Chain(Pattern, Builder):
 
     @staticmethod
     def _group_by_match_index(matches):
-        grouped_matches_dict = dict()
+        grouped_matches_dict = {}
         for match_index, match in itertools.groupby(matches, lambda m: m.match_index):
             grouped_matches_dict[match_index] = list(match)
         return grouped_matches_dict
@@ -202,8 +202,8 @@ class Chain(Pattern, Builder):
     def __repr__(self):
         defined = ""
         if self.defined_at:
-            defined = "@%s" % (self.defined_at,)
-        return "<%s%s:%s>" % (self.__class__.__name__, defined, self.parts)
+            defined = f"@{self.defined_at}"
+        return f"<{self.__class__.__name__}{defined}:{self.parts}>"
 
 
 class ChainPart(BasePattern):
@@ -377,4 +377,4 @@ class ChainPart(BasePattern):
         return self
 
     def __repr__(self):
-        return "%s({%s,%s})" % (self.pattern, self.repeater_start, self.repeater_end)
+        return f"{self.pattern}({{{self.repeater_start},{self.repeater_end}}})"

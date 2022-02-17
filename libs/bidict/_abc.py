@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,12 +26,15 @@
 #==============================================================================
 
 
-"""Provides the :class:`BidirectionalMapping` abstract base class."""
+"""Provide the :class:`BidirectionalMapping` abstract base class."""
 
-from .compat import Mapping, abstractproperty, iteritems
+import typing as _t
+from abc import abstractmethod
+
+from ._typing import KT, VT
 
 
-class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
+class BidirectionalMapping(_t.Mapping[KT, VT]):
     """Abstract base class (ABC) for bidirectional mapping types.
 
     Extends :class:`collections.abc.Mapping` primarily by adding the
@@ -43,8 +46,9 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
 
     __slots__ = ()
 
-    @abstractproperty
-    def inverse(self):
+    @property
+    @abstractmethod
+    def inverse(self) -> 'BidirectionalMapping[VT, KT]':
         """The inverse of this bidirectional mapping instance.
 
         *See also* :attr:`bidict.BidictBase.inverse`, :attr:`bidict.BidictBase.inv`
@@ -58,7 +62,7 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
         # clear there's no reason to call this implementation (e.g. via super() after overriding).
         raise NotImplementedError
 
-    def __inverted__(self):
+    def __inverted__(self) -> _t.Iterator[_t.Tuple[VT, KT]]:
         """Get an iterator over the items in :attr:`inverse`.
 
         This is functionally equivalent to iterating over the items in the
@@ -72,7 +76,27 @@ class BidirectionalMapping(Mapping):  # pylint: disable=abstract-method,no-init
 
         *See also* :func:`bidict.inverted`
         """
-        return iteritems(self.inverse)
+        return iter(self.inverse.items())
+
+    def values(self) -> _t.KeysView[VT]:  # type: ignore [override]  # https://github.com/python/typeshed/issues/4435
+        """A set-like object providing a view on the contained values.
+
+        Override the implementation inherited from
+        :class:`~collections.abc.Mapping`.
+        Because the values of a :class:`~bidict.BidirectionalMapping`
+        are the keys of its inverse,
+        this returns a :class:`~collections.abc.KeysView`
+        rather than a :class:`~collections.abc.ValuesView`,
+        which has the advantages of constant-time containment checks
+        and supporting set operations.
+        """
+        return self.inverse.keys()  # type: ignore [return-value]
+
+
+class MutableBidirectionalMapping(BidirectionalMapping[KT, VT], _t.MutableMapping[KT, VT]):
+    """Abstract base class (ABC) for mutable bidirectional mapping types."""
+
+    __slots__ = ()
 
 
 #                             * Code review nav *

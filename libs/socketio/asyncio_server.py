@@ -122,10 +122,11 @@ class AsyncServer(server.Server):
                      multiple arguments, use a tuple where each element is of
                      one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
-                   session ID of a client to address only that client, or to
-                   to any custom room created by the application to address all
-                   the clients in that room, If this argument is omitted the
-                   event is broadcasted to all connected clients.
+                   session ID of a client to address only that client, to any
+                   any custom room created by the application to address all
+                   the clients in that room, or to a list of custom room
+                   names. If this argument is omitted the event is broadcasted
+                   to all connected clients.
         :param room: Alias for the ``to`` parameter.
         :param skip_sid: The session ID of a client to skip when broadcasting
                          to a room or to all clients. This can be used to
@@ -174,10 +175,11 @@ class AsyncServer(server.Server):
                      multiple arguments, use a tuple where each element is of
                      one of the types indicated above.
         :param to: The recipient of the message. This can be set to the
-                   session ID of a client to address only that client, or to
-                   to any custom room created by the application to address all
-                   the clients in that room, If this argument is omitted the
-                   event is broadcasted to all connected clients.
+                   session ID of a client to address only that client, to any
+                   any custom room created by the application to address all
+                   the clients in that room, or to a list of custom room
+                   names. If this argument is omitted the event is broadcasted
+                   to all connected clients.
         :param room: Alias for the ``to`` parameter.
         :param skip_sid: The session ID of a client to skip when broadcasting
                          to a room or to all clients. This can be used to
@@ -207,6 +209,12 @@ class AsyncServer(server.Server):
     async def call(self, event, data=None, to=None, sid=None, namespace=None,
                    timeout=60, **kwargs):
         """Emit a custom event to a client and wait for the response.
+
+        This method issues an emit with a callback and waits for the callback
+        to be invoked before returning. If the callback isn't invoked before
+        the timeout, then a ``TimeoutError`` exception is raised. If the
+        Socket.IO connection drops during the wait, this method still waits
+        until the specified timeout.
 
         :param event: The event name. It can be any string. The event names
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
@@ -367,7 +375,7 @@ class AsyncServer(server.Server):
         if delete_it:
             self.logger.info('Disconnecting %s [%s]', sid, namespace)
             eio_sid = self.manager.pre_disconnect(sid, namespace=namespace)
-            await self._send_packet(eio_sid, packet.Packet(
+            await self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
             await self._trigger_event('disconnect', namespace, sid)
             self.manager.disconnect(sid, namespace=namespace)
@@ -394,8 +402,6 @@ class AsyncServer(server.Server):
         :param kwargs: keyword arguments to pass to the function.
 
         The return value is a ``asyncio.Task`` object.
-
-        Note: this method is a coroutine.
         """
         return self.eio.start_background_task(target, *args, **kwargs)
 
@@ -421,7 +427,7 @@ class AsyncServer(server.Server):
             data = [data]
         else:
             data = []
-        await self._send_packet(sid, packet.Packet(
+        await self._send_packet(sid, self.packet_class(
             packet.EVENT, namespace=namespace, data=[event] + data, id=id))
 
     async def _send_packet(self, eio_sid, pkt):
@@ -438,7 +444,7 @@ class AsyncServer(server.Server):
         namespace = namespace or '/'
         sid = self.manager.connect(eio_sid, namespace)
         if self.always_connect:
-            await self._send_packet(eio_sid, packet.Packet(
+            await self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
         fail_reason = exceptions.ConnectionRefusedError().error_args
         try:
@@ -459,15 +465,15 @@ class AsyncServer(server.Server):
         if success is False:
             if self.always_connect:
                 self.manager.pre_disconnect(sid, namespace)
-                await self._send_packet(eio_sid, packet.Packet(
+                await self._send_packet(eio_sid, self.packet_class(
                     packet.DISCONNECT, data=fail_reason, namespace=namespace))
             else:
-                await self._send_packet(eio_sid, packet.Packet(
+                await self._send_packet(eio_sid, self.packet_class(
                     packet.CONNECT_ERROR, data=fail_reason,
                     namespace=namespace))
             self.manager.disconnect(sid, namespace)
         elif not self.always_connect:
-            await self._send_packet(eio_sid, packet.Packet(
+            await self._send_packet(eio_sid, self.packet_class(
                 packet.CONNECT, {'sid': sid}, namespace=namespace))
 
     async def _handle_disconnect(self, eio_sid, namespace):
@@ -509,7 +515,7 @@ class AsyncServer(server.Server):
                 data = list(r)
             else:
                 data = [r]
-            await server._send_packet(eio_sid, packet.Packet(
+            await server._send_packet(eio_sid, self.packet_class(
                 packet.ACK, namespace=namespace, id=id, data=data))
 
     async def _handle_ack(self, eio_sid, namespace, id, data):
@@ -522,16 +528,23 @@ class AsyncServer(server.Server):
     async def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers and event in self.handlers[namespace]:
-            if asyncio.iscoroutinefunction(self.handlers[namespace][event]) \
-                    is True:
-                try:
-                    ret = await self.handlers[namespace][event](*args)
-                except asyncio.CancelledError:  # pragma: no cover
-                    ret = None
-            else:
-                ret = self.handlers[namespace][event](*args)
-            return ret
+        if namespace in self.handlers:
+            handler = None
+            if event in self.handlers[namespace]:
+                handler = self.handlers[namespace][event]
+            elif event not in self.reserved_events and \
+                    '*' in self.handlers[namespace]:
+                handler = self.handlers[namespace]['*']
+                args = (event, *args)
+            if handler:
+                if asyncio.iscoroutinefunction(handler):
+                    try:
+                        ret = await handler(*args)
+                    except asyncio.CancelledError:  # pragma: no cover
+                        ret = None
+                else:
+                    ret = handler(*args)
+                return ret
 
         # or else, forward the event to a namepsace handler if one exists
         elif namespace in self.namespace_handlers:
@@ -558,7 +571,7 @@ class AsyncServer(server.Server):
                     await self._handle_ack(eio_sid, pkt.namespace, pkt.id,
                                            pkt.data)
         else:
-            pkt = packet.Packet(encoded_packet=data)
+            pkt = self.packet_class(encoded_packet=data)
             if pkt.packet_type == packet.CONNECT:
                 await self._handle_connect(eio_sid, pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:

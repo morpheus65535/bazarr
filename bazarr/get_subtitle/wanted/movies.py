@@ -32,7 +32,10 @@ def _wanted_movie(movie):
         confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
             .where(TableMovies.radarrId == movie['radarrId']) \
             .dicts() \
-            .get()
+            .get_or_none()
+        if not confirmed_missing_subs:
+            continue
+
         if language not in ast.literal_eval(confirmed_missing_subs['missing_subtitles']):
             continue
 
@@ -124,7 +127,7 @@ def wanted_search_missing_subtitles_movies():
             wanted_download_subtitles_movie(movie['radarrId'])
         else:
             logging.info("BAZARR All providers are throttled")
-            return
+            break
 
     hide_progress(id='wanted_movies_progress')
 

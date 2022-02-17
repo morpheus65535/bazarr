@@ -8,14 +8,21 @@ is given as a comment above each class.
 """
 from collections import defaultdict
 from itertools import islice
+from typing import Any, Callable, Optional
+from typing_extensions import Protocol
+
+
+class TransformerProtocol(Protocol):
+    fit: Callable[..., "TransformerProtocol"]
+    transform: Callable[["TransformerProtocol", Any], Any]
 
 
 # Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
 # License: BSD 3 clause
-class TransformerMixin(object):
+class TransformerMixin(TransformerProtocol):
     """Mixin class for all transformers."""
 
-    def fit_transform(self, X, y=None, **fit_params):
+    def fit_transform(self, X: Any, y: Optional[Any] = None, **fit_params: Any) -> Any:
         """
         Fit to data, then transform it.
         Fits transformer to X and y with optional parameters fit_params
@@ -49,7 +56,7 @@ class TransformerMixin(object):
 #         Alexandre Gramfort
 #         Lars Buitinck
 # License: BSD
-class Pipeline(object):
+class Pipeline:
     def __init__(self, steps, verbose=False):
         self.steps = steps
         self.verbose = verbose
@@ -63,22 +70,29 @@ class Pipeline(object):
         estimator = estimators[-1]
 
         for t in transformers:
-            if t is None or t == 'passthrough':
+            if t is None or t == "passthrough":
                 continue
-            if (not (hasattr(t, "fit") or hasattr(t, "fit_transform")) or not
-            hasattr(t, "transform")):
-                raise TypeError("All intermediate steps should be "
-                                "transformers and implement fit and transform "
-                                "or be the string 'passthrough' "
-                                "'%s' (type %s) doesn't" % (t, type(t)))
+            if not (hasattr(t, "fit") or hasattr(t, "fit_transform")) or not hasattr(
+                t, "transform"
+            ):
+                raise TypeError(
+                    "All intermediate steps should be "
+                    "transformers and implement fit and transform "
+                    "or be the string 'passthrough' "
+                    "'%s' (type %s) doesn't" % (t, type(t))
+                )
 
         # We allow last estimator to be None as an identity transformation
-        if (estimator is not None and estimator != 'passthrough'
-                and not hasattr(estimator, "fit")):
+        if (
+            estimator is not None
+            and estimator != "passthrough"
+            and not hasattr(estimator, "fit")
+        ):
             raise TypeError(
                 "Last step of Pipeline should implement fit "
                 "or be the string 'passthrough'. "
-                "'%s' (type %s) doesn't" % (estimator, type(estimator)))
+                "'%s' (type %s) doesn't" % (estimator, type(estimator))
+            )
 
     def _iter(self, with_final=True, filter_passthrough=True):
         """
@@ -94,10 +108,10 @@ class Pipeline(object):
         for idx, (name, trans) in enumerate(islice(self.steps, 0, stop)):
             if not filter_passthrough:
                 yield idx, name, trans
-            elif trans is not None and trans != 'passthrough':
+            elif trans is not None and trans != "passthrough":
                 yield idx, name, trans
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Returns the length of the Pipeline
         """
@@ -114,7 +128,7 @@ class Pipeline(object):
         """
         if isinstance(ind, slice):
             if ind.step not in (1, None):
-                raise ValueError('Pipeline slicing only supports a step of 1')
+                raise ValueError("Pipeline slicing only supports a step of 1")
             return self.__class__(self.steps[ind])
         try:
             name, est = self.steps[ind]
@@ -134,16 +148,14 @@ class Pipeline(object):
     @property
     def _final_estimator(self):
         estimator = self.steps[-1][1]
-        return 'passthrough' if estimator is None else estimator
+        return "passthrough" if estimator is None else estimator
 
     def _log_message(self, step_idx):
         if not self.verbose:
             return None
         name, step = self.steps[step_idx]
 
-        return '(step %d of %d) Processing %s' % (step_idx + 1,
-                                                  len(self.steps),
-                                                  name)
+        return "(step %d of %d) Processing %s" % (step_idx + 1, len(self.steps), name)
 
     # Estimator interface
 
@@ -152,34 +164,33 @@ class Pipeline(object):
         self.steps = list(self.steps)
         self._validate_steps()
 
-        fit_params_steps = {name: {} for name, step in self.steps
-                            if step is not None}
+        fit_params_steps = {name: {} for name, step in self.steps if step is not None}
         for pname, pval in fit_params.items():
-            if '__' not in pname:
+            if "__" not in pname:
                 raise ValueError(
                     "Pipeline.fit does not accept the {} parameter. "
                     "You can pass parameters to specific steps of your "
                     "pipeline using the stepname__parameter format, e.g. "
                     "`Pipeline.fit(X, y, logisticregression__sample_weight"
-                    "=sample_weight)`.".format(pname))
-            step, param = pname.split('__', 1)
+                    "=sample_weight)`.".format(pname)
+                )
+            step, param = pname.split("__", 1)
             fit_params_steps[step][param] = pval
-        for (step_idx,
-             name,
-             transformer) in self._iter(with_final=False,
-                                        filter_passthrough=False):
-            if transformer is None or transformer == 'passthrough':
+        for (step_idx, name, transformer) in self._iter(
+            with_final=False, filter_passthrough=False
+        ):
+            if transformer is None or transformer == "passthrough":
                 continue
 
             # Fit or load from cache the current transformer
             X, fitted_transformer = _fit_transform_one(
-                transformer, X, y, None,
-                **fit_params_steps[name])
+                transformer, X, y, None, **fit_params_steps[name]
+            )
             # Replace the transformer of the step with the fitted
             # transformer. This is necessary when loading the transformer
             # from the cache.
             self.steps[step_idx] = (name, fitted_transformer)
-        if self._final_estimator == 'passthrough':
+        if self._final_estimator == "passthrough":
             return X, {}
         return X, fit_params_steps[self.steps[-1][0]]
 
@@ -210,7 +221,7 @@ class Pipeline(object):
             This estimator
         """
         Xt, fit_params = self._fit(X, y, **fit_params)
-        if self._final_estimator != 'passthrough':
+        if self._final_estimator != "passthrough":
             self._final_estimator.fit(Xt, y, **fit_params)
         return self
 
@@ -243,9 +254,9 @@ class Pipeline(object):
         """
         last_step = self._final_estimator
         Xt, fit_params = self._fit(X, y, **fit_params)
-        if last_step == 'passthrough':
+        if last_step == "passthrough":
             return Xt
-        if hasattr(last_step, 'fit_transform'):
+        if hasattr(last_step, "fit_transform"):
             return last_step.fit_transform(Xt, y, **fit_params)
         else:
             return last_step.fit(Xt, y, **fit_params).transform(Xt)
@@ -269,7 +280,7 @@ class Pipeline(object):
         """
         # _final_estimator is None or has transform, otherwise attribute error
         # XXX: Handling the None case means we can't use if_delegate_has_method
-        if self._final_estimator != 'passthrough':
+        if self._final_estimator != "passthrough":
             self._final_estimator.transform
         return self._transform
 
@@ -279,7 +290,6 @@ class Pipeline(object):
             Xt = transform.transform(Xt)
         return Xt
 
-
     @property
     def classes_(self):
         return self.steps[-1][-1].classes_
@@ -287,7 +297,7 @@ class Pipeline(object):
     @property
     def _pairwise(self):
         # check if first estimator expects pairwise input
-        return getattr(self.steps[0][1], '_pairwise', False)
+        return getattr(self.steps[0][1], "_pairwise", False)
 
     @property
     def n_features_in_(self):
@@ -299,8 +309,7 @@ def _name_estimators(estimators):
     """Generate names for estimators."""
 
     names = [
-        estimator
-        if isinstance(estimator, str) else type(estimator).__name__.lower()
+        estimator if isinstance(estimator, str) else type(estimator).__name__.lower()
         for estimator in estimators
     ]
     namecount = defaultdict(int)
@@ -320,7 +329,7 @@ def _name_estimators(estimators):
     return list(zip(names, estimators))
 
 
-def make_pipeline(*steps, **kwargs):
+def make_pipeline(*steps, **kwargs) -> Pipeline:
     """Construct a Pipeline from the given estimators.
 
     This is a shorthand for the Pipeline constructor; it does not require, and
@@ -339,10 +348,11 @@ def make_pipeline(*steps, **kwargs):
     -------
     p : Pipeline
     """
-    verbose = kwargs.pop('verbose', False)
+    verbose = kwargs.pop("verbose", False)
     if kwargs:
-        raise TypeError('Unknown keyword arguments: "{}"'
-                        .format(list(kwargs.keys())[0]))
+        raise TypeError(
+            'Unknown keyword arguments: "{}"'.format(list(kwargs.keys())[0])
+        )
     return Pipeline(_name_estimators(steps), verbose=verbose)
 
 
@@ -354,17 +364,13 @@ def _transform_one(transformer, X, y, weight, **fit_params):
     return res * weight
 
 
-def _fit_transform_one(transformer,
-                       X,
-                       y,
-                       weight,
-                       **fit_params):
+def _fit_transform_one(transformer, X, y, weight, **fit_params):
     """
     Fits ``transformer`` to ``X`` and ``y``. The transformed result is returned
     with the fitted transformer. If ``weight`` is not ``None``, the result will
     be multiplied by ``weight``.
     """
-    if hasattr(transformer, 'fit_transform'):
+    if hasattr(transformer, "fit_transform"):
         res = transformer.fit_transform(X, y, **fit_params)
     else:
         res = transformer.fit(X, y, **fit_params).transform(X)

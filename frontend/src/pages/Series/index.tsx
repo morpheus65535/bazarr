@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const SeriesView: FunctionComponent = () => {
-  const { mutateAsync } = useSeriesModification();
+  const mutation = useSeriesModification();
 
   const query = useSeriesPagination();
 
@@ -57,7 +57,7 @@ const SeriesView: FunctionComponent = () => {
         Header: "Episodes",
         accessor: "episodeFileCount",
         Cell: (row) => {
-          const { episodeFileCount, episodeMissingCount, profileId } =
+          const { episodeFileCount, episodeMissingCount, profileId, title } =
             row.row.original;
           let progress = 0;
           let label = "";
@@ -75,6 +75,7 @@ const SeriesView: FunctionComponent = () => {
           return (
             <ProgressBar
               className="my-a"
+              key={title}
               variant={color}
               min={0}
               max={episodeFileCount}
@@ -106,7 +107,7 @@ const SeriesView: FunctionComponent = () => {
         <title>Series - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };

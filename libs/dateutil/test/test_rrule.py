@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from ._common import WarningTestMixin, unittest
 
-import calendar
 from datetime import datetime, date
-from six import PY3
+import unittest
+from six import PY2
 
-from dateutil.rrule import *
+from dateutil import tz
+from dateutil.rrule import (
+    rrule, rruleset, rrulestr,
+    YEARLY, MONTHLY, WEEKLY, DAILY,
+    HOURLY, MINUTELY, SECONDLY,
+    MO, TU, WE, TH, FR, SA, SU
+)
+
+from freezegun import freeze_time
+
+import pytest
 
 
-class RRuleTest(WarningTestMixin, unittest.TestCase):
+@pytest.mark.rrule
+class RRuleTest(unittest.TestCase):
     def _rrulestr_reverse_test(self, rule):
         """
         Call with an `rrule` and it will test that `str(rrule)` generates a
@@ -20,6 +30,20 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
         rrulestr_rrule = rrulestr(rr_str)
 
         self.assertEqual(list(rule), list(rrulestr_rrule))
+
+    def testStrAppendRRULEToken(self):
+        # `_rrulestr_reverse_test` does not check if the "RRULE:" prefix
+        # property is appended properly, so give it a dedicated test
+        self.assertEqual(str(rrule(YEARLY,
+                             count=5,
+                             dtstart=datetime(1997, 9, 2, 9, 0))),
+                         "DTSTART:19970902T090000\n"
+                         "RRULE:FREQ=YEARLY;COUNT=5")
+
+        rr_str = (
+          'DTSTART:19970105T083000\nRRULE:FREQ=YEARLY;INTERVAL=2'
+        )
+        self.assertEqual(str(rrulestr(rr_str)), rr_str)
 
     def testYearly(self):
         self.assertEqual(list(rrule(YEARLY,
@@ -2259,7 +2283,7 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                           datetime(2010, 3, 22, 14, 1)])
 
     def testLongIntegers(self):
-        if not PY3:  # There is no longs in python3
+        if PY2:  # There are no longs in python3
             self.assertEqual(list(rrule(MINUTELY,
                                   count=long(2),
                                   interval=long(2),
@@ -2344,10 +2368,10 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
 
     def testBadUntilCountRRule(self):
         """
-        See rfc-2445 4.3.10 - This checks for the deprecation warning, and will
+        See rfc-5545 3.3.10 - This checks for the deprecation warning, and will
         eventually check for an error.
         """
-        with self.assertWarns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning):
             rrule(DAILY, dtstart=datetime(1997, 9, 2, 9, 0),
                          count=3, until=datetime(1997, 9, 4, 9, 0))
 
@@ -2471,6 +2495,12 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                                count=3,
                                dtstart=datetime(1997, 9, 2, 9, 0)).count(),
                          3)
+
+    def testCountZero(self):
+        self.assertEqual(rrule(YEARLY,
+                               count=0,
+                               dtstart=datetime(1997, 9, 2, 9, 0)).count(),
+                         0)
 
     def testContains(self):
         rr = rrule(DAILY, count=3, dtstart=datetime(1997, 9, 2, 9, 0))
@@ -2644,6 +2674,70 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                           datetime(1998, 9, 2, 9, 0),
                           datetime(1999, 9, 2, 9, 0)])
 
+    def testStrWithTZID(self):
+        NYC = tz.gettz('America/New_York')
+        self.assertEqual(list(rrulestr(
+                              "DTSTART;TZID=America/New_York:19970902T090000\n"
+                              "RRULE:FREQ=YEARLY;COUNT=3\n"
+                              )),
+                         [datetime(1997, 9, 2, 9, 0, tzinfo=NYC),
+                          datetime(1998, 9, 2, 9, 0, tzinfo=NYC),
+                          datetime(1999, 9, 2, 9, 0, tzinfo=NYC)])
+
+    def testStrWithTZIDMapping(self):
+        rrstr = ("DTSTART;TZID=Eastern:19970902T090000\n" +
+                 "RRULE:FREQ=YEARLY;COUNT=3")
+
+        NYC = tz.gettz('America/New_York')
+        rr = rrulestr(rrstr, tzids={'Eastern': NYC})
+        exp = [datetime(1997, 9, 2, 9, 0, tzinfo=NYC),
+               datetime(1998, 9, 2, 9, 0, tzinfo=NYC),
+               datetime(1999, 9, 2, 9, 0, tzinfo=NYC)]
+
+        self.assertEqual(list(rr), exp)
+
+    def testStrWithTZIDCallable(self):
+        rrstr = ('DTSTART;TZID=UTC+04:19970902T090000\n' +
+                 'RRULE:FREQ=YEARLY;COUNT=3')
+
+        TZ = tz.tzstr('UTC+04')
+        def parse_tzstr(tzstr):
+            if tzstr is None:
+                raise ValueError('Invalid tzstr')
+
+            return tz.tzstr(tzstr)
+
+        rr = rrulestr(rrstr, tzids=parse_tzstr)
+
+        exp = [datetime(1997, 9, 2, 9, 0, tzinfo=TZ),
+               datetime(1998, 9, 2, 9, 0, tzinfo=TZ),
+               datetime(1999, 9, 2, 9, 0, tzinfo=TZ),]
+
+        self.assertEqual(list(rr), exp)
+
+    def testStrWithTZIDCallableFailure(self):
+        rrstr = ('DTSTART;TZID=America/New_York:19970902T090000\n' +
+                 'RRULE:FREQ=YEARLY;COUNT=3')
+
+        class TzInfoError(Exception):
+            pass
+
+        def tzinfos(tzstr):
+            if tzstr == 'America/New_York':
+                raise TzInfoError('Invalid!')
+            return None
+
+        with self.assertRaises(TzInfoError):
+            rrulestr(rrstr, tzids=tzinfos)
+
+    def testStrWithConflictingTZID(self):
+        # RFC 5545 Section 3.3.5, FORM #2: DATE WITH UTC TIME
+        # https://tools.ietf.org/html/rfc5545#section-3.3.5
+        # The "TZID" property parameter MUST NOT be applied to DATE-TIME
+        with self.assertRaises(ValueError):
+            rrulestr("DTSTART;TZID=America/New_York:19970902T090000Z\n"+
+                     "RRULE:FREQ=YEARLY;COUNT=3\n")
+
     def testStrType(self):
         self.assertEqual(isinstance(rrulestr(
                               "DTSTART:19970902T090000\n"
@@ -2758,6 +2852,74 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                           datetime(1997, 9, 9, 9, 0),
                           datetime(1997, 9, 16, 9, 0)])
 
+    def testStrSetExDateMultiple(self):
+        rrstr = ("DTSTART:19970902T090000\n"
+                 "RRULE:FREQ=YEARLY;COUNT=6;BYDAY=TU,TH\n"
+                 "EXDATE:19970904T090000,19970911T090000,19970918T090000\n")
+
+        rr = rrulestr(rrstr)
+        assert list(rr) == [datetime(1997, 9, 2, 9, 0),
+                            datetime(1997, 9, 9, 9, 0),
+                            datetime(1997, 9, 16, 9, 0)]
+
+    def testStrSetExDateWithTZID(self):
+        BXL = tz.gettz('Europe/Brussels')
+        rr = rrulestr("DTSTART;TZID=Europe/Brussels:19970902T090000\n"
+                      "RRULE:FREQ=YEARLY;COUNT=6;BYDAY=TU,TH\n"
+                      "EXDATE;TZID=Europe/Brussels:19970904T090000\n"
+                      "EXDATE;TZID=Europe/Brussels:19970911T090000\n"
+                      "EXDATE;TZID=Europe/Brussels:19970918T090000\n")
+
+        assert list(rr) == [datetime(1997, 9, 2, 9, 0, tzinfo=BXL),
+                            datetime(1997, 9, 9, 9, 0, tzinfo=BXL),
+                            datetime(1997, 9, 16, 9, 0, tzinfo=BXL)]
+
+    def testStrSetExDateValueDateTimeNoTZID(self):
+        rrstr = '\n'.join([
+            "DTSTART:19970902T090000",
+            "RRULE:FREQ=YEARLY;COUNT=4;BYDAY=TU,TH",
+            "EXDATE;VALUE=DATE-TIME:19970902T090000",
+            "EXDATE;VALUE=DATE-TIME:19970909T090000",
+        ])
+
+        rr = rrulestr(rrstr)
+        assert list(rr) == [datetime(1997, 9, 4, 9), datetime(1997, 9, 11, 9)]
+
+    def testStrSetExDateValueMixDateTimeNoTZID(self):
+        rrstr = '\n'.join([
+            "DTSTART:19970902T090000",
+            "RRULE:FREQ=YEARLY;COUNT=4;BYDAY=TU,TH",
+            "EXDATE;VALUE=DATE-TIME:19970902T090000",
+            "EXDATE:19970909T090000",
+        ])
+
+        rr = rrulestr(rrstr)
+        assert list(rr) == [datetime(1997, 9, 4, 9), datetime(1997, 9, 11, 9)]
+
+    def testStrSetExDateValueDateTimeWithTZID(self):
+        BXL = tz.gettz('Europe/Brussels')
+        rrstr = '\n'.join([
+            "DTSTART;VALUE=DATE-TIME;TZID=Europe/Brussels:19970902T090000",
+            "RRULE:FREQ=YEARLY;COUNT=4;BYDAY=TU,TH",
+            "EXDATE;VALUE=DATE-TIME;TZID=Europe/Brussels:19970902T090000",
+            "EXDATE;VALUE=DATE-TIME;TZID=Europe/Brussels:19970909T090000",
+        ])
+
+        rr = rrulestr(rrstr)
+        assert list(rr) == [datetime(1997, 9, 4, 9, tzinfo=BXL),
+                            datetime(1997, 9, 11, 9, tzinfo=BXL)]
+
+    def testStrSetExDateValueDate(self):
+        rrstr = '\n'.join([
+            "DTSTART;VALUE=DATE:19970902",
+            "RRULE:FREQ=YEARLY;COUNT=4;BYDAY=TU,TH",
+            "EXDATE;VALUE=DATE:19970902",
+            "EXDATE;VALUE=DATE:19970909",
+        ])
+
+        rr = rrulestr(rrstr)
+        assert list(rr) == [datetime(1997, 9, 4), datetime(1997, 9, 11)]
+
     def testStrSetDateAndExDate(self):
         self.assertEqual(list(rrulestr(
                               "DTSTART:19970902T090000\n"
@@ -2812,7 +2974,7 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
 
     def testStrUntil(self):
         self.assertEqual(list(rrulestr(
-                              "DTSTART:19970902T090000\n" 
+                              "DTSTART:19970902T090000\n"
                               "RRULE:FREQ=YEARLY;"
                               "UNTIL=19990101T000000;BYDAY=1TU,-1TH\n"
                               )),
@@ -2820,11 +2982,44 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                           datetime(1998, 1, 6, 9, 0),
                           datetime(1998, 12, 31, 9, 0)])
 
+    def testStrValueDatetime(self):
+        rr = rrulestr("DTSTART;VALUE=DATE-TIME:19970902T090000\n"
+                       "RRULE:FREQ=YEARLY;COUNT=2")
+
+        self.assertEqual(list(rr), [datetime(1997, 9, 2, 9, 0, 0),
+                                    datetime(1998, 9, 2, 9, 0, 0)])
+
+    def testStrValueDate(self):
+        rr = rrulestr("DTSTART;VALUE=DATE:19970902\n"
+                       "RRULE:FREQ=YEARLY;COUNT=2")
+
+        self.assertEqual(list(rr), [datetime(1997, 9, 2, 0, 0, 0),
+                                    datetime(1998, 9, 2, 0, 0, 0)])
+
+    def testStrMultipleDTStartComma(self):
+        with pytest.raises(ValueError):
+            rr = rrulestr("DTSTART:19970101T000000,19970202T000000\n"
+                          "RRULE:FREQ=YEARLY;COUNT=1")
+
     def testStrInvalidUntil(self):
         with self.assertRaises(ValueError):
             list(rrulestr("DTSTART:19970902T090000\n"
                           "RRULE:FREQ=YEARLY;"
                           "UNTIL=TheCowsComeHome;BYDAY=1TU,-1TH\n"))
+
+    def testStrUntilMustBeUTC(self):
+        with self.assertRaises(ValueError):
+            list(rrulestr("DTSTART;TZID=America/New_York:19970902T090000\n"
+                          "RRULE:FREQ=YEARLY;"
+                          "UNTIL=19990101T000000;BYDAY=1TU,-1TH\n"))
+
+    def testStrUntilWithTZ(self):
+        NYC = tz.gettz('America/New_York')
+        rr = list(rrulestr("DTSTART;TZID=America/New_York:19970101T000000\n"
+                          "RRULE:FREQ=YEARLY;"
+                          "UNTIL=19990101T000000Z\n"))
+        self.assertEqual(list(rr), [datetime(1997, 1, 1, 0, 0, 0, tzinfo=NYC),
+                                    datetime(1998, 1, 1, 0, 0, 0, tzinfo=NYC)])
 
     def testStrEmptyByDay(self):
         with self.assertRaises(ValueError):
@@ -2862,12 +3057,6 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
     def testToStrYearlyInterval(self):
         rule = rrule(YEARLY, count=3, interval=2,
                      dtstart=datetime(1997, 9, 2, 9, 0))
-        self._rrulestr_reverse_test(rule)
-
-    def testToStrYearlyByMonth(self):
-        rule = rrule(YEARLY, count=3, bymonth=(1, 3),
-                     dtstart=datetime(1997, 9, 2, 9, 0))
-
         self._rrulestr_reverse_test(rule)
 
     def testToStrYearlyByMonth(self):
@@ -4389,7 +4578,7 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                               dtstart=datetime(1997, 9, 2, 9, 0)))
 
     def testToStrLongIntegers(self):
-        if not PY3:  # There is no longs in python3
+        if PY2:  # There are no longs in python3
             self._rrulestr_reverse_test(rrule(MINUTELY,
                                   count=long(2),
                                   interval=long(2),
@@ -4399,7 +4588,7 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                                   byminute=long(6),
                                   bysecond=long(6),
                                   dtstart=datetime(1997, 9, 2, 9, 0)))
-            
+
             self._rrulestr_reverse_test(rrule(YEARLY,
                                   count=long(2),
                                   bymonthday=long(5),
@@ -4426,6 +4615,31 @@ class RRuleTest(WarningTestMixin, unittest.TestCase):
                              [datetime(1997, 1, 6)])
 
 
+@pytest.mark.rrule
+@freeze_time(datetime(2018, 3, 6, 5, 36, tzinfo=tz.UTC))
+def test_generated_aware_dtstart():
+    dtstart_exp = datetime(2018, 3, 6, 5, 36, tzinfo=tz.UTC)
+    UNTIL = datetime(2018, 3, 6, 8, 0, tzinfo=tz.UTC)
+
+    rule_without_dtstart = rrule(freq=HOURLY, until=UNTIL)
+    rule_with_dtstart = rrule(freq=HOURLY, dtstart=dtstart_exp, until=UNTIL)
+    assert list(rule_without_dtstart) == list(rule_with_dtstart)
+
+
+@pytest.mark.rrule
+@pytest.mark.rrulestr
+@pytest.mark.xfail(reason="rrulestr loses time zone, gh issue #637")
+@freeze_time(datetime(2018, 3, 6, 5, 36, tzinfo=tz.UTC))
+def test_generated_aware_dtstart_rrulestr():
+    rrule_without_dtstart = rrule(freq=HOURLY,
+                                  until=datetime(2018, 3, 6, 8, 0,
+                                                 tzinfo=tz.UTC))
+    rrule_r = rrulestr(str(rrule_without_dtstart))
+
+    assert list(rrule_r) == list(rrule_without_dtstart)
+
+
+@pytest.mark.rruleset
 class RRuleSetTest(unittest.TestCase):
     def testSet(self):
         rrset = rruleset()
@@ -4641,7 +4855,7 @@ class RRuleSetTest(unittest.TestCase):
 class WeekdayTest(unittest.TestCase):
     def testInvalidNthWeekday(self):
         with self.assertRaises(ValueError):
-            zeroth_friday = FR(0)
+            FR(0)
 
     def testWeekdayCallable(self):
         # Calling a weekday instance generates a new weekday instance with the
@@ -4672,7 +4886,7 @@ class WeekdayTest(unittest.TestCase):
                 self.n = n
 
         MO_Basic = BasicWeekday(0)
-        
+
         self.assertNotEqual(MO, MO_Basic)
         self.assertNotEqual(MO(1), MO_Basic)
 
@@ -4698,4 +4912,3 @@ class WeekdayTest(unittest.TestCase):
 
         for repstr, wday in zip(with_n_reprs, with_n_wdays):
             self.assertEqual(repr(wday), repstr)
-

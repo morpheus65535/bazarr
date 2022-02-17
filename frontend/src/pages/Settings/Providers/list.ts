@@ -64,6 +64,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       include_srt: true,
       include_ass: true,
       hi_fallback: false,
+      mergerfs_mode: false,
     },
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
@@ -72,6 +73,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       include_ass: "Include ASS (will be converted to SRT)",
       hi_fallback:
         "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
+      mergerfs_mode:
+        "[EXPERIMENTAL] Ignore cloud video files from rclone/mergerfs",
     },
   },
   {

@@ -5,7 +5,7 @@ Abstract pattern class definition along with various implementations (regexp, st
 """
 # pylint: disable=super-init-not-called,wrong-import-position
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 from . import debug
 from .formatters import default_formatter
@@ -329,7 +329,8 @@ class Pattern(BasePattern, metaclass=ABCMeta):
             return self.post_processor(matches, self)
         return matches
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def patterns(self):  # pragma: no cover
         """
         List of base patterns defined
@@ -350,7 +351,8 @@ class Pattern(BasePattern, metaclass=ABCMeta):
             return self._properties
         return {}
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def match_options(self):  # pragma: no cover
         """
         dict of default options for generated Match objects
@@ -378,8 +380,8 @@ class Pattern(BasePattern, metaclass=ABCMeta):
     def __repr__(self):
         defined = ""
         if self.defined_at:
-            defined = "@%s" % (self.defined_at,)
-        return "<%s%s:%s>" % (self.__class__.__name__, defined, self.__repr__patterns__)
+            defined = f"@{self.defined_at}"
+        return f"<{self.__class__.__name__}{defined}:{self.__repr__patterns__}>"
 
     @property
     def __repr__patterns__(self):

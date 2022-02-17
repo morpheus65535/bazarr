@@ -5,8 +5,6 @@ import os
 import io
 import logging
 import re
-import rarfile
-from random import randint
 
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
@@ -39,9 +37,6 @@ def fix_inconsistent_naming(title):
 
 
 logger = logging.getLogger(__name__)
-
-# Configure :mod:`rarfile` to use the same path separator as :mod:`zipfile`
-rarfile.PATH_SEP = '/'
 
 
 class SubtitrarinoiSubtitle(Subtitle):

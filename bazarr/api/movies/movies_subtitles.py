@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import logging
 
 from flask import request
 from flask_restful import Resource
@@ -33,7 +34,10 @@ class MoviesSubtitles(Resource):
                                        TableMovies.audio_language)\
             .where(TableMovies.radarrId == radarrId)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName'] or 'None'
@@ -90,7 +94,10 @@ class MoviesSubtitles(Resource):
                                        TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
         sceneName = movieInfo['sceneName'] or 'None'
@@ -119,7 +126,9 @@ class MoviesSubtitles(Resource):
                                             subtitle=subFile,
                                             audio_language=audioLanguage)
 
-            if result is not None:
+            if not result:
+                logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")
+            else:
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
@@ -147,7 +156,10 @@ class MoviesSubtitles(Resource):
         movieInfo = TableMovies.select(TableMovies.path) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 

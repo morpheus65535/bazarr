@@ -1,34 +1,38 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from collections import namedtuple
+import os
+import typing
 from logging import NullHandler, getLogger
 
 from pkg_resources import resource_stream
-from six import text_type
 import yaml
 
-from .serializer import get_yaml_loader
+from knowit.serializer import get_yaml_loader
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 
-_valid_aliases = ('code', 'default', 'human', 'technical')
-_Value = namedtuple('_Value', _valid_aliases)
+
+class _Value(typing.NamedTuple):
+    code: str
+    default: str
+    human: str
+    technical: str
 
 
-class Config(object):
+_valid_aliases = _Value._fields
+
+
+class Config:
     """Application config class."""
 
     @classmethod
-    def build(cls, path=None):
+    def build(cls, path: typing.Optional[typing.Union[str, os.PathLike]] = None) -> 'Config':
         """Build config instance."""
         loader = get_yaml_loader()
         with resource_stream('knowit', 'defaults.yml') as stream:
             cfgs = [yaml.load(stream, Loader=loader)]
 
         if path:
-            with open(path, 'r') as stream:
+            with open(path, 'rb') as stream:
                 cfgs.append(yaml.load(stream, Loader=loader))
 
         profiles_data = {}
@@ -41,7 +45,7 @@ class Config(object):
             if 'knowledge' in cfg:
                 knowledge_data.update(cfg['knowledge'])
 
-        data = {'general': {}}
+        data: typing.Dict[str, typing.MutableMapping] = {'general': {}}
         for class_name, data_map in knowledge_data.items():
             data.setdefault(class_name, {})
             for code, detection_values in data_map.items():
@@ -52,7 +56,7 @@ class Config(object):
                 alias_map.setdefault('technical', alias_map['human'])
                 value = _Value(**{k: v for k, v in alias_map.items() if k in _valid_aliases})
                 for detection_value in detection_values:
-                    data[class_name][text_type(detection_value)] = value
+                    data[class_name][str(detection_value)] = value
 
         config = Config()
         config.__dict__ = data

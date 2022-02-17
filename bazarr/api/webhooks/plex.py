@@ -56,7 +56,7 @@ class WebHooksPlex(Resource):
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode) \
                     .dicts() \
-                    .get()
+                    .get_or_none()
 
                 if sonarrEpisodeId:
                     episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
@@ -69,7 +69,8 @@ class WebHooksPlex(Resource):
                 radarrId = TableMovies.select(TableMovies.radarrId)\
                     .where(TableMovies.imdbId == movie_imdb_id)\
                     .dicts()\
-                    .get()
+                    .get_or_none()
+
                 if radarrId:
                     movies_download_subtitles(no=radarrId['radarrId'])
 

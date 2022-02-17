@@ -36,7 +36,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const { data: series, isFetched } = useSeriesById(id);
   const { data: episodes } = useEpisodesBySeriesId(id);
 
-  const { mutateAsync } = useSeriesModification();
+  const mutation = useSeriesModification();
   const { mutateAsync: action } = useSeriesAction();
 
   const available = episodes?.length !== 0;
@@ -158,7 +158,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           ></Table>
         )}
       </Row>
-      <ItemEditorModal modalKey="edit" submit={mutateAsync}></ItemEditorModal>
+      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
       <SeriesUploadModal
         modalKey="upload"
         episodes={episodes ?? []}

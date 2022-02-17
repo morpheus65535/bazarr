@@ -1,11 +1,11 @@
-
-from datetime import datetime, date, time, timedelta
-from fractions import Fraction
-from importlib import import_module
+import warnings
 from collections import OrderedDict
+from datetime import datetime, date, time, timedelta
 from decimal import Decimal
-from logging import warning
-from json_tricks import NoPandasException, NoNumpyException
+from fractions import Fraction
+
+from json_tricks import NoEnumException, NoPandasException, NoNumpyException
+from .utils import ClassInstanceHookBase, nested_index, str_type, gzip_decompress, filtered_wrapper
 
 
 class DuplicateJsonKeyException(Exception):
@@ -17,17 +17,18 @@ class TricksPairHook(object):
 	Hook that converts json maps to the appropriate python type (dict or OrderedDict)
 	and then runs any number of hooks on the individual maps.
 	"""
-	def __init__(self, ordered=True, obj_pairs_hooks=None, allow_duplicates=True):
+	def __init__(self, ordered=True, obj_pairs_hooks=None, allow_duplicates=True, properties=None):
 		"""
 		:param ordered: True if maps should retain their ordering.
 		:param obj_pairs_hooks: An iterable of hooks to apply to elements.
 		"""
+		self.properties = properties or {}
 		self.map_type = OrderedDict
 		if not ordered:
 			self.map_type = dict
 		self.obj_pairs_hooks = []
 		if obj_pairs_hooks:
-			self.obj_pairs_hooks = list(obj_pairs_hooks)
+			self.obj_pairs_hooks = list(filtered_wrapper(hook) for hook in obj_pairs_hooks)
 		self.allow_duplicates = allow_duplicates
 
 	def __call__(self, pairs):
@@ -35,12 +36,12 @@ class TricksPairHook(object):
 			known = set()
 			for key, value in pairs:
 				if key in known:
-					raise DuplicateJsonKeyException(('Trying to load a json map which contains a' +
-						' duplicate key "{0:}" (but allow_duplicates is False)').format(key))
+					raise DuplicateJsonKeyException(('Trying to load a json map which contains a ' +
+						'duplicate key "{0:}" (but allow_duplicates is False)').format(key))
 				known.add(key)
 		map = self.map_type(pairs)
 		for hook in self.obj_pairs_hooks:
-			map = hook(map)
+			map = hook(map, properties=self.properties)
 		return map
 
 
@@ -62,21 +63,25 @@ def json_date_time_hook(dct):
 				'Error: {0:}').format(str(err)))
 		return pytz.timezone(dct['tzinfo'])
 
-	if isinstance(dct, dict):
-		if '__date__' in dct:
-			return date(year=dct.get('year', 0), month=dct.get('month', 0), day=dct.get('day', 0))
-		elif '__time__' in dct:
-			tzinfo = get_tz(dct)
-			return time(hour=dct.get('hour', 0), minute=dct.get('minute', 0), second=dct.get('second', 0),
-				microsecond=dct.get('microsecond', 0), tzinfo=tzinfo)
-		elif '__datetime__' in dct:
-			tzinfo = get_tz(dct)
-			return datetime(year=dct.get('year', 0), month=dct.get('month', 0), day=dct.get('day', 0),
-				hour=dct.get('hour', 0), minute=dct.get('minute', 0), second=dct.get('second', 0),
-				microsecond=dct.get('microsecond', 0), tzinfo=tzinfo)
-		elif '__timedelta__' in dct:
-			return timedelta(days=dct.get('days', 0), seconds=dct.get('seconds', 0),
-				microseconds=dct.get('microseconds', 0))
+	if not isinstance(dct, dict):
+		return dct
+	if '__date__' in dct:
+		return date(year=dct.get('year', 0), month=dct.get('month', 0), day=dct.get('day', 0))
+	elif '__time__' in dct:
+		tzinfo = get_tz(dct)
+		return time(hour=dct.get('hour', 0), minute=dct.get('minute', 0), second=dct.get('second', 0),
+			microsecond=dct.get('microsecond', 0), tzinfo=tzinfo)
+	elif '__datetime__' in dct:
+		tzinfo = get_tz(dct)
+		dt = datetime(year=dct.get('year', 0), month=dct.get('month', 0), day=dct.get('day', 0),
+			hour=dct.get('hour', 0), minute=dct.get('minute', 0), second=dct.get('second', 0),
+			microsecond=dct.get('microsecond', 0))
+		if tzinfo is None:
+			return dt
+		return tzinfo.localize(dt)
+	elif '__timedelta__' in dct:
+		return timedelta(days=dct.get('days', 0), seconds=dct.get('seconds', 0),
+			microseconds=dct.get('microseconds', 0))
 	return dct
 
 
@@ -87,95 +92,120 @@ def json_complex_hook(dct):
 	:param dct: (dict) json encoded complex number (__complex__)
 	:return: python complex number
 	"""
-	if isinstance(dct, dict):
-		if '__complex__' in dct:
-			parts = dct['__complex__']
-			assert len(parts) == 2
-			return parts[0] + parts[1] * 1j
-	return dct
+	if not isinstance(dct, dict):
+		return dct
+	if not '__complex__' in dct:
+		return dct
+	parts = dct['__complex__']
+	assert len(parts) == 2
+	return parts[0] + parts[1] * 1j
 
 
 def numeric_types_hook(dct):
-	if isinstance(dct, dict):
-		if '__decimal__' in dct:
-			return Decimal(dct['__decimal__'])
-		if '__fraction__' in dct:
-			return Fraction(numerator=dct['numerator'], denominator=dct['denominator'])
+	if not isinstance(dct, dict):
+		return dct
+	if '__decimal__' in dct:
+		return Decimal(dct['__decimal__'])
+	if '__fraction__' in dct:
+		return Fraction(numerator=dct['numerator'], denominator=dct['denominator'])
 	return dct
 
 
-class ClassInstanceHook(object):
+def noenum_hook(dct):
+	if isinstance(dct, dict) and '__enum__' in dct:
+		raise NoEnumException(('Trying to decode a map which appears to represent a enum '
+			'data structure, but enum support is not enabled, perhaps it is not installed.'))
+	return dct
+
+
+def pathlib_hook(dct):
+	if not isinstance(dct, dict):
+		return dct
+	if not '__pathlib__' in dct:
+		return dct
+	from pathlib import Path
+	return Path(dct['__pathlib__'])
+
+
+def nopathlib_hook(dct):
+	if isinstance(dct, dict) and '__pathlib__' in dct:
+		raise NoPathlib(('Trying to decode a map which appears to represent a '
+						'pathlib.Path data structure, but pathlib support '
+						'is not enabled.'))
+	return dct
+
+
+class EnumInstanceHook(ClassInstanceHookBase):
+	"""
+	This hook tries to convert json encoded by enum_instance_encode back to it's original instance.
+	It only works if the environment is the same, e.g. the enum is similarly importable and hasn't changed.
+	"""
+	def __call__(self, dct, properties=None):
+		if not isinstance(dct, dict):
+			return dct
+		if '__enum__' not in dct:
+			return dct
+		cls_lookup_map = properties.get('cls_lookup_map', {})
+		mod, name = dct['__enum__']['__enum_instance_type__']
+		Cls = self.get_cls_from_instance_type(mod, name, cls_lookup_map=cls_lookup_map)
+		return Cls[dct['__enum__']['name']]
+
+
+class ClassInstanceHook(ClassInstanceHookBase):
 	"""
 	This hook tries to convert json encoded by class_instance_encoder back to it's original instance.
 	It only works if the environment is the same, e.g. the class is similarly importable and hasn't changed.
 	"""
-	def __init__(self, cls_lookup_map=None):
-		self.cls_lookup_map = cls_lookup_map or {}
-
-	def __call__(self, dct):
-		if isinstance(dct, dict) and '__instance_type__' in dct:
-			mod, name = dct['__instance_type__']
-			attrs = dct['attributes']
-			if mod is None:
-				try:
-					Cls = getattr((__import__('__main__')), name)
-				except (ImportError, AttributeError) as err:
-					if not name in self.cls_lookup_map:
-						raise ImportError(('class {0:s} seems to have been exported from the main file, which means '
-							'it has no module/import path set; you need to provide cls_lookup_map which maps names '
-							'to classes').format(name))
-					Cls = self.cls_lookup_map[name]
-			else:
-				imp_err = None
-				try:
-					module = import_module('{0:}'.format(mod, name))
-				except ImportError as err:
-					imp_err = ('encountered import error "{0:}" while importing "{1:}" to decode a json file; perhaps '
-						'it was encoded in a different environment where {1:}.{2:} was available').format(err, mod, name)
-				else:
-					if not hasattr(module, name):
-						imp_err = 'imported "{0:}" but could find "{1:}" inside while decoding a json file (found {2:}'.format(
-							module, name, ', '.join(attr for attr in dir(module) if not attr.startswith('_')))
-					Cls = getattr(module, name)
-				if imp_err:
-					if 'name' in self.cls_lookup_map:
-						Cls = self.cls_lookup_map[name]
-					else:
-						raise ImportError(imp_err)
-			try:
-				obj = Cls.__new__(Cls)
-			except TypeError:
-				raise TypeError(('problem while decoding instance of "{0:s}"; this instance has a special '
-					'__new__ method and can\'t be restored').format(name))
-			if hasattr(obj, '__json_decode__'):
-				obj.__json_decode__(**attrs)
-			else:
-				obj.__dict__ = dict(attrs)
-			return  obj
-		return dct
+	def __call__(self, dct, properties=None):
+		if not isinstance(dct, dict):
+			return dct
+		if '__instance_type__' not in dct:
+			return dct
+		cls_lookup_map = properties.get('cls_lookup_map', {}) or {}
+		mod, name = dct['__instance_type__']
+		Cls = self.get_cls_from_instance_type(mod, name, cls_lookup_map=cls_lookup_map)
+		try:
+			obj = Cls.__new__(Cls)
+		except TypeError:
+			raise TypeError(('problem while decoding instance of "{0:s}"; this instance has a special '
+				'__new__ method and can\'t be restored').format(name))
+		if hasattr(obj, '__json_decode__'):
+			properties = {}
+			if 'slots' in dct:
+				properties.update(dct['slots'])
+			if 'attributes' in dct:
+				properties.update(dct['attributes'])
+			obj.__json_decode__(**properties)
+		else:
+			if 'slots' in dct:
+				for slot,value in dct['slots'].items():
+					setattr(obj, slot, value)
+			if 'attributes' in dct:
+				obj.__dict__ = dict(dct['attributes'])
+		return obj
 
 
 def json_set_hook(dct):
 	"""
 	Return an encoded set to it's python representation.
 	"""
-	if isinstance(dct, dict):
-		if '__set__' in dct:
-			return set((tuple(item) if isinstance(item, list) else item) for item in dct['__set__'])
-	return dct
+	if not isinstance(dct, dict):
+		return dct
+	if '__set__' not in dct:
+		return dct
+	return set((tuple(item) if isinstance(item, list) else item) for item in dct['__set__'])
 
 
 def pandas_hook(dct):
-	if '__pandas_dataframe__' in dct or '__pandas_series__' in dct:
-		# todo: this is experimental
-		if not getattr(pandas_hook, '_warned', False):
-			pandas_hook._warned = True
-			warning('Pandas loading support in json-tricks is experimental and may change in future versions.')
+	if not isinstance(dct, dict):
+		return dct
+	if '__pandas_dataframe__' not in dct and '__pandas_series__' not in dct:
+		return dct
 	if '__pandas_dataframe__' in dct:
 		try:
 			from pandas import DataFrame
 		except ImportError:
-			raise NoPandasException('Trying to decode a map which appears to represent a pandas data structure, but pandas appears not to be installed.')
+			raise NoPandasException('Trying to decode a map which appears to repr esent a pandas data structure, but pandas appears not to be installed.')
 		from numpy import dtype, array
 		meta = dct.pop('__pandas_dataframe__')
 		indx = dct.pop('index') if 'index' in dct else None
@@ -200,7 +230,7 @@ def pandas_hook(dct):
 			name=meta['name'],
 			dtype=dtype(meta['type']),
 		)
-	return dct
+	return dct	# impossible
 
 
 def nopandas_hook(dct):
@@ -218,22 +248,84 @@ def json_numpy_obj_hook(dct):
 	:param dct: (dict) json encoded ndarray
 	:return: (ndarray) if input was an encoded ndarray
 	"""
-	if isinstance(dct, dict) and '__ndarray__' in dct:
-		try:
-			from numpy import asarray
-			import numpy as nptypes
-		except ImportError:
-			raise NoNumpyException('Trying to decode a map which appears to represent a numpy '
-				'array, but numpy appears not to be installed.')
-		order = 'A'
-		if 'Corder' in dct:
-			order = 'C' if dct['Corder'] else 'F'
-		if dct['shape']:
-			return asarray(dct['__ndarray__'], dtype=dct['dtype'], order=order)
+	if not isinstance(dct, dict):
+		return dct
+	if not '__ndarray__' in dct:
+		return dct
+	try:
+		import numpy
+	except ImportError:
+		raise NoNumpyException('Trying to decode a map which appears to represent a numpy '
+			'array, but numpy appears not to be installed.')
+	order = None
+	if 'Corder' in dct:
+		order = 'C' if dct['Corder'] else 'F'
+	data_json = dct['__ndarray__']
+	shape = tuple(dct['shape'])
+	nptype = dct['dtype']
+	if shape:
+		if nptype == 'object':
+			return _lists_of_obj_to_ndarray(data_json, order, shape, nptype)
+		if isinstance(data_json, str_type):
+			return _bin_str_to_ndarray(data_json, order, shape, nptype)
 		else:
-			dtype = getattr(nptypes, dct['dtype'])
-			return dtype(dct['__ndarray__'])
-	return dct
+			return _lists_of_numbers_to_ndarray(data_json, order, shape, nptype)
+	else:
+		return _scalar_to_numpy(data_json, nptype)
+
+
+def _bin_str_to_ndarray(data, order, shape, dtype):
+	"""
+	From base64 encoded, gzipped binary data to ndarray.
+	"""
+	from base64 import standard_b64decode
+	from numpy import frombuffer
+
+	assert order in [None, 'C'], 'specifying different memory order is not (yet) supported ' \
+		'for binary numpy format (got order = {})'.format(order)
+	if data.startswith('b64.gz:'):
+		data = standard_b64decode(data[7:])
+		data = gzip_decompress(data)
+	elif data.startswith('b64:'):
+		data = standard_b64decode(data[4:])
+	else:
+		raise ValueError('found numpy array buffer, but did not understand header; supported: b64 or b64.gz')
+	data = frombuffer(data, dtype=dtype)
+	return data.reshape(shape)
+
+
+def _lists_of_numbers_to_ndarray(data, order, shape, dtype):
+	"""
+	From nested list of numbers to ndarray.
+	"""
+	from numpy import asarray
+	arr = asarray(data, dtype=dtype, order=order)
+	if 0 in shape:
+		return arr.reshape(shape)
+	if shape != arr.shape:
+		warnings.warn('size mismatch decoding numpy array: expected {}, got {}'.format(shape, arr.shape))
+	return arr
+
+
+def _lists_of_obj_to_ndarray(data, order, shape, dtype):
+	"""
+	From nested list of objects (that aren't native numpy numbers) to ndarray.
+	"""
+	from numpy import empty, ndindex
+	arr = empty(shape, dtype=dtype, order=order)
+	dec_data = data
+	for indx in ndindex(arr.shape):
+		arr[indx] = nested_index(dec_data, indx)
+	return arr
+
+
+def _scalar_to_numpy(data, dtype):
+	"""
+	From scalar value to numpy type.
+	"""
+	import numpy as nptypes
+	dtype = getattr(nptypes, dtype)
+	return dtype(data)
 
 
 def json_nonumpy_obj_hook(dct):

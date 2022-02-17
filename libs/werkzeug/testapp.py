@@ -1,23 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-    werkzeug.testapp
-    ~~~~~~~~~~~~~~~~
-
-    Provide a small test application that can be used to test a WSGI server
-    and check it for WSGI compliance.
-
-    :copyright: 2007 Pallets
-    :license: BSD-3-Clause
+"""A small application that can be used to test a WSGI server and check
+it for WSGI compliance.
 """
 import base64
 import os
 import sys
+import typing as t
+from html import escape
 from textwrap import wrap
 
 from . import __version__ as _werkzeug_version
-from .utils import escape
-from .wrappers import BaseRequest as Request
-from .wrappers import BaseResponse as Response
+from .wrappers.request import Request
+from .wrappers.response import Response
+
+if t.TYPE_CHECKING:
+    from _typeshed.wsgi import StartResponse
+    from _typeshed.wsgi import WSGIEnvironment
+
 
 logo = Response(
     base64.b64decode(
@@ -61,7 +59,7 @@ kiIzwKucd0wsEHlLpe5yHXuc6FrNelOl7pY2+11kTWx7VpRu97dXA3DO1vbkhcb4zyvERYajQgAADs
 )
 
 
-TEMPLATE = u"""\
+TEMPLATE = """\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <title>WSGI Information</title>
@@ -140,18 +138,18 @@ TEMPLATE = u"""\
 """
 
 
-def iter_sys_path():
+def iter_sys_path() -> t.Iterator[t.Tuple[str, bool, bool]]:
     if os.name == "posix":
 
-        def strip(x):
+        def strip(x: str) -> str:
             prefix = os.path.expanduser("~")
             if x.startswith(prefix):
-                x = "~" + x[len(prefix) :]
+                x = f"~{x[len(prefix) :]}"
             return x
 
     else:
 
-        def strip(x):
+        def strip(x: str) -> str:
             return x
 
     cwd = os.path.abspath(os.getcwd())
@@ -160,13 +158,16 @@ def iter_sys_path():
         yield strip(os.path.normpath(path)), not os.path.isdir(path), path != item
 
 
-def render_testapp(req):
+def render_testapp(req: Request) -> bytes:
     try:
         import pkg_resources
     except ImportError:
-        eggs = ()
+        eggs: t.Iterable[t.Any] = ()
     else:
-        eggs = sorted(pkg_resources.working_set, key=lambda x: x.project_name.lower())
+        eggs = sorted(
+            pkg_resources.working_set,
+            key=lambda x: x.project_name.lower(),  # type: ignore
+        )
     python_eggs = []
     for egg in eggs:
         try:
@@ -174,16 +175,14 @@ def render_testapp(req):
         except (ValueError, AttributeError):
             version = "unknown"
         python_eggs.append(
-            "<li>%s <small>[%s]</small>" % (escape(egg.project_name), escape(version))
+            f"<li>{escape(egg.project_name)} <small>[{escape(version)}]</small>"
         )
 
     wsgi_env = []
     sorted_environ = sorted(req.environ.items(), key=lambda x: repr(x[0]).lower())
     for key, value in sorted_environ:
-        wsgi_env.append(
-            "<tr><th>%s<td><code>%s</code>"
-            % (escape(str(key)), " ".join(wrap(escape(repr(value)))))
-        )
+        value = "".join(wrap(escape(repr(value))))
+        wsgi_env.append(f"<tr><th>{escape(str(key))}<td><code>{value}</code>")
 
     sys_path = []
     for item, virtual, expanded in iter_sys_path():
@@ -192,10 +191,8 @@ def render_testapp(req):
             class_.append("virtual")
         if expanded:
             class_.append("exp")
-        sys_path.append(
-            "<li%s>%s"
-            % (' class="%s"' % " ".join(class_) if class_ else "", escape(item))
-        )
+        class_ = f' class="{" ".join(class_)}"' if class_ else ""
+        sys_path.append(f"<li{class_}>{escape(item)}")
 
     return (
         TEMPLATE
@@ -213,7 +210,9 @@ def render_testapp(req):
     ).encode("utf-8")
 
 
-def test_app(environ, start_response):
+def test_app(
+    environ: "WSGIEnvironment", start_response: "StartResponse"
+) -> t.Iterable[bytes]:
     """Simple test application that dumps the environment.  You can use
     it to check if Werkzeug is working properly:
 

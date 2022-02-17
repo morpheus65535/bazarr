@@ -1,12 +1,14 @@
 import sys
 from functools import lru_cache
+from marshal import loads, dumps
 from random import randint
-from time import time
-from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import Any, cast, Dict, Iterable, List, Optional, Type, Union
 
 from . import errors
 from .color import Color, ColorParseError, ColorSystem, blend_rgb
+from .repr import rich_repr, Result
 from .terminal_theme import DEFAULT_TERMINAL_THEME, TerminalTheme
+
 
 # Style instances and style definitions are often interchangeable
 StyleType = Union[str, "Style"]
@@ -26,6 +28,7 @@ class _Bit:
         return None
 
 
+@rich_repr
 class Style:
     """A terminal style.
 
@@ -59,6 +62,7 @@ class Style:
     _set_attributes: int
     _hash: int
     _null: bool
+    _meta: Optional[bytes]
 
     __slots__ = [
         "_color",
@@ -71,6 +75,7 @@ class Style:
         "_style_definition",
         "_hash",
         "_null",
+        "_meta",
     ]
 
     # maps bits on to SGR parameter
@@ -90,25 +95,51 @@ class Style:
         12: "53",
     }
 
+    STYLE_ATTRIBUTES = {
+        "dim": "dim",
+        "d": "dim",
+        "bold": "bold",
+        "b": "bold",
+        "italic": "italic",
+        "i": "italic",
+        "underline": "underline",
+        "u": "underline",
+        "blink": "blink",
+        "blink2": "blink2",
+        "reverse": "reverse",
+        "r": "reverse",
+        "conceal": "conceal",
+        "c": "conceal",
+        "strike": "strike",
+        "s": "strike",
+        "underline2": "underline2",
+        "uu": "underline2",
+        "frame": "frame",
+        "encircle": "encircle",
+        "overline": "overline",
+        "o": "overline",
+    }
+
     def __init__(
         self,
         *,
-        color: Union[Color, str] = None,
-        bgcolor: Union[Color, str] = None,
-        bold: bool = None,
-        dim: bool = None,
-        italic: bool = None,
-        underline: bool = None,
-        blink: bool = None,
-        blink2: bool = None,
-        reverse: bool = None,
-        conceal: bool = None,
-        strike: bool = None,
-        underline2: bool = None,
-        frame: bool = None,
-        encircle: bool = None,
-        overline: bool = None,
-        link: str = None,
+        color: Optional[Union[Color, str]] = None,
+        bgcolor: Optional[Union[Color, str]] = None,
+        bold: Optional[bool] = None,
+        dim: Optional[bool] = None,
+        italic: Optional[bool] = None,
+        underline: Optional[bool] = None,
+        blink: Optional[bool] = None,
+        blink2: Optional[bool] = None,
+        reverse: Optional[bool] = None,
+        conceal: Optional[bool] = None,
+        strike: Optional[bool] = None,
+        underline2: Optional[bool] = None,
+        frame: Optional[bool] = None,
+        encircle: Optional[bool] = None,
+        overline: Optional[bool] = None,
+        link: Optional[str] = None,
+        meta: Optional[Dict[str, Any]] = None,
     ):
         self._ansi: Optional[str] = None
         self._style_definition: Optional[str] = None
@@ -158,7 +189,8 @@ class Style:
         )
 
         self._link = link
-        self._link_id = f"{time()}-{randint(0, 999999)}" if link else ""
+        self._link_id = f"{randint(0, 999999)}" if link else ""
+        self._meta = None if meta is None else dumps(meta)
         self._hash = hash(
             (
                 self._color,
@@ -166,9 +198,10 @@ class Style:
                 self._attributes,
                 self._set_attributes,
                 link,
+                self._meta,
             )
         )
-        self._null = not (self._set_attributes or color or bgcolor or link)
+        self._null = not (self._set_attributes or color or bgcolor or link or meta)
 
     @classmethod
     def null(cls) -> "Style":
@@ -176,14 +209,16 @@ class Style:
         return NULL_STYLE
 
     @classmethod
-    def from_color(cls, color: Color = None, bgcolor: Color = None) -> "Style":
+    def from_color(
+        cls, color: Optional[Color] = None, bgcolor: Optional[Color] = None
+    ) -> "Style":
         """Create a new style with colors and no attributes.
 
         Returns:
             color (Optional[Color]): A (foreground) color, or None for no color. Defaults to None.
             bgcolor (Optional[Color]): A (background) color, or None for no color. Defaults to None.
         """
-        style = cls.__new__(Style)
+        style: Style = cls.__new__(Style)
         style._ansi = None
         style._style_definition = None
         style._color = color
@@ -192,6 +227,7 @@ class Style:
         style._attributes = 0
         style._link = None
         style._link_id = ""
+        style._meta = None
         style._hash = hash(
             (
                 color,
@@ -199,10 +235,59 @@ class Style:
                 None,
                 None,
                 None,
+                None,
             )
         )
         style._null = not (color or bgcolor)
         return style
+
+    @classmethod
+    def from_meta(cls, meta: Optional[Dict[str, Any]]) -> "Style":
+        """Create a new style with meta data.
+
+        Returns:
+            meta (Optional[Dict[str, Any]]): A dictionary of meta data. Defaults to None.
+        """
+        style: Style = cls.__new__(Style)
+        style._ansi = None
+        style._style_definition = None
+        style._color = None
+        style._bgcolor = None
+        style._set_attributes = 0
+        style._attributes = 0
+        style._link = None
+        style._link_id = ""
+        style._meta = dumps(meta)
+        style._hash = hash(
+            (
+                None,
+                None,
+                None,
+                None,
+                None,
+                style._meta,
+            )
+        )
+        style._null = not (meta)
+        return style
+
+    @classmethod
+    def on(cls, meta: Optional[Dict[str, Any]] = None, **handlers: Any) -> "Style":
+        """Create a blank style with meta information.
+
+        Example:
+            style = Style.on(click=self.on_click)
+
+        Args:
+            meta (Optiona[Dict[str, Any]], optional): An optional dict of meta information.
+            **handlers (Any): Keyword arguments are translated in to handlers.
+
+        Returns:
+            Style: A Style with meta information attached.
+        """
+        meta = {} if meta is None else meta
+        meta.update({f"@{key}": value for key, value in handlers.items()})
+        return cls.from_meta(meta)
 
     bold = _Bit(0)
     dim = _Bit(1)
@@ -340,9 +425,24 @@ class Style:
                 return value
         raise ValueError("expected at least one non-None style")
 
-    def __repr__(self) -> str:
-        """Render a named style differently from an anonymous style."""
-        return f'Style.parse("{self}")'
+    def __rich_repr__(self) -> Result:
+        yield "color", self.color, None
+        yield "bgcolor", self.bgcolor, None
+        yield "bold", self.bold, None,
+        yield "dim", self.dim, None,
+        yield "italic", self.italic, None
+        yield "underline", self.underline, None,
+        yield "blink", self.blink, None
+        yield "blink2", self.blink2, None
+        yield "reverse", self.reverse, None
+        yield "conceal", self.conceal, None
+        yield "strike", self.strike, None
+        yield "underline2", self.underline2, None
+        yield "frame", self.frame, None
+        yield "encircle", self.encircle, None
+        yield "link", self.link, None
+        if self._meta:
+            yield "meta", self.meta
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Style):
@@ -353,6 +453,7 @@ class Style:
             and self._set_attributes == other._set_attributes
             and self._attributes == other._attributes
             and self._link == other._link
+            and self._meta == other._meta
         )
 
     def __hash__(self) -> int:
@@ -384,11 +485,16 @@ class Style:
         return Style(bgcolor=self.bgcolor)
 
     @property
+    def meta(self) -> Dict[str, Any]:
+        """Get meta information (can not be changed after construction)."""
+        return {} if self._meta is None else cast(Dict[str, Any], loads(self._meta))
+
+    @property
     def without_color(self) -> "Style":
         """Get a copy of the style with color removed."""
         if self._null:
             return NULL_STYLE
-        style = self.__new__(Style)
+        style: Style = self.__new__(Style)
         style._ansi = None
         style._style_definition = None
         style._color = None
@@ -396,9 +502,10 @@ class Style:
         style._attributes = self._attributes
         style._set_attributes = self._set_attributes
         style._link = self._link
-        style._link_id = f"{time()}-{randint(0, 999999)}" if self._link else ""
+        style._link_id = f"{randint(0, 999999)}" if self._link else ""
         style._hash = self._hash
         style._null = False
+        style._meta = None
         return style
 
     @classmethod
@@ -418,33 +525,10 @@ class Style:
         if style_definition.strip() == "none" or not style_definition:
             return cls.null()
 
-        style_attributes = {
-            "dim": "dim",
-            "d": "dim",
-            "bold": "bold",
-            "b": "bold",
-            "italic": "italic",
-            "i": "italic",
-            "underline": "underline",
-            "u": "underline",
-            "blink": "blink",
-            "blink2": "blink2",
-            "reverse": "reverse",
-            "r": "reverse",
-            "conceal": "conceal",
-            "c": "conceal",
-            "strike": "strike",
-            "s": "strike",
-            "underline2": "underline2",
-            "uu": "underline2",
-            "frame": "frame",
-            "encircle": "encircle",
-            "overline": "overline",
-            "o": "overline",
-        }
+        STYLE_ATTRIBUTES = cls.STYLE_ATTRIBUTES
         color: Optional[str] = None
         bgcolor: Optional[str] = None
-        attributes: Dict[str, Optional[bool]] = {}
+        attributes: Dict[str, Optional[Any]] = {}
         link: Optional[str] = None
 
         words = iter(style_definition.split())
@@ -464,7 +548,7 @@ class Style:
 
             elif word == "not":
                 word = next(words, "")
-                attribute = style_attributes.get(word)
+                attribute = STYLE_ATTRIBUTES.get(word)
                 if attribute is None:
                     raise errors.StyleSyntaxError(
                         f"expected style attribute after 'not', found {word!r}"
@@ -477,8 +561,8 @@ class Style:
                     raise errors.StyleSyntaxError("URL expected after 'link'")
                 link = word
 
-            elif word in style_attributes:
-                attributes[style_attributes[word]] = True
+            elif word in STYLE_ATTRIBUTES:
+                attributes[STYLE_ATTRIBUTES[word]] = True
 
             else:
                 try:
@@ -492,7 +576,7 @@ class Style:
         return style
 
     @lru_cache(maxsize=1024)
-    def get_html_style(self, theme: TerminalTheme = None) -> str:
+    def get_html_style(self, theme: Optional[TerminalTheme] = None) -> str:
         """Get a CSS style rule."""
         theme = theme or DEFAULT_TERMINAL_THEME
         css: List[str] = []
@@ -562,7 +646,7 @@ class Style:
         """
         if self._null:
             return NULL_STYLE
-        style = self.__new__(Style)
+        style: Style = self.__new__(Style)
         style._ansi = self._ansi
         style._style_definition = self._style_definition
         style._color = self._color
@@ -570,12 +654,13 @@ class Style:
         style._attributes = self._attributes
         style._set_attributes = self._set_attributes
         style._link = self._link
-        style._link_id = f"{time()}-{randint(0, 999999)}" if self._link else ""
+        style._link_id = f"{randint(0, 999999)}" if self._link else ""
         style._hash = self._hash
         style._null = False
+        style._meta = self._meta
         return style
 
-    def update_link(self, link: str = None) -> "Style":
+    def update_link(self, link: Optional[str] = None) -> "Style":
         """Get a copy with a different value for link.
 
         Args:
@@ -584,7 +669,7 @@ class Style:
         Returns:
             Style: A new Style instance.
         """
-        style = self.__new__(Style)
+        style: Style = self.__new__(Style)
         style._ansi = self._ansi
         style._style_definition = self._style_definition
         style._color = self._color
@@ -592,9 +677,10 @@ class Style:
         style._attributes = self._attributes
         style._set_attributes = self._set_attributes
         style._link = link
-        style._link_id = f"{time()}-{randint(0, 999999)}" if link else ""
+        style._link_id = f"{randint(0, 999999)}" if link else ""
         style._hash = self._hash
         style._null = False
+        style._meta = self._meta
         return style
 
     def render(
@@ -637,12 +723,12 @@ class Style:
 
     def __add__(self, style: Optional["Style"]) -> "Style":
         if not (isinstance(style, Style) or style is None):
-            return NotImplemented  # type: ignore
+            return NotImplemented
         if style is None or style._null:
             return self
         if self._null:
             return style
-        new_style = self.__new__(Style)
+        new_style: Style = self.__new__(Style)
         new_style._ansi = None
         new_style._style_definition = None
         new_style._color = style._color or self._color
@@ -655,6 +741,10 @@ class Style:
         new_style._link_id = style._link_id or self._link_id
         new_style._hash = style._hash
         new_style._null = self._null or style._null
+        if self._meta and style._meta:
+            new_style._meta = dumps({**self.meta, **style.meta})
+        else:
+            new_style._meta = self._meta or style._meta
         return new_style
 
 

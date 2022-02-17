@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,38 +25,61 @@
 #← Prev: _orderedbase.py  Current: _frozenordered.py  Next: _orderedbidict.py →
 #==============================================================================
 
-"""Provides :class:`FrozenOrderedBidict`, an immutable, hashable, ordered bidict."""
+"""Provide :class:`FrozenOrderedBidict`, an immutable, hashable, ordered bidict."""
 
-from ._delegating_mixins import _DelegateKeysToFwdm
+import typing as _t
+
 from ._frozenbidict import frozenbidict
 from ._orderedbase import OrderedBidictBase
-from .compat import DICTS_ORDERED, PY2, izip
+from ._typing import KT, VT
 
 
-# If the Python implementation's dict type is ordered (e.g. PyPy or CPython >= 3.6), then
-# `FrozenOrderedBidict` can delegate to `_fwdm` for keys: Both `_fwdm` and `_invm` will always
-# be initialized with the provided items in the correct order, and since `FrozenOrderedBidict`
-# is immutable, their respective orders can't get out of sync after a mutation. (Can't delegate
-# to `_fwdm` for items though because values in `_fwdm` are nodes.)
-_BASES = ((_DelegateKeysToFwdm,) if DICTS_ORDERED else ()) + (OrderedBidictBase,)
-_CLSDICT = dict(
-    __slots__=(),
-    # Must set __hash__ explicitly, Python prevents inheriting it.
-    # frozenbidict.__hash__ can be reused for FrozenOrderedBidict:
-    # FrozenOrderedBidict inherits BidictBase.__eq__ which is order-insensitive,
-    # and frozenbidict.__hash__ is consistent with BidictBase.__eq__.
-    __hash__=frozenbidict.__hash__.__func__ if PY2 else frozenbidict.__hash__,
-    __doc__='Hashable, immutable, ordered bidict type.',
-    __module__=__name__,  # Otherwise unpickling fails in Python 2.
-)
+class FrozenOrderedBidict(OrderedBidictBase[KT, VT]):
+    """Hashable, immutable, ordered bidict type.
 
-# When PY2 (so we provide iteritems) and DICTS_ORDERED, e.g. on PyPy, the following implementation
-# of iteritems may be more efficient than that inherited from `Mapping`. This exploits the property
-# that the keys in `_fwdm` and `_invm` are already in the right order:
-if PY2 and DICTS_ORDERED:
-    _CLSDICT['iteritems'] = lambda self: izip(self._fwdm, self._invm)  # noqa: E501; pylint: disable=protected-access
+    Like a hashable :class:`bidict.OrderedBidict`
+    without the mutating APIs, or like a
+    reversible :class:`bidict.frozenbidict` even on Python < 3.8.
+    (All bidicts are order-preserving when never mutated, so frozenbidict is
+    already order-preserving, but only on Python 3.8+, where dicts are
+    reversible, are all bidicts (including frozenbidict) also reversible.)
 
-FrozenOrderedBidict = type('FrozenOrderedBidict', _BASES, _CLSDICT)  # pylint: disable=invalid-name
+    If you are using Python 3.8+, frozenbidict gives you everything that
+    FrozenOrderedBidict gives you, but with less space overhead.
+    """
+
+    __slots__ = ('_hash',)
+    __hash__ = frozenbidict.__hash__
+
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'FrozenOrderedBidict[VT, KT]': ...
+
+    # Delegate to backing dicts for more efficient implementations of keys() and values().
+    # Possible with FrozenOrderedBidict but not OrderedBidict since FrozenOrderedBidict
+    # is immutable, i.e. these can't get out of sync after initialization due to mutation.
+    def keys(self) -> _t.KeysView[KT]:
+        """A set-like object providing a view on the contained keys."""
+        return self._fwdm._fwdm.keys()  # type: ignore [return-value]
+
+    def values(self) -> _t.KeysView[VT]:  # type: ignore [override]
+        """A set-like object providing a view on the contained values."""
+        return self._invm._fwdm.keys()  # type: ignore [return-value]
+
+    # Can't delegate for items() because values in _fwdm and _invm are nodes.
+
+    # On Python 3.8+, delegate to backing dicts for a more efficient implementation
+    # of __iter__ and __reversed__ (both of which call this _iter() method):
+    if hasattr(dict, '__reversed__'):
+        def _iter(self, *, reverse: bool = False) -> _t.Iterator[KT]:
+            itfn = reversed if reverse else iter
+            return itfn(self._fwdm._fwdm)  # type: ignore [operator,no-any-return]
+    else:
+        # On Python < 3.8, just optimize __iter__:
+        def _iter(self, *, reverse: bool = False) -> _t.Iterator[KT]:
+            if not reverse:
+                return iter(self._fwdm._fwdm)
+            return super()._iter(reverse=True)
 
 
 #                             * Code review nav *

@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.oauth2.rfc6749.grant_types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
-from __future__ import absolute_import, unicode_literals
-
 import json
 import logging
 
 from .. import errors, utils
-from ..request_validator import RequestValidator
 from .base import GrantTypeBase
 
 log = logging.getLogger(__name__)
@@ -25,13 +21,18 @@ class RefreshTokenGrant(GrantTypeBase):
     def __init__(self, request_validator=None,
                  issue_new_refresh_tokens=True,
                  **kwargs):
-        super(RefreshTokenGrant, self).__init__(
+        super().__init__(
             request_validator,
             issue_new_refresh_tokens=issue_new_refresh_tokens,
             **kwargs)
 
     def create_token_response(self, request, token_handler):
         """Create a new access token from a refresh_token.
+
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        :param token_handler: A token handler instance, for example of type
+                              oauthlib.oauth2.BearerToken.
 
         If valid and authorized, the authorization server issues an access
         token as described in `Section 5.1`_. If the request failed
@@ -49,22 +50,21 @@ class RefreshTokenGrant(GrantTypeBase):
         .. _`Section 5.1`: https://tools.ietf.org/html/rfc6749#section-5.1
         .. _`Section 5.2`: https://tools.ietf.org/html/rfc6749#section-5.2
         """
-        headers = {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
-            'Pragma': 'no-cache',
-        }
+        headers = self._get_default_headers()
         try:
             log.debug('Validating refresh token request, %r.', request)
             self.validate_token_request(request)
         except errors.OAuth2Error as e:
+            log.debug('Client error in token request, %s.', e)
+            headers.update(e.headers)
             return headers, e.json, e.status_code
 
         token = token_handler.create_token(request,
-                                           refresh_token=self.issue_new_refresh_tokens, save_token=False)
+                                           refresh_token=self.issue_new_refresh_tokens)
 
         for modifier in self._token_modifiers:
             token = modifier(token)
+
         self.request_validator.save_token(token, request)
 
         log.debug('Issuing new token to client id %r (%r), %r.',
@@ -72,6 +72,10 @@ class RefreshTokenGrant(GrantTypeBase):
         return headers, json.dumps(token), 200
 
     def validate_token_request(self, request):
+        """
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
+        """
         # REQUIRED. Value MUST be set to "refresh_token".
         if request.grant_type != 'refresh_token':
             raise errors.UnsupportedGrantTypeError(request=request)
@@ -118,7 +122,7 @@ class RefreshTokenGrant(GrantTypeBase):
 
         if request.scope:
             request.scopes = utils.scope_to_list(request.scope)
-            if (not all((s in original_scopes for s in request.scopes))
+            if (not all(s in original_scopes for s in request.scopes)
                 and not self.request_validator.is_within_original_scope(
                     request.scopes, request.refresh_token, request)):
                 log.debug('Refresh token %s lack requested scopes, %r.',

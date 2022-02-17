@@ -1,27 +1,28 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from .audio import (
+from knowit.properties.audio import (
     AudioChannels,
     AudioCodec,
     AudioCompression,
     AudioProfile,
     BitRateMode,
 )
-from .basic import Basic
-from .duration import Duration
-from .language import Language
-from .quantity import Quantity
-from .subtitle import (
+from knowit.properties.general import (
+    Basic,
+    Duration,
+    Language,
+    Quantity,
+    YesNo,
+)
+from knowit.properties.subtitle import (
     SubtitleFormat,
 )
-from .video import (
+from knowit.properties.video import (
     Ratio,
     ScanType,
     VideoCodec,
+    VideoDimensions,
     VideoEncoder,
+    VideoHdrFormat,
     VideoProfile,
     VideoProfileLevel,
     VideoProfileTier,
 )
-from .yesno import YesNo

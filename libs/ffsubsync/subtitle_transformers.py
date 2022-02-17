@@ -3,12 +3,11 @@ from datetime import timedelta
 import logging
 import numbers
 
-from .sklearn_shim import TransformerMixin
-
-from .generic_subtitles import GenericSubtitle, GenericSubtitlesFile, SubsMixin
+from ffsubsync.generic_subtitles import GenericSubtitle, GenericSubtitlesFile, SubsMixin
+from ffsubsync.sklearn_shim import TransformerMixin
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class SubtitleShifter(SubsMixin, TransformerMixin):
@@ -19,7 +18,7 @@ class SubtitleShifter(SubsMixin, TransformerMixin):
         else:
             self.td_seconds = td_seconds
 
-    def fit(self, subs, *_):
+    def fit(self, subs: GenericSubtitlesFile, *_):
         self.subs_ = subs.offset(self.td_seconds)
         return self
 
@@ -33,7 +32,7 @@ class SubtitleScaler(SubsMixin, TransformerMixin):
         super(SubsMixin, self).__init__()
         self.scale_factor = scale_factor
 
-    def fit(self, subs, *_):
+    def fit(self, subs: GenericSubtitlesFile, *_):
         scaled_subs = []
         for sub in subs:
             scaled_subs.append(
@@ -41,15 +40,10 @@ class SubtitleScaler(SubsMixin, TransformerMixin):
                     # py2 doesn't support direct multiplication of timedelta w/ float
                     timedelta(seconds=sub.start.total_seconds() * self.scale_factor),
                     timedelta(seconds=sub.end.total_seconds() * self.scale_factor),
-                    sub.inner
+                    sub.inner,
                 )
             )
-        self.subs_ = GenericSubtitlesFile(
-            scaled_subs,
-            sub_format=subs.sub_format,
-            encoding=subs.encoding,
-            styles=subs.styles
-        )
+        self.subs_ = subs.clone_props_for_subs(scaled_subs)
         return self
 
     def transform(self, *_):
@@ -57,13 +51,13 @@ class SubtitleScaler(SubsMixin, TransformerMixin):
 
 
 class SubtitleMerger(SubsMixin, TransformerMixin):
-    def __init__(self, reference_subs, first='reference'):
-        assert first in ('reference', 'output')
+    def __init__(self, reference_subs, first="reference"):
+        assert first in ("reference", "output")
         super(SubsMixin, self).__init__()
         self.reference_subs = reference_subs
         self.first = first
 
-    def fit(self, output_subs, *_):
+    def fit(self, output_subs: GenericSubtitlesFile, *_):
         def _merger_gen(a, b):
             ita, itb = iter(a), iter(b)
             cur_a = next(ita, None)
@@ -118,17 +112,13 @@ class SubtitleMerger(SubsMixin, TransformerMixin):
                     cur_b = next(itb, None)
 
         merged_subs = []
-        if self.first == 'reference':
+        if self.first == "reference":
             first, second = self.reference_subs, output_subs
         else:
             first, second = output_subs, self.reference_subs
         for merged in _merger_gen(first, second):
             merged_subs.append(merged)
-        self.subs_ = GenericSubtitlesFile(
-            merged_subs,
-            sub_format=output_subs.sub_format,
-            encoding=output_subs.encoding
-        )
+        self.subs_ = output_subs.clone_props_for_subs(merged_subs)
         return self
 
     def transform(self, *_):

@@ -267,6 +267,7 @@ cdef extern from "sqlite3.h" nogil:
     cdef int sqlite3_errcode(sqlite3 *db)
     cdef int sqlite3_errstr(int)
     cdef const char *sqlite3_errmsg(sqlite3 *db)
+    cdef char *sqlite3_mprintf(const char *, ...)
 
     cdef int sqlite3_blob_open(
           sqlite3*,
@@ -573,6 +574,7 @@ cdef int pwBestIndex(sqlite3_vtab *pBase, sqlite3_index_info *pIdxInfo) \
         with gil:
     cdef:
         int i
+        int col_idx
         int idxNum = 0, nArg = 0
         peewee_vtab *pVtab = <peewee_vtab *>pBase
         object table_func_cls = <object>pVtab.table_func_cls
@@ -582,17 +584,18 @@ cdef int pwBestIndex(sqlite3_vtab *pBase, sqlite3_index_info *pIdxInfo) \
         int nParams = len(table_func_cls.params)
 
     for i in range(pIdxInfo.nConstraint):
-        pConstraint = pIdxInfo.aConstraint + i
+        pConstraint = <sqlite3_index_constraint *>pIdxInfo.aConstraint + i
         if not pConstraint.usable:
             continue
         if pConstraint.op != SQLITE_INDEX_CONSTRAINT_EQ:
             continue
 
-        columns.append(table_func_cls.params[pConstraint.iColumn -
-                                             table_func_cls._ncols])
-        nArg += 1
-        pIdxInfo.aConstraintUsage[i].argvIndex = nArg
-        pIdxInfo.aConstraintUsage[i].omit = 1
+        col_idx = pConstraint.iColumn - table_func_cls._ncols
+        if col_idx >= 0:
+            columns.append(table_func_cls.params[col_idx])
+            nArg += 1
+            pIdxInfo.aConstraintUsage[i].argvIndex = nArg
+            pIdxInfo.aConstraintUsage[i].omit = 1
 
     if nArg > 0 or nParams == 0:
         if nArg == nParams:
@@ -606,11 +609,8 @@ cdef int pwBestIndex(sqlite3_vtab *pBase, sqlite3_index_info *pIdxInfo) \
 
         # Store a reference to the columns in the index info structure.
         joinedCols = encode(','.join(columns))
-        idxStr = <char *>sqlite3_malloc((len(joinedCols) + 1) * sizeof(char))
-        memcpy(idxStr, <char *>joinedCols, len(joinedCols))
-        idxStr[len(joinedCols)] = '\x00'
-        pIdxInfo.idxStr = idxStr
-        pIdxInfo.needToFreeIdxStr = 0
+        pIdxInfo.idxStr = sqlite3_mprintf("%s", <char *>joinedCols)
+        pIdxInfo.needToFreeIdxStr = 1
     elif USE_SQLITE_CONSTRAINT:
         return SQLITE_CONSTRAINT
     else:
@@ -703,43 +703,6 @@ class TableFunction(object):
             accum.append('%s HIDDEN' % param)
 
         return ', '.join(accum)
-
-
-cdef tuple SQLITE_DATETIME_FORMATS = (
-    '%Y-%m-%d %H:%M:%S',
-    '%Y-%m-%d %H:%M:%S.%f',
-    '%Y-%m-%d',
-    '%H:%M:%S',
-    '%H:%M:%S.%f',
-    '%H:%M')
-
-cdef dict SQLITE_DATE_TRUNC_MAPPING = {
-    'year': '%Y',
-    'month': '%Y-%m',
-    'day': '%Y-%m-%d',
-    'hour': '%Y-%m-%d %H',
-    'minute': '%Y-%m-%d %H:%M',
-    'second': '%Y-%m-%d %H:%M:%S'}
-
-
-cdef tuple validate_and_format_datetime(lookup, date_str):
-    if not date_str or not lookup:
-        return
-
-    lookup = lookup.lower()
-    if lookup not in SQLITE_DATE_TRUNC_MAPPING:
-        return
-
-    cdef datetime.datetime date_obj
-    cdef bint success = False
-
-    for date_format in SQLITE_DATETIME_FORMATS:
-        try:
-            date_obj = datetime.datetime.strptime(date_str, date_format)
-        except ValueError:
-            pass
-        else:
-            return (date_obj, lookup)
 
 
 cdef inline bytes encode(key):
@@ -1411,6 +1374,9 @@ def sqlite_get_db_status(conn, flag):
         int current, highwater, rc
         pysqlite_Connection *c_conn = <pysqlite_Connection *>conn
 
+    if not c_conn.db:
+        return (None, None)
+
     rc = sqlite3_db_status(c_conn.db, flag, &current, &highwater, 0)
     if rc == SQLITE_OK:
         return (current, highwater)
@@ -1440,6 +1406,9 @@ cdef class ConnectionHelper(object):
             sqlite3_update_hook(self.conn.db, NULL, NULL)
 
     def set_commit_hook(self, fn):
+        if not self.conn.initialized or not self.conn.db:
+            return
+
         self._commit_hook = fn
         if fn is None:
             sqlite3_commit_hook(self.conn.db, NULL, NULL)
@@ -1447,6 +1416,9 @@ cdef class ConnectionHelper(object):
             sqlite3_commit_hook(self.conn.db, _commit_callback, <void *>fn)
 
     def set_rollback_hook(self, fn):
+        if not self.conn.initialized or not self.conn.db:
+            return
+
         self._rollback_hook = fn
         if fn is None:
             sqlite3_rollback_hook(self.conn.db, NULL, NULL)
@@ -1454,6 +1426,9 @@ cdef class ConnectionHelper(object):
             sqlite3_rollback_hook(self.conn.db, _rollback_callback, <void *>fn)
 
     def set_update_hook(self, fn):
+        if not self.conn.initialized or not self.conn.db:
+            return
+
         self._update_hook = fn
         if fn is None:
             sqlite3_update_hook(self.conn.db, NULL, NULL)
@@ -1465,18 +1440,24 @@ cdef class ConnectionHelper(object):
         Replace the default busy handler with one that introduces some "jitter"
         into the amount of time delayed between checks.
         """
+        if not self.conn.initialized or not self.conn.db:
+            return False
+
         cdef sqlite3_int64 n = timeout * 1000
         sqlite3_busy_handler(self.conn.db, _aggressive_busy_handler, <void *>n)
         return True
 
     def changes(self):
-        return sqlite3_changes(self.conn.db)
+        if self.conn.initialized and self.conn.db:
+            return sqlite3_changes(self.conn.db)
 
     def last_insert_rowid(self):
-        return <int>sqlite3_last_insert_rowid(self.conn.db)
+        if self.conn.initialized and self.conn.db:
+            return <int>sqlite3_last_insert_rowid(self.conn.db)
 
     def autocommit(self):
-        return sqlite3_get_autocommit(self.conn.db) != 0
+        if self.conn.initialized and self.conn.db:
+            return sqlite3_get_autocommit(self.conn.db) != 0
 
 
 cdef int _commit_callback(void *userData) with gil:
@@ -1528,6 +1509,9 @@ def backup(src_conn, dest_conn, pages=None, name=None, progress=None):
         sqlite3 *src_db = src.db
         sqlite3 *dest_db = dest.db
         sqlite3_backup *backup
+
+    if not src_db or not dest_db:
+        raise OperationalError('cannot backup to or from a closed database')
 
     # We always backup to the "main" database in the dest db.
     backup = sqlite3_backup_init(dest_db, b'main', src_db, bname)

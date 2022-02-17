@@ -107,6 +107,11 @@ const SystemStatusView: FunctionComponent = () => {
           <CRow title="Bazarr Version">
             <span>{status?.bazarr_version}</span>
           </CRow>
+          {status?.package_version !== "" && (
+            <CRow title="Package Version">
+              <span>{status?.package_version}</span>
+            </CRow>
+          )}
           <CRow title="Sonarr Version">
             <span>{status?.sonarr_version}</span>
           </CRow>

@@ -205,7 +205,7 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     logging.debug(f'BAZARR upgrade leftover cleaner will ignore directories matching this '
                   f'regex: {dir_to_ignore_regex.pattern}')
 
-    file_to_ignore = ['nssm.exe', '7za.exe']
+    file_to_ignore = ['nssm.exe', '7za.exe', 'unins000.exe', 'unins000.dat']
     logging.debug('BAZARR upgrade leftover cleaner will ignore those files: {}'.format(', '.join(file_to_ignore)))
     extension_to_ignore = ['.pyc']
     logging.debug('BAZARR upgrade leftover cleaner will ignore files with those extensions: '

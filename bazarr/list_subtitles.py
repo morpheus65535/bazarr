@@ -18,7 +18,6 @@ from helper import path_mappings, get_subtitle_destination_folder
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream, show_progress, hide_progress
 from charamel import Detector
-from peewee import DoesNotExist
 
 gc.enable()
 
@@ -32,12 +31,11 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
-                    .where(TableEpisodes.path == original_path)\
-                    .dicts()\
-                    .get()
-            except DoesNotExist:
+            item = TableEpisodes.select(TableEpisodes.episode_file_id, TableEpisodes.file_size)\
+                .where(TableEpisodes.path == original_path)\
+                .dicts()\
+                .get_or_none()
+            if not item:
                 logging.exception(f"BAZARR error when trying to select this episode from database: {reversed_path}")
             else:
                 try:
@@ -90,6 +88,10 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                 if language:
                     if hasattr(language, 'alpha3'):
                         valid_language = alpha2_from_alpha3(language.alpha3)
+                else:
+                    logging.debug(f"Skipping subtitles because we are unable to define language: {subtitle}")
+                    continue
+
                 if not valid_language:
                     logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
@@ -137,12 +139,11 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
     if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
-                    .where(TableMovies.path == original_path)\
-                    .dicts()\
-                    .get()
-            except DoesNotExist:
+            item = TableMovies.select(TableMovies.movie_file_id, TableMovies.file_size)\
+                .where(TableMovies.path == original_path)\
+                .dicts()\
+                .get_or_none()
+            if not item:
                 logging.exception(f"BAZARR error when trying to select this movie from database: {reversed_path}")
             else:
                 try:
@@ -197,6 +198,10 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
                 if language:
                     if hasattr(language, 'alpha3'):
                         valid_language = alpha2_from_alpha3(language.alpha3)
+                else:
+                    logging.debug(f"Skipping subtitles because we are unable to define language: {subtitle}")
+                    continue
+
                 if not valid_language:
                     logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
@@ -266,12 +271,6 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if desired_subtitles_temp:
                 for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
-                        cutoff_lang_temp = get_profile_cutoff(profile_id=episode_subtitles['profileId'])
-                        if cutoff_lang_temp:
-                            if language_from_alpha2(cutoff_lang_temp[0]['language']) in ast.literal_eval(
-                                    episode_subtitles['audio_language']):
-                                desired_subtitles_list = []
-                                break
                         if language_from_alpha2(language['language']) in ast.literal_eval(
                                 episode_subtitles['audio_language']):
                             continue
@@ -306,17 +305,19 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if cutoff_language in actual_subtitles_list:
+                    if language_from_alpha2(cutoff_temp['language']) in \
+                            ast.literal_eval(episode_subtitles['audio_language']):
                         cutoff_met = True
-                        missing_subtitles_text = str([])
+                    elif cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
                     elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
                     elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
 
-            if not cutoff_met:
+            if cutoff_met:
+                missing_subtitles_text = str([])
+            else:
                 # if cutoff isn't met or None, we continue
 
                 # get difference between desired and existing subtitles
@@ -376,12 +377,6 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             if desired_subtitles_temp:
                 for language in desired_subtitles_temp['items']:
                     if language['audio_exclude'] == "True":
-                        cutoff_lang_temp = get_profile_cutoff(profile_id=movie_subtitles['profileId'])
-                        if cutoff_lang_temp:
-                            if language_from_alpha2(cutoff_lang_temp[0]['language']) in ast.literal_eval(
-                                    movie_subtitles['audio_language']):
-                                desired_subtitles_list = []
-                                break
                         if language_from_alpha2(language['language']) in ast.literal_eval(
                                 movie_subtitles['audio_language']):
                             continue
@@ -416,17 +411,19 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if cutoff_language in actual_subtitles_list:
+                    if language_from_alpha2(cutoff_temp['language']) in \
+                            ast.literal_eval(movie_subtitles['audio_language']):
                         cutoff_met = True
-                        missing_subtitles_text = str([])
+                    elif cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
                     elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
                     elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
                         cutoff_met = True
-                        missing_subtitles_text = str([])
 
-            if not cutoff_met:
+            if cutoff_met:
+                missing_subtitles_text = str([])
+            else:
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:

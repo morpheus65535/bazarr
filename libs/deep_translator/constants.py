@@ -11,7 +11,9 @@ BASE_URLS = {
     "DEEPL_FREE": "https://api-free.deepl.com/v2/",
     "MICROSOFT_TRANSLATE": "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0",
     "PAPAGO": "https://papago.naver.com/",
-    "PAPAGO_API": "https://openapi.naver.com/v1/papago/n2mt"
+    "PAPAGO_API": "https://openapi.naver.com/v1/papago/n2mt",
+    "LIBRE": "https://libretranslate.com/",
+    "LIBRE_FREE": "https://libretranslate.de/",
 }
 
 GOOGLE_CODES_TO_LANGUAGES = {
@@ -29,9 +31,8 @@ GOOGLE_CODES_TO_LANGUAGES = {
     'ca': 'catalan',
     'ceb': 'cebuano',
     'ny': 'chichewa',
-    'zh': 'chinese',
-    'zh-cn': 'chinese (simplified)',
-    'zh-tw': 'chinese (traditional)',
+    'zh-CN': 'chinese (simplified)',
+    'zh-TW': 'chinese (traditional)',
     'co': 'corsican',
     'hr': 'croatian',
     'cs': 'czech',
@@ -66,8 +67,9 @@ GOOGLE_CODES_TO_LANGUAGES = {
     'kn': 'kannada',
     'kk': 'kazakh',
     'km': 'khmer',
+    'rw': 'kinyarwanda',
     'ko': 'korean',
-    'ku': 'kurdish (kurmanji)',
+    'ku': 'kurdish',
     'ky': 'kyrgyz',
     'lo': 'lao',
     'la': 'latin',
@@ -82,9 +84,10 @@ GOOGLE_CODES_TO_LANGUAGES = {
     'mi': 'maori',
     'mr': 'marathi',
     'mn': 'mongolian',
-    'my': 'myanmar (burmese)',
+    'my': 'myanmar',
     'ne': 'nepali',
     'no': 'norwegian',
+    'or': 'odia',
     'ps': 'pashto',
     'fa': 'persian',
     'pl': 'polish',
@@ -108,11 +111,14 @@ GOOGLE_CODES_TO_LANGUAGES = {
     'sv': 'swedish',
     'tg': 'tajik',
     'ta': 'tamil',
+    'tt': 'tatar',
     'te': 'telugu',
     'th': 'thai',
     'tr': 'turkish',
+    'tk': 'turkmen',
     'uk': 'ukrainian',
     'ur': 'urdu',
+    'ug': 'uyghur',
     'uz': 'uzbek',
     'vi': 'vietnamese',
     'cy': 'welsh',
@@ -120,11 +126,17 @@ GOOGLE_CODES_TO_LANGUAGES = {
     'yi': 'yiddish',
     'yo': 'yoruba',
     'zu': 'zulu',
-    'fil': 'Filipino',
-    'he': 'Hebrew'
 }
 
 GOOGLE_LANGUAGES_TO_CODES = {v: k for k, v in GOOGLE_CODES_TO_LANGUAGES.items()}
+
+# This dictionary maps the primary name of language to its secondary names in list manner (if any)
+GOOGLE_LANGUAGES_SECONDARY_NAMES = {
+    'myanmar': ['burmese'],
+    'odia': ['oriya'],
+    'kurdish':  ['kurmanji']
+}
+
 
 PONS_CODES_TO_LANGUAGES = {
     'ar': 'arabic',
@@ -247,4 +259,28 @@ QCRI_CODE_TO_LANGUAGE = {
 
 QCRI_LANGUAGE_TO_CODE = {
     v: k for k, v in QCRI_CODE_TO_LANGUAGE.items()
+}
+
+LIBRE_CODES_TO_LANGUAGES = {
+    'en': 'English',
+    'ar': 'Arabic',
+    'zh': 'Chinese',
+    'fr': 'French',
+    'de': 'German',
+    'hi': 'Hindi',
+    'id': 'Indonesian',
+    'ga': 'Irish',
+    'it': 'Italian',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'pl': 'Polish',
+    'pt': 'Portuguese',
+    'ru': 'Russian',
+    'es': 'Spanish',
+    'tr': 'Turkish',
+    'vi': 'Vietnamese'
+}
+
+LIBRE_LANGUAGES_TO_CODES = {
+    v: k for k, v in LIBRE_CODES_TO_LANGUAGES.items()
 }

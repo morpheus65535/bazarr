@@ -1,5 +1,6 @@
 from collections.abc import Mapping
-from typing import Optional
+from typing import Any, Optional
+import warnings
 
 from rich.console import JustifyMethod
 
@@ -10,9 +11,9 @@ from .table import Table
 
 
 def tabulate_mapping(
-    mapping: Mapping,
-    title: str = None,
-    caption: str = None,
+    mapping: "Mapping[Any, Any]",
+    title: Optional[str] = None,
+    caption: Optional[str] = None,
     title_justify: Optional[JustifyMethod] = None,
     caption_justify: Optional[JustifyMethod] = None,
 ) -> Table:
@@ -28,6 +29,7 @@ def tabulate_mapping(
     Returns:
         Table: A table instance which may be rendered by the Console.
     """
+    warnings.warn("tabulate_mapping will be deprecated in Rich v11", DeprecationWarning)
     table = Table(
         show_header=False,
         title=title,

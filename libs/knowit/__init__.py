@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
 """Know your media files better."""
-from __future__ import unicode_literals
-
 __title__ = 'knowit'
-__version__ = '0.3.0-dev'
+__version__ = '0.4.0'
 __short_version__ = '.'.join(__version__.split('.')[:2])
 __author__ = 'Rato AQ2'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2016-2017, Rato AQ2'
+__copyright__ = 'Copyright 2016-2021, Rato AQ2'
 __url__ = 'https://github.com/ratoaq2/knowit'
 
 #: Video extensions
@@ -19,9 +16,4 @@ VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.
                     '.omf', '.ps', '.qt', '.ram', '.rm', '.rmvb', '.swf', '.ts', '.vfw', '.vid', '.video', '.viv',
                     '.vivo', '.vob', '.vro', '.webm', '.wm', '.wmv', '.wmx', '.wrap', '.wvx', '.wx', '.x264', '.xvid')
 
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no cover
-    from ordereddict import OrderedDict
-
-from .api import KnowitException, know
+from knowit.api import KnowitException, know

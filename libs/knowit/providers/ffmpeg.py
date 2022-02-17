@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 import json
 import logging
@@ -7,13 +5,9 @@ import re
 from logging import NullHandler, getLogger
 from subprocess import check_output
 
-from six import ensure_text
-
-from .. import (
-    OrderedDict,
-    VIDEO_EXTENSIONS,
-)
-from ..properties import (
+from knowit import VIDEO_EXTENSIONS
+from knowit.core import Property
+from knowit.properties import (
     AudioChannels,
     AudioCodec,
     AudioProfile,
@@ -29,24 +23,20 @@ from ..properties import (
     VideoProfileLevel,
     YesNo,
 )
-from ..property import (
-    Property,
-)
-from ..provider import (
+from knowit.provider import (
     MalformedFileError,
     Provider,
 )
-from ..rules import (
+from knowit.rules import (
     AudioChannelsRule,
-    AudioCodecRule,
     ClosedCaptionRule,
     HearingImpairedRule,
     LanguageRule,
     ResolutionRule,
 )
-from ..serializer import get_json_encoder
-from ..units import units
-from ..utils import (
+from knowit.serializer import get_json_encoder
+from knowit.units import units
+from knowit.utils import (
     define_candidate,
     detect_os,
 )
@@ -69,10 +59,10 @@ To load FFmpeg (ffprobe) from a specific location, please define the location as
 '''
 
 
-class FFmpegExecutor(object):
+class FFmpegExecutor:
     """Executor that knows how to execute media info: using ctypes or cli."""
 
-    version_re = re.compile(r'\bversion\s+(?P<version>\d+(?:\.\d+)+)\b')
+    version_re = re.compile(r'\bversion\s+(?P<version>[^\b\s]+)')
     locations = {
         'unix': ('/usr/local/ffmpeg/lib', '/usr/local/ffmpeg/bin', '__PATH__'),
         'windows': ('__PATH__', ),
@@ -80,7 +70,7 @@ class FFmpegExecutor(object):
     }
 
     def __init__(self, location, version):
-        """Constructor."""
+        """Initialize the object."""
         self.location = location
         self.version = version
 
@@ -96,7 +86,7 @@ class FFmpegExecutor(object):
     def _get_version(cls, output):
         match = cls.version_re.search(output)
         if match:
-            version = tuple([int(v) for v in match.groupdict()['version'].split('.')])
+            version = match.groupdict()['version']
             return version
 
     @classmethod
@@ -120,19 +110,19 @@ class FFmpegCliExecutor(FFmpegExecutor):
     }
 
     def _execute(self, filename):
-        return ensure_text(check_output([self.location, '-v', 'quiet', '-print_format', 'json',
-                                         '-show_format', '-show_streams', '-sexagesimal', filename]))
+        return check_output([self.location, '-v', 'quiet', '-print_format', 'json',
+                            '-show_format', '-show_streams', '-sexagesimal', filename]).decode()
 
     @classmethod
     def create(cls, os_family=None, suggested_path=None):
         """Create the executor instance."""
         for candidate in define_candidate(cls.locations, cls.names, os_family, suggested_path):
             try:
-                output = ensure_text(check_output([candidate, '-version']))
+                output = check_output([candidate, '-version']).decode()
                 version = cls._get_version(output)
                 if version:
-                    logger.debug('FFmpeg cli detected: %s v%s', candidate, '.'.join(map(str, version)))
-                    return FFmpegCliExecutor(candidate, version)
+                    logger.debug('FFmpeg cli detected: %s v%s', candidate, version)
+                    return FFmpegCliExecutor(candidate, version.split('.'))
             except OSError:
                 pass
 
@@ -142,78 +132,76 @@ class FFmpegProvider(Provider):
 
     def __init__(self, config, suggested_path=None):
         """Init method."""
-        super(FFmpegProvider, self).__init__(config, {
-            'general': OrderedDict([
-                ('title', Property('tags.title', description='media title')),
-                ('path', Property('filename', description='media path')),
-                ('duration', Duration('duration', description='media duration')),
-                ('size', Quantity('size', units.byte, description='media size')),
-                ('bit_rate', Quantity('bit_rate', units.bps, description='media bit rate')),
-            ]),
-            'video': OrderedDict([
-                ('id', Basic('index', int, allow_fallback=True, description='video track number')),
-                ('name', Property('tags.title', description='video track name')),
-                ('language', Language('tags.language', description='video language')),
-                ('duration', Duration('duration', description='video duration')),
-                ('width', Quantity('width', units.pixel)),
-                ('height', Quantity('height', units.pixel)),
-                ('scan_type', ScanType(config, 'field_order', default='Progressive', description='video scan type')),
-                ('aspect_ratio', Ratio('display_aspect_ratio', description='display aspect ratio')),
-                ('pixel_aspect_ratio', Ratio('sample_aspect_ratio', description='pixel aspect ratio')),
-                ('resolution', None),  # populated with ResolutionRule
-                ('frame_rate', Ratio('r_frame_rate', unit=units.FPS, description='video frame rate')),
+        super().__init__(config, {
+            'general': {
+                'title': Property('tags.title', description='media title'),
+                'path': Property('filename', description='media path'),
+                'duration': Duration('duration', description='media duration'),
+                'size': Quantity('size', unit=units.byte, description='media size'),
+                'bit_rate': Quantity('bit_rate', unit=units.bps, description='media bit rate'),
+            },
+            'video': {
+                'id': Basic('index', data_type=int, allow_fallback=True, description='video track number'),
+                'name': Property('tags.title', description='video track name'),
+                'language': Language('tags.language', description='video language'),
+                'duration': Duration('duration', description='video duration'),
+                'width': Quantity('width', unit=units.pixel),
+                'height': Quantity('height', unit=units.pixel),
+                'scan_type': ScanType(config, 'field_order', default='Progressive', description='video scan type'),
+                'aspect_ratio': Ratio('display_aspect_ratio', description='display aspect ratio'),
+                'pixel_aspect_ratio': Ratio('sample_aspect_ratio', description='pixel aspect ratio'),
+                'resolution': None,  # populated with ResolutionRule
+                'frame_rate': Ratio('r_frame_rate', unit=units.FPS, description='video frame rate'),
                 # frame_rate_mode
-                ('bit_rate', Quantity('bit_rate', units.bps, description='video bit rate')),
-                ('bit_depth', Quantity('bits_per_raw_sample', units.bit, description='video bit depth')),
-                ('codec', VideoCodec(config, 'codec_name', description='video codec')),
-                ('profile', VideoProfile(config, 'profile', description='video codec profile')),
-                ('profile_level', VideoProfileLevel(config, 'level', description='video codec profile level')),
-                # ('profile_tier', VideoProfileTier(config, 'codec_profile', description='video codec profile tier')),
-                ('forced', YesNo('disposition.forced', hide_value=False, description='video track forced')),
-                ('default', YesNo('disposition.default', hide_value=False, description='video track default')),
-            ]),
-            'audio': OrderedDict([
-                ('id', Basic('index', int, allow_fallback=True, description='audio track number')),
-                ('name', Property('tags.title', description='audio track name')),
-                ('language', Language('tags.language', description='audio language')),
-                ('duration', Duration('duration', description='audio duration')),
-                ('codec', AudioCodec(config, 'codec_name', description='audio codec')),
-                ('_codec', AudioCodec(config, 'profile', description='audio codec', private=True, reportable=False)),
-                ('profile', AudioProfile(config, 'profile', description='audio codec profile')),
-                ('channels_count', AudioChannels('channels', description='audio channels count')),
-                ('channels', None),  # populated with AudioChannelsRule
-                ('bit_depth', Quantity('bits_per_raw_sample', units.bit, description='audio bit depth')),
-                ('bit_rate', Quantity('bit_rate', units.bps, description='audio bit rate')),
-                ('sampling_rate', Quantity('sample_rate', units.Hz, description='audio sampling rate')),
-                ('forced', YesNo('disposition.forced', hide_value=False, description='audio track forced')),
-                ('default', YesNo('disposition.default', hide_value=False, description='audio track default')),
-            ]),
-            'subtitle': OrderedDict([
-                ('id', Basic('index', int, allow_fallback=True, description='subtitle track number')),
-                ('name', Property('tags.title', description='subtitle track name')),
-                ('language', Language('tags.language', description='subtitle language')),
-                ('hearing_impaired', YesNo('disposition.hearing_impaired',
-                                           hide_value=False, description='subtitle hearing impaired')),
-                ('closed_caption', None),  # populated with ClosedCaptionRule
-                ('format', SubtitleFormat(config, 'codec_name', description='subtitle format')),
-                ('forced', YesNo('disposition.forced', hide_value=False, description='subtitle track forced')),
-                ('default', YesNo('disposition.default', hide_value=False, description='subtitle track default')),
-            ]),
+                'bit_rate': Quantity('bit_rate', unit=units.bps, description='video bit rate'),
+                'bit_depth': Quantity('bits_per_raw_sample', unit=units.bit, description='video bit depth'),
+                'codec': VideoCodec(config, 'codec_name', description='video codec'),
+                'profile': VideoProfile(config, 'profile', description='video codec profile'),
+                'profile_level': VideoProfileLevel(config, 'level', description='video codec profile level'),
+                # 'profile_tier': VideoProfileTier(config, 'codec_profile', description='video codec profile tier'),
+                'forced': YesNo('disposition.forced', hide_value=False, description='video track forced'),
+                'default': YesNo('disposition.default', hide_value=False, description='video track default'),
+            },
+            'audio': {
+                'id': Basic('index', data_type=int, allow_fallback=True, description='audio track number'),
+                'name': Property('tags.title', description='audio track name'),
+                'language': Language('tags.language', description='audio language'),
+                'duration': Duration('duration', description='audio duration'),
+                'codec': AudioCodec(config, 'profile', 'codec_name', description='audio codec'),
+                'profile': AudioProfile(config, 'profile', description='audio codec profile'),
+                'channels_count': AudioChannels('channels', description='audio channels count'),
+                'channels': None,  # populated with AudioChannelsRule
+                'bit_depth': Quantity('bits_per_raw_sample', unit=units.bit, description='audio bit depth'),
+                'bit_rate': Quantity('bit_rate', unit=units.bps, description='audio bit rate'),
+                'sampling_rate': Quantity('sample_rate', unit=units.Hz, description='audio sampling rate'),
+                'forced': YesNo('disposition.forced', hide_value=False, description='audio track forced'),
+                'default': YesNo('disposition.default', hide_value=False, description='audio track default'),
+            },
+            'subtitle': {
+                'id': Basic('index', data_type=int, allow_fallback=True, description='subtitle track number'),
+                'name': Property('tags.title', description='subtitle track name'),
+                'language': Language('tags.language', description='subtitle language'),
+                'hearing_impaired': YesNo('disposition.hearing_impaired',
+                                          hide_value=False, description='subtitle hearing impaired'),
+                'closed_caption': None,  # populated with ClosedCaptionRule
+                'format': SubtitleFormat(config, 'codec_name', description='subtitle format'),
+                'forced': YesNo('disposition.forced', hide_value=False, description='subtitle track forced'),
+                'default': YesNo('disposition.default', hide_value=False, description='subtitle track default'),
+            },
         }, {
-            'video': OrderedDict([
-                ('language', LanguageRule('video language')),
-                ('resolution', ResolutionRule('video resolution')),
-            ]),
-            'audio': OrderedDict([
-                ('language', LanguageRule('audio language')),
-                ('channels', AudioChannelsRule('audio channels')),
-                ('codec', AudioCodecRule('audio codec', override=True)),
-            ]),
-            'subtitle': OrderedDict([
-                ('language', LanguageRule('subtitle language')),
-                ('hearing_impaired', HearingImpairedRule('subtitle hearing impaired')),
-                ('closed_caption', ClosedCaptionRule('closed caption'))
-            ])
+            'video': {
+                'language': LanguageRule('video language'),
+                'resolution': ResolutionRule('video resolution'),
+            },
+            'audio': {
+                'language': LanguageRule('audio language'),
+                'channels': AudioChannelsRule('audio channels'),
+            },
+            'subtitle': {
+                'language': LanguageRule('subtitle language'),
+                'hearing_impaired': HearingImpairedRule('subtitle hearing impaired'),
+                'closed_caption': ClosedCaptionRule('closed caption'),
+            },
         })
         self.executor = FFmpegExecutor.get_executor_instance(suggested_path)
 
@@ -272,5 +260,6 @@ class FFmpegProvider(Provider):
         """Return ffmpeg version information."""
         if not self.executor:
             return {}
+        version = '.'.join(map(str, self.executor.version))
 
-        return {self.executor.location: 'v{}'.format('.'.join(map(str, self.executor.version)))}
+        return {self.executor.location: f'v{version}'}

@@ -1,6 +1,11 @@
+import sys
 from typing import TYPE_CHECKING, Iterable, List
 
-from typing_extensions import Literal
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal  # pragma: no cover
+
 
 from ._loop import loop_last
 
@@ -430,7 +435,7 @@ if __name__ == "__main__":  # pragma: no cover
     from rich.columns import Columns
     from rich.panel import Panel
 
-    from . import box
+    from . import box as box
     from .console import Console
     from .table import Table
     from .text import Text

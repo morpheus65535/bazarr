@@ -1,6 +1,6 @@
-# coding: utf-8
 r"""
-Give Python the ability to decode some common, flawed encodings.
+The `ftfy.bad_codecs` module gives Python the ability to decode some common, 
+flawed encodings.
 
 Python does not want you to be sloppy with your text. Its encoders and decoders
 ("codecs") follow the relevant standards whenever possible, which means that
@@ -29,11 +29,11 @@ A quick example of decoding text that's encoded in CESU-8:
     >>> print(b'\xed\xa0\xbd\xed\xb8\x8d'.decode('utf-8-variants'))
     😍
 """
-from __future__ import unicode_literals
 from encodings import normalize_encoding
 import codecs
+from typing import Dict
 
-_CACHE = {}
+_CACHE: Dict[str, codecs.CodecInfo] = {}
 
 # Define some aliases for 'utf-8-variants'. All hyphens get turned into
 # underscores, because of `normalize_encoding`.
@@ -88,7 +88,6 @@ def ok():
     you use the ``unicode.encode`` and ``bytes.decode`` methods with certain
     encodings.
     """
-    pass
 
 
 codecs.register(search_function)

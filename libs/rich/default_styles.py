@@ -2,6 +2,7 @@ from typing import Dict
 
 from .style import Style
 
+
 DEFAULT_STYLES: Dict[str, Style] = {
     "none": Style.null(),
     "reset": Style(
@@ -82,8 +83,18 @@ DEFAULT_STYLES: Dict[str, Style] = {
     "repr.none": Style(color="magenta", italic=True),
     "repr.url": Style(underline=True, color="bright_blue", italic=False, bold=False),
     "repr.uuid": Style(color="bright_yellow", bold=False),
+    "repr.call": Style(color="magenta", bold=True),
+    "repr.path": Style(color="magenta"),
+    "repr.filename": Style(color="bright_magenta"),
     "rule.line": Style(color="bright_green"),
     "rule.text": Style.null(),
+    "json.brace": Style(bold=True),
+    "json.bool_true": Style(color="bright_green", italic=True),
+    "json.bool_false": Style(color="bright_red", italic=True),
+    "json.null": Style(color="magenta", italic=True),
+    "json.number": Style(color="cyan", bold=True, italic=False),
+    "json.str": Style(color="green", italic=False, bold=False),
+    "json.key": Style(color="blue", bold=True),
     "prompt": Style.null(),
     "prompt.choices": Style(color="magenta", bold=True),
     "prompt.default": Style(color="cyan", bold=True),
@@ -94,8 +105,6 @@ DEFAULT_STYLES: Dict[str, Style] = {
     "scope.key": Style(color="yellow", italic=True),
     "scope.key.special": Style(color="yellow", italic=True, dim=True),
     "scope.equals": Style(color="red"),
-    "repr.path": Style(color="magenta"),
-    "repr.filename": Style(color="bright_magenta"),
     "table.header": Style(bold=True),
     "table.footer": Style(bold=True),
     "table.cell": Style.null(),
@@ -125,9 +134,6 @@ DEFAULT_STYLES: Dict[str, Style] = {
     "status.spinner": Style(color="green"),
     "tree": Style(),
     "tree.line": Style(),
-}
-
-MARKDOWN_STYLES = {
     "markdown.paragraph": Style(),
     "markdown.text": Style(),
     "markdown.emph": Style(italic=True),
@@ -153,4 +159,25 @@ MARKDOWN_STYLES = {
 }
 
 
-DEFAULT_STYLES.update(MARKDOWN_STYLES)
+if __name__ == "__main__":  # pragma: no cover
+    import argparse
+    import io
+
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--html", action="store_true", help="Export as HTML table")
+    args = parser.parse_args()
+    html: bool = args.html
+    console = Console(record=True, width=70, file=io.StringIO()) if html else Console()
+
+    table = Table("Name", "Styling")
+
+    for style_name, style in DEFAULT_STYLES.items():
+        table.add_row(Text(style_name, style=style), str(style))
+
+    console.print(table)
+    if html:
+        print(console.export_html(inline_styles=True))

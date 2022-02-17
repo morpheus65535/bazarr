@@ -14,6 +14,7 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.exceptions import HTTPError
 
+from subliminal.cache import region as cache
 from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, Error, ProviderError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
@@ -25,6 +26,7 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.score import framerate_equal
 from subliminal_patch.subtitle import Subtitle, guess_matches, sanitize
 
+from dogpile.cache.api import NO_VALUE
 from subzero.language import Language
 
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
@@ -239,9 +241,14 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session.mount('http://', HTTPAdapter(pool_maxsize=pool_maxsize))
 
         # Set headers
-        self.session.headers['User-Agent'] = AGENT_LIST[randint(
-            0,
-            len(AGENT_LIST) - 1)]
+        cached_user_agent = cache.get('titulky_user_agent')
+        if cached_user_agent == NO_VALUE:
+            new_user_agent = AGENT_LIST[ randint(0, len(AGENT_LIST) - 1) ]
+            cache.set('titulky_user_agent', new_user_agent)
+            self.session.headers['User-Agent'] = new_user_agent
+        else:
+            self.session.headers['User-Agent'] = cached_user_agent
+
         self.session.headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         self.session.headers['Accept-Language'] = 'sk,cz,en;q=0.5'
         self.session.headers['Accept-Encoding'] = 'gzip, deflate'
@@ -253,19 +260,24 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         self.login()
 
     def terminate(self):
-        self.logout()
         self.session.close()
 
     def login(self):
-        logger.info("Titulky.com: Logging in")
+        # Reuse all cookies if found in cache and skip login.
+        cached_cookiejar = cache.get('titulky_cookiejar')
+        if cached_cookiejar != NO_VALUE:
+            logger.info("Titulky.com: Reusing cached cookies.")
+            self.session.cookies.update(cached_cookiejar)
+            return True
 
-        self.session.get(self.server_url)
-
+        logger.info("Titulky.com: Logging in...")
+        
         data = {'LoginName': self.username, 'LoginPassword': self.password}
         res = self.session.post(self.server_url,
                                 data,
                                 allow_redirects=False,
-                                timeout=self.timeout)
+                                timeout=self.timeout,
+                                headers={'Referer': self.server_url})
 
         location_qs = parse_qs(urlparse(res.headers['Location']).query)
 
@@ -274,6 +286,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             if 'omezené' in location_qs['msg'][0]:
                 raise AuthenticationError("V.I.P. account is required for this provider to work!")
             else:
+                logger.info("Titulky.com: Successfully logged in, caching cookies for future connections...")
+                cache.set('titulky_cookiejar', self.session.cookies.copy())
                 return True
         else:
             raise AuthenticationError("Login failed")
@@ -283,9 +297,14 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         res = self.session.get(self.logout_url,
                                allow_redirects=False,
-                               timeout=self.timeout)
+                               timeout=self.timeout,
+                               headers={'Referer': self.server_url})
 
         location_qs = parse_qs(urlparse(res.headers['Location']).query)
+
+        logger.info("Titulky.com: Clearing cache...")
+        cache.delete('titulky_cookiejar')
+        cache.delete('titulky_user_agent')
 
         # If the response is a redirect and doesnt point to an error message page, then we are logged out
         if res.status_code == 302 and location_qs['msg_type'][0] == 'i':
@@ -293,13 +312,39 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             raise AuthenticationError("Logout failed.")
 
-    def fetch_page(self, url, ref=None):
+    # GET request a page. This functions acts as a requests.session.get proxy handling expired cached cookies 
+    # and subsequent relogging and sending the original request again. If all went well, returns the response.
+    def get_request(self, url, ref=None, __recursion=0):
+        # That's deep... recursion... Stop. We don't have infinite memmory. And don't want to 
+        # spam titulky's server either. So we have to just accept the defeat. Let it throw!
+        if __recursion >= 5:
+            logger.debug(f"Titulky.com: Got into a loop while trying to send a request after relogging.")
+            raise AuthenticationError("Got into a loop and couldn't get authenticated!")
+
         logger.debug(f"Titulky.com: Fetching url: {url}")
 
         res = self.session.get(
             url,
             timeout=self.timeout,
+            allow_redirects=False,
             headers={'Referer': ref if ref else self.server_url})
+
+        # Check if we got redirected because login cookies expired.
+        # Note: microoptimization - don't bother parsing qs for non 302 responses.
+        if res.status_code == 302:
+            location_qs = parse_qs(urlparse(res.headers['Location']).query)
+            if location_qs['msg_type'][0] == 'e' and "Přihlašte se" in location_qs['msg'][0]:
+                logger.debug(f"Titulky.com: Login cookies expired.")
+                self.login()
+                return self.get_request(url, ref=ref, __recursion=++__recursion)
+        
+        return res
+
+
+    def fetch_page(self, url, ref=None):
+        logger.debug(f"Titulky.com: Fetching url: {url}")
+
+        res = self.get_request(url, ref=ref)
 
         if res.status_code != 200:
             raise HTTPError(f"Fetch failed with status code {res.status_code}")
@@ -842,9 +887,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
         return subtitles
 
     def download_subtitle(self, subtitle):
-        res = self.session.get(subtitle.download_link,
-                               headers={'Referer': subtitle.page_link},
-                               timeout=self.timeout)
+        res = self.get_request(subtitle.download_link, ref=subtitle.page_link)
 
         try:
             res.raise_for_status()

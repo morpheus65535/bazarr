@@ -50,9 +50,6 @@ def fix_inconsistent_naming(title):
 
 logger = logging.getLogger(__name__)
 
-# Configure :mod:`rarfile` to use the same path separator as :mod:`zipfile`
-rarfile.PATH_SEP = '/'
-
 language_converters.register('titlovi = subliminal_patch.converters.titlovi:TitloviConverter')
 
 

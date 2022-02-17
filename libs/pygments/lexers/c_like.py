@@ -13,13 +13,14 @@ import re
 from pygments.lexer import RegexLexer, include, bygroups, inherit, words, \
     default
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
-    Number, Punctuation
+    Number, Punctuation, Whitespace
 
 from pygments.lexers.c_cpp import CLexer, CppLexer
 from pygments.lexers import _mql_builtins
 
 __all__ = ['PikeLexer', 'NesCLexer', 'ClayLexer', 'ECLexer', 'ValaLexer',
-           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer', 'CharmciLexer']
+           'CudaLexer', 'SwigLexer', 'MqlLexer', 'ArduinoLexer', 'CharmciLexer',
+           'OmgIdlLexer']
 
 
 class PikeLexer(CppLexer):
@@ -50,14 +51,14 @@ class PikeLexer(CppLexer):
              r'array|multiset|program|function|lambda|mixed|'
              r'[a-z_][a-z0-9_]*_t)\b',
              Keyword.Type),
-            (r'(class)(\s+)', bygroups(Keyword, Text), 'classname'),
+            (r'(class)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
             (r'[~!%^&*+=|?:<>/@-]', Operator),
             inherit,
         ],
         'classname': [
             (r'[a-zA-Z_]\w*', Name.Class, '#pop'),
             # template specification
-            (r'\s*(?=>)', Text, '#pop'),
+            (r'\s*(?=>)', Whitespace, '#pop'),
         ],
     }
 
@@ -103,7 +104,7 @@ class ClayLexer(RegexLexer):
     mimetypes = ['text/x-clay']
     tokens = {
         'root': [
-            (r'\s', Text),
+            (r'\s+', Whitespace),
             (r'//.*?$', Comment.Single),
             (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
             (r'\b(public|private|import|as|record|variant|instance'
@@ -168,7 +169,7 @@ class ECLexer(CLexer):
             (words(('uint', 'uint16', 'uint32', 'uint64', 'bool', 'byte',
                     'unichar', 'int64'), suffix=r'\b'),
              Keyword.Type),
-            (r'(class)(\s+)', bygroups(Keyword, Text), 'classname'),
+            (r'(class)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
             (r'(null|value|this)\b', Name.Builtin),
             inherit,
         ]
@@ -189,8 +190,8 @@ class ValaLexer(RegexLexer):
     tokens = {
         'whitespace': [
             (r'^\s*#if\s+0', Comment.Preproc, 'if0'),
-            (r'\n', Text),
-            (r'\s+', Text),
+            (r'\n', Whitespace),
+            (r'\s+', Whitespace),
             (r'\\\n', Text),  # line continuation
             (r'//(\n|(.|\n)*?[^\\]\n)', Comment.Single),
             (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
@@ -225,10 +226,10 @@ class ValaLexer(RegexLexer):
                 'public', 'ref', 'requires', 'signal', 'static', 'throws', 'unowned',
                 'var', 'virtual', 'volatile', 'weak', 'yields'), suffix=r'\b'),
              Keyword.Declaration),
-            (r'(namespace|using)(\s+)', bygroups(Keyword.Namespace, Text),
+            (r'(namespace|using)(\s+)', bygroups(Keyword.Namespace, Whitespace),
              'namespace'),
             (r'(class|errordomain|interface|struct)(\s+)',
-             bygroups(Keyword.Declaration, Text), 'class'),
+             bygroups(Keyword.Declaration, Whitespace), 'class'),
             (r'(\.)([a-zA-Z_]\w*)',
              bygroups(Operator, Name.Attribute)),
             # void is an actual keyword, others are in glib-2.0.vapi
@@ -334,6 +335,11 @@ class SwigLexer(CppLexer):
     priority = 0.04  # Lower than C/C++ and Objective C/C++
 
     tokens = {
+        'root': [
+            # Match it here so it won't be matched as a function in the rest of root
+            (r'\$\**\&?\w+', Name),
+            inherit
+        ],
         'statements': [
             # SWIG directives
             (r'(%[a-z_][a-z0-9_]*)', Name.Function),
@@ -549,7 +555,7 @@ class CharmciLexer(CppLexer):
     mimetypes = []
 
     tokens = {
-        'statements': [
+        'keywords': [
             (r'(module)(\s+)', bygroups(Keyword, Text), 'classname'),
             (words(('mainmodule', 'mainchare', 'chare', 'array', 'group',
                     'nodegroup', 'message', 'conditional')), Keyword),
@@ -561,5 +567,98 @@ class CharmciLexer(CppLexer):
                     'createhere', 'createhome', 'reductiontarget', 'iget',
                     'nocopy', 'mutable', 'migratable', 'readonly')), Keyword),
             inherit,
+        ],
+    }
+
+
+class OmgIdlLexer(CLexer):
+    """
+    Lexer for `Object Management Group Interface Definition Language <https://www.omg.org/spec/IDL/About-IDL/>`_.
+
+    .. versionadded:: 2.9
+    """
+
+    name = 'OMG Interface Definition Language'
+    aliases = ['omg-idl']
+    filenames = ['*.idl', '*.pidl']
+    mimetypes = []
+
+    scoped_name = r'((::)?\w+)+'
+
+    tokens = {
+        'values': [
+            (words(('true', 'false'), prefix=r'(?i)', suffix=r'\b'), Number),
+            (r'([Ll]?)(")', bygroups(String.Affix, String.Double), 'string'),
+            (r'([Ll]?)(\')(\\[^\']+)(\')',
+                bygroups(String.Affix, String.Char, String.Escape, String.Char)),
+            (r'([Ll]?)(\')(\\\')(\')',
+                bygroups(String.Affix, String.Char, String.Escape, String.Char)),
+            (r'([Ll]?)(\'.\')', bygroups(String.Affix, String.Char)),
+            (r'[+-]?\d+(\.\d*)?[Ee][+-]?\d+', Number.Float),
+            (r'[+-]?(\d+\.\d*)|(\d*\.\d+)([Ee][+-]?\d+)?', Number.Float),
+            (r'(?i)[+-]?0x[0-9a-f]+', Number.Hex),
+            (r'[+-]?[1-9]\d*', Number.Integer),
+            (r'[+-]?0[0-7]*', Number.Oct),
+            (r'[\+\-\*\/%^&\|~]', Operator),
+            (words(('<<', '>>')), Operator),
+            (scoped_name, Name),
+            (r'[{};:,<>\[\]]', Punctuation),
+        ],
+        'annotation_params': [
+            include('whitespace'),
+            (r'\(', Punctuation, '#push'),
+            include('values'),
+            (r'=', Punctuation),
+            (r'\)', Punctuation, '#pop'),
+        ],
+        'annotation_params_maybe': [
+            (r'\(', Punctuation, 'annotation_params'),
+            include('whitespace'),
+            default('#pop'),
+        ],
+        'annotation_appl': [
+            (r'@' + scoped_name, Name.Decorator, 'annotation_params_maybe'),
+        ],
+        'enum': [
+            include('whitespace'),
+            (r'[{,]', Punctuation),
+            (r'\w+', Name.Constant),
+            include('annotation_appl'),
+            (r'\}', Punctuation, '#pop'),
+        ],
+        'root': [
+            include('whitespace'),
+            (words((
+                'typedef', 'const',
+                'in', 'out', 'inout', 'local',
+            ), prefix=r'(?i)', suffix=r'\b'), Keyword.Declaration),
+            (words((
+                'void', 'any', 'native', 'bitfield',
+                'unsigned', 'boolean', 'char', 'wchar', 'octet', 'short', 'long',
+                'int8', 'uint8', 'int16', 'int32', 'int64', 'uint16', 'uint32', 'uint64',
+                'float', 'double', 'fixed',
+                'sequence', 'string', 'wstring', 'map',
+            ), prefix=r'(?i)', suffix=r'\b'), Keyword.Type),
+            (words((
+                '@annotation', 'struct', 'union', 'bitset', 'interface',
+                'exception', 'valuetype', 'eventtype', 'component',
+            ), prefix=r'(?i)', suffix=r'(\s+)(\w+)'), bygroups(Keyword, Whitespace, Name.Class)),
+            (words((
+                'abstract', 'alias', 'attribute', 'case', 'connector',
+                'consumes', 'context', 'custom', 'default', 'emits', 'factory',
+                'finder', 'getraises', 'home', 'import', 'manages', 'mirrorport',
+                'multiple', 'Object', 'oneway', 'primarykey', 'private', 'port',
+                'porttype', 'provides', 'public', 'publishes', 'raises',
+                'readonly', 'setraises', 'supports', 'switch', 'truncatable',
+                'typeid', 'typename', 'typeprefix', 'uses', 'ValueBase',
+            ), prefix=r'(?i)', suffix=r'\b'), Keyword),
+            (r'(?i)(enum|bitmask)(\s+)(\w+)',
+                bygroups(Keyword, Whitespace, Name.Class), 'enum'),
+            (r'(?i)(module)(\s+)(\w+)',
+                bygroups(Keyword.Namespace, Whitespace, Name.Namespace)),
+            (r'(\w+)(\s*)(=)', bygroups(Name.Constant, Whitespace, Operator)),
+            (r'[\(\)]', Punctuation),
+            include('values'),
+            include('annotation_appl'),
         ],
     }

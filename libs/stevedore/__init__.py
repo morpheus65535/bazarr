@@ -21,4 +21,3 @@ import logging
 LOG = logging.getLogger('stevedore')
 
 LOG.addHandler(logging.NullHandler())
-

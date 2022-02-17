@@ -13,7 +13,15 @@
 """Tests for stevedore.extension
 """
 
-import mock
+import operator
+from unittest import mock
+
+try:
+    # For python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # For everyone else
+    import importlib_metadata
 
 from stevedore import exception
 from stevedore import extension
@@ -49,6 +57,19 @@ class TestCallback(utils.TestCase):
         e = em['t1']
         self.assertEqual(e.name, 't1')
 
+    def test_list_entry_points(self):
+        em = extension.ExtensionManager('stevedore.test.extension')
+        n = em.list_entry_points()
+        self.assertEqual(set(['e1', 'e2', 't1', 't2']),
+                         set(map(operator.attrgetter("name"), n)))
+        self.assertEqual(4, len(n))
+
+    def test_list_entry_points_names(self):
+        em = extension.ExtensionManager('stevedore.test.extension')
+        names = em.entry_points_names()
+        self.assertEqual(set(['e1', 'e2', 't1', 't2']), set(names))
+        self.assertEqual(4, len(names))
+
     def test_contains_by_name(self):
         em = extension.ExtensionManager('stevedore.test.extension')
         self.assertEqual('t1' in em, True)
@@ -82,13 +103,13 @@ class TestCallback(utils.TestCase):
 
     def test_use_cache(self):
         # If we insert something into the cache of entry points,
-        # the manager should not have to call into pkg_resources
+        # the manager should not have to call into entrypoints
         # to find the plugins.
         cache = extension.ExtensionManager.ENTRY_POINT_CACHE
         cache['stevedore.test.faux'] = []
-        with mock.patch('pkg_resources.iter_entry_points',
+        with mock.patch('stevedore._cache.get_group_all',
                         side_effect=
-                        AssertionError('called iter_entry_points')):
+                        AssertionError('called get_group_all')):
             em = extension.ExtensionManager('stevedore.test.faux')
             names = em.names()
         self.assertEqual(names, [])
@@ -183,6 +204,11 @@ class TestCallback(utils.TestCase):
         result = em.map_method('get_args_and_data', 42)
         self.assertEqual(set(r[2] for r in result), set([42]))
 
+    def test_items(self):
+        em = extension.ExtensionManager('stevedore.test.extension')
+        expected_output = set([(name, em[name]) for name in ALL_NAMES])
+        self.assertEqual(expected_output, set(em.items()))
+
 
 class TestLoadRequirementsNewSetuptools(utils.TestCase):
     # setuptools 11.3 and later
@@ -216,9 +242,48 @@ class TestLoadRequirementsOldSetuptools(utils.TestCase):
     def test_verify_requirements(self):
         self.em._load_one_plugin(self.mock_ep, False, (), {},
                                  verify_requirements=True)
-        self.mock_ep.load.assert_called_once_with(require=True)
+        self.mock_ep.load.assert_called_once_with()
 
     def test_no_verify_requirements(self):
         self.em._load_one_plugin(self.mock_ep, False, (), {},
                                  verify_requirements=False)
-        self.mock_ep.load.assert_called_once_with(require=False)
+        self.mock_ep.load.assert_called_once_with()
+
+
+class TestExtensionProperties(utils.TestCase):
+
+    def setUp(self):
+        self.ext1 = extension.Extension(
+            'name',
+            importlib_metadata.EntryPoint(
+                'name', 'module.name:attribute.name [extra]', 'group_name',
+            ),
+            mock.Mock(),
+            None,
+        )
+        self.ext2 = extension.Extension(
+            'name',
+            importlib_metadata.EntryPoint(
+                'name', 'module:attribute', 'group_name',
+            ),
+            mock.Mock(),
+            None,
+        )
+
+    def test_module_name(self):
+        self.assertEqual('module.name', self.ext1.module_name)
+        self.assertEqual('module', self.ext2.module_name)
+
+    def test_extras(self):
+        self.assertEqual(['[extra]'], self.ext1.extras)
+        self.assertEqual([], self.ext2.extras)
+
+    def test_attr(self):
+        self.assertEqual('attribute.name', self.ext1.attr)
+        self.assertEqual('attribute', self.ext2.attr)
+
+    def test_entry_point_target(self):
+        self.assertEqual('module.name:attribute.name [extra]',
+                         self.ext1.entry_point_target)
+        self.assertEqual('module:attribute',
+                         self.ext2.entry_point_target)

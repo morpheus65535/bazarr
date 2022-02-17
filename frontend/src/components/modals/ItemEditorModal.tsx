@@ -1,23 +1,25 @@
 import { useIsAnyActionRunning, useLanguageProfiles } from "@/apis/hooks";
 import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { GetItemId } from "@/utilities";
-import { FunctionComponent, useMemo, useState } from "react";
+import { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
+import { UseMutationResult } from "react-query";
 import { AsyncButton, Selector, SelectorOption } from "..";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 
 interface Props {
-  submit: (form: FormType.ModifyItem) => Promise<void>;
-  onSuccess?: (item: Item.Base) => void;
+  mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
 }
 
 const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
-  const { onSuccess, submit, ...modal } = props;
+  const { mutation, ...modal } = props;
 
   const { data: profiles } = useLanguageProfiles();
 
   const payload = usePayload<Item.Base>(modal.modalKey);
   const { hide } = useModalControl();
+
+  const { mutateAsync, isLoading } = mutation;
 
   const hasTask = useIsAnyActionRunning();
 
@@ -28,14 +30,16 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       }) ?? [],
     [profiles]
   );
-  const [id, setId] = useState<Nullable<number>>(null);
 
-  const [updating, setUpdating] = useState(false);
+  const [id, setId] = useState<Nullable<number>>(payload?.profileId ?? null);
+
+  useEffect(() => {
+    setId(payload?.profileId ?? null);
+  }, [payload]);
 
   const footer = (
     <AsyncButton
       noReset
-      onChange={setUpdating}
       disabled={hasTask}
       promise={() => {
         if (payload) {
@@ -44,7 +48,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
             return null;
           }
 
-          return submit({
+          return mutateAsync({
             id: [itemId],
             profileid: [id],
           });
@@ -54,7 +58,6 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
       }}
       onSuccess={() => {
         hide();
-        onSuccess && payload && onSuccess(payload);
       }}
     >
       Save
@@ -63,7 +66,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   return (
     <BaseModal
-      closeable={!updating}
+      closeable={!isLoading}
       footer={footer}
       title={payload?.title}
       {...modal}
@@ -86,7 +89,7 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
               clearable
               disabled={hasTask}
               options={profileOptions}
-              defaultValue={payload?.profileId}
+              value={id}
               onChange={(v) => setId(v === undefined ? null : v)}
             ></Selector>
           </Form.Group>

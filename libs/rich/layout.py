@@ -20,7 +20,7 @@ from .console import Console, ConsoleOptions, RenderableType, RenderResult
 from .highlighter import ReprHighlighter
 from .panel import Panel
 from .pretty import Pretty
-from .repr import rich_repr, RichReprResult
+from .repr import rich_repr, Result
 from .region import Region
 from .segment import Segment
 from .style import StyleType
@@ -154,14 +154,14 @@ class Layout:
 
     def __init__(
         self,
-        renderable: RenderableType = None,
+        renderable: Optional[RenderableType] = None,
         *,
-        name: str = None,
-        size: int = None,
+        name: Optional[str] = None,
+        size: Optional[int] = None,
         minimum_size: int = 1,
         ratio: int = 1,
         visible: bool = True,
-        height: int = None,
+        height: Optional[int] = None,
     ) -> None:
         self._renderable = renderable or _Placeholder(self)
         self.size = size
@@ -175,7 +175,7 @@ class Layout:
         self._render_map: RenderMap = {}
         self._lock = RLock()
 
-    def __rich_repr__(self) -> RichReprResult:
+    def __rich_repr__(self) -> Result:
         yield "name", self.name, None
         yield "size", self.size, None
         yield "minimum_size", self.minimum_size, 1
@@ -190,6 +190,11 @@ class Layout:
     def children(self) -> List["Layout"]:
         """Gets (visible) layout children."""
         return [child for child in self._children if child.visible]
+
+    @property
+    def map(self) -> RenderMap:
+        """Get a map of the last render."""
+        return self._render_map
 
     def get(self, name: str) -> Optional["Layout"]:
         """Get a named layout, or None if it doesn't exist.
@@ -222,7 +227,7 @@ class Layout:
         from rich.table import Table
         from rich.tree import Tree
 
-        def summary(layout) -> Table:
+        def summary(layout: "Layout") -> Table:
 
             icon = layout.splitter.get_tree_icon()
 
@@ -412,9 +417,8 @@ class Layout:
                 yield new_line
 
 
-if __name__ == "__main__":  # type: ignore
+if __name__ == "__main__":
     from rich.console import Console
-    from rich.panel import Panel
 
     console = Console()
     layout = Layout()

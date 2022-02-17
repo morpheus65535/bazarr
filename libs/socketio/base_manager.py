@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from bidict import bidict
+from bidict import bidict, ValueDuplicationError
 
 default_logger = logging.getLogger('socketio')
 
@@ -38,13 +38,24 @@ class BaseManager(object):
 
     def get_participants(self, namespace, room):
         """Return an iterable with the active participants in a room."""
-        for sid, eio_sid in self.rooms[namespace][room]._fwdm.copy().items():
+        ns = self.rooms[namespace]
+        if hasattr(room, '__len__') and not isinstance(room, str):
+            participants = ns[room[0]]._fwdm.copy() if room[0] in ns else {}
+            for r in room[1:]:
+                participants.update(ns[r]._fwdm if r in ns else {})
+        else:
+            participants = ns[room]._fwdm.copy() if room in ns else {}
+        for sid, eio_sid in participants.items():
             yield sid, eio_sid
 
     def connect(self, eio_sid, namespace):
         """Register a client connection to a namespace."""
         sid = self.server.eio.generate_id()
-        self.enter_room(sid, namespace, None, eio_sid=eio_sid)
+        try:
+            self.enter_room(sid, namespace, None, eio_sid=eio_sid)
+        except ValueDuplicationError:
+            # already connected
+            return None
         self.enter_room(sid, namespace, sid, eio_sid=eio_sid)
         return sid
 
@@ -103,6 +114,8 @@ class BaseManager(object):
 
     def enter_room(self, sid, namespace, room, eio_sid=None):
         """Add a client to a room."""
+        if eio_sid is None and namespace not in self.rooms:
+            raise ValueError('sid is not connected to requested namespace')
         if namespace not in self.rooms:
             self.rooms[namespace] = {}
         if room not in self.rooms[namespace]:
@@ -145,7 +158,7 @@ class BaseManager(object):
              callback=None, **kwargs):
         """Emit a message to a single client, a room, or all the clients
         connected to the namespace."""
-        if namespace not in self.rooms or room not in self.rooms[namespace]:
+        if namespace not in self.rooms:
             return
         if not isinstance(skip_sid, list):
             skip_sid = [skip_sid]

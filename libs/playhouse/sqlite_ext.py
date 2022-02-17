@@ -9,6 +9,7 @@ from peewee import ColumnBase
 from peewee import EnclosedNodeList
 from peewee import Entity
 from peewee import Expression
+from peewee import Insert
 from peewee import Node
 from peewee import NodeList
 from peewee import OP
@@ -204,6 +205,25 @@ class SearchField(Field):
 
     def match(self, term):
         return match(self, term)
+
+    @property
+    def fts_column_index(self):
+        if not hasattr(self, '_fts_column_index'):
+            search_fields = [f.name for f in self.model._meta.sorted_fields
+                             if isinstance(f, SearchField)]
+            self._fts_column_index = search_fields.index(self.name)
+        return self._fts_column_index
+
+    def highlight(self, left, right):
+        column_idx = self.fts_column_index
+        return fn.highlight(self.model._meta.entity, column_idx, left, right)
+
+    def snippet(self, left, right, over_length='...', max_tokens=16):
+        if not (0 < max_tokens < 65):
+            raise ValueError('max_tokens must be between 1 and 64 (inclusive)')
+        column_idx = self.fts_column_index
+        return fn.snippet(self.model._meta.entity, column_idx, left, right,
+                          over_length, max_tokens)
 
 
 class VirtualTableSchemaManager(SchemaManager):
@@ -887,10 +907,7 @@ class LSMTable(VirtualModel):
             pk)
 
         if is_single:
-            try:
-                row = query.get()
-            except cls.DoesNotExist:
-                raise KeyError(pk)
+            row = query.get()
             return row[1] if cls._meta._value_field is not None else row
         else:
             return query

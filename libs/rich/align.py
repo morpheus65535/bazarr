@@ -1,16 +1,20 @@
+import sys
 from itertools import chain
-from typing import Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, Optional
 
-from typing_extensions import Literal
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal  # pragma: no cover
+
 from .constrain import Constrain
 from .jupyter import JupyterMixin
 from .measure import Measurement
 from .segment import Segment
 from .style import StyleType
 
-
 if TYPE_CHECKING:
-    from .console import Console, ConsoleOptions, RenderResult, RenderableType
+    from .console import Console, ConsoleOptions, RenderableType, RenderResult
 
 AlignMethod = Literal["left", "center", "right"]
 VerticalAlignMethod = Literal["top", "middle", "bottom"]
@@ -37,12 +41,12 @@ class Align(JupyterMixin):
         self,
         renderable: "RenderableType",
         align: AlignMethod = "left",
-        style: StyleType = None,
+        style: Optional[StyleType] = None,
         *,
-        vertical: VerticalAlignMethod = None,
+        vertical: Optional[VerticalAlignMethod] = None,
         pad: bool = True,
-        width: int = None,
-        height: int = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> None:
         if align not in ("left", "center", "right"):
             raise ValueError(
@@ -67,12 +71,12 @@ class Align(JupyterMixin):
     def left(
         cls,
         renderable: "RenderableType",
-        style: StyleType = None,
+        style: Optional[StyleType] = None,
         *,
-        vertical: VerticalAlignMethod = None,
+        vertical: Optional[VerticalAlignMethod] = None,
         pad: bool = True,
-        width: int = None,
-        height: int = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> "Align":
         """Align a renderable to the left."""
         return cls(
@@ -89,12 +93,12 @@ class Align(JupyterMixin):
     def center(
         cls,
         renderable: "RenderableType",
-        style: StyleType = None,
+        style: Optional[StyleType] = None,
         *,
-        vertical: VerticalAlignMethod = None,
+        vertical: Optional[VerticalAlignMethod] = None,
         pad: bool = True,
-        width: int = None,
-        height: int = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> "Align":
         """Align a renderable to the center."""
         return cls(
@@ -111,12 +115,12 @@ class Align(JupyterMixin):
     def right(
         cls,
         renderable: "RenderableType",
-        style: StyleType = None,
+        style: Optional[StyleType] = None,
         *,
-        vertical: VerticalAlignMethod = None,
+        vertical: Optional[VerticalAlignMethod] = None,
         pad: bool = True,
-        width: int = None,
-        height: int = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
     ) -> "Align":
         """Align a renderable to the right."""
         return cls(
@@ -133,7 +137,7 @@ class Align(JupyterMixin):
         self, console: "Console", options: "ConsoleOptions"
     ) -> "RenderResult":
         align = self.align
-        width = Measurement.get(console, options, self.renderable).maximum
+        width = console.measure(self.renderable, options=options).maximum
         rendered = console.render(
             Constrain(
                 self.renderable, width if self.width is None else min(width, self.width)
@@ -192,7 +196,7 @@ class Align(JupyterMixin):
             else Segment("\n")
         )
 
-        def blank_lines(count) -> Iterable[Segment]:
+        def blank_lines(count: int) -> Iterable[Segment]:
             if count > 0:
                 for _ in range(count):
                     yield blank_line
@@ -242,7 +246,7 @@ class VerticalCenter(JupyterMixin):
     def __init__(
         self,
         renderable: "RenderableType",
-        style: StyleType = None,
+        style: Optional[StyleType] = None,
     ) -> None:
         self.renderable = renderable
         self.style = style
@@ -264,7 +268,7 @@ class VerticalCenter(JupyterMixin):
         bottom_space = height - top_space - len(lines)
         blank_line = Segment(f"{' ' * width}", style)
 
-        def blank_lines(count) -> Iterable[Segment]:
+        def blank_lines(count: int) -> Iterable[Segment]:
             for _ in range(count):
                 yield blank_line
                 yield new_line
@@ -285,7 +289,7 @@ class VerticalCenter(JupyterMixin):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    from rich.console import Console, RenderGroup
+    from rich.console import Console, Group
     from rich.highlighter import ReprHighlighter
     from rich.panel import Panel
 
@@ -293,7 +297,7 @@ if __name__ == "__main__":  # pragma: no cover
     console = Console()
 
     panel = Panel(
-        RenderGroup(
+        Group(
             Align.left(highlighter("align='left'")),
             Align.center(highlighter("align='center'")),
             Align.right(highlighter("align='right'")),

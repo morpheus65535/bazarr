@@ -1,14 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-    flask.signals
-    ~~~~~~~~~~~~~
+import typing as t
 
-    Implements signals based on blinker if available, otherwise
-    falls silently back to a noop.
-
-    :copyright: 2010 Pallets
-    :license: BSD-3-Clause
-"""
 try:
     from blinker import Namespace
 
@@ -16,29 +7,29 @@ try:
 except ImportError:
     signals_available = False
 
-    class Namespace(object):
-        def signal(self, name, doc=None):
+    class Namespace:  # type: ignore
+        def signal(self, name: str, doc: t.Optional[str] = None) -> "_FakeSignal":
             return _FakeSignal(name, doc)
 
-    class _FakeSignal(object):
+    class _FakeSignal:
         """If blinker is unavailable, create a fake class with the same
         interface that allows sending of signals but will fail with an
         error on anything else.  Instead of doing anything on send, it
         will just ignore the arguments and do nothing instead.
         """
 
-        def __init__(self, name, doc=None):
+        def __init__(self, name: str, doc: t.Optional[str] = None) -> None:
             self.name = name
             self.__doc__ = doc
 
-        def send(self, *args, **kwargs):
+        def send(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
             pass
 
-        def _fail(self, *args, **kwargs):
+        def _fail(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
             raise RuntimeError(
                 "Signalling support is unavailable because the blinker"
                 " library is not installed."
-            )
+            ) from None
 
         connect = connect_via = connected_to = temporarily_connected_to = _fail
         disconnect = _fail

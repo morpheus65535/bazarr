@@ -40,6 +40,7 @@ class SchemeLexer(RegexLexer):
     filenames = ['*.scm', '*.ss']
     mimetypes = ['text/x-scheme', 'application/x-scheme']
 
+    flags = re.DOTALL | re.MULTILINE
     # list of known keywords and builtins taken form vim 6.4 scheme.vim
     # syntax file.
     keywords = (
@@ -94,11 +95,28 @@ class SchemeLexer(RegexLexer):
     # but this should be good enough for now
     valid_name = r'[\w!$%&*+,/:<=>?@^~|-]+'
 
+    # The 'scheme-root' state parses as many expressions as needed, always
+    # delegating to the 'scheme-value' state. The latter parses one complete
+    # expression and immediately pops back. This is needed for the LilyPondLexer.
+    # When LilyPond encounters a #, it starts parsing embedded Scheme code, and
+    # returns to normal syntax after one expression. We implement this
+    # by letting the LilyPondLexer subclass the SchemeLexer. When it finds
+    # the #, the LilyPondLexer goes to the 'value' state, which then pops back
+    # to LilyPondLexer. The 'root' state of the SchemeLexer merely delegates the
+    # work to 'scheme-root'; this is so that LilyPondLexer can inherit
+    # 'scheme-root' and redefine 'root'.
+
     tokens = {
         'root': [
+            default('scheme-root'),
+        ],
+        'scheme-root': [
+            default('value'),
+        ],
+        'value': [
             # the comments
             # and going to the end of the line
-            (r';.*$', Comment.Single),
+            (r';.*?$', Comment.Single),
             # multi-line comment
             (r'#\|', Comment.Multiline, 'multiline-comment'),
             # commented form (entire sexpr folliwng)
@@ -111,44 +129,52 @@ class SchemeLexer(RegexLexer):
             (r'\s+', Text),
 
             # numbers
-            (r'-?\d+\.\d+', Number.Float),
-            (r'-?\d+', Number.Integer),
+            (r'-?\d+\.\d+', Number.Float, '#pop'),
+            (r'-?\d+', Number.Integer, '#pop'),
             # support for uncommon kinds of numbers -
             # have to figure out what the characters mean
             # (r'(#e|#i|#b|#o|#d|#x)[\d.]+', Number),
 
             # strings, symbols and characters
-            (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
-            (r"'" + valid_name, String.Symbol),
-            (r"#\\([()/'\"._!§$%& ?=+-]|[a-zA-Z0-9]+)", String.Char),
+            (r'"(\\\\|\\[^\\]|[^"\\])*"', String, "#pop"),
+            (r"'" + valid_name, String.Symbol, "#pop"),
+            (r"#\\([()/'\"._!§$%& ?=+-]|[a-zA-Z0-9]+)", String.Char, "#pop"),
 
             # constants
-            (r'(#t|#f)', Name.Constant),
+            (r'(#t|#f)', Name.Constant, '#pop'),
 
             # special operators
             (r"('|#|`|,@|,|\.)", Operator),
 
             # highlight the keywords
             ('(%s)' % '|'.join(re.escape(entry) + ' ' for entry in keywords),
-             Keyword),
+             Keyword,
+             '#pop'),
 
             # first variable in a quoted string like
             # '(this is syntactic sugar)
-            (r"(?<='\()" + valid_name, Name.Variable),
-            (r"(?<=#\()" + valid_name, Name.Variable),
+            (r"(?<='\()" + valid_name, Name.Variable, '#pop'),
+            (r"(?<=#\()" + valid_name, Name.Variable, '#pop'),
 
             # highlight the builtins
             (r"(?<=\()(%s)" % '|'.join(re.escape(entry) + ' ' for entry in builtins),
-             Name.Builtin),
+             Name.Builtin,
+             '#pop'),
 
             # the remaining functions
-            (r'(?<=\()' + valid_name, Name.Function),
+            (r'(?<=\()' + valid_name, Name.Function, '#pop'),
             # find the remaining variables
-            (valid_name, Name.Variable),
+            (valid_name, Name.Variable, '#pop'),
 
             # the famous parentheses!
-            (r'(\(|\))', Punctuation),
-            (r'(\[|\])', Punctuation),
+
+            # Push scheme-root to enter a state that will parse as many things
+            # as needed in the parentheses.
+            (r'\(|\[', Punctuation, 'scheme-root'),
+            # Pop one 'value', one 'scheme-root', and yet another 'value', so
+            # we get back to a state parsing expressions as needed in the
+            # enclosing context.
+            (r'\)|\]', Punctuation, '#pop:3'),
         ],
         'multiline-comment': [
             (r'#\|', Comment.Multiline, '#push'),
@@ -1536,7 +1562,7 @@ class EmacsLispLexer(RegexLexer):
     .. versionadded:: 2.1
     """
     name = 'EmacsLisp'
-    aliases = ['emacs', 'elisp', 'emacs-lisp']
+    aliases = ['emacs-lisp', 'elisp', 'emacs']
     filenames = ['*.el']
     mimetypes = ['text/x-elisp', 'application/x-elisp']
 
@@ -2337,7 +2363,7 @@ class ShenLexer(RegexLexer):
             yield index, token, value
 
 
-class CPSALexer(SchemeLexer):
+class CPSALexer(RegexLexer):
     """
     A CPSA lexer based on the CPSA language as of version 2.2.12
 
@@ -2631,23 +2657,22 @@ class FennelLexer(RegexLexer):
     aliases = ['fennel', 'fnl']
     filenames = ['*.fnl']
 
-    # these two lists are taken from fennel-mode.el:
-    # https://gitlab.com/technomancy/fennel-mode
-    # this list is current as of Fennel version 0.6.0.
+    # this list is current as of Fennel version 0.10.0.
     special_forms = (
-        'require-macros', 'eval-compiler', 'doc', 'lua', 'hashfn',
-        'macro', 'macros', 'import-macros', 'pick-args', 'pick-values',
-        'macroexpand', 'macrodebug', 'do', 'values', 'if', 'when',
-        'each', 'for', 'fn', 'lambda', 'λ', 'partial', 'while',
-        'set', 'global', 'var', 'local', 'let', 'tset', 'set-forcibly!',
-        'doto', 'match', 'or', 'and', 'true', 'false', 'nil', 'not',
-        'not=', '.', '+', '..', '^', '-', '*', '%', '/', '>',
-        '<', '>=', '<=', '=', '...', ':', '->', '->>', '-?>',
-        '-?>>', 'rshift', 'lshift', 'bor', 'band', 'bnot', 'bxor',
-        'with-open', 'length'
+        '#', '%', '*', '+', '-', '->', '->>', '-?>', '-?>>', '.', '..',
+        '/', '//', ':', '<', '<=', '=', '>', '>=', '?.', '^', 'accumulate',
+        'and', 'band', 'bnot', 'bor', 'bxor', 'collect', 'comment', 'do', 'doc',
+        'doto', 'each', 'eval-compiler', 'for', 'hashfn', 'icollect', 'if',
+        'import-macros', 'include', 'length', 'let', 'lshift', 'lua',
+        'macrodebug', 'match', 'not', 'not=', 'or', 'partial', 'pick-args',
+        'pick-values', 'quote', 'require-macros', 'rshift', 'set',
+        'set-forcibly!', 'tset', 'values', 'when', 'while', 'with-open', '~='
     )
 
-    # Might be nicer to use the list from _lua_builtins.py but it's unclear how?
+    declarations = (
+        'fn', 'global', 'lambda', 'local', 'macro', 'macros', 'var', 'λ'
+    )
+
     builtins = (
         '_G', '_VERSION', 'arg', 'assert', 'bit32', 'collectgarbage',
         'coroutine', 'debug', 'dofile', 'error', 'getfenv',
@@ -2673,6 +2698,8 @@ class FennelLexer(RegexLexer):
 
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
 
+            (r'(true|false|nil)', Name.Constant),
+
             # these are technically strings, but it's worth visually
             # distinguishing them because their intent is different
             # from regular strings.
@@ -2680,6 +2707,8 @@ class FennelLexer(RegexLexer):
 
             # special forms are keywords
             (words(special_forms, suffix=' '), Keyword),
+            # these are ... even more special!
+            (words(declarations, suffix=' '), Keyword.Declaration),
             # lua standard library are builtins
             (words(builtins, suffix=' '), Name.Builtin),
             # special-case the vararg symbol

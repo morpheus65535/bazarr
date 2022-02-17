@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from inspect import cleandoc, getdoc, getfile, isclass, ismodule, signature
 from typing import Any, Iterable, Optional, Tuple
 
-from .console import RenderableType, RenderGroup
+from .console import RenderableType, Group
 from .highlighter import ReprHighlighter
 from .jupyter import JupyterMixin
 from .panel import Panel
@@ -44,7 +44,7 @@ class Inspect(JupyterMixin):
         self,
         obj: Any,
         *,
-        title: TextType = None,
+        title: Optional[TextType] = None,
         help: bool = False,
         methods: bool = False,
         docs: bool = True,
@@ -79,7 +79,7 @@ class Inspect(JupyterMixin):
 
     def __rich__(self) -> Panel:
         return Panel.fit(
-            RenderGroup(*self._render()),
+            Group(*self._render()),
             title=self.title,
             border_style="scope.border",
             padding=(0, 1),
@@ -149,14 +149,15 @@ class Inspect(JupyterMixin):
                 yield signature
                 yield ""
 
-        _doc = getdoc(obj)
-        if _doc is not None:
-            if not self.help:
-                _doc = _first_paragraph(_doc)
-            doc_text = Text(_reformat_doc(_doc), style="inspect.help")
-            doc_text = highlighter(doc_text)
-            yield doc_text
-            yield ""
+        if self.docs:
+            _doc = getdoc(obj)
+            if _doc is not None:
+                if not self.help:
+                    _doc = _first_paragraph(_doc)
+                doc_text = Text(_reformat_doc(_doc), style="inspect.help")
+                doc_text = highlighter(doc_text)
+                yield doc_text
+                yield ""
 
         if self.value and not (isclass(obj) or callable(obj) or ismodule(obj)):
             yield Panel(
@@ -204,8 +205,6 @@ class Inspect(JupyterMixin):
         if items_table.row_count:
             yield items_table
         else:
-            yield self.highlighter(
-                Text.from_markup(
-                    f"[i][b]{not_shown_count}[/b] attribute(s) not shown.[/i] Run [b][red]inspect[/red]([not b]inspect[/])[/b] for options."
-                )
+            yield Text.from_markup(
+                f"[b cyan]{not_shown_count}[/][i] attribute(s) not shown.[/i] Run [b][magenta]inspect[/]([not b]inspect[/])[/b] for options."
             )
