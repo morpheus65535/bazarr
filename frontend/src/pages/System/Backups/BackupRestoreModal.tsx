@@ -6,11 +6,14 @@ import {
 } from "components";
 import React, { FunctionComponent } from "react";
 import { Button } from "react-bootstrap";
+import { useRestoreBackups } from "../../../apis/hooks";
 
 interface Props extends BaseModalProps {}
 
 const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
   const result = useModalPayload<string>(modal.modalKey);
+
+  const { mutateAsync } = useRestoreBackups();
 
   const closeModal = useCloseModal();
 
@@ -21,14 +24,17 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
           variant="outline-secondary"
           className="mr-2"
           onClick={() => {
-            closeModal();
+            closeModal(modal.modalKey);
           }}
         >
           Cancel
         </Button>
         <Button
           onClick={() => {
-            closeModal();
+            if (result != null) {
+              mutateAsync(result);
+            }
+            closeModal(modal.modalKey);
           }}
         >
           Restore

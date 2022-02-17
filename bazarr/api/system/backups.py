@@ -4,7 +4,7 @@ from flask import jsonify, request
 from flask_restful import Resource
 
 from ..utils import authenticate
-from backup import get_backup_files, prepare_restore, delete_backup_file
+from backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
 
 
 class SystemBackups(Resource):
@@ -15,6 +15,11 @@ class SystemBackups(Resource):
 
     @authenticate
     def post(self):
+        backup_to_zip()
+        return '', 204
+
+    @authenticate
+    def patch(self):
         filename = request.form.get('filename')
         if filename:
             restored = prepare_restore(filename)

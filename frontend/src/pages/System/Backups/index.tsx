@@ -1,10 +1,9 @@
 import { faFileArchive } from "@fortawesome/free-solid-svg-icons";
-import { useSystemBackups } from "apis/hooks";
+import { useCreateBackups, useSystemBackups } from "apis/hooks";
 import { ContentHeader, QueryOverlay } from "components";
-import React, { FunctionComponent, useCallback } from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Environment } from "../../../utilities";
 import Table from "./table";
 
 interface Props {}
@@ -12,9 +11,7 @@ interface Props {}
 const SystemBackupsView: FunctionComponent<Props> = () => {
   const backups = useSystemBackups();
 
-  const run_backup = useCallback(() => {
-    window.open(`${Environment.baseUrl}/bazarr.log`);
-  }, []);
+  const { mutate: backup, isLoading: isResetting } = useCreateBackups();
 
   return (
     <QueryOverlay result={backups}>
@@ -23,7 +20,11 @@ const SystemBackupsView: FunctionComponent<Props> = () => {
           <title>Backups - Bazarr (System)</title>
         </Helmet>
         <ContentHeader>
-          <ContentHeader.Button icon={faFileArchive} onClick={run_backup}>
+          <ContentHeader.Button
+            icon={faFileArchive}
+            updating={isResetting}
+            onClick={() => backup()}
+          >
             Backup Now
           </ContentHeader.Button>
         </ContentHeader>
