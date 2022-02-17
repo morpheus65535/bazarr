@@ -81,6 +81,10 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'backup': {
+        'folder': 'None',
+        'retention': '31'
+    },
     'sonarr': {
         'ip': '127.0.0.1',
         'port': '8989',

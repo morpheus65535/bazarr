@@ -110,6 +110,10 @@ export function useRunTask() {
   );
 }
 
+export function useSystemBackups() {
+  return useQuery([QueryKeys.System, "backups"], () => api.system.backups());
+}
+
 export function useSystemStatus() {
   return useQuery([QueryKeys.System, "status"], () => api.system.status());
 }

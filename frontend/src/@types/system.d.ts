@@ -20,6 +20,13 @@ declare namespace System {
     start_time: number;
   }
 
+  interface Backups {
+    type: string;
+    filename: string;
+    date: string;
+    id: number;
+  }
+
   interface Health {
     object: string;
     issue: string;

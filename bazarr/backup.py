@@ -5,14 +5,18 @@ import sqlite3
 import shutil
 import logging
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
+from glob import glob
 
 from get_args import args
+from config import settings
 
 
 def get_backup_path():
     backup_dir = os.path.join(args.config_dir, 'backup')
+    if settings.backup.folder != 'None':
+        backup_dir = settings.backup.folder
     if not os.path.isdir(backup_dir):
         os.mkdir(backup_dir)
     logging.debug(f'Backup directory path is: {backup_dir}')
@@ -25,6 +29,19 @@ def get_restore_path():
         os.mkdir(restore_dir)
     logging.debug(f'Restore directory path is: {restore_dir}')
     return restore_dir
+
+
+def get_backup_files(fullpath=True):
+    backup_file_pattern = os.path.join(get_backup_path(), 'bazarr_backup_v*.zip')
+    file_list = glob(backup_file_pattern)
+    if fullpath:
+        return file_list
+    else:
+        return [{
+            'type': 'backup',
+            'filename': os.path.basename(x),
+            'date': datetime.fromtimestamp(os.path.getmtime(x)).strftime("%b %d %Y")
+        } for x in file_list]
 
 
 def backup_to_zip():
@@ -134,3 +151,34 @@ def prepare_restore(filename):
     if success:
         logging.debug('time to restart')
         # todo: restart Bazarr
+
+
+def backup_rotation():
+    backup_retention = settings.backup.retention
+    try:
+        int(backup_retention)
+    except ValueError:
+        logging.error('Backup retention time must be a valid integer. Please fix this in your settings.')
+        return
+
+    backup_files = get_backup_files()
+
+    logging.debug(f'Cleaning up backup files older than {backup_retention} days')
+    for file in backup_files:
+        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=backup_retention) < datetime.utcnow():
+            logging.debug(f'Deleting old backup file {file}')
+            try:
+                os.remove(file)
+            except OSError:
+                logging.debug(f'Unable to delete backup file {file}')
+    logging.debug('Finished cleaning up old backup files')
+
+
+def delete_backup_file(filename):
+    backup_file_path = os.path.join(get_backup_path(), filename)
+    try:
+        os.remove(backup_file_path)
+        return True
+    except OSError:
+        logging.debug(f'Unable to delete backup file {backup_file_path}')
+    return False

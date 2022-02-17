@@ -51,6 +51,11 @@ class SystemApi extends BaseApi {
     return response.data;
   }
 
+  async backups() {
+    const response = await this.get<DataWrapper<System.Backups[]>>("/backups");
+    return response.data;
+  }
+
   async health() {
     const response = await this.get<DataWrapper<System.Health[]>>("/health");
     return response.data;
