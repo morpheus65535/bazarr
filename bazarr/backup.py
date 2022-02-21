@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import io
 import sqlite3
 import shutil
 import logging
@@ -91,13 +92,15 @@ def restore_from_backup():
     if os.path.isfile(restore_config_path) and os.path.isfile(restore_database_path):
         try:
             shutil.copy(restore_config_path, dest_config_path)
+            os.remove(restore_config_path)
         except OSError:
-            logging.exception(f'Unable to restore config.ini to {dest_config_path}')
+            logging.exception(f'Unable to restore or delete config.ini to {dest_config_path}')
 
         try:
             shutil.copy(restore_database_path, dest_database_path)
+            os.remove(restore_database_path)
         except OSError:
-            logging.exception(f'Unable to restore bazarr.db to {dest_database_path}')
+            logging.exception(f'Unable to restore or delete bazarr.db to {dest_database_path}')
         else:
             try:
                 if os.path.isfile(dest_database_path + '-shm'):
@@ -108,8 +111,16 @@ def restore_from_backup():
                 logging.exception('Unable to delete SHM and WAL file.')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
-        from server import webserver
-        webserver.restart()
+
+        try:
+            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
+        except Exception as e:
+            logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+        else:
+            logging.info('Bazarr is being restarted...')
+            restart_file.write(str(''))
+            restart_file.close()
+            os._exit(0)
     elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
         logging.debug('Cannot restore a partial backup. You must have both config and database.')
     else:
@@ -137,8 +148,8 @@ def prepare_restore(filename):
         logging.exception(f'Unable to copy backup archive to {dest_zip_file_path}')
     else:
         try:
-            with ZipFile('sampleDir.zip', 'r') as zipObj:
-                zipObj.extractall(path=dest_zip_file_path)
+            with ZipFile(dest_zip_file_path, 'r') as zipObj:
+                zipObj.extractall(path=get_restore_path())
         except BadZipFile:
             logging.exception(f'Unable to extract files from backup archive {dest_zip_file_path}')
 
