@@ -305,7 +305,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if language_from_alpha2(cutoff_temp['language']) in \
+                    if cutoff_temp['audio_exclude'] == 'True' and language_from_alpha2(cutoff_temp['language']) in \
                             ast.literal_eval(episode_subtitles['audio_language']):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
@@ -411,7 +411,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
                     cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-                    if language_from_alpha2(cutoff_temp['language']) in \
+                    if cutoff_temp['audio_exclude'] == 'True' and language_from_alpha2(cutoff_temp['language']) in \
                             ast.literal_eval(movie_subtitles['audio_language']):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
