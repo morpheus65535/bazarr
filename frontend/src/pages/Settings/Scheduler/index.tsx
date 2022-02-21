@@ -9,6 +9,7 @@ import {
   SettingsProvider,
 } from "../components";
 import {
+  backupOptions,
   dayOptions,
   diskUpdateOptions,
   episodesSyncOptions,
@@ -142,6 +143,34 @@ const SettingsSchedulerView: FunctionComponent = () => {
             settingKey="settings-general-upgrade_frequency"
           ></Selector>
         </Input>
+      </Group>
+      <Group header="Backup">
+        <CollapseBox>
+          <CollapseBox.Control>
+            <Input name="Backup config and database">
+              <Selector
+                settingKey="settings-backup-frequency"
+                options={backupOptions}
+              ></Selector>
+            </Input>
+          </CollapseBox.Control>
+          <CollapseBox.Content on={(k) => k === "Weekly"}>
+            <Input name="Day of The Week">
+              <Selector
+                settingKey="settings-backup-day"
+                options={dayOptions}
+              ></Selector>
+            </Input>
+          </CollapseBox.Content>
+          <CollapseBox.Content on={(k) => k === "Daily" || k === "Weekly"}>
+            <Input name="Time of The Day">
+              <Selector
+                settingKey="settings-backup-hour"
+                options={timeOptions}
+              ></Selector>
+            </Input>
+          </CollapseBox.Content>
+        </CollapseBox>
       </Group>
     </SettingsProvider>
   );

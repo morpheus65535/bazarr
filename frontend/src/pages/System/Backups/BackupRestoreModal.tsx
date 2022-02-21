@@ -1,4 +1,5 @@
 import {
+  AsyncButton,
   BaseModal,
   BaseModalProps,
   useCloseModal,
@@ -29,16 +30,19 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
         >
           Cancel
         </Button>
-        <Button
-          onClick={() => {
-            if (result != null) {
-              mutateAsync(result);
+        <AsyncButton
+          noReset
+          promise={() => {
+            if (result) {
+              return mutateAsync(result);
+            } else {
+              return null;
             }
-            closeModal(modal.modalKey);
           }}
+          onSuccess={() => closeModal(modal.modalKey)}
         >
           Restore
-        </Button>
+        </AsyncButton>
       </div>
     </div>
   );

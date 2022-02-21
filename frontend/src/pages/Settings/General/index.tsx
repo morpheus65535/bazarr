@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
 import { copyToClipboard, Environment, toggleState } from "utilities";
+import { FileBrowser } from "../../../components";
 import {
   Button,
   Check,
@@ -174,6 +175,16 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Check label="Debug" settingKey="settings-general-debug"></Check>
           <Message>Debug logging should only be enabled temporarily</Message>
         </Input>
+      </Group>
+      <Group header="Backups">
+        <FileBrowser
+          drop="up"
+          defaultValue={"/"}
+          type="bazarr"
+          onChange={(path) => {
+            console.log(path);
+          }}
+        ></FileBrowser>
       </Group>
       <Group header="Analytics">
         <Input>

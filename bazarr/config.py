@@ -82,8 +82,11 @@ defaults = {
         'password': ''
     },
     'backup': {
-        'folder': 'None',
-        'retention': '31'
+        'folder': os.path.join(args.config_dir, 'backup'),
+        'retention': '31',
+        'frequency': 'Weekly',
+        'day': '6',
+        'hour': '3'
     },
     'sonarr': {
         'ip': '127.0.0.1',
@@ -387,7 +390,8 @@ def save_settings(settings_items):
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
-                   'settings-general-upgrade_frequency']:
+                   'settings-general-upgrade_frequency', 'settings-backup-frequency', 'settings-backup-day',
+                   'settings-backup-hour']:
             update_schedule = True
 
         if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',

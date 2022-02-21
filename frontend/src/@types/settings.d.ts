@@ -6,6 +6,7 @@ interface Settings {
   analytics: Settings.Analytic;
   sonarr: Settings.Sonarr;
   radarr: Settings.Radarr;
+  backup: Settings.Backup;
   // Anitcaptcha
   anticaptcha: Settings.Anticaptcha;
   deathbycaptcha: Settings.DeathByCaptche;
@@ -85,6 +86,14 @@ declare namespace Settings {
     port?: number;
     username?: string;
     password?: string;
+  }
+
+  interface Backup {
+    folder: string;
+    retention: number;
+    frequency: string;
+    day: number;
+    hour: number;
   }
 
   interface Auth {

@@ -14,9 +14,7 @@ from config import settings
 
 
 def get_backup_path():
-    backup_dir = os.path.join(args.config_dir, 'backup')
-    if settings.backup.folder != 'None':
-        backup_dir = settings.backup.folder
+    backup_dir = settings.backup.folder
     if not os.path.isdir(backup_dir):
         os.mkdir(backup_dir)
     logging.debug(f'Backup directory path is: {backup_dir}')
@@ -110,10 +108,13 @@ def restore_from_backup():
                 logging.exception('Unable to delete SHM and WAL file.')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
-
-        # todo: restart Bazarr
-    else:
+        from server import webserver
+        webserver.restart()
+    elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
         logging.debug('Cannot restore a partial backup. You must have both config and database.')
+    else:
+        logging.debug('No backup to restore.')
+        return
 
     try:
         os.remove(restore_config_path)
@@ -150,7 +151,8 @@ def prepare_restore(filename):
 
     if success:
         logging.debug('time to restart')
-        # todo: restart Bazarr
+        from server import webserver
+        webserver.restart()
 
 
 def backup_rotation():

@@ -10,6 +10,7 @@ from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
 from helper import path_mappings
+from backup import restore_from_backup
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -19,6 +20,9 @@ import time
 # set start time global variable as epoch
 global startTime
 startTime = time.time()
+
+# restore backup if required
+restore_from_backup()
 
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
