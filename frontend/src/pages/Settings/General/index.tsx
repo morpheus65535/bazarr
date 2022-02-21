@@ -7,12 +7,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
 import { copyToClipboard, Environment, toggleState } from "utilities";
-import { FileBrowser } from "../../../components";
 import {
   Button,
   Check,
   Chips,
   CollapseBox,
+  File,
   Group,
   Input,
   Message,
@@ -177,14 +177,7 @@ const SettingsGeneralView: FunctionComponent = () => {
         </Input>
       </Group>
       <Group header="Backups">
-        <FileBrowser
-          drop="up"
-          defaultValue={"/"}
-          type="bazarr"
-          onChange={(path) => {
-            console.log(path);
-          }}
-        ></FileBrowser>
+        <File settingKey="settings-backup-folder" type="bazarr"></File>
       </Group>
       <Group header="Analytics">
         <Input>

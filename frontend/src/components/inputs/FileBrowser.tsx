@@ -30,14 +30,14 @@ function extractPath(raw: string) {
   }
 }
 
-interface Props {
+export interface FileBrowserProps {
   defaultValue?: string;
   type: "sonarr" | "radarr" | "bazarr";
   onChange?: (path: string) => void;
   drop?: DropdownProps["drop"];
 }
 
-export const FileBrowser: FunctionComponent<Props> = ({
+export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   defaultValue,
   type,
   onChange,
