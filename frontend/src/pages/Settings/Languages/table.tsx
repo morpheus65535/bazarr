@@ -1,12 +1,7 @@
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { ActionButton, SimpleTable, useShowModal } from "components";
 import { cloneDeep } from "lodash";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { useEnabledLanguagesContext, useProfilesContext } from ".";
@@ -16,11 +11,9 @@ import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
-  const originalProfiles = useProfilesContext();
+  const profiles = useProfilesContext();
 
   const languages = useEnabledLanguagesContext();
-
-  const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
 
   const nextProfileId = useMemo(
     () =>
@@ -36,7 +29,6 @@ const Table: FunctionComponent = () => {
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
       update(list, languageProfileKey);
-      setProfiles(list);
     },
     [update]
   );
