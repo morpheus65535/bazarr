@@ -178,6 +178,7 @@ const SettingsGeneralView: FunctionComponent = () => {
       </Group>
       <Group header="Backups">
         <File settingKey="settings-backup-folder" type="bazarr"></File>
+        <Message>Absolute path to the backup directory</Message>
       </Group>
       <Group header="Analytics">
         <Input>
