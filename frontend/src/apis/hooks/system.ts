@@ -105,6 +105,7 @@ export function useRunTask() {
     {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
     }
   );
