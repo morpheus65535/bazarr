@@ -19,7 +19,7 @@ import React, {
 import { Button, Form } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
 import { BuildKey } from "utilities";
-import { useEnabledLanguagesContext } from ".";
+import { useLatestEnabledLanguages } from ".";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 interface Props {
@@ -45,7 +45,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   const { payload: profile, closeModal } =
     useModalInformation<Language.Profile>(modal.modalKey);
 
-  const languages = useEnabledLanguagesContext();
+  const languages = useLatestEnabledLanguages();
 
   const [current, setProfile] = useState(createDefaultProfile);
 

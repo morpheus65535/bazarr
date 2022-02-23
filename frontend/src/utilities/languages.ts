@@ -10,7 +10,7 @@ export function useEnabledLanguages() {
   const query = useLanguages();
 
   const enabled = useMemo(() => {
-    const data =
+    const data: Language.Info[] =
       query.data
         ?.filter((v) => v.enabled)
         .map((v) => ({ code2: v.code2, name: v.name })) ?? [];

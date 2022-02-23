@@ -4,16 +4,16 @@ import { cloneDeep } from "lodash";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column, TableUpdater } from "react-table";
-import { useEnabledLanguagesContext, useProfilesContext } from ".";
+import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
 import { anyCutoff } from "./options";
 
 const Table: FunctionComponent = () => {
-  const profiles = useProfilesContext();
+  const profiles = useLatestProfiles();
 
-  const languages = useEnabledLanguagesContext();
+  const languages = useLatestEnabledLanguages();
 
   const nextProfileId = useMemo(
     () =>
