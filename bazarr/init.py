@@ -50,6 +50,8 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
+if not os.path.exists(os.path.join(args.config_dir, 'restore')):
+    os.mkdir(os.path.join(args.config_dir, 'restore'))
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402
