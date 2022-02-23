@@ -17,7 +17,7 @@ from config import settings
 def get_backup_path():
     backup_dir = settings.backup.folder
     if not os.path.isdir(backup_dir):
-        os.mkdir(backup_dir)
+        os.makedirs(backup_dir)
     logging.debug(f'Backup directory path is: {backup_dir}')
     return backup_dir
 
@@ -25,7 +25,7 @@ def get_backup_path():
 def get_restore_path():
     restore_dir = os.path.join(args.config_dir, 'restore')
     if not os.path.isdir(restore_dir):
-        os.mkdir(restore_dir)
+        os.makedirs(restore_dir)
     logging.debug(f'Restore directory path is: {restore_dir}')
     return restore_dir
 
