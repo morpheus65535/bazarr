@@ -12,6 +12,7 @@ import {
   Check,
   Chips,
   CollapseBox,
+  File,
   Group,
   Input,
   Message,
@@ -174,6 +175,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Check label="Debug" settingKey="settings-general-debug"></Check>
           <Message>Debug logging should only be enabled temporarily</Message>
         </Input>
+      </Group>
+      <Group header="Backups">
+        <File settingKey="settings-backup-folder" type="bazarr"></File>
+        <Message>Absolute path to the backup directory</Message>
       </Group>
       <Group header="Analytics">
         <Input>

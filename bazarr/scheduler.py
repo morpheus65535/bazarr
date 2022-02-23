@@ -1,5 +1,18 @@
 # coding=utf-8
 
+import os
+import pretty
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+from apscheduler.jobstores.base import JobLookupError
+from datetime import datetime, timedelta
+from calendar import day_name
+from random import randrange
+
 from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
@@ -12,17 +25,8 @@ if not args.no_update:
     from check_update import check_if_new_update, check_releases
 else:
     from check_update import check_releases
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.date import DateTrigger
-from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timedelta
-from calendar import day_name
-import pretty
-from random import randrange
 from event_handler import event_stream
-import os
+from backup import backup_to_zip
 
 
 class Scheduler:
@@ -62,6 +66,7 @@ class Scheduler:
         self.__search_wanted_subtitles_task()
         self.__upgrade_subtitles_task()
         self.__randomize_interval_task()
+        self.__automatic_backup()
         if args.no_tasks:
             self.__no_task()
 
@@ -165,6 +170,24 @@ class Scheduler:
     def __check_health_task(self):
         self.aps_scheduler.add_job(check_health, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                                    misfire_grace_time=15, id='check_health', name='Check health')
+
+    def __automatic_backup(self):
+        backup = settings.backup.frequency
+        if backup == "Daily":
+            self.aps_scheduler.add_job(
+                backup_to_zip, CronTrigger(hour=settings.backup.hour), max_instances=1, coalesce=True,
+                misfire_grace_time=15, id='backup', name='Backup database and configuration file',
+                replace_existing=True)
+        elif backup == "Weekly":
+            self.aps_scheduler.add_job(
+                backup_to_zip, CronTrigger(day_of_week=settings.backup.day, hour=settings.backup.hour),
+                max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
+                name='Backup database and configuration file', replace_existing=True)
+        elif backup == "Manually":
+            try:
+                self.aps_scheduler.remove_job(job_id='backup')
+            except JobLookupError:
+                pass
 
     def __sonarr_full_update_task(self):
         if settings.general.getboolean('use_sonarr'):

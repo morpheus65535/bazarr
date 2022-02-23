@@ -36,6 +36,7 @@ import SystemTasksView from "pages/System/Tasks";
 import WantedMoviesView from "pages/Wanted/Movies";
 import WantedSeriesView from "pages/Wanted/Series";
 import { useMemo } from "react";
+import SystemBackupsView from "../pages/System/Backups";
 import { Navigation } from "./nav";
 import RootRedirect from "./RootRedirect";
 
@@ -224,6 +225,11 @@ export function useNavigationItems() {
             path: "/providers",
             badge: data?.providers,
             component: SystemProvidersView,
+          },
+          {
+            name: "Backup",
+            path: "/backups",
+            component: SystemBackupsView,
           },
           {
             name: "Status",

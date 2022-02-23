@@ -10,6 +10,7 @@ from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
 from helper import path_mappings
+from backup import restore_from_backup
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -19,6 +20,9 @@ import time
 # set start time global variable as epoch
 global startTime
 startTime = time.time()
+
+# restore backup if required
+restore_from_backup()
 
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
@@ -46,6 +50,8 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
+if not os.path.exists(os.path.join(args.config_dir, 'restore')):
+    os.mkdir(os.path.join(args.config_dir, 'restore'))
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402

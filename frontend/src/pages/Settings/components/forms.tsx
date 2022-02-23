@@ -1,6 +1,8 @@
 import {
   Chips as CChips,
   ChipsProps as CChipsProps,
+  FileBrowser,
+  FileBrowserProps,
   Selector as CSelector,
   SelectorProps as CSelectorProps,
   Slider as CSlider,
@@ -212,5 +214,25 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
       }}
       {...button}
     ></BSButton>
+  );
+};
+
+type FileProps = {} & BaseInput<string>;
+
+export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
+  props
+) => {
+  const { settingKey, override, ...file } = props;
+  const value = useLatest<string>(settingKey, isString);
+  const update = useSingleUpdate();
+
+  return (
+    <FileBrowser
+      defaultValue={value ?? undefined}
+      onChange={(p) => {
+        update(p, settingKey);
+      }}
+      {...file}
+    ></FileBrowser>
   );
 };
