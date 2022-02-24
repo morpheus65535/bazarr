@@ -1,5 +1,6 @@
 import logging
 import os
+import gc
 from ffsubsync.ffsubsync import run, make_parser
 from utils import get_binary
 from utils import history_log, history_log_movie
@@ -53,12 +54,18 @@ class SubSyncer:
                 unparsed_args.append('--make-test-case')
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
+            if os.path.isfile(self.srtout):
+                os.remove(self.srtout)
+                logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
             result = run(self.args)
         except Exception:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
                               '{0}'.format(self.srtin))
+            gc.collect()
+            return
         else:
             if settings.subsync.getboolean('debug'):
+                gc.collect()
                 return result
             if os.path.isfile(self.srtout):
                 if not settings.subsync.getboolean('debug'):
@@ -81,6 +88,8 @@ class SubSyncer:
                                           language=srt_lang, subtitles_path=srt_path)
             else:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
+
+            gc.collect()
 
             return result
 
