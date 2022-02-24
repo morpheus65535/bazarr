@@ -74,7 +74,7 @@ def backup_to_zip():
         if database_backup_file:
             backupZip.write(database_backup_file, 'bazarr.db')
         else:
-            logging.debug(f'Database file is not included in backup. See previous exception')
+            logging.debug('Database file is not included in backup. See previous exception')
         backupZip.write(config_file, 'config.ini')
 
     try:

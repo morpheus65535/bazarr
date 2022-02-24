@@ -124,7 +124,7 @@ def get_providers():
 
 
 _FFPROBE_BINARY = get_binary("ffprobe")
-_FFMPEG_BINARY= get_binary("ffmpeg")
+_FFMPEG_BINARY = get_binary("ffmpeg")
 
 
 def get_providers_auth():
