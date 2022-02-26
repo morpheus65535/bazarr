@@ -9,6 +9,7 @@ from rebulk.remodule import re
 from ..common import dash
 from ..common.pattern import is_disabled
 from ..common.validators import seps_before, seps_after
+from ...config import load_config_patterns
 
 audio_properties = ['audio_codec', 'audio_profile', 'audio_channels']
 
@@ -22,8 +23,8 @@ def audio_codec(config):  # pylint:disable=unused-argument
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk()\
-        .regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])\
+    rebulk = Rebulk() \
+        .regex_defaults(flags=re.IGNORECASE, abbreviations=[dash]) \
         .string_defaults(ignore_case=True)
 
     def audio_codec_priority(match1, match2):
@@ -46,46 +47,19 @@ def audio_codec(config):  # pylint:disable=unused-argument
                     conflict_solver=audio_codec_priority,
                     disabled=lambda context: is_disabled(context, 'audio_codec'))
 
-    rebulk.regex("MP3", "LAME", r"LAME(?:\d)+-?(?:\d)+", value="MP3")
-    rebulk.string("MP2", value="MP2")
-    rebulk.regex('Dolby', 'DolbyDigital', 'Dolby-Digital', 'DD', 'AC3D?', value='Dolby Digital')
-    rebulk.regex('Dolby-?Atmos', 'Atmos', value='Dolby Atmos')
-    rebulk.string("AAC", value="AAC")
-    rebulk.string('EAC3', 'DDP', 'DD+', value='Dolby Digital Plus')
-    rebulk.string("Flac", value="FLAC")
-    rebulk.string("DTS", value="DTS")
-    rebulk.regex('DTS-?HD', 'DTS(?=-?MA)', value='DTS-HD',
-                 conflict_solver=lambda match, other: other if other.name == 'audio_codec' else '__default__')
-    rebulk.regex('True-?HD', value='Dolby TrueHD')
-    rebulk.string('Opus', value='Opus')
-    rebulk.string('Vorbis', value='Vorbis')
-    rebulk.string('PCM', value='PCM')
-    rebulk.string('LPCM', value='LPCM')
+    load_config_patterns(rebulk, config.get('audio_codec'))
 
     rebulk.defaults(clear=True,
                     name='audio_profile',
                     disabled=lambda context: is_disabled(context, 'audio_profile'))
-    rebulk.string('MA', value='Master Audio', tags=['audio_profile.rule', 'DTS-HD'])
-    rebulk.string('HR', 'HRA', value='High Resolution Audio', tags=['audio_profile.rule', 'DTS-HD'])
-    rebulk.string('ES', value='Extended Surround', tags=['audio_profile.rule', 'DTS'])
-    rebulk.string('HE', value='High Efficiency', tags=['audio_profile.rule', 'AAC'])
-    rebulk.string('LC', value='Low Complexity', tags=['audio_profile.rule', 'AAC'])
-    rebulk.string('HQ', value='High Quality', tags=['audio_profile.rule', 'Dolby Digital'])
-    rebulk.string('EX', value='EX', tags=['audio_profile.rule', 'Dolby Digital'])
+
+    load_config_patterns(rebulk, config.get('audio_profile'))
 
     rebulk.defaults(clear=True,
                     name="audio_channels",
                     disabled=lambda context: is_disabled(context, 'audio_channels'))
-    rebulk.regex('7[01]', value='7.1', validator=seps_after, tags='weak-audio_channels')
-    rebulk.regex('5[01]', value='5.1', validator=seps_after, tags='weak-audio_channels')
-    rebulk.string('20', value='2.0', validator=seps_after, tags='weak-audio_channels')
 
-    for value, items in config.get('audio_channels').items():
-        for item in items:
-            if item.startswith('re:'):
-                rebulk.regex(item[3:], value=value, children=True)
-            else:
-                rebulk.string(item, value=value)
+    load_config_patterns(rebulk, config.get('audio_channels'))
 
     rebulk.rules(DtsHDRule, DtsRule, AacRule, DolbyDigitalRule, AudioValidatorRule, HqConflictRule,
                  AudioChannelsValidatorRule)
@@ -139,20 +113,20 @@ class AudioProfileRule(Rule):
     def when(self, matches, context):
         profile_list = matches.named('audio_profile',
                                      lambda match: 'audio_profile.rule' in match.tags and
-                                     self.codec in match.tags)
+                                                   self.codec in match.tags)
         ret = []
         for profile in profile_list:
             codec = matches.at_span(profile.span,
                                     lambda match: match.name == 'audio_codec' and
-                                    match.value == self.codec, 0)
+                                                  match.value == self.codec, 0)
             if not codec:
                 codec = matches.previous(profile,
                                          lambda match: match.name == 'audio_codec' and
-                                         match.value == self.codec)
+                                                       match.value == self.codec)
             if not codec:
                 codec = matches.next(profile,
                                      lambda match: match.name == 'audio_codec' and
-                                     match.value == self.codec)
+                                                   match.value == self.codec)
             if not codec:
                 ret.append(profile)
             if codec:

@@ -10,7 +10,7 @@ from flask_restful import Resource
 from bs4 import BeautifulSoup as bso
 
 from database import TableEpisodes, TableShows, TableMovies
-from get_subtitle import episode_download_subtitles, movies_download_subtitles
+from get_subtitle.mass_download import episode_download_subtitles, movies_download_subtitles
 from ..utils import authenticate
 
 
@@ -47,7 +47,7 @@ class WebHooksPlex(Resource):
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
                 series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
-            except:
+            except Exception:
                 return '', 404
             else:
                 sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
@@ -56,20 +56,21 @@ class WebHooksPlex(Resource):
                            TableEpisodes.season == season,
                            TableEpisodes.episode == episode) \
                     .dicts() \
-                    .get()
+                    .get_or_none()
 
                 if sonarrEpisodeId:
                     episode_download_subtitles(no=sonarrEpisodeId['sonarrEpisodeId'], send_progress=True)
         else:
             try:
                 movie_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-            except:
+            except Exception:
                 return '', 404
             else:
                 radarrId = TableMovies.select(TableMovies.radarrId)\
                     .where(TableMovies.imdbId == movie_imdb_id)\
                     .dicts()\
-                    .get()
+                    .get_or_none()
+
                 if radarrId:
                     movies_download_subtitles(no=radarrId['radarrId'])
 

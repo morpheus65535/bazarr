@@ -52,7 +52,7 @@ from auditok import __version__ as version
 __all__ = []
 __version__ = version
 __date__ = '2015-11-23'
-__updated__ = '2015-03-11'
+__updated__ = '2015-12-02'
 
 DEBUG = 0
 TESTRUN = 1

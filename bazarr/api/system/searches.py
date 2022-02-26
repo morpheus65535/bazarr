@@ -37,5 +37,4 @@ class Searches(Resource):
                 movies = list(movies)
                 search_list += movies
 
-
         return jsonify(search_list)

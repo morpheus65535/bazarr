@@ -3,14 +3,13 @@
 """
 bonus property
 """
-from rebulk.remodule import re
-
 from rebulk import Rebulk, AppendMatch, Rule
+from rebulk.remodule import re
 
 from .title import TitleFromPosition
 from ..common.formatters import cleanup
 from ..common.pattern import is_disabled
-from ..common.validators import seps_surround
+from ...config import load_config_patterns
 
 
 def bonus(config):  # pylint:disable=unused-argument
@@ -23,14 +22,9 @@ def bonus(config):  # pylint:disable=unused-argument
     :rtype: Rebulk
     """
     rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'bonus'))
-    rebulk = rebulk.regex_defaults(flags=re.IGNORECASE)
+    rebulk = rebulk.regex_defaults(name='bonus', flags=re.IGNORECASE)
 
-    rebulk.regex(r'x(\d+)', name='bonus', private_parent=True, children=True, formatter=int,
-                 validator={'__parent__': seps_surround},
-                 validate_all=True,
-                 conflict_solver=lambda match, conflicting: match
-                 if conflicting.name in ('video_codec', 'episode') and 'weak-episode' not in conflicting.tags
-                 else '__default__')
+    load_config_patterns(rebulk, config.get('bonus'))
 
     rebulk.rules(BonusTitleRule)
 

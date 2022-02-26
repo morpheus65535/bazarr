@@ -200,6 +200,12 @@ knowledge:
     HIGH:
       - HIGH
 
+  VideoHdrFormat:
+    DV:
+      - DOLBY VISION
+    HDR10:
+      - SMPTE ST 2086
+
   ScanType:
     PROGRESSIVE:
       - PROGRESSIVE
@@ -232,6 +238,7 @@ knowledge:
     MA:
       - MA
       - DTS-HD MA
+      - XLL
     MAIN:
       - MAIN
     LC:
@@ -282,6 +289,7 @@ knowledge:
       - DTS-HD
     AAC:
       - AAC
+      - AAC-2
     FLAC:
       - FLAC
     PCM:
@@ -502,6 +510,13 @@ profiles:
       default: Main
     HIGH:
       default: High
+
+  VideoHdrFormat:
+    DV:
+      default: Dolby Vision
+    HDR10:
+      default: HDR10
+      technical: HDR10 - SMPTE ST 2086
 
   ScanType:
     PROGRESSIVE:

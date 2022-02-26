@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,26 +26,32 @@
 #==============================================================================
 
 
-"""Provides :class:`OrderedBidict`."""
+"""Provide :class:`OrderedBidict`."""
+
+import typing as _t
 
 from ._mut import MutableBidict
 from ._orderedbase import OrderedBidictBase
+from ._typing import KT, VT
 
 
-class OrderedBidict(OrderedBidictBase, MutableBidict):
+class OrderedBidict(OrderedBidictBase[KT, VT], MutableBidict[KT, VT]):
     """Mutable bidict type that maintains items in insertion order."""
 
     __slots__ = ()
-    __hash__ = None  # since this class is mutable; explicit > implicit.
 
-    def clear(self):
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'OrderedBidict[VT, KT]': ...
+
+    def clear(self) -> None:
         """Remove all items."""
         self._fwdm.clear()
         self._invm.clear()
         self._sntl.nxt = self._sntl.prv = self._sntl
 
-    def popitem(self, last=True):  # pylint: disable=arguments-differ
-        u"""*x.popitem() → (k, v)*
+    def popitem(self, last: bool = True) -> _t.Tuple[KT, VT]:
+        """*x.popitem() → (k, v)*
 
         Remove and return the most recently added item as a (key, value) pair
         if *last* is True, else the least recently added item.
@@ -54,11 +60,13 @@ class OrderedBidict(OrderedBidictBase, MutableBidict):
         """
         if not self:
             raise KeyError('mapping is empty')
-        key = next((reversed if last else iter)(self))
+        itfn: _t.Callable = reversed if last else iter  # type: ignore [assignment]
+        it = itfn(self)
+        key = next(it)
         val = self._pop(key)
         return key, val
 
-    def move_to_end(self, key, last=True):
+    def move_to_end(self, key: KT, last: bool = True) -> None:
         """Move an existing key to the beginning or end of this ordered bidict.
 
         The item is moved to the end if *last* is True, else to the beginning.
@@ -70,15 +78,15 @@ class OrderedBidict(OrderedBidictBase, MutableBidict):
         node.nxt.prv = node.prv
         sntl = self._sntl
         if last:
-            last = sntl.prv
-            node.prv = last
+            lastnode = sntl.prv
+            node.prv = lastnode
             node.nxt = sntl
-            sntl.prv = last.nxt = node
+            sntl.prv = lastnode.nxt = node
         else:
-            first = sntl.nxt
+            firstnode = sntl.nxt
             node.prv = sntl
-            node.nxt = first
-            sntl.nxt = first.prv = node
+            node.nxt = firstnode
+            sntl.nxt = firstnode.prv = node
 
 
 #                             * Code review nav *

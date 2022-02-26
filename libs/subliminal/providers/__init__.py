@@ -161,5 +161,8 @@ class Provider(object):
         """
         raise NotImplementedError
 
+    def ping(self):
+        return True
+
     def __repr__(self):
         return '<%s [%r]>' % (self.__class__.__name__, self.video_types)

@@ -134,7 +134,7 @@ class StyleMeta(type):
             color = _ansimap[color]
         bgcolor = t[4]
         if bgcolor in _deprecated_ansicolors:
-            bgcolor = _deprecated_ansicolors[color]
+            bgcolor = _deprecated_ansicolors[bgcolor]
         if bgcolor in ansicolors:
             bgansicolor = bgcolor
             bgcolor = _ansimap[bgcolor]
@@ -189,3 +189,9 @@ class Style(metaclass=StyleMeta):
 
     #: Style definitions for individual token types.
     styles = {}
+
+    # Attribute for lexers defined within Pygments. If set
+    # to True, the style is not shown in the style gallery
+    # on the website. This is intended for language-specific
+    # styles.
+    web_style_gallery_exclude = False

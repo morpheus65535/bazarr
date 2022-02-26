@@ -12,6 +12,11 @@ class WebVTTFormat(SubripFormat):
     TIMESTAMP = re.compile(r"(\d{0,4}:)?(\d{2}):(\d{2})\.(\d{2,3})")
 
     @staticmethod
+    def ms_to_timestamp(ms: int) -> str:
+        result = SubripFormat.ms_to_timestamp(ms)
+        return result.replace(',', '.')
+
+    @staticmethod
     def timestamp_to_ms(groups):
         _h, _m, _s, _ms = groups
         if not _h:
@@ -33,4 +38,5 @@ class WebVTTFormat(SubripFormat):
         See :meth:`pysubs2.formats.FormatBase.to_file()`
         """
         print("WEBVTT\n", file=fp)
-        return SubripFormat.to_file(subs=subs, fp=fp, format_=format_, **kwargs)
+        return super(WebVTTFormat, cls).to_file(
+            subs=subs, fp=fp, format_=format_, **kwargs)

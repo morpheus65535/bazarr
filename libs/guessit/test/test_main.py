@@ -16,7 +16,7 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 # Prevent output from spamming the console
 @pytest.fixture(scope="function", autouse=True)
 def no_stdout(monkeypatch):
-    with open(os.devnull, "w") as f:
+    with open(os.devnull, "w") as f:  # pylint:disable=unspecified-encoding
         monkeypatch.setattr(sys, "stdout", f)
         yield
 

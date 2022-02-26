@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask
 from flask_socketio import SocketIO
 import os
 

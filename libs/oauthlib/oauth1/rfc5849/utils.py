@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 oauthlib.utils
 ~~~~~~~~~~~~~~
@@ -6,15 +5,9 @@ oauthlib.utils
 This module contains utility methods used by various parts of the OAuth
 spec.
 """
-from __future__ import absolute_import, unicode_literals
+import urllib.request as urllib2
 
-from oauthlib.common import bytes_type, quote, unicode_type, unquote
-
-try:
-    import urllib2
-except ImportError:
-    import urllib.request as urllib2
-
+from oauthlib.common import quote, unquote
 
 UNICODE_ASCII_CHARACTER_SET = ('abcdefghijklmnopqrstuvwxyz'
                                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -52,16 +45,16 @@ def escape(u):
     .. _`section 3.6`: https://tools.ietf.org/html/rfc5849#section-3.6
 
     """
-    if not isinstance(u, unicode_type):
+    if not isinstance(u, str):
         raise ValueError('Only unicode objects are escapable. ' +
-                         'Got %r of type %s.' % (u, type(u)))
+                         'Got {!r} of type {}.'.format(u, type(u)))
     # Letters, digits, and the characters '_.-' are already treated as safe
     # by urllib.quote(). We need to add '~' to fully support rfc5849.
     return quote(u, safe=b'~')
 
 
 def unescape(u):
-    if not isinstance(u, unicode_type):
+    if not isinstance(u, str):
         raise ValueError('Only unicode objects are unescapable.')
     return unquote(u)
 

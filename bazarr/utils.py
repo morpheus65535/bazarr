@@ -17,7 +17,7 @@ from custom_lang import CustomLanguage
 from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
     TableMoviesRootfolder
 from event_handler import event_stream
-from get_languages import alpha2_from_alpha3, language_from_alpha3, language_from_alpha2, alpha3_from_alpha2
+from get_languages import language_from_alpha2, alpha3_from_alpha2
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
@@ -293,7 +293,7 @@ def notify_sonarr(sonarr_series_id):
             'seriesId': int(sonarr_series_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Sonarr')
 
 
@@ -319,9 +319,13 @@ class GetRadarrInfo:
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
-                rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-            except Exception as e:
+                try:
+                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
+                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
+                except json.decoder.JSONDecodeError:
+                    logging.debug('BAZARR cannot get Radarr version')
+                    radarr_version = 'unknown'
+            except Exception:
                 logging.debug('BAZARR cannot get Radarr version')
                 radarr_version = 'unknown'
         logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
@@ -354,7 +358,7 @@ def notify_radarr(radarr_id):
             'movieId': int(radarr_id)
         }
         requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception as e:
+    except Exception:
         logging.exception('BAZARR cannot notify Radarr')
 
 
@@ -372,7 +376,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     elif forced in [True, 'true', 'True']:
         language_log += ':forced'
         language_string += ' forced'
-        
+
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':
@@ -476,20 +480,33 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
     for block_str in lines_block_list:
+        empty_first_line = False
+        if block_str.startswith('\n\n\n'):
+            # This happens when the first line of text in a subtitles file is an empty string
+            empty_first_line = True
+
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
                                                            target=language_code_convert_dict.get(lang_obj.alpha2,
                                                                                                  lang_obj.alpha2)
                                                            ).translate(text=block_str)
-        except:
+        except Exception:
+            logging.exception(f'BAZARR Unable to translate subtitles {source_srt_file}')
             return False
         else:
+            if empty_first_line:
+                # GoogleTranslate remove new lines at the beginning of the string, so we add it back.
+                translated_partial_srt_text = '\n\n\n' + translated_partial_srt_text
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
             translated_lines_list += translated_partial_srt_list
 
     logging.debug('BAZARR saving translated subtitles to {}'.format(dest_srt_file))
     for i, line in enumerate(subs):
-        line.plaintext = translated_lines_list[i]
+        try:
+            line.plaintext = translated_lines_list[i]
+        except IndexError:
+            logging.error(f'BAZARR is unable to translate malformed subtitles: {source_srt_file}')
+            return False
     subs.save(dest_srt_file)
 
     return dest_srt_file

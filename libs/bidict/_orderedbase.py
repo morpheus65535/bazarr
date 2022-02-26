@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,17 +26,19 @@
 #==============================================================================
 
 
-"""Provides :class:`OrderedBidictBase`."""
+"""Provide :class:`OrderedBidictBase`."""
 
+import typing as _t
+from copy import copy
 from weakref import ref
 
-from ._base import _WriteResult, BidictBase
+from ._abc import MutableBidirectionalMapping
+from ._base import _NONE, _DedupResult, _WriteResult, BidictBase, BT
 from ._bidict import bidict
-from ._miss import _MISS
-from .compat import Mapping, PY2, iteritems, izip
+from ._typing import KT, VT, OKT, OVT, IterItems, MapOrIterItems
 
 
-class _Node(object):  # pylint: disable=too-few-public-methods
+class _Node:
     """A node in a circular doubly-linked list
     used to encode the order of items in an ordered bidict.
 
@@ -55,33 +57,33 @@ class _Node(object):  # pylint: disable=too-few-public-methods
 
     __slots__ = ('_prv', '_nxt', '__weakref__')
 
-    def __init__(self, prv=None, nxt=None):
+    def __init__(self, prv: '_Node' = None, nxt: '_Node' = None) -> None:
         self._setprv(prv)
         self._setnxt(nxt)
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self) -> str:
         clsname = self.__class__.__name__
         prv = id(self.prv)
         nxt = id(self.nxt)
-        return '%s(prv=%s, self=%s, nxt=%s)' % (clsname, prv, id(self), nxt)
+        return f'{clsname}(prv={prv}, self={id(self)}, nxt={nxt})'
 
-    def _getprv(self):
+    def _getprv(self) -> '_t.Optional[_Node]':
         return self._prv() if isinstance(self._prv, ref) else self._prv
 
-    def _setprv(self, prv):
+    def _setprv(self, prv: '_t.Optional[_Node]') -> None:
         self._prv = prv and ref(prv)
 
     prv = property(_getprv, _setprv)
 
-    def _getnxt(self):
+    def _getnxt(self) -> '_t.Optional[_Node]':
         return self._nxt() if isinstance(self._nxt, ref) else self._nxt
 
-    def _setnxt(self, nxt):
+    def _setnxt(self, nxt: '_t.Optional[_Node]') -> None:
         self._nxt = nxt and ref(nxt)
 
     nxt = property(_getnxt, _setnxt)
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         """Return the instance state dictionary
         but with weakrefs converted to strong refs
         so that it can be pickled.
@@ -90,13 +92,13 @@ class _Node(object):  # pylint: disable=too-few-public-methods
         """
         return dict(_prv=self.prv, _nxt=self.nxt)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
         """Set the instance state from *state*."""
         self._setprv(state['_prv'])
         self._setnxt(state['_nxt'])
 
 
-class _Sentinel(_Node):  # pylint: disable=too-few-public-methods
+class _SentinelNode(_Node):
     """Special node in a circular doubly-linked list
     that links the first node with the last node.
     When its next and previous references point back to itself
@@ -105,19 +107,16 @@ class _Sentinel(_Node):  # pylint: disable=too-few-public-methods
 
     __slots__ = ()
 
-    def __init__(self, prv=None, nxt=None):
-        super(_Sentinel, self).__init__(prv or self, nxt or self)
+    def __init__(self, prv: _Node = None, nxt: _Node = None) -> None:
+        super().__init__(prv or self, nxt or self)
 
-    def __repr__(self):  # pragma: no cover
-        return '<SENTINEL>'
+    def __repr__(self) -> str:
+        return '<SNTL>'
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
-    if PY2:
-        __nonzero__ = __bool__
-
-    def __iter__(self, reverse=False):
+    def _iter(self, *, reverse: bool = False) -> _t.Iterator[_Node]:
         """Iterator yielding nodes in the requested order,
         i.e. traverse the linked list via :attr:`nxt`
         (or :attr:`prv` if *reverse* is truthy)
@@ -130,26 +129,35 @@ class _Sentinel(_Node):  # pylint: disable=too-few-public-methods
             node = getattr(node, attr)
 
 
-class OrderedBidictBase(BidictBase):
+class OrderedBidictBase(BidictBase[KT, VT]):
     """Base class implementing an ordered :class:`BidirectionalMapping`."""
 
     __slots__ = ('_sntl',)
 
-    _fwdm_cls = bidict
-    _invm_cls = bidict
+    _fwdm_cls: _t.Type[MutableBidirectionalMapping[KT, _Node]] = bidict  # type: ignore [assignment]
+    _invm_cls: _t.Type[MutableBidirectionalMapping[VT, _Node]] = bidict  # type: ignore [assignment]
+    _fwdm: bidict[KT, _Node]  # type: ignore [assignment]
+    _invm: bidict[VT, _Node]  # type: ignore [assignment]
 
     #: The object used by :meth:`__repr__` for printing the contained items.
     _repr_delegate = list
 
-    def __init__(self, *args, **kw):
+    @_t.overload
+    def __init__(self, __arg: _t.Mapping[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def __init__(self, __arg: IterItems[KT, VT], **kw: VT) -> None: ...
+    @_t.overload
+    def __init__(self, **kw: VT) -> None: ...
+    def __init__(self, *args: MapOrIterItems[KT, VT], **kw: VT) -> None:
         """Make a new ordered bidirectional mapping.
-        The signature is the same as that of regular dictionaries.
+        The signature behaves like that of :class:`dict`.
         Items passed in are added in the order they are passed,
-        respecting this bidict type's duplication policies along the way.
+        respecting the :attr:`on_dup` class attribute in the process.
+
         The order in which items are inserted is remembered,
         similar to :class:`collections.OrderedDict`.
         """
-        self._sntl = _Sentinel()
+        self._sntl = _SentinelNode()
 
         # Like unordered bidicts, ordered bidicts also store two backing one-directional mappings
         # `_fwdm` and `_invm`. But rather than mapping `key` to `val` and `val` to `key`
@@ -159,55 +167,58 @@ class OrderedBidictBase(BidictBase):
         # To effect this difference, `_write_item` and `_undo_write` are overridden. But much of the
         # rest of BidictBase's implementation, including BidictBase.__init__ and BidictBase._update,
         # are inherited and are able to be reused without modification.
-        super(OrderedBidictBase, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
 
-    def _init_inv(self):
-        super(OrderedBidictBase, self)._init_inv()
-        self.inverse._sntl = self._sntl  # pylint: disable=protected-access
+    if _t.TYPE_CHECKING:
+        @property
+        def inverse(self) -> 'OrderedBidictBase[VT, KT]': ...
+
+    def _init_inv(self) -> None:
+        super()._init_inv()
+        self.inverse._sntl = self._sntl
 
     # Can't reuse BidictBase.copy since ordered bidicts have different internal structure.
-    def copy(self):
+    def copy(self: BT) -> BT:
         """A shallow copy of this ordered bidict."""
         # Fast copy implementation bypassing __init__. See comments in :meth:`BidictBase.copy`.
-        copy = self.__class__.__new__(self.__class__)
-        sntl = _Sentinel()
-        fwdm = self._fwdm.copy()
-        invm = self._invm.copy()
+        cp: BT = self.__class__.__new__(self.__class__)
+        sntl = _SentinelNode()
+        fwdm = copy(self._fwdm)
+        invm = copy(self._invm)
         cur = sntl
         nxt = sntl.nxt
-        for (key, val) in iteritems(self):
+        for (key, val) in self.items():
             nxt = _Node(cur, sntl)
             cur.nxt = fwdm[key] = invm[val] = nxt
             cur = nxt
         sntl.prv = nxt
-        copy._sntl = sntl  # pylint: disable=protected-access
-        copy._fwdm = fwdm  # pylint: disable=protected-access
-        copy._invm = invm  # pylint: disable=protected-access
-        copy._init_inv()  # pylint: disable=protected-access
-        return copy
+        cp._sntl = sntl  # type: ignore [attr-defined]
+        cp._fwdm = fwdm
+        cp._invm = invm
+        cp._init_inv()
+        return cp
 
-    def __getitem__(self, key):
+    __copy__ = copy
+
+    def __getitem__(self, key: KT) -> VT:
         nodefwd = self._fwdm[key]
         val = self._invm.inverse[nodefwd]
         return val
 
-    def _pop(self, key):
+    def _pop(self, key: KT) -> VT:
         nodefwd = self._fwdm.pop(key)
         val = self._invm.inverse.pop(nodefwd)
         nodefwd.prv.nxt = nodefwd.nxt
         nodefwd.nxt.prv = nodefwd.prv
         return val
 
-    def _isdupitem(self, key, val, dedup_result):
-        """Return whether (key, val) duplicates an existing item."""
-        isdupkey, isdupval, nodeinv, nodefwd = dedup_result
-        isdupitem = nodeinv is nodefwd
-        if isdupitem:
-            assert isdupkey
-            assert isdupval
-        return isdupitem
+    @staticmethod
+    def _already_have(key: KT, val: VT, nodeinv: _Node, nodefwd: _Node) -> bool:  # type: ignore [override]
+        # Overrides _base.BidictBase.
+        return nodeinv is nodefwd
 
-    def _write_item(self, key, val, dedup_result):  # pylint: disable=too-many-locals
+    def _write_item(self, key: KT, val: VT, dedup_result: _DedupResult) -> _WriteResult:
+        # Overrides _base.BidictBase.
         fwdm = self._fwdm  # bidict mapping keys to nodes
         invm = self._invm  # bidict mapping vals to nodes
         isdupkey, isdupval, nodeinv, nodefwd = dedup_result
@@ -217,7 +228,8 @@ class OrderedBidictBase(BidictBase):
             last = sntl.prv
             node = _Node(last, sntl)
             last.nxt = sntl.prv = fwdm[key] = invm[val] = node
-            oldkey = oldval = _MISS
+            oldkey: OKT = _NONE
+            oldval: OVT = _NONE
         elif isdupkey and isdupval:
             # Key and value duplication across two different nodes.
             assert nodefwd is not nodeinv
@@ -239,19 +251,19 @@ class OrderedBidictBase(BidictBase):
             fwdm[key] = invm[val] = nodefwd
         elif isdupkey:
             oldval = invm.inverse[nodefwd]
-            oldkey = _MISS
+            oldkey = _NONE
             oldnodeinv = invm.pop(oldval)
             assert oldnodeinv is nodefwd
             invm[val] = nodefwd
         else:  # isdupval
             oldkey = fwdm.inverse[nodeinv]
-            oldval = _MISS
+            oldval = _NONE
             oldnodefwd = fwdm.pop(oldkey)
             assert oldnodefwd is nodeinv
             fwdm[key] = nodeinv
         return _WriteResult(key, val, oldkey, oldval)
 
-    def _undo_write(self, dedup_result, write_result):  # pylint: disable=too-many-locals
+    def _undo_write(self, dedup_result: _DedupResult, write_result: _WriteResult) -> None:
         fwdm = self._fwdm
         invm = self._invm
         isdupkey, isdupval, nodeinv, nodefwd = dedup_result
@@ -274,26 +286,18 @@ class OrderedBidictBase(BidictBase):
             fwdm[oldkey] = nodeinv
             assert invm[val] is nodeinv
 
-    def __iter__(self, reverse=False):
-        """An iterator over this bidict's items in order."""
+    def __iter__(self) -> _t.Iterator[KT]:
+        """Iterator over the contained keys in insertion order."""
+        return self._iter()
+
+    def _iter(self, *, reverse: bool = False) -> _t.Iterator[KT]:
         fwdm_inv = self._fwdm.inverse
-        for node in self._sntl.__iter__(reverse=reverse):
+        for node in self._sntl._iter(reverse=reverse):
             yield fwdm_inv[node]
 
-    def __reversed__(self):
-        """An iterator over this bidict's items in reverse order."""
-        for key in self.__iter__(reverse=True):
-            yield key
-
-    def equals_order_sensitive(self, other):
-        """Order-sensitive equality check.
-
-        *See also* :ref:`eq-order-insensitive`
-        """
-        # Same short-circuit as BidictBase.__eq__. Factoring out not worth function call overhead.
-        if not isinstance(other, Mapping) or len(self) != len(other):
-            return False
-        return all(i == j for (i, j) in izip(iteritems(self), iteritems(other)))
+    def __reversed__(self) -> _t.Iterator[KT]:
+        """Iterator over the contained keys in reverse insertion order."""
+        yield from self._iter(reverse=True)
 
 
 #                             * Code review nav *

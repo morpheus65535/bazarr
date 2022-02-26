@@ -385,7 +385,7 @@ class Unpacker(object):
         self._buffer.extend(view)
 
     def _consume(self):
-        """ Gets rid of the used parts of the buffer. """
+        """Gets rid of the used parts of the buffer."""
         self._stream_offset += self._buff_i - self._buf_checkpoint
         self._buf_checkpoint = self._buff_i
 
@@ -874,6 +874,10 @@ class Packer(object):
                 obj = self._default(obj)
                 default_used = 1
                 continue
+
+            if self._datetime and check(obj, _DateTime):
+                raise ValueError("Cannot serialize %r where tzinfo=None" % (obj,))
+
             raise TypeError("Cannot serialize %r" % (obj,))
 
     def pack(self, obj):

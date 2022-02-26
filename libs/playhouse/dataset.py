@@ -8,6 +8,7 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 import sys
+import uuid
 
 from peewee import *
 from playhouse.db_url import connect
@@ -18,10 +19,11 @@ from playhouse.reflection import Introspector
 if sys.version_info[0] == 3:
     basestring = str
     from functools import reduce
-    def open_file(f, mode):
-        return open(f, mode, encoding='utf8')
+    def open_file(f, mode, encoding='utf8'):
+        return open(f, mode, encoding=encoding)
 else:
-    open_file = open
+    def open_file(f, mode, encoding='utf8'):
+        return open(f, mode)
 
 
 class DataSet(object):
@@ -38,7 +40,8 @@ class DataSet(object):
             # Connect to the database.
             self._database = connect(url)
 
-        self._database.connect()
+        # Open a connection if one does not already exist.
+        self._database.connect(reuse_if_open=True)
 
         # Introspect the database and generate models.
         self._introspector = Introspector.from_database(self._database)
@@ -82,8 +85,8 @@ class DataSet(object):
     def __contains__(self, table):
         return table in self.tables
 
-    def connect(self):
-        self._database.connect()
+    def connect(self, reuse_if_open=False):
+        self._database.connect(reuse_if_open=reuse_if_open)
 
     def close(self):
         self._database.close()
@@ -150,10 +153,10 @@ class DataSet(object):
                 format, valid_formats))
 
     def freeze(self, query, format='csv', filename=None, file_obj=None,
-               **kwargs):
+               encoding='utf8', **kwargs):
         self._check_arguments(filename, file_obj, format, self._export_formats)
         if filename:
-            file_obj = open_file(filename, 'w')
+            file_obj = open_file(filename, 'w', encoding)
 
         exporter = self._export_formats[format](query)
         exporter.export(file_obj, **kwargs)
@@ -162,10 +165,10 @@ class DataSet(object):
             file_obj.close()
 
     def thaw(self, table, format='csv', filename=None, file_obj=None,
-             strict=False, **kwargs):
+             strict=False, encoding='utf8', **kwargs):
         self._check_arguments(filename, file_obj, format, self._export_formats)
         if filename:
-            file_obj = open_file(filename, 'r')
+            file_obj = open_file(filename, 'r', encoding)
 
         importer = self._import_formats[format](self[table], strict)
         count = importer.load(file_obj, **kwargs)
@@ -338,12 +341,12 @@ class JSONExporter(Exporter):
             def default(o):
                 if isinstance(o, datetime_types):
                     return o.isoformat()
-                elif isinstance(o, Decimal):
+                elif isinstance(o, (Decimal, uuid.UUID)):
                     return str(o)
                 raise TypeError('Unable to serialize %r as JSON' % o)
         else:
             def default(o):
-                if isinstance(o, datetime_types + (Decimal,)):
+                if isinstance(o, datetime_types + (Decimal, uuid.UUID)):
                     return str(o)
                 raise TypeError('Unable to serialize %r as JSON' % o)
         return default

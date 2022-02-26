@@ -1,55 +1,50 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+import os
 import traceback
+import typing
 
-from . import OrderedDict, __version__
-from .config import Config
+from knowit import __version__
+from knowit.config import Config
+from knowit.provider import Provider
 from .providers import (
     EnzymeProvider,
     FFmpegProvider,
-#    MediaInfoProvider,
+    MediaInfoProvider,
+    MkvMergeProvider,
 )
 
-_provider_map = OrderedDict([
-#    ('mediainfo', MediaInfoProvider),
-    ('ffmpeg', FFmpegProvider),
-    ('enzyme', EnzymeProvider)
-])
+_provider_map = {
+    'mediainfo': MediaInfoProvider,
+    'ffmpeg': FFmpegProvider,
+    'mkvmerge': MkvMergeProvider,
+    'enzyme': EnzymeProvider,
+}
 
 provider_names = _provider_map.keys()
 
-available_providers = OrderedDict([])
+available_providers: typing.Dict[str, Provider] = {}
 
 
 class KnowitException(Exception):
-    """Exception raised when knowit fails to perform media info extraction because of an internal error."""
+    """Exception raised when knowit encounters an internal error."""
 
 
-def initialize(context=None):
+def initialize(context: typing.Optional[typing.Mapping] = None) -> None:
     """Initialize knowit."""
     if not available_providers:
         context = context or {}
         config = Config.build(context.get('config'))
         for name, provider_cls in _provider_map.items():
-            available_providers[name] = provider_cls(config, context.get(name) or config.general.get(name))
+            general_config = getattr(config, 'general', {})
+            mapping = context.get(name) or general_config.get(name)
+            available_providers[name] = provider_cls(config, mapping)
 
 
-def know(video_path, context=None):
-    """Return a dict containing the video metadata.
-
-    :param video_path:
-    :type video_path: string
-    :param context:
-    :type context: dict
-    :return:
-    :rtype: dict
-    """
-    try:
-        # handle path-like objects
-        video_path = video_path.__fspath__()
-    except AttributeError:
-        pass
+def know(
+        video_path: typing.Union[str, os.PathLike],
+        context: typing.Optional[typing.MutableMapping] = None
+) -> typing.Mapping:
+    """Return a mapping of video metadata."""
+    video_path = os.fspath(video_path)
 
     try:
         context = context or {}
@@ -70,9 +65,9 @@ def know(video_path, context=None):
         raise KnowitException(debug_info(context=context, exc_info=True))
 
 
-def dependencies(context=None):
+def dependencies(context: typing.Mapping = None) -> typing.Mapping:
     """Return all dependencies detected by knowit."""
-    deps = OrderedDict([])
+    deps = {}
     try:
         initialize(context)
         for name, provider_cls in _provider_map.items():
@@ -86,15 +81,18 @@ def dependencies(context=None):
     return deps
 
 
-def _centered(value):
+def _centered(value: str) -> str:
     value = value[-52:]
-    return '| {msg:^53} |'.format(msg=value)
+    return f'| {value:^53} |'
 
 
-def debug_info(context=None, exc_info=False):
+def debug_info(
+        context: typing.Optional[typing.MutableMapping] = None,
+        exc_info: bool = False,
+) -> str:
     lines = [
         '+-------------------------------------------------------+',
-        _centered('KnowIt {0}'.format(__version__)),
+        _centered(f'KnowIt {__version__}'),
         '+-------------------------------------------------------+'
     ]
 
@@ -114,7 +112,7 @@ def debug_info(context=None, exc_info=False):
         lines.append('+-------------------------------------------------------+')
         for k, v in context.items():
             if v:
-                lines.append(_centered('{}: {}'.format(k, v)))
+                lines.append(_centered(f'{k}: {v}'))
 
         if debug_data:
             lines.append('+-------------------------------------------------------+')

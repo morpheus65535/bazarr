@@ -1,11 +1,11 @@
-__author__ = 'Artur Barseghyan'
-__copyright__ = '2013-2020 Artur Barseghyan'
-__license__ = 'MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later'
+__author__ = "Artur Barseghyan"
+__copyright__ = "2013-2021 Artur Barseghyan"
+__license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
-    'TldBadUrl',
-    'TldDomainNotFound',
-    'TldImproperlyConfigured',
-    'TldIOError',
+    "TldBadUrl",
+    "TldDomainNotFound",
+    "TldImproperlyConfigured",
+    "TldIOError",
 )
 
 
@@ -46,11 +46,3 @@ class TldImproperlyConfigured(Exception):
     is when user tries to use `get_tld` function with both `search_public` and
     `search_private` set to False.
     """
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = "Improperly configured."
-        else:
-            msg = "Improperly configured. %s" % msg
-
-        super(TldImproperlyConfigured, self).__init__(msg)

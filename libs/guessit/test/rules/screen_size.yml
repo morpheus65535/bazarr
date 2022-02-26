@@ -81,6 +81,15 @@
 ? +852x480i
 : screen_size: 480i
 
+? +540p
+? +540px
+? -540i
+? -540
+: screen_size: 540p
+
+? +540i
+: screen_size: 540i
+
 ? +576p
 ? +576px
 ? -576i

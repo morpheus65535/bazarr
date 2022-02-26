@@ -14,17 +14,18 @@ TMP_LINE = re.compile(r"(\d{1,2}:\d{2}:\d{2}):(.+)")
 MAX_REPRESENTABLE_TIME = make_time(h=100) - 1
 
 
-def ms_to_timestamp(ms):
-    """Convert ms to 'HH:MM:SS'"""
-    # XXX throw on overflow/underflow?
-    if ms < 0: ms = 0
-    if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
-    h, m, s, ms = ms_to_times(ms)
-    return "%02d:%02d:%02d" % (h, m, s)
-
-
 class TmpFormat(FormatBase):
     """TMP subtitle format implementation"""
+
+    @staticmethod
+    def ms_to_timestamp(ms: int) -> str:
+        """Convert ms to 'HH:MM:SS'"""
+        # XXX throw on overflow/underflow?
+        if ms < 0: ms = 0
+        if ms > MAX_REPRESENTABLE_TIME: ms = MAX_REPRESENTABLE_TIME
+        h, m, s, ms = ms_to_times(ms)
+        return "%02d:%02d:%02d" % (h, m, s)
+
     @classmethod
     def guess_format(cls, text):
         """See :meth:`pysubs2.formats.FormatBase.guess_format()`"""
@@ -101,7 +102,7 @@ class TmpFormat(FormatBase):
         visible_lines = (line for line in subs if not line.is_comment)
 
         for line in visible_lines:
-            start = ms_to_timestamp(line.start)
+            start = cls.ms_to_timestamp(line.start)
             text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
 
             print(start + ":" + text, end="\n", file=fp)

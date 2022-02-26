@@ -9,6 +9,7 @@ from rebulk import Rebulk
 from rebulk.rules import Rule, RemoveMatch
 
 from ..common.pattern import is_disabled
+from ...config import load_config_patterns
 from ...rules.common import seps, dash
 from ...rules.common.validators import seps_before, seps_after
 
@@ -25,22 +26,7 @@ def streaming_service(config):  # pylint: disable=too-many-statements,unused-arg
     rebulk = rebulk.string_defaults(ignore_case=True).regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
     rebulk.defaults(name='streaming_service', tags=['source-prefix'])
 
-    regex_prefix = 're:'
-
-    for value, items in config.items():
-        patterns = items if isinstance(items, list) else [items]
-        for pattern in patterns:
-            if isinstance(pattern, dict):
-                pattern_value = pattern.pop('pattern')
-                kwargs = pattern
-                pattern = pattern_value
-            else:
-                kwargs = {}
-            regex = kwargs.pop('regex', False)
-            if regex or pattern.startswith(regex_prefix):
-                rebulk.regex(pattern[len(regex_prefix):], value=value, **kwargs)
-            else:
-                rebulk.string(pattern, value=value, **kwargs)
+    load_config_patterns(rebulk, config)
 
     rebulk.rules(ValidateStreamingService)
 

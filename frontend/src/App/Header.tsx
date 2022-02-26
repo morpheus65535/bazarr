@@ -5,7 +5,11 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { uniqueId } from "lodash";
+import { setSidebar } from "@redux/actions";
+import { useIsOffline } from "@redux/hooks";
+import { useReduxAction } from "@redux/hooks/base";
+import logo from "@static/logo64.png";
+import { ActionButton, SearchBar } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import {
   Button,
@@ -17,59 +21,25 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import {
-  siteChangeSidebarVisibility,
-  siteRedirectToAuth,
-} from "../@redux/actions";
-import { useSystemSettings } from "../@redux/hooks";
-import { useReduxAction } from "../@redux/hooks/base";
-import { useIsOffline } from "../@redux/hooks/site";
-import logo from "../@static/logo64.png";
-import { SystemApi } from "../apis";
-import { ActionButton, SearchBar, SearchResult } from "../components";
-import { useGotoHomepage, useIsMobile } from "../utilities";
+import { useGotoHomepage, useIsMobile } from "utilities";
+import { useSystem, useSystemSettings } from "../apis/hooks";
 import "./header.scss";
 import NotificationCenter from "./Notification";
-
-async function SearchItem(text: string) {
-  const results = await SystemApi.search(text);
-
-  return results.map<SearchResult>((v) => {
-    let link: string;
-    let id: string;
-    if (v.sonarrSeriesId) {
-      link = `/series/${v.sonarrSeriesId}`;
-      id = `series-${v.sonarrSeriesId}`;
-    } else if (v.radarrId) {
-      link = `/movies/${v.radarrId}`;
-      id = `movie-${v.radarrId}`;
-    } else {
-      link = "";
-      id = uniqueId("unknown");
-    }
-
-    return {
-      name: `${v.title} (${v.year})`,
-      link,
-      id,
-    };
-  });
-}
 
 interface Props {}
 
 const Header: FunctionComponent<Props> = () => {
-  const setNeedAuth = useReduxAction(siteRedirectToAuth);
+  const { data: settings } = useSystemSettings();
 
-  const settings = useSystemSettings();
+  const hasLogout = (settings?.auth.type ?? "none") === "form";
 
-  const canLogout = (settings.content?.auth.type ?? "none") === "form";
-
-  const changeSidebar = useReduxAction(siteChangeSidebarVisibility);
+  const changeSidebar = useReduxAction(setSidebar);
 
   const offline = useIsOffline();
 
   const isMobile = useIsMobile();
+
+  const { shutdown, restart, logout } = useSystem();
 
   const serverActions = useMemo(
     () => (
@@ -80,23 +50,23 @@ const Header: FunctionComponent<Props> = () => {
         <Dropdown.Menu>
           <Dropdown.Item
             onClick={() => {
-              SystemApi.restart();
+              restart();
             }}
           >
             Restart
           </Dropdown.Item>
           <Dropdown.Item
             onClick={() => {
-              SystemApi.shutdown();
+              shutdown();
             }}
           >
             Shutdown
           </Dropdown.Item>
-          <Dropdown.Divider hidden={!canLogout}></Dropdown.Divider>
+          <Dropdown.Divider hidden={!hasLogout}></Dropdown.Divider>
           <Dropdown.Item
-            hidden={!canLogout}
+            hidden={!hasLogout}
             onClick={() => {
-              SystemApi.logout().then(() => setNeedAuth());
+              logout();
             }}
           >
             Logout
@@ -104,7 +74,7 @@ const Header: FunctionComponent<Props> = () => {
         </Dropdown.Menu>
       </Dropdown>
     ),
-    [canLogout, setNeedAuth]
+    [hasLogout, logout, restart, shutdown]
   );
 
   const goHome = useGotoHomepage();
@@ -133,7 +103,7 @@ const Header: FunctionComponent<Props> = () => {
       <Container fluid>
         <Row noGutters className="flex-grow-1">
           <Col xs={4} sm={6} className="d-flex align-items-center">
-            <SearchBar onSearch={SearchItem}></SearchBar>
+            <SearchBar></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
             <NotificationCenter></NotificationCenter>

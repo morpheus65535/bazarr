@@ -16,12 +16,12 @@ class Languages(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             languages = list(TableHistory.select(TableHistory.language)
-                             .where(TableHistory.language != None)
+                             .where(TableHistory.language.is_null(False))
                              .dicts())
             languages += list(TableHistoryMovie.select(TableHistoryMovie.language)
-                             .where(TableHistoryMovie.language != None)
+                              .where(TableHistoryMovie.language.is_null(False))
                               .dicts())
-            languages_list = list(set([l['language'].split(':')[0] for l in languages]))
+            languages_list = list(set([lang['language'].split(':')[0] for lang in languages]))
             languages_dicts = []
             for language in languages_list:
                 code2 = None
@@ -40,7 +40,7 @@ class Languages(Resource):
                             # Compatibility: Use false temporarily
                             'enabled': False
                         })
-                    except:
+                    except Exception:
                         continue
             return jsonify(sorted(languages_dicts, key=itemgetter('name')))
 

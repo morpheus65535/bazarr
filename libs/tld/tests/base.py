@@ -4,12 +4,12 @@ from functools import lru_cache
 import logging
 import socket
 
-__author__ = 'Artur Barseghyan'
-__copyright__ = '2013-2020 Artur Barseghyan'
-__license__ = 'MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later'
+__author__ = "Artur Barseghyan"
+__copyright__ = "2013-2021 Artur Barseghyan"
+__license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
-    'internet_available_only',
-    'log_info',
+    "internet_available_only",
+    "log_info",
 )
 
 LOG_INFO = True
@@ -25,16 +25,17 @@ def log_info(func):
         """Inner."""
         result = func(self, *args, **kwargs)
 
-        LOGGER.debug('\n\n%s', func.__name__)
-        LOGGER.debug('============================')
+        LOGGER.debug("\n\n%s", func.__name__)
+        LOGGER.debug("============================")
         if func.__doc__:
             LOGGER.debug('""" %s """', func.__doc__.strip())
-        LOGGER.debug('----------------------------')
+        LOGGER.debug("----------------------------")
         if result is not None:
             LOGGER.debug(result)
-        LOGGER.debug('\n++++++++++++++++++++++++++++')
+        LOGGER.debug("\n++++++++++++++++++++++++++++")
 
         return result
+
     return inner
 
 
@@ -56,17 +57,16 @@ def is_internet_available(host="8.8.8.8", port=53, timeout=3):
 
 
 def internet_available_only(func):
-
     def inner(self, *args, **kwargs):
         """Inner."""
         if not is_internet_available():
-            LOGGER.debug('\n\n%s', func.__name__)
-            LOGGER.debug('============================')
+            LOGGER.debug("\n\n%s", func.__name__)
+            LOGGER.debug("============================")
             if func.__doc__:
                 LOGGER.debug('""" %s """', func.__doc__.strip())
-            LOGGER.debug('----------------------------')
+            LOGGER.debug("----------------------------")
             LOGGER.debug("Skipping because no Internet connection available.")
-            LOGGER.debug('\n++++++++++++++++++++++++++++')
+            LOGGER.debug("\n++++++++++++++++++++++++++++")
             return None
 
         result = func(self, *args, **kwargs)

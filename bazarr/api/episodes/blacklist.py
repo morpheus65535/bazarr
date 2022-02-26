@@ -10,7 +10,7 @@ from database import TableEpisodes, TableShows, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
 from utils import blacklist_log, delete_subtitles, blacklist_delete_all, blacklist_delete
 from helper import path_mappings
-from get_subtitle import episode_download_subtitles
+from get_subtitle.mass_download import episode_download_subtitles
 from event_handler import event_stream
 
 
@@ -59,7 +59,10 @@ class EpisodesBlacklist(Resource):
         episodeInfo = TableEpisodes.select(TableEpisodes.path)\
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not episodeInfo:
+            return 'Episode not found', 500
 
         media_path = episodeInfo['path']
         subtitles_path = request.form.get('subtitles_path')

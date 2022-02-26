@@ -8,8 +8,6 @@ OAuth 1.0 RFC 5849. It validates the correctness of request token requests,
 creates and persists tokens as well as create the proper response to be
 returned to the client.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from oauthlib.common import urlencode
@@ -34,7 +32,8 @@ class RequestTokenEndpoint(BaseEndpoint):
     def create_request_token(self, request, credentials):
         """Create and save a new request token.
 
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :param credentials: A dict of extra token credentials.
         :returns: The token as an urlencoded string.
         """
@@ -111,7 +110,8 @@ class RequestTokenEndpoint(BaseEndpoint):
     def validate_request_token_request(self, request):
         """Validate a request token request.
 
-        :param request: An oauthlib.common.Request object.
+        :param request: OAuthlib request.
+        :type request: oauthlib.common.Request
         :raises: OAuth1Error if the request is invalid.
         :returns: A tuple of 2 elements.
                   1. The validation result (True or False).
@@ -127,7 +127,7 @@ class RequestTokenEndpoint(BaseEndpoint):
                 request.client_key, request)
         if not self.request_validator.check_realms(request.realms):
             raise errors.InvalidRequestError(
-                description='Invalid realm %s. Allowed are %r.' % (
+                description='Invalid realm {}. Allowed are {!r}.'.format(
                     request.realms, self.request_validator.realms))
 
         if not request.redirect_uri:

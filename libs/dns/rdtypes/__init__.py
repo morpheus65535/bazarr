@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -18,7 +20,14 @@
 __all__ = [
     'ANY',
     'IN',
+    'CH',
+    'dnskeybase',
+    'dsbase',
     'euibase',
     'mxbase',
     'nsbase',
+    'svcbbase',
+    'tlsabase',
+    'txtbase',
+    'util'
 ]

@@ -1,6 +1,7 @@
 import { faFile, faFolder } from "@fortawesome/free-regular-svg-icons";
 import { faReply } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFileSystem } from "apis/hooks";
 import React, {
   FunctionComponent,
   useEffect,
@@ -29,23 +30,24 @@ function extractPath(raw: string) {
   }
 }
 
-interface Props {
+export interface FileBrowserProps {
   defaultValue?: string;
-  load: (path: string) => Promise<FileTree[]>;
+  type: "sonarr" | "radarr" | "bazarr";
   onChange?: (path: string) => void;
   drop?: DropdownProps["drop"];
 }
 
-export const FileBrowser: FunctionComponent<Props> = ({
+export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   defaultValue,
+  type,
   onChange,
-  load,
   drop,
 }) => {
   const [show, canShow] = useState(false);
   const [text, setText] = useState(defaultValue ?? "");
   const [path, setPath] = useState(() => extractPath(text));
-  const [loading, setLoading] = useState(true);
+
+  const { data: tree, isFetching } = useFileSystem(type, path, show);
 
   const filter = useMemo(() => {
     const idx = getLastSeparator(text);
@@ -57,10 +59,8 @@ export const FileBrowser: FunctionComponent<Props> = ({
     return path.slice(0, idx + 1);
   }, [path]);
 
-  const [tree, setTree] = useState<FileTree[]>([]);
-
-  const requestItems = useMemo(() => {
-    if (loading) {
+  const requestItems = () => {
+    if (isFetching) {
       return (
         <Dropdown.Item>
           <Spinner size="sm" animation="border"></Spinner>
@@ -70,19 +70,21 @@ export const FileBrowser: FunctionComponent<Props> = ({
 
     const elements = [];
 
-    elements.push(
-      ...tree
-        .filter((v) => v.name.startsWith(filter))
-        .map((v) => (
-          <Dropdown.Item eventKey={v.path} key={v.name}>
-            <FontAwesomeIcon
-              icon={v.children ? faFolder : faFile}
-              className="mr-2"
-            ></FontAwesomeIcon>
-            <span>{v.name}</span>
-          </Dropdown.Item>
-        ))
-    );
+    if (tree) {
+      elements.push(
+        ...tree
+          .filter((v) => v.name.startsWith(filter))
+          .map((v) => (
+            <Dropdown.Item eventKey={v.path} key={v.name}>
+              <FontAwesomeIcon
+                icon={v.children ? faFolder : faFile}
+                className="mr-2"
+              ></FontAwesomeIcon>
+              <span>{v.name}</span>
+            </Dropdown.Item>
+          ))
+      );
+    }
 
     if (elements.length === 0) {
       elements.push(<Dropdown.Header key="no-files">No Files</Dropdown.Header>);
@@ -100,7 +102,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
     } else {
       return elements;
     }
-  }, [tree, filter, previous, loading]);
+  };
 
   useEffect(() => {
     if (text === path) {
@@ -115,17 +117,6 @@ export const FileBrowser: FunctionComponent<Props> = ({
   }, [path, text, onChange]);
 
   const input = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (show) {
-      setLoading(true);
-      load(path)
-        .then((res) => {
-          setTree(res);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [path, load, show]);
 
   return (
     <Dropdown
@@ -165,7 +156,7 @@ export const FileBrowser: FunctionComponent<Props> = ({
         className="w-100"
         style={{ maxHeight: 256, overflowY: "auto" }}
       >
-        {requestItems}
+        {requestItems()}
       </Dropdown.Menu>
     </Dropdown>
   );

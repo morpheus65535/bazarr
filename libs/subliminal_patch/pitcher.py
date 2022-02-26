@@ -7,11 +7,11 @@ import logging
 import json
 from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
-from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException,\
-    Proxy
+from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException
 from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
 import six
 from six.moves import range
+from urllib import parse
 
 
 logger = logging.getLogger(__name__)
@@ -166,13 +166,24 @@ class AntiCaptchaPitcher(AntiCaptchaProxyLessPitcher):
     cookies = None
 
     def __init__(self, *args, **kwargs):
-        self.proxy = Proxy.parse_url(kwargs.pop("proxy"))
+        self.proxy = self.parse_url(kwargs.pop("proxy"))
         self.user_agent = kwargs.pop("user_agent")
         cookies = kwargs.pop("cookies", {})
         if isinstance(cookies, dict):
             self.cookies = ";".join(["%s=%s" % (k, v) for k, v in six.iteritems(cookies)])
 
         super(AntiCaptchaPitcher, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def parse_url(url):
+        parsed = parse.urlparse(url)
+        return dict(
+            proxy_type=parsed.scheme,
+            proxy_address=parsed.hostname,
+            proxy_port=parsed.port,
+            proxy_login=parsed.username,
+            proxy_password=parsed.password,
+        )
 
     def get_job(self):
         task = NoCaptchaTask(website_url=self.website_url, website_key=self.website_key, proxy=self.proxy,

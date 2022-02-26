@@ -21,12 +21,10 @@ from flask.sessions import SessionMixin
 import socketio
 from socketio.exceptions import ConnectionRefusedError  # noqa: F401
 from werkzeug.debug import DebuggedApplication
-from werkzeug.serving import run_with_reloader
+from werkzeug._reloader import run_with_reloader
 
 from .namespace import Namespace
 from .test_client import SocketIOTestClient
-
-__version__ = '5.0.2dev'
 
 
 class _SocketIOMiddleware(socketio.WSGIApp):
@@ -144,7 +142,7 @@ class SocketIO(object):
                                   is greater than this value. The default is
                                   1024 bytes.
     :param cookie: If set to a string, it is the name of the HTTP cookie the
-                   server sends back tot he client containing the client
+                   server sends back to the client containing the client
                    session id. If set to a dictionary, the ``'name'`` key
                    contains the cookie name and other keys define cookie
                    attributes, where the value of each attribute can be a
@@ -515,7 +513,7 @@ class SocketIO(object):
         """
         self.server.close_room(room, namespace)
 
-    def run(self, app, host=None, port=None, **kwargs):
+    def run(self, app, host=None, port=None, **kwargs):  # pragma: no cover
         """Run the SocketIO web server.
 
         :param app: The Flask application instance.
@@ -527,8 +525,12 @@ class SocketIO(object):
                       start in normal mode.
         :param use_reloader: ``True`` to enable the Flask reloader, ``False``
                              to disable it.
+        :param reloader_options: A dictionary with options that are passed to
+                                 the Flask reloader, such as ``extra_files``,
+                                 ``reloader_type``, etc.
         :param extra_files: A list of additional files that the Flask
-                            reloader should watch. Defaults to ``None``
+                            reloader should watch. Defaults to ``None``.
+                            Deprecated, use ``reloader_options`` instead.
         :param log_output: If ``True``, the server logs all incoming
                            connections. If ``False`` logging is disabled.
                            Defaults to ``True`` in debug mode, ``False``
@@ -554,6 +556,9 @@ class SocketIO(object):
         log_output = kwargs.pop('log_output', debug)
         use_reloader = kwargs.pop('use_reloader', debug)
         extra_files = kwargs.pop('extra_files', None)
+        reloader_options = kwargs.pop('reloader_options', {})
+        if extra_files:
+            reloader_options['extra_files'] = extra_files
 
         app.debug = debug
         if app.debug and self.server.eio.async_mode != 'threading':
@@ -582,12 +587,14 @@ class SocketIO(object):
                 self.sockio_mw.wsgi_app, evalex=True)
 
         if self.server.eio.async_mode == 'threading':
-            from werkzeug._internal import _log
-            _log('warning', 'WebSocket transport not available. Install '
-                            'eventlet or gevent and gevent-websocket for '
-                            'improved performance.')
+            try:
+                import simple_websocket  # noqa: F401
+            except ImportError:
+                from werkzeug._internal import _log
+                _log('warning', 'WebSocket transport not available. Install '
+                                'simple-websocket for improved performance.')
             app.run(host=host, port=port, threaded=True,
-                    use_reloader=use_reloader, **kwargs)
+                    use_reloader=use_reloader, **reloader_options, **kwargs)
         elif self.server.eio.async_mode == 'eventlet':
             def run_server():
                 import eventlet
@@ -605,10 +612,11 @@ class SocketIO(object):
                             'ssl_version', 'ca_certs',
                             'do_handshake_on_connect', 'suppress_ragged_eofs',
                             'ciphers']
-                ssl_params = {k: kwargs[k] for k in kwargs if k in ssl_args}
+                ssl_params = {k: kwargs[k] for k in kwargs
+                              if k in ssl_args and kwargs[k] is not None}
+                for k in ssl_args:
+                    kwargs.pop(k, None)
                 if len(ssl_params) > 0:
-                    for k in ssl_params:
-                        kwargs.pop(k)
                     ssl_params['server_side'] = True  # Listening requires true
                     eventlet_socket = eventlet.wrap_ssl(eventlet_socket,
                                                         **ssl_params)
@@ -617,7 +625,7 @@ class SocketIO(object):
                                      log_output=log_output, **kwargs)
 
             if use_reloader:
-                run_with_reloader(run_server, extra_files=extra_files)
+                run_with_reloader(run_server, **reloader_options)
             else:
                 run_server()
         elif self.server.eio.async_mode == 'gevent':
@@ -651,7 +659,7 @@ class SocketIO(object):
                 def run_server():
                     self.wsgi_server.serve_forever()
 
-                run_with_reloader(run_server, extra_files=extra_files)
+                run_with_reloader(run_server, **reloader_options)
             else:
                 self.wsgi_server.serve_forever()
 
@@ -699,7 +707,7 @@ class SocketIO(object):
         return self.server.sleep(seconds)
 
     def test_client(self, app, namespace=None, query_string=None,
-                    headers=None, flask_test_client=None):
+                    headers=None, auth=None, flask_test_client=None):
         """The Socket.IO test client is useful for testing a Flask-SocketIO
         server. It works in a similar way to the Flask Test Client, but
         adapted to the Socket.IO server.
@@ -710,6 +718,7 @@ class SocketIO(object):
                           namespace.
         :param query_string: A string with custom query string arguments.
         :param headers: A dictionary with custom HTTP headers.
+        :param auth: Optional authentication data, given as a dictionary.
         :param flask_test_client: The instance of the Flask test client
                                   currently in use. Passing the Flask test
                                   client is optional, but is necessary if you
@@ -719,6 +728,7 @@ class SocketIO(object):
         """
         return SocketIOTestClient(app, self, namespace=namespace,
                                   query_string=query_string, headers=headers,
+                                  auth=auth,
                                   flask_test_client=flask_test_client)
 
     def _handle_event(self, handler, message, namespace, sid, *args):
@@ -747,7 +757,11 @@ class SocketIO(object):
             flask.request.event = {'message': message, 'args': args}
             try:
                 if message == 'connect':
-                    ret = handler()
+                    auth = args[1] if len(args) > 1 else None
+                    try:
+                        ret = handler(auth)
+                    except TypeError:
+                        ret = handler()
                 else:
                     ret = handler(*args)
             except:

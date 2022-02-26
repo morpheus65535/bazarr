@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 This module provides functions for justifying Unicode text in a monospaced
 display such as a terminal.
@@ -6,12 +5,12 @@ display such as a terminal.
 We used to have our own implementation here, but now we mostly rely on
 the 'wcwidth' library.
 """
-from __future__ import unicode_literals, division
 from unicodedata import normalize
-from wcwidth import wcwidth, wcswidth
 
+from wcwidth import wcswidth, wcwidth
+from ftfy.fixes import remove_terminal_escapes
 
-def character_width(char):
+def character_width(char: str) -> int:
     r"""
     Determine the width that a character is likely to be displayed as in
     a monospaced terminal. The width for a printable character will
@@ -32,8 +31,8 @@ def character_width(char):
     return wcwidth(char)
 
 
-def monospaced_width(text):
-    """
+def monospaced_width(text: str) -> int:
+    r"""
     Return the number of character cells that this string is likely to occupy
     when displayed in a monospaced, modern, Unicode-aware terminal emulator.
     We refer to this as the "display width" of the string.
@@ -52,16 +51,26 @@ def monospaced_width(text):
     >>> monospaced_width('example\x80')
     -1
 
-    # The Korean word 'ibnida' can be written with 3 characters or 7 jamo.
-    # Either way, it *looks* the same and takes up 6 character cells.
+    A more complex example: The Korean word 'ibnida' can be written with 3
+    pre-composed characters or 7 jamo. Either way, it *looks* the same and
+    takes up 6 character cells.
+
     >>> monospaced_width('입니다')
     6
     >>> monospaced_width('\u110b\u1175\u11b8\u1102\u1175\u1103\u1161')
     6
+
+    The word "blue" with terminal escapes to make it blue still takes up only
+    4 characters, when shown as intended.
+    >>> monospaced_width('\x1b[34mblue\x1b[m')
+    4
     """
     # NFC-normalize the text first, so that we don't need special cases for
     # Hangul jamo.
-    return wcswidth(normalize('NFC', text))
+    #
+    # Remove terminal escapes before calculating width, because if they are
+    # displayed as intended, they will have zero width.
+    return wcswidth(remove_terminal_escapes(normalize('NFC', text)))
 
 
 def display_ljust(text, width, fillchar=' '):

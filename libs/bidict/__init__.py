@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2019 Joshua Bronson. All Rights Reserved.
+# Copyright 2009-2021 Joshua Bronson. All Rights Reserved.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,8 +26,9 @@
 #==============================================================================
 
 
-"""
-Efficient, Pythonic bidirectional map implementation and related functionality.
+"""The bidirectional mapping library for Python.
+
+bidict by example:
 
 .. code-block:: python
 
@@ -44,65 +45,44 @@ https://bidict.readthedocs.io for the most up-to-date documentation
 if you are reading this elsewhere.
 
 
-.. :copyright: (c) 2019 Joshua Bronson.
+.. :copyright: (c) 2009-2021 Joshua Bronson.
 .. :license: MPLv2. See LICENSE for details.
 """
 
-# This __init__.py only collects functionality implemented in the rest of the
-# source and exports it under the `bidict` module namespace (via `__all__`).
+# Use private aliases to not re-export these publicly (for Sphinx automodule with imported-members).
+from sys import version_info as _version_info
 
-from ._abc import BidirectionalMapping
+
+if _version_info < (3, 6):  # pragma: no cover
+    raise ImportError('Python 3.6+ is required.')
+
+from ._abc import BidirectionalMapping, MutableBidirectionalMapping
 from ._base import BidictBase
 from ._mut import MutableBidict
 from ._bidict import bidict
-from ._dup import DuplicationPolicy, IGNORE, OVERWRITE, RAISE
-from ._exc import (
-    BidictException, DuplicationError,
-    KeyDuplicationError, ValueDuplicationError, KeyAndValueDuplicationError)
-from ._util import inverted
 from ._frozenbidict import frozenbidict
 from ._frozenordered import FrozenOrderedBidict
 from ._named import namedbidict
 from ._orderedbase import OrderedBidictBase
 from ._orderedbidict import OrderedBidict
+from ._dup import ON_DUP_DEFAULT, ON_DUP_RAISE, ON_DUP_DROP_OLD, RAISE, DROP_OLD, DROP_NEW, OnDup, OnDupAction
+from ._exc import BidictException, DuplicationError, KeyDuplicationError, ValueDuplicationError, KeyAndValueDuplicationError
+from ._iter import inverted
 from .metadata import (
     __author__, __maintainer__, __copyright__, __email__, __credits__, __url__,
-    __license__, __status__, __description__, __keywords__, __version__, __version_info__)
-
-
-__all__ = (
-    '__author__',
-    '__maintainer__',
-    '__copyright__',
-    '__email__',
-    '__credits__',
-    '__license__',
-    '__status__',
-    '__description__',
-    '__keywords__',
-    '__url__',
-    '__version__',
-    '__version_info__',
-    'BidirectionalMapping',
-    'BidictException',
-    'DuplicationPolicy',
-    'IGNORE',
-    'OVERWRITE',
-    'RAISE',
-    'DuplicationError',
-    'KeyDuplicationError',
-    'ValueDuplicationError',
-    'KeyAndValueDuplicationError',
-    'BidictBase',
-    'MutableBidict',
-    'frozenbidict',
-    'bidict',
-    'namedbidict',
-    'FrozenOrderedBidict',
-    'OrderedBidictBase',
-    'OrderedBidict',
-    'inverted',
+    __license__, __status__, __description__, __keywords__, __version__,
 )
+
+# Set __module__ of re-exported classes to the 'bidict' top-level module name
+# so that private/internal submodules are not exposed to users e.g. in repr strings.
+_locals = tuple(locals().items())
+for _name, _obj in _locals:  # pragma: no cover
+    if not getattr(_obj, '__module__', '').startswith('bidict.'):
+        continue
+    try:
+        _obj.__module__ = 'bidict'
+    except AttributeError:  # raised when __module__ is read-only (as in OnDup)
+        pass
 
 
 #                             * Code review nav *

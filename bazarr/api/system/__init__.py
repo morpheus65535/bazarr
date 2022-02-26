@@ -6,6 +6,7 @@ from flask_restful import Api
 from .system import System
 from .searches import Searches
 from .account import SystemAccount
+from .backups import SystemBackups
 from .tasks import SystemTasks
 from .logs import SystemLogs
 from .status import SystemStatus
@@ -22,6 +23,7 @@ api = Api(api_bp_system)
 api.add_resource(System, '/system')
 api.add_resource(Searches, '/system/searches')
 api.add_resource(SystemAccount, '/system/account')
+api.add_resource(SystemBackups, '/system/backups')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
 api.add_resource(SystemStatus, '/system/status')

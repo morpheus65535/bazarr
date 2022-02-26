@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import logging
 
 from flask import request
 from flask_restful import Resource
@@ -9,8 +10,8 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from database import TableMovies, get_audio_profile_languages, get_profile_id
 from ..utils import authenticate
 from helper import path_mappings
-from get_providers import get_providers, get_providers_auth
-from get_subtitle import download_subtitle, manual_upload_subtitle
+from get_subtitle.upload import manual_upload_subtitle
+from get_subtitle.download import generate_subtitles
 from utils import history_log_movie, delete_subtitles
 from notifier import send_notifications_movie
 from list_subtitles import store_subtitles_movie
@@ -33,11 +34,13 @@ class MoviesSubtitles(Resource):
                                        TableMovies.audio_language)\
             .where(TableMovies.radarrId == radarrId)\
             .dicts()\
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        sceneName = movieInfo['sceneName'] or 'None'
 
         title = movieInfo['title']
         audio_language = movieInfo['audio_language']
@@ -46,9 +49,6 @@ class MoviesSubtitles(Resource):
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
 
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
-
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
@@ -56,10 +56,10 @@ class MoviesSubtitles(Resource):
             audio_language = None
 
         try:
-            result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
-                                       providers_auth, sceneName, title, 'movie',
-                                       profile_id=get_profile_id(movie_id=radarrId))
-            if result is not None:
+            result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,
+                                             sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId)))
+            if result:
+                result = result[0]
                 message = result[0]
                 path = result[1]
                 forced = result[5]
@@ -94,11 +94,13 @@ class MoviesSubtitles(Resource):
                                        TableMovies.audio_language) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
-        sceneName = movieInfo['sceneName']
-        if sceneName is None: sceneName = 'None'
+        sceneName = movieInfo['sceneName'] or 'None'
 
         title = movieInfo['title']
         audioLanguage = movieInfo['audio_language']
@@ -124,7 +126,9 @@ class MoviesSubtitles(Resource):
                                             subtitle=subFile,
                                             audio_language=audioLanguage)
 
-            if result is not None:
+            if not result:
+                logging.debug(f"BAZARR unable to process subtitles for this movie: {moviePath}")
+            else:
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
@@ -152,7 +156,10 @@ class MoviesSubtitles(Resource):
         movieInfo = TableMovies.select(TableMovies.path) \
             .where(TableMovies.radarrId == radarrId) \
             .dicts() \
-            .get()
+            .get_or_none()
+
+        if not movieInfo:
+            return 'Movie not found', 500
 
         moviePath = path_mappings.path_replace_movie(movieInfo['path'])
 

@@ -7,42 +7,43 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
+import { useIsRadarrEnabled, useIsSonarrEnabled } from "@redux/hooks";
+import { useBadges } from "apis/hooks";
+import EmptyPage, { RouterEmptyPath } from "pages/404";
+import BlacklistMoviesView from "pages/Blacklist/Movies";
+import BlacklistSeriesView from "pages/Blacklist/Series";
+import Episodes from "pages/Episodes";
+import MoviesHistoryView from "pages/History/Movies";
+import SeriesHistoryView from "pages/History/Series";
+import HistoryStats from "pages/History/Statistics";
+import MovieView from "pages/Movies";
+import MovieDetail from "pages/Movies/Details";
+import SeriesView from "pages/Series";
+import SettingsGeneralView from "pages/Settings/General";
+import SettingsLanguagesView from "pages/Settings/Languages";
+import SettingsNotificationsView from "pages/Settings/Notifications";
+import SettingsProvidersView from "pages/Settings/Providers";
+import SettingsRadarrView from "pages/Settings/Radarr";
+import SettingsSchedulerView from "pages/Settings/Scheduler";
+import SettingsSonarrView from "pages/Settings/Sonarr";
+import SettingsSubtitlesView from "pages/Settings/Subtitles";
+import SettingsUIView from "pages/Settings/UI";
+import SystemLogsView from "pages/System/Logs";
+import SystemProvidersView from "pages/System/Providers";
+import SystemReleasesView from "pages/System/Releases";
+import SystemStatusView from "pages/System/Status";
+import SystemTasksView from "pages/System/Tasks";
+import WantedMoviesView from "pages/Wanted/Movies";
+import WantedSeriesView from "pages/Wanted/Series";
 import { useMemo } from "react";
-import { useIsRadarrEnabled, useIsSonarrEnabled } from "../@redux/hooks";
-import { useReduxStore } from "../@redux/hooks/base";
-import BlacklistMoviesView from "../Blacklist/Movies";
-import BlacklistSeriesView from "../Blacklist/Series";
-import Episodes from "../DisplayItem/Episodes";
-import MovieDetail from "../DisplayItem/MovieDetail";
-import MovieView from "../DisplayItem/Movies";
-import SeriesView from "../DisplayItem/Series";
-import MoviesHistoryView from "../History/Movies";
-import SeriesHistoryView from "../History/Series";
-import HistoryStats from "../History/Statistics";
-import SettingsGeneralView from "../Settings/General";
-import SettingsLanguagesView from "../Settings/Languages";
-import SettingsNotificationsView from "../Settings/Notifications";
-import SettingsProvidersView from "../Settings/Providers";
-import SettingsRadarrView from "../Settings/Radarr";
-import SettingsSchedulerView from "../Settings/Scheduler";
-import SettingsSonarrView from "../Settings/Sonarr";
-import SettingsSubtitlesView from "../Settings/Subtitles";
-import SettingsUIView from "../Settings/UI";
-import EmptyPage, { RouterEmptyPath } from "../special-pages/404";
-import SystemLogsView from "../System/Logs";
-import SystemProvidersView from "../System/Providers";
-import SystemReleasesView from "../System/Releases";
-import SystemStatusView from "../System/Status";
-import SystemTasksView from "../System/Tasks";
-import WantedMoviesView from "../Wanted/Movies";
-import WantedSeriesView from "../Wanted/Series";
+import SystemBackupsView from "../pages/System/Backups";
 import { Navigation } from "./nav";
 import RootRedirect from "./RootRedirect";
 
 export function useNavigationItems() {
   const sonarr = useIsSonarrEnabled();
   const radarr = useIsRadarrEnabled();
-  const { movies, episodes, providers } = useReduxStore((s) => s.site.badges);
+  const { data } = useBadges();
 
   const items = useMemo<Navigation.RouteItem[]>(
     () => [
@@ -139,14 +140,14 @@ export function useNavigationItems() {
           {
             name: "Series",
             path: "/series",
-            badge: episodes,
+            badge: data?.episodes,
             enabled: sonarr,
             component: WantedSeriesView,
           },
           {
             name: "Movies",
             path: "/movies",
-            badge: movies,
+            badge: data?.movies,
             enabled: radarr,
             component: WantedMoviesView,
           },
@@ -222,8 +223,13 @@ export function useNavigationItems() {
           {
             name: "Providers",
             path: "/providers",
-            badge: providers,
+            badge: data?.providers,
             component: SystemProvidersView,
+          },
+          {
+            name: "Backup",
+            path: "/backups",
+            component: SystemBackupsView,
           },
           {
             name: "Status",
@@ -238,7 +244,7 @@ export function useNavigationItems() {
         ],
       },
     ],
-    [episodes, movies, providers, radarr, sonarr]
+    [data, radarr, sonarr]
   );
 
   return items;

@@ -88,6 +88,7 @@
 ? +stereo
 : audio_channels: '2.0'
 
+? +1.0
 ? +1ch
 ? +mono
 : audio_channels: '1.0'

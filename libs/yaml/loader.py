@@ -51,7 +51,7 @@ class Loader(Reader, Scanner, Parser, Composer, Constructor, Resolver):
 # UnsafeLoader is the same as Loader (which is and was always unsafe on
 # untrusted input). Use of either Loader or UnsafeLoader should be rare, since
 # FullLoad should be able to load almost all YAML safely. Loader is left intact
-# to ensure backwards compatability.
+# to ensure backwards compatibility.
 class UnsafeLoader(Reader, Scanner, Parser, Composer, Constructor, Resolver):
 
     def __init__(self, stream):

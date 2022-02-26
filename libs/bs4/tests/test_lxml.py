@@ -45,7 +45,7 @@ class LXMLTreeBuilderSmokeTest(SoupTest, HTMLTreeBuilderSmokeTest):
             "<p>foo&#x10000000000000;bar</p>", "<p>foobar</p>")
         self.assertSoupEquals(
             "<p>foo&#1000000000;bar</p>", "<p>foobar</p>")
-
+        
     def test_entities_in_foreign_document_encoding(self):
         # We can't implement this case correctly because by the time we
         # hear about markup like "&#147;", it's been (incorrectly) converted into
@@ -71,6 +71,21 @@ class LXMLTreeBuilderSmokeTest(SoupTest, HTMLTreeBuilderSmokeTest):
         self.assertEqual("<b/>", str(soup.b))
         self.assertTrue("BeautifulStoneSoup class is deprecated" in str(w[0].message))
 
+    def test_tracking_line_numbers(self):
+        # The lxml TreeBuilder cannot keep track of line numbers from
+        # the original markup. Even if you ask for line numbers, we
+        # don't have 'em.
+        #
+        # This means that if you have a tag like <sourceline> or
+        # <sourcepos>, attribute access will find it rather than
+        # giving you a numeric answer.
+        soup = self.soup(
+            "\n   <p>\n\n<sourceline>\n<b>text</b></sourceline><sourcepos></p>",
+            store_line_numbers=True
+        )
+        self.assertEqual("sourceline", soup.p.sourceline.name)
+        self.assertEqual("sourcepos", soup.p.sourcepos.name)
+        
 @skipIf(
     not LXML_PRESENT,
     "lxml seems not to be present, not testing its XML tree builder.")

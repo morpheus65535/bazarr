@@ -10,6 +10,7 @@ from .pons import PonsTranslator
 from .yandex import YandexTranslator
 from .microsoft import MicrosoftTranslator
 from .papago import PapagoTranslator
+from .libre import LibreTranslator
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.group()
@@ -64,6 +65,11 @@ def translate(translator, source, target, text, api_key):
             source=source,
             target=target,
             api_key=api_key)
+    elif translator == "libre":
+        translator= LibreTranslator(
+            source=source,
+            target=target
+        )
     else:
         raise AttributeError("The given translator is not supported.")
 
@@ -105,6 +111,8 @@ def languages(translator, api_key):
         translator = MicrosoftTranslator(api_key=api_key)
     elif translator == "papago":
         translator = PapagoTranslator(api_key=api_key)
+    elif translator == "libre":
+        translator = LibreTranslator
     else:
         raise AttributeError("The given translator is not supported.")
 
@@ -117,7 +125,7 @@ def languages(translator, api_key):
 @cli.command()
 def list():
     """Lists available translators."""
-    click.echo("Available translators include: Google, MyMemory, QCRI, Linguee, Pons, Yandex, Microsoft (Bing), and Papago.")
+    click.echo("Available translators include: Google, MyMemory, QCRI, Linguee, Pons, Yandex, Microsoft (Bing), Papago and LibreTranslate.")
     return 0
 
 if __name__ == "__main__":

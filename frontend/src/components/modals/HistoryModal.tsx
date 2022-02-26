@@ -1,10 +1,19 @@
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import {
+  useEpisodeAddBlacklist,
+  useEpisodeHistory,
+  useMovieAddBlacklist,
+  useMovieHistory,
+} from "apis/hooks";
+import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { useDidUpdate } from "rooks";
-import { HistoryIcon, LanguageText, PageTable, TextPopover } from "..";
-import { EpisodesApi, MoviesApi, useAsyncRequest } from "../../apis";
-import { BlacklistButton } from "../../DisplayItem/generic/blacklist";
-import { AsyncOverlay } from "../async";
+import {
+  HistoryIcon,
+  LanguageText,
+  PageTable,
+  QueryOverlay,
+  TextPopover,
+} from "..";
+import { BlacklistButton } from "../inputs/blacklist";
 import BaseModal, { BaseModalProps } from "./BaseModal";
 import { useModalPayload } from "./hooks";
 
@@ -13,19 +22,9 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const movie = useModalPayload<Item.Movie>(modal.modalKey);
 
-  const [history, updateHistory] = useAsyncRequest(
-    MoviesApi.historyBy.bind(MoviesApi)
-  );
+  const history = useMovieHistory(movie?.radarrId);
 
-  const update = useCallback(() => {
-    if (movie) {
-      updateHistory(movie.radarrId);
-    }
-  }, [movie, updateHistory]);
-
-  useDidUpdate(() => {
-    update();
-  }, [movie?.radarrId]);
+  const { data } = history;
 
   const columns = useMemo<Column<History.Movie>[]>(
     () => [
@@ -74,33 +73,30 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         // Actions
         accessor: "blacklisted",
         Cell: ({ row }) => {
-          const original = row.original;
+          const { radarrId } = row.original;
+          const { mutateAsync } = useMovieAddBlacklist();
           return (
             <BlacklistButton
-              update={update}
-              promise={(form) =>
-                MoviesApi.addBlacklist(original.radarrId, form)
-              }
-              history={original}
+              update={history.refetch}
+              promise={(form) => mutateAsync({ id: radarrId, form })}
+              history={row.original}
             ></BlacklistButton>
           );
         },
       },
     ],
-    [update]
+    [history.refetch]
   );
 
   return (
     <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
-      <AsyncOverlay ctx={history}>
-        {({ content }) => (
-          <PageTable
-            emptyText="No History Found"
-            columns={columns}
-            data={content?.data ?? []}
-          ></PageTable>
-        )}
-      </AsyncOverlay>
+      <QueryOverlay result={history}>
+        <PageTable
+          emptyText="No History Found"
+          columns={columns}
+          data={data ?? []}
+        ></PageTable>
+      </QueryOverlay>
     </BaseModal>
   );
 };
@@ -112,19 +108,9 @@ export const EpisodeHistoryModal: FunctionComponent<
 > = (props) => {
   const episode = useModalPayload<Item.Episode>(props.modalKey);
 
-  const [history, updateHistory] = useAsyncRequest(
-    EpisodesApi.historyBy.bind(EpisodesApi)
-  );
+  const history = useEpisodeHistory(episode?.sonarrEpisodeId);
 
-  const update = useCallback(() => {
-    if (episode) {
-      updateHistory(episode.sonarrEpisodeId);
-    }
-  }, [episode, updateHistory]);
-
-  useDidUpdate(() => {
-    update();
-  }, [episode?.sonarrEpisodeId]);
+  const { data } = history;
 
   const columns = useMemo<Column<History.Episode>[]>(
     () => [
@@ -174,33 +160,36 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "blacklisted",
         Cell: ({ row }) => {
           const original = row.original;
-          const { sonarrSeriesId, sonarrEpisodeId } = original;
+
+          const { sonarrEpisodeId, sonarrSeriesId } = original;
+          const { mutateAsync } = useEpisodeAddBlacklist();
           return (
             <BlacklistButton
               history={original}
-              update={update}
               promise={(form) =>
-                EpisodesApi.addBlacklist(sonarrSeriesId, sonarrEpisodeId, form)
+                mutateAsync({
+                  seriesId: sonarrSeriesId,
+                  episodeId: sonarrEpisodeId,
+                  form,
+                })
               }
             ></BlacklistButton>
           );
         },
       },
     ],
-    [update]
+    []
   );
 
   return (
     <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
-      <AsyncOverlay ctx={history}>
-        {({ content }) => (
-          <PageTable
-            emptyText="No History Found"
-            columns={columns}
-            data={content?.data ?? []}
-          ></PageTable>
-        )}
-      </AsyncOverlay>
+      <QueryOverlay result={history}>
+        <PageTable
+          emptyText="No History Found"
+          columns={columns}
+          data={data ?? []}
+        ></PageTable>
+      </QueryOverlay>
     </BaseModal>
   );
 };

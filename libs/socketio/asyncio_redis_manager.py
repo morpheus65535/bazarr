@@ -1,6 +1,5 @@
 import asyncio
 import pickle
-from urllib.parse import urlparse
 
 try:
     import aioredis
@@ -10,34 +9,18 @@ except ImportError:
 from .asyncio_pubsub_manager import AsyncPubSubManager
 
 
-def _parse_redis_url(url):
-    p = urlparse(url)
-    if p.scheme not in {'redis', 'rediss'}:
-        raise ValueError('Invalid redis url')
-    ssl = p.scheme == 'rediss'
-    host = p.hostname or 'localhost'
-    port = p.port or 6379
-    password = p.password
-    if p.path:
-        db = int(p.path[1:])
-    else:
-        db = 0
-    return host, port, password, db, ssl
-
-
 class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
     """Redis based client manager for asyncio servers.
 
     This class implements a Redis backend for event sharing across multiple
-    processes. Only kept here as one more example of how to build a custom
-    backend, since the kombu backend is perfectly adequate to support a Redis
-    message queue.
+    processes.
 
-    To use a Redis backend, initialize the :class:`Server` instance as
+    To use a Redis backend, initialize the :class:`AsyncServer` instance as
     follows::
 
-        server = socketio.Server(client_manager=socketio.AsyncRedisManager(
-            'redis://hostname:port/0'))
+        url = 'redis://hostname:port/0'
+        server = socketio.AsyncServer(
+            client_manager=socketio.AsyncRedisManager(url))
 
     :param url: The connection URL for the Redis server. For a default Redis
                 store running on the same host, use ``redis://``.  To use an
@@ -47,62 +30,73 @@ class AsyncRedisManager(AsyncPubSubManager):  # pragma: no cover
     :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
                        and receiving.
+    :param redis_options: additional keyword arguments to be passed to
+                          ``aioredis.from_url()``.
     """
     name = 'aioredis'
 
     def __init__(self, url='redis://localhost:6379/0', channel='socketio',
-                 write_only=False, logger=None):
+                 write_only=False, logger=None, redis_options=None):
         if aioredis is None:
             raise RuntimeError('Redis package is not installed '
                                '(Run "pip install aioredis" in your '
                                'virtualenv).')
-        (
-            self.host, self.port, self.password, self.db, self.ssl
-        ) = _parse_redis_url(url)
-        self.pub = None
-        self.sub = None
+        if not hasattr(aioredis.Redis, 'from_url'):
+            raise RuntimeError('Version 2 of aioredis package is required.')
+        self.redis_url = url
+        self.redis_options = redis_options or {}
+        self._redis_connect()
         super().__init__(channel=channel, write_only=write_only, logger=logger)
+
+    def _redis_connect(self):
+        self.redis = aioredis.Redis.from_url(self.redis_url,
+                                             **self.redis_options)
+        self.pubsub = self.redis.pubsub(ignore_subscribe_messages=True)
 
     async def _publish(self, data):
         retry = True
         while True:
             try:
-                if self.pub is None:
-                    self.pub = await aioredis.create_redis(
-                        (self.host, self.port), db=self.db,
-                        password=self.password, ssl=self.ssl
-                    )
-                return await self.pub.publish(self.channel,
-                                              pickle.dumps(data))
-            except (aioredis.RedisError, OSError):
+                if not retry:
+                    self._redis_connect()
+                return await self.redis.publish(
+                    self.channel, pickle.dumps(data))
+            except aioredis.exceptions.RedisError:
                 if retry:
                     self._get_logger().error('Cannot publish to redis... '
                                              'retrying')
-                    self.pub = None
                     retry = False
                 else:
                     self._get_logger().error('Cannot publish to redis... '
                                              'giving up')
                     break
 
-    async def _listen(self):
+    async def _redis_listen_with_retries(self):
         retry_sleep = 1
+        connect = False
         while True:
             try:
-                if self.sub is None:
-                    self.sub = await aioredis.create_redis(
-                        (self.host, self.port), db=self.db,
-                        password=self.password, ssl=self.ssl
-                    )
-                self.ch = (await self.sub.subscribe(self.channel))[0]
-                retry_sleep = 1
-                return await self.ch.get()
-            except (aioredis.RedisError, OSError):
+                if connect:
+                    self._redis_connect()
+                    await self.pubsub.subscribe(self.channel)
+                    retry_sleep = 1
+                async for message in self.pubsub.listen():
+                    yield message
+            except aioredis.exceptions.RedisError:
                 self._get_logger().error('Cannot receive from redis... '
                                          'retrying in '
                                          '{} secs'.format(retry_sleep))
-                self.sub = None
+                connect = True
                 await asyncio.sleep(retry_sleep)
                 retry_sleep *= 2
                 if retry_sleep > 60:
                     retry_sleep = 60
+
+    async def _listen(self):
+        channel = self.channel.encode('utf-8')
+        await self.pubsub.subscribe(self.channel)
+        async for message in self._redis_listen_with_retries():
+            if message['channel'] == channel and \
+                    message['type'] == 'message' and 'data' in message:
+                yield message['data']
+        await self.pubsub.unsubscribe(self.channel)

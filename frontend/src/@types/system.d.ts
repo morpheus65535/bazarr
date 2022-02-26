@@ -13,10 +13,18 @@ declare namespace System {
     bazarr_directory: string;
     bazarr_version: string;
     operating_system: string;
+    package_version: string;
     python_version: string;
     radarr_version: string;
     sonarr_version: string;
     start_time: number;
+  }
+
+  interface Backups {
+    type: string;
+    filename: string;
+    date: string;
+    id: number;
   }
 
   interface Health {

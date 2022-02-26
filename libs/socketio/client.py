@@ -42,7 +42,7 @@ class Client(object):
                          reconnect to the server after an interruption, or
                          ``False`` to not reconnect. The default is ``True``.
     :param reconnection_attempts: How many reconnection attempts to issue
-                                  before giving up, or 0 for infinity attempts.
+                                  before giving up, or 0 for infinite attempts.
                                   The default is 0.
     :param reconnection_delay: How long to wait in seconds before the first
                                reconnection attempt. Each successive attempt
@@ -57,10 +57,22 @@ class Client(object):
                    use. To disable logging set to ``False``. The default is
                    ``False``. Note that fatal errors are logged even when
                    ``logger`` is ``False``.
+    :param serializer: The serialization method to use when transmitting
+                       packets. Valid values are ``'default'``, ``'pickle'``,
+                       ``'msgpack'`` and ``'cbor'``. Alternatively, a subclass
+                       of the :class:`Packet` class with custom implementations
+                       of the ``encode()`` and ``decode()`` methods can be
+                       provided. Client and server must use compatible
+                       serializers.
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
 
     The Engine.IO configuration supports the following settings:
 
@@ -80,11 +92,14 @@ class Client(object):
                             fatal errors are logged even when
                             ``engineio_logger`` is ``False``.
     """
+    reserved_events = ['connect', 'connect_error', 'disconnect']
+
     def __init__(self, reconnection=True, reconnection_attempts=0,
                  reconnection_delay=1, reconnection_delay_max=5,
-                 randomization_factor=0.5, logger=False, json=None, **kwargs):
+                 randomization_factor=0.5, logger=False, serializer='default',
+                 json=None, handle_sigint=True, **kwargs):
         global original_signal_handler
-        if original_signal_handler is None and \
+        if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
@@ -93,13 +108,22 @@ class Client(object):
         self.reconnection_delay = reconnection_delay
         self.reconnection_delay_max = reconnection_delay_max
         self.randomization_factor = randomization_factor
+        self.handle_sigint = handle_sigint
 
         engineio_options = kwargs
+        engineio_options['handle_sigint'] = handle_sigint
         engineio_logger = engineio_options.pop('engineio_logger', None)
         if engineio_logger is not None:
             engineio_options['logger'] = engineio_logger
+        if serializer == 'default':
+            self.packet_class = packet.Packet
+        elif serializer == 'msgpack':
+            from . import msgpack_packet
+            self.packet_class = msgpack_packet.MsgPackPacket
+        else:
+            self.packet_class = serializer
         if json is not None:
-            packet.Packet.json = json
+            self.packet_class.json = json
             engineio_options['json'] = json
 
         self.eio = self._engineio_client_class()(**engineio_options)
@@ -120,13 +144,14 @@ class Client(object):
 
         self.connection_url = None
         self.connection_headers = None
+        self.connection_auth = None
         self.connection_transports = None
         self.connection_namespaces = []
         self.socketio_path = None
         self.sid = None
 
-        self.connected = False
-        self.namespaces = {}
+        self.connected = False  #: Indicates if the client is connected or not.
+        self.namespaces = {}  #: set of connected namespaces.
         self.handlers = {}
         self.namespace_handlers = {}
         self.callbacks = {}
@@ -233,15 +258,25 @@ class Client(object):
         self.namespace_handlers[namespace_handler.namespace] = \
             namespace_handler
 
-    def connect(self, url, headers={}, transports=None,
+    def connect(self, url, headers={}, auth=None, transports=None,
                 namespaces=None, socketio_path='socket.io', wait=True,
                 wait_timeout=1):
         """Connect to a Socket.IO server.
 
         :param url: The URL of the Socket.IO server. It can include custom
-                    query string parameters if required by the server.
+                    query string parameters if required by the server. If a
+                    function is provided, the client will invoke it to obtain
+                    the URL each time a connection or reconnection is
+                    attempted.
         :param headers: A dictionary with custom headers to send with the
-                        connection request.
+                        connection request. If a function is provided, the
+                        client will invoke it to obtain the headers dictionary
+                        each time a connection or reconnection is attempted.
+        :param auth: Authentication data passed to the server with the
+                     connection request, normally a dictionary with one or
+                     more string key/value pairs. If a function is provided,
+                     the client will invoke it to obtain the authentication
+                     data each time a connection or reconnection is attempted.
         :param transports: The list of allowed transports. Valid transports
                            are ``'polling'`` and ``'websocket'``. If not
                            given, the polling transport is connected first,
@@ -272,6 +307,7 @@ class Client(object):
 
         self.connection_url = url
         self.connection_headers = headers
+        self.connection_auth = auth
         self.connection_transports = transports
         self.connection_namespaces = namespaces
         self.socketio_path = socketio_path
@@ -289,8 +325,11 @@ class Client(object):
             self._connect_event = self.eio.create_event()
         else:
             self._connect_event.clear()
+        real_url = self._get_real_value(self.connection_url)
+        real_headers = self._get_real_value(self.connection_headers)
         try:
-            self.eio.connect(url, headers=headers, transports=transports,
+            self.eio.connect(real_url, headers=real_headers,
+                             transports=transports,
                              engineio_path=socketio_path)
         except engineio.exceptions.ConnectionError as exc:
             self._trigger_event(
@@ -366,8 +405,8 @@ class Client(object):
             data = [data]
         else:
             data = []
-        self._send_packet(packet.Packet(packet.EVENT, namespace=namespace,
-                                        data=[event] + data, id=id))
+        self._send_packet(self.packet_class(packet.EVENT, namespace=namespace,
+                                            data=[event] + data, id=id))
 
     def send(self, data, namespace=None, callback=None):
         """Send a message to one or more connected clients.
@@ -392,6 +431,12 @@ class Client(object):
 
     def call(self, event, data=None, namespace=None, timeout=60):
         """Emit a custom event to a client and wait for the response.
+
+        This method issues an emit with a callback and waits for the callback
+        to be invoked before returning. If the callback isn't invoked before
+        the timeout, then a ``TimeoutError`` exception is raised. If the
+        Socket.IO connection drops during the wait, this method still waits
+        until the specified timeout.
 
         :param event: The event name. It can be any string. The event names
                       ``'connect'``, ``'message'`` and ``'disconnect'`` are
@@ -433,7 +478,8 @@ class Client(object):
         # here we just request the disconnection
         # later in _handle_eio_disconnect we invoke the disconnect handler
         for n in self.namespaces:
-            self._send_packet(packet.Packet(packet.DISCONNECT, namespace=n))
+            self._send_packet(self.packet_class(
+                packet.DISCONNECT, namespace=n))
         self.eio.disconnect(abort=True)
 
     def get_sid(self, namespace=None):
@@ -469,9 +515,9 @@ class Client(object):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        This function returns an object that represents the background task,
+        on which the ``join()`` methond can be invoked to wait for the task to
+        complete.
         """
         return self.eio.start_background_task(target, *args, **kwargs)
 
@@ -484,6 +530,13 @@ class Client(object):
         selected async mode.
         """
         return self.eio.sleep(seconds)
+
+    def _get_real_value(self, value):
+        """Return the actual value, for parameters that can also be given as
+        callables."""
+        if not callable(value):
+            return value
+        return value()
 
     def _send_packet(self, pkt):
         """Send a Socket.IO packet to the server."""
@@ -535,8 +588,8 @@ class Client(object):
                 data = list(r)
             else:
                 data = [r]
-            self._send_packet(packet.Packet(packet.ACK, namespace=namespace,
-                              id=id, data=data))
+            self._send_packet(self.packet_class(
+                packet.ACK, namespace=namespace, id=id, data=data))
 
     def _handle_ack(self, namespace, id, data):
         namespace = namespace or '/'
@@ -571,8 +624,12 @@ class Client(object):
     def _trigger_event(self, event, namespace, *args):
         """Invoke an application event handler."""
         # first see if we have an explicit handler for the event
-        if namespace in self.handlers and event in self.handlers[namespace]:
-            return self.handlers[namespace][event](*args)
+        if namespace in self.handlers:
+            if event in self.handlers[namespace]:
+                return self.handlers[namespace][event](*args)
+            elif event not in self.reserved_events and \
+                    '*' in self.handlers[namespace]:
+                return self.handlers[namespace]['*'](event, *args)
 
         # or else, forward the event to a namespace handler if one exists
         elif namespace in self.namespace_handlers:
@@ -602,6 +659,7 @@ class Client(object):
             try:
                 self.connect(self.connection_url,
                              headers=self.connection_headers,
+                             auth=self.connection_auth,
                              transports=self.connection_transports,
                              namespaces=self.connection_namespaces,
                              socketio_path=self.socketio_path)
@@ -622,8 +680,10 @@ class Client(object):
         """Handle the Engine.IO connection event."""
         self.logger.info('Engine.IO connection established')
         self.sid = self.eio.sid
+        real_auth = self._get_real_value(self.connection_auth)
         for n in self.connection_namespaces:
-            self._send_packet(packet.Packet(packet.CONNECT, namespace=n))
+            self._send_packet(self.packet_class(
+                packet.CONNECT, data=real_auth, namespace=n))
 
     def _handle_eio_message(self, data):
         """Dispatch Engine.IO messages."""
@@ -636,7 +696,7 @@ class Client(object):
                 else:
                     self._handle_ack(pkt.namespace, pkt.id, pkt.data)
         else:
-            pkt = packet.Packet(encoded_packet=data)
+            pkt = self.packet_class(encoded_packet=data)
             if pkt.packet_type == packet.CONNECT:
                 self._handle_connect(pkt.namespace, pkt.data)
             elif pkt.packet_type == packet.DISCONNECT:

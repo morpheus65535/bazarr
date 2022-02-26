@@ -3,10 +3,7 @@
 """
 Various utilities functions
 """
-try:
-    from collections.abc import MutableSet
-except ImportError:
-    from collections import MutableSet
+from collections.abc import MutableSet
 
 from types import GeneratorType
 
@@ -153,4 +150,4 @@ class IdentitySet(MutableSet):  # pragma: no cover
             self.add(elem)
 
     def __repr__(self):  # pragma: no cover
-        return "%s(%s)" % (type(self).__name__, list(self))
+        return f"{type(self).__name__}({list(self)})"

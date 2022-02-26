@@ -15,10 +15,10 @@ class Providers(Resource):
         history = request.args.get('history')
         if history and history not in False_Keys:
             providers = list(TableHistory.select(TableHistory.provider)
-                             .where(TableHistory.provider != None and TableHistory.provider != "manual")
+                             .where(TableHistory.provider is not None and TableHistory.provider != "manual")
                              .dicts())
             providers += list(TableHistoryMovie.select(TableHistoryMovie.provider)
-                              .where(TableHistoryMovie.provider != None and TableHistoryMovie.provider != "manual")
+                              .where(TableHistoryMovie.provider is not None and TableHistoryMovie.provider != "manual")
                               .dicts())
             providers_list = list(set([x['provider'] for x in providers]))
             providers_dicts = []

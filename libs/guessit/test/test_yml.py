@@ -3,8 +3,6 @@
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name
 import logging
 import os
-# io.open supports encoding= in python 2.7
-from io import open  # pylint: disable=redefined-builtin
 
 import babelfish
 import yaml  # pylint:disable=wrong-import-order
@@ -52,16 +50,16 @@ class EntryResult(object):
         if self.ok:
             return self.string + ': OK!'
         if self.warning:
-            return '%s%s: WARNING! (valid=%i, extra=%s)' % ('-' if self.negates else '', self.string, len(self.valid),
-                                                            self.extra)
+            return f'{"-" if self.negates else ""}{self.string}: ' \
+                   f'WARNING! (valid={len(self.valid)}, extra={self.extra})'
         if self.error:
-            return '%s%s: ERROR! (valid=%i, extra=%s, missing=%s, different=%s, others=%s)' % \
-                   ('-' if self.negates else '', self.string, len(self.valid), self.extra, self.missing,
-                    self.different, self.others)
+            return f'{"-" if self.negates else ""}{self.string}: ' \
+                   f'ERROR! (valid={len(self.valid)}, extra={self.extra}, ' \
+                   f'missing={self.missing}, different={self.different}, others={self.others})'
 
-        return '%s%s: UNKOWN! (valid=%i, extra=%s, missing=%s, different=%s, others=%s)' % \
-               ('-' if self.negates else '', self.string, len(self.valid), self.extra, self.missing, self.different,
-                self.others)
+        return f'{"-" if self.negates else ""}{self.string}: ' \
+               f'UNKOWN! (valid={len(self.valid)}, extra={self.extra}, ' \
+               f'missing={self.missing}, different={self.different}, others={self.others})'
 
     @property
     def details(self):

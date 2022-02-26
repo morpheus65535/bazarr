@@ -1,7 +1,9 @@
-# coding: utf-8
 r"""
-Decodes single-byte encodings, filling their "holes" in the same messy way that
-everyone else does.
+`ftfy.bad_codecs.sloppy` provides character-map encodings that fill their "holes"
+in a messy but common way: by outputting the Unicode codepoints with the same
+numbers.
+
+This is incredibly ugly, and it's also in the HTML5 standard.
 
 A single-byte encoding maps each byte to a Unicode character, except that some
 bytes are left unmapped. In the commonly-used Windows-1252 encoding, for
@@ -17,7 +19,7 @@ the common Web browsers -- will pick some Unicode characters for them to map
 to, and the characters they pick are the Unicode characters with the same
 numbers: U+0081 and U+008D. This is the same as what Latin-1 does, and the
 resulting characters tend to fall into a range of Unicode that's set aside for
-obselete Latin-1 control characters anyway.
+obsolete Latin-1 control characters anyway.
 
 These sloppy codecs let Python do the same thing, thus interoperating with
 other software that works this way. It defines a sloppy version of many
@@ -46,10 +48,10 @@ The following encodings will become defined:
 Aliases such as "sloppy-cp1252" for "sloppy-windows-1252" will also be
 defined.
 
-Only sloppy-windows-1251 and sloppy-windows-1252 are used by the rest of ftfy;
-the rest are rather uncommon.
+Five of these encodings (`sloppy-windows-1250` through `sloppy-windows-1254`)
+are used within ftfy.
 
-Here are some examples, using `ftfy.explain_unicode` to illustrate how
+Here are some examples, using :func:`ftfy.explain_unicode` to illustrate how
 sloppy-windows-1252 merges Windows-1252 with Latin-1:
 
     >>> from ftfy import explain_unicode
@@ -69,13 +71,13 @@ sloppy-windows-1252 merges Windows-1252 with Latin-1:
     U+0081  \x81    [Cc] <unknown>
     U+201A  ‚       [Ps] SINGLE LOW-9 QUOTATION MARK
 """
-from __future__ import unicode_literals
 import codecs
 from encodings import normalize_encoding
 import sys
 
 REPLACEMENT_CHAR = '\ufffd'
 PY26 = sys.version_info[:2] == (2, 6)
+
 
 def make_sloppy_codec(encoding):
     """
@@ -87,8 +89,8 @@ def make_sloppy_codec(encoding):
     `codecs.charmap_decode` and `charmap_encode`. This function, given an
     encoding name, *defines* those boilerplate classes.
     """
-    # Make an array of all 256 possible bytes.
-    all_bytes = bytearray(range(256))
+    # Make a bytestring of all 256 possible bytes.
+    all_bytes = bytes(range(256))
 
     # Get a list of what they would decode to in Latin-1.
     sloppy_chars = list(all_bytes.decode('latin-1'))
@@ -149,6 +151,7 @@ def make_sloppy_codec(encoding):
         streamreader=StreamReader,
         streamwriter=StreamWriter,
     )
+
 
 # Define a codec for each incomplete encoding. The resulting CODECS dictionary
 # can be used by the main module of ftfy.bad_codecs.

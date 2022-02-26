@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+This module provides an interface to the native time zone data on Windows,
+including :py:class:`datetime.tzinfo` implementations.
+
+Attempting to import this module on a non-Windows platform will raise an
+:py:obj:`ImportError`.
+"""
 # This code was originally contributed by Jeffrey Harris.
 import datetime
 import struct
@@ -12,7 +20,6 @@ except ValueError:
     # ValueError is raised on non-Windows systems for some horrible reason.
     raise ImportError("Running tzwin on non-Windows system")
 
-from ._common import tzname_in_python2, _tzinfo
 from ._common import tzrangebase
 
 __all__ = ["tzwin", "tzwinlocal", "tzres"]
@@ -34,12 +41,13 @@ def _settzkeyname():
     handle.Close()
     return TZKEYNAME
 
+
 TZKEYNAME = _settzkeyname()
 
 
 class tzres(object):
     """
-    Class for accessing `tzres.dll`, which contains timezone name related
+    Class for accessing ``tzres.dll``, which contains timezone name related
     resources.
 
     .. versionadded:: 2.5.0
@@ -49,7 +57,7 @@ class tzres(object):
     def __init__(self, tzres_loc='tzres.dll'):
         # Load the user32 DLL so we can load strings from tzres
         user32 = ctypes.WinDLL('user32')
-        
+
         # Specify the LoadStringW function
         user32.LoadStringW.argtypes = (wintypes.HINSTANCE,
                                        wintypes.UINT,
@@ -63,7 +71,7 @@ class tzres(object):
     def load_name(self, offset):
         """
         Load a timezone name from a DLL offset (integer).
-        
+
         >>> from dateutil.tzwin import tzres
         >>> tzr = tzres()
         >>> print(tzr.load_name(112))
@@ -72,9 +80,10 @@ class tzres(object):
         :param offset:
             A positive integer value referring to a string from the tzres dll.
 
-        ..note:
+        .. note::
+
             Offsets found in the registry are generally of the form
-            `@tzres.dll,-114`. The offset in this case if 114, not -114.
+            ``@tzres.dll,-114``. The offset in this case is 114, not -114.
 
         """
         resource = self.p_wchar()
@@ -146,6 +155,9 @@ class tzwinbase(tzrangebase):
         return result
 
     def display(self):
+        """
+        Return the display name of the time zone.
+        """
         return self._display
 
     def transitions(self, year):
@@ -188,13 +200,23 @@ class tzwinbase(tzrangebase):
 
 
 class tzwin(tzwinbase):
+    """
+    Time zone object created from the zone info in the Windows registry
+
+    These are similar to :py:class:`dateutil.tz.tzrange` objects in that
+    the time zone data is provided in the format of a single offset rule
+    for either 0 or 2 time zone transitions per year.
+
+    :param: name
+        The name of a Windows time zone key, e.g. "Eastern Standard Time".
+        The full list of keys can be retrieved with :func:`tzwin.list`.
+    """
 
     def __init__(self, name):
         self._name = name
 
-        # multiple contexts only possible in 2.7 and 3.1, we still support 2.6
         with winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE) as handle:
-            tzkeyname = text_type("{kn}\{name}").format(kn=TZKEYNAME, name=name)
+            tzkeyname = text_type("{kn}\\{name}").format(kn=TZKEYNAME, name=name)
             with winreg.OpenKey(handle, tzkeyname) as tzkey:
                 keydict = valuestodict(tzkey)
 
@@ -235,6 +257,22 @@ class tzwin(tzwinbase):
 
 
 class tzwinlocal(tzwinbase):
+    """
+    Class representing the local time zone information in the Windows registry
+
+    While :class:`dateutil.tz.tzlocal` makes system calls (via the :mod:`time`
+    module) to retrieve time zone information, ``tzwinlocal`` retrieves the
+    rules directly from the Windows registry and creates an object like
+    :class:`dateutil.tz.tzwin`.
+
+    Because Windows does not have an equivalent of :func:`time.tzset`, on
+    Windows, :class:`dateutil.tz.tzlocal` instances will always reflect the
+    time zone settings *at the time that the process was started*, meaning
+    changes to the machine's time zone settings during the run of a program
+    on Windows will **not** be reflected by :class:`dateutil.tz.tzlocal`.
+    Because ``tzwinlocal`` reads the registry directly, it is unaffected by
+    this issue.
+    """
     def __init__(self):
         with winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE) as handle:
             with winreg.OpenKey(handle, TZLOCALKEYNAME) as tzlocalkey:
@@ -244,7 +282,7 @@ class tzwinlocal(tzwinbase):
             self._dst_abbr = keydict["DaylightName"]
 
             try:
-                tzkeyname = text_type('{kn}\{sn}').format(kn=TZKEYNAME,
+                tzkeyname = text_type('{kn}\\{sn}').format(kn=TZKEYNAME,
                                                           sn=self._std_abbr)
                 with winreg.OpenKey(handle, tzkeyname) as tzkey:
                     _keydict = valuestodict(tzkey)
@@ -266,7 +304,7 @@ class tzwinlocal(tzwinbase):
          self._stdweeknumber,  # Last = 5
          self._stdhour,
          self._stdminute) = tup[1:5]
-        
+
         self._stddayofweek = tup[7]
 
         tup = struct.unpack("=8h", keydict["DaylightStart"])

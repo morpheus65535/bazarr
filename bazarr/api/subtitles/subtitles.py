@@ -2,6 +2,7 @@
 
 import os
 import sys
+import gc
 
 from flask import request
 from flask_restful import Resource
@@ -9,9 +10,9 @@ from flask_restful import Resource
 from database import TableEpisodes, TableMovies
 from helper import path_mappings
 from ..utils import authenticate
-from subsyncer import subsync
+from subsyncer import SubSyncer
 from utils import translate_subtitles_file, subtitles_apply_mods
-from get_subtitle import store_subtitles, store_subtitles_movie
+from list_subtitles import store_subtitles, store_subtitles_movie
 from config import settings
 
 
@@ -30,14 +31,23 @@ class Subtitles(Resource):
             metadata = TableEpisodes.select(TableEpisodes.path, TableEpisodes.sonarrSeriesId)\
                 .where(TableEpisodes.sonarrEpisodeId == id)\
                 .dicts()\
-                .get()
+                .get_or_none()
+
+            if not metadata:
+                return 'Episode not found', 500
+
             video_path = path_mappings.path_replace(metadata['path'])
         else:
             subtitles_path = path_mappings.path_replace_movie(subtitles_path)
-            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get()
+            metadata = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == id).dicts().get_or_none()
+
+            if not metadata:
+                return 'Movie not found', 500
+
             video_path = path_mappings.path_replace_movie(metadata['path'])
 
         if action == 'sync':
+            subsync = SubSyncer()
             if media_type == 'episode':
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='series', sonarr_series_id=metadata['sonarrSeriesId'],
@@ -45,6 +55,8 @@ class Subtitles(Resource):
             else:
                 subsync.sync(video_path=video_path, srt_path=subtitles_path,
                              srt_lang=language, media_type='movies', radarr_id=id)
+            del subsync
+            gc.collect()
         elif action == 'translate':
             dest_language = language
             forced = True if request.form.get('forced') == 'true' else False

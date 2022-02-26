@@ -1,14 +1,14 @@
-from ..useragents import UserAgent
-from ..utils import cached_property
+import typing as t
+import warnings
 
 
-class UserAgentMixin(object):
-    """Adds a `user_agent` attribute to the request object which
-    contains the parsed user agent of the browser that triggered the
-    request as a :class:`~werkzeug.useragents.UserAgent` object.
-    """
-
-    @cached_property
-    def user_agent(self):
-        """The current user agent."""
-        return UserAgent(self.environ)
+class UserAgentMixin:
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        warnings.warn(
+            "'UserAgentMixin' is deprecated and will be removed in"
+            " Werkzeug 2.1. 'Request' now includes the functionality"
+            " directly.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)  # type: ignore

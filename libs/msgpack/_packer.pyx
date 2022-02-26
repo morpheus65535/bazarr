@@ -285,6 +285,8 @@ cdef class Packer(object):
                 o = self._default(o)
                 default_used = 1
                 continue
+            elif self.datetime and PyDateTime_CheckExact(o):
+                PyErr_Format(ValueError, b"can not serialize '%.200s' object where tzinfo=None", Py_TYPE(o).tp_name)
             else:
                 PyErr_Format(TypeError, b"can not serialize '%.200s' object", Py_TYPE(o).tp_name)
             return ret

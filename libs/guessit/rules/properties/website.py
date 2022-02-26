@@ -3,7 +3,11 @@
 """
 Website property.
 """
-from pkg_resources import resource_stream  # @UnresolvedImport
+try:
+    from importlib.resources import files  # @UnresolvedImport
+except ImportError:
+    from importlib_resources import files  # @UnresolvedImport
+
 from rebulk.remodule import re
 
 from rebulk import Rebulk, Rule, RemoveMatch
@@ -27,11 +31,12 @@ def website(config):
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE).string_defaults(ignore_case=True)
     rebulk.defaults(name="website")
 
-    with resource_stream('guessit', 'data/tlds-alpha-by-domain.txt') as tld_file:
+    with files('guessit.data') as data_files:
+        tld_file = data_files.joinpath('tlds-alpha-by-domain.txt').read_text(encoding='utf-8')
         tlds = [
-            tld.strip().decode('utf-8')
-            for tld in tld_file.readlines()
-            if b'--' not in tld
+            tld.strip()
+            for tld in tld_file.split('\n')
+            if '--' not in tld
         ][1:]  # All registered domain extension
 
     safe_tlds = config['safe_tlds']  # For sure a website extension
@@ -40,15 +45,15 @@ def website(config):
     website_prefixes = config['prefixes']
 
     rebulk.regex(r'(?:[^a-z0-9]|^)((?:'+build_or_pattern(safe_subdomains) +
-                 r'\.)+(?:[a-z-]+\.)+(?:'+build_or_pattern(tlds) +
+                 r'\.)+(?:[a-z-0-9-]+\.)+(?:'+build_or_pattern(tlds) +
                  r'))(?:[^a-z0-9]|$)',
                  children=True)
     rebulk.regex(r'(?:[^a-z0-9]|^)((?:'+build_or_pattern(safe_subdomains) +
-                 r'\.)*[a-z-]+\.(?:'+build_or_pattern(safe_tlds) +
+                 r'\.)*[a-z0-9-]+\.(?:'+build_or_pattern(safe_tlds) +
                  r'))(?:[^a-z0-9]|$)',
                  safe_subdomains=safe_subdomains, safe_tlds=safe_tlds, children=True)
     rebulk.regex(r'(?:[^a-z0-9]|^)((?:'+build_or_pattern(safe_subdomains) +
-                 r'\.)*[a-z-]+\.(?:'+build_or_pattern(safe_prefix) +
+                 r'\.)*[a-z0-9-]+\.(?:'+build_or_pattern(safe_prefix) +
                  r'\.)+(?:'+build_or_pattern(tlds) +
                  r'))(?:[^a-z0-9]|$)',
                  safe_subdomains=safe_subdomains, safe_prefix=safe_prefix, tlds=tlds, children=True)

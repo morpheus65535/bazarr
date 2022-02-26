@@ -3,15 +3,14 @@
 """
 video_bit_rate and audio_bit_rate properties
 """
-from rebulk.remodule import re
-
 from rebulk import Rebulk
+from rebulk.remodule import re
 from rebulk.rules import Rule, RemoveMatch, RenameMatch
 
 from ..common import dash, seps
 from ..common.pattern import is_disabled
-from ..common.quantity import BitRate
 from ..common.validators import seps_surround
+from ...config import load_config_patterns
 
 
 def bit_rate(config):  # pylint:disable=unused-argument
@@ -27,13 +26,8 @@ def bit_rate(config):  # pylint:disable=unused-argument
                                               and is_disabled(context, 'video_bit_rate')))
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
     rebulk.defaults(name='audio_bit_rate', validator=seps_surround)
-    rebulk.regex(r'\d+-?[kmg]b(ps|its?)', r'\d+\.\d+-?[kmg]b(ps|its?)',
-                 conflict_solver=(
-                     lambda match, other: match
-                     if other.name == 'audio_channels' and 'weak-audio_channels' not in other.tags
-                     else other
-                 ),
-                 formatter=BitRate.fromstring, tags=['release-group-prefix'])
+
+    load_config_patterns(rebulk, config.get('bit_rate'))
 
     rebulk.rules(BitRateTypeRule)
 

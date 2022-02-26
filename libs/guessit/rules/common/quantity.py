@@ -59,10 +59,10 @@ class Quantity(object):
         return not self == other
 
     def __repr__(self):
-        return '<{0} [{1}]>'.format(self.__class__.__name__, self)
+        return f'<{self.__class__.__name__} [{self}]>'
 
     def __str__(self):
-        return '{0}{1}'.format(self.magnitude, self.units)
+        return f'{self.magnitude}{self.units}'
 
 
 class Size(Quantity):

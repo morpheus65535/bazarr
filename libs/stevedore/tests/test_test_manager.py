@@ -10,13 +10,19 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from mock import Mock, sentinel
-from stevedore import (ExtensionManager, NamedExtensionManager, HookManager,
-                       DriverManager, EnabledExtensionManager)
-from stevedore.dispatch import (DispatchExtensionManager,
-                                NameDispatchExtensionManager)
+from unittest.mock import Mock
+from unittest.mock import sentinel
+
+from stevedore.dispatch import DispatchExtensionManager
+from stevedore.dispatch import NameDispatchExtensionManager
 from stevedore.extension import Extension
 from stevedore.tests import utils
+
+from stevedore import DriverManager
+from stevedore import EnabledExtensionManager
+from stevedore import ExtensionManager
+from stevedore import HookManager
+from stevedore import NamedExtensionManager
 
 
 test_extension = Extension('test_extension', None, None, None)

@@ -1,8 +1,11 @@
+import { dispatchTask } from "@modules/task";
+import { createTask } from "@modules/task/utilities";
+import { useMovieSubtitleModification } from "apis/hooks";
 import React, { FunctionComponent, useCallback } from "react";
-import { dispatchTask } from "../../@modules/task";
-import { createTask } from "../../@modules/task/utilities";
-import { useProfileBy, useProfileItemsToLanguages } from "../../@redux/hooks";
-import { MoviesApi } from "../../apis";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "utilities/languages";
 import { BaseModalProps } from "./BaseModal";
 import { useModalInformation } from "./hooks";
 import SubtitleUploadModal, {
@@ -19,13 +22,17 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
 
   const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
 
-  const profile = useProfileBy(payload?.profileId);
+  const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
   const update = useCallback(async (list: PendingSubtitle<Payload>[]) => {
     return list;
   }, []);
+
+  const {
+    upload: { mutateAsync },
+  } = useMovieSubtitleModification();
 
   const validate = useCallback<Validator<Payload>>(
     (item) => {
@@ -64,23 +71,20 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
         .map((v) => {
           const { file, language, forced, hi } = v;
 
-          return createTask(
-            file.name,
+          return createTask(file.name, radarrId, mutateAsync, {
             radarrId,
-            MoviesApi.uploadSubtitles.bind(MoviesApi),
-            radarrId,
-            {
+            form: {
               file,
               forced,
               hi,
               language: language!.code2,
-            }
-          );
+            },
+          });
         });
 
       dispatchTask(TaskGroupName, tasks, "Uploading...");
     },
-    [payload]
+    [mutateAsync, payload]
   );
 
   return (

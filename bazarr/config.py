@@ -73,12 +73,20 @@ defaults = {
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
         'subzero_mods': '[]',
-        'dont_notify_manual_actions': 'False'
+        'dont_notify_manual_actions': 'False',
+        'hi_extension': 'hi'
     },
     'auth': {
         'type': 'None',
         'username': '',
         'password': ''
+    },
+    'backup': {
+        'folder': os.path.join(args.config_dir, 'backup'),
+        'retention': '31',
+        'frequency': 'Weekly',
+        'day': '6',
+        'hour': '3'
     },
     'sonarr': {
         'ip': '127.0.0.1',
@@ -136,6 +144,8 @@ defaults = {
     'addic7ed': {
         'username': '',
         'password': '',
+        'cookies': '',
+        'user_agent': '',
         'vip': 'False'
     },
     'podnapisi': {
@@ -197,6 +207,8 @@ defaults = {
     'embeddedsubtitles': {
         'include_ass': 'True',
         'include_srt': 'True',
+        'hi_fallback': 'False',
+        'mergerfs_mode': 'False'
     },
     'subsync': {
         'use_subsync': 'False',
@@ -243,19 +255,19 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
-                'page_size',
-                'page_size_manual_search',
-                'throtteled_providers']
+               'page_size',
+               'page_size_manual_search',
+               'throtteled_providers']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 array_keys = ['excluded_tags',
-                'exclude',
-                'subzero_mods',
-                'excluded_series_types',
-                'enabled_providers',
-                'path_mappings',
-                'path_mappings_movie']
+              'exclude',
+              'subzero_mods',
+              'excluded_series_types',
+              'enabled_providers',
+              'path_mappings',
+              'path_mappings_movie']
 
 str_keys = ['chmod']
 
@@ -308,17 +320,15 @@ def get_settings():
                             value = int(value)
                         except ValueError:
                             pass
-            
+
             values_dict[key] = value
-        
+
         result[sec] = values_dict
 
     return result
 
 
 def save_settings(settings_items):
-    from database import database
-
     configure_debug = False
     configure_captcha = False
     update_schedule = False
@@ -340,7 +350,7 @@ def save_settings(settings_items):
     for key, value in settings_items:
 
         settings_keys = key.split('-')
-        
+
         # Make sure that text based form values aren't pass as list
         if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
@@ -348,7 +358,7 @@ def save_settings(settings_items):
                 value = None
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values :
+        if settings_keys[-1] in array_keys and value[0] in empty_values:
             value = []
 
         # Handle path mappings settings since they are array in array
@@ -361,11 +371,14 @@ def save_settings(settings_items):
             value = 'False'
 
         if key == 'settings-auth-password':
-            if value != settings.auth.password and value != None:
+            if value != settings.auth.password and value is not None:
                 value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if key == 'settings-general-debug':
             configure_debug = True
+
+        if key == 'settings-general-hi_extension':
+            os.environ["SZ_HI_EXTENSION"] = str(value)
 
         if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
                    'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
@@ -377,7 +390,8 @@ def save_settings(settings_items):
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
-                   'settings-general-upgrade_frequency']:
+                   'settings-general-upgrade_frequency', 'settings-backup-frequency', 'settings-backup-day',
+                   'settings-backup-hour']:
             update_schedule = True
 
         if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
@@ -480,14 +494,14 @@ def save_settings(settings_items):
         from signalr_client import sonarr_signalr_client
         try:
             sonarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if radarr_changed:
         from signalr_client import radarr_signalr_client
         try:
             radarr_signalr_client.restart()
-        except:
+        except Exception:
             pass
 
     if update_path_map:

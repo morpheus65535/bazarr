@@ -41,7 +41,7 @@ class AsyncNamespace(namespace.Namespace):
                 ret = handler(*args)
             return ret
 
-    async def emit(self, event, data=None, room=None, skip_sid=None,
+    async def emit(self, event, data=None, to=None, room=None, skip_sid=None,
                    namespace=None, callback=None):
         """Emit a custom event to one or more connected clients.
 
@@ -51,13 +51,13 @@ class AsyncNamespace(namespace.Namespace):
 
         Note: this method is a coroutine.
         """
-        return await self.server.emit(event, data=data, room=room,
+        return await self.server.emit(event, data=data, to=to, room=room,
                                       skip_sid=skip_sid,
                                       namespace=namespace or self.namespace,
                                       callback=callback)
 
-    async def send(self, data, room=None, skip_sid=None, namespace=None,
-                   callback=None):
+    async def send(self, data, to=None, room=None, skip_sid=None,
+                   namespace=None, callback=None):
         """Send a message to one or more connected clients.
 
         The only difference with the :func:`socketio.Server.send` method is
@@ -66,9 +66,22 @@ class AsyncNamespace(namespace.Namespace):
 
         Note: this method is a coroutine.
         """
-        return await self.server.send(data, room=room, skip_sid=skip_sid,
+        return await self.server.send(data, to=to, room=room,
+                                      skip_sid=skip_sid,
                                       namespace=namespace or self.namespace,
                                       callback=callback)
+
+    async def call(self, event, data=None, to=None, sid=None, namespace=None,
+                   timeout=None):
+        """Emit a custom event to a client and wait for the response.
+
+        The only difference with the :func:`socketio.Server.call` method is
+        that when the ``namespace`` argument is not given the namespace
+        associated with the class is used.
+        """
+        return await self.server.call(event, data=data, to=to, sid=sid,
+                                      namespace=namespace or self.namespace,
+                                      timeout=timeout)
 
     async def close_room(self, room, namespace=None):
         """Close a room.
@@ -191,6 +204,17 @@ class AsyncClientNamespace(namespace.ClientNamespace):
         return await self.client.send(data,
                                       namespace=namespace or self.namespace,
                                       callback=callback)
+
+    async def call(self, event, data=None, namespace=None, timeout=None):
+        """Emit a custom event to the server and wait for the response.
+
+        The only difference with the :func:`socketio.Client.call` method is
+        that when the ``namespace`` argument is not given the namespace
+        associated with the class is used.
+        """
+        return await self.client.call(event, data=data,
+                                      namespace=namespace or self.namespace,
+                                      timeout=timeout)
 
     async def disconnect(self):
         """Disconnect a client.

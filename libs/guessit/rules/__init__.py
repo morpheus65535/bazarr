@@ -26,7 +26,7 @@ from .properties.other import other
 from .properties.size import size
 from .properties.bit_rate import bit_rate
 from .properties.edition import edition
-from .properties.cds import cds
+from .properties.cd import cd
 from .properties.bonus import bonus
 from .properties.film import film
 from .properties.part import part
@@ -71,7 +71,7 @@ def rebulk_builder(config):
     rebulk.rebulk(size(_config('size')))
     rebulk.rebulk(bit_rate(_config('bit_rate')))
     rebulk.rebulk(edition(_config('edition')))
-    rebulk.rebulk(cds(_config('cds')))
+    rebulk.rebulk(cd(_config('cd')))
     rebulk.rebulk(bonus(_config('bonus')))
     rebulk.rebulk(film(_config('film')))
     rebulk.rebulk(part(_config('part')))

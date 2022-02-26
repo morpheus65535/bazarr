@@ -50,7 +50,10 @@ def get_series(sonarr_series_id):
     data = TableShows.select(TableShows.title, TableShows.year)\
         .where(TableShows.sonarrSeriesId == sonarr_series_id)\
         .dicts()\
-        .get()
+        .get_or_none()
+
+    if not data:
+        return
 
     return {'title': data['title'], 'year': data['year']}
 
@@ -59,7 +62,10 @@ def get_episode_name(sonarr_episode_id):
     data = TableEpisodes.select(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)\
         .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)\
         .dicts()\
-        .get()
+        .get_or_none()
+
+    if not data:
+        return
 
     return data['title'], data['season'], data['episode']
 
@@ -68,7 +74,10 @@ def get_movie(radarr_id):
     data = TableMovies.select(TableMovies.title, TableMovies.year)\
         .where(TableMovies.radarrId == radarr_id)\
         .dicts()\
-        .get()
+        .get_or_none()
+
+    if not data:
+        return
 
     return {'title': data['title'], 'year': data['year']}
 
@@ -76,6 +85,8 @@ def get_movie(radarr_id):
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
     series = get_series(sonarr_series_id)
+    if not series:
+        return
     series_title = series['title']
     series_year = series['year']
     if series_year not in [None, '', '0']:
@@ -83,6 +94,8 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     else:
         series_year = ''
     episode = get_episode_name(sonarr_episode_id)
+    if not episode:
+        return
 
     asset = apprise.AppriseAsset(async_mode=False)
 
@@ -102,6 +115,8 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
     movie = get_movie(radarr_id)
+    if not movie:
+        return
     movie_title = movie['title']
     movie_year = movie['year']
     if movie_year not in [None, '', '0']:

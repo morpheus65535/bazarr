@@ -10,7 +10,7 @@ from database import TableMovies, TableBlacklistMovie
 from ..utils import authenticate, postprocessMovie
 from utils import blacklist_log_movie, delete_subtitles, blacklist_delete_all_movie, blacklist_delete_movie
 from helper import path_mappings
-from get_subtitle import movies_download_subtitles
+from get_subtitle.mass_download import movies_download_subtitles
 from event_handler import event_stream
 
 
@@ -55,7 +55,10 @@ class MoviesBlacklist(Resource):
         forced = False
         hi = False
 
-        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get()
+        data = TableMovies.select(TableMovies.path).where(TableMovies.radarrId == radarr_id).dicts().get_or_none()
+
+        if not data:
+            return 'Movie not found', 500
 
         media_path = data['path']
         subtitles_path = request.form.get('subtitles_path')

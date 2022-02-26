@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import pytest
+import logging
 import os
 
-# import sys
-# sys.path.append("libs")
+import pytest
 
 from subliminal_patch.core import Movie, Episode
+
+
+logging.getLogger("vcr").setLevel(logging.WARNING)
+logging.getLogger("rebulk").setLevel(logging.WARNING)
 
 
 @pytest.fixture(scope="module")
@@ -24,6 +27,7 @@ def movies():
             resolution="1080p",
             source="Web",
             # other="Rip",
+            alternative_titles=["Dune: Part One"],
             audio_codec="Dolby Digital",
             video_codec="H.264",
             release_group="SHITBOX",

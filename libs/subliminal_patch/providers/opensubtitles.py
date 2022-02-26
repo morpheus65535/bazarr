@@ -18,6 +18,7 @@ from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSub
     DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
 from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
+from subliminal_patch.providers import reinitialize_on_error
 from subliminal_patch.http import SubZeroRequestsTransport
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.cache import region
@@ -236,7 +237,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
     def terminate(self):
         self.server = None
         self.token = None
-
+    
     def list_subtitles(self, video, languages):
         """
         :param video:
@@ -272,6 +273,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                           use_tag_search=self.use_tag_search, only_foreign=self.only_foreign,
                           also_foreign=self.also_foreign)
 
+    @reinitialize_on_error((NoSession, Unauthorized, OpenSubtitlesError, ServiceUnavailable), attempts=1)
     def query(self, video, languages, hash=None, size=None, imdb_id=None, query=None, season=None, episode=None,
               tag=None, use_tag_search=False, only_foreign=False, also_foreign=False):
         # fill the search criteria
@@ -377,6 +379,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
         return subtitles
 
+    @reinitialize_on_error((NoSession, Unauthorized, OpenSubtitlesError, ServiceUnavailable), attempts=1)
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle)
         response = self.use_token_or_login(

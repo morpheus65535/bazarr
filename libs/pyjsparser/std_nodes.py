@@ -1,6 +1,16 @@
 from .pyjsparserdata import *
 
 
+class Ecma51NotSupported(Exception):
+    def __init__(self, feature):
+        super(Ecma51NotSupported,
+              self).__init__("%s is not supported by ECMA 5.1." % feature)
+        self.feature = feature
+
+    def get_feature(self):
+        return self.feature
+
+
 class BaseNode:
     def finish(self):
         pass
@@ -14,17 +24,6 @@ class BaseNode:
     def finishArrayPattern(self, elements):
         self.type = Syntax.ArrayPattern
         self.elements = elements
-        self.finish()
-        return self
-
-    def finishArrowFunctionExpression(self, params, defaults, body, expression):
-        self.type = Syntax.ArrowFunctionExpression
-        self.id = None
-        self.params = params
-        self.defaults = defaults
-        self.body = body
-        self.generator = False
-        self.expression = expression
         self.finish()
         return self
 
@@ -44,7 +43,8 @@ class BaseNode:
         return self
 
     def finishBinaryExpression(self, operator, left, right):
-        self.type = Syntax.LogicalExpression if (operator == '||' or operator == '&&') else Syntax.BinaryExpression
+        self.type = Syntax.LogicalExpression if (
+            operator == '||' or operator == '&&') else Syntax.BinaryExpression
         self.operator = operator
         self.left = left
         self.right = right
@@ -73,28 +73,6 @@ class BaseNode:
     def finishCatchClause(self, param, body):
         self.type = Syntax.CatchClause
         self.param = param
-        self.body = body
-        self.finish()
-        return self
-
-    def finishClassBody(self, body):
-        self.type = Syntax.ClassBody
-        self.body = body
-        self.finish()
-        return self
-
-    def finishClassDeclaration(self, id, superClass, body):
-        self.type = Syntax.ClassDeclaration
-        self.id = id
-        self.superClass = superClass
-        self.body = body
-        self.finish()
-        return self
-
-    def finishClassExpression(self, id, superClass, body):
-        self.type = Syntax.ClassExpression
-        self.id = id
-        self.superClass = superClass
         self.body = body
         self.finish()
         return self
@@ -200,7 +178,7 @@ class BaseNode:
     def finishLiteral(self, token):
         self.type = Syntax.Literal
         self.value = token['value']
-        self.raw = None  # todo fix it?
+        self.raw = token['raw']
         if token.get('regex'):
             self.regex = token['regex']
         self.finish()
@@ -264,12 +242,6 @@ class BaseNode:
         self.finish()
         return self
 
-    def finishRestElement(self, argument):
-        self.type = Syntax.RestElement
-        self.argument = argument
-        self.finish()
-        return self
-
     def finishReturnStatement(self, argument):
         self.type = Syntax.ReturnStatement
         self.argument = argument
@@ -282,12 +254,6 @@ class BaseNode:
         self.finish()
         return self
 
-    def finishSpreadElement(self, argument):
-        self.type = Syntax.SpreadElement
-        self.argument = argument
-        self.finish()
-        return self
-
     def finishSwitchCase(self, test, consequent):
         self.type = Syntax.SwitchCase
         self.test = test
@@ -295,36 +261,10 @@ class BaseNode:
         self.finish()
         return self
 
-    def finishSuper(self, ):
-        self.type = Syntax.Super
-        self.finish()
-        return self
-
     def finishSwitchStatement(self, discriminant, cases):
         self.type = Syntax.SwitchStatement
         self.discriminant = discriminant
         self.cases = cases
-        self.finish()
-        return self
-
-    def finishTaggedTemplateExpression(self, tag, quasi):
-        self.type = Syntax.TaggedTemplateExpression
-        self.tag = tag
-        self.quasi = quasi
-        self.finish()
-        return self
-
-    def finishTemplateElement(self, value, tail):
-        self.type = Syntax.TemplateElement
-        self.value = value
-        self.tail = tail
-        self.finish()
-        return self
-
-    def finishTemplateLiteral(self, quasis, expressions):
-        self.type = Syntax.TemplateLiteral
-        self.quasis = quasis
-        self.expressions = expressions
         self.finish()
         return self
 
@@ -350,7 +290,8 @@ class BaseNode:
         return self
 
     def finishUnaryExpression(self, operator, argument):
-        self.type = Syntax.UpdateExpression if (operator == '++' or operator == '--') else Syntax.UnaryExpression
+        self.type = Syntax.UpdateExpression if (
+            operator == '++' or operator == '--') else Syntax.UnaryExpression
         self.operator = operator
         self.argument = argument
         self.prefix = True
@@ -392,64 +333,23 @@ class BaseNode:
         self.finish()
         return self
 
-    def finishExportSpecifier(self, local, exported):
-        self.type = Syntax.ExportSpecifier
-        self.exported = exported or local
-        self.local = local
-        self.finish()
-        return self
-
-    def finishImportDefaultSpecifier(self, local):
-        self.type = Syntax.ImportDefaultSpecifier
-        self.local = local
-        self.finish()
-        return self
-
-    def finishImportNamespaceSpecifier(self, local):
-        self.type = Syntax.ImportNamespaceSpecifier
-        self.local = local
-        self.finish()
-        return self
-
-    def finishExportNamedDeclaration(self, declaration, specifiers, src):
-        self.type = Syntax.ExportNamedDeclaration
-        self.declaration = declaration
-        self.specifiers = specifiers
-        self.source = src
-        self.finish()
-        return self
-
-    def finishExportDefaultDeclaration(self, declaration):
-        self.type = Syntax.ExportDefaultDeclaration
-        self.declaration = declaration
-        self.finish()
-        return self
-
-    def finishExportAllDeclaration(self, src):
-        self.type = Syntax.ExportAllDeclaration
-        self.source = src
-        self.finish()
-        return self
-
-    def finishImportSpecifier(self, local, imported):
-        self.type = Syntax.ImportSpecifier
-        self.local = local or imported
-        self.imported = imported
-        self.finish()
-        return self
-
-    def finishImportDeclaration(self, specifiers, src):
-        self.type = Syntax.ImportDeclaration
-        self.specifiers = specifiers
-        self.source = src
-        self.finish()
-        return self
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__dict__[item]
+        if item.startswith('finish'):
+            feature = item[6:]
+            raise Ecma51NotSupported(feature)
+        else:
+            raise AttributeError(item)
 
     def __getitem__(self, item):
         return getattr(self, item)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
+
+    def to_dict(self):
+        return node_to_dict(self)
 
 
 class Node(BaseNode):

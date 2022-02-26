@@ -9,9 +9,9 @@ class BaseField(object):
     def serialize(self, name=None):
         data = {}
         if self.label:
-            data['label'] = self.label or False
+            data["label"] = self.label or False
         if self.labelHint:
-            data['labelHint'] = self.labelHint or False
+            data["labelHint"] = self.labelHint or False
         return data
 
 
@@ -21,16 +21,16 @@ class NameBaseField(BaseField):
     def serialize(self, name=None):
         data = super(NameBaseField, self).serialize(name)
         if name:
-            data['name'] = name
+            data["name"] = name
         elif self.name:
-            data['name'] = self.name
+            data["name"] = self.name
         else:
             raise MissingNameException(cls=self.__class__)
         return data
 
 
 class SimpleText(BaseField):
-    contentType = 'text'
+    contentType = "text"
 
     def __init__(self, content, label=None, labelHint=None, width=None):
         self.label = label
@@ -41,19 +41,19 @@ class SimpleText(BaseField):
 
     def serialize(self, name=None):
         data = super(SimpleText, self).serialize(name)
-        data['contentType'] = self.contentType
-        data['content'] = self.content
+        data["contentType"] = self.contentType
+        data["content"] = self.content
 
         if self.width:
             if self.width not in [100, 50, 33, 25]:
                 raise InvalidWidthException(self.width)
-            data['inputOptions'] = {}
-            data['width'] = self.width
+            data["inputOptions"] = {}
+            data["width"] = self.width
         return data
 
 
 class Image(BaseField):
-    contentType = 'image'
+    contentType = "image"
 
     def __init__(self, imageUrl, label=None, labelHint=None):
         self.label = label
@@ -62,13 +62,13 @@ class Image(BaseField):
 
     def serialize(self, name=None):
         data = super(Image, self).serialize(name)
-        data['contentType'] = self.contentType
-        data['content'] = self.imageUrl
+        data["contentType"] = self.contentType
+        data["content"] = self.imageUrl
         return data
 
 
 class WebLink(BaseField):
-    contentType = 'link'
+    contentType = "link"
 
     def __init__(self, linkText, linkUrl, label=None, labelHint=None, width=None):
         self.label = label
@@ -81,16 +81,15 @@ class WebLink(BaseField):
 
     def serialize(self, name=None):
         data = super(WebLink, self).serialize(name)
-        data['contentType'] = self.contentType
+        data["contentType"] = self.contentType
 
         if self.width:
             if self.width not in [100, 50, 33, 25]:
                 raise InvalidWidthException(self.width)
-            data['inputOptions'] = {}
-            data['width'] = self.width
+            data["inputOptions"] = {}
+            data["width"] = self.width
 
-        data.update({'content': {'url': self.linkUrl,
-                                 'text': self.linkText}})
+        data.update({"content": {"url": self.linkUrl, "text": self.linkText}})
 
         return data
 
@@ -106,23 +105,25 @@ class TextInput(NameBaseField):
 
     def serialize(self, name=None):
         data = super(TextInput, self).serialize(name)
-        data['inputType'] = 'text'
+        data["inputType"] = "text"
 
-        data['inputOptions'] = {}
+        data["inputOptions"] = {}
 
         if self.width:
             if self.width not in [100, 50, 33, 25]:
                 raise InvalidWidthException(self.width)
 
-            data['inputOptions']['width'] = str(self.width)
+            data["inputOptions"]["width"] = str(self.width)
 
         if self.placeHolder:
-            data['inputOptions']['placeHolder'] = self.placeHolder
+            data["inputOptions"]["placeHolder"] = self.placeHolder
         return data
 
 
 class Textarea(NameBaseField):
-    def __init__(self, placeHolder=None, rows=None, label=None, width=None, labelHint=None):
+    def __init__(
+        self, placeHolder=None, rows=None, label=None, width=None, labelHint=None
+    ):
         self.label = label
         self.labelHint = labelHint
 
@@ -132,14 +133,14 @@ class Textarea(NameBaseField):
 
     def serialize(self, name=None):
         data = super(Textarea, self).serialize(name)
-        data['inputType'] = 'textarea'
-        data['inputOptions'] = {}
+        data["inputType"] = "textarea"
+        data["inputOptions"] = {}
         if self.rows:
-            data['inputOptions']['rows'] = str(self.rows)
+            data["inputOptions"]["rows"] = str(self.rows)
         if self.placeHolder:
-            data['inputOptions']['placeHolder'] = self.placeHolder
+            data["inputOptions"]["placeHolder"] = self.placeHolder
         if self.width:
-            data['inputOptions']['width'] = str(self.width)
+            data["inputOptions"]["width"] = str(self.width)
         return data
 
 
@@ -152,13 +153,13 @@ class Checkbox(NameBaseField):
 
     def serialize(self, name=None):
         data = super(Checkbox, self).serialize(name)
-        data['inputType'] = 'checkbox'
-        data['inputOptions'] = {'label': self.text}
+        data["inputType"] = "checkbox"
+        data["inputOptions"] = {"label": self.text}
         return data
 
 
 class Select(NameBaseField):
-    type = 'select'
+    type = "select"
 
     def __init__(self, label=None, choices=None, labelHint=None):
         self.label = label
@@ -174,18 +175,17 @@ class Select(NameBaseField):
 
     def serialize(self, name=None):
         data = super(Select, self).serialize(name)
-        data['inputType'] = self.type
+        data["inputType"] = self.type
 
-        data['inputOptions'] = []
+        data["inputOptions"] = []
         for value, caption in self.get_choices():
-            data['inputOptions'].append({"value": value,
-                                         "caption": caption})
+            data["inputOptions"].append({"value": value, "caption": caption})
 
         return data
 
 
 class Radio(Select):
-    type = 'radio'
+    type = "radio"
 
 
 class ImageUpload(NameBaseField):
@@ -195,5 +195,5 @@ class ImageUpload(NameBaseField):
 
     def serialize(self, name=None):
         data = super(ImageUpload, self).serialize(name)
-        data['inputType'] = 'imageUpload'
+        data["inputType"] = "imageUpload"
         return data

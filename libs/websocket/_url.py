@@ -2,31 +2,29 @@
 
 """
 """
+_url.py
 websocket - WebSocket client library for Python
 
-Copyright (C) 2010 Hiroki Ohtani(liris)
+Copyright 2021 engn33r
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 import os
 import socket
 import struct
 
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 
 __all__ = ["parse_url", "get_proxy_info"]
@@ -109,7 +107,7 @@ def _is_address_in_network(ip, net):
 
 def _is_no_proxy_host(hostname, no_proxy):
     if not no_proxy:
-        v = os.environ.get("no_proxy", "").replace(" ", "")
+        v = os.environ.get("no_proxy", os.environ.get("NO_PROXY", "")).replace(" ", "")
         if v:
             no_proxy = v.split(",")
     if not no_proxy:
@@ -139,22 +137,22 @@ def get_proxy_info(
 
     Parameters
     ----------
-    hostname: <type>
-        websocket server name.
-    is_secure: <type>
-        is the connection secure? (wss) looks for "https_proxy" in env
+    hostname: str
+        Websocket server name.
+    is_secure: bool
+        Is the connection secure? (wss) looks for "https_proxy" in env
         before falling back to "http_proxy"
-    options: <type>
-        - http_proxy_host: <type>
-            http proxy host name.
-        - http_proxy_port: <type>
-            http proxy port.
-        - http_no_proxy: <type>
-            host names, which doesn't use proxy.
-        - http_proxy_auth: <type>
-            http proxy auth information. tuple of username and password. default is None
-        - proxy_type: <type>
-            if set to "socks5" PySocks wrapper will be used in place of a http proxy. default is "http"
+    proxy_host: str
+        http proxy host name.
+    http_proxy_port: str or int
+        http proxy port.
+    http_no_proxy: list
+        Whitelisted host names that don't use the proxy.
+    http_proxy_auth: tuple
+        HTTP proxy auth information. Tuple of username and password. Default is None.
+    proxy_type: str
+        Specify the proxy protocol (http, socks4, socks4a, socks5, socks5h). Default is "http".
+        Use socks4a or socks5h if you want to send DNS requests through the proxy.
     """
     if _is_no_proxy_host(hostname, no_proxy):
         return None, 0, None
@@ -169,10 +167,10 @@ def get_proxy_info(
         env_keys.insert(0, "https_proxy")
 
     for key in env_keys:
-        value = os.environ.get(key, None)
+        value = os.environ.get(key, os.environ.get(key.upper(), "")).replace(" ", "")
         if value:
             proxy = urlparse(value)
-            auth = (proxy.username, proxy.password) if proxy.username else None
+            auth = (unquote(proxy.username), unquote(proxy.password)) if proxy.username else None
             return proxy.hostname, proxy.port, auth
 
     return None, 0, None

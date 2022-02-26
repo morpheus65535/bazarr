@@ -46,8 +46,9 @@ class SonarrSignalrClientLegacy:
                     time.sleep(5)
                 except json.decoder.JSONDecodeError:
                     logging.error("BAZARR cannot parse JSON returned by SignalR feed. This is caused by a permissions "
-                                  "issue when Sonarr try to access its /config/.config directory. You should fix "
-                                  "permissions on that directory and restart Sonarr. Also, if you're a Docker image "
+                                  "issue when Sonarr try to access its /config/.config directory."
+                                  "Typically permissions are too permissive - only the user and group Sonarr runs as should have Read/Write permissions (e.g. files 664 / folders 775)"
+                                  "You should fix permissions on that directory and restart Sonarr. Also, if you're a Docker image "
                                   "user, you should make sure you properly defined PUID/PGID environment variables. "
                                   "Otherwise, please contact Sonarr support.")
                 else:
@@ -60,7 +61,7 @@ class SonarrSignalrClientLegacy:
     def stop(self, log=True):
         try:
             self.connection.close()
-        except Exception as e:
+        except Exception:
             pass
         if log:
             logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
@@ -70,7 +71,7 @@ class SonarrSignalrClientLegacy:
             if self.connection.started:
                 try:
                     self.stop(log=False)
-                except:
+                except Exception:
                     self.connection.started = False
         if settings.general.getboolean('use_sonarr'):
             self.start()

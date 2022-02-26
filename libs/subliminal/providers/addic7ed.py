@@ -98,12 +98,14 @@ class Addic7edProvider(Provider):
     server_url = 'http://www.addic7ed.com/'
     subtitle_class = Addic7edSubtitle
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, username=None, password=None, cookies=None, user_agent=None):
         if any((username, password)) and not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
 
         self.username = username
         self.password = password
+        self.cookies = cookies
+        self.user_agent = user_agent
         self.logged_in = False
         self.session = None
 

@@ -1,5 +1,5 @@
 import functools
-import json as _json
+from engineio import json as _json
 
 (CONNECT, DISCONNECT, EVENT, ACK, CONNECT_ERROR, BINARY_EVENT, BINARY_ACK) = \
     (0, 1, 2, 3, 4, 5, 6)
@@ -15,11 +15,11 @@ class Packet(object):
     # packet type: 1 byte, values 0-6
     # num_attachments: ASCII encoded, only if num_attachments != 0
     # '-': only if num_attachments != 0
-    # namespace: only if namespace != '/'
-    # ',': only if namespace and one of id and data are defined in this packet
+    # namespace, followed by a ',': only if namespace != '/'
     # id: ASCII encoded, only if id is not None
     # data: JSON dump of data payload
 
+    uses_binary_events = True
     json = _json
 
     def __init__(self, packet_type=EVENT, data=None, namespace=None, id=None,
@@ -28,7 +28,9 @@ class Packet(object):
         self.data = data
         self.namespace = namespace
         self.id = id
-        if binary or (binary is None and self._data_is_binary(self.data)):
+        if self.uses_binary_events and \
+                (binary or (binary is None and self._data_is_binary(
+                    self.data))):
             if self.packet_type == EVENT:
                 self.packet_type = BINARY_EVENT
             elif self.packet_type == ACK:
@@ -38,7 +40,7 @@ class Packet(object):
         self.attachment_count = 0
         self.attachments = []
         if encoded_packet:
-            self.attachment_count = self.decode(encoded_packet)
+            self.attachment_count = self.decode(encoded_packet) or 0
 
     def encode(self):
         """Encode the packet for transmission.
@@ -54,18 +56,11 @@ class Packet(object):
         else:
             data = self.data
             attachments = None
-        needs_comma = False
         if self.namespace is not None and self.namespace != '/':
-            encoded_packet += self.namespace
-            needs_comma = True
+            encoded_packet += self.namespace + ','
         if self.id is not None:
-            if needs_comma:
-                encoded_packet += ','
-                needs_comma = False
             encoded_packet += str(self.id)
         if data is not None:
-            if needs_comma:
-                encoded_packet += ','
             encoded_packet += self.json.dumps(data, separators=(',', ':'))
         if attachments is not None:
             encoded_packet = [encoded_packet] + attachments
@@ -89,6 +84,8 @@ class Packet(object):
         dash = ep.find('-')
         attachment_count = 0
         if dash > 0 and ep[0:dash].isdigit():
+            if dash > 10:
+                raise ValueError('too many attachments')
             attachment_count = int(ep[0:dash])
             ep = ep[dash + 1:]
         if ep and ep[0:1] == '/':
@@ -103,10 +100,16 @@ class Packet(object):
             if q != -1:
                 self.namespace = self.namespace[0:q]
         if ep and ep[0].isdigit():
-            self.id = 0
-            while ep and ep[0].isdigit():
-                self.id = self.id * 10 + int(ep[0])
-                ep = ep[1:]
+            i = 1
+            end = len(ep)
+            while i < end:
+                if not ep[i].isdigit() or i >= 100:
+                    break
+                i += 1
+            self.id = int(ep[:i])
+            ep = ep[i:]
+            if len(ep) > 0 and ep[0].isdigit():
+                raise ValueError('id field is too long')
         if ep:
             self.data = self.json.loads(ep)
         return attachment_count
@@ -175,3 +178,13 @@ class Packet(object):
                 False)
         else:
             return False
+
+    def _to_dict(self):
+        d = {
+            'type': self.packet_type,
+            'data': self.data,
+            'nsp': self.namespace,
+        }
+        if self.id:
+            d['id'] = self.id
+        return d

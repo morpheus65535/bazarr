@@ -10,6 +10,7 @@ from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
 from helper import path_mappings
+from backup import restore_from_backup
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -20,8 +21,14 @@ import time
 global startTime
 startTime = time.time()
 
+# restore backup if required
+restore_from_backup()
+
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
+
+# set subliminal_patch hearing-impaired extension to use when naming subtitles
+os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
 
 # set anti-captcha provider and key
 configure_captcha_func()
@@ -43,9 +50,11 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
+if not os.path.exists(os.path.join(args.config_dir, 'restore')):
+    os.mkdir(os.path.join(args.config_dir, 'restore'))
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
-import logging
+import logging  # noqa E402
 
 
 def is_virtualenv():
@@ -59,10 +68,10 @@ def is_virtualenv():
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy, webrtcvad, setuptools
+        import lxml, numpy, webrtcvad, setuptools  # noqa E401
     except ImportError:
         try:
-            import pip
+            import pip  # noqa W0611
         except ImportError:
             logging.info('BAZARR unable to install requirements (pip not installed).')
         else:
@@ -118,7 +127,8 @@ if isinstance(settings.general.enabled_providers, str) and not settings.general.
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
-# make sure settings.general.branch is properly set when running inside a docker container
+# Read package_info (if exists) to override some settings by package maintainers
+# This file can also provide some info about the package version and author
 package_info_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'package_info')
 if os.path.isfile(package_info_file):
     try:
@@ -129,14 +139,22 @@ if os.path.isfile(package_info_file):
             for line in lines:
                 splitted_lines += line.split(r'\n')
             for line in splitted_lines:
-                splitted_line = line.split('=')
+                splitted_line = line.split('=', 1)
                 if len(splitted_line) == 2:
                     package_info[splitted_line[0].lower()] = splitted_line[1].replace('\n', '')
                 else:
                     continue
+        # package author can force a branch to follow
         if 'branch' in package_info:
             settings.general.branch = package_info['branch']
-    except:
+        # package author can disable update
+        if package_info.get('updatemethod', '') == 'External':
+            os.environ['BAZARR_UPDATE_ALLOWED'] = '0'
+            os.environ['BAZARR_UPDATE_MESSAGE'] = package_info.get('updatemethodmessage', '')
+        # package author can provide version and contact info
+        os.environ['BAZARR_PACKAGE_VERSION'] = package_info.get('packageversion', '')
+        os.environ['BAZARR_PACKAGE_AUTHOR'] = package_info.get('packageauthor', '')
+    except Exception:
         pass
     else:
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -173,24 +191,21 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 def init_binaries():
     from utils import get_binary
     exe = get_binary("unrar")
-    
+
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
-    except:
+    except Exception:
         logging.debug("custom check failed for: %s", exe)
-    
-    rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
-    rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
-    rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
+
     logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
-    
+
     return unrar
 
 
-from database import init_db, migrate_db
+from database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

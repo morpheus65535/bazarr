@@ -81,7 +81,7 @@ def __parse_roman(value):
     :rtype:
     """
     if not __romanNumeralPattern.search(value):
-        raise ValueError('Invalid Roman numeral: %s' % value)
+        raise ValueError(f'Invalid Roman numeral: {value}')
 
     result = 0
     index = 0
