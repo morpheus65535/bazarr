@@ -35,6 +35,7 @@ declare namespace Language {
     items: ProfileItem[];
     mustContain: string[];
     mustNotContain: string[];
+    originalFormat: boolean | null;
   }
 }
 
@@ -252,6 +253,7 @@ interface SearchResultType {
   subtitle: any;
   uploader?: string;
   url?: string;
+  original_format: PythonBoolean;
 }
 
 interface ReleaseInfo {
