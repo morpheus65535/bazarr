@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
 TOKEN_EXPIRATION_TIME = datetime.timedelta(hours=12).total_seconds()
 
-retry_amount=5
+retry_amount = 5
 
 
 def fix_tv_naming(title):
@@ -293,7 +293,6 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                                      ('languages', langs.lower()),
                                                      ('moviehash', file_hash),
                                                      ('parent_feature_id', title_id if title_id else None),
-                                                     ('query', os.path.basename(self.video.name).lower()),
                                                      ('season_number', self.video.season)),
                                              timeout=30),
                     validate_json=True,
@@ -309,8 +308,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                                      ('id', title_id if title_id else None),
                                                      ('imdb_id', imdb_id if not title_id else None),
                                                      ('languages', langs.lower()),
-                                                     ('moviehash', file_hash),
-                                                     ('query', os.path.basename(self.video.name).lower())),
+                                                     ('moviehash', file_hash)),
                                              timeout=30),
                     validate_json=True,
                     json_key_name='data'
