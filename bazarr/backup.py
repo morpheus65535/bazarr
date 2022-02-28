@@ -39,6 +39,7 @@ def get_backup_files(fullpath=True):
         return [{
             'type': 'backup',
             'filename': os.path.basename(x),
+            'size': sizeof_fmt(os.path.getsize(x)),
             'date': datetime.fromtimestamp(os.path.getmtime(x)).strftime("%b %d %Y")
         } for x in file_list]
 
@@ -195,3 +196,11 @@ def delete_backup_file(filename):
     except OSError:
         logging.debug(f'Unable to delete backup file {backup_file_path}')
     return False
+
+
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+        if abs(num) < 1000.0:
+            return f"{num:3.1f} {unit}{suffix}"
+        num /= 1000.0
+    return f"{num:.1f} Y{suffix}"

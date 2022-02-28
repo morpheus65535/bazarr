@@ -23,6 +23,7 @@ declare namespace System {
   interface Backups {
     type: string;
     filename: string;
+    size: string;
     date: string;
     id: number;
   }
