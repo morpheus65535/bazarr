@@ -465,6 +465,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                       extension='.srt', forced_tag=forced, hi_tag=hi)
 
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    subs.remove_miscellaneous_events()
     lines_list = [x.plaintext for x in subs]
     joined_lines_str = '\n\n\n'.join(lines_list)
 
@@ -484,11 +485,6 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
     for block_str in lines_block_list:
-        empty_first_line = False
-        if block_str.startswith('\n\n\n'):
-            # This happens when the first line of text in a subtitles file is an empty string
-            empty_first_line = True
-
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
                                                            target=language_code_convert_dict.get(lang_obj.alpha2,
@@ -498,9 +494,6 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
             logging.exception(f'BAZARR Unable to translate subtitles {source_srt_file}')
             return False
         else:
-            if empty_first_line:
-                # GoogleTranslate remove new lines at the beginning of the string, so we add it back.
-                translated_partial_srt_text = '\n\n\n' + translated_partial_srt_text
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
             translated_lines_list += translated_partial_srt_list
 
