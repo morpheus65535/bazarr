@@ -3163,10 +3163,10 @@ def custom_popen(cmd):
     try:
         p = Popen(cmd, bufsize=0, stdout=PIPE, stderr=STDOUT, stdin=DEVNULL,
                   creationflags=creationflags)
-    except OSError as ex:
+    except Exception as ex:
         if ex.errno == errno.ENOENT:
             raise RarCannotExec("Unrar not installed?")
-        if ex.errno == errno.EACCES or ex.errno == errno.EPERM:
+        if ex.errno in (errno.EACCES, errno.EPERM):
             raise RarCannotExec("Cannot execute unrar")
         raise
     return p
