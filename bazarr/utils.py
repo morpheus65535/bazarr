@@ -24,7 +24,6 @@ from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
-from deep_translator import GoogleTranslator
 from dogpile.cache import make_region
 import datetime
 import glob
@@ -442,6 +441,8 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    from deep_translator import GoogleTranslator
+
     language_code_convert_dict = {
         'he': 'iw',
         'zt': 'zh-cn',
