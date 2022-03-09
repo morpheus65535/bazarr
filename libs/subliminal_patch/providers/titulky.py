@@ -5,7 +5,7 @@ import math
 import re
 import zipfile
 from random import randint
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, quote
 from threading import Thread
 
 import rarfile
@@ -314,7 +314,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
     # GET request a page. This functions acts as a requests.session.get proxy handling expired cached cookies 
     # and subsequent relogging and sending the original request again. If all went well, returns the response.
-    def get_request(self, url, ref=None, __recursion=0):
+    def get_request(self, url, ref=server_url, __recursion=0):
         # That's deep... recursion... Stop. We don't have infinite memmory. And don't want to 
         # spam titulky's server either. So we have to just accept the defeat. Let it throw!
         if __recursion >= 5:
@@ -327,7 +327,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             url,
             timeout=self.timeout,
             allow_redirects=False,
-            headers={'Referer': ref if ref else self.server_url})
+            headers={'Referer': quote(ref)})
 
         # Check if we got redirected because login cookies expired.
         # Note: microoptimization - don't bother parsing qs for non 302 responses.
