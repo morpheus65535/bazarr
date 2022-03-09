@@ -46,7 +46,11 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
         </Input>
         <Input name="Port">
-          <Text placeholder={6767} settingKey="settings-general-port"></Text>
+          <Text
+            placeholder={6767}
+            settingKey="settings-general-port"
+            numberWithArrows={true}
+          ></Text>
         </Input>
         <Input name="Base URL">
           <InputGroup>
@@ -131,7 +135,10 @@ const SettingsGeneralView: FunctionComponent = () => {
               <Text settingKey="settings-proxy-url"></Text>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-proxy-port"></Text>
+              <Text
+                settingKey="settings-proxy-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Username">
               <Text settingKey="settings-proxy-username"></Text>
@@ -177,8 +184,17 @@ const SettingsGeneralView: FunctionComponent = () => {
         </Input>
       </Group>
       <Group header="Backups">
-        <File settingKey="settings-backup-folder" type="bazarr"></File>
-        <Message>Absolute path to the backup directory</Message>
+        <Input name="Folder">
+          <File settingKey="settings-backup-folder" type="bazarr"></File>
+          <Message>Absolute path to the backup directory</Message>
+        </Input>
+
+        <Input name="Retention (days)">
+          <Text
+            settingKey="settings-backup-retention"
+            numberWithArrows={true}
+          ></Text>
+        </Input>
       </Group>
       <Group header="Analytics">
         <Input>

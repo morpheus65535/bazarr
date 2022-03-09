@@ -41,7 +41,10 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-sonarr-port"></Text>
+              <Text
+                settingKey="settings-sonarr-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Base URL">
               <InputGroup>

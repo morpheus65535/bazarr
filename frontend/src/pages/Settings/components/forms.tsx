@@ -39,6 +39,7 @@ export interface TextProps extends BaseInput<React.ReactText> {
   placeholder?: React.ReactText;
   password?: boolean;
   controlled?: boolean;
+  numberWithArrows?: boolean;
 }
 
 export const Text: FunctionComponent<TextProps> = ({
@@ -49,15 +50,26 @@ export const Text: FunctionComponent<TextProps> = ({
   override,
   password,
   settingKey,
+  numberWithArrows,
 }) => {
   const value = useLatest<React.ReactText>(settingKey, isReactText, override);
 
   const update = useSingleUpdate();
   const collapse = useCollapse();
 
+  const fieldType = () => {
+    if (password) {
+      return "password";
+    } else if (numberWithArrows) {
+      return "number";
+    } else {
+      return "text";
+    }
+  };
+
   return (
     <Form.Control
-      type={password ? "password" : "text"}
+      type={fieldType()}
       placeholder={placeholder?.toString()}
       disabled={disabled}
       defaultValue={controlled ? undefined : value ?? undefined}

@@ -39,7 +39,10 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-radarr-port"></Text>
+              <Text
+                settingKey="settings-radarr-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Base URL">
               <InputGroup>
