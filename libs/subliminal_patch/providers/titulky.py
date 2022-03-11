@@ -327,7 +327,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             url,
             timeout=self.timeout,
             allow_redirects=False,
-            headers={'Referer': quote(ref)})
+            headers={'Referer': quote(ref) if ref else None}) # URL encode ref if it has value
 
         # Check if we got redirected because login cookies expired.
         # Note: microoptimization - don't bother parsing qs for non 302 responses.
