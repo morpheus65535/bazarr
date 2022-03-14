@@ -524,6 +524,9 @@ def check_health():
         check_radarr_rootfolder()
     event_stream(type='badges')
 
+    from backup import backup_rotation
+    backup_rotation()
+
 
 def get_health_issues():
     # this function must return a list of dictionaries consisting of to keys: object and issue

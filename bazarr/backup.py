@@ -33,6 +33,7 @@ def get_restore_path():
 def get_backup_files(fullpath=True):
     backup_file_pattern = os.path.join(get_backup_path(), 'bazarr_backup_v*.zip')
     file_list = glob(backup_file_pattern)
+    file_list.sort(key=os.path.getmtime)
     if fullpath:
         return file_list
     else:
@@ -179,7 +180,7 @@ def backup_rotation():
 
     logging.debug(f'Cleaning up backup files older than {backup_retention} days')
     for file in backup_files:
-        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=backup_retention) < datetime.utcnow():
+        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=int(backup_retention)) < datetime.utcnow():
             logging.debug(f'Deleting old backup file {file}')
             try:
                 os.remove(file)
