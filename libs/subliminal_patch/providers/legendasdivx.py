@@ -343,6 +343,16 @@ class LegendasdivxProvider(Provider):
                     sleep(1)
                     res = self.session.get(_searchurl.format(query=querytext))
                     res.raise_for_status()
+                    if res.status_code == 200 and "<!--pesquisas:" in res.text:
+                        searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
+                        if searches_count_groups:
+                            try:
+                                searches_count = int(searches_count_groups.group(1))
+                            except TypeError:
+                                pass
+                            else:
+                                if searches_count >= self.SAFE_SEARCH_LIMIT:
+                                    searchLimitReached = True
             except HTTPError as e:
                 if "bloqueado" in res.text.lower():
                     logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
