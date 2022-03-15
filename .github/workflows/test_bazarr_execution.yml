@@ -22,7 +22,7 @@ jobs:
           ref: development
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "15.x"
 
