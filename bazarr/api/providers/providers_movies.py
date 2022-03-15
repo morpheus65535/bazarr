@@ -13,6 +13,7 @@ from notifier import send_notifications_movie
 from list_subtitles import store_subtitles_movie
 
 from ..utils import authenticate
+import logging
 
 
 class ProviderMovies(Resource):
@@ -64,6 +65,8 @@ class ProviderMovies(Resource):
 
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
+        use_original_format = request.form.get('original_format').capitalize()
+        logging.debug(f"use_original_format {use_original_format}")
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
 
@@ -75,7 +78,7 @@ class ProviderMovies(Resource):
 
         try:
             result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
-                                              sceneName, title, 'movie', profile_id=get_profile_id(movie_id=radarrId))
+                                              sceneName, title, 'movie', use_original_format, profile_id=get_profile_id(movie_id=radarrId))
             if result is not None:
                 message = result[0]
                 path = result[1]

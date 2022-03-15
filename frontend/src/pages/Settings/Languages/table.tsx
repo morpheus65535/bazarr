@@ -166,6 +166,7 @@ const Table: FunctionComponent = () => {
             cutoff: null,
             mustContain: [],
             mustNotContain: [],
+            originalFormat: false,
           };
           showModal("profile", profile);
         }}

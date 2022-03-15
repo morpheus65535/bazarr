@@ -61,8 +61,10 @@ class Subtitle(Subtitle_):
     pack_data = None
     _guessed_encoding = None
     _is_valid = False
+    use_original_format = False
+    format = "srt" # default format is srt
 
-    def __init__(self, language, hearing_impaired=False, page_link=None, encoding=None, mods=None):
+    def __init__(self, language, hearing_impaired=False, page_link=None, encoding=None, mods=None, original_format=False):
         # set subtitle language to hi if it's hearing_impaired
         if hearing_impaired:
             language = Language.rebuild(language, hi=True)
@@ -71,6 +73,7 @@ class Subtitle(Subtitle_):
                                        encoding=encoding)
         self.mods = mods
         self._is_valid = False
+        self.use_original_format = original_format
 
     def __repr__(self):
         return '<%s %r [%s:%s]>' % (
@@ -257,7 +260,7 @@ class Subtitle(Subtitle_):
         return encoding
 
     def is_valid(self):
-        """Check if a :attr:`text` is a valid SubRip format.
+        """Check if a :attr:`text` is a valid SubRip format. Note that orignal format will pypass the checking
 
         :return: whether or not the subtitle is valid.
         :rtype: bool
@@ -289,6 +292,12 @@ class Subtitle(Subtitle_):
                     logger.info("Got FPS from MicroDVD subtitle: %s", subs.fps)
                 else:
                     logger.info("Got format: %s", subs.format)
+                    if self.use_original_format:
+                        self.format = subs.format
+                        self._is_valid = True
+                        logger.debug("Using original format")
+                        return True
+
             except pysubs2.UnknownFPSError:
                 # if parsing failed, use frame rate from provider
                 sub_fps = self.get_fps()

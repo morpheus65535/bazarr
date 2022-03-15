@@ -72,5 +72,6 @@ declare namespace FormType {
     forced: PythonBoolean;
     provider: string;
     subtitle: any;
+    original_format: PythonBoolean;
   }
 }

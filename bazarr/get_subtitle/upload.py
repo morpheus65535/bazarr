@@ -63,7 +63,7 @@ def manual_upload_subtitle(path, language, forced, hi, title, scene_name, media_
                                          tags=None,  # fixme
                                          directory=get_target_folder(path),
                                          chmod=chmod,
-                                         # formats=("srt", "vtt")
+                                         formats=(sub.format,),
                                          path_decoder=force_unicode)
     except Exception:
         logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)

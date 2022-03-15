@@ -34,6 +34,7 @@ function createDefaultProfile(): Language.Profile {
     cutoff: null,
     mustContain: [],
     mustNotContain: [],
+    originalFormat: false,
   };
 }
 
@@ -284,6 +285,18 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           Subtitles release info including one of those words (case insensitive)
           will be excluded from search results (regex supported).
         </Message>
+      </Input>
+      <Input name="Original Format">
+        <Selector
+          clearable
+          options={[
+            { label: "Enable", value: true },
+            { label: "Disable", value: false },
+          ]}
+          value={current.originalFormat}
+          onChange={(value) => updateProfile("originalFormat", value)}
+        ></Selector>
+        <Message>Download subtitle file without format conversion</Message>
       </Input>
     </BaseModal>
   );

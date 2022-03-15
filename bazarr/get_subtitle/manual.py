@@ -31,7 +31,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
     pool = _get_pool(media_type, profile_id)
 
-    language_set, initial_language_set = _get_language_obj(profile_id=profile_id)
+    language_set, initial_language_set, original_format = _get_language_obj(profile_id=profile_id)
     also_forced = any([x.forced for x in initial_language_set])
     _set_forced_providers(also_forced=also_forced, pool=pool)
 
@@ -136,6 +136,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link,
+                         original_format=original_format,
                          matches=list(matches),
                          dont_matches=list(not_matched),
                          release_info=releases,
@@ -153,7 +154,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
 @update_pools
 def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provider, sceneName, title, media_type,
-                             profile_id):
+    use_original_format, profile_id):
     logging.debug('BAZARR Manually downloading Subtitles for this file: ' + path)
 
     if settings.general.getboolean('utf8_encode'):
@@ -170,6 +171,8 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
         subtitle.language.forced = True
     else:
         subtitle.language.forced = False
+    if use_original_format == 'True':
+        subtitle.use_original_format = use_original_format
     subtitle.mods = get_array_from(settings.general.subzero_mods)
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:
@@ -195,7 +198,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                                                  tags=None,  # fixme
                                                  directory=get_target_folder(path),
                                                  chmod=chmod,
-                                                 # formats=("srt", "vtt")
+                                                 formats=(subtitle.format,),
                                                  path_decoder=force_unicode)
             except Exception:
                 logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
@@ -228,8 +231,9 @@ def _get_language_obj(profile_id):
     initial_language_set = set()
     language_set = set()
 
-    # where [3] is items list of dict(id, lang, forced, hi)
-    language_items = get_profiles_list(profile_id=int(profile_id))['items']
+    profile = get_profiles_list(profile_id=int(profile_id))
+    language_items = profile['items']
+    original_format = profile['originalFormat']
 
     for language in language_items:
         forced = language['forced']
@@ -259,7 +263,7 @@ def _get_language_obj(profile_id):
             continue
         language_set.add(lang_obj_hi)
 
-    return language_set, initial_language_set
+    return language_set, initial_language_set, original_format
 
 
 def _set_forced_providers(also_forced, pool):
