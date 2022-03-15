@@ -9,11 +9,10 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
 } from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
-import { useEnabledLanguagesContext, useProfilesContext } from ".";
+import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
@@ -30,11 +29,9 @@ function useRowMutation() {
 }
 
 const Table: FunctionComponent = () => {
-  const originalProfiles = useProfilesContext();
+  const profiles = useLatestProfiles();
 
-  const languages = useEnabledLanguagesContext();
-
-  const [profiles, setProfiles] = useState(() => cloneDeep(originalProfiles));
+  const languages = useLatestEnabledLanguages();
 
   const nextProfileId = useMemo(
     () =>
@@ -50,7 +47,6 @@ const Table: FunctionComponent = () => {
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
       update(list, languageProfileKey);
-      setProfiles(list);
     },
     [update]
   );
@@ -187,6 +183,7 @@ const Table: FunctionComponent = () => {
             cutoff: null,
             mustContain: [],
             mustNotContain: [],
+            originalFormat: false,
           };
           show("profile", profile);
         }}

@@ -56,6 +56,7 @@ const MovieDetailView: FunctionComponent = () => {
         forced,
         provider,
         subtitle,
+        original_format,
       } = result;
       const { radarrId } = item;
 
@@ -67,6 +68,7 @@ const MovieDetailView: FunctionComponent = () => {
           forced,
           provider,
           subtitle,
+          original_format,
         },
       });
     },

@@ -16,7 +16,7 @@ class SystemStatus(Resource):
     @authenticate
     def get(self):
         package_version = ''
-        if  'BAZARR_PACKAGE_VERSION' in os.environ:
+        if 'BAZARR_PACKAGE_VERSION' in os.environ:
             package_version = os.environ['BAZARR_PACKAGE_VERSION']
         if 'BAZARR_PACKAGE_AUTHOR' in os.environ and os.environ['BAZARR_PACKAGE_AUTHOR'] != '':
             package_version = f'{package_version} by {os.environ["BAZARR_PACKAGE_AUTHOR"]}'

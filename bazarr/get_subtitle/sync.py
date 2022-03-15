@@ -2,9 +2,10 @@
 # fmt: off
 
 import logging
+import gc
 
 from config import settings
-from subsyncer import subsync
+from subsyncer import SubSyncer
 
 
 def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_score, sonarr_series_id=None,
@@ -24,8 +25,11 @@ def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_s
             subsync_threshold = settings.subsync.subsync_movie_threshold
 
         if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
+            subsync = SubSyncer()
             subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, media_type=media_type,
                          sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id)
+            del subsync
+            gc.collect()
             return True
         else:
             logging.debug("BAZARR subsync skipped because subtitles score isn't below this "

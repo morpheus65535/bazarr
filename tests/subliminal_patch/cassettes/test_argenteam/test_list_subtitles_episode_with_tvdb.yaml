@@ -1,0 +1,174 @@
+interactions:
+  - request:
+      body: null
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        User-Agent:
+          - Sub-Zero/2
+      method: GET
+      uri: https://argenteam.net/api/v1/search?q=Severance+S01E01
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA3yQvWocQRCEX6XoyIaR2TsJy2xmLGMlcmCFQkHfTp93dLPTq+6ZOxahF3PqFzNr
+          jH8CGSrogiror57IxFuuTv3dE6VI/eb84vLtZaCaahbq6VaOYlwGwattt92+Bu5uu83HbnOPM3xS
+          jfgsJ8f7nbaKa8mZAtVlXqsyJ9coFMjbNLEt1NMN2wHiYB+kxBQVMxsjpyjGhlYgjy3NiqEt6jAZ
+          mlhUhwtGhssaj4rHluz7N/uaBp6kVIGUagJvqMY7flAsqzmmyJjFXAvnNxQoTXFHPVGgWb2Krfdz
+          +IXenXcXmz/oH9hrFnzR4bDCb979C/97mf8TX0uxBVfCR7EARhSu45npCVyrWpElYNCyNy3VMSZH
+          XDea2StOoxTwKi3LpM0xcM7IzWSNTtjxcEDVn7VRJ6l6KtA9/no94IZTkRfh7wNVrZyp3wbS/d6l
+          Ut89/wAAAP//AwBurbIoGgIAAA==
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 6e0db09d7bdfe51e-ARI
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json;charset=UTF-8
+        Date:
+          - Mon, 21 Feb 2022 05:49:11 GMT
+        Expect-CT:
+          - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+        NEL:
+          - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+        Report-To:
+          - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=cx3Z59tbyYQ5rXEfX2FssZh1WPCFloUN9QX%2Bj0enSws3CCLaRPWdo9hH4vcDFE8NIoEgQuXnkROhPZUpfCZyagPBMgR54Q2rI%2FaXuilqP1o%2BYOS6KCwwS4qsA7qp6ffle7mcoBB27A56ETGB"}],"group":"cf-nel","max_age":604800}'
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        alt-svc:
+          - h3=":443"; ma=86400, h3-29=":443"; ma=86400
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        User-Agent:
+          - Sub-Zero/2
+      method: GET
+      uri: https://argenteam.net/api/v1/episode?id=134767
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA7TVX2/bNhAA8K9CEHCfHIJ/RJESEAzu7CRA0y1ou/RhyANFnmwtMulSVJqsyBfb
+          a79YIW9esy6eJ2x+Egjc6Y768ahPuHG4ZCJTuZridOcqXPq+bae4A9MFj0s2xb5fVxBxiSnDU5ya
+          1AIu8XkIDv0AHzs0q0Kf0AW0LZ7irl+vTXzAJX5t4i2CDpnOgneNC2hjokFt4yCaiHqP4EPfbAKy
+          /UPoUATbQ3ShQx2glUEdDOEuoA99Ez//FpeNNWvwCRD4FAF1PUrRVOaXgB6GxV3jDNpA7II3LcFT
+          HKEF00GHy58/4S700Q5tv1+8xFNsgwOLS3zB82zYE5g1LvGrH8+bYWWWHS6x4nQzbKj5dchjRKLz
+          ITWFGMGn31/bxwaXeG2WHlL53X067aMvq9SsSqdyygoJUNS2yKTmQjOtuSyyOq+tVTZzObhCvHD+
+          9C3cQTTeAnlL2YIyMpQm7xcvyYrn2cnQ1osUT1cpbSZiNuFnE36WorG3EMkfz7q5JzasJ2Km6YSf
+          Ge9D7y0Mab37mlWQaGK1JGuYiBlXBd0XkMI2QPwt4M+6q8ZDC5uV8YmEuJyIGeNK743v2vDRrgCS
+          We3CM5VT/HgzxdA2/nb4oDfD+am2J2y7fJz+S7nzy4uzr3KM6qd0GclG0Umpciut1TKXGaVOisJJ
+          ldW1lkZSavKKciUpfZZuW3trN3R4MjR2HDt+wE7vt6hNul0F05qdhBgLx/4TnNwHx1n+FE4TNQoO
+          lNBWUFooxQWjGStEJmlVA3OF1EZVVNJcAnsWblt7ByePB1ewQ0M3Bk7TkRMq/i+5q8X3P13O3i2+
+          0UMX8zdPbk1K6ChCrjNWVZw6q5yEXFR1XjsrClFklPOszjMhRa7qZwkv5m++Zdx1eRRKfWgGVb5f
+          x7TtBvyyb/wORyo2EvOYY4jm139xZKMcC8aoVqZyrla20oYLzitqjdWi0prxCsBoKPQ/jOLs3fXV
+          AHkyvyTz+ZUkjMzSOnRkfk1ev7om90cdUy0O3a/52H/dqKNw8Nd48/gFAAD//wMA0OOUr70JAAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 6e0db0a07fbbe51e-ARI
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json;charset=UTF-8
+        Date:
+          - Mon, 21 Feb 2022 05:49:11 GMT
+        Expect-CT:
+          - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+        NEL:
+          - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+        Report-To:
+          - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=g5d54GFqOV5jObpa5K3eUGRTqV2aiKnMhZPzvSi38fpQ%2FiL3hPjNbooaZAHsfoXbgF%2F8mF9rGm2vw%2BGqQdJM2tHpWIJ5Vhwxaoi4dMMhlc8%2FQAR5QLBIQpkR9FEUuXHu4uXE%2BerMI6g4ko%2FU"}],"group":"cf-nel","max_age":604800}'
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        alt-svc:
+          - h3=":443"; ma=86400, h3-29=":443"; ma=86400
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        User-Agent:
+          - Sub-Zero/2
+      method: GET
+      uri: https://argenteam.net/api/v1/episode?id=103041
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//3JbZbqNIFIZfBZXkvnJwLdSGFI1YTKfb8e7YSUa5KKCIkW2IAGeZdt59
+          hJ3FnUmmx9M3My0hIcQ5nP/89dUpvoE0BjaCBFqoCarbOAQ2YEgIC1qgCUqtyjwDNmqCbL0KdQFs
+          ABFogiqtlhrYYKxvdaGySNfB69VKFQ/ABic6Kx4MX6tbXTQNZcRaVfOjIr8zVFXlRaYfmkaUZ0mR
+          Z1VpzNPSiFWxMG5UWRl3c50Zqr7y7GGVr0sjUsulsVwXug5dGaGKFkaVb9Pm+UpX+V1m5InhqbJa
+          amOUR4um0VVppk3QBIVealXqEti/fwNlvi6iWvZMh6P0BjRBlMc6Aja4x6zut9JqBWwwccf1g7ou
+          gQ3qztI/6iwCodF16zd5Ueis2n10XaTABit1nenK/u2+Ol4XmR1W6dxWhOA4kVQKpAUmitI4JkrR
+          SCgrTqiQjLGIUPIpzo536s1avTmGqA2ROWu7o/TGrKUdTdzxp6o4nlfVTYM4DRw0cFAVKlrowny6
+          J+m9GeWrBnEEbOBAZVm+ziJdp63j1yxpFqoIr82VbhAHcwQ/CqjypwDweNUEeplmi/2GdYwXdqu1
+          SdKl3ryj/oWMt32Yq8XthkBiSYYJ2kCLe64LGZKBEMShGLoBEQFFnieDtsSb+XEQnHb8c6/rBN0p
+          8y58TsmlyztjPBwPB4Ovk01rK7Fch1ss91XWhpV2q6WKa53Vq2tmumq9RLY44Uy29uU3sMAQiQaW
+          T50c7XWyxealky0/66wCtqBSiserx+a/ZIxjePPKmaCHcca4CkPEEFdRHDKZYEkQRJiRkFoxljKM
+          udQqSj7grC7+y8D2XjNb4oSE0LI4ZRuPusSVtG0R6VFGoY+4gyGUwpcWl4zWxE17zmzaHk4C96x3
+          2e1MnS51+nw0uOxMhw45fYe4gxa/2554/d7r+iMo9gHAJjI+HwCA1EqohKqEWoxKxRCFSKKY8yhG
+          HMEYScwEIvQDALbVn007r03b6fuPQHCY0SffGd2bhB/tMnbgLtMxp1HCsFYR0VDymCc6sghPokir
+          RCRKMsipZh+Y/AbRk7PTs2fLHcfDJjRr5Ue9Sfir2f4GbmRaB8GNRcRljBRFMaWMxRRSRCVnhElF
+          YSKYplYYIvVD33eY/8+Nd/2/myt+u+v0/H/67/Jzk3arZDdjd2V3BzumBGMk4MbhkGEOA4oxdSlG
+          0GU+YQT6nGHp8mAzP+6zIe8P+m33xLPafTrgzmB2TqyL2dRzLzqO88Mx6y7XI/XwvR1074xtj7pp
+          zzl9NQQjts8iNdlfWPw5V7YFzLMT39xpqw2iR89CthYxiBCjEmGx8TDkAlvEgpbnMcykF3DkUzcg
+          qI25Wx9Fw8+zL50OHgwt6+K0Sy798dfxoEfOppezaX/8pfuuR1ePfwIAAP//AwAUxeXr2QsAAA==
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 6e0db0aea83ce51e-ARI
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json;charset=UTF-8
+        Date:
+          - Mon, 21 Feb 2022 05:49:13 GMT
+        Expect-CT:
+          - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+        NEL:
+          - '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}'
+        Report-To:
+          - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=AdOHU5vn5DOJvLGv0lIJUFfzCd10UMoFR0Rw5PsWx9O0mFdhpyALZD4%2BAS020DGyUIebvektdDb4Yt5BGySvi9xEMeGdOPE48fqr3Xc%2Bw1auefrQ3GWmS9R9AALLnKa4VeSORN%2Fwpc3h5OSy"}],"group":"cf-nel","max_age":604800}'
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        alt-svc:
+          - h3=":443"; ma=86400, h3-29=":443"; ma=86400
+      status:
+        code: 200
+        message: OK
+version: 1

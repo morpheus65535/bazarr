@@ -24,7 +24,6 @@ from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
-from deep_translator import GoogleTranslator
 from dogpile.cache import make_region
 import datetime
 import glob
@@ -258,8 +257,12 @@ class GetSonarrInfo:
                 else:
                     raise json.decoder.JSONDecodeError
             except json.decoder.JSONDecodeError:
-                sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
+                try:
+                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
+                    sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
+                except json.decoder.JSONDecodeError:
+                    logging.debug('BAZARR cannot get Sonarr version')
+                    sonarr_version = 'unknown'
             except Exception:
                 logging.debug('BAZARR cannot get Sonarr version')
                 sonarr_version = 'unknown'
@@ -412,7 +415,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             return True
 
 
-def subtitles_apply_mods(language, subtitle_path, mods):
+def subtitles_apply_mods(language, subtitle_path, mods, use_original_format):
     language = alpha3_from_alpha2(language)
     custom = CustomLanguage.from_value(language, "alpha3")
     if custom is None:
@@ -420,12 +423,15 @@ def subtitles_apply_mods(language, subtitle_path, mods):
     else:
         lang_obj = custom.subzero_language()
 
-    sub = Subtitle(lang_obj, mods=mods)
+    sub = Subtitle(lang_obj, mods=mods, original_format=use_original_format)
     with open(subtitle_path, 'rb') as f:
         sub.content = f.read()
 
     if not sub.is_valid():
         logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        return
+    
+    if use_original_format:
         return
 
     content = sub.get_modified_content()
@@ -438,6 +444,8 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
+    from deep_translator import GoogleTranslator
+
     language_code_convert_dict = {
         'he': 'iw',
         'zt': 'zh-cn',
@@ -461,6 +469,7 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
                                       extension='.srt', forced_tag=forced, hi_tag=hi)
 
     subs = pysubs2.load(source_srt_file, encoding='utf-8')
+    subs.remove_miscellaneous_events()
     lines_list = [x.plaintext for x in subs]
     joined_lines_str = '\n\n\n'.join(lines_list)
 
@@ -480,11 +489,6 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     logging.debug('BAZARR is sending {} blocks to Google Translate'.format(len(lines_block_list)))
     for block_str in lines_block_list:
-        empty_first_line = False
-        if block_str.startswith('\n\n\n'):
-            # This happens when the first line of text in a subtitles file is an empty string
-            empty_first_line = True
-
         try:
             translated_partial_srt_text = GoogleTranslator(source='auto',
                                                            target=language_code_convert_dict.get(lang_obj.alpha2,
@@ -494,9 +498,6 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
             logging.exception(f'BAZARR Unable to translate subtitles {source_srt_file}')
             return False
         else:
-            if empty_first_line:
-                # GoogleTranslate remove new lines at the beginning of the string, so we add it back.
-                translated_partial_srt_text = '\n\n\n' + translated_partial_srt_text
             translated_partial_srt_list = translated_partial_srt_text.split('\n\n\n')
             translated_lines_list += translated_partial_srt_list
 
@@ -525,6 +526,9 @@ def check_health():
     if settings.general.getboolean('use_radarr'):
         check_radarr_rootfolder()
     event_stream(type='badges')
+
+    from backup import backup_rotation
+    backup_rotation()
 
 
 def get_health_issues():

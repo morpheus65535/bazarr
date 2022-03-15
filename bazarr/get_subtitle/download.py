@@ -72,8 +72,10 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                 if not subtitles:
                     continue
 
+                subtitle_formats = set()
                 for s in subtitles:
                     s.mods = subz_mods
+                    subtitle_formats.add(s.format)
 
                 try:
                     fld = get_target_folder(path)
@@ -84,7 +86,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                      tags=None,  # fixme
                                                      directory=fld,
                                                      chmod=chmod,
-                                                     # formats=("srt", "vtt")
+                                                     formats=tuple(subtitle_formats),
                                                      path_decoder=force_unicode
                                                      )
                 except Exception as e:

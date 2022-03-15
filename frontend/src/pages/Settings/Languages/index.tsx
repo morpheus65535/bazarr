@@ -15,25 +15,25 @@ import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { LanguageSelector, ProfileSelector } from "./components";
 import Table from "./table";
 
-export function useEnabledLanguagesContext() {
+export function useLatestEnabledLanguages() {
   const { data } = useEnabledLanguages();
   const latest = useLatest<Language.Info[]>(enabledLanguageKey, isArray);
 
   if (latest) {
     return latest;
   } else {
-    return data ?? [];
+    return data;
   }
 }
 
-export function useProfilesContext() {
-  const { data } = useLanguageProfiles();
+export function useLatestProfiles() {
+  const { data = [] } = useLanguageProfiles();
   const latest = useLatest<Language.Profile[]>(languageProfileKey, isArray);
 
   if (latest) {
     return latest;
   } else {
-    return data ?? [];
+    return data;
   }
 }
 

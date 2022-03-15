@@ -6,7 +6,7 @@ charamel==1.0.0
 deep-translator==1.6.1
 dogpile.cache==1.1.5
 enzyme==0.4.1
-fese==0.1.1
+fese==0.1.2
 ffsubsync==0.4.20
 flask-restful==0.3.9
 Flask-SocketIO==5.1.1
@@ -52,7 +52,7 @@ tzlocal==4.1
 soupsieve==2.3.1
 
 # Required-by: ffsubsync
-auditok==0.2.0
+auditok==0.1.5 # do not upgrade unless ffsubsync requirements.txt change
 ffmpeg-python==0.2.0
 future==0.18.2
 rich==11.0.0
@@ -127,7 +127,7 @@ webencodings==0.5.1
 backports.functools-lru-cache==1.6.4
 fcache==0.4.7
 json_tricks==3.15.5
-tld==0.12.6
+tld==0.12.6 # https://github.com/barseghyanartur/tld/pull/119
 
 # Required-by: requests
 certifi==2021.10.8

@@ -23,7 +23,7 @@ import {
 } from "react";
 import { Button, Form } from "react-bootstrap";
 import { Column } from "react-table";
-import { useEnabledLanguagesContext } from ".";
+import { useLatestEnabledLanguages } from ".";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
 
@@ -49,6 +49,7 @@ function createDefaultProfile(): Language.Profile {
     cutoff: null,
     mustContain: [],
     mustNotContain: [],
+    originalFormat: false,
   };
 }
 
@@ -61,7 +62,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 
   const { hide } = useModalControl();
 
-  const languages = useEnabledLanguagesContext();
+  const languages = useLatestEnabledLanguages();
 
   const [current, setProfile] = useState(createDefaultProfile);
 
@@ -306,6 +307,18 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
           Subtitles release info including one of those words (case insensitive)
           will be excluded from search results (regex supported).
         </Message>
+      </Input>
+      <Input name="Original Format">
+        <Selector
+          clearable
+          options={[
+            { label: "Enable", value: true },
+            { label: "Disable", value: false },
+          ]}
+          value={current.originalFormat}
+          onChange={(value) => updateProfile("originalFormat", value)}
+        ></Selector>
+        <Message>Download subtitle file without format conversion</Message>
       </Input>
     </BaseModal>
   );

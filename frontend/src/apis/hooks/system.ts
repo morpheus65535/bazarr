@@ -105,6 +105,50 @@ export function useRunTask() {
     {
       onSuccess: () => {
         client.invalidateQueries([QueryKeys.System, QueryKeys.Tasks]);
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
+      },
+    }
+  );
+}
+
+export function useSystemBackups() {
+  return useQuery([QueryKeys.System, "backups"], () => api.system.backups());
+}
+
+export function useCreateBackups() {
+  const client = useQueryClient();
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Backups],
+    () => api.system.createBackups(),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
+      },
+    }
+  );
+}
+
+export function useRestoreBackups() {
+  const client = useQueryClient();
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Backups],
+    (filename: string) => api.system.restoreBackups(filename),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
+      },
+    }
+  );
+}
+
+export function useDeleteBackups() {
+  const client = useQueryClient();
+  return useMutation(
+    [QueryKeys.System, QueryKeys.Backups],
+    (filename: string) => api.system.deleteBackups(filename),
+    {
+      onSuccess: () => {
+        client.invalidateQueries([QueryKeys.System, QueryKeys.Backups]);
       },
     }
   );

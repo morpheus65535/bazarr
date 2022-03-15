@@ -13,7 +13,8 @@ from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
 from utils import get_binary, blacklist_log, blacklist_log_movie
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, MustGetBlacklisted
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
+    MustGetBlacklisted, SearchLimitReached
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
@@ -35,6 +36,11 @@ def time_until_end_of_day(dt=None):
 # Needs to convert to offset-naive dt
 titulky_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Prague')).replace(tzinfo=None)
 titulky_limit_reset_datetime = time_until_end_of_day(dt=titulky_server_local_time)
+
+# LegendasDivx reset its searches limit at approximately midnight, Lisbon time, everyday.
+legendasdivx_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Lisbon')).replace(tzinfo=None)
+legendasdivx_limit_reset_datetime = time_until_end_of_day(dt=legendasdivx_server_local_time) + \
+                                    datetime.timedelta(minutes=15)
 
 hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
@@ -79,6 +85,8 @@ PROVIDER_THROTTLE_MAP = {
             datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
         IPAddressBlocked: (
             datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+        SearchLimitReached: (legendasdivx_limit_reset_datetime,
+                             f"{legendasdivx_limit_reset_datetime.seconds // 3600} hours"),
     }
 }
 
@@ -124,7 +132,7 @@ def get_providers():
 
 
 _FFPROBE_BINARY = get_binary("ffprobe")
-_FFMPEG_BINARY= get_binary("ffmpeg")
+_FFMPEG_BINARY = get_binary("ffmpeg")
 
 
 def get_providers_auth():

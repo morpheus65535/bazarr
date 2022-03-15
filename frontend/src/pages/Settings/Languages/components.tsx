@@ -3,7 +3,7 @@ import {
   SelectorOption,
 } from "@/components";
 import { FunctionComponent, useMemo } from "react";
-import { useEnabledLanguagesContext, useProfilesContext } from ".";
+import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { BaseInput, Selector, useSingleUpdate } from "../components";
 
 interface LanguageSelectorProps {
@@ -13,7 +13,7 @@ interface LanguageSelectorProps {
 export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
 > = ({ settingKey, options }) => {
-  const enabled = useEnabledLanguagesContext();
+  const enabled = useLatestEnabledLanguages();
   const update = useSingleUpdate();
 
   return (
@@ -30,7 +30,7 @@ export const LanguageSelector: FunctionComponent<
 
 export const ProfileSelector: FunctionComponent<BaseInput<Language.Profile>> =
   ({ settingKey }) => {
-    const profiles = useProfilesContext();
+    const profiles = useLatestProfiles();
 
     const profileOptions = useMemo<SelectorOption<number>[]>(
       () =>

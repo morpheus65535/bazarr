@@ -10,6 +10,7 @@ import MovieView from "@/pages/Movies";
 import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
+import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
 import SystemProvidersView from "@/pages/System/Providers";
 import SystemReleasesView from "@/pages/System/Releases";
@@ -298,6 +299,11 @@ function useRoutes(): CustomRouteObject[] {
                 name: "Providers",
                 badge: data?.providers,
                 element: <SystemProvidersView></SystemProvidersView>,
+              },
+              {
+                path: "backup",
+                name: "Backups",
+                element: <SystemBackupsView></SystemBackupsView>,
               },
               {
                 path: "status",

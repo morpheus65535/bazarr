@@ -4,6 +4,7 @@ import pytest
 import os
 from subliminal_patch.providers.argenteam import ArgenteamProvider
 from subliminal_patch.providers.argenteam import ArgenteamSubtitle
+from subliminal_patch.core import Episode
 from subzero.language import Language
 
 
@@ -89,3 +90,21 @@ def test_download_subtitle(episodes):
         subtitle = subtitles[0]
         provider.download_subtitle(subtitle)
         assert subtitle.content is not None
+
+
+@pytest.mark.vcr
+def test_list_subtitles_episode_with_tvdb():
+    video = Episode(
+        "Severance.S01E01.720p.BluRay.X264-REWARD.mkv",
+        "Severance",
+        1,
+        1,
+        source="Blu-Ray",
+        release_group="REWARD",
+        resolution="720p",
+        video_codec="H.264",
+        series_tvdb_id=371980,
+    )
+    with ArgenteamProvider() as provider:
+        subtitles = provider.list_subtitles(video, {Language("spa", "MX")})
+        assert len(subtitles) == 0

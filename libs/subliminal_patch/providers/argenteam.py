@@ -137,15 +137,17 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
                         imdb_id=imdb_id,
                         tvdb_id=content.get("tvdb"),
                     )
-                    subtitles.append(
-                        ArgenteamSubtitle(
-                            language,
-                            page_link,
-                            download_link,
-                            release_info,
-                            matches_,
+
+                    if matches_ is not None:
+                        subtitles.append(
+                            ArgenteamSubtitle(
+                                language,
+                                page_link,
+                                download_link,
+                                release_info,
+                                matches_,
+                            )
                         )
-                    )
 
             if has_multiple_ids:
                 time.sleep(self.multi_result_throttle)
@@ -229,7 +231,16 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def _get_query_matches(self, video, **kwargs):
         matches = set()
+
         if isinstance(video, Episode) and kwargs.get("movie_kind") == "episode":
+            if (kwargs.get("tvdb_id") and video.series_tvdb_id) and str(
+                video.series_tvdb_id
+            ) != str(kwargs.get("tvdb_id")):
+                logger.debug(
+                    "TVDB ID not matched: %s - %s", kwargs, video.series_tvdb_id
+                )
+                return None
+
             if video.series and (
                 sanitize(kwargs.get("title"))
                 in (
@@ -243,9 +254,6 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
             if video.episode and kwargs.get("episode") == video.episode:
                 matches.add("episode")
-
-            if video.tvdb_id and kwargs.get("tvdb_id") == str(video.tvdb_id):
-                matches.add("tvdb_id")
 
             # year (year is not available for series, but we assume it matches)
             matches.add("year")

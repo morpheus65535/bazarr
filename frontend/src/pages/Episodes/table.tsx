@@ -50,6 +50,7 @@ const Table: FunctionComponent<Props> = ({
         forced,
         provider,
         subtitle,
+        original_format,
       } = result;
       const { sonarrSeriesId: seriesId, sonarrEpisodeId: episodeId } = item;
 
@@ -62,6 +63,7 @@ const Table: FunctionComponent<Props> = ({
           forced,
           provider,
           subtitle,
+          original_format: original_format,
         },
       });
     },

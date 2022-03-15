@@ -1,6 +1,8 @@
 import {
   Chips as CChips,
   ChipsProps as CChipsProps,
+  FileBrowser,
+  FileBrowserProps,
   Selector as CSelector,
   SelectorProps as CSelectorProps,
   SelectorValueType,
@@ -38,6 +40,7 @@ export interface TextProps extends BaseInput<ReactText> {
   placeholder?: ReactText;
   password?: boolean;
   controlled?: boolean;
+  numberWithArrows?: boolean;
 }
 
 export const Text: FunctionComponent<TextProps> = ({
@@ -48,15 +51,26 @@ export const Text: FunctionComponent<TextProps> = ({
   override,
   password,
   settingKey,
+  numberWithArrows,
 }) => {
   const value = useLatest<ReactText>(settingKey, isReactText, override);
 
   const update = useSingleUpdate();
   const collapse = useCollapse();
 
+  const fieldType = () => {
+    if (password) {
+      return "password";
+    } else if (numberWithArrows) {
+      return "number";
+    } else {
+      return "text";
+    }
+  };
+
   return (
     <Form.Control
-      type={password ? "password" : "text"}
+      type={fieldType()}
       placeholder={placeholder?.toString()}
       disabled={disabled}
       defaultValue={controlled ? undefined : value ?? undefined}
@@ -138,7 +152,7 @@ export function Selector<
   return (
     <CSelector
       {...selector}
-      defaultValue={value as SelectorValueType<T, M>}
+      value={value as SelectorValueType<T, M>}
       onChange={(v) => {
         const result = beforeStaged ? beforeStaged(v) : v;
         update(result, settingKey);
@@ -212,5 +226,25 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
       }}
       {...button}
     ></BSButton>
+  );
+};
+
+type FileProps = {} & BaseInput<string>;
+
+export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
+  props
+) => {
+  const { settingKey, override, ...file } = props;
+  const value = useLatest<string>(settingKey, isString);
+  const update = useSingleUpdate();
+
+  return (
+    <FileBrowser
+      defaultValue={value ?? undefined}
+      onChange={(p) => {
+        update(p, settingKey);
+      }}
+      {...file}
+    ></FileBrowser>
   );
 };

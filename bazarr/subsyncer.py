@@ -53,6 +53,9 @@ class SubSyncer:
                 unparsed_args.append('--make-test-case')
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
+            if os.path.isfile(self.srtout):
+                os.remove(self.srtout)
+                logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
             result = run(self.args)
         except Exception:
             logging.exception('BAZARR an exception occurs during the synchronization process for this subtitles: '
@@ -83,6 +86,3 @@ class SubSyncer:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
 
             return result
-
-
-subsync = SubSyncer()

@@ -19,6 +19,8 @@ export const diskUpdateOptions: SelectorOption<string>[] = [
   { label: "Weekly", value: "Weekly" },
 ];
 
+export const backupOptions = diskUpdateOptions;
+
 export const dayOptions: SelectorOption<number>[] = [
   { label: "Monday", value: 0 },
   { label: "Tuesday", value: 1 },
