@@ -310,12 +310,11 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       </Input>
       <Input name="Original Format">
         <Selector
-          clearable
           options={[
             { label: "Enable", value: true },
             { label: "Disable", value: false },
           ]}
-          value={current.originalFormat}
+          value={current.originalFormat || false}
           onChange={(value) => updateProfile("originalFormat", value)}
         ></Selector>
         <Message>Download subtitle file without format conversion</Message>
