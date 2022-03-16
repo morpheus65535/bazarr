@@ -1,11 +1,14 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
+import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import Episodes from "@/pages/Episodes";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
+import MovieDetailView from "@/pages/Movies/Details";
 import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
@@ -49,8 +52,6 @@ const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));
 const Authentication = lazy(() => import("@/pages/Authentication"));
 const NotFound = lazy(() => import("@/pages/404"));
-const Episodes = lazy(() => import("@/pages/Episodes"));
-const MovieDetail = lazy(() => import("@/pages/Movies/Details"));
 
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
@@ -104,7 +105,7 @@ function useRoutes(): CustomRouteObject[] {
               },
               {
                 path: ":id",
-                element: <MovieDetail></MovieDetail>,
+                element: <MovieDetailView></MovieDetailView>,
               },
             ],
           },
@@ -129,7 +130,11 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "stats",
                 name: "Statistics",
-                element: <HistoryStats></HistoryStats>,
+                element: (
+                  <Lazy>
+                    <HistoryStats></HistoryStats>
+                  </Lazy>
+                ),
               },
             ],
           },
@@ -258,7 +263,11 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "status",
                 name: "Status",
-                element: <SystemStatusView></SystemStatusView>,
+                element: (
+                  <Lazy>
+                    <SystemStatusView></SystemStatusView>
+                  </Lazy>
+                ),
               },
               {
                 path: "releases",
@@ -272,12 +281,20 @@ function useRoutes(): CustomRouteObject[] {
       {
         path: "/login",
         hidden: true,
-        element: <Authentication></Authentication>,
+        element: (
+          <Lazy>
+            <Authentication></Authentication>
+          </Lazy>
+        ),
       },
       {
         path: "*",
         hidden: true,
-        element: <NotFound></NotFound>,
+        element: (
+          <Lazy>
+            <NotFound></NotFound>
+          </Lazy>
+        ),
       },
     ],
     [data?.episodes, data?.movies, data?.providers, radarr, sonarr]

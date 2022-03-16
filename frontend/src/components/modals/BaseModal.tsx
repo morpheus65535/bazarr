@@ -12,7 +12,7 @@ export interface BaseModalProps {
 }
 
 export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { size, modalKey, title, children, footer, closeable = false } = props;
+  const { size, modalKey, title, children, footer, closeable = true } = props;
   const [needExit, setExit] = useState(false);
 
   const { hide: hideModal } = useModalControl();

@@ -62,13 +62,12 @@ const HistoryStats: FunctionComponent = () => {
   }, [data]);
 
   return (
-    // TODO: Responsive
     <Container fluid className="vh-75">
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
       <QueryOverlay result={stats}>
-        <>
+        <div className="chart-container">
           <ContentHeader scroll={false}>
             <SelectorContainer>
               <Selector
@@ -116,7 +115,7 @@ const HistoryStats: FunctionComponent = () => {
               <Bar name="Movies" dataKey="movies" fill="#FFC22F"></Bar>
             </BarChart>
           </ResponsiveContainer>
-        </>
+        </div>
       </QueryOverlay>
     </Container>
   );
