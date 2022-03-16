@@ -36,7 +36,6 @@ export function useMovies() {
     [QueryKeys.Movies, QueryKeys.All],
     () => api.movies.movies(),
     {
-      enabled: false,
       onSuccess: (data) => {
         cacheMovies(client, data);
       },

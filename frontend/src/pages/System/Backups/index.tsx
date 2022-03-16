@@ -1,14 +1,12 @@
+import { useCreateBackups, useSystemBackups } from "@/apis/hooks";
+import { ContentHeader, QueryOverlay } from "@/components";
 import { faFileArchive } from "@fortawesome/free-solid-svg-icons";
-import { useCreateBackups, useSystemBackups } from "apis/hooks";
-import { ContentHeader, QueryOverlay } from "components";
 import React, { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemBackupsView: FunctionComponent<Props> = () => {
+const SystemBackupsView: FunctionComponent = () => {
   const backups = useSystemBackups();
 
   const { mutate: backup, isLoading: isResetting } = useCreateBackups();

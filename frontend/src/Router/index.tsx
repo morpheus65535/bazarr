@@ -1,83 +1,318 @@
-import { FunctionComponent } from "react";
-import { Redirect, Route, Switch, useHistory } from "react-router";
-import { useDidMount } from "rooks";
-import { BuildKey, ScrollToTop } from "utilities";
-import { useNavigationItems } from "../Navigation";
-import { Navigation } from "../Navigation/nav";
-import { RouterEmptyPath } from "../pages/404";
+import { useBadges } from "@/apis/hooks";
+import App from "@/App";
+import Lazy from "@/components/Lazy";
+import { useEnabledStatus } from "@/modules/redux/hooks";
+import BlacklistMoviesView from "@/pages/Blacklist/Movies";
+import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import Episodes from "@/pages/Episodes";
+import MoviesHistoryView from "@/pages/History/Movies";
+import SeriesHistoryView from "@/pages/History/Series";
+import MovieView from "@/pages/Movies";
+import MovieDetailView from "@/pages/Movies/Details";
+import MovieMassEditor from "@/pages/Movies/Editor";
+import SeriesView from "@/pages/Series";
+import SeriesMassEditor from "@/pages/Series/Editor";
+import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsLanguagesView from "@/pages/Settings/Languages";
+import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsProvidersView from "@/pages/Settings/Providers";
+import SettingsRadarrView from "@/pages/Settings/Radarr";
+import SettingsSchedulerView from "@/pages/Settings/Scheduler";
+import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsUIView from "@/pages/Settings/UI";
+import SystemBackupsView from "@/pages/System/Backups";
+import SystemLogsView from "@/pages/System/Logs";
+import SystemProvidersView from "@/pages/System/Providers";
+import SystemReleasesView from "@/pages/System/Releases";
+import SystemTasksView from "@/pages/System/Tasks";
+import WantedMoviesView from "@/pages/Wanted/Movies";
+import WantedSeriesView from "@/pages/Wanted/Series";
+import { Environment } from "@/utilities";
+import {
+  faClock,
+  faExclamationTriangle,
+  faFileExcel,
+  faFilm,
+  faLaptop,
+  faPlay,
+} from "@fortawesome/free-solid-svg-icons";
+import React, {
+  createContext,
+  FunctionComponent,
+  lazy,
+  useContext,
+  useMemo,
+} from "react";
+import { BrowserRouter } from "react-router-dom";
+import Redirector from "./Redirector";
+import { CustomRouteObject } from "./type";
 
-const Router: FunctionComponent = () => {
-  const navItems = useNavigationItems();
+const HistoryStats = lazy(() => import("@/pages/History/Statistics"));
+const SystemStatusView = lazy(() => import("@/pages/System/Status"));
+const Authentication = lazy(() => import("@/pages/Authentication"));
+const NotFound = lazy(() => import("@/pages/404"));
 
-  const history = useHistory();
-  useDidMount(() => {
-    history.listen(() => {
-      // This is a hack to make sure ScrollToTop will be triggered in the next frame (When everything are loaded)
-      setTimeout(ScrollToTop);
-    });
-  });
+function useRoutes(): CustomRouteObject[] {
+  const { data } = useBadges();
+  const { sonarr, radarr } = useEnabledStatus();
+
+  return useMemo(
+    () => [
+      {
+        path: "/",
+        element: <App></App>,
+        children: [
+          {
+            index: true,
+            element: <Redirector></Redirector>,
+          },
+          {
+            icon: faPlay,
+            name: "Series",
+            path: "series",
+            hidden: !sonarr,
+            children: [
+              {
+                index: true,
+                element: <SeriesView></SeriesView>,
+              },
+              {
+                path: "edit",
+                hidden: true,
+                element: <SeriesMassEditor></SeriesMassEditor>,
+              },
+              {
+                path: ":id",
+                element: <Episodes></Episodes>,
+              },
+            ],
+          },
+          {
+            icon: faFilm,
+            name: "Movies",
+            path: "movies",
+            hidden: !radarr,
+            children: [
+              {
+                index: true,
+                element: <MovieView></MovieView>,
+              },
+              {
+                path: "edit",
+                hidden: true,
+                element: <MovieMassEditor></MovieMassEditor>,
+              },
+              {
+                path: ":id",
+                element: <MovieDetailView></MovieDetailView>,
+              },
+            ],
+          },
+          {
+            icon: faClock,
+            name: "History",
+            path: "history",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                hidden: !sonarr,
+                element: <SeriesHistoryView></SeriesHistoryView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                hidden: !radarr,
+                element: <MoviesHistoryView></MoviesHistoryView>,
+              },
+              {
+                path: "stats",
+                name: "Statistics",
+                element: (
+                  <Lazy>
+                    <HistoryStats></HistoryStats>
+                  </Lazy>
+                ),
+              },
+            ],
+          },
+          {
+            icon: faExclamationTriangle,
+            name: "Wanted",
+            path: "wanted",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                name: "Episodes",
+                path: "series",
+                badge: data?.episodes,
+                hidden: !sonarr,
+                element: <WantedSeriesView></WantedSeriesView>,
+              },
+              {
+                name: "Movies",
+                path: "movies",
+                badge: data?.movies,
+                hidden: !radarr,
+                element: <WantedMoviesView></WantedMoviesView>,
+              },
+            ],
+          },
+          {
+            icon: faFileExcel,
+            name: "Blacklist",
+            path: "blacklist",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                hidden: !sonarr,
+                element: <BlacklistSeriesView></BlacklistSeriesView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                hidden: !radarr,
+                element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+            ],
+          },
+          {
+            icon: faExclamationTriangle,
+            name: "Settings",
+            path: "settings",
+            children: [
+              {
+                path: "general",
+                name: "General",
+                element: <SettingsGeneralView></SettingsGeneralView>,
+              },
+              {
+                path: "languages",
+                name: "Languages",
+                element: <SettingsLanguagesView></SettingsLanguagesView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                element: <SettingsProvidersView></SettingsProvidersView>,
+              },
+              {
+                path: "subtitles",
+                name: "Subtitles",
+                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+              },
+              {
+                path: "sonarr",
+                name: "Sonarr",
+                element: <SettingsSonarrView></SettingsSonarrView>,
+              },
+              {
+                path: "radarr",
+                name: "Radarr",
+                element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "notifications",
+                name: "Notifications",
+                element: (
+                  <SettingsNotificationsView></SettingsNotificationsView>
+                ),
+              },
+              {
+                path: "scheduler",
+                name: "Scheduler",
+                element: <SettingsSchedulerView></SettingsSchedulerView>,
+              },
+              {
+                path: "ui",
+                name: "UI",
+                element: <SettingsUIView></SettingsUIView>,
+              },
+            ],
+          },
+          {
+            icon: faLaptop,
+            name: "System",
+            path: "system",
+            children: [
+              {
+                path: "tasks",
+                name: "Tasks",
+                element: <SystemTasksView></SystemTasksView>,
+              },
+              {
+                path: "logs",
+                name: "Logs",
+                element: <SystemLogsView></SystemLogsView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                badge: data?.providers,
+                element: <SystemProvidersView></SystemProvidersView>,
+              },
+              {
+                path: "backup",
+                name: "Backups",
+                element: <SystemBackupsView></SystemBackupsView>,
+              },
+              {
+                path: "status",
+                name: "Status",
+                element: (
+                  <Lazy>
+                    <SystemStatusView></SystemStatusView>
+                  </Lazy>
+                ),
+              },
+              {
+                path: "releases",
+                name: "Releases",
+                element: <SystemReleasesView></SystemReleasesView>,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: "/login",
+        hidden: true,
+        element: (
+          <Lazy>
+            <Authentication></Authentication>
+          </Lazy>
+        ),
+      },
+      {
+        path: "*",
+        hidden: true,
+        element: (
+          <Lazy>
+            <NotFound></NotFound>
+          </Lazy>
+        ),
+      },
+    ],
+    [data?.episodes, data?.movies, data?.providers, radarr, sonarr]
+  );
+}
+
+const RouterItemContext = createContext<CustomRouteObject[]>([]);
+
+export const Router: FunctionComponent = ({ children }) => {
+  const routes = useRoutes();
 
   return (
-    <div className="d-flex flex-row flex-grow-1 main-router">
-      <Switch>
-        {navItems.map((v, idx) => {
-          if ("routes" in v) {
-            return (
-              <Route path={v.path} key={BuildKey(idx, v.name, "router")}>
-                <ParentRouter {...v}></ParentRouter>
-              </Route>
-            );
-          } else if (v.enabled !== false) {
-            return (
-              <Route
-                key={BuildKey(idx, v.name, "root")}
-                exact
-                path={v.path}
-                component={v.component}
-              ></Route>
-            );
-          } else {
-            return null;
-          }
-        })}
-        <Route path="*">
-          <Redirect to={RouterEmptyPath}></Redirect>
-        </Route>
-      </Switch>
-    </div>
+    <RouterItemContext.Provider value={routes}>
+      <BrowserRouter basename={Environment.baseUrl}>{children}</BrowserRouter>
+    </RouterItemContext.Provider>
   );
 };
 
-export default Router;
-
-const ParentRouter: FunctionComponent<Navigation.RouteWithChild> = ({
-  path,
-  enabled,
-  component,
-  routes,
-}) => {
-  if (enabled === false || (component === undefined && routes.length === 0)) {
-    return null;
-  }
-  const ParentComponent =
-    component ?? (() => <Redirect to={path + routes[0].path}></Redirect>);
-
-  return (
-    <Switch>
-      <Route exact path={path} component={ParentComponent}></Route>
-      {routes
-        .filter((v) => v.enabled !== false)
-        .map((v, idx) => (
-          <Route
-            key={BuildKey(idx, v.name, "route")}
-            exact
-            path={path + v.path}
-            component={v.component}
-          ></Route>
-        ))}
-      <Route path="*">
-        <Redirect to={RouterEmptyPath}></Redirect>
-      </Route>
-    </Switch>
-  );
-};
+export function useRouteItems() {
+  return useContext(RouterItemContext);
+}

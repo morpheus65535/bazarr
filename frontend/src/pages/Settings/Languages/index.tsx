@@ -1,14 +1,14 @@
-import { useLanguageProfiles, useLanguages } from "apis/hooks";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
+import { useEnabledLanguages } from "@/utilities/languages";
 import { isArray } from "lodash";
-import React, { FunctionComponent } from "react";
-import { useEnabledLanguages } from "utilities/languages";
+import { FunctionComponent } from "react";
 import {
   Check,
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
-  SettingsProvider,
   useLatest,
 } from "../components";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
@@ -37,13 +37,10 @@ export function useLatestProfiles() {
   }
 }
 
-interface Props {}
-
-const SettingsLanguagesView: FunctionComponent<Props> = () => {
+const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();
-
   return (
-    <SettingsProvider title="Languages - Bazarr (Settings)">
+    <Layout name="Languages">
       <Group header="Subtitles Language">
         <Input>
           <Check
@@ -108,7 +105,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = () => {
           </CollapseBox.Content>
         </CollapseBox>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

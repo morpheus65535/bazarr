@@ -36,7 +36,6 @@ export function useSeries() {
     [QueryKeys.Series, QueryKeys.All],
     () => api.series.series(),
     {
-      enabled: false,
       onSuccess: (data) => {
         cacheSeries(client, data);
       },

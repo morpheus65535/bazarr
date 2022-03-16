@@ -5,7 +5,7 @@ class ProviderApi extends BaseApi {
     super("/providers");
   }
 
-  async providers(history: boolean = false) {
+  async providers(history = false) {
     const response = await this.get<DataWrapper<System.Provider[]>>("", {
       history,
     });

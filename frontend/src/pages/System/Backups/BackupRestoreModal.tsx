@@ -1,22 +1,17 @@
-import {
-  AsyncButton,
-  BaseModal,
-  BaseModalProps,
-  useCloseModal,
-  useModalPayload,
-} from "components";
+import { useRestoreBackups } from "@/apis/hooks/system";
+import { AsyncButton, BaseModal, BaseModalProps } from "@/components";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import React, { FunctionComponent } from "react";
 import { Button } from "react-bootstrap";
-import { useRestoreBackups } from "../../../apis/hooks";
 
 interface Props extends BaseModalProps {}
 
 const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
-  const result = useModalPayload<string>(modal.modalKey);
+  const result = usePayload<string>(modal.modalKey);
 
   const { mutateAsync } = useRestoreBackups();
 
-  const closeModal = useCloseModal();
+  const { hide } = useModalControl();
 
   const footer = (
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
@@ -25,7 +20,7 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
           variant="outline-secondary"
           className="mr-2"
           onClick={() => {
-            closeModal(modal.modalKey);
+            hide(modal.modalKey);
           }}
         >
           Cancel
@@ -39,7 +34,7 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
               return null;
             }
           }}
-          onSuccess={() => closeModal(modal.modalKey)}
+          onSuccess={() => hide(modal.modalKey)}
         >
           Restore
         </AsyncButton>

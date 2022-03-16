@@ -1,6 +1,7 @@
+import { ActionButton, PageTable } from "@/components";
+import { useModalControl } from "@/modules/redux/hooks/modal";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionButton, PageTable, useShowModal } from "components";
 import React, { FunctionComponent, useMemo } from "react";
 import { ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
@@ -12,7 +13,6 @@ interface Props {
 }
 
 const Table: FunctionComponent<Props> = ({ backups }) => {
-  const backupModal = useShowModal();
   const columns: Column<System.Backups>[] = useMemo<Column<System.Backups>[]>(
     () => [
       {
@@ -37,24 +37,23 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
       {
         accessor: "id",
         Cell: (row) => {
+          const { show } = useModalControl();
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faHistory}
-                onClick={() =>
-                  backupModal("restore", row.row.original.filename)
-                }
+                onClick={() => show("restore", row.row.original.filename)}
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => backupModal("delete", row.row.original.filename)}
+                onClick={() => show("delete", row.row.original.filename)}
               ></ActionButton>
             </ButtonGroup>
           );
         },
       },
     ],
-    [backupModal]
+    []
   );
 
   return (

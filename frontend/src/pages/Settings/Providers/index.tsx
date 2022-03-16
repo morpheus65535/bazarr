@@ -1,17 +1,17 @@
-import React, { FunctionComponent } from "react";
-import { Group, Input, SettingsProvider } from "../components";
+import { FunctionComponent } from "react";
+import { Group, Input, Layout } from "../components";
 import { ProviderModal, ProviderView } from "./components";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (
-    <SettingsProvider title="Providers - Bazarr (Settings)">
+    <Layout name="Providers">
       <Group header="Providers">
         <Input>
           <ProviderView></ProviderView>
         </Input>
       </Group>
       <ProviderModal></ProviderModal>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

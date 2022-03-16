@@ -1,4 +1,3 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   ActionButton,
   BaseModal,
@@ -6,22 +5,38 @@ import {
   Chips,
   LanguageSelector,
   Selector,
+  SelectorOption,
   SimpleTable,
-  useModalInformation,
-} from "components";
-import React, {
+} from "@/components";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import { BuildKey } from "@/utilities";
+import { LOG } from "@/utilities/console";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  createContext,
   FunctionComponent,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
 import { Button, Form } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
-import { BuildKey } from "utilities";
+import { Column } from "react-table";
 import { useLatestEnabledLanguages } from ".";
 import { Input, Message } from "../components";
 import { cutoffOptions } from "./options";
+
+type ModifyFn = (index: number, item?: Language.ProfileItem) => void;
+
+const RowContext = createContext<ModifyFn>(() => {
+  LOG("error", "RowContext not initialized");
+});
+
+function useRowMutation() {
+  return useContext(RowContext);
+}
+
 interface Props {
   update: (profile: Language.Profile) => void;
 }
@@ -43,8 +58,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 ) => {
   const { update, ...modal } = props;
 
-  const { payload: profile, closeModal } =
-    useModalInformation<Language.Profile>(modal.modalKey);
+  const profile = usePayload<Language.Profile>(modal.modalKey);
+
+  const { hide } = useModalControl();
 
   const languages = useLatestEnabledLanguages();
 
@@ -80,13 +96,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     [current]
   );
 
-  const updateRow = useCallback<TableUpdater<Language.ProfileItem>>(
-    (row, item: Language.ProfileItem) => {
+  const mutateRow = useCallback(
+    (index: number, item?: Language.ProfileItem) => {
       const list = [...current.items];
       if (item) {
-        list[row.index] = item;
+        list[index] = item;
       } else {
-        list.splice(row.index, 1);
+        list.splice(index, 1);
       }
       updateProfile("items", list);
     },
@@ -122,7 +138,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     <Button
       disabled={!canSave}
       onClick={() => {
-        closeModal();
+        hide();
         update(current);
       }}
     >
@@ -139,13 +155,14 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Language",
         accessor: "language",
-        Cell: ({ value, row, update }) => {
+        Cell: ({ value, row }) => {
           const code = value;
           const item = row.original;
           const lang = useMemo(
             () => languages.find((l) => l.code2 === code) ?? null,
             [code]
           );
+          const mutate = useRowMutation();
           return (
             <div style={{ width: "8rem" }}>
               <LanguageSelector
@@ -154,7 +171,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
                 onChange={(l) => {
                   if (l) {
                     item.language = l.code2;
-                    update && update(row, item);
+                    mutate(row.index, item);
                   }
                 }}
               ></LanguageSelector>
@@ -165,8 +182,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Forced",
         accessor: "forced",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const item = row.original;
+          const mutate = useRowMutation();
           return (
             <Form.Check
               custom
@@ -174,7 +192,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               checked={value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                mutate(row.index, item);
               }}
             ></Form.Check>
           );
@@ -183,8 +201,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "HI",
         accessor: "hi",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const item = row.original;
+          const mutate = useRowMutation();
           return (
             <Form.Check
               custom
@@ -192,7 +211,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               checked={value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                mutate(row.index, item);
               }}
             ></Form.Check>
           );
@@ -201,8 +220,9 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         Header: "Exclude Audio",
         accessor: "audio_exclude",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const item = row.original;
+          const mutate = useRowMutation();
           return (
             <Form.Check
               custom
@@ -210,7 +230,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
               checked={value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";
-                update && update(row, item);
+                mutate(row.index, item);
               }}
             ></Form.Check>
           );
@@ -219,11 +239,12 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
       {
         id: "action",
         accessor: "id",
-        Cell: ({ row, update }) => {
+        Cell: ({ row }) => {
+          const mutate = useRowMutation();
           return (
             <ActionButton
               icon={faTrash}
-              onClick={() => update && update(row)}
+              onClick={() => mutate(row.index)}
             ></ActionButton>
           );
         },
@@ -245,12 +266,13 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         ></Form.Control>
       </Input>
       <Input>
-        <SimpleTable
-          responsive={false}
-          columns={columns}
-          data={current.items}
-          update={updateRow}
-        ></SimpleTable>
+        <RowContext.Provider value={mutateRow}>
+          <SimpleTable
+            responsive={false}
+            columns={columns}
+            data={current.items}
+          ></SimpleTable>
+        </RowContext.Provider>
         <Button block variant="light" onClick={addItem}>
           Add
         </Button>

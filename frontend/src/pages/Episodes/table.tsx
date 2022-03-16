@@ -1,3 +1,16 @@
+import { useDownloadEpisodeSubtitles } from "@/apis/hooks";
+import {
+  ActionButton,
+  EpisodeHistoryModal,
+  GroupTable,
+  SubtitleToolModal,
+  TextPopover,
+} from "@/components";
+import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import { useModalControl } from "@/modules/redux/hooks/modal";
+import { BuildKey, filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,
@@ -6,22 +19,9 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useShowOnlyDesired } from "@redux/hooks";
-import { useDownloadEpisodeSubtitles } from "apis/hooks";
-import {
-  ActionButton,
-  EpisodeHistoryModal,
-  GroupTable,
-  SubtitleToolModal,
-  TextPopover,
-  useShowModal,
-} from "components";
-import { ManualSearchModal } from "components/modals/ManualSearchModal";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, ButtonGroup } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
-import { BuildKey, filterSubtitleBy } from "utilities";
-import { useProfileItemsToLanguages } from "utilities/languages";
+import { Column } from "react-table";
 import { SubtitleAction } from "./components";
 
 interface Props {
@@ -37,8 +37,6 @@ const Table: FunctionComponent<Props> = ({
   profile,
   disabled,
 }) => {
-  const showModal = useShowModal();
-
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -160,28 +158,29 @@ const Table: FunctionComponent<Props> = ({
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row }) => {
+          const { show } = useModalControl();
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faUser}
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
-                  update && update(row, "manual-search");
+                  show("manual-search", row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
                 disabled={disabled}
                 onClick={() => {
-                  update && update(row, "history");
+                  show("manual-search", row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
                 disabled={disabled}
                 onClick={() => {
-                  update && update(row, "tools");
+                  show("tools", [row.original]);
                 }}
               ></ActionButton>
             </ButtonGroup>
@@ -192,17 +191,6 @@ const Table: FunctionComponent<Props> = ({
     [onlyDesired, profileItems, series, disabled]
   );
 
-  const updateRow = useCallback<TableUpdater<Item.Episode>>(
-    (row, modalKey: string) => {
-      if (modalKey === "tools") {
-        showModal(modalKey, [row.original]);
-      } else {
-        showModal(modalKey, row.original);
-      }
-    },
-    [showModal]
-  );
-
   const maxSeason = useMemo(
     () =>
       episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
@@ -210,11 +198,10 @@ const Table: FunctionComponent<Props> = ({
   );
 
   return (
-    <React.Fragment>
+    <>
       <GroupTable
         columns={columns}
         data={episodes}
-        update={updateRow}
         initialState={{
           sortBy: [
             { id: "season", desc: true },
@@ -233,7 +220,7 @@ const Table: FunctionComponent<Props> = ({
         modalKey="manual-search"
         download={download}
       ></ManualSearchModal>
-    </React.Fragment>
+    </>
   );
 };
 

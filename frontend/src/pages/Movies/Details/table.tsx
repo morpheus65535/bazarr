@@ -1,13 +1,14 @@
+import { useMovieSubtitleModification } from "@/apis/hooks";
+import { AsyncButton, SimpleTable } from "@/components";
+import Language from "@/components/bazarr/Language";
+import { useShowOnlyDesired } from "@/modules/redux/hooks";
+import { filterSubtitleBy } from "@/utilities";
+import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useShowOnlyDesired } from "@redux/hooks";
-import { useMovieSubtitleModification } from "apis/hooks";
-import { AsyncButton, LanguageText, SimpleTable } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
-import { filterSubtitleBy } from "utilities";
-import { useProfileItemsToLanguages } from "utilities/languages";
 
 const missingText = "Missing Subtitles";
 
@@ -44,13 +45,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           if (row.original.path === missingText) {
             return (
               <Badge variant="primary">
-                <LanguageText text={row.original} long></LanguageText>
+                <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
           } else {
             return (
               <Badge variant="secondary">
-                <LanguageText text={row.original} long></LanguageText>
+                <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
           }

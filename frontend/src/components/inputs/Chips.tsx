@@ -1,4 +1,4 @@
-import React, {
+import {
   FocusEvent,
   FunctionComponent,
   KeyboardEvent,
@@ -8,7 +8,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import "./chip.scss";
 
 const SplitKeys = ["Tab", "Enter", " ", ",", ";"];
 

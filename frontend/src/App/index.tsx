@@ -1,26 +1,23 @@
-import Socketio from "@modules/socketio";
-import { useNotification } from "@redux/hooks";
-import { useReduxStore } from "@redux/hooks/base";
-import { LoadingIndicator, ModalProvider } from "components";
-import Authentication from "pages/Authentication";
-import LaunchError from "pages/LaunchError";
-import React, { FunctionComponent, useEffect } from "react";
+import { LoadingIndicator } from "@/components";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { useNotification } from "@/modules/redux/hooks";
+import { useReduxStore } from "@/modules/redux/hooks/base";
+import SocketIO from "@/modules/socketio";
+import LaunchError from "@/pages/LaunchError";
+import Sidebar from "@/Sidebar";
+import { Environment } from "@/utilities";
+import { FunctionComponent, useEffect } from "react";
 import { Row } from "react-bootstrap";
-import { Route, Switch } from "react-router";
-import { BrowserRouter, Redirect } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
-import { Environment } from "utilities";
-import ErrorBoundary from "../components/ErrorBoundary";
-import Router from "../Router";
-import Sidebar from "../Sidebar";
 import Header from "./Header";
 
-// Sidebar Toggle
+const App: FunctionComponent = () => {
+  const { status } = useReduxStore((s) => s.site);
 
-interface Props {}
-
-const App: FunctionComponent<Props> = () => {
-  const { status } = useReduxStore((s) => s);
+  useEffect(() => {
+    SocketIO.initialize();
+  }, []);
 
   const notify = useNotification("has-update", 10 * 1000);
 
@@ -36,7 +33,7 @@ const App: FunctionComponent<Props> = () => {
   }, status === "initialized");
 
   if (status === "unauthenticated") {
-    return <Redirect to="/login"></Redirect>;
+    return <Navigate to="/login"></Navigate>;
   } else if (status === "uninitialized") {
     return (
       <LoadingIndicator>
@@ -54,31 +51,10 @@ const App: FunctionComponent<Props> = () => {
       </Row>
       <Row noGutters className="flex-nowrap">
         <Sidebar></Sidebar>
-        <ModalProvider>
-          <Router></Router>
-        </ModalProvider>
+        <Outlet></Outlet>
       </Row>
     </ErrorBoundary>
   );
 };
 
-const MainRouter: FunctionComponent = () => {
-  useEffect(() => {
-    Socketio.initialize();
-  }, []);
-
-  return (
-    <BrowserRouter basename={Environment.baseUrl}>
-      <Switch>
-        <Route exact path="/login">
-          <Authentication></Authentication>
-        </Route>
-        <Route path="/">
-          <App></App>
-        </Route>
-      </Switch>
-    </BrowserRouter>
-  );
-};
-
-export default MainRouter;
+export default App;

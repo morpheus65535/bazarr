@@ -1,12 +1,12 @@
+import { copyToClipboard, Environment, toggleState } from "@/utilities";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
-import { copyToClipboard, Environment, toggleState } from "utilities";
 import {
   Button,
   Check,
@@ -15,9 +15,9 @@ import {
   File,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
   Text,
 } from "../components";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
@@ -39,7 +39,7 @@ const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
 
   return (
-    <SettingsProvider title="General - Bazarr (Settings)">
+    <Layout name="General">
       <Group header="Host">
         <Input name="Address">
           <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
@@ -209,7 +209,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           </Message>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

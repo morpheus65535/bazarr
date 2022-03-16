@@ -1,11 +1,11 @@
-import { useIsAnyActionRunning, useLanguageProfiles } from "apis/hooks";
-import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
+import { useIsAnyActionRunning, useLanguageProfiles } from "@/apis/hooks";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import { GetItemId } from "@/utilities";
+import { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { UseMutationResult } from "react-query";
-import { GetItemId } from "utilities";
-import { AsyncButton, Selector } from "../";
+import { AsyncButton, Selector, SelectorOption } from "..";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
 
 interface Props {
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
@@ -16,9 +16,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const { data: profiles } = useLanguageProfiles();
 
-  const { payload, closeModal } = useModalInformation<Item.Base>(
-    modal.modalKey
-  );
+  const payload = usePayload<Item.Base>(modal.modalKey);
+  const { hide } = useModalControl();
 
   const { mutateAsync, isLoading } = mutation;
 
@@ -57,7 +56,9 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
           return null;
         }
       }}
-      onSuccess={() => closeModal()}
+      onSuccess={() => {
+        hide();
+      }}
     >
       Save
     </AsyncButton>

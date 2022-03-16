@@ -29,11 +29,11 @@ jobs:
 
       - name: Setup Git
         run: git config --global user.name "github-actions"
-      
+
       - name: Cache node_modules
         uses: actions/cache@v2
         with:
-          path: '${{ env.UI_DIRECTORY }}/node_modules'
+          path: "${{ env.UI_DIRECTORY }}/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-modules-
 

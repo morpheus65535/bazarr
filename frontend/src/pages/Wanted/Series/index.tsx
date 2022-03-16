@@ -1,21 +1,20 @@
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useEpisodeSubtitleModification,
   useEpisodeWantedPagination,
   useSeriesAction,
-} from "apis/hooks";
-import { AsyncButton, LanguageText } from "components";
-import WantedView from "components/views/WantedView";
-import React, { FunctionComponent, useMemo } from "react";
+} from "@/apis/hooks";
+import { AsyncButton } from "@/components";
+import Language from "@/components/bazarr/Language";
+import WantedView from "@/components/views/WantedView";
+import { BuildKey } from "@/utilities";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { BuildKey } from "utilities";
 
-interface Props {}
-
-const WantedSeriesView: FunctionComponent<Props> = () => {
+const WantedSeriesView: FunctionComponent = () => {
   const columns: Column<Wanted.Episode>[] = useMemo<Column<Wanted.Episode>[]>(
     () => [
       {
@@ -66,7 +65,7 @@ const WantedSeriesView: FunctionComponent<Props> = () => {
                 })
               }
             >
-              <LanguageText className="pr-1" text={item}></LanguageText>
+              <Language.Text className="pr-1" value={item}></Language.Text>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

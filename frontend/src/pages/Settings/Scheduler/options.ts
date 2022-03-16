@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const seriesSyncOptions: SelectorOption<number>[] = [
   { label: "15 Minutes", value: 15 },
   { label: "1 Hour", value: 60 },

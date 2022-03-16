@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { setUnauthenticated } from "../../@redux/actions";
-import store from "../../@redux/store";
+import { setUnauthenticated } from "../../modules/redux/actions";
+import store from "../../modules/redux/store";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 

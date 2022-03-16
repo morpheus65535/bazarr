@@ -1,26 +1,20 @@
+import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
+import { ActionBadge, ItemEditorModal } from "@/components";
+import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import ItemView from "@/components/views/ItemView";
+import { useModalControl } from "@/modules/redux/hooks/modal";
+import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import {
-  useLanguageProfiles,
-  useSeries,
-  useSeriesModification,
-  useSeriesPagination,
-} from "apis/hooks";
-import { ActionBadge } from "components";
-import ItemView from "components/views/ItemView";
-import React, { FunctionComponent, useMemo } from "react";
-import { Badge, ProgressBar } from "react-bootstrap";
+import { FunctionComponent, useMemo } from "react";
+import { Badge, Container, ProgressBar } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
-import { BuildKey } from "utilities";
 
-interface Props {}
-
-const SeriesView: FunctionComponent<Props> = () => {
-  const { data: profiles } = useLanguageProfiles();
+const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
 
   const query = useSeriesPagination();
-  const full = useSeries();
 
   const columns: Column<Item.Series>[] = useMemo<Column<Item.Series>[]>(
     () => [
@@ -28,17 +22,13 @@ const SeriesView: FunctionComponent<Props> = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: ({ row, value, isSelecting: select }) => {
-          if (select) {
-            return value;
-          } else {
-            const target = `/series/${row.original.sonarrSeriesId}`;
-            return (
-              <Link to={target}>
-                <span>{value}</span>
-              </Link>
-            );
-          }
+        Cell: ({ row, value }) => {
+          const target = `/series/${row.original.sonarrSeriesId}`;
+          return (
+            <Link to={target}>
+              <span>{value}</span>
+            </Link>
+          );
         },
       },
       {
@@ -60,17 +50,15 @@ const SeriesView: FunctionComponent<Props> = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return profiles?.find((v) => v.profileId === value)?.name ?? null;
+          return <LanguageProfile index={value} empty=""></LanguageProfile>;
         },
       },
       {
         Header: "Episodes",
         accessor: "episodeFileCount",
-        selectHide: true,
-        Cell: ({ row }) => {
+        Cell: (row) => {
           const { episodeFileCount, episodeMissingCount, profileId, title } =
-            row.original;
-
+            row.row.original;
           let progress = 0;
           let label = "";
           if (episodeFileCount === 0 || !profileId) {
@@ -99,28 +87,28 @@ const SeriesView: FunctionComponent<Props> = () => {
       },
       {
         accessor: "sonarrSeriesId",
-        selectHide: true,
-        Cell: ({ row, update }) => (
-          <ActionBadge
-            icon={faWrench}
-            onClick={() => {
-              update && update(row, "edit");
-            }}
-          ></ActionBadge>
-        ),
+        Cell: ({ row: { original } }) => {
+          const { show } = useModalControl();
+          return (
+            <ActionBadge
+              icon={faWrench}
+              onClick={() => show("edit", original)}
+            ></ActionBadge>
+          );
+        },
       },
     ],
-    [profiles]
+    []
   );
 
   return (
-    <ItemView
-      name="Series"
-      fullQuery={full}
-      query={query}
-      columns={columns}
-      mutation={mutation}
-    ></ItemView>
+    <Container fluid>
+      <Helmet>
+        <title>Series - Bazarr</title>
+      </Helmet>
+      <ItemView query={query} columns={columns}></ItemView>
+      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
+    </Container>
   );
 };
 

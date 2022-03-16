@@ -1,8 +1,7 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Card as BSCard, Col, Form, Row } from "react-bootstrap";
-import "./style.scss";
 
 interface GroupProps {
   header: string;

@@ -1,3 +1,9 @@
+import { useSystem, useSystemSettings } from "@/apis/hooks";
+import { ActionButton, SearchBar } from "@/components";
+import { setSidebar } from "@/modules/redux/actions";
+import { useIsOffline } from "@/modules/redux/hooks";
+import { useReduxAction } from "@/modules/redux/hooks/base";
+import { useGotoHomepage, useIsMobile } from "@/utilities";
 import {
   faBars,
   faHeart,
@@ -5,12 +11,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { setSidebar } from "@redux/actions";
-import { useIsOffline } from "@redux/hooks";
-import { useReduxAction } from "@redux/hooks/base";
-import logo from "@static/logo64.png";
-import { ActionButton, SearchBar } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import {
   Button,
   Col,
@@ -21,14 +22,9 @@ import {
   Row,
 } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { useGotoHomepage, useIsMobile } from "utilities";
-import { useSystem, useSystemSettings } from "../apis/hooks";
-import "./header.scss";
 import NotificationCenter from "./Notification";
 
-interface Props {}
-
-const Header: FunctionComponent<Props> = () => {
+const Header: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
 
   const hasLogout = (settings?.auth.type ?? "none") === "form";
@@ -44,7 +40,7 @@ const Header: FunctionComponent<Props> = () => {
   const serverActions = useMemo(
     () => (
       <Dropdown alignRight>
-        <Dropdown.Toggle className="dropdown-hidden" as={Button}>
+        <Dropdown.Toggle className="hide-arrow" as={Button}>
           <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu>
@@ -87,7 +83,7 @@ const Header: FunctionComponent<Props> = () => {
       <div className="header-icon px-3 m-0 d-none d-md-block">
         <Image
           alt="brand"
-          src={logo}
+          src="/static/logo64.png"
           width="32"
           height="32"
           onClick={goHome}

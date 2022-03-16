@@ -1,3 +1,5 @@
+import { useReduxStore } from "@/modules/redux/hooks/base";
+import { BuildKey, useIsArrayExtended } from "@/utilities";
 import {
   faBug,
   faCircleNotch,
@@ -10,9 +12,10 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import { useReduxStore } from "@redux/hooks/base";
-import React, {
+import {
+  Fragment,
   FunctionComponent,
+  ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -27,8 +30,6 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
-import { BuildKey, useIsArrayExtended } from "utilities";
-import "./notification.scss";
 
 enum State {
   Idle,
@@ -63,7 +64,7 @@ function useHasErrorNotification(notifications: Server.Notification[]) {
 }
 
 const NotificationCenter: FunctionComponent = () => {
-  const { progress, notifications, notifier } = useReduxStore((s) => s);
+  const { progress, notifications, notifier } = useReduxStore((s) => s.site);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [hasNew, setHasNew] = useState(false);
@@ -115,7 +116,7 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [btnState]);
 
-  const content = useMemo<React.ReactNode>(() => {
+  const content = useMemo<ReactNode>(() => {
     const nodes: JSX.Element[] = [];
 
     nodes.push(
@@ -163,14 +164,14 @@ const NotificationCenter: FunctionComponent = () => {
   }, [notifier.timestamp]);
 
   return (
-    <React.Fragment>
+    <Fragment>
       <Dropdown
         onClick={onToggleClick}
         className={`notification-btn ${hasNew ? "new-item" : ""}`}
         ref={dropdownRef}
         alignRight
       >
-        <Dropdown.Toggle as={Button} className="dropdown-hidden">
+        <Dropdown.Toggle as={Button} className="hide-arrow">
           <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
         </Dropdown.Toggle>
         <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>
@@ -184,7 +185,7 @@ const NotificationCenter: FunctionComponent = () => {
           );
         }}
       </Overlay>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

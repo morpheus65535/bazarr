@@ -1,3 +1,6 @@
+import { useModalControl } from "@/modules/redux/hooks/modal";
+import { BuildKey } from "@/utilities";
+import { LOG } from "@/utilities/console";
 import {
   faCheck,
   faCircleNotch,
@@ -6,15 +9,31 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button, Container, Form } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
-import { BuildKey } from "utilities";
+import { Column } from "react-table";
 import { LanguageSelector, MessageIcon } from "..";
 import { FileForm } from "../inputs";
 import { SimpleTable } from "../tables";
 import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useCloseModal } from "./hooks";
+
+type ModifyFn<T> = (index: number, info?: PendingSubtitle<T>) => void;
+
+const RowContext = createContext<ModifyFn<unknown>>(() => {
+  LOG("error", "RowContext not initialized");
+});
+
+export function useRowMutation() {
+  return useContext(RowContext);
+}
 
 export interface PendingSubtitle<P> {
   file: File;
@@ -30,7 +49,7 @@ export type Validator<T> = (
   item: PendingSubtitle<T>
 ) => Pick<PendingSubtitle<T>, "state" | "messages">;
 
-interface Props<T> {
+interface Props<T = unknown> {
   initial: T;
   availableLanguages: Language.Info[];
   upload: (items: PendingSubtitle<T>[]) => void;
@@ -40,9 +59,10 @@ interface Props<T> {
   hideAllLanguages?: boolean;
 }
 
-export default function SubtitleUploadModal<T>(
-  props: Props<T> & Omit<BaseModalProps, "footer" | "title" | "size">
-) {
+type ComponentProps<T> = Props<T> &
+  Omit<BaseModalProps, "footer" | "title" | "size">;
+
+function SubtitleUploadModal<T>(props: ComponentProps<T>) {
   const {
     initial,
     columns,
@@ -53,7 +73,7 @@ export default function SubtitleUploadModal<T>(
     hideAllLanguages,
   } = props;
 
-  const closeModal = useCloseModal();
+  const { hide } = useModalControl();
 
   const [pending, setPending] = useState<PendingSubtitle<T>[]>([]);
 
@@ -72,7 +92,7 @@ export default function SubtitleUploadModal<T>(
         language: initialLanguage,
         forced: false,
         hi: false,
-        payload: { ...initialRef.current },
+        payload: initialRef.current,
       }));
 
       if (update) {
@@ -95,15 +115,15 @@ export default function SubtitleUploadModal<T>(
     [update, validate, availableLanguages]
   );
 
-  const modify = useCallback<TableUpdater<PendingSubtitle<T>>>(
-    (row, info?: PendingSubtitle<T>) => {
+  const modify = useCallback(
+    (index: number, info?: PendingSubtitle<T>) => {
       setPending((pd) => {
         const newPending = [...pd];
         if (info) {
           info = { ...info, ...validate(info) };
-          newPending[row.index] = info;
+          newPending[index] = info;
         } else {
-          newPending.splice(row.index, 1);
+          newPending.splice(index, 1);
         }
         return newPending;
       });
@@ -174,8 +194,9 @@ export default function SubtitleUploadModal<T>(
         id: "hi",
         Header: "HI",
         accessor: "hi",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const { original, index } = row;
+          const mutate = useRowMutation();
           return (
             <Form.Check
               custom
@@ -185,7 +206,7 @@ export default function SubtitleUploadModal<T>(
               onChange={(v) => {
                 const newInfo = { ...row.original };
                 newInfo.hi = v.target.checked;
-                update && update(row, newInfo);
+                mutate(row.index, newInfo);
               }}
             ></Form.Check>
           );
@@ -195,8 +216,9 @@ export default function SubtitleUploadModal<T>(
         id: "forced",
         Header: "Forced",
         accessor: "forced",
-        Cell: ({ row, value, update }) => {
+        Cell: ({ row, value }) => {
           const { original, index } = row;
+          const mutate = useRowMutation();
           return (
             <Form.Check
               custom
@@ -206,7 +228,7 @@ export default function SubtitleUploadModal<T>(
               onChange={(v) => {
                 const newInfo = { ...row.original };
                 newInfo.forced = v.target.checked;
-                update && update(row, newInfo);
+                mutate(row.index, newInfo);
               }}
             ></Form.Check>
           );
@@ -217,17 +239,18 @@ export default function SubtitleUploadModal<T>(
         Header: "Language",
         accessor: "language",
         className: "w-25",
-        Cell: ({ row, update, value }) => {
+        Cell: ({ row, value }) => {
+          const mutate = useRowMutation();
           return (
             <LanguageSelector
               disabled={row.original.state === "fetching"}
               options={availableLanguages}
               value={value}
               onChange={(lang) => {
-                if (lang && update) {
+                if (lang) {
                   const newInfo = { ...row.original };
                   newInfo.language = lang;
-                  update(row, newInfo);
+                  mutate(row.index, newInfo);
                 }
               }}
             ></LanguageSelector>
@@ -238,18 +261,21 @@ export default function SubtitleUploadModal<T>(
       {
         id: "action",
         accessor: "file",
-        Cell: ({ row, update }) => (
-          <Button
-            size="sm"
-            variant="light"
-            disabled={row.original.state === "fetching"}
-            onClick={() => {
-              update && update(row);
-            }}
-          >
-            <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-          </Button>
-        ),
+        Cell: ({ row }) => {
+          const mutate = useRowMutation();
+          return (
+            <Button
+              size="sm"
+              variant="light"
+              disabled={row.original.state === "fetching"}
+              onClick={() => {
+                mutate(row.index);
+              }}
+            >
+              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+            </Button>
+          );
+        },
       },
     ],
     [columns, availableLanguages]
@@ -280,7 +306,7 @@ export default function SubtitleUploadModal<T>(
           onClick={() => {
             upload(pending);
             setFiles([]);
-            closeModal();
+            hide();
           }}
         >
           Upload
@@ -325,14 +351,17 @@ export default function SubtitleUploadModal<T>(
           </Form.Group>
         </Form>
         <div hidden={!showTable}>
-          <SimpleTable
-            columns={columnsWithAction}
-            data={pending}
-            responsive={false}
-            update={modify}
-          ></SimpleTable>
+          <RowContext.Provider value={modify as ModifyFn<unknown>}>
+            <SimpleTable
+              columns={columnsWithAction}
+              data={pending}
+              responsive={false}
+            ></SimpleTable>
+          </RowContext.Provider>
         </div>
       </Container>
     </BaseModal>
   );
 }
+
+export default SubtitleUploadModal;

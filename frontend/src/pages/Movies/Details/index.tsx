@@ -1,4 +1,26 @@
 import {
+  useDownloadMovieSubtitles,
+  useIsMovieActionRunning,
+} from "@/apis/hooks";
+import {
+  useMovieAction,
+  useMovieById,
+  useMovieModification,
+} from "@/apis/hooks/movies";
+import {
+  ContentHeader,
+  ItemEditorModal,
+  LoadingIndicator,
+  MovieHistoryModal,
+  MovieUploadModal,
+  SubtitleToolModal,
+} from "@/components";
+import ItemOverview from "@/components/ItemOverview";
+import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { useModalControl } from "@/modules/redux/hooks/modal";
+import { createAndDispatchTask } from "@/modules/task/utilities";
+import { useLanguageProfileBy } from "@/utilities/languages";
+import {
   faCloudUploadAlt,
   faHistory,
   faSearch,
@@ -7,46 +29,20 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useDownloadMovieSubtitles, useIsMovieActionRunning } from "apis/hooks";
-import {
-  useMovieAction,
-  useMovieById,
-  useMovieModification,
-} from "apis/hooks/movies";
-import {
-  ContentHeader,
-  ItemEditorModal,
-  LoadingIndicator,
-  MovieHistoryModal,
-  MovieUploadModal,
-  SubtitleToolModal,
-  useShowModal,
-} from "components";
-import ItemOverview from "components/ItemOverview";
-import { ManualSearchModal } from "components/modals/ManualSearchModal";
-import { RouterEmptyPath } from "pages/404";
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useLanguageProfileBy } from "utilities/languages";
+import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
-interface Params {
-  id: string;
-}
-
-interface Props extends RouteComponentProps<Params> {}
-
-const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
-  const id = Number.parseInt(match.params.id);
+const MovieDetailView: FunctionComponent = () => {
+  const param = useParams();
+  const id = Number.parseInt(param.id ?? "");
   const { data: movie, isFetched } = useMovieById(id);
 
   const profile = useLanguageProfileBy(movie?.profileId);
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const mutation = useMovieModification();
   const { mutateAsync: action } = useMovieAction();
@@ -82,7 +78,7 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   const hasTask = useIsMovieActionRunning();
 
   if (isNaN(id) || (isFetched && !movie)) {
-    return <Redirect to={RouterEmptyPath}></Redirect>;
+    return <Navigate to="/not-found"></Navigate>;
   }
 
   if (!movie) {
@@ -102,11 +98,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSync}
             disabled={hasTask}
             onClick={() => {
-              const task = createTask(movie.title, id, action, {
+              createAndDispatchTask(movie.title, "scan-disk", action, {
                 action: "scan-disk",
                 radarrid: id,
               });
-              dispatchTask("Scanning Disk...", [task], "Scanning...");
             }}
           >
             Scan Disk
@@ -115,11 +110,10 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
             icon={faSearch}
             disabled={movie.profileId === null}
             onClick={() => {
-              const task = createTask(movie.title, id, action, {
+              createAndDispatchTask(movie.title, "search-subtitles", action, {
                 action: "search-missing",
                 radarrid: id,
               });
-              dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
           >
             Search
@@ -127,20 +121,20 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           <ContentHeader.Button
             icon={faUser}
             disabled={movie.profileId === null || hasTask}
-            onClick={() => showModal<Item.Movie>("manual-search", movie)}
+            onClick={() => show("manual-search", movie)}
           >
             Manual
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}
-            onClick={() => showModal("history", movie)}
+            onClick={() => show("history", movie)}
           >
             History
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
             disabled={hasTask}
-            onClick={() => showModal("tools", [movie])}
+            onClick={() => show("tools", [movie])}
           >
             Tools
           </ContentHeader.Button>
@@ -150,14 +144,14 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
           <ContentHeader.Button
             disabled={!allowEdit || movie.profileId === null || hasTask}
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", movie)}
+            onClick={() => show("upload", movie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", movie)}
+            onClick={() => show("edit", movie)}
           >
             Edit Movie
           </ContentHeader.Button>
@@ -191,4 +185,4 @@ const MovieDetailView: FunctionComponent<Props> = ({ match }) => {
   );
 };
 
-export default withRouter(MovieDetailView);
+export default MovieDetailView;

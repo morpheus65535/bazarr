@@ -1,3 +1,5 @@
+import { GetItemId } from "@/utilities";
+import { usePageSize } from "@/utilities/storage";
 import { useCallback, useEffect, useState } from "react";
 import {
   QueryKey,
@@ -5,8 +7,6 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "react-query";
-import { GetItemId } from "utilities";
-import { usePageSize } from "utilities/storage";
 import { QueryKeys } from "./keys";
 
 export type UsePaginationQueryResult<T extends object> = UseQueryResult<

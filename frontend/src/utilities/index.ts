@@ -3,7 +3,7 @@ import { Dispatch } from "react";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
 export function copyToClipboard(s: string) {
-  let field = document.createElement("textarea");
+  const field = document.createElement("textarea");
   field.innerText = s;
   document.body.appendChild(field);
   field.select();
@@ -15,7 +15,7 @@ export function copyToClipboard(s: string) {
 export function toggleState(
   dispatch: Dispatch<boolean>,
   wait: number,
-  start: boolean = false
+  start = false
 ) {
   dispatch(!start);
   setTimeout(() => dispatch(start), wait);
@@ -37,7 +37,7 @@ export function GetItemId<T extends object>(item: T): number | undefined {
   }
 }
 
-export function BuildKey(...args: any[]) {
+export function BuildKey(...args: unknown[]) {
   return args.join("-");
 }
 
@@ -47,6 +47,12 @@ export function Reload() {
 
 export function ScrollToTop() {
   window.scrollTo(0, 0);
+}
+
+const pathReplaceReg = new RegExp("/{1,}", "g");
+export function pathJoin(...parts: string[]) {
+  const separator = "/";
+  return parts.join(separator).replace(pathReplaceReg, separator);
 }
 
 export function filterSubtitleBy(

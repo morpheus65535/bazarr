@@ -1,21 +1,15 @@
-import api from "apis/raw";
+import api from "@/apis/raw";
 import {
   AsyncButton,
   BaseModal,
   BaseModalProps,
   Selector,
-  useModalInformation,
-  useOnModalShow,
-  useShowModal,
-} from "components";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+  SelectorOption,
+} from "@/components";
+import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import { BuildKey } from "@/utilities";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import { BuildKey } from "utilities";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
@@ -43,16 +37,11 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     "name"
   );
 
-  const { payload, closeModal } =
-    useModalInformation<Settings.NotificationInfo>(modal.modalKey);
+  const payload = usePayload<Settings.NotificationInfo>(modal.modalKey);
+  const { hide } = useModalControl();
 
   const [current, setCurrent] =
     useState<Nullable<Settings.NotificationInfo>>(payload);
-
-  useOnModalShow<Settings.NotificationInfo>(
-    (p) => setCurrent(p),
-    modal.modalKey
-  );
 
   const updateUrl = useCallback((url: string) => {
     setCurrent((current) => {
@@ -72,7 +61,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 
   const footer = useMemo(
     () => (
-      <React.Fragment>
+      <>
         <AsyncButton
           className="mr-auto"
           disabled={!canSave}
@@ -94,7 +83,7 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
             if (current) {
               update({ ...current, enabled: false });
             }
-            closeModal();
+            hide();
           }}
         >
           Remove
@@ -105,14 +94,14 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
             if (current) {
               update({ ...current, enabled: true });
             }
-            closeModal();
+            hide();
           }}
         >
           Save
         </Button>
-      </React.Fragment>
+      </>
     ),
-    [canSave, closeModal, current, update, payload]
+    [canSave, payload, current, hide, update]
   );
 
   const getLabel = useCallback((v: Settings.NotificationInfo) => v.name, []);
@@ -157,7 +146,7 @@ export const NotificationView: FunctionComponent = () => {
     (s) => s.notifications.providers
   );
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const elements = useMemo(() => {
     return notifications
@@ -166,16 +155,16 @@ export const NotificationView: FunctionComponent = () => {
         <ColCard
           key={BuildKey(idx, v.name)}
           header={v.name}
-          onClick={() => showModal("notifications", v)}
+          onClick={() => show("notifications", v)}
         ></ColCard>
       ));
-  }, [notifications, showModal]);
+  }, [notifications, show]);
 
   return (
     <Container fluid>
       <Row>
         {elements}{" "}
-        <ColCard plus onClick={() => showModal("notifications")}></ColCard>
+        <ColCard plus onClick={() => show("notifications")}></ColCard>
       </Row>
       <NotificationModal
         selections={notifications ?? []}

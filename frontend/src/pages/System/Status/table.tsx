@@ -1,5 +1,5 @@
-import { SimpleTable } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { SimpleTable } from "@/components";
+import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
 interface Props {

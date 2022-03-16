@@ -1,3 +1,7 @@
+import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
+import { usePayload } from "@/modules/redux/hooks/modal";
+import { createAndDispatchTask } from "@/modules/task/utilities";
+import { isMovie } from "@/utilities";
 import {
   faCaretDown,
   faCheck,
@@ -6,15 +10,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useEpisodesProvider, useMoviesProvider } from "apis/hooks";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -26,16 +22,8 @@ import {
   Row,
 } from "react-bootstrap";
 import { Column } from "react-table";
-import { GetItemId, isMovie } from "utilities";
-import {
-  BaseModal,
-  BaseModalProps,
-  LanguageText,
-  LoadingIndicator,
-  PageTable,
-  useModalPayload,
-} from "..";
-import "./msmStyle.scss";
+import { BaseModal, BaseModalProps, LoadingIndicator, PageTable } from "..";
+import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
 
@@ -48,7 +36,7 @@ export function ManualSearchModal<T extends SupportType>(
 ) {
   const { download, ...modal } = props;
 
-  const item = useModalPayload<T>(modal.modalKey);
+  const item = usePayload<T>(modal.modalKey);
 
   const [episodeId, setEpisodeId] = useState<number | undefined>(undefined);
   const [radarrId, setRadarrId] = useState<number | undefined>(undefined);
@@ -95,7 +83,7 @@ export function ManualSearchModal<T extends SupportType>(
           };
           return (
             <Badge variant="secondary">
-              <LanguageText text={lang}></LanguageText>
+              <Language.Text value={lang}></Language.Text>
             </Badge>
           );
         },
@@ -194,12 +182,12 @@ export function ManualSearchModal<T extends SupportType>(
               onClick={() => {
                 if (!item) return;
 
-                const id = GetItemId(item);
-                const task = createTask(item.title, id, download, item, result);
-                dispatchTask(
-                  "Downloading subtitles...",
-                  [task],
-                  "Downloading..."
+                createAndDispatchTask(
+                  item.title,
+                  "download-subtitles",
+                  download,
+                  item,
+                  result
                 );
               }}
             >
@@ -226,14 +214,14 @@ export function ManualSearchModal<T extends SupportType>(
       return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
-        <React.Fragment>
+        <>
           <p className="mb-3 small">{item?.path ?? ""}</p>
           <PageTable
             emptyText="No Result"
             columns={columns}
             data={results}
           ></PageTable>
-        </React.Fragment>
+        </>
       );
     }
   };

@@ -1,0 +1,18 @@
+$modal-root-index: 1040;
+
+@mixin modal-hierarchical($index) {
+  .modal-backdrop {
+    &.index-#{$index} {
+      z-index: $modal-root-index + $index * 10;
+    }
+  }
+  .modal {
+    &.index-#{$index} {
+      z-index: $modal-root-index + $index * 10 + 1;
+    }
+  }
+}
+
+@for $index from 0 through 10 {
+  @include modal-hierarchical($index);
+}

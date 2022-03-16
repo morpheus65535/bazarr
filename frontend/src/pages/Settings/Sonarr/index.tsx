@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
   Check,
@@ -6,10 +6,10 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
   Selector,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
@@ -17,15 +17,13 @@ import {
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
 
-interface Props {}
-
-const SettingsSonarrView: FunctionComponent<Props> = () => {
+const SettingsSonarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.sonarr.base_url?.slice(1) ?? "";
   }, []);
 
   return (
-    <SettingsProvider title="Sonarr - Bazarr (Settings)">
+    <Layout name="Sonarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Sonarr">
@@ -116,7 +114,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

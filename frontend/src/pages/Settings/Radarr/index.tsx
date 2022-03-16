@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
   Check,
@@ -6,24 +6,22 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
 } from "../components";
 import { moviesEnabledKey } from "../keys";
 
-interface Props {}
-
-const SettingsRadarrView: FunctionComponent<Props> = () => {
+const SettingsRadarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.radarr.base_url?.slice(1) ?? "";
   }, []);
 
   return (
-    <SettingsProvider title="Radarr - Bazarr (Settings)">
+    <Layout name="Radarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Radarr">
@@ -93,7 +91,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

@@ -1,15 +1,13 @@
+import { useDeleteLogs, useSystemLogs } from "@/apis/hooks";
+import { ContentHeader, QueryOverlay } from "@/components";
+import { Environment } from "@/utilities";
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useDeleteLogs, useSystemLogs } from "apis/hooks";
-import { ContentHeader, QueryOverlay } from "components";
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Environment } from "utilities";
 import Table from "./table";
 
-interface Props {}
-
-const SystemLogsView: FunctionComponent<Props> = () => {
+const SystemLogsView: FunctionComponent = () => {
   const logs = useSystemLogs();
   const { isFetching, data, refetch } = logs;
 

@@ -1,6 +1,7 @@
-import React, { FunctionComponent, useCallback, useState } from "react";
+import { useIsShowed, useModalControl } from "@/modules/redux/hooks/modal";
+import clsx from "clsx";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Modal } from "react-bootstrap";
-import { useModalInformation } from "./hooks";
 
 export interface BaseModalProps {
   modalKey: string;
@@ -11,32 +12,34 @@ export interface BaseModalProps {
 }
 
 export const BaseModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { size, modalKey, title, children, footer } = props;
+  const { size, modalKey, title, children, footer, closeable = true } = props;
   const [needExit, setExit] = useState(false);
 
-  const { isShow, closeModal } = useModalInformation(modalKey);
-
-  const closeable = props.closeable !== false;
+  const { hide: hideModal } = useModalControl();
+  const showIndex = useIsShowed(modalKey);
+  const isShowed = showIndex !== -1;
 
   const hide = useCallback(() => {
     setExit(true);
   }, []);
 
   const exit = useCallback(() => {
-    if (isShow) {
-      closeModal(modalKey);
+    if (isShowed) {
+      hideModal(modalKey);
     }
     setExit(false);
-  }, [closeModal, modalKey, isShow]);
+  }, [isShowed, hideModal, modalKey]);
 
   return (
     <Modal
       centered
       size={size}
-      show={isShow && !needExit}
+      show={isShowed && !needExit}
       onHide={hide}
       onExited={exit}
       backdrop={closeable ? undefined : "static"}
+      className={clsx(`index-${showIndex}`)}
+      backdropClassName={clsx(`index-${showIndex}`)}
     >
       <Modal.Header closeButton={closeable}>{title}</Modal.Header>
       <Modal.Body>{children}</Modal.Body>

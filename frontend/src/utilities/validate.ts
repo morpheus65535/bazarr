@@ -1,26 +1,18 @@
-import { isNull, isNumber, isString, isUndefined } from "lodash";
+import { isNumber, isString } from "lodash";
 import { ReactText } from "react";
 
-export function isReactText(v: any): v is ReactText {
+export function isReactText(v: unknown): v is ReactText {
   return isString(v) || isNumber(v);
 }
 
-export function isNullable(v: any): v is Nullable<any> {
-  return isNull(v) || isUndefined(v);
-}
-
-export function isNonNullable(v: any): v is NonNullable<any> {
-  return !isNullable(v);
-}
-
-export function isMovie(v: any): v is Item.Movie {
+export function isMovie(v: object): v is Item.Movie {
   return "radarrId" in v;
 }
 
-export function isEpisode(v: any): v is Item.Episode {
+export function isEpisode(v: object): v is Item.Episode {
   return "sonarrEpisodeId" in v;
 }
 
-export function isSeries(v: any): v is Item.Series {
+export function isSeries(v: object): v is Item.Series {
   return "episodeFileCount" in v;
 }

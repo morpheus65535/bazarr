@@ -11,7 +11,7 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { isNull, isUndefined } from "lodash";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, ReactElement } from "react";
 import {
   OverlayTrigger,
   OverlayTriggerProps,
@@ -97,44 +97,8 @@ export const LoadingIndicator: FunctionComponent<{
   );
 };
 
-interface LanguageTextProps {
-  text: Language.Info;
-  className?: string;
-  long?: boolean;
-}
-
-export const LanguageText: FunctionComponent<LanguageTextProps> = ({
-  text,
-  className,
-  long,
-}) => {
-  const result = useMemo(() => {
-    let lang = text.code2;
-    let hi = ":HI";
-    let forced = ":Forced";
-    if (long) {
-      lang = text.name;
-      hi = " HI";
-      forced = " Forced";
-    }
-
-    let res = lang;
-    if (text.hi) {
-      res += hi;
-    } else if (text.forced) {
-      res += forced;
-    }
-    return res;
-  }, [text, long]);
-  return (
-    <span title={text.name} className={className}>
-      {result}
-    </span>
-  );
-};
-
 interface TextPopoverProps {
-  children: React.ReactElement<any, any>;
+  children: ReactElement;
   text: string | undefined | null;
   placement?: OverlayTriggerProps["placement"];
   delay?: number;
