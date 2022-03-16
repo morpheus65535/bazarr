@@ -1,6 +1,5 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
-import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
@@ -10,6 +9,15 @@ import MovieView from "@/pages/Movies";
 import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
+import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsLanguagesView from "@/pages/Settings/Languages";
+import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsProvidersView from "@/pages/Settings/Providers";
+import SettingsRadarrView from "@/pages/Settings/Radarr";
+import SettingsSchedulerView from "@/pages/Settings/Scheduler";
+import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsUIView from "@/pages/Settings/UI";
 import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
 import SystemProvidersView from "@/pages/System/Providers";
@@ -44,18 +52,6 @@ const NotFound = lazy(() => import("@/pages/404"));
 const Episodes = lazy(() => import("@/pages/Episodes"));
 const MovieDetail = lazy(() => import("@/pages/Movies/Details"));
 
-const SettingsGeneralView = lazy(() => import("@/pages/Settings/General"));
-const SettingsLanguagesView = lazy(() => import("@/pages/Settings/Languages"));
-const SettingsProvidersView = lazy(() => import("@/pages/Settings/Providers"));
-const SettingsRadarrView = lazy(() => import("@/pages/Settings/Radarr"));
-const SettingsSonarrView = lazy(() => import("@/pages/Settings/Sonarr"));
-const SettingsSubtitlesView = lazy(() => import("@/pages/Settings/Subtitles"));
-const SettingsNotificationsView = lazy(
-  () => import("@/pages/Settings/Notifications")
-);
-const SettingsSchedulerView = lazy(() => import("@/pages/Settings/Scheduler"));
-const SettingsUIView = lazy(() => import("@/pages/Settings/UI"));
-
 function useRoutes(): CustomRouteObject[] {
   const { data } = useBadges();
   const { sonarr, radarr } = useEnabledStatus();
@@ -87,11 +83,7 @@ function useRoutes(): CustomRouteObject[] {
               },
               {
                 path: ":id",
-                element: (
-                  <Lazy>
-                    <Episodes></Episodes>
-                  </Lazy>
-                ),
+                element: <Episodes></Episodes>,
               },
             ],
           },
@@ -112,11 +104,7 @@ function useRoutes(): CustomRouteObject[] {
               },
               {
                 path: ":id",
-                element: (
-                  <Lazy>
-                    <MovieDetail></MovieDetail>
-                  </Lazy>
-                ),
+                element: <MovieDetail></MovieDetail>,
               },
             ],
           },
@@ -141,11 +129,7 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "stats",
                 name: "Statistics",
-                element: (
-                  <Lazy>
-                    <HistoryStats></HistoryStats>
-                  </Lazy>
-                ),
+                element: <HistoryStats></HistoryStats>,
               },
             ],
           },
@@ -199,83 +183,49 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "general",
                 name: "General",
-                element: (
-                  <Lazy>
-                    <SettingsGeneralView></SettingsGeneralView>
-                  </Lazy>
-                ),
+                element: <SettingsGeneralView></SettingsGeneralView>,
               },
               {
                 path: "languages",
                 name: "Languages",
-                element: (
-                  <Lazy>
-                    <SettingsLanguagesView></SettingsLanguagesView>
-                  </Lazy>
-                ),
+                element: <SettingsLanguagesView></SettingsLanguagesView>,
               },
               {
                 path: "providers",
                 name: "Providers",
-                element: (
-                  <Lazy>
-                    <SettingsProvidersView></SettingsProvidersView>
-                  </Lazy>
-                ),
+                element: <SettingsProvidersView></SettingsProvidersView>,
               },
               {
                 path: "subtitles",
                 name: "Subtitles",
-                element: (
-                  <Lazy>
-                    <SettingsSubtitlesView></SettingsSubtitlesView>
-                  </Lazy>
-                ),
+                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
               },
               {
                 path: "sonarr",
                 name: "Sonarr",
-                element: (
-                  <Lazy>
-                    <SettingsSonarrView></SettingsSonarrView>
-                  </Lazy>
-                ),
+                element: <SettingsSonarrView></SettingsSonarrView>,
               },
               {
                 path: "radarr",
                 name: "Radarr",
-                element: (
-                  <Lazy>
-                    <SettingsRadarrView></SettingsRadarrView>
-                  </Lazy>
-                ),
+                element: <SettingsRadarrView></SettingsRadarrView>,
               },
               {
                 path: "notifications",
                 name: "Notifications",
                 element: (
-                  <Lazy>
-                    <SettingsNotificationsView></SettingsNotificationsView>
-                  </Lazy>
+                  <SettingsNotificationsView></SettingsNotificationsView>
                 ),
               },
               {
                 path: "scheduler",
                 name: "Scheduler",
-                element: (
-                  <Lazy>
-                    <SettingsSchedulerView></SettingsSchedulerView>
-                  </Lazy>
-                ),
+                element: <SettingsSchedulerView></SettingsSchedulerView>,
               },
               {
                 path: "ui",
                 name: "UI",
-                element: (
-                  <Lazy>
-                    <SettingsUIView></SettingsUIView>
-                  </Lazy>
-                ),
+                element: <SettingsUIView></SettingsUIView>,
               },
             ],
           },
@@ -308,11 +258,7 @@ function useRoutes(): CustomRouteObject[] {
               {
                 path: "status",
                 name: "Status",
-                element: (
-                  <Lazy>
-                    <SystemStatusView></SystemStatusView>
-                  </Lazy>
-                ),
+                element: <SystemStatusView></SystemStatusView>,
               },
               {
                 path: "releases",
@@ -326,20 +272,12 @@ function useRoutes(): CustomRouteObject[] {
       {
         path: "/login",
         hidden: true,
-        element: (
-          <Lazy>
-            <Authentication></Authentication>
-          </Lazy>
-        ),
+        element: <Authentication></Authentication>,
       },
       {
         path: "*",
         hidden: true,
-        element: (
-          <Lazy>
-            <NotFound></NotFound>
-          </Lazy>
-        ),
+        element: <NotFound></NotFound>,
       },
     ],
     [data?.episodes, data?.movies, data?.providers, radarr, sonarr]

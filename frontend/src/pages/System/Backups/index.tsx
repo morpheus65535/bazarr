@@ -6,9 +6,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemBackupsView: FunctionComponent<Props> = () => {
+const SystemBackupsView: FunctionComponent = () => {
   const backups = useSystemBackups();
 
   const { mutate: backup, isLoading: isResetting } = useCreateBackups();

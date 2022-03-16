@@ -229,7 +229,7 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
   );
 };
 
-type FileProps = {} & BaseInput<string>;
+interface FileProps extends BaseInput<string> {}
 
 export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
   props
