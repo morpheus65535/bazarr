@@ -305,7 +305,7 @@ def update_throttled_provider():
     for provider in list(tp):
         if provider not in providers_list:
             del tp[provider]
-            settings.general.throtteled_providers = str(tp)
+            set_throttled_providers(str(tp))
 
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
 

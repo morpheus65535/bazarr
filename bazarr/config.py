@@ -256,8 +256,7 @@ base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
                'page_size',
-               'page_size_manual_search',
-               'throtteled_providers']
+               'page_size_manual_search']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
