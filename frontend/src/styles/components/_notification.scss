@@ -8,8 +8,8 @@
       background-color: red;
       content: "";
       border-radius: 50%;
-      height: 6px;
-      width: 6px;
+      height: 0.4rem;
+      width: 0.4rem;
       right: 10%;
       top: 10%;
     }
@@ -29,12 +29,6 @@
     .progress-name {
       word-wrap: break-word;
       white-space: normal;
-    }
-
-    .progress .progress-bar {
-      text-shadow: -2px -2px 5px bs.$primary, 2px -2px 5px bs.$primary,
-        -2px 2px 5px bs.$primary, 2px 2px 5px bs.$primary;
-      overflow: visible;
     }
   }
 

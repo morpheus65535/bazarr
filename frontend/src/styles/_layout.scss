@@ -57,7 +57,7 @@
     #{$side}: {
       color: rgba(0, 0, 0, 0.125);
       style: solid;
-      width: 1px;
+      width: 0.08rem;
     }
   }
 }
@@ -92,13 +92,13 @@ $sidebar-active-color: #252833;
 
   span {
     font-size: 0.85rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04rem;
   }
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
-    width: 0px;
-    height: 0px;
+    width: 0;
+    height: 0;
   }
 
   .title {
@@ -112,7 +112,7 @@ $sidebar-active-color: #252833;
     top: 0;
     bottom: 0;
     left: 0;
-    width: 3px;
+    width: 0.1rem;
     z-index: 10;
     background-color: bs.$primary;
   }

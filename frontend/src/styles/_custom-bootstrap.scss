@@ -7,8 +7,9 @@ $dark: #4f566f;
 
 .progress-bar {
   cursor: default;
-  text-shadow: -2px -2px 5px $primary, 2px -2px 5px $primary,
-    -2px 2px 5px $primary, 2px 2px 5px $primary;
+  text-shadow: -0.16rem -0.16rem 0.24rem $primary,
+    0.16rem -0.16rem 0.24rem $primary, -0.16rem 0.16rem 0.24rem $primary,
+    0.16rem 0.16rem 0.24rem $primary;
   overflow: visible;
 }
 

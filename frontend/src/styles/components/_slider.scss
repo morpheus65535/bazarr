@@ -8,12 +8,12 @@
     cursor: pointer;
   }
   .rc-slider-handle {
-    border: 3px solid bs.$primary;
+    border: 0.2rem solid bs.$primary;
     margin-top: 0;
     top: 50%;
     transform: translate(-50%, -50%) !important;
-    width: 18px;
-    height: 18px;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
 
     .rc-slider-handle-tips-always {

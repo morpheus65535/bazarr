@@ -10,6 +10,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import clsx from "clsx";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
@@ -128,19 +129,14 @@ export function ManualSearchModal<T extends SupportType>(
             return <span className="text-muted">Cannot get release info</span>;
           }
 
-          const cls = [
-            "release-container",
-            "d-flex",
-            "justify-content-between",
-            "align-items-center",
-          ];
-
-          if (value.length > 1) {
-            cls.push("release-multi");
-          }
-
           return (
-            <div className={cls.join(" ")} onClick={() => setOpen((o) => !o)}>
+            <div
+              className={clsx(
+                "release-container d-flex justify-content-between align-items-center",
+                { "release-multi": value.length > 1 }
+              )}
+              onClick={() => setOpen((o) => !o)}
+            >
               <div className="text-container">
                 <span className="release-text">{value[0]}</span>
                 <Collapse in={open}>
