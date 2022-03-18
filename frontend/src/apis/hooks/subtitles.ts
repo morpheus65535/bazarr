@@ -12,8 +12,16 @@ export function useSubtitleAction() {
     [QueryKeys.Subtitles],
     (param: Param) => api.subtitles.modify(param.action, param.form),
     {
-      onSuccess: () => {
+      onSuccess: (_, param) => {
         client.invalidateQueries([QueryKeys.History]);
+
+        // TODO: Query less
+        const { type, id } = param.form;
+        if (type === "episode") {
+          client.invalidateQueries([QueryKeys.Series, id]);
+        } else {
+          client.invalidateQueries([QueryKeys.Movies, id]);
+        }
       },
     }
   );

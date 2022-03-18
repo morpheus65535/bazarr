@@ -4,7 +4,7 @@ declare namespace FormType {
     profileid: (number | null)[];
   }
 
-  type SeriesAction = OneSerieAction | SearchWantedAction;
+  type SeriesAction = OneSeriesAction | SearchWantedAction;
 
   type MoviesAction = OneMovieAction | SearchWantedAction;
 
@@ -13,7 +13,7 @@ declare namespace FormType {
     radarrid: number;
   }
 
-  interface OneSerieAction {
+  interface OneSeriesAction {
     action: "search-missing" | "scan-disk";
     seriesid: number;
   }
