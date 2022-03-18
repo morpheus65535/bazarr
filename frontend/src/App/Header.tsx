@@ -3,7 +3,7 @@ import { ActionButton, SearchBar } from "@/components";
 import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
 import { useReduxAction } from "@/modules/redux/hooks/base";
-import { useGotoHomepage, useIsMobile } from "@/utilities";
+import { Environment, useGotoHomepage, useIsMobile } from "@/utilities";
 import {
   faBars,
   faHeart,
@@ -83,7 +83,7 @@ const Header: FunctionComponent = () => {
       <div className="header-icon px-3 m-0 d-none d-md-block">
         <Image
           alt="brand"
-          src="/static/logo64.png"
+          src={`${Environment.baseUrl}/static/logo64.png`}
           width="32"
           height="32"
           onClick={goHome}

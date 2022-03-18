@@ -32,7 +32,6 @@ export const Environment = {
   },
   get baseUrl(): string {
     if (isDevEnv || isTestEnv) {
-      // TODO: Support overriding base URL in development env
       return "";
     } else {
       let url = window.Bazarr.baseUrl;
