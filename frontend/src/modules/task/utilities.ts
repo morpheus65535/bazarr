@@ -1,3 +1,4 @@
+import { LOG } from "@/utilities/console";
 import taskManager from ".";
 import { GroupName } from "./group";
 
@@ -5,8 +6,10 @@ export function createTask<T extends Task.AnyCallable>(
   name: string,
   callable: T,
   ...parameters: Parameters<T>
-): Task.Task {
+): Task.TaskRef {
   const callableId = taskManager.create(callable, parameters);
+
+  LOG("info", "task created", name);
 
   return {
     name,
@@ -14,8 +17,13 @@ export function createTask<T extends Task.AnyCallable>(
   };
 }
 
-export function dispatchTask(task: Task.Task[], group: GroupName) {
-  // TODO
+export function dispatchTask(tasks: Task.TaskRef[], group: GroupName) {
+  setTimeout(async () => {
+    for (const ref of tasks) {
+      LOG("info", "dispatching task", ref.name);
+      await taskManager.run(ref);
+    }
+  });
 }
 
 export function createAndDispatchTask<T extends Task.AnyCallable>(

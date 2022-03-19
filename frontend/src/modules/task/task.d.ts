@@ -5,13 +5,13 @@ declare namespace Task {
   type AnyCallable = (...args: any[]) => Promise<void>;
   export type Callable<T extends AnyCallable = AnyCallable> = T & {
     parameters: Parameters<T>;
-    id: string;
+    id: symbol;
     status: Status;
   };
 
-  export interface Task {
+  export interface TaskRef {
     name: string;
-    callableId: string;
+    callableId: symbol;
     description?: string;
   }
 

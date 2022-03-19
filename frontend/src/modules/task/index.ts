@@ -9,7 +9,7 @@ class TaskManager {
   private onBeforeUnload(e: BeforeUnloadEvent) {
     const message = "Background tasks are still running";
 
-    if (this.tasks.some((t) => t.status !== "success")) {
+    if (this.tasks.some((t) => t.status === "running")) {
       e.preventDefault();
       e.returnValue = message;
       return;
@@ -17,22 +17,29 @@ class TaskManager {
     delete e["returnValue"];
   }
 
-  private generateUniqueId(): string {
-    return "TODO-TODO";
+  private findTask(ref: Task.TaskRef): Task.Callable | undefined {
+    return this.tasks.find((t) => t.id === ref.callableId);
   }
 
-  create<T extends Task.AnyCallable>(fn: T, parameters: Parameters<T>): string {
-    const newTask = fn as Task.Callable<T>;
+  create<T extends Task.AnyCallable>(fn: T, parameters: Parameters<T>): symbol {
+    // Clone this function
+    const newTask = fn.bind({}) as Task.Callable<T>;
     newTask.status = "idle";
     newTask.parameters = parameters;
-    newTask.id = this.generateUniqueId();
+    newTask.id = Symbol(this.tasks.length);
 
     this.tasks.push(newTask);
 
     return newTask.id;
   }
 
-  async run(task: Task.Callable) {
+  async run(taskRef: Task.TaskRef) {
+    const task = this.findTask(taskRef);
+
+    if (task === undefined) {
+      throw new Error(`Task ${taskRef.name} not found`);
+    }
+
     if (task.status !== "idle") {
       return;
     }
@@ -44,6 +51,7 @@ class TaskManager {
       task.status = "success";
     } catch (err) {
       task.status = "failure";
+      throw err;
     }
   }
 }
