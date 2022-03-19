@@ -1,5 +1,7 @@
 import { LOG } from "@/utilities/console";
 import taskManager from ".";
+import { siteAddProgress, siteRemoveProgress } from "../redux/actions";
+import store from "../redux/store";
 import { GroupName } from "./group";
 
 export function createTask<T extends Task.AnyCallable>(
@@ -19,10 +21,27 @@ export function createTask<T extends Task.AnyCallable>(
 
 export function dispatchTask(tasks: Task.TaskRef[], group: GroupName) {
   setTimeout(async () => {
-    for (const ref of tasks) {
+    for (let index = 0; index < tasks.length; index++) {
+      const ref = tasks[index];
       LOG("info", "dispatching task", ref.name);
+
+      store.dispatch(
+        siteAddProgress([
+          {
+            id: group,
+            header: group,
+            name: ref.name,
+            value: index,
+            count: tasks.length,
+          },
+        ])
+      );
+
       await taskManager.run(ref);
     }
+
+    // TODO: Also remove from taskManager
+    store.dispatch(siteRemoveProgress([group]));
   });
 }
 
