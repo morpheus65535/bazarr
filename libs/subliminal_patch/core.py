@@ -131,6 +131,10 @@ class SZProviderPool(ProviderPool):
 
         # Restart providers with new configs
         for key, val in provider_configs.items():
+            # Don't restart providers that are not enabled
+            if key not in self.providers:
+                continue
+
             # key: provider's name; val: config dict
             old_val = self.provider_configs.get(key)
 
