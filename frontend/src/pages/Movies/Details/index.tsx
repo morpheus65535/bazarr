@@ -1,6 +1,7 @@
 import {
   useDownloadMovieSubtitles,
   useIsMovieActionRunning,
+  useMoviesProvider,
 } from "@/apis/hooks";
 import {
   useMovieAction,
@@ -180,6 +181,7 @@ const MovieDetailView: FunctionComponent = () => {
       <ManualSearchModal
         modalKey="manual-search"
         download={download}
+        query={useMoviesProvider}
       ></ManualSearchModal>
     </Container>
   );

@@ -1,7 +1,6 @@
-import { useEpisodesProvider, useMoviesProvider } from "@/apis/hooks";
 import { usePayload } from "@/modules/redux/hooks/modal";
 import { createAndDispatchTask } from "@/modules/task/utilities";
-import { isMovie } from "@/utilities";
+import { GetItemId, isMovie } from "@/utilities";
 import {
   faCaretDown,
   faCheck,
@@ -11,7 +10,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Badge,
   Button,
@@ -22,6 +27,7 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
+import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
 import { BaseModal, BaseModalProps, LoadingIndicator, PageTable } from "..";
 import Language from "../bazarr/Language";
@@ -30,42 +36,39 @@ type SupportType = Item.Movie | Item.Episode;
 
 interface Props<T extends SupportType> {
   download: (item: T, result: SearchResultType) => Promise<void>;
+  query: (
+    id?: number
+  ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
 }
 
 export function ManualSearchModal<T extends SupportType>(
   props: Props<T> & BaseModalProps
 ) {
-  const { download, ...modal } = props;
+  const { download, query: useSearch, ...modal } = props;
 
   const item = usePayload<T>(modal.modalKey);
 
-  const [episodeId, setEpisodeId] = useState<number | undefined>(undefined);
-  const [radarrId, setRadarrId] = useState<number | undefined>(undefined);
+  const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
 
-  const episodes = useEpisodesProvider(episodeId);
-  const movies = useMoviesProvider(radarrId);
+  const [id, setId] = useState<number | undefined>(undefined);
 
-  const isInitial = episodeId === undefined && radarrId === undefined;
-  const isFetching = episodes.isFetching || movies.isFetching;
+  // Cleanup the ID when user switches episode / movie
+  useEffect(() => {
+    if (itemId !== undefined && itemId !== id) {
+      setId(undefined);
+    }
+  }, [id, itemId]);
 
-  const results = useMemo(
-    () => [...(episodes.data ?? []), ...(movies.data ?? [])],
-    [episodes.data, movies.data]
-  );
+  const results = useSearch(id);
+
+  const isStale = results.data === undefined;
 
   const search = useCallback(() => {
-    setEpisodeId(undefined);
-    setRadarrId(undefined);
-    if (item) {
-      if (isMovie(item)) {
-        setRadarrId(item.radarrId);
-        movies.refetch();
-      } else {
-        setEpisodeId(item.sonarrEpisodeId);
-        episodes.refetch();
-      }
+    if (itemId !== undefined) {
+      setId(itemId);
+      results.refetch();
     }
-  }, [episodes, item, movies]);
+  }, [itemId, results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -197,7 +200,9 @@ export function ManualSearchModal<T extends SupportType>(
   );
 
   const content = () => {
-    if (isInitial) {
+    if (results.isFetching) {
+      return <LoadingIndicator animation="grow"></LoadingIndicator>;
+    } else if (isStale) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
@@ -206,8 +211,6 @@ export function ManualSearchModal<T extends SupportType>(
           </Button>
         </div>
       );
-    } else if (isFetching) {
-      return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
         <>
@@ -215,7 +218,7 @@ export function ManualSearchModal<T extends SupportType>(
           <PageTable
             emptyText="No Result"
             columns={columns}
-            data={results}
+            data={results.data ?? []}
           ></PageTable>
         </>
       );
@@ -223,11 +226,7 @@ export function ManualSearchModal<T extends SupportType>(
   };
 
   const footer = (
-    <Button
-      variant="light"
-      hidden={isFetching === true || isInitial === true}
-      onClick={search}
-    >
+    <Button variant="light" hidden={isStale} onClick={search}>
       Search Again
     </Button>
   );
@@ -249,7 +248,7 @@ export function ManualSearchModal<T extends SupportType>(
 
   return (
     <BaseModal
-      closeable={isFetching === false}
+      closeable={results.isFetching === false}
       size="xl"
       title={title}
       footer={footer}

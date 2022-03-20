@@ -1,4 +1,4 @@
-import { useDownloadEpisodeSubtitles } from "@/apis/hooks";
+import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import {
   ActionButton,
   EpisodeHistoryModal,
@@ -219,6 +219,7 @@ const Table: FunctionComponent<Props> = ({
       <ManualSearchModal
         modalKey="manual-search"
         download={download}
+        query={useEpisodesProvider}
       ></ManualSearchModal>
     </>
   );
