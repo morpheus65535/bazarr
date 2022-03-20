@@ -173,7 +173,7 @@ const Table: FunctionComponent<Props> = ({
                 icon={faHistory}
                 disabled={disabled}
                 onClick={() => {
-                  show("manual-search", row.original);
+                  show("history", row.original);
                 }}
               ></ActionButton>
               <ActionButton
