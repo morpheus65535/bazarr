@@ -87,7 +87,7 @@ const Header: FunctionComponent = () => {
           width="32"
           height="32"
           onClick={goHome}
-          className="cursor-pointer"
+          role="button"
         ></Image>
       </div>
       <Button
