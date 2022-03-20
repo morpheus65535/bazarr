@@ -5,7 +5,7 @@ import { Navigate } from "react-router-dom";
 const Redirector: FunctionComponent = () => {
   const { sonarr, radarr } = useEnabledStatus();
 
-  let path = "/settings";
+  let path = "/settings/general";
   if (sonarr) {
     path = "/series";
   } else if (radarr) {
