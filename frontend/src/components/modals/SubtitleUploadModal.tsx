@@ -92,7 +92,7 @@ function SubtitleUploadModal<T>(props: ComponentProps<T>) {
         language: initialLanguage,
         forced: false,
         hi: false,
-        payload: initialRef.current,
+        payload: { ...initialRef.current },
       }));
 
       if (update) {
