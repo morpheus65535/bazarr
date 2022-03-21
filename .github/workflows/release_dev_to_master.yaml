@@ -31,7 +31,7 @@ jobs:
         run: git config --global user.name "github-actions"
 
       - name: Cache node_modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: "${{ env.UI_DIRECTORY }}/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
