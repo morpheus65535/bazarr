@@ -31,6 +31,7 @@ import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
 import {
   faClock,
+  faCogs,
   faExclamationTriangle,
   faFileExcel,
   faFilm,
@@ -181,7 +182,7 @@ function useRoutes(): CustomRouteObject[] {
             ],
           },
           {
-            icon: faExclamationTriangle,
+            icon: faCogs,
             name: "Settings",
             path: "settings",
             children: [

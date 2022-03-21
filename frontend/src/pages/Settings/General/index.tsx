@@ -188,12 +188,16 @@ const SettingsGeneralView: FunctionComponent = () => {
           <File settingKey="settings-backup-folder" type="bazarr"></File>
           <Message>Absolute path to the backup directory</Message>
         </Input>
-
-        <Input name="Retention (days)">
-          <Text
-            settingKey="settings-backup-retention"
-            numberWithArrows={true}
-          ></Text>
+        <Input name="Retention">
+          <InputGroup>
+            <Text
+              settingKey="settings-backup-retention"
+              numberWithArrows={true}
+            ></Text>
+            <InputGroup.Prepend>
+              <InputGroup.Text>Days</InputGroup.Text>
+            </InputGroup.Prepend>
+          </InputGroup>
         </Input>
       </Group>
       <Group header="Analytics">
