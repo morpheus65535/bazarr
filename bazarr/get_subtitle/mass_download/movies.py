@@ -53,12 +53,12 @@ def movies_download_subtitles(no):
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles'])):
         providers_list = get_providers()
 
-        if language is not None:
-            hi_ = "True" if language.endswith(':hi') else "False"
-            forced_ = "True" if language.endswith(':forced') else "False"
-            languages.append((language.split(":")[0], hi_, forced_))
-
         if providers_list:
+            if language is not None:
+                hi_ = "True" if language.endswith(':hi') else "False"
+                forced_ = "True" if language.endswith(':forced') else "False"
+                languages.append((language.split(":")[0], hi_, forced_))
+
             # confirm if language is still missing or if cutoff have been reached
             confirmed_missing_subs = TableMovies.select(TableMovies.missing_subtitles) \
                 .where(TableMovies.radarrId == movie['radarrId']) \
@@ -76,32 +76,32 @@ def movies_download_subtitles(no):
                           value=i,
                           count=count_movie)
 
-    if providers_list:
-        for result in generate_subtitles(path_mappings.path_replace_movie(movie['path']),
-                                         languages,
-                                         audio_language,
-                                         str(movie['sceneName']),
-                                         movie['title'],
-                                         'movie'):
+            for result in generate_subtitles(path_mappings.path_replace_movie(movie['path']),
+                                             languages,
+                                             audio_language,
+                                             str(movie['sceneName']),
+                                             movie['title'],
+                                             'movie'):
 
-            if result:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-                history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications_movie(no, message)
-    else:
-        logging.info("BAZARR All providers are throttled")
+                if result:
+                    message = result[0]
+                    path = result[1]
+                    forced = result[5]
+                    if result[8]:
+                        language_code = result[2] + ":hi"
+                    elif forced:
+                        language_code = result[2] + ":forced"
+                    else:
+                        language_code = result[2]
+                    provider = result[3]
+                    score = result[4]
+                    subs_id = result[6]
+                    subs_path = result[7]
+                    store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
+                    history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
+                    send_notifications_movie(no, message)
+        else:
+            logging.info("BAZARR All providers are throttled")
+            break
 
     hide_progress(id='movie_search_progress_{}'.format(no))
