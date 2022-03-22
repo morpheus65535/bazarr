@@ -448,8 +448,8 @@ def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
 
     language_code_convert_dict = {
         'he': 'iw',
-        'zt': 'zh-cn',
-        'zh': 'zh-tw',
+        'zt': 'zh-CN',
+        'zh': 'zh-TW',
     }
 
     to_lang = alpha3_from_alpha2(to_lang)
