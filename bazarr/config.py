@@ -103,7 +103,8 @@ defaults = {
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
         'use_ffprobe_cache': 'True',
-        'exclude_season_zero': 'False'
+        'exclude_season_zero': 'False',
+        'defer_search_signalr': 'False'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -117,7 +118,8 @@ defaults = {
         'only_monitored': 'False',
         'movies_sync': '60',
         'excluded_tags': '[]',
-        'use_ffprobe_cache': 'True'
+        'use_ffprobe_cache': 'True',
+        'defer_search_signalr': 'False'
     },
     'proxy': {
         'type': 'None',

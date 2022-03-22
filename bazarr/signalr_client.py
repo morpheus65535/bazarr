@@ -237,9 +237,10 @@ def dispatcher(data):
                 # this will happen if a season monitored status is changed.
                 sync_episodes(series_id=media_id, send_event=True)
         elif topic == 'episode':
-            sync_one_episode(episode_id=media_id)
+            sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.getboolean('defer_search_signalr'))
         elif topic == 'movie':
-            update_one_movie(movie_id=media_id, action=action)
+            update_one_movie(movie_id=media_id, action=action,
+                             defer_search=settings.radarr.getboolean('defer_search_signalr'))
     except Exception as e:
         logging.debug('BAZARR an exception occurred while parsing SignalR feed: {}'.format(repr(e)))
     finally:

@@ -100,6 +100,22 @@ const SettingsSonarrView: FunctionComponent = () => {
             </Input>
             <Input>
               <Check
+                label="Defer searching of subtitles until scheduled task execution"
+                settingKey="settings-sonarr-defer_search_signalr"
+              ></Check>
+              <Message>
+                If enabled, this option will prevent Bazarr from searching
+                subtitles as soon as episodes are imported.
+              </Message>
+              <Message>
+                Search can be triggered using this command: `curl -d
+                "sonarr_episodefile_id=$sonarr_episodefile_id" -H "x-api-key:
+                ###############################" -X POST
+                http://localhost:6767/api/webhooks/sonarr`
+              </Message>
+            </Input>
+            <Input>
+              <Check
                 label="Exclude season zero (extras)"
                 settingKey="settings-sonarr-exclude_season_zero"
               ></Check>

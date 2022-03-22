@@ -85,6 +85,22 @@ const SettingsRadarrView: FunctionComponent = () => {
                 movies in Radarr.
               </Message>
             </Input>
+            <Input>
+              <Check
+                label="Defer searching of subtitles until scheduled task execution"
+                settingKey="settings-radarr-defer_search_signalr"
+              ></Check>
+              <Message>
+                If enabled, this option will prevent Bazarr from searching
+                subtitles as soon as movies are imported.
+              </Message>
+              <Message>
+                Search can be triggered using this command: `curl -d
+                "radarr_moviefile_id=$radarr_moviefile_id" -H "x-api-key:
+                ###############################" -X POST
+                http://localhost:6767/api/webhooks/radarr`
+              </Message>
+            </Input>
           </Group>
           <Group header="Path Mappings">
             <PathMappingTable type="radarr"></PathMappingTable>
