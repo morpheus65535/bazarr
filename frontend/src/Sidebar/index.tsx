@@ -2,7 +2,7 @@ import { setSidebar } from "@/modules/redux/actions";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
-import { BuildKey, pathJoin } from "@/utilities";
+import { BuildKey, Environment, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -109,7 +109,7 @@ const Sidebar: FunctionComponent = () => {
         <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image
             alt="brand"
-            src="/static/logo64.png"
+            src={`${Environment.baseUrl}/static/logo64.png`}
             width="32"
             height="32"
             onClick={goHome}
