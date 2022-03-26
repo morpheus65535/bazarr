@@ -8,7 +8,13 @@ import {
 } from "@/components";
 import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
 import { BuildKey } from "@/utilities";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
@@ -42,6 +48,10 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
 
   const [current, setCurrent] =
     useState<Nullable<Settings.NotificationInfo>>(payload);
+
+  useEffect(() => {
+    setCurrent(payload);
+  }, [payload]);
 
   const updateUrl = useCallback((url: string) => {
     setCurrent((current) => {
