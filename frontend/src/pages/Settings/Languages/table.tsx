@@ -1,5 +1,5 @@
 import { ActionButton, SimpleTable } from "@/components";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModalControl } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep } from "lodash";
@@ -69,7 +69,7 @@ const Table: FunctionComponent = () => {
   const mutateRow = useCallback<ModifyFn>(
     (index, item) => {
       if (item) {
-        show("profile", cloneDeep(item));
+        show(Modal, cloneDeep(item));
       } else {
         const list = [...profiles];
         list.splice(index, 1);
@@ -185,12 +185,12 @@ const Table: FunctionComponent = () => {
             mustNotContain: [],
             originalFormat: false,
           };
-          show("profile", profile);
+          show(Modal, profile);
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
-      <Modal update={updateProfile} modalKey="profile"></Modal>
+      <Modal update={updateProfile}></Modal>
     </>
   );
 };

@@ -1,9 +1,11 @@
-import { BaseModal, BaseModalProps } from "@/components";
-import { usePayload } from "@/modules/redux/hooks/modal";
+import { useModal, usePayload, withModal } from "@/modules/modals";
 import { FunctionComponent, useMemo } from "react";
 
-const SystemLogModal: FunctionComponent<BaseModalProps> = ({ ...modal }) => {
-  const stack = usePayload<string>(modal.modalKey);
+const SystemLogModal: FunctionComponent = () => {
+  const stack = usePayload<string>();
+
+  const Modal = useModal();
+
   const result = useMemo(
     () =>
       stack?.split("\\n").map((v, idx) => (
@@ -13,13 +15,14 @@ const SystemLogModal: FunctionComponent<BaseModalProps> = ({ ...modal }) => {
       )),
     [stack]
   );
+
   return (
-    <BaseModal title="Stack traceback" {...modal}>
+    <Modal title="Stack traceback">
       <pre>
         <code>{result}</code>
       </pre>
-    </BaseModal>
+    </Modal>
   );
 };
 
-export default SystemLogModal;
+export default withModal(SystemLogModal, "system-log");

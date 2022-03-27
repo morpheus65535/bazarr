@@ -5,14 +5,14 @@ import {
   useSeriesById,
   useSeriesModification,
 } from "@/apis/hooks";
-import {
-  ContentHeader,
-  ItemEditorModal,
-  LoadingIndicator,
-  SeriesUploadModal,
-} from "@/components";
+import { ContentHeader, LoadingIndicator } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import {
+  ItemEditorModal,
+  SeriesUploadModal,
+  SubtitleToolModal,
+} from "@/components/modals";
+import { useModalControl } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -109,7 +109,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ContentHeader.Button
             disabled={series.episodeFileCount === 0 || !available || hasTask}
             icon={faBriefcase}
-            onClick={() => show("tools", episodes)}
+            onClick={() => show(SubtitleToolModal, episodes)}
           >
             Tools
           </ContentHeader.Button>
@@ -120,14 +120,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => show("upload", series)}
+            onClick={() => show(SeriesUploadModal, series)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => show("edit", series)}
+            onClick={() => show(ItemEditorModal, series)}
           >
             Edit Series
           </ContentHeader.Button>
@@ -158,11 +158,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
           ></Table>
         )}
       </Row>
-      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
-      <SeriesUploadModal
-        modalKey="upload"
-        episodes={episodes ?? []}
-      ></SeriesUploadModal>
+      <ItemEditorModal mutation={mutation}></ItemEditorModal>
+      <SeriesUploadModal episodes={episodes ?? []}></SeriesUploadModal>
     </Container>
   );
 };

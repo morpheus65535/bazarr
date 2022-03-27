@@ -1,5 +1,10 @@
 import { useSubtitleAction } from "@/apis/hooks";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import {
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { isMovie, submodProcessColor } from "@/utilities";
 import { LOG } from "@/utilities/console";
@@ -45,7 +50,6 @@ import {
 } from "..";
 import Language from "../bazarr/Language";
 import { useCustomSelection } from "../tables/plugins";
-import BaseModal, { BaseModalProps } from "./BaseModal";
 import { availableTranslation, colorOptions } from "./toolOptions";
 
 type SupportType = Item.Episode | Item.Movie;
@@ -77,11 +81,10 @@ interface ToolModalProps {
   ) => void;
 }
 
-const AddColorModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
-  props
-) => {
-  const { process, ...modal } = props;
+const ColorTool: FunctionComponent<ToolModalProps> = ({ process }) => {
   const [selection, setSelection] = useState<Nullable<string>>(null);
+
+  const Modal = useModal();
 
   const submit = useCallback(() => {
     if (selection) {
@@ -90,30 +93,28 @@ const AddColorModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
     }
   }, [selection, process]);
 
-  const footer = useMemo(
-    () => (
-      <Button disabled={selection === null} onClick={submit}>
-        Save
-      </Button>
-    ),
-    [selection, submit]
+  const footer = (
+    <Button disabled={selection === null} onClick={submit}>
+      Save
+    </Button>
   );
+
   return (
-    <BaseModal title="Choose Color" footer={footer} {...modal}>
+    <Modal title="Choose Color" footer={footer}>
       <Selector options={colorOptions} onChange={setSelection}></Selector>
-    </BaseModal>
+    </Modal>
   );
 };
 
-const FrameRateModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
-  props
-) => {
-  const { process, ...modal } = props;
+const ColorToolModal = withModal(ColorTool, "color-tool");
 
+const FrameRateTool: FunctionComponent<ToolModalProps> = ({ process }) => {
   const [from, setFrom] = useState<Nullable<number>>(null);
   const [to, setTo] = useState<Nullable<number>>(null);
 
   const canSave = from !== null && to !== null && from !== to;
+
+  const Modal = useModal();
 
   const submit = useCallback(() => {
     if (canSave) {
@@ -129,7 +130,7 @@ const FrameRateModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
   );
 
   return (
-    <BaseModal title="Change Frame Rate" footer={footer} {...modal}>
+    <Modal title="Change Frame Rate" footer={footer}>
       <InputGroup className="px-2">
         <Form.Control
           placeholder="From"
@@ -156,19 +157,19 @@ const FrameRateModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
           }}
         ></Form.Control>
       </InputGroup>
-    </BaseModal>
+    </Modal>
   );
 };
 
-const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
-  props
-) => {
-  const { process, ...modal } = props;
+const FrameRateModal = withModal(FrameRateTool, "frame-rate-tool");
 
+const TimeAdjustmentTool: FunctionComponent<ToolModalProps> = ({ process }) => {
   const [isPlus, setPlus] = useState(true);
   const [offset, setOffset] = useState<[number, number, number, number]>([
     0, 0, 0, 0,
   ]);
+
+  const Modal = useModal();
 
   const updateOffset = useCallback(
     (idx: number): ChangeEventHandler<HTMLInputElement> => {
@@ -200,17 +201,14 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
     }
   }, [process, canSave, offset, isPlus]);
 
-  const footer = useMemo(
-    () => (
-      <Button disabled={!canSave} onClick={submit}>
-        Save
-      </Button>
-    ),
-    [submit, canSave]
+  const footer = (
+    <Button disabled={!canSave} onClick={submit}>
+      Save
+    </Button>
   );
 
   return (
-    <BaseModal title="Adjust Times" footer={footer} {...modal}>
+    <Modal title="Adjust Times" footer={footer}>
       <InputGroup>
         <InputGroup.Prepend>
           <Button
@@ -242,20 +240,21 @@ const AdjustTimesModal: FunctionComponent<BaseModalProps & ToolModalProps> = (
           onChange={updateOffset(3)}
         ></Form.Control>
       </InputGroup>
-    </BaseModal>
+    </Modal>
   );
 };
 
-const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
-  process,
-  ...modal
-}) => {
+const TimeAdjustmentModal = withModal(TimeAdjustmentTool, "time-adjust-tool");
+
+const TranslationTool: FunctionComponent<ToolModalProps> = ({ process }) => {
   const { data: languages } = useEnabledLanguages();
 
   const available = useMemo(
     () => languages.filter((v) => v.code2 in availableTranslation),
     [languages]
   );
+
+  const Modal = useModal();
 
   const [selectedLanguage, setLanguage] =
     useState<Nullable<Language.Info>>(null);
@@ -266,17 +265,13 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
     }
   }, [selectedLanguage, process]);
 
-  const footer = useMemo(
-    () => (
-      <Button disabled={!selectedLanguage} onClick={submit}>
-        Translate
-      </Button>
-    ),
-    [submit, selectedLanguage]
+  const footer = (
+    <Button disabled={!selectedLanguage} onClick={submit}>
+      Translate
+    </Button>
   );
-
   return (
-    <BaseModal title="Translate to" footer={footer} {...modal}>
+    <Modal title="Translation" footer={footer}>
       <Form.Label>
         Enabled languages not listed here are unsupported by Google Translate.
       </Form.Label>
@@ -284,18 +279,21 @@ const TranslateModal: FunctionComponent<BaseModalProps & ToolModalProps> = ({
         options={available}
         onChange={setLanguage}
       ></LanguageSelector>
-    </BaseModal>
+    </Modal>
   );
 };
+
+const TranslationModal = withModal(TranslationTool, "translate-tool");
 
 const CanSelectSubtitle = (item: TableColumnType) => {
   return item.path.endsWith(".srt");
 };
 
-const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
-  const payload = usePayload<SupportType[]>(props.modalKey);
+const STM: FunctionComponent = () => {
+  const payload = usePayload<SupportType[]>();
   const [selections, setSelections] = useState<TableColumnType[]>([]);
 
+  const Modal = useModal({ size: "xl" });
   const { hide } = useModalControl();
 
   const { mutateAsync } = useSubtitleAction();
@@ -303,8 +301,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
   const process = useCallback(
     (action: string, override?: Partial<FormType.ModifySubtitle>) => {
       LOG("info", "executing action", action);
-      hide(props.modalKey);
-
+      hide();
       const tasks = selections.map((s) => {
         const form: FormType.ModifySubtitle = {
           id: s.id,
@@ -318,7 +315,7 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
       dispatchTask(tasks, "modify-subtitles");
     },
-    [hide, props.modalKey, selections, mutateAsync]
+    [hide, selections, mutateAsync]
   );
 
   const { show } = useModalControl();
@@ -383,92 +380,74 @@ const STM: FunctionComponent<BaseModalProps> = ({ ...props }) => {
 
   const plugins = [useRowSelect, useCustomSelection];
 
-  const footer = useMemo(
-    () => (
-      <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
-        <ActionButton
-          size="sm"
-          disabled={selections.length === 0}
-          icon={faPlay}
-          onClick={() => process("sync")}
-        >
-          Sync
-        </ActionButton>
-        <Dropdown.Toggle
-          disabled={selections.length === 0}
-          split
-          variant="light"
-          size="sm"
-          className="px-2"
-        ></Dropdown.Toggle>
-        <Dropdown.Menu>
-          <Dropdown.Item eventKey="remove_HI">
-            <ActionButtonItem icon={faDeaf}>Remove HI Tags</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item eventKey="remove_tags">
-            <ActionButtonItem icon={faCode}>Remove Style Tags</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item eventKey="OCR_fixes">
-            <ActionButtonItem icon={faImage}>OCR Fixes</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item eventKey="common">
-            <ActionButtonItem icon={faMagic}>Common Fixes</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item eventKey="fix_uppercase">
-            <ActionButtonItem icon={faTextHeight}>
-              Fix Uppercase
-            </ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item eventKey="reverse_rtl">
-            <ActionButtonItem icon={faExchangeAlt}>
-              Reverse RTL
-            </ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item onSelect={() => show("add-color")}>
-            <ActionButtonItem icon={faPaintBrush}>Add Color</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item onSelect={() => show("change-frame-rate")}>
-            <ActionButtonItem icon={faFilm}>Change Frame Rate</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item onSelect={() => show("adjust-times")}>
-            <ActionButtonItem icon={faClock}>Adjust Times</ActionButtonItem>
-          </Dropdown.Item>
-          <Dropdown.Item onSelect={() => show("translate-sub")}>
-            <ActionButtonItem icon={faLanguage}>Translate</ActionButtonItem>
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
-    ),
-    [selections.length, process, show]
+  const footer = (
+    <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
+      <ActionButton
+        size="sm"
+        disabled={selections.length === 0}
+        icon={faPlay}
+        onClick={() => process("sync")}
+      >
+        Sync
+      </ActionButton>
+      <Dropdown.Toggle
+        disabled={selections.length === 0}
+        split
+        variant="light"
+        size="sm"
+        className="px-2"
+      ></Dropdown.Toggle>
+      <Dropdown.Menu>
+        <Dropdown.Item eventKey="remove_HI">
+          <ActionButtonItem icon={faDeaf}>Remove HI Tags</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item eventKey="remove_tags">
+          <ActionButtonItem icon={faCode}>Remove Style Tags</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item eventKey="OCR_fixes">
+          <ActionButtonItem icon={faImage}>OCR Fixes</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item eventKey="common">
+          <ActionButtonItem icon={faMagic}>Common Fixes</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item eventKey="fix_uppercase">
+          <ActionButtonItem icon={faTextHeight}>Fix Uppercase</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item eventKey="reverse_rtl">
+          <ActionButtonItem icon={faExchangeAlt}>Reverse RTL</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item onSelect={() => show(ColorToolModal)}>
+          <ActionButtonItem icon={faPaintBrush}>Add Color</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item onSelect={() => show(FrameRateModal)}>
+          <ActionButtonItem icon={faFilm}>Change Frame Rate</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item onSelect={() => show(TimeAdjustmentModal)}>
+          <ActionButtonItem icon={faClock}>Adjust Times</ActionButtonItem>
+        </Dropdown.Item>
+        <Dropdown.Item onSelect={() => show(TranslationModal)}>
+          <ActionButtonItem icon={faLanguage}>Translate</ActionButtonItem>
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
   );
 
   return (
-    <>
-      <BaseModal title={"Subtitle Tools"} footer={footer} {...props}>
-        <SimpleTable
-          emptyText="No External Subtitles Found"
-          plugins={plugins}
-          columns={columns}
-          onSelect={setSelections}
-          canSelect={CanSelectSubtitle}
-          data={data}
-        ></SimpleTable>
-      </BaseModal>
-      <AddColorModal process={process} modalKey="add-color"></AddColorModal>
-      <FrameRateModal
-        process={process}
-        modalKey="change-frame-rate"
-      ></FrameRateModal>
-      <AdjustTimesModal
-        process={process}
-        modalKey="adjust-times"
-      ></AdjustTimesModal>
-      <TranslateModal
-        process={process}
-        modalKey="translate-sub"
-      ></TranslateModal>
-    </>
+    <Modal title="Subtitle Tools" footer={footer}>
+      <SimpleTable
+        emptyText="No External Subtitles Found"
+        plugins={plugins}
+        columns={columns}
+        onSelect={setSelections}
+        canSelect={CanSelectSubtitle}
+        data={data}
+      ></SimpleTable>
+      <ColorToolModal process={process}></ColorToolModal>
+      <FrameRateModal process={process}></FrameRateModal>
+      <TimeAdjustmentModal process={process}></TimeAdjustmentModal>
+      <TranslationModal process={process}></TranslationModal>
+    </Modal>
   );
 };
 
-export default STM;
+export default withModal(STM, "subtitle-tools");

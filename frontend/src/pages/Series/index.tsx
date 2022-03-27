@@ -1,8 +1,9 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
-import { ActionBadge, ItemEditorModal } from "@/components";
+import { ActionBadge } from "@/components";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import { ItemEditorModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FunctionComponent, useMemo } from "react";
@@ -92,7 +93,7 @@ const SeriesView: FunctionComponent = () => {
           return (
             <ActionBadge
               icon={faWrench}
-              onClick={() => show("edit", original)}
+              onClick={() => show(ItemEditorModal, original)}
             ></ActionBadge>
           );
         },
@@ -107,7 +108,7 @@ const SeriesView: FunctionComponent = () => {
         <title>Series - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
+      <ItemEditorModal mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };

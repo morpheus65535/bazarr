@@ -1,10 +1,10 @@
+import { Selector, SelectorComponents, SelectorOption } from "@/components";
 import {
-  BaseModal,
-  Selector,
-  SelectorComponents,
-  SelectorOption,
-} from "@/components";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import { BuildKey, isReactText } from "@/utilities";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
@@ -27,7 +27,6 @@ import {
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
 
-const ModalKey = "provider-modal";
 const ProviderKey = "settings-general-enabled_providers";
 
 export const ProviderView: FunctionComponent = () => {
@@ -37,7 +36,7 @@ export const ProviderView: FunctionComponent = () => {
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      show(ModalKey, v ?? null);
+      show(ProviderModal, v ?? null);
     },
     [show]
   );
@@ -72,12 +71,14 @@ export const ProviderView: FunctionComponent = () => {
         {cards}
         <ColCard key="add-card" plus onClick={select}></ColCard>
       </Row>
+      <ProviderModal></ProviderModal>
     </Container>
   );
 };
 
-export const ProviderModal: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo>(ModalKey);
+const ProviderTool: FunctionComponent = () => {
+  const payload = usePayload<ProviderInfo>();
+  const Modal = useModal();
   const { hide } = useModalControl();
 
   const [staged, setChange] = useState<LooseObject>({});
@@ -120,20 +121,6 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info, providers, staged, updateGlobal, hide]);
 
   const canSave = info !== null;
-
-  const footer = useMemo(
-    () => (
-      <>
-        <Button hidden={!payload} variant="danger" onClick={deletePayload}>
-          Delete
-        </Button>
-        <Button disabled={!canSave} onClick={addProvider}>
-          Save
-        </Button>
-      </>
-    ),
-    [canSave, payload, deletePayload, addProvider]
-  );
 
   const onSelect = useCallback((item: Nullable<ProviderInfo>) => {
     if (item) {
@@ -237,8 +224,19 @@ export const ProviderModal: FunctionComponent = () => {
     []
   );
 
+  const footer = (
+    <>
+      <Button hidden={!payload} variant="danger" onClick={deletePayload}>
+        Delete
+      </Button>
+      <Button disabled={!canSave} onClick={addProvider}>
+        Save
+      </Button>
+    </>
+  );
+
   return (
-    <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
+    <Modal title="Provider" footer={footer}>
       <StagedChangesContext.Provider value={[staged, setChange]}>
         <Container>
           <Row>
@@ -266,6 +264,8 @@ export const ProviderModal: FunctionComponent = () => {
           </Row>
         </Container>
       </StagedChangesContext.Provider>
-    </BaseModal>
+    </Modal>
   );
 };
+
+const ProviderModal = withModal(ProviderTool, "provider-tool");

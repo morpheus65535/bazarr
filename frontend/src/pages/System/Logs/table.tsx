@@ -1,5 +1,5 @@
 import { ActionButton, PageTable } from "@/components";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModalControl } from "@/modules/modals";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
             return (
               <ActionButton
                 icon={faLayerGroup}
-                onClick={() => show("system-log", value)}
+                onClick={() => show(SystemLogModal, value)}
               ></ActionButton>
             );
           } else {
@@ -75,7 +75,7 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
   return (
     <>
       <PageTable columns={columns} data={logs}></PageTable>
-      <SystemLogModal size="xl" modalKey="system-log"></SystemLogModal>
+      <SystemLogModal></SystemLogModal>
     </>
   );
 };

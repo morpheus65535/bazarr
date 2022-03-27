@@ -1,14 +1,9 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import {
-  ActionButton,
-  EpisodeHistoryModal,
-  GroupTable,
-  SubtitleToolModal,
-  TextPopover,
-} from "@/components";
-import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
+import { ActionButton, GroupTable, TextPopover } from "@/components";
+import { EpisodeHistoryModal, SubtitleToolModal } from "@/components/modals";
+import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import { useModalControl } from "@/modules/modals";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
-import { useModalControl } from "@/modules/redux/hooks/modal";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -166,21 +161,21 @@ const Table: FunctionComponent<Props> = ({
                 icon={faUser}
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
-                  show("manual-search", row.original);
+                  show(EpisodeSearchModal, row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faHistory}
                 disabled={disabled}
                 onClick={() => {
-                  show("history", row.original);
+                  show(EpisodeHistoryModal, row.original);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faBriefcase}
                 disabled={disabled}
                 onClick={() => {
-                  show("tools", [row.original]);
+                  show(SubtitleToolModal, [row.original]);
                 }}
               ></ActionButton>
             </ButtonGroup>
@@ -214,13 +209,12 @@ const Table: FunctionComponent<Props> = ({
         }}
         emptyText="No Episode Found For This Series"
       ></GroupTable>
-      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
-      <EpisodeHistoryModal modalKey="history" size="lg"></EpisodeHistoryModal>
-      <ManualSearchModal
-        modalKey="manual-search"
+      <SubtitleToolModal></SubtitleToolModal>
+      <EpisodeHistoryModal></EpisodeHistoryModal>
+      <EpisodeSearchModal
         download={download}
         query={useEpisodesProvider}
-      ></ManualSearchModal>
+      ></EpisodeSearchModal>
     </>
   );
 };

@@ -1,25 +1,27 @@
 import { useIsAnyActionRunning, useLanguageProfiles } from "@/apis/hooks";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import {
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import { GetItemId } from "@/utilities";
-import { FunctionComponent, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Container, Form } from "react-bootstrap";
 import { UseMutationResult } from "react-query";
 import { AsyncButton, Selector, SelectorOption } from "..";
-import BaseModal, { BaseModalProps } from "./BaseModal";
 
 interface Props {
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
 }
 
-const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
-  const { mutation, ...modal } = props;
-
+const Editor: FunctionComponent<Props> = ({ mutation }) => {
   const { data: profiles } = useLanguageProfiles();
 
-  const payload = usePayload<Item.Base>(modal.modalKey);
-  const { hide } = useModalControl();
-
+  const payload = usePayload<Item.Base>();
   const { mutateAsync, isLoading } = mutation;
+
+  const { hide } = useModalControl();
 
   const hasTask = useIsAnyActionRunning();
 
@@ -33,9 +35,12 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
 
   const [id, setId] = useState<Nullable<number>>(payload?.profileId ?? null);
 
-  useEffect(() => {
-    setId(payload?.profileId ?? null);
-  }, [payload]);
+  const Modal = useModal({
+    closeable: !isLoading,
+    onMounted: () => {
+      setId(payload?.profileId ?? null);
+    },
+  });
 
   const footer = (
     <AsyncButton
@@ -56,21 +61,14 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
           return null;
         }
       }}
-      onSuccess={() => {
-        hide();
-      }}
+      onSuccess={() => hide()}
     >
       Save
     </AsyncButton>
   );
 
   return (
-    <BaseModal
-      closeable={!isLoading}
-      footer={footer}
-      title={payload?.title}
-      {...modal}
-    >
+    <Modal title={payload?.title ?? "Item Editor"} footer={footer}>
       <Container fluid>
         <Form>
           <Form.Group>
@@ -95,8 +93,8 @@ const Editor: FunctionComponent<Props & BaseModalProps> = (props) => {
           </Form.Group>
         </Form>
       </Container>
-    </BaseModal>
+    </Modal>
   );
 };
 
-export default Editor;
+export default withModal(Editor, "edit");

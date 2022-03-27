@@ -1,17 +1,21 @@
 import { useRestoreBackups } from "@/apis/hooks/system";
-import { AsyncButton, BaseModal, BaseModalProps } from "@/components";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import { AsyncButton } from "@/components";
+import {
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import React, { FunctionComponent } from "react";
 import { Button } from "react-bootstrap";
 
-interface Props extends BaseModalProps {}
+const SystemBackupRestoreModal: FunctionComponent = () => {
+  const result = usePayload<string>();
 
-const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
-  const result = usePayload<string>(modal.modalKey);
+  const Modal = useModal();
+  const { hide } = useModalControl();
 
   const { mutateAsync } = useRestoreBackups();
-
-  const { hide } = useModalControl();
 
   const footer = (
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
@@ -19,9 +23,7 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
         <Button
           variant="outline-secondary"
           className="mr-2"
-          onClick={() => {
-            hide(modal.modalKey);
-          }}
+          onClick={() => hide()}
         >
           Cancel
         </Button>
@@ -34,7 +36,7 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
               return null;
             }
           }}
-          onSuccess={() => hide(modal.modalKey)}
+          onSuccess={() => hide()}
         >
           Restore
         </AsyncButton>
@@ -43,11 +45,13 @@ const SystemBackupRestoreModal: FunctionComponent<Props> = ({ ...modal }) => {
   );
 
   return (
-    <BaseModal title="Restore Backup" footer={footer} {...modal}>
-      Are you sure you want to restore the backup '{result}'? Bazarr will
-      automatically restart and reload the UI during the restore process.
-    </BaseModal>
+    <Modal title="Restore Backup" footer={footer}>
+      <span>
+        Are you sure you want to restore the backup '{result}'? Bazarr will
+        automatically restart and reload the UI during the restore process.
+      </span>
+    </Modal>
   );
 };
 
-export default SystemBackupRestoreModal;
+export default withModal(SystemBackupRestoreModal, "restore");
