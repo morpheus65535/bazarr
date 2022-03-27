@@ -1,7 +1,10 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { ActionButton, GroupTable, TextPopover } from "@/components";
-import { EpisodeHistoryModal, SubtitleToolModal } from "@/components/modals";
+import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import SubtitleTools, {
+  SubtitleToolModal,
+} from "@/components/modals/subtitle-tools";
 import { useModalControl } from "@/modules/modals";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
@@ -209,7 +212,7 @@ const Table: FunctionComponent<Props> = ({
         }}
         emptyText="No Episode Found For This Series"
       ></GroupTable>
-      <SubtitleToolModal></SubtitleToolModal>
+      <SubtitleTools></SubtitleTools>
       <EpisodeHistoryModal></EpisodeHistoryModal>
       <EpisodeSearchModal
         download={download}

@@ -14,9 +14,11 @@ import {
   ItemEditorModal,
   MovieHistoryModal,
   MovieUploadModal,
-  SubtitleToolModal,
 } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
+import SubtitleTools, {
+  SubtitleToolModal,
+} from "@/components/modals/subtitle-tools";
 import { useModalControl } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -174,7 +176,7 @@ const MovieDetailView: FunctionComponent = () => {
         <Table movie={movie} profile={profile} disabled={hasTask}></Table>
       </Row>
       <ItemEditorModal mutation={mutation}></ItemEditorModal>
-      <SubtitleToolModal></SubtitleToolModal>
+      <SubtitleTools></SubtitleTools>
       <MovieHistoryModal></MovieHistoryModal>
       <MovieUploadModal></MovieUploadModal>
       <MovieSearchModal

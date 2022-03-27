@@ -7,11 +7,8 @@ import {
 } from "@/apis/hooks";
 import { ContentHeader, LoadingIndicator } from "@/components";
 import ItemOverview from "@/components/ItemOverview";
-import {
-  ItemEditorModal,
-  SeriesUploadModal,
-  SubtitleToolModal,
-} from "@/components/modals";
+import { ItemEditorModal, SeriesUploadModal } from "@/components/modals";
+import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import { useModalControl } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
