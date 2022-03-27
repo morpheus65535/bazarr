@@ -3,8 +3,8 @@ import { useModal, withModal } from "@/modules/modals";
 import { submodProcessColor } from "@/utilities";
 import { FunctionComponent, useCallback, useState } from "react";
 import { Button } from "react-bootstrap";
-import { colorOptions } from "../toolOptions";
 import { useProcess } from "./ToolContext";
+import { colorOptions } from "./tools";
 
 const ColorTool: FunctionComponent = () => {
   const [selection, setSelection] = useState<Nullable<string>>(null);

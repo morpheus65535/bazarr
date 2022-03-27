@@ -3,8 +3,8 @@ import { useModal, withModal } from "@/modules/modals";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import { availableTranslation } from "../toolOptions";
 import { useProcess } from "./ToolContext";
+import { availableTranslation } from "./tools";
 
 const TranslationTool: FunctionComponent = () => {
   const { data: languages } = useEnabledLanguages();
