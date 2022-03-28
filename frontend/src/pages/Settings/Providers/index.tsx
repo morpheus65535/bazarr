@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { Group, Input, Layout } from "../components";
-import { ProviderModal, ProviderView } from "./components";
+import { ProviderView } from "./components";
 
 const SettingsProvidersView: FunctionComponent = () => {
   return (
@@ -10,7 +10,6 @@ const SettingsProvidersView: FunctionComponent = () => {
           <ProviderView></ProviderView>
         </Input>
       </Group>
-      <ProviderModal></ProviderModal>
     </Layout>
   );
 };

@@ -1,4 +1,4 @@
-import { usePayload } from "@/modules/redux/hooks/modal";
+import { useModal, usePayload, withModal } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { GetItemId, isMovie } from "@/utilities";
 import {
@@ -10,13 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -29,7 +23,7 @@ import {
 } from "react-bootstrap";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
-import { BaseModal, BaseModalProps, LoadingIndicator, PageTable } from "..";
+import { LoadingIndicator, PageTable } from "..";
 import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -41,23 +35,14 @@ interface Props<T extends SupportType> {
   ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
 }
 
-export function ManualSearchModal<T extends SupportType>(
-  props: Props<T> & BaseModalProps
-) {
-  const { download, query: useSearch, ...modal } = props;
+function ManualSearchView<T extends SupportType>(props: Props<T>) {
+  const { download, query: useSearch } = props;
 
-  const item = usePayload<T>(modal.modalKey);
+  const item = usePayload<T>();
 
   const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
 
   const [id, setId] = useState<number | undefined>(undefined);
-
-  // Cleanup the ID when user switches episode / movie
-  useEffect(() => {
-    if (itemId !== undefined && itemId !== id) {
-      setId(undefined);
-    }
-  }, [id, itemId]);
 
   const results = useSearch(id);
 
@@ -225,12 +210,6 @@ export function ManualSearchModal<T extends SupportType>(
     }
   };
 
-  const footer = (
-    <Button variant="light" hidden={isStale} onClick={search}>
-      Search Again
-    </Button>
-  );
-
   const title = useMemo(() => {
     let title = "Unknown";
 
@@ -246,18 +225,38 @@ export function ManualSearchModal<T extends SupportType>(
     return `Search - ${title}`;
   }, [item]);
 
+  const Modal = useModal({
+    size: "xl",
+    closeable: results.isFetching === false,
+    onMounted: () => {
+      // Cleanup the ID when user switches episode / movie
+      if (itemId !== id) {
+        setId(undefined);
+      }
+    },
+  });
+
+  const footer = (
+    <Button variant="light" hidden={isStale} onClick={search}>
+      Search Again
+    </Button>
+  );
+
   return (
-    <BaseModal
-      closeable={results.isFetching === false}
-      size="xl"
-      title={title}
-      footer={footer}
-      {...modal}
-    >
+    <Modal title={title} footer={footer}>
       {content()}
-    </BaseModal>
+    </Modal>
   );
 }
+
+export const MovieSearchModal = withModal<Props<Item.Movie>>(
+  ManualSearchView,
+  "movie-manual-search"
+);
+export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
+  ManualSearchView,
+  "episode-manual-search"
+);
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   matches,

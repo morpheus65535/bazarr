@@ -1,14 +1,17 @@
 import {
   ActionButton,
-  BaseModal,
-  BaseModalProps,
   Chips,
   LanguageSelector,
   Selector,
   SelectorOption,
   SimpleTable,
 } from "@/components";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import {
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -17,7 +20,6 @@ import {
   FunctionComponent,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -53,12 +55,8 @@ function createDefaultProfile(): Language.Profile {
   };
 }
 
-const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
-  props
-) => {
-  const { update, ...modal } = props;
-
-  const profile = usePayload<Language.Profile>(modal.modalKey);
+const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
+  const profile = usePayload<Language.Profile>();
 
   const { hide } = useModalControl();
 
@@ -66,13 +64,12 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
 
   const [current, setProfile] = useState(createDefaultProfile);
 
-  useEffect(() => {
-    if (profile) {
-      setProfile(profile);
-    } else {
-      setProfile(createDefaultProfile);
-    }
-  }, [profile]);
+  const Modal = useModal({
+    size: "lg",
+    onMounted: () => {
+      setProfile(profile ?? createDefaultProfile);
+    },
+  });
 
   const cutoff: SelectorOption<number>[] = useMemo(() => {
     const options = [...cutoffOptions];
@@ -133,18 +130,6 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
   }, [current.items, updateProfile, languages]);
 
   const canSave = current.name.length > 0 && current.items.length > 0;
-
-  const footer = (
-    <Button
-      disabled={!canSave}
-      onClick={() => {
-        hide();
-        update(current);
-      }}
-    >
-      Save
-    </Button>
-  );
 
   const columns = useMemo<Column<Language.ProfileItem>[]>(
     () => [
@@ -253,8 +238,20 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
     [languages]
   );
 
+  const footer = (
+    <Button
+      disabled={!canSave}
+      onClick={() => {
+        hide();
+        update(current);
+      }}
+    >
+      Save
+    </Button>
+  );
+
   return (
-    <BaseModal size="lg" title="Languages Profile" footer={footer} {...modal}>
+    <Modal title="Languages Profile" footer={footer}>
       <Input>
         <Form.Control
           type="text"
@@ -319,8 +316,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BaseModalProps> = (
         ></Selector>
         <Message>Download subtitle file without format conversion</Message>
       </Input>
-    </BaseModal>
+    </Modal>
   );
 };
 
-export default LanguagesProfileModal;
+export default withModal(LanguagesProfileModal, "languages-profile-editor");

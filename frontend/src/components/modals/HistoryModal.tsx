@@ -4,18 +4,17 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
-import { usePayload } from "@/modules/redux/hooks/modal";
+import { useModal, usePayload, withModal } from "@/modules/modals";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
 import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
-import BaseModal, { BaseModalProps } from "./BaseModal";
 
-export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { ...modal } = props;
+const MovieHistoryView: FunctionComponent = () => {
+  const movie = usePayload<Item.Movie>();
 
-  const movie = usePayload<Item.Movie>(modal.modalKey);
+  const Modal = useModal({ size: "lg" });
 
   const history = useMovieHistory(movie?.radarrId);
 
@@ -84,7 +83,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 
   return (
-    <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
+    <Modal title={`History - ${movie?.title ?? ""}`}>
       <QueryOverlay result={history}>
         <PageTable
           emptyText="No History Found"
@@ -92,14 +91,16 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
           data={data ?? []}
         ></PageTable>
       </QueryOverlay>
-    </BaseModal>
+    </Modal>
   );
 };
 
-export const EpisodeHistoryModal: FunctionComponent<BaseModalProps> = (
-  props
-) => {
-  const episode = usePayload<Item.Episode>(props.modalKey);
+export const MovieHistoryModal = withModal(MovieHistoryView, "movie-history");
+
+const EpisodeHistoryView: FunctionComponent = () => {
+  const episode = usePayload<Item.Episode>();
+
+  const Modal = useModal({ size: "lg" });
 
   const history = useEpisodeHistory(episode?.sonarrEpisodeId);
 
@@ -175,7 +176,7 @@ export const EpisodeHistoryModal: FunctionComponent<BaseModalProps> = (
   );
 
   return (
-    <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
+    <Modal title={`History - ${episode?.title ?? ""}`}>
       <QueryOverlay result={history}>
         <PageTable
           emptyText="No History Found"
@@ -183,6 +184,11 @@ export const EpisodeHistoryModal: FunctionComponent<BaseModalProps> = (
           data={data ?? []}
         ></PageTable>
       </QueryOverlay>
-    </BaseModal>
+    </Modal>
   );
 };
+
+export const EpisodeHistoryModal = withModal(
+  EpisodeHistoryView,
+  "episode-history"
+);

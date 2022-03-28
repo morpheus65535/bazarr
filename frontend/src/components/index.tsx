@@ -131,6 +131,5 @@ export * from "./buttons";
 export * from "./header";
 export * from "./inputs";
 export * from "./LanguageSelector";
-export * from "./modals";
 export * from "./SearchBar";
 export * from "./tables";

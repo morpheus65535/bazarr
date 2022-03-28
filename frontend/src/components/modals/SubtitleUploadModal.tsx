@@ -1,4 +1,4 @@
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModal, useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
@@ -23,7 +23,6 @@ import { Column } from "react-table";
 import { LanguageSelector, MessageIcon } from "..";
 import { FileForm } from "../inputs";
 import { SimpleTable } from "../tables";
-import BaseModal, { BaseModalProps } from "./BaseModal";
 
 type ModifyFn<T> = (index: number, info?: PendingSubtitle<T>) => void;
 
@@ -59,10 +58,7 @@ interface Props<T = unknown> {
   hideAllLanguages?: boolean;
 }
 
-type ComponentProps<T> = Props<T> &
-  Omit<BaseModalProps, "footer" | "title" | "size">;
-
-function SubtitleUploadModal<T>(props: ComponentProps<T>) {
+function SubtitleUploader<T>(props: Props<T>) {
   const {
     initial,
     columns,
@@ -73,9 +69,15 @@ function SubtitleUploadModal<T>(props: ComponentProps<T>) {
     hideAllLanguages,
   } = props;
 
-  const { hide } = useModalControl();
-
   const [pending, setPending] = useState<PendingSubtitle<T>[]>([]);
+
+  const showTable = pending.length > 0;
+
+  const Modal = useModal({
+    size: showTable ? "xl" : "lg",
+  });
+
+  const { hide } = useModalControl();
 
   const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
 
@@ -281,8 +283,6 @@ function SubtitleUploadModal<T>(props: ComponentProps<T>) {
     [columns, availableLanguages]
   );
 
-  const showTable = pending.length > 0;
-
   const canUpload = useMemo(
     () =>
       pending.length > 0 &&
@@ -332,12 +332,7 @@ function SubtitleUploadModal<T>(props: ComponentProps<T>) {
   );
 
   return (
-    <BaseModal
-      size={showTable ? "xl" : "lg"}
-      title="Upload Subtitles"
-      footer={footer}
-      {...props}
-    >
+    <Modal title="Update Subtitles" footer={footer}>
       <Container fluid className="flex-column">
         <Form>
           <Form.Group>
@@ -360,8 +355,8 @@ function SubtitleUploadModal<T>(props: ComponentProps<T>) {
           </RowContext.Provider>
         </div>
       </Container>
-    </BaseModal>
+    </Modal>
   );
 }
 
-export default SubtitleUploadModal;
+export default SubtitleUploader;

@@ -8,17 +8,18 @@ import {
   useMovieById,
   useMovieModification,
 } from "@/apis/hooks/movies";
+import { ContentHeader, LoadingIndicator } from "@/components";
+import ItemOverview from "@/components/ItemOverview";
 import {
-  ContentHeader,
   ItemEditorModal,
-  LoadingIndicator,
   MovieHistoryModal,
   MovieUploadModal,
+} from "@/components/modals";
+import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
+import SubtitleTools, {
   SubtitleToolModal,
-} from "@/components";
-import ItemOverview from "@/components/ItemOverview";
-import { ManualSearchModal } from "@/components/modals/ManualSearchModal";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+} from "@/components/modals/subtitle-tools";
+import { useModalControl } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -122,20 +123,20 @@ const MovieDetailView: FunctionComponent = () => {
           <ContentHeader.Button
             icon={faUser}
             disabled={movie.profileId === null || hasTask}
-            onClick={() => show("manual-search", movie)}
+            onClick={() => show(MovieSearchModal, movie)}
           >
             Manual
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faHistory}
-            onClick={() => show("history", movie)}
+            onClick={() => show(MovieHistoryModal, movie)}
           >
             History
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faToolbox}
             disabled={hasTask}
-            onClick={() => show("tools", [movie])}
+            onClick={() => show(SubtitleToolModal, [movie])}
           >
             Tools
           </ContentHeader.Button>
@@ -145,14 +146,14 @@ const MovieDetailView: FunctionComponent = () => {
           <ContentHeader.Button
             disabled={!allowEdit || movie.profileId === null || hasTask}
             icon={faCloudUploadAlt}
-            onClick={() => show("upload", movie)}
+            onClick={() => show(MovieUploadModal, movie)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => show("edit", movie)}
+            onClick={() => show(ItemEditorModal, movie)}
           >
             Edit Movie
           </ContentHeader.Button>
@@ -174,15 +175,14 @@ const MovieDetailView: FunctionComponent = () => {
       <Row>
         <Table movie={movie} profile={profile} disabled={hasTask}></Table>
       </Row>
-      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
-      <SubtitleToolModal modalKey="tools" size="lg"></SubtitleToolModal>
-      <MovieHistoryModal modalKey="history" size="lg"></MovieHistoryModal>
-      <MovieUploadModal modalKey="upload" size="lg"></MovieUploadModal>
-      <ManualSearchModal
-        modalKey="manual-search"
+      <ItemEditorModal mutation={mutation}></ItemEditorModal>
+      <SubtitleTools></SubtitleTools>
+      <MovieHistoryModal></MovieHistoryModal>
+      <MovieUploadModal></MovieUploadModal>
+      <MovieSearchModal
         download={download}
         query={useMoviesProvider}
-      ></ManualSearchModal>
+      ></MovieSearchModal>
     </Container>
   );
 };

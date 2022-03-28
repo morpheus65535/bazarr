@@ -1,5 +1,5 @@
 import { ActionButton, PageTable } from "@/components";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModalControl } from "@/modules/modals";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { FunctionComponent, useMemo } from "react";
@@ -42,11 +42,15 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
             <ButtonGroup>
               <ActionButton
                 icon={faHistory}
-                onClick={() => show("restore", row.row.original.filename)}
+                onClick={() =>
+                  show(SystemBackupRestoreModal, row.row.original.filename)
+                }
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => show("delete", row.row.original.filename)}
+                onClick={() =>
+                  show(SystemBackupDeleteModal, row.row.original.filename)
+                }
               ></ActionButton>
             </ButtonGroup>
           );
@@ -59,14 +63,8 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
   return (
     <React.Fragment>
       <PageTable columns={columns} data={backups}></PageTable>
-      <SystemBackupRestoreModal
-        modalKey="restore"
-        size="lg"
-      ></SystemBackupRestoreModal>
-      <SystemBackupDeleteModal
-        modalKey="delete"
-        size="lg"
-      ></SystemBackupDeleteModal>
+      <SystemBackupRestoreModal></SystemBackupRestoreModal>
+      <SystemBackupDeleteModal></SystemBackupDeleteModal>
     </React.Fragment>
   );
 };

@@ -1,9 +1,10 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
-import { ActionBadge, ItemEditorModal, TextPopover } from "@/components";
+import { ActionBadge, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import { ItemEditorModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/redux/hooks/modal";
+import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -90,7 +91,7 @@ const MovieView: FunctionComponent = () => {
           return (
             <ActionBadge
               icon={faWrench}
-              onClick={() => show("edit", row.original)}
+              onClick={() => show(ItemEditorModal, row.original)}
             ></ActionBadge>
           );
         },
@@ -105,7 +106,7 @@ const MovieView: FunctionComponent = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
+      <ItemEditorModal mutation={mutation}></ItemEditorModal>
     </Container>
   );
 };

@@ -1,6 +1,6 @@
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import api from "@/apis/raw";
-import { usePayload } from "@/modules/redux/hooks/modal";
+import { usePayload, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
@@ -9,8 +9,7 @@ import {
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Selector, SelectorOption } from "../inputs";
-import { BaseModalProps } from "./BaseModal";
-import SubtitleUploadModal, {
+import SubtitleUploader, {
   PendingSubtitle,
   useRowMutation,
   Validator,
@@ -24,11 +23,8 @@ interface SeriesProps {
   episodes: readonly Item.Episode[];
 }
 
-const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
-  episodes,
-  ...modal
-}) => {
-  const payload = usePayload<Item.Series>(modal.modalKey);
+const SeriesUploadModal: FunctionComponent<SeriesProps> = ({ episodes }) => {
+  const payload = usePayload<Item.Series>();
 
   const profile = useLanguageProfileBy(payload?.profileId);
 
@@ -165,16 +161,15 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
   );
 
   return (
-    <SubtitleUploadModal
+    <SubtitleUploader
       columns={columns}
       initial={{ instance: null }}
       availableLanguages={availableLanguages}
       upload={upload}
       update={update}
       validate={validate}
-      {...modal}
-    ></SubtitleUploadModal>
+    ></SubtitleUploader>
   );
 };
 
-export default SeriesUploadModal;
+export default withModal(SeriesUploadModal, "series-upload");

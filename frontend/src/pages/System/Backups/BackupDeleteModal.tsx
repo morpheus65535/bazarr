@@ -1,16 +1,20 @@
-import { AsyncButton, BaseModal, BaseModalProps } from "@/components";
-import { useModalControl, usePayload } from "@/modules/redux/hooks/modal";
+import { AsyncButton } from "@/components";
+import {
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import React, { FunctionComponent } from "react";
 import { Button } from "react-bootstrap";
 import { useDeleteBackups } from "../../../apis/hooks";
 
-interface Props extends BaseModalProps {}
-
-const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
+const SystemBackupDeleteModal: FunctionComponent = () => {
   const { mutateAsync } = useDeleteBackups();
 
-  const result = usePayload<string>(modal.modalKey);
+  const result = usePayload<string>();
 
+  const Modal = useModal();
   const { hide } = useModalControl();
 
   const footer = (
@@ -19,9 +23,7 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
         <Button
           variant="outline-secondary"
           className="mr-2"
-          onClick={() => {
-            hide(modal.modalKey);
-          }}
+          onClick={() => hide()}
         >
           Cancel
         </Button>
@@ -34,7 +36,7 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
               return null;
             }
           }}
-          onSuccess={() => hide(modal.modalKey)}
+          onSuccess={() => hide()}
         >
           Delete
         </AsyncButton>
@@ -43,10 +45,10 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
   );
 
   return (
-    <BaseModal title="Delete Backup" footer={footer} {...modal}>
-      Are you sure you want to delete the backup '{result}'?
-    </BaseModal>
+    <Modal title="Delete Backup" footer={footer}>
+      <span>Are you sure you want to delete the backup '{result}'?</span>
+    </Modal>
   );
 };
 
-export default SystemBackupDeleteModal;
+export default withModal(SystemBackupDeleteModal, "delete");
