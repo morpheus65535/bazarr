@@ -53,6 +53,7 @@ export default defineConfig(async ({ mode, command }) => {
           ws,
         },
       },
+      host: true,
     },
   };
 });
