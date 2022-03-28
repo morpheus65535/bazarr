@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { readFile } from "fs/promises";
 
 async function read(path: string, sectionName: string, fieldName: string) {
