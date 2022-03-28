@@ -3,7 +3,7 @@
 import json
 import requests
 import os
-import re
+import logging
 
 from flask import request
 from flask_restful import Resource
@@ -46,8 +46,12 @@ class WebHooksPlex(Resource):
                 r = requests.get('https://imdb.com/title/{}'.format(episode_imdb_id),
                                  headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
                 soup = bso(r.content, "html.parser")
-                series_imdb_id = soup.find('a', {'class': re.compile(r'SeriesParentLink__ParentTextLink')})['href'].split('/')[2]
+                script_tag = soup.find(id='__NEXT_DATA__')
+                script_tag_json = script_tag.string
+                show_metadata_dict = json.loads(script_tag_json)
+                series_imdb_id = show_metadata_dict['props']['pageProps']['aboveTheFoldData']['series']['series']['id']
             except Exception:
+                logging.debug('BAZARR is unable to get series IMDB id.')
                 return '', 404
             else:
                 sonarrEpisodeId = TableEpisodes.select(TableEpisodes.sonarrEpisodeId) \
