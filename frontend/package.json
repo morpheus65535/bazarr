@@ -30,6 +30,10 @@
     "@fortawesome/free-solid-svg-icons": "^5.15",
     "@fortawesome/react-fontawesome": "^0.1.16",
     "@reduxjs/toolkit": "^1.6",
+    "@testing-library/jest-dom": "^5.16.3",
+    "@testing-library/react": "^12.1.4",
+    "@testing-library/react-hooks": "^7.0.2",
+    "@testing-library/user-event": "^13.5.0",
     "@types/bootstrap": "^5",
     "@types/lodash": "^4",
     "@types/node": "^15",
@@ -44,6 +48,7 @@
     "eslint-config-react-app": "^7.0.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "husky": "^7",
+    "jsdom": "latest",
     "lodash": "^4",
     "moment": "^2.29.1",
     "prettier": "^2",
@@ -57,8 +62,9 @@
     "rooks": "^5.7.1",
     "sass": "^1",
     "typescript": "^4",
-    "vite": "^2.7.13",
-    "vite-plugin-checker": "^0.3.4"
+    "vite": "latest",
+    "vite-plugin-checker": "^0.3.4",
+    "vitest": "latest"
   },
   "scripts": {
     "start": "vite",
@@ -67,7 +73,7 @@
     "check": "eslint --ext .ts,.tsx src",
     "check:ts": "tsc --noEmit --incremental false",
     "check:fmt": "prettier -c .",
-    "test": "exit 0",
+    "test": "vitest",
     "format": "prettier -w .",
     "prepare": "cd .. && husky install frontend/.husky"
   },

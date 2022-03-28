@@ -1,3 +1,5 @@
+/// <reference types="vitest" />
+/// <reference types="vite/client" />
 /// <reference types="node" />
 
 import react from "@vitejs/plugin-react";
@@ -45,6 +47,11 @@ export default defineConfig(async ({ mode, command }) => {
           manualChunks: chunks,
         },
       },
+    },
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: "./test/setup.ts",
     },
     server: {
       proxy: {
