@@ -1,6 +1,6 @@
-export const isDevEnv = import.meta.env.DEV;
-export const isProdEnv = import.meta.env.PROD;
-export const isTestEnv = false;
+export const isDevEnv = import.meta.env.MODE === "development";
+export const isProdEnv = import.meta.env.MODE === "production";
+export const isTestEnv = import.meta.env.MODE === "test";
 
 export const Environment = {
   get apiKey(): string | undefined {
