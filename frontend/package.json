@@ -63,7 +63,7 @@
     "sass": "^1",
     "typescript": "^4",
     "vite": "latest",
-    "vite-plugin-checker": "^0.3",
+    "vite-plugin-checker": "latest",
     "vitest": "latest"
   },
   "scripts": {
