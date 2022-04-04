@@ -1,7 +1,7 @@
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent } from "react";
-import { AsyncButton } from "..";
+import { AsyncButton } from "../async/AsyncButton";
 
 interface Props {
   history: History.Base;
@@ -19,8 +19,6 @@ export const BlacklistButton: FunctionComponent<Props> = ({
   if (subs_id && provider && language) {
     return (
       <AsyncButton
-        size="sm"
-        color="light"
         noReset
         disabled={blacklisted}
         promise={() => {

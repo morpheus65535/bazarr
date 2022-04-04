@@ -1,4 +1,4 @@
-import { Form } from "@mantine/core";
+import { Checkbox as MantineCheckbox } from "@mantine/core";
 import { forwardRef, useEffect, useRef } from "react";
 import {
   CellProps,
@@ -41,13 +41,11 @@ const Checkbox = forwardRef<
   }, [resolvedRef, indeterminate, checked, disabled]);
 
   return (
-    <Form.Check
-      custom
+    <MantineCheckbox
       disabled={disabled}
-      id={idIn}
       ref={resolvedRef}
       {...rest}
-    ></Form.Check>
+    ></MantineCheckbox>
   );
 });
 

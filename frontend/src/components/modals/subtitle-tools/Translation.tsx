@@ -1,7 +1,7 @@
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useModal, withModal } from "@/modules/modals";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { Button, Form } from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { useProcess } from "./ToolContext";
 import { availableTranslation } from "./tools";
@@ -34,9 +34,9 @@ const TranslationTool: FunctionComponent = () => {
   );
   return (
     <Modal title="Translation" footer={footer}>
-      <Form.Label>
+      <Text>
         Enabled languages not listed here are unsupported by Google Translate.
-      </Form.Label>
+      </Text>
       <LanguageSelector
         options={available}
         onChange={setLanguage}

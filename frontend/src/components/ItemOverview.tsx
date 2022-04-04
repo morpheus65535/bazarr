@@ -5,7 +5,6 @@ import {
 } from "@/utilities/languages";
 import {
   faBookmark as farBookmark,
-  faClone as fasClone,
   faFolder,
 } from "@fortawesome/free-regular-svg-icons";
 import {
@@ -17,15 +16,7 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  Badge,
-  Col,
-  Container,
-  Image,
-  OverlayTrigger,
-  Popover,
-  Row,
-} from "@mantine/core";
+import { Badge, Grid, Group, Image, Stack, Title } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import Language from "./bazarr/Language";
 
@@ -111,23 +102,22 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [profile, profileItems]);
 
-  const alternativePopover = useMemo(
-    () => (
-      <Popover id="item-overview-alternative">
-        <Popover.Title>Alternate Titles</Popover.Title>
-        <Popover.Content>
-          {item.alternativeTitles.map((v, idx) => (
-            <li key={idx}>{v}</li>
-          ))}
-        </Popover.Content>
-      </Popover>
-    ),
-    [item.alternativeTitles]
-  );
+  // const alternativePopover = useMemo(
+  //   () => (
+  //     <Popover id="item-overview-alternative">
+  //       <Popover.Title>Alternate Titles</Popover.Title>
+  //       <Popover.Content>
+  //         {item.alternativeTitles.map((v, idx) => (
+  //           <li key={idx}>{v}</li>
+  //         ))}
+  //       </Popover.Content>
+  //     </Popover>
+  //   ),
+  //   [item.alternativeTitles]
+  // );
 
   return (
-    <Container
-      fluid
+    <Grid
       style={{
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
@@ -135,52 +125,46 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         backgroundImage: `url('${item.fanart}')`,
       }}
     >
-      <Row
-        className="p-4 pb-4"
-        style={{
-          backgroundColor: "rgba(0,0,0,0.7)",
-        }}
-      >
-        <Col sm="auto">
-          <Image
-            className="d-none d-sm-block my-2"
-            style={{
-              maxHeight: 250,
-            }}
-            src={item.poster}
-          ></Image>
-        </Col>
-        <Col>
-          <Container fluid className="text-white">
-            <Row>
-              {isMovie(item) ? (
+      <Grid.Col>
+        <Image
+          className="d-none d-sm-block my-2"
+          style={{
+            maxHeight: 250,
+          }}
+          src={item.poster}
+        ></Image>
+      </Grid.Col>
+      <Grid.Col>
+        <Stack>
+          <Group>
+            {isMovie(item) ? (
+              <FontAwesomeIcon
+                className="mx-2 mt-2"
+                title={item.monitored ? "monitored" : "unmonitored"}
+                icon={item.monitored ? faBookmark : farBookmark}
+                size="2x"
+              ></FontAwesomeIcon>
+            ) : null}
+            <Title>{item.title}</Title>
+          </Group>
+          {/* <Row>
+            <h1>{item.title}</h1>
+            <span hidden={item.alternativeTitles.length === 0}>
+              <OverlayTrigger overlay={alternativePopover}>
                 <FontAwesomeIcon
-                  className="mx-2 mt-2"
-                  title={item.monitored ? "monitored" : "unmonitored"}
-                  icon={item.monitored ? faBookmark : farBookmark}
-                  size="2x"
+                  className="mx-2"
+                  icon={fasClone}
                 ></FontAwesomeIcon>
-              ) : null}
-              <h1>{item.title}</h1>
-              <span hidden={item.alternativeTitles.length === 0}>
-                <OverlayTrigger overlay={alternativePopover}>
-                  <FontAwesomeIcon
-                    className="mx-2"
-                    icon={fasClone}
-                  ></FontAwesomeIcon>
-                </OverlayTrigger>
-              </span>
-            </Row>
-            <Row>{detailBadges}</Row>
-            <Row>{audioBadges}</Row>
-            <Row>{languageBadges}</Row>
-            <Row>
-              <span>{item.overview}</span>
-            </Row>
-          </Container>
-        </Col>
-      </Row>
-    </Container>
+              </OverlayTrigger>
+            </span>
+          </Row> */}
+          {detailBadges}
+          {audioBadges}
+          {languageBadges}
+          <Title>{item.overview}</Title>
+        </Stack>
+      </Grid.Col>
+    </Grid>
   );
 };
 

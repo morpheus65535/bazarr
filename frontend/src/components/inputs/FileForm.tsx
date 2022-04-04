@@ -1,12 +1,4 @@
-import { Form } from "@mantine/core";
-import {
-  ChangeEvent,
-  FunctionComponent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 
 export interface FileFormProps {
   disabled?: boolean;
@@ -50,24 +42,25 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
     }
   }, [fileList, emptyText, multiple]);
 
-  return (
-    <Form.File
-      disabled={disabled}
-      custom
-      label={label}
-      multiple={multiple}
-      ref={input}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-        const { files } = e.target;
-        if (files) {
-          const list: File[] = [];
-          for (const file of files) {
-            list.push(file);
-          }
-          setFileList(list);
-          onChange && onChange(list);
-        }
-      }}
-    ></Form.File>
-  );
+  return null;
+  // return (
+  //   <Form.File
+  //     disabled={disabled}
+  //     custom
+  //     label={label}
+  //     multiple={multiple}
+  //     ref={input}
+  //     onChange={(e: ChangeEvent<HTMLInputElement>) => {
+  //       const { files } = e.target;
+  //       if (files) {
+  //         const list: File[] = [];
+  //         for (const file of files) {
+  //           list.push(file);
+  //         }
+  //         setFileList(list);
+  //         onChange && onChange(list);
+  //       }
+  //     }}
+  //   ></Form.File>
+  // );
 };

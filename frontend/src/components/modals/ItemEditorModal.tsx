@@ -6,10 +6,11 @@ import {
   withModal,
 } from "@/modules/modals";
 import { GetItemId } from "@/utilities";
-import { Container, Form } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
-import { AsyncButton, Selector, SelectorOption } from "..";
+import { SelectorOption } from "..";
+import { AsyncButton } from "../async/AsyncButton";
 
 interface Props {
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
@@ -70,7 +71,7 @@ const Editor: FunctionComponent<Props> = ({ mutation }) => {
   return (
     <Modal title={payload?.title ?? "Item Editor"} footer={footer}>
       <Container fluid>
-        <Form>
+        {/* <Form>
           <Form.Group>
             <Form.Label>Audio</Form.Label>
             <Form.Control
@@ -91,7 +92,7 @@ const Editor: FunctionComponent<Props> = ({ mutation }) => {
               onChange={(v) => setId(v === undefined ? null : v)}
             ></Selector>
           </Form.Group>
-        </Form>
+        </Form> */}
       </Container>
     </Modal>
   );

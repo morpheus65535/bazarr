@@ -1,7 +1,7 @@
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GetItemId } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
-import { Container, Dropdown, Row } from "@mantine/core";
+import { Container, Select } from "@mantine/core";
 import { uniqBy } from "lodash";
 import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
@@ -33,24 +33,24 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     [dirties, raw]
   );
 
-  const profileOptions = useMemo(() => {
-    const items: JSX.Element[] = [];
-    if (profiles) {
-      items.push(
-        <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
-      );
-      items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
-      items.push(
-        ...profiles.map((v) => (
-          <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
-            {v.name}
-          </Dropdown.Item>
-        ))
-      );
-    }
+  // const profileOptions = useMemo(() => {
+  //   const items: JSX.Element[] = [];
+  //   if (profiles) {
+  //     items.push(
+  //       <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
+  //     );
+  //     items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
+  //     items.push(
+  //       ...profiles.map((v) => (
+  //         <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
+  //           {v.name}
+  //         </Dropdown.Item>
+  //       ))
+  //     );
+  //   }
 
-    return items;
-  }, [profiles]);
+  //   return items;
+  // }, [profiles]);
 
   const { mutateAsync } = mutation;
 
@@ -85,12 +85,17 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     <Container fluid>
       <ContentHeader scroll={false}>
         <ContentHeader.Group pos="start">
-          <Dropdown onSelect={setProfiles}>
+          <Select
+            disabled={selections.length === 0}
+            label="Change Profile"
+            data={[]}
+          ></Select>
+          {/* <Dropdown onSelect={setProfiles}>
             <Dropdown.Toggle disabled={selections.length === 0} color="light">
               Change Profile
             </Dropdown.Toggle>
             <Dropdown.Menu>{profileOptions}</Dropdown.Menu>
-          </Dropdown>
+          </Dropdown> */}
         </ContentHeader.Group>
         <ContentHeader.Group pos="end">
           <ContentHeader.Button icon={faUndo} onClick={onEnded}>
@@ -106,14 +111,12 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           </ContentHeader.AsyncButton>
         </ContentHeader.Group>
       </ContentHeader>
-      <Row>
-        <SimpleTable
-          columns={columns}
-          data={data}
-          onSelect={setSelections}
-          plugins={[useRowSelect, useCustomSelection]}
-        ></SimpleTable>
-      </Row>
+      <SimpleTable
+        columns={columns}
+        data={data}
+        onSelect={setSelections}
+        plugins={[useRowSelect, useCustomSelection]}
+      ></SimpleTable>
     </Container>
   );
 }

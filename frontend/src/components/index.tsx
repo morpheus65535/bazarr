@@ -10,7 +10,6 @@ export const LoadingIndicator: FunctionComponent = ({ children }) => {
   );
 };
 
-export * from "./async";
 export * from "./buttons";
 export * from "./header";
 export * from "./inputs";

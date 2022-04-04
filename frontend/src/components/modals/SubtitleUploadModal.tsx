@@ -1,5 +1,4 @@
 import { useModal, useModalControl } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
   faCheck,
@@ -9,7 +8,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Container, Form } from "@mantine/core";
+import { Button, Checkbox, Container } from "@mantine/core";
 import {
   createContext,
   useCallback,
@@ -20,8 +19,8 @@ import {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { LanguageSelector, MessageIcon } from "..";
-import { FileForm } from "../inputs";
+import { LanguageSelector } from "..";
+import MessageIcon from "../MessageIcon";
 import { SimpleTable } from "../tables";
 
 type ModifyFn<T> = (index: number, info?: PendingSubtitle<T>) => void;
@@ -200,17 +199,15 @@ function SubtitleUploader<T>(props: Props<T>) {
           const { original, index } = row;
           const mutate = useRowMutation();
           return (
-            <Form.Check
-              custom
+            <Checkbox
               disabled={original.state === "fetching"}
-              id={BuildKey(index, original.file.name, "hi")}
               checked={value}
               onChange={(v) => {
                 const newInfo = { ...row.original };
                 newInfo.hi = v.target.checked;
                 mutate(row.index, newInfo);
               }}
-            ></Form.Check>
+            ></Checkbox>
           );
         },
       },
@@ -222,17 +219,15 @@ function SubtitleUploader<T>(props: Props<T>) {
           const { original, index } = row;
           const mutate = useRowMutation();
           return (
-            <Form.Check
-              custom
+            <Checkbox
               disabled={original.state === "fetching"}
-              id={BuildKey(index, original.file.name, "forced")}
               checked={value}
               onChange={(v) => {
                 const newInfo = { ...row.original };
                 newInfo.forced = v.target.checked;
                 mutate(row.index, newInfo);
               }}
-            ></Form.Check>
+            ></Checkbox>
           );
         },
       },
@@ -334,7 +329,7 @@ function SubtitleUploader<T>(props: Props<T>) {
   return (
     <Modal title="Update Subtitles" footer={footer}>
       <Container fluid className="flex-column">
-        <Form>
+        {/* <Form>
           <Form.Group>
             <FileForm
               disabled={showTable}
@@ -344,7 +339,7 @@ function SubtitleUploader<T>(props: Props<T>) {
               onChange={setFiles}
             ></FileForm>
           </Form.Group>
-        </Form>
+        </Form> */}
         <div hidden={!showTable}>
           <RowContext.Provider value={modify as ModifyFn<unknown>}>
             <SimpleTable

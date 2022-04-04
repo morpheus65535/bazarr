@@ -7,9 +7,12 @@ import {
 import { useModal, usePayload, withModal } from "@/modules/modals";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
+import { PageTable } from "..";
+import QueryOverlay from "../async/QueryOverlay";
+import { HistoryIcon } from "../bazarr/HistoryIcon";
 import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
+import TextPopover from "../TextPopover";
 
 const MovieHistoryView: FunctionComponent = () => {
   const movie = usePayload<Item.Movie>();
@@ -54,7 +57,7 @@ const MovieHistoryView: FunctionComponent = () => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+              <TextPopover text={row.row.original.parsed_timestamp}>
                 <span>{row.value}</span>
               </TextPopover>
             );
@@ -140,7 +143,7 @@ const EpisodeHistoryView: FunctionComponent = () => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
+              <TextPopover text={row.row.original.parsed_timestamp}>
                 <span>{row.value}</span>
               </TextPopover>
             );

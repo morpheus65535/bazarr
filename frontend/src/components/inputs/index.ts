@@ -1,4 +1,3 @@
-export * from "./Chips";
 export * from "./FileBrowser";
 export * from "./FileForm";
 export * from "./Selector";

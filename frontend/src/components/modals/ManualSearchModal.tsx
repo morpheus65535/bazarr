@@ -6,19 +6,9 @@ import {
   faCheck,
   faDownload,
   faInfoCircle,
-  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  Badge,
-  Button,
-  Col,
-  Collapse,
-  Container,
-  OverlayTrigger,
-  Popover,
-  Row,
-} from "@mantine/core";
+import { Badge, Button, Collapse } from "@mantine/core";
 import clsx from "clsx";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
@@ -186,12 +176,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
   const content = () => {
     if (results.isFetching) {
-      return <LoadingIndicator animation="grow"></LoadingIndicator>;
+      return <LoadingIndicator></LoadingIndicator>;
     } else if (isStale) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
-          <Button color="primary" block onClick={search}>
+          <Button color="primary" onClick={search}>
             Start Search
           </Button>
         </div>
@@ -288,37 +278,35 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
     [dont]
   );
 
-  const popover = useMemo(
-    () => (
-      <Popover className="w-100" id="manual-search-matches-info">
-        <Popover.Content>
-          <Container fluid>
-            <Row>
-              <Col xs={6}>
-                <FontAwesomeIcon
-                  color="var(--success)"
-                  icon={faCheck}
-                ></FontAwesomeIcon>
-                {matchElements}
-              </Col>
-              <Col xs={6}>
-                <FontAwesomeIcon
-                  color="var(--danger)"
-                  icon={faTimes}
-                ></FontAwesomeIcon>
-                {dontElements}
-              </Col>
-            </Row>
-          </Container>
-        </Popover.Content>
-      </Popover>
-    ),
-    [matchElements, dontElements]
-  );
+  return null;
+  // const popover = (
+  //   <Popover className="w-100" id="manual-search-matches-info">
+  //     <Popover.Content>
+  //       <Container fluid>
+  //         <Row>
+  //           <Col xs={6}>
+  //             <FontAwesomeIcon
+  //               color="var(--success)"
+  //               icon={faCheck}
+  //             ></FontAwesomeIcon>
+  //             {matchElements}
+  //           </Col>
+  //           <Col xs={6}>
+  //             <FontAwesomeIcon
+  //               color="var(--danger)"
+  //               icon={faTimes}
+  //             ></FontAwesomeIcon>
+  //             {dontElements}
+  //           </Col>
+  //         </Row>
+  //       </Container>
+  //     </Popover.Content>
+  //   </Popover>
+  // );
 
-  return (
-    <OverlayTrigger overlay={popover} placement={"left"}>
-      <FontAwesomeIcon icon={icon} color={color}></FontAwesomeIcon>
-    </OverlayTrigger>
-  );
+  // return (
+  //   <OverlayTrigger overlay={popover} placement={"left"}>
+  //     <FontAwesomeIcon icon={icon} color={color}></FontAwesomeIcon>
+  //   </OverlayTrigger>
+  // );
 };

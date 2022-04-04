@@ -120,11 +120,8 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   return (
     <Table
-      size={small ? "sm" : undefined}
+      fontSize={small ? "sm" : undefined}
       striped={striped ?? true}
-      borderless={borderless ?? true}
-      hover={hoverable}
-      responsive={responsive ?? true}
       {...tableProps}
     >
       <thead hidden={hideHeader}>

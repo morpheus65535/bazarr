@@ -1,5 +1,5 @@
 import { useModal, withModal } from "@/modules/modals";
-import { Button, Form, InputGroup } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
 import { useProcess } from "./ToolContext";
 
@@ -32,7 +32,7 @@ const FrameRateTool: FunctionComponent = () => {
 
   return (
     <Modal title="Change Frame Rate" footer={footer}>
-      <InputGroup className="px-2">
+      {/* <InputGroup className="px-2">
         <Form.Control
           placeholder="From"
           type="number"
@@ -57,7 +57,7 @@ const FrameRateTool: FunctionComponent = () => {
             }
           }}
         ></Form.Control>
-      </InputGroup>
+      </InputGroup> */}
     </Modal>
   );
 };

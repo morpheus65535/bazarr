@@ -1,7 +1,5 @@
 import { useModal, withModal } from "@/modules/modals";
-import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Form, InputGroup } from "@mantine/core";
+import { Button } from "@mantine/core";
 import {
   ChangeEventHandler,
   FunctionComponent,
@@ -62,7 +60,7 @@ const TimeAdjustmentTool: FunctionComponent = () => {
 
   return (
     <Modal title="Adjust Times" footer={footer}>
-      <InputGroup>
+      {/* <InputGroup>
         <InputGroup.Prepend>
           <Button
             color="secondary"
@@ -92,7 +90,7 @@ const TimeAdjustmentTool: FunctionComponent = () => {
           placeholder="ms"
           onChange={updateOffset(3)}
         ></Form.Control>
-      </InputGroup>
+      </InputGroup> */}
     </Modal>
   );
 };

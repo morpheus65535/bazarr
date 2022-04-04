@@ -1,5 +1,5 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { Container, Row } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { QueryPageTable } from "..";
@@ -20,14 +20,12 @@ function HistoryView<T extends History.Base = History.Base>({
       <Helmet>
         <title>{name} History - Bazarr</title>
       </Helmet>
-      <Row>
-        <QueryPageTable
-          emptyText={`Nothing Found in ${name} History`}
-          columns={columns}
-          query={query}
-          data={[]}
-        ></QueryPageTable>
-      </Row>
+      <QueryPageTable
+        emptyText={`Nothing Found in ${name} History`}
+        columns={columns}
+        query={query}
+        data={[]}
+      ></QueryPageTable>
     </Container>
   );
 }

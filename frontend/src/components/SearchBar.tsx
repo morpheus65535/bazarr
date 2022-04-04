@@ -1,5 +1,4 @@
 import { useServerSearch } from "@/apis/hooks";
-import { Dropdown, Form } from "@mantine/core";
 import { uniqueId } from "lodash";
 import {
   FunctionComponent,
@@ -73,47 +72,48 @@ export const SearchBar: FunctionComponent<Props> = ({
     setQuery("");
   }, []);
 
-  const items = useMemo(() => {
-    const its = results.map((v) => (
-      <Dropdown.Item
-        key={v.id}
-        eventKey={v.link}
-        disabled={v.link === undefined}
-      >
-        <span>{v.name}</span>
-      </Dropdown.Item>
-    ));
+  // const items = useMemo(() => {
+  //   const its = results.map((v) => (
+  //     <Dropdown.Item
+  //       key={v.id}
+  //       eventKey={v.link}
+  //       disabled={v.link === undefined}
+  //     >
+  //       <span>{v.name}</span>
+  //     </Dropdown.Item>
+  //   ));
 
-    if (its.length === 0) {
-      its.push(<Dropdown.Header key="notify">No Found</Dropdown.Header>);
-    }
+  //   if (its.length === 0) {
+  //     its.push(<Dropdown.Header key="notify">No Found</Dropdown.Header>);
+  //   }
 
-    return its;
-  }, [results]);
+  //   return its;
+  // }, [results]);
 
-  return (
-    <Dropdown
-      show={query.length !== 0}
-      className={className}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onSelect={(link) => {
-        if (link) {
-          clear();
-          navigate(link);
-        }
-      }}
-    >
-      <Form.Control
-        type="text"
-        size="sm"
-        placeholder="Search..."
-        value={display}
-        onChange={(e) => setDisplay(e.currentTarget.value)}
-      ></Form.Control>
-      <Dropdown.Menu style={{ maxHeight: 256, overflowY: "auto" }}>
-        {items}
-      </Dropdown.Menu>
-    </Dropdown>
-  );
+  return null;
+  // return (
+  //   <Dropdown
+  //     show={query.length !== 0}
+  //     className={className}
+  //     onFocus={onFocus}
+  //     onBlur={onBlur}
+  //     onSelect={(link) => {
+  //       if (link) {
+  //         clear();
+  //         navigate(link);
+  //       }
+  //     }}
+  //   >
+  //     <Form.Control
+  //       type="text"
+  //       size="sm"
+  //       placeholder="Search..."
+  //       value={display}
+  //       onChange={(e) => setDisplay(e.currentTarget.value)}
+  //     ></Form.Control>
+  //     <Dropdown.Menu style={{ maxHeight: 256, overflowY: "auto" }}>
+  //       {items}
+  //     </Dropdown.Menu>
+  //   </Dropdown>
+  // );
 };

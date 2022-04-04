@@ -2,7 +2,7 @@ import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { ContentHeader, QueryPageTable } from "..";
@@ -40,14 +40,12 @@ function WantedView<T extends Wanted.Base>({
           Search All
         </ContentHeader.Button>
       </ContentHeader>
-      <Row>
-        <QueryPageTable
-          emptyText={`No Missing ${name} Subtitles`}
-          query={query}
-          columns={columns}
-          data={[]}
-        ></QueryPageTable>
-      </Row>
+      <QueryPageTable
+        emptyText={`No Missing ${name} Subtitles`}
+        query={query}
+        columns={columns}
+        data={[]}
+      ></QueryPageTable>
     </Container>
   );
 }
