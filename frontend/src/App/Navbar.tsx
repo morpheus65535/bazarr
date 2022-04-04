@@ -8,8 +8,15 @@ import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Accordion, Badge, Navbar as MantineNavbar, Text } from "@mantine/core";
-import clsx from "clsx";
+import {
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Group,
+  Navbar as MantineNavbar,
+  Text,
+} from "@mantine/core";
 import {
   createContext,
   FunctionComponent,
@@ -105,17 +112,13 @@ const Navbar: FunctionComponent = () => {
         hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
       >
         <MantineNavbar.Section>
-          <Accordion>
-            {routes.map((route, idx) => (
-              <RouteItem
-                key={BuildKey("nav", idx)}
-                parent="/"
-                route={route}
-              ></RouteItem>
-            ))}
-            <Text>Pure Text</Text>
-            <Accordion.Item label="Test"></Accordion.Item>
-          </Accordion>
+          {routes.map((route, idx) => (
+            <RouteItem
+              key={BuildKey("nav", idx)}
+              parent="/"
+              route={route}
+            ></RouteItem>
+          ))}
         </MantineNavbar.Section>
       </MantineNavbar>
     </Selection.Provider>
@@ -165,68 +168,70 @@ const RouteItem: FunctionComponent<{
 
     if (name) {
       return (
-        <RouteItemContent name={name ?? link} icon={icon} badge={badge}>
-          {elements}
-        </RouteItemContent>
+        <div>
+          <Button
+            fullWidth
+            variant="subtle"
+            onClick={() => {
+              LOG("info", "clicked", link);
 
-        // onClick={() => {
-        //   LOG("info", "clicked", link);
+              if (isValidated) {
+                navigate(link);
+              }
 
-        //   if (isValidated) {
-        //     navigate(link);
-        //   }
-
-        //   if (isOpen) {
-        //     select(null);
-        //   } else {
-        //     select(link);
-        //   }
-        // }}
+              if (isOpen) {
+                select(null);
+              } else {
+                select(link);
+              }
+            }}
+          >
+            <NavbarItem
+              name={name ?? link}
+              icon={icon}
+              badge={badge}
+            ></NavbarItem>
+          </Button>
+          <Collapse in={isOpen}>
+            <div>{elements}</div>
+          </Collapse>
+        </div>
       );
     } else {
       return <>{elements}</>;
     }
   } else {
     return (
-      <NavLink
-        to={link}
-        className={({ isActive }) =>
-          clsx("list-group-item list-group-item-action button sb-collapse", {
-            active: isActive,
-          })
-        }
-      >
-        <RouteItemContent
-          name={name ?? link}
-          icon={icon}
-          badge={badge}
-        ></RouteItemContent>
+      <NavLink to={link}>
+        <NavbarItem name={name ?? link} icon={icon} badge={badge}></NavbarItem>
       </NavLink>
     );
   }
 };
 
-interface ItemComponentProps {
+interface NavbarItemProps {
   name: string;
   icon?: IconDefinition;
   badge?: number;
 }
 
-const RouteItemContent: FunctionComponent<ItemComponentProps> = ({
+const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   icon,
   name,
   badge,
 }) => {
   return (
-    <>
-      {icon && <FontAwesomeIcon size="1x" className="icon" icon={icon} />}
-      <span className="d-flex flex-grow-1 justify-content-between">
+    <Group position="apart">
+      <Text>
+        <Box component="span" mr={8}>
+          {icon && <FontAwesomeIcon size="1x" icon={icon} />}
+        </Box>
         {name}
-        <Badge color="secondary" hidden={badge === undefined || badge === 0}>
-          {badge}
-        </Badge>
-      </span>
-    </>
+      </Text>
+      <Badge color="gray" hidden={badge === undefined || badge === 0}>
+        {badge}
+      </Badge>
+    </Group>
   );
 };
 
