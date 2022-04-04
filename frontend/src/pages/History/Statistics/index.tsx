@@ -1,12 +1,8 @@
 import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
-import {
-  ContentHeader,
-  QueryOverlay,
-  Selector,
-  SelectorOption,
-} from "@/components";
+import { ContentHeader, Selector, SelectorOption } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
-import { Col, Container } from "@mantine/core";
+import { Container, Grid, Stack } from "@mantine/core";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
@@ -21,12 +17,6 @@ import {
   YAxis,
 } from "recharts";
 import { actionOptions, timeFrameOptions } from "./options";
-
-const SelectorContainer: FunctionComponent = ({ children }) => (
-  <Col xs={6} lg={3} className="p-1">
-    {children}
-  </Col>
-);
 
 const HistoryStats: FunctionComponent = () => {
   const { data: providers } = useSystemProviders(true);
@@ -62,47 +52,49 @@ const HistoryStats: FunctionComponent = () => {
   }, [data]);
 
   return (
-    <Container fluid className="vh-75">
+    <Container fluid px={0}>
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
       <QueryOverlay result={stats}>
-        <div className="chart-container">
-          <ContentHeader scroll={false}>
-            <SelectorContainer>
-              <Selector
-                placeholder="Time..."
-                options={timeFrameOptions}
-                value={timeFrame}
-                onChange={(v) => setTimeFrame(v ?? "month")}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Selector
-                placeholder="Action..."
-                clearable
-                options={actionOptions}
-                value={action}
-                onChange={setAction}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Selector
-                placeholder="Provider..."
-                clearable
-                options={providerOptions}
-                value={provider}
-                onChange={setProvider}
-              ></Selector>
-            </SelectorContainer>
-            <SelectorContainer>
-              <Language.Selector
-                clearable
-                value={lang}
-                onChange={setLanguage}
-                history
-              ></Language.Selector>
-            </SelectorContainer>
+        <Stack>
+          <ContentHeader>
+            <Grid grow>
+              <Grid.Col span={3}>
+                <Selector
+                  placeholder="Time..."
+                  options={timeFrameOptions}
+                  value={timeFrame}
+                  onChange={(v) => setTimeFrame(v ?? "month")}
+                ></Selector>
+              </Grid.Col>
+              <Grid.Col span={3}>
+                <Selector
+                  placeholder="Action..."
+                  clearable
+                  options={actionOptions}
+                  value={action}
+                  onChange={setAction}
+                ></Selector>
+              </Grid.Col>
+              <Grid.Col span={3}>
+                <Selector
+                  placeholder="Provider..."
+                  clearable
+                  options={providerOptions}
+                  value={provider}
+                  onChange={setProvider}
+                ></Selector>
+              </Grid.Col>
+              <Grid.Col span={3}>
+                <Language.Selector
+                  clearable
+                  value={lang}
+                  onChange={setLanguage}
+                  history
+                ></Language.Selector>
+              </Grid.Col>
+            </Grid>
           </ContentHeader>
           <ResponsiveContainer height="100%">
             <BarChart data={convertedData}>
@@ -115,7 +107,7 @@ const HistoryStats: FunctionComponent = () => {
               <Bar name="Movies" dataKey="movies" fill="#FFC22F"></Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Stack>
       </QueryOverlay>
     </Container>
   );

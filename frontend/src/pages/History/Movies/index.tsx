@@ -1,11 +1,12 @@
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
-import { HistoryIcon, TextPopover } from "@/components";
+import { HistoryIcon } from "@/components/bazarr/HistoryIcon";
 import Language from "@/components/bazarr/Language";
 import { BlacklistButton } from "@/components/inputs/blacklist";
+import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/components/views/HistoryView";
 import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, OverlayTrigger, Popover } from "@mantine/core";
+import { Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -15,7 +16,6 @@ const MoviesHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
         Cell: (row) => <HistoryIcon action={row.value}></HistoryIcon>,
       },
       {
@@ -57,8 +57,8 @@ const MoviesHistoryView: FunctionComponent = () => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
+              <TextPopover text={row.row.original.parsed_timestamp}>
+                <Text>{row.value}</Text>
               </TextPopover>
             );
           } else {
@@ -68,34 +68,22 @@ const MoviesHistoryView: FunctionComponent = () => {
       },
       {
         accessor: "description",
-        Cell: ({ row, value }) => {
-          const overlay = (
-            <Popover id={`description-${row.id}`}>
-              <Popover.Content>{value}</Popover.Content>
-            </Popover>
-          );
+        Cell: ({ value }) => {
           return (
-            <OverlayTrigger overlay={overlay}>
+            <TextPopover text={value}>
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
-            </OverlayTrigger>
+            </TextPopover>
           );
         },
       },
       {
         accessor: "upgradable",
         Cell: (row) => {
-          const overlay = (
-            <Popover id={`description-${row.row.id}`}>
-              <Popover.Content>
-                This Subtitles File Is Eligible For An Upgrade.
-              </Popover.Content>
-            </Popover>
-          );
           if (row.value) {
             return (
-              <OverlayTrigger overlay={overlay}>
+              <TextPopover text="This Subtitles File Is Eligible For An Upgrade.">
                 <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
-              </OverlayTrigger>
+              </TextPopover>
             );
           } else {
             return null;

@@ -16,7 +16,7 @@ function HistoryView<T extends History.Base = History.Base>({
   query,
 }: Props<T>) {
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <Helmet>
         <title>{name} History - Bazarr</title>
       </Helmet>

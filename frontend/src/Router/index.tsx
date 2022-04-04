@@ -1,12 +1,13 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
+import { Lazy } from "@/components/async";
 // import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
 // import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 // import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
-// import MoviesHistoryView from "@/pages/History/Movies";
-// import SeriesHistoryView from "@/pages/History/Series";
+import MoviesHistoryView from "@/pages/History/Movies";
+import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
 import MovieMassEditor from "@/pages/Movies/Editor";
@@ -29,7 +30,7 @@ import SeriesMassEditor from "@/pages/Series/Editor";
 // import WantedMoviesView from "@/pages/Wanted/Movies";
 // import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
-import { faFilm, faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faClock, faFilm, faPlay } from "@fortawesome/free-solid-svg-icons";
 // import {
 //   faClock,
 //   faCogs,
@@ -111,35 +112,35 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faClock,
-          //     name: "History",
-          //     path: "history",
-          //     hidden: !sonarr && !radarr,
-          //     children: [
-          //       {
-          //         path: "series",
-          //         name: "Episodes",
-          //         hidden: !sonarr,
-          //         element: <SeriesHistoryView></SeriesHistoryView>,
-          //       },
-          //       {
-          //         path: "movies",
-          //         name: "Movies",
-          //         hidden: !radarr,
-          //         element: <MoviesHistoryView></MoviesHistoryView>,
-          //       },
-          //       {
-          //         path: "stats",
-          //         name: "Statistics",
-          //         element: (
-          //           <Lazy>
-          //             <HistoryStats></HistoryStats>
-          //           </Lazy>
-          //         ),
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faClock,
+            name: "History",
+            path: "history",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                hidden: !sonarr,
+                element: <SeriesHistoryView></SeriesHistoryView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                hidden: !radarr,
+                element: <MoviesHistoryView></MoviesHistoryView>,
+              },
+              {
+                path: "stats",
+                name: "Statistics",
+                element: (
+                  <Lazy>
+                    <HistoryStats></HistoryStats>
+                  </Lazy>
+                ),
+              },
+            ],
+          },
           //   {
           //     icon: faExclamationTriangle,
           //     name: "Wanted",
