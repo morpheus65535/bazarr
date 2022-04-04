@@ -62,11 +62,8 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
         index={page}
         size={pageSize}
         total={totalCount}
-        canPrevious={canPrevious}
-        canNext={canNext}
-        previous={previousPage}
-        next={nextPage}
         goto={gotoPage}
+        loading={isFetching}
       ></PageControl>
     </>
   );

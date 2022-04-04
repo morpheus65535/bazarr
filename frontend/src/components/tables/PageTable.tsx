@@ -32,12 +32,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
 
     // page
     page,
-    canNextPage,
-    canPreviousPage,
     pageCount,
     gotoPage,
-    nextPage,
-    previousPage,
     state: { pageIndex, pageSize },
   } = instance;
 
@@ -63,10 +59,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
         index={pageIndex}
         size={pageSize}
         total={rows.length}
-        canPrevious={canPreviousPage}
-        canNext={canNextPage}
-        previous={previousPage}
-        next={nextPage}
         goto={gotoPage}
       ></PageControl>
     </>
