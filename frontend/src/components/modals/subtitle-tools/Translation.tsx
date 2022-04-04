@@ -1,8 +1,8 @@
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useModal, withModal } from "@/modules/modals";
 import { useEnabledLanguages } from "@/utilities/languages";
+import { Button, Form } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
-import { Button, Form } from "react-bootstrap";
 import { useProcess } from "./ToolContext";
 import { availableTranslation } from "./tools";
 

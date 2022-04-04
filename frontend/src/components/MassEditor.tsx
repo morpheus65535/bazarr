@@ -1,9 +1,9 @@
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GetItemId } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
+import { Container, Dropdown, Row } from "@mantine/core";
 import { uniqBy } from "lodash";
 import { useCallback, useMemo, useState } from "react";
-import { Container, Dropdown, Row } from "react-bootstrap";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
@@ -86,7 +86,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       <ContentHeader scroll={false}>
         <ContentHeader.Group pos="start">
           <Dropdown onSelect={setProfiles}>
-            <Dropdown.Toggle disabled={selections.length === 0} variant="light">
+            <Dropdown.Toggle disabled={selections.length === 0} color="light">
               Change Profile
             </Dropdown.Toggle>
             <Dropdown.Menu>{profileOptions}</Dropdown.Menu>

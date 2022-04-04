@@ -15,11 +15,11 @@ const RouteApp = () => {
   return useRoutes(items);
 };
 
-export const Entrance = () => (
+export const Main = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
       <Router>
-        {/* TODO: Enabled Strict Mode after react-bootstrap upgrade to bootstrap 5 */}
+        {/* TODO: Enabled Strict Mode after @mantine/core upgrade to bootstrap 5 */}
         {/* <StrictMode> */}
         {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
         <RouteApp></RouteApp>

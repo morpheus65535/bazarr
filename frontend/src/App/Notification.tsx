@@ -1,5 +1,5 @@
 import { useReduxStore } from "@/modules/redux/hooks/base";
-import { BuildKey, useIsArrayExtended } from "@/utilities";
+import { useIsArrayExtended } from "@/utilities";
 import {
   faBug,
   faCircleNotch,
@@ -13,7 +13,6 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import {
-  Fragment,
   FunctionComponent,
   ReactNode,
   useCallback,
@@ -22,13 +21,6 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Button,
-  Dropdown,
-  Overlay,
-  ProgressBar,
-  Tooltip,
-} from "react-bootstrap";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 
 enum State {
@@ -119,33 +111,33 @@ const NotificationCenter: FunctionComponent = () => {
   const content = useMemo<ReactNode>(() => {
     const nodes: JSX.Element[] = [];
 
-    nodes.push(
-      <Dropdown.Header key="notifications-header">
-        {notifications.length > 0 ? "Notifications" : "No Notifications"}
-      </Dropdown.Header>
-    );
-    nodes.push(
-      ...notifications.map((v, idx) => (
-        <Dropdown.Item disabled key={BuildKey(idx, v.id, "notification")}>
-          <Notification {...v}></Notification>
-        </Dropdown.Item>
-      ))
-    );
+    // nodes.push(
+    //   <Dropdown.Header key="notifications-header">
+    //     {notifications.length > 0 ? "Notifications" : "No Notifications"}
+    //   </Dropdown.Header>
+    // );
+    // nodes.push(
+    //   ...notifications.map((v, idx) => (
+    //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "notification")}>
+    //       <Notification {...v}></Notification>
+    //     </Dropdown.Item>
+    //   ))
+    // );
 
-    nodes.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
+    // nodes.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
 
-    nodes.push(
-      <Dropdown.Header key="background-task-header">
-        {progress.length > 0 ? "Background Tasks" : "No Background Tasks"}
-      </Dropdown.Header>
-    );
-    nodes.push(
-      ...progress.map((v, idx) => (
-        <Dropdown.Item disabled key={BuildKey(idx, v.id, "progress")}>
-          <Progress {...v}></Progress>
-        </Dropdown.Item>
-      ))
-    );
+    // nodes.push(
+    //   <Dropdown.Header key="background-task-header">
+    //     {progress.length > 0 ? "Background Tasks" : "No Background Tasks"}
+    //   </Dropdown.Header>
+    // );
+    // nodes.push(
+    //   ...progress.map((v, idx) => (
+    //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "progress")}>
+    //       <Progress {...v}></Progress>
+    //     </Dropdown.Item>
+    //   ))
+    // );
 
     return nodes;
   }, [progress, notifications]);
@@ -163,30 +155,32 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [notifier.timestamp]);
 
-  return (
-    <Fragment>
-      <Dropdown
-        onClick={onToggleClick}
-        className={`notification-btn ${hasNew ? "new-item" : ""}`}
-        ref={dropdownRef}
-        alignRight
-      >
-        <Dropdown.Toggle as={Button} className="hide-arrow">
-          <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
-        </Dropdown.Toggle>
-        <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>
-      </Dropdown>
-      <Overlay target={dropdownRef} show={showTooltip} placement="bottom">
-        {(props) => {
-          return (
-            <Tooltip id="new-notification-tip" {...props}>
-              {notifier.content}
-            </Tooltip>
-          );
-        }}
-      </Overlay>
-    </Fragment>
-  );
+  return null;
+
+  // return (
+  //   <>
+  //     <Dropdown
+  //       onClick={onToggleClick}
+  //       className={`notification-btn ${hasNew ? "new-item" : ""}`}
+  //       ref={dropdownRef}
+  //       alignRight
+  //     >
+  //       <Dropdown.Toggle as={Button} className="hide-arrow">
+  //         <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
+  //       </Dropdown.Toggle>
+  //       <Dropdown.Menu className="pb-3">{content}</Dropdown.Menu>
+  //     </Dropdown>
+  //     <Overlay target={dropdownRef} show={showTooltip} placement="bottom">
+  //       {(props) => {
+  //         return (
+  //           <Tooltip id="new-notification-tip" {...props}>
+  //             {notifier.content}
+  //           </Tooltip>
+  //         );
+  //       }}
+  //     </Overlay>
+  //   </>
+  // );
 };
 
 const Notification: FunctionComponent<Server.Notification> = ({
@@ -211,31 +205,31 @@ const Notification: FunctionComponent<Server.Notification> = ({
   );
 };
 
-const Progress: FunctionComponent<Site.Progress> = ({
-  name,
-  value,
-  count,
-  header,
-}) => {
-  const isCompleted = value / count > 1;
-  const displayValue = Math.min(count, value + 1);
-  return (
-    <div className="notification-center-progress d-flex flex-column">
-      <p className="progress-header m-0 h-6 text-dark font-weight-bold">
-        {header}
-      </p>
-      <p className="progress-name m-0 small text-secondary">
-        {isCompleted ? "Completed successfully" : name}
-      </p>
-      <ProgressBar
-        className="mt-2"
-        animated={!isCompleted}
-        now={displayValue / count}
-        max={1}
-        label={`${displayValue}/${count}`}
-      ></ProgressBar>
-    </div>
-  );
-};
+// const Progress: FunctionComponent<Site.Progress> = ({
+//   name,
+//   value,
+//   count,
+//   header,
+// }) => {
+//   const isCompleted = value / count > 1;
+//   const displayValue = Math.min(count, value + 1);
+//   return (
+//     <div className="notification-center-progress d-flex flex-column">
+//       <p className="progress-header m-0 h-6 text-dark font-weight-bold">
+//         {header}
+//       </p>
+//       <p className="progress-name m-0 small text-secondary">
+//         {isCompleted ? "Completed successfully" : name}
+//       </p>
+//       <ProgressBar
+//         className="mt-2"
+//         animated={!isCompleted}
+//         now={displayValue / count}
+//         max={1}
+//         label={`${displayValue}/${count}`}
+//       ></ProgressBar>
+//     </div>
+//   );
+// };
 
 export default NotificationCenter;

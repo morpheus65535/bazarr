@@ -1,5 +1,5 @@
-import { FunctionComponent, ReactNode, useMemo } from "react";
-import { Row } from "react-bootstrap";
+import { Group } from "@mantine/core";
+import { FunctionComponent, ReactNode } from "react";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
 
@@ -15,19 +15,6 @@ declare type Header = FunctionComponent<Props> & {
 };
 
 export const ContentHeader: Header = ({ children, scroll, className }) => {
-  const cls = useMemo(() => {
-    const rowCls = ["content-header", "bg-dark", "p-2"];
-
-    if (className !== undefined) {
-      rowCls.push(className);
-    }
-
-    if (scroll !== false) {
-      rowCls.push("scroll");
-    }
-    return rowCls.join(" ");
-  }, [scroll, className]);
-
   let childItem: ReactNode;
 
   if (scroll !== false) {
@@ -37,7 +24,7 @@ export const ContentHeader: Header = ({ children, scroll, className }) => {
   } else {
     childItem = children;
   }
-  return <Row className={cls}>{childItem}</Row>;
+  return <Group>{childItem}</Group>;
 };
 
 ContentHeader.Button = ContentHeaderButton;

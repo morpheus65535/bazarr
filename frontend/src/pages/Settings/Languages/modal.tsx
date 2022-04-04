@@ -15,6 +15,7 @@ import {
 import { BuildKey } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Button, Form } from "@mantine/core";
 import {
   createContext,
   FunctionComponent,
@@ -23,7 +24,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Button, Form } from "react-bootstrap";
 import { Column } from "react-table";
 import { useLatestEnabledLanguages } from ".";
 import { Input, Message } from "../components";
@@ -270,7 +270,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
             data={current.items}
           ></SimpleTable>
         </RowContext.Provider>
-        <Button block variant="light" onClick={addItem}>
+        <Button block color="light" onClick={addItem}>
           Add
         </Button>
       </Input>

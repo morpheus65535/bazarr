@@ -9,6 +9,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button, Container, Form } from "@mantine/core";
 import {
   createContext,
   useCallback,
@@ -18,7 +19,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, Container, Form } from "react-bootstrap";
 import { Column } from "react-table";
 import { LanguageSelector, MessageIcon } from "..";
 import { FileForm } from "../inputs";
@@ -268,7 +268,7 @@ function SubtitleUploader<T>(props: Props<T>) {
           return (
             <Button
               size="sm"
-              variant="light"
+              color="light"
               disabled={row.original.state === "fetching"}
               onClick={() => {
                 mutate(row.index);
@@ -295,7 +295,7 @@ function SubtitleUploader<T>(props: Props<T>) {
       <div>
         <Button
           hidden={!showTable}
-          variant="outline-secondary"
+          color="outline-secondary"
           className="mr-2"
           onClick={() => setFiles([])}
         >

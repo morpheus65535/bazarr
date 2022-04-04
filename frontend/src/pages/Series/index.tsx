@@ -6,8 +6,8 @@ import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
+import { Badge, Container, ProgressBar } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Container, ProgressBar } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -38,7 +38,7 @@ const SeriesView: FunctionComponent = () => {
         Cell: (row) => {
           return row.value.map((v) => (
             <Badge
-              variant="secondary"
+              color="secondary"
               className="mr-2"
               key={BuildKey(v.code2, v.forced, v.hi)}
             >
@@ -77,7 +77,7 @@ const SeriesView: FunctionComponent = () => {
             <ProgressBar
               className="my-a"
               key={title}
-              variant={color}
+              color={color}
               min={0}
               max={episodeFileCount}
               now={progress}

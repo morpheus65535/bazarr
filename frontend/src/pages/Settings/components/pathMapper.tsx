@@ -2,6 +2,7 @@ import { ActionButton, FileBrowser, SimpleTable } from "@/components";
 import { LOG } from "@/utilities/console";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   createContext,
@@ -10,7 +11,6 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { Button } from "react-bootstrap";
 import { Column } from "react-table";
 import {
   moviesEnabledKey,
@@ -177,7 +177,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           columns={columns}
           data={data}
         ></SimpleTable>
-        <Button block variant="light" onClick={addRow}>
+        <Button block color="light" onClick={addRow}>
           Add
         </Button>
       </RowContext.Provider>

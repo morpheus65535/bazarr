@@ -1,7 +1,7 @@
 import { faEyeSlash as fasEyeSlash } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Container } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Container } from "react-bootstrap";
 
 const NotFound: FunctionComponent = () => {
   return (

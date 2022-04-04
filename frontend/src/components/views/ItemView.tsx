@@ -1,7 +1,7 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { TableStyleProps } from "@/components/tables/BaseTable";
 import { faList } from "@fortawesome/free-solid-svg-icons";
-import { Row } from "react-bootstrap";
+import { Row } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { Column, TableOptions } from "react-table";
 import { ContentHeader, QueryPageTable } from "..";

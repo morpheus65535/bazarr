@@ -35,7 +35,7 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
           return (
             <AsyncButton
               promise={() => mutateAsync(job_id)}
-              variant="light"
+              color="light"
               size="sm"
               disabled={row.value}
               animation={false}

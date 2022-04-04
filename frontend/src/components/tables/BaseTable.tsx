@@ -1,5 +1,5 @@
+import { Table } from "@mantine/core";
 import { useMemo } from "react";
-import { Table } from "react-bootstrap";
 import {
   HeaderGroup,
   Row,

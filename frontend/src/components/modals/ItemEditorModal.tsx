@@ -6,8 +6,8 @@ import {
   withModal,
 } from "@/modules/modals";
 import { GetItemId } from "@/utilities";
+import { Container, Form } from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
-import { Container, Form } from "react-bootstrap";
 import { UseMutationResult } from "react-query";
 import { AsyncButton, Selector, SelectorOption } from "..";
 

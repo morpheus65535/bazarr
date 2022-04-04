@@ -1,8 +1,8 @@
 import { useSystemReleases } from "@/apis/hooks";
 import { QueryOverlay } from "@/components";
 import { BuildKey } from "@/utilities";
+import { Badge, Card, Col, Container, Row } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 const SystemReleasesView: FunctionComponent = () => {
@@ -46,16 +46,16 @@ const InfoElement: FunctionComponent<ReleaseInfo> = ({
     <Card className="mb-4 mx-3 d-flex flex-grow-1">
       <Card.Header>
         <span className={headerBadgeCls}>{name}</span>
-        <Badge className={headerBadgeCls} variant="info">
+        <Badge className={headerBadgeCls} color="info">
           {date}
         </Badge>
         <Badge
           className={headerBadgeCls}
-          variant={prerelease ? "danger" : "success"}
+          color={prerelease ? "danger" : "success"}
         >
           {prerelease ? "Development" : "Master"}
         </Badge>
-        <Badge className={headerBadgeCls} hidden={!current} variant="primary">
+        <Badge className={headerBadgeCls} hidden={!current} color="primary">
           Installed
         </Badge>
       </Card.Header>

@@ -9,8 +9,8 @@ import WantedView from "@/components/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -52,7 +52,7 @@ const WantedSeriesView: FunctionComponent = () => {
               as={Badge}
               key={BuildKey(idx, item.code2)}
               className="mx-1 mr-2"
-              variant="secondary"
+              color="secondary"
               promise={() =>
                 download.mutateAsync({
                   seriesId,

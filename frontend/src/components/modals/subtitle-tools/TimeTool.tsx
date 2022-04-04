@@ -1,13 +1,13 @@
 import { useModal, withModal } from "@/modules/modals";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button, Form, InputGroup } from "@mantine/core";
 import {
   ChangeEventHandler,
   FunctionComponent,
   useCallback,
   useState,
 } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
 import { useProcess } from "./ToolContext";
 
 function submodProcessOffset(h: number, m: number, s: number, ms: number) {
@@ -65,7 +65,7 @@ const TimeAdjustmentTool: FunctionComponent = () => {
       <InputGroup>
         <InputGroup.Prepend>
           <Button
-            variant="secondary"
+            color="secondary"
             title={isPlus ? "Later" : "Earlier"}
             onClick={() => setPlus(!isPlus)}
           >

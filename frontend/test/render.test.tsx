@@ -1,9 +1,9 @@
 import { render } from "@testing-library/react";
 import { describe, it } from "vitest";
-import { Entrance } from "../src";
+import { Main } from "../src/main";
 
 describe("render test", () => {
   it("render without crashing", () => {
-    render(<Entrance />);
+    render(<Main />);
   });
 });

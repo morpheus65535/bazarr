@@ -1,6 +1,6 @@
+import { Modal } from "@mantine/core";
 import clsx from "clsx";
 import { FunctionComponent, useCallback, useState } from "react";
-import { Modal } from "react-bootstrap";
 import { useCurrentLayer, useModalControl, useModalData } from "./hooks";
 
 interface Props {}

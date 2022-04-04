@@ -1,14 +1,14 @@
 import api from "@/apis/raw";
+import { Button } from "@mantine/core";
 import { isBoolean, isNumber, isString } from "lodash";
 import { FunctionComponent, useCallback, useState } from "react";
-import { Button } from "react-bootstrap";
 import { useLatest } from "./hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
 }> = ({ category }) => {
   const [title, setTitle] = useState("Test");
-  const [variant, setVar] = useState("primary");
+  const [color, setVar] = useState("primary");
 
   const address = useLatest<string>(`settings-${category}-ip`, isString);
   const port = useLatest<number>(`settings-${category}-port`, isNumber);
@@ -53,7 +53,7 @@ export const URLTestButton: FunctionComponent<{
   return (
     <Button
       onClick={click}
-      variant={variant}
+      color={color}
       title={title}
       className="text-truncate text-nowrap"
     >

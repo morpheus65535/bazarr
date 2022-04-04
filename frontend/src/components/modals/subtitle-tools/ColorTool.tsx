@@ -1,8 +1,8 @@
 import { Selector } from "@/components";
 import { useModal, withModal } from "@/modules/modals";
 import { submodProcessColor } from "@/utilities";
+import { Button } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { Button } from "react-bootstrap";
 import { useProcess } from "./ToolContext";
 import { colorOptions } from "./tools";
 

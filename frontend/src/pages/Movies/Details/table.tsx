@@ -6,8 +6,8 @@ import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
 
 const missingText = "Missing Subtitles";
@@ -44,13 +44,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Cell: ({ row }) => {
           if (row.original.path === missingText) {
             return (
-              <Badge variant="primary">
+              <Badge color="primary">
                 <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
           } else {
             return (
-              <Badge variant="secondary">
+              <Badge color="secondary">
                 <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
@@ -83,7 +83,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                     },
                   })
                 }
-                variant="light"
+                color="light"
                 size="sm"
               >
                 <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
@@ -93,7 +93,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
             return (
               <AsyncButton
                 disabled={disabled}
-                variant="light"
+                color="light"
                 size="sm"
                 promise={() =>
                   remove.mutateAsync({

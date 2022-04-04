@@ -1,5 +1,5 @@
+import { Modal } from "@mantine/core";
 import { FunctionComponent, ReactNode } from "react";
-import { Modal } from "react-bootstrap";
 import { useModalData } from "./hooks";
 
 interface StandardModalProps {

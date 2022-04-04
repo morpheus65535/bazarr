@@ -5,8 +5,8 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { InputGroup } from "@mantine/core";
 import { FunctionComponent, useState } from "react";
-import { InputGroup } from "react-bootstrap";
 import {
   Button,
   Check,
@@ -92,7 +92,7 @@ const SettingsGeneralView: FunctionComponent = () => {
             <Text disabled controlled settingKey={settingApiKey}></Text>
             <InputGroup.Append>
               <Button
-                variant={copied ? "success" : "light"}
+                color={copied ? "success" : "light"}
                 settingKey={settingApiKey}
                 onClick={(update, key, value) => {
                   if (value) {
@@ -106,7 +106,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 ></FontAwesomeIcon>
               </Button>
               <Button
-                variant="danger"
+                color="danger"
                 settingKey={settingApiKey}
                 onClick={(update, key) => {
                   update(generateApiKey(), key);

@@ -7,8 +7,8 @@ import {
   withModal,
 } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
+import { Button, Col, Container, Form, Row } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
@@ -69,7 +69,7 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
       <AsyncButton
         className="mr-auto"
         disabled={!canSave}
-        variant="outline-secondary"
+        color="outline-secondary"
         promise={() => {
           if (current && current.url) {
             return api.system.testNotification(current.url);
@@ -82,7 +82,7 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
       </AsyncButton>
       <Button
         hidden={payload === null}
-        variant="danger"
+        color="danger"
         onClick={() => {
           if (current) {
             update({ ...current, enabled: false });

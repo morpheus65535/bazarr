@@ -9,9 +9,9 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Col, Container, Row } from "@mantine/core";
 import moment from "moment";
 import { FunctionComponent, ReactNode, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
 import Table from "./table";

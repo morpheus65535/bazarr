@@ -12,9 +12,9 @@ import {
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { isMovie } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import { Badge, ButtonGroup, Dropdown } from "@mantine/core";
 import { isObject } from "lodash";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
-import { Badge, ButtonGroup, Dropdown } from "react-bootstrap";
 import { Column, useRowSelect } from "react-table";
 import {
   ProcessSubtitleContext,
@@ -70,7 +70,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         Header: "Language",
         accessor: "raw_language",
         Cell: ({ value }) => (
-          <Badge variant="secondary">
+          <Badge color="secondary">
             <Language.Text value={value} long></Language.Text>
           </Badge>
         ),
@@ -143,7 +143,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         <Dropdown.Toggle
           disabled={count === 0}
           split
-          variant="light"
+          color="light"
           size="sm"
           className="px-2"
         ></Dropdown.Toggle>

@@ -21,8 +21,8 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+import { Alert, Container, Row } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -135,7 +135,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           className="w-100 m-0 py-2"
           show={hasTask}
           style={{ borderRadius: 0 }}
-          variant="light"
+          color="light"
         >
           A background task is running for this show, actions are unavailable
         </Alert>

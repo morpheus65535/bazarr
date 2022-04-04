@@ -1,6 +1,6 @@
 import { useModal, withModal } from "@/modules/modals";
+import { Button, Form, InputGroup } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
 import { useProcess } from "./ToolContext";
 
 function submodProcessFrameRate(from: number, to: number) {

@@ -6,9 +6,9 @@ import {
   SelectorOption,
 } from "@/components";
 import Language from "@/components/bazarr/Language";
+import { Col, Container } from "@mantine/core";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";
-import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
   Bar,

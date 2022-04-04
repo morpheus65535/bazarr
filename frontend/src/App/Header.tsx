@@ -1,5 +1,5 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
-import { ActionButton, SearchBar } from "@/components";
+import { SearchBar } from "@/components";
 import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
 import { useReduxAction } from "@/modules/redux/hooks/base";
@@ -8,21 +8,20 @@ import {
   faBars,
   faHeart,
   faNetworkWired,
-  faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent, useMemo } from "react";
 import {
+  Anchor,
   Button,
-  Col,
-  Container,
-  Dropdown,
+  Divider,
+  Grid,
+  Group,
   Image,
+  Menu,
   Navbar,
-  Row,
-} from "react-bootstrap";
+} from "@mantine/core";
+import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
-import NotificationCenter from "./Notification";
 
 const Header: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
@@ -37,46 +36,49 @@ const Header: FunctionComponent = () => {
 
   const { shutdown, restart, logout } = useSystem();
 
-  const serverActions = useMemo(
-    () => (
-      <Dropdown alignRight>
-        <Dropdown.Toggle className="hide-arrow" as={Button}>
-          <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          <Dropdown.Item
-            onClick={() => {
-              restart();
-            }}
-          >
-            Restart
-          </Dropdown.Item>
-          <Dropdown.Item
-            onClick={() => {
-              shutdown();
-            }}
-          >
-            Shutdown
-          </Dropdown.Item>
-          <Dropdown.Divider hidden={!hasLogout}></Dropdown.Divider>
-          <Dropdown.Item
-            hidden={!hasLogout}
-            onClick={() => {
-              logout();
-            }}
-          >
-            Logout
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
-    ),
-    [hasLogout, logout, restart, shutdown]
+  const serverActions = (
+    <Menu>
+      <Menu.Item>Restart</Menu.Item>
+      <Menu.Item>Shutdown</Menu.Item>
+      <Divider></Divider>
+      <Menu.Item>Logout</Menu.Item>
+    </Menu>
+    // <Dropdown alignRight>
+    //   <Dropdown.Toggle className="hide-arrow" as={Button}>
+    //     <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
+    //   </Dropdown.Toggle>
+    //   <Dropdown.Menu>
+    //     <Dropdown.Item
+    //       onClick={() => {
+    //         restart();
+    //       }}
+    //     >
+    //       Restart
+    //     </Dropdown.Item>
+    //     <Dropdown.Item
+    //       onClick={() => {
+    //         shutdown();
+    //       }}
+    //     >
+    //       Shutdown
+    //     </Dropdown.Item>
+    //     <Dropdown.Divider hidden={!hasLogout}></Dropdown.Divider>
+    //     <Dropdown.Item
+    //       hidden={!hasLogout}
+    //       onClick={() => {
+    //         logout();
+    //       }}
+    //     >
+    //       Logout
+    //     </Dropdown.Item>
+    //   </Dropdown.Menu>
+    // </Dropdown>
   );
 
   const goHome = useGotoHomepage();
 
   return (
-    <Navbar bg="primary" className="flex-grow-1 px-0">
+    <Navbar>
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
@@ -96,35 +98,30 @@ const Header: FunctionComponent = () => {
       >
         <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
       </Button>
-      <Container fluid>
-        <Row noGutters className="flex-grow-1">
-          <Col xs={4} sm={6} className="d-flex align-items-center">
-            <SearchBar></SearchBar>
-          </Col>
-          <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
-            <NotificationCenter></NotificationCenter>
-            <Button
+      <Grid>
+        <Grid.Col span={6} xs={4}>
+          <SearchBar></SearchBar>
+        </Grid.Col>
+        <Grid.Col span={6} xs={4}>
+          <Group>
+            {/* NotificationCenter */}
+            <Anchor
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
-            </Button>
+            </Anchor>
             {offline ? (
-              <ActionButton
-                loading
-                alwaysShowText
-                className="ml-2"
-                variant="warning"
-                icon={faNetworkWired}
-              >
-                {isMobile ? "" : "Connecting..."}
-              </ActionButton>
+              <Button color="yellow">
+                <FontAwesomeIcon icon={faNetworkWired}></FontAwesomeIcon>
+                Connecting...
+              </Button>
             ) : (
               serverActions
             )}
-          </Col>
-        </Row>
-      </Container>
+          </Group>
+        </Grid.Col>
+      </Grid>
     </Navbar>
   );
 };

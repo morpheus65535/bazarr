@@ -6,6 +6,7 @@ import {
   withModal,
 } from "@/modules/modals";
 import { BuildKey, isReactText } from "@/utilities";
+import { Button, Col, Container, Row } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   FunctionComponent,
@@ -14,7 +15,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
 import { components } from "react-select";
 import {
   Check,
@@ -226,7 +226,7 @@ const ProviderTool: FunctionComponent = () => {
 
   const footer = (
     <>
-      <Button hidden={!payload} variant="danger" onClick={deletePayload}>
+      <Button hidden={!payload} color="danger" onClick={deletePayload}>
         Delete
       </Button>
       <Button disabled={!canSave} onClick={addProvider}>

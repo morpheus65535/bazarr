@@ -5,8 +5,8 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
+import { Button } from "@mantine/core";
 import React, { FunctionComponent } from "react";
-import { Button } from "react-bootstrap";
 import { useDeleteBackups } from "../../../apis/hooks";
 
 const SystemBackupDeleteModal: FunctionComponent = () => {
@@ -21,7 +21,7 @@ const SystemBackupDeleteModal: FunctionComponent = () => {
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
       <div>
         <Button
-          variant="outline-secondary"
+          color="outline-secondary"
           className="mr-2"
           onClick={() => hide()}
         >

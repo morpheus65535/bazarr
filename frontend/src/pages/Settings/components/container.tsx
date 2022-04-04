@@ -1,7 +1,7 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Card as BSCard, Col, Form, Row } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Card as BSCard, Col, Form, Row } from "react-bootstrap";
 
 interface GroupProps {
   header: string;

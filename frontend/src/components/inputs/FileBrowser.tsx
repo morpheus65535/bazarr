@@ -2,6 +2,7 @@ import { useFileSystem } from "@/apis/hooks";
 import { faFile, faFolder } from "@fortawesome/free-regular-svg-icons";
 import { faReply } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Dropdown, DropdownProps, Form, Spinner } from "@mantine/core";
 import {
   ChangeEvent,
   FunctionComponent,
@@ -10,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Dropdown, DropdownProps, Form, Spinner } from "react-bootstrap";
 
 const backKey = "--back--";
 

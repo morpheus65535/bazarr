@@ -3,6 +3,7 @@ import { ContentHeader, LoadingIndicator } from "@/components";
 import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { Container, Row } from "@mantine/core";
 import { merge } from "lodash";
 import {
   createContext,
@@ -12,7 +13,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
   enabledLanguageKey,

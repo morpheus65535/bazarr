@@ -2,8 +2,8 @@ import { Reload } from "@/utilities";
 import { GithubRepoRoot } from "@/utilities/constants";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button, Container } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Button, Container } from "react-bootstrap";
 
 interface Props {
   error: Error;
@@ -21,11 +21,11 @@ const UIError: FunctionComponent<Props> = ({ error }) => (
         className="mx-1"
         href={`${GithubRepoRoot}/issues/new/choose`}
         target="_blank"
-        variant="warning"
+        color="warning"
       >
         Report Issue
       </Button>
-      <Button className="mx-1" onClick={Reload} variant="light">
+      <Button className="mx-1" onClick={Reload} color="light">
         Reload Page
       </Button>
     </div>

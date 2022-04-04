@@ -3,8 +3,8 @@ import { AsyncButton } from "@/components";
 import Language from "@/components/bazarr/Language";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Badge } from "react-bootstrap";
 
 interface Props {
   seriesId: number;
@@ -51,7 +51,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
         }}
         as={Badge}
         className="mr-1"
-        variant={missing ? "primary" : "secondary"}
+        color={missing ? "primary" : "secondary"}
       >
         <Language.Text className="pr-1" value={subtitle}></Language.Text>
         <FontAwesomeIcon
@@ -62,7 +62,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
     );
   } else {
     return (
-      <Badge className="mr-1" variant="secondary">
+      <Badge className="mr-1" color="secondary">
         <Language.Text value={subtitle} long={false}></Language.Text>
       </Badge>
     );

@@ -65,7 +65,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
           return (
             <AsyncButton
               size="sm"
-              variant="light"
+              color="light"
               noReset
               promise={() =>
                 mutateAsync({

@@ -9,8 +9,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import clsx from "clsx";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -20,7 +18,9 @@ import {
   OverlayTrigger,
   Popover,
   Row,
-} from "react-bootstrap";
+} from "@mantine/core";
+import clsx from "clsx";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
 import { LoadingIndicator, PageTable } from "..";
@@ -71,7 +71,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             name: "",
           };
           return (
-            <Badge variant="secondary">
+            <Badge color="secondary">
               <Language.Text value={lang}></Language.Text>
             </Badge>
           );
@@ -161,7 +161,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           return (
             <Button
               size="sm"
-              variant="light"
+              color="light"
               disabled={item === null}
               onClick={() => {
                 if (!item) return;
@@ -191,7 +191,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
-          <Button variant="primary" block onClick={search}>
+          <Button color="primary" block onClick={search}>
             Start Search
           </Button>
         </div>
@@ -237,7 +237,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
   });
 
   const footer = (
-    <Button variant="light" hidden={isStale} onClick={search}>
+    <Button color="light" hidden={isStale} onClick={search}>
       Search Again
     </Button>
   );

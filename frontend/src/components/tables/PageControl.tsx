@@ -1,5 +1,5 @@
+import { Col, Container, Pagination, Row } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Col, Container, Pagination, Row } from "react-bootstrap";
 import { PageControlAction } from "./types";
 interface Props {
   count: number;

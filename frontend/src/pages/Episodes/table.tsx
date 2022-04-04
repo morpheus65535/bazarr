@@ -17,8 +17,8 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge, ButtonGroup } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { Badge, ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
 import { SubtitleAction } from "./components";
 
@@ -106,7 +106,7 @@ const Table: FunctionComponent<Props> = ({
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" key={v.code2}>
+            <Badge color="secondary" key={v.code2}>
               {v.name}
             </Badge>
           ));

@@ -1,3 +1,4 @@
+import { Collapse } from "@mantine/core";
 import {
   createContext,
   Dispatch,
@@ -6,7 +7,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Collapse } from "react-bootstrap";
 
 type SupportType = string | boolean;
 

@@ -1,12 +1,12 @@
+import { Alert } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Alert } from "react-bootstrap";
 import { Check, Group, Input, Layout, Message } from "../components";
 import { NotificationView } from "./components";
 
 const SettingsNotificationsView: FunctionComponent = () => {
   return (
     <Layout name="Notifications">
-      <Alert variant="secondary">
+      <Alert color="secondary">
         Thanks to caronc for his work on{" "}
         <a
           href="https://github.com/caronc/apprise"
@@ -17,7 +17,7 @@ const SettingsNotificationsView: FunctionComponent = () => {
         </a>
         , the core of the Bazarr notification system.
       </Alert>
-      <Alert variant="secondary">
+      <Alert color="secondary">
         Please follow instructions on his{" "}
         <a
           href="https://github.com/caronc/apprise/wiki"

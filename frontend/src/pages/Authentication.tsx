@@ -1,7 +1,7 @@
 import { useSystem } from "@/apis/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
+import { Button, Card, Form, Image, Spinner } from "@mantine/core";
 import { FunctionComponent, useState } from "react";
-import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
 import { Navigate } from "react-router-dom";
 
 const Authentication: FunctionComponent = () => {
@@ -53,7 +53,7 @@ const Authentication: FunctionComponent = () => {
             </Form.Group>
             {/* <Collapse in={error.length !== 0}>
               <div>
-                <Alert variant="danger" className="m-0">
+                <Alert color="danger" className="m-0">
                   {error}
                 </Alert>
               </div>

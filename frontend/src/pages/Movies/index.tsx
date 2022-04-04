@@ -9,8 +9,8 @@ import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge, Container } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -52,7 +52,7 @@ const MovieView: FunctionComponent = () => {
         Cell: (row) => {
           return row.value.map((v) => (
             <Badge
-              variant="secondary"
+              color="secondary"
               className="mr-2"
               key={BuildKey(v.code2, v.code2, v.hi)}
             >
@@ -76,7 +76,7 @@ const MovieView: FunctionComponent = () => {
           return missing.map((v) => (
             <Badge
               className="mx-2"
-              variant="warning"
+              color="warning"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
               <Language.Text value={v}></Language.Text>

@@ -1,5 +1,5 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { Container, Row } from "react-bootstrap";
+import { Container, Row } from "@mantine/core";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 import { QueryPageTable } from "..";

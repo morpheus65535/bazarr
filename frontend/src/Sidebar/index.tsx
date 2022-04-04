@@ -7,6 +7,14 @@ import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  Badge,
+  Collapse,
+  Container,
+  Image,
+  ListGroup,
+  ListGroupItem,
+} from "@mantine/core";
 import clsx from "clsx";
 import {
   createContext,
@@ -16,14 +24,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import {
-  Badge,
-  Collapse,
-  Container,
-  Image,
-  ListGroup,
-  ListGroupItem,
-} from "react-bootstrap";
 import {
   matchPath,
   NavLink,
@@ -116,7 +116,7 @@ const Sidebar: FunctionComponent = () => {
             className="cursor-pointer"
           ></Image>
         </Container>
-        <ListGroup variant="flush" style={{ paddingBottom: "16rem" }}>
+        <ListGroup color="flush" style={{ paddingBottom: "16rem" }}>
           {routes.map((route, idx) => (
             <RouteItem
               key={BuildKey("nav", idx)}
@@ -245,7 +245,7 @@ const RouteItemContent: FunctionComponent<ItemComponentProps> = ({
       {icon && <FontAwesomeIcon size="1x" className="icon" icon={icon} />}
       <span className="d-flex flex-grow-1 justify-content-between">
         {name}
-        <Badge variant="secondary" hidden={badge === undefined || badge === 0}>
+        <Badge color="secondary" hidden={badge === undefined || badge === 0}>
           {badge}
         </Badge>
       </span>

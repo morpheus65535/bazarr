@@ -1,8 +1,8 @@
 import { useResetProvider, useSystemProviders } from "@/apis/hooks";
 import { ContentHeader, QueryOverlay } from "@/components";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { Container, Row } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 

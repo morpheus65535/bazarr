@@ -17,7 +17,6 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent, useMemo } from "react";
 import {
   Badge,
   Col,
@@ -26,7 +25,8 @@ import {
   OverlayTrigger,
   Popover,
   Row,
-} from "react-bootstrap";
+} from "@mantine/core";
+import { FunctionComponent, useMemo } from "react";
 import Language from "./bazarr/Language";
 
 interface Props {
@@ -195,7 +195,7 @@ const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge title={desc} variant="secondary" className="mr-2 my-1 text-truncate">
+  <Badge title={desc} color="secondary" className="mr-2 my-1 text-truncate">
     <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
     <span className="ml-1">{children}</span>
   </Badge>

@@ -10,13 +10,13 @@ import {
   SliderProps as CSliderProps,
 } from "@/components";
 import { isReactText } from "@/utilities";
-import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
-import { FunctionComponent, ReactText, useEffect } from "react";
 import {
   Button as BSButton,
   ButtonProps as BSButtonProps,
   Form,
-} from "react-bootstrap";
+} from "@mantine/core";
+import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
+import { FunctionComponent, ReactText, useEffect } from "react";
 import { useCollapse, useLatest } from ".";
 import { OverrideFuncType, useSingleUpdate } from "./hooks";
 

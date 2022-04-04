@@ -20,7 +20,7 @@ export const BlacklistButton: FunctionComponent<Props> = ({
     return (
       <AsyncButton
         size="sm"
-        variant="light"
+        color="light"
         noReset
         disabled={blacklisted}
         promise={() => {

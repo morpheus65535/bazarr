@@ -2,6 +2,7 @@ import { ActionButton, SimpleTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { Badge, Button, ButtonGroup } from "@mantine/core";
 import { cloneDeep } from "lodash";
 import {
   createContext,
@@ -10,7 +11,6 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { Badge, Button, ButtonGroup } from "react-bootstrap";
 import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
@@ -114,7 +114,7 @@ const Table: FunctionComponent = () => {
           }
           return items.map((v) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge className={"mx-1"} color={"secondary"}>
                 {v}
               </Badge>
             );
@@ -131,7 +131,7 @@ const Table: FunctionComponent = () => {
           }
           return items.map((v) => {
             return (
-              <Badge className={"mx-1"} variant={"secondary"}>
+              <Badge className={"mx-1"} color={"secondary"}>
                 {v}
               </Badge>
             );
@@ -174,7 +174,7 @@ const Table: FunctionComponent = () => {
       <Button
         block
         disabled={!canAdd}
-        variant="light"
+        color="light"
         onClick={() => {
           const profile = {
             profileId: nextProfileId,
@@ -219,7 +219,7 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
     <Badge
       className={className}
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      variant={cutoff ? "primary" : "secondary"}
+      color={cutoff ? "primary" : "secondary"}
     >
       {text}
     </Badge>

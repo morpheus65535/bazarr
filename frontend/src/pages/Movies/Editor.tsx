@@ -3,8 +3,8 @@ import { QueryOverlay } from "@/components";
 import LanguageProfile from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
 import { BuildKey } from "@/utilities";
+import { Badge } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import { Badge } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 
@@ -25,7 +25,7 @@ const MovieMassEditor: FunctionComponent = () => {
         Cell: (row) => {
           return row.value.map((v) => (
             <Badge
-              variant="secondary"
+              color="secondary"
               className="mr-2"
               key={BuildKey(v.code2, v.code2, v.hi)}
             >

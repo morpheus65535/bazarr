@@ -1,5 +1,5 @@
+import { InputGroup } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
-import { InputGroup } from "react-bootstrap";
 import {
   Check,
   Chips,

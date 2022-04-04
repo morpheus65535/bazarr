@@ -1,4 +1,5 @@
 import { useServerSearch } from "@/apis/hooks";
+import { Dropdown, Form } from "@mantine/core";
 import { uniqueId } from "lodash";
 import {
   FunctionComponent,
@@ -7,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Dropdown, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useThrottle } from "rooks";
 
