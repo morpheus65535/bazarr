@@ -3,13 +3,12 @@ import {
   useMovieSubtitleModification,
   useMovieWantedPagination,
 } from "@/apis/hooks";
-import { AsyncButton } from "@/components";
+import { AsyncButton } from "@/components/async";
 import Language from "@/components/bazarr/Language";
 import WantedView from "@/components/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -40,10 +39,7 @@ const WantedMoviesView: FunctionComponent = () => {
 
           return value.map((item, idx) => (
             <AsyncButton
-              as={Badge}
               key={BuildKey(idx, item.code2)}
-              className="mx-1 mr-2"
-              color="secondary"
               promise={() =>
                 download.mutateAsync({
                   radarrId,

@@ -20,12 +20,11 @@ function WantedView<T extends Wanted.Base>({
   query,
   searchAll,
 }: Props<T>) {
-  // TODO
   const dataCount = query.paginationStatus.totalCount;
   const hasTask = useIsAnyActionRunning();
 
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <Helmet>
         <title>Wanted {name} - Bazarr</title>
       </Helmet>

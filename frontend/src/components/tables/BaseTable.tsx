@@ -1,5 +1,5 @@
 import { usePageSize } from "@/utilities/storage";
-import { Skeleton, Table } from "@mantine/core";
+import { Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
 import {
   HeaderGroup,
@@ -120,7 +120,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
     body = (
       <tr>
         <td colSpan={colCount} className="text-center">
-          {emptyText}
+          <Text align="center">{emptyText}</Text>
         </td>
       </tr>
     );

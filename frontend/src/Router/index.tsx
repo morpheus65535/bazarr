@@ -27,10 +27,15 @@ import SeriesMassEditor from "@/pages/Series/Editor";
 // import SystemProvidersView from "@/pages/System/Providers";
 // import SystemReleasesView from "@/pages/System/Releases";
 // import SystemTasksView from "@/pages/System/Tasks";
-// import WantedMoviesView from "@/pages/Wanted/Movies";
-// import WantedSeriesView from "@/pages/Wanted/Series";
+import WantedMoviesView from "@/pages/Wanted/Movies";
+import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
-import { faClock, faFilm, faPlay } from "@fortawesome/free-solid-svg-icons";
+import {
+  faClock,
+  faExclamationTriangle,
+  faFilm,
+  faPlay,
+} from "@fortawesome/free-solid-svg-icons";
 // import {
 //   faClock,
 //   faCogs,
@@ -141,28 +146,28 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faExclamationTriangle,
-          //     name: "Wanted",
-          //     path: "wanted",
-          //     hidden: !sonarr && !radarr,
-          //     children: [
-          //       {
-          //         name: "Episodes",
-          //         path: "series",
-          //         badge: data?.episodes,
-          //         hidden: !sonarr,
-          //         element: <WantedSeriesView></WantedSeriesView>,
-          //       },
-          //       {
-          //         name: "Movies",
-          //         path: "movies",
-          //         badge: data?.movies,
-          //         hidden: !radarr,
-          //         element: <WantedMoviesView></WantedMoviesView>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faExclamationTriangle,
+            name: "Wanted",
+            path: "wanted",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                name: "Episodes",
+                path: "series",
+                badge: data?.episodes,
+                hidden: !sonarr,
+                element: <WantedSeriesView></WantedSeriesView>,
+              },
+              {
+                name: "Movies",
+                path: "movies",
+                badge: data?.movies,
+                hidden: !radarr,
+                element: <WantedMoviesView></WantedMoviesView>,
+              },
+            ],
+          },
           //   {
           //     icon: faFileExcel,
           //     name: "Blacklist",
