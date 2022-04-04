@@ -1,8 +1,8 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { ScrollToTop } from "@/utilities";
+import { Box, Skeleton } from "@mantine/core";
 import { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
-import { LoadingIndicator } from "..";
 import BaseTable, { TableStyleProps, useStyleAndOptions } from "./BaseTable";
 import PageControl from "./PageControl";
 import { useDefaultSettings } from "./plugins";
@@ -48,7 +48,17 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   }, [page]);
 
   if (isLoading) {
-    return <LoadingIndicator></LoadingIndicator>;
+    return (
+      <Box mx={10}>
+        <div>
+          {Array(pageSize)
+            .fill(0)
+            .map((_, i) => (
+              <Skeleton key={i} radius="xl" height={24} mt={10}></Skeleton>
+            ))}
+        </div>
+      </Box>
+    );
   }
 
   return (

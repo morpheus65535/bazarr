@@ -1,30 +1,27 @@
-import { Group } from "@mantine/core";
-import { FunctionComponent, ReactNode } from "react";
+import { createStyles, Group } from "@mantine/core";
+import { FunctionComponent } from "react";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
 
-interface Props {
-  scroll?: boolean;
-  className?: string;
-}
+const useStyles = createStyles((theme) => ({
+  group: {
+    backgroundColor: theme.colors.gray[4],
+  },
+}));
 
-declare type Header = FunctionComponent<Props> & {
+declare type Header = FunctionComponent & {
   Button: typeof ContentHeaderButton;
   AsyncButton: typeof ContentHeaderAsyncButton;
   Group: typeof ContentHeaderGroup;
 };
 
-export const ContentHeader: Header = ({ children, scroll, className }) => {
-  let childItem: ReactNode;
-
-  if (scroll !== false) {
-    childItem = (
-      <div className="d-flex flex-nowrap flex-grow-1">{children}</div>
-    );
-  } else {
-    childItem = children;
-  }
-  return <Group>{childItem}</Group>;
+export const ContentHeader: Header = ({ children }) => {
+  const { classes } = useStyles();
+  return (
+    <Group p={12} className={classes.group}>
+      {children}
+    </Group>
+  );
 };
 
 ContentHeader.Button = ContentHeaderButton;

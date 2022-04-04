@@ -1,7 +1,7 @@
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent } from "react";
-import { AsyncButton } from "../async/AsyncButton";
+import { AsyncButton } from "../async";
 
 interface Props {
   history: History.Base;

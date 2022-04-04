@@ -10,7 +10,7 @@ import { Container } from "@mantine/core";
 import { FunctionComponent, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
 import { SelectorOption } from "..";
-import { AsyncButton } from "../async/AsyncButton";
+import { AsyncButton } from "../async";
 
 interface Props {
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;

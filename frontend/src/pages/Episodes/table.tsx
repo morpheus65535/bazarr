@@ -1,10 +1,11 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { ActionButton, GroupTable, TextPopover } from "@/components";
+import { GroupTable } from "@/components";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import SubtitleTools, {
   SubtitleToolModal,
 } from "@/components/modals/subtitle-tools";
+import TextPopover from "@/components/TextPopover";
 import { useModalControl } from "@/modules/modals";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
@@ -17,7 +18,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, ButtonGroup } from "@mantine/core";
+import { ActionIcon, Badge, Group } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { SubtitleAction } from "./components";
@@ -96,7 +97,7 @@ const Table: FunctionComponent<Props> = ({
         accessor: "title",
         className: "text-nowrap",
         Cell: ({ value, row }) => (
-          <TextPopover text={row.original.sceneName} delay={1}>
+          <TextPopover text={row.original.sceneName}>
             <span>{value}</span>
           </TextPopover>
         ),
@@ -159,29 +160,32 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const { show } = useModalControl();
           return (
-            <ButtonGroup>
-              <ActionButton
-                icon={faUser}
+            <Group>
+              <ActionIcon
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
                   show(EpisodeSearchModal, row.original);
                 }}
-              ></ActionButton>
-              <ActionButton
-                icon={faHistory}
+              >
+                <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
+              </ActionIcon>
+              <ActionIcon
                 disabled={disabled}
                 onClick={() => {
                   show(EpisodeHistoryModal, row.original);
                 }}
-              ></ActionButton>
-              <ActionButton
-                icon={faBriefcase}
+              >
+                <FontAwesomeIcon icon={faHistory}></FontAwesomeIcon>
+              </ActionIcon>
+              <ActionIcon
                 disabled={disabled}
                 onClick={() => {
                   show(SubtitleToolModal, [row.original]);
                 }}
-              ></ActionButton>
-            </ButtonGroup>
+              >
+                <FontAwesomeIcon icon={faBriefcase}></FontAwesomeIcon>
+              </ActionIcon>
+            </Group>
           );
         },
       },

@@ -19,7 +19,7 @@ function ItemView<T extends Item.Base>({ query, columns }: Props<T>) {
 
   return (
     <>
-      <ContentHeader scroll={false}>
+      <ContentHeader>
         <ContentHeader.Button
           disabled={query.paginationStatus.totalCount === 0}
           icon={faList}

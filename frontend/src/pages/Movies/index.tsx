@@ -1,7 +1,7 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { ActionBadge, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
-import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditorModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
@@ -65,7 +65,9 @@ const MovieView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value} empty=""></LanguageProfile>;
+          return (
+            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+          );
         },
       },
       {

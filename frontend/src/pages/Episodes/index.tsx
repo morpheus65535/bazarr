@@ -21,7 +21,7 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Alert, Container, Row } from "@mantine/core";
+import { Container, Stack } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
@@ -130,20 +130,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
           </ContentHeader.Button>
         </ContentHeader.Group>
       </ContentHeader>
-      <Row>
-        <Alert
-          className="w-100 m-0 py-2"
-          show={hasTask}
-          style={{ borderRadius: 0 }}
-          color="light"
-        >
-          A background task is running for this show, actions are unavailable
-        </Alert>
-      </Row>
-      <Row>
+
+      <Stack>
         <ItemOverview item={series} details={details}></ItemOverview>
-      </Row>
-      <Row>
         {episodes === undefined ? (
           <LoadingIndicator></LoadingIndicator>
         ) : (
@@ -154,7 +143,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
             disabled={hasTask}
           ></Table>
         )}
-      </Row>
+      </Stack>
       <ItemEditorModal mutation={mutation}></ItemEditorModal>
       <SeriesUploadModal episodes={episodes ?? []}></SeriesUploadModal>
     </Container>

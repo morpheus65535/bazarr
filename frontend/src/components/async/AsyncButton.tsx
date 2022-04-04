@@ -26,7 +26,7 @@ enum RequestState {
   Invalid,
 }
 
-export function AsyncButton<T>(
+export default function AsyncButton<T>(
   props: PropsWithChildren<AsyncButtonProps<T>>
 ): JSX.Element {
   const {

@@ -4,14 +4,14 @@ import App from "@/App";
 import { useEnabledStatus } from "@/modules/redux/hooks";
 // import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 // import BlacklistSeriesView from "@/pages/Blacklist/Series";
-// import Episodes from "@/pages/Episodes";
+import Episodes from "@/pages/Episodes";
 // import MoviesHistoryView from "@/pages/History/Movies";
 // import SeriesHistoryView from "@/pages/History/Series";
 // import MovieView from "@/pages/Movies";
 // import MovieDetailView from "@/pages/Movies/Details";
 // import MovieMassEditor from "@/pages/Movies/Editor";
-// import SeriesView from "@/pages/Series";
-// import SeriesMassEditor from "@/pages/Series/Editor";
+import SeriesView from "@/pages/Series";
+import SeriesMassEditor from "@/pages/Series/Editor";
 // import SettingsGeneralView from "@/pages/Settings/General";
 // import SettingsLanguagesView from "@/pages/Settings/Languages";
 // import SettingsNotificationsView from "@/pages/Settings/Notifications";
@@ -29,6 +29,7 @@ import { useEnabledStatus } from "@/modules/redux/hooks";
 // import WantedMoviesView from "@/pages/Wanted/Movies";
 // import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
+import { faPlay } from "@fortawesome/free-solid-svg-icons";
 // import {
 //   faClock,
 //   faCogs,
@@ -68,27 +69,27 @@ function useRoutes(): CustomRouteObject[] {
             index: true,
             element: <Redirector></Redirector>,
           },
-          //   {
-          //     icon: faPlay,
-          //     name: "Series",
-          //     path: "series",
-          //     hidden: !sonarr,
-          //     children: [
-          //       {
-          //         index: true,
-          //         element: <SeriesView></SeriesView>,
-          //       },
-          //       {
-          //         path: "edit",
-          //         hidden: true,
-          //         element: <SeriesMassEditor></SeriesMassEditor>,
-          //       },
-          //       {
-          //         path: ":id",
-          //         element: <Episodes></Episodes>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faPlay,
+            name: "Series",
+            path: "series",
+            hidden: !sonarr,
+            children: [
+              {
+                index: true,
+                element: <SeriesView></SeriesView>,
+              },
+              {
+                path: "edit",
+                hidden: true,
+                element: <SeriesMassEditor></SeriesMassEditor>,
+              },
+              {
+                path: ":id",
+                element: <Episodes></Episodes>,
+              },
+            ],
+          },
           //   {
           //     icon: faFilm,
           //     name: "Movies",

@@ -1,6 +1,6 @@
 import { useSeries, useSeriesModification } from "@/apis/hooks";
-import { QueryOverlay } from "@/components";
-import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import { QueryOverlay } from "@/components/async";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
 import { BuildKey } from "@/utilities";
 import { Badge } from "@mantine/core";
@@ -38,7 +38,7 @@ const SeriesMassEditor: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value}></LanguageProfile>;
+          return <LanguageProfileName index={value}></LanguageProfileName>;
         },
       },
     ],

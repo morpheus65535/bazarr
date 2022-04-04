@@ -9,7 +9,7 @@ import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import Header from "./Header";
 
@@ -51,9 +51,9 @@ const App: FunctionComponent = () => {
         navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
         header={<Header></Header>}
         navbar={<Navbar></Navbar>}
+        padding={0}
       >
-        {/* <Outlet></Outlet> */}
-        <span>Content</span>
+        <Outlet></Outlet>
       </AppShell>
     </ErrorBoundary>
   );

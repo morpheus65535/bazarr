@@ -19,10 +19,6 @@ const PageControl: FunctionComponent<Props> = ({
   index,
   size,
   total,
-  canPrevious,
-  previous,
-  canNext,
-  next,
   goto,
   loadState,
 }) => {
@@ -33,11 +29,18 @@ const PageControl: FunctionComponent<Props> = ({
   const loading = loadState !== undefined;
 
   return (
-    <Group>
-      <Text>
+    <Group p={16} position="apart">
+      <Text size="sm">
         Show {start} to {end} of {total} entries
       </Text>
-      <Pagination hidden={count <= 1} total={size}></Pagination>
+      <Pagination
+        size="sm"
+        color={loading ? "gray" : "primary"}
+        page={index + 1}
+        onChange={(page) => goto(page - 1)}
+        hidden={count <= 1}
+        total={count}
+      ></Pagination>
     </Group>
   );
 };

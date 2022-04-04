@@ -1,12 +1,19 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
-import { ActionBadge } from "@/components";
-import LanguageProfile from "@/components/bazarr/LanguageProfile";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditorModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Container, ProgressBar } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  ActionIcon,
+  Anchor,
+  Badge,
+  Container,
+  Progress,
+  Text,
+} from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
@@ -26,9 +33,9 @@ const SeriesView: FunctionComponent = () => {
         Cell: ({ row, value }) => {
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
-            <Link to={target}>
-              <span>{value}</span>
-            </Link>
+            <Anchor component={Link} to={target}>
+              <Text>{value}</Text>
+            </Anchor>
           );
         },
       },
@@ -51,7 +58,9 @@ const SeriesView: FunctionComponent = () => {
         Header: "Languages Profile",
         accessor: "profileId",
         Cell: ({ value }) => {
-          return <LanguageProfile index={value} empty=""></LanguageProfile>;
+          return (
+            <LanguageProfileName index={value} empty=""></LanguageProfileName>
+          );
         },
       },
       {
@@ -65,24 +74,20 @@ const SeriesView: FunctionComponent = () => {
           if (episodeFileCount === 0 || !profileId) {
             progress = 0.0;
           } else {
-            progress = episodeFileCount - episodeMissingCount;
+            progress = (1.0 - episodeMissingCount / episodeFileCount) * 100.0;
             label = `${
               episodeFileCount - episodeMissingCount
             }/${episodeFileCount}`;
           }
 
-          const color = episodeMissingCount === 0 ? "primary" : "warning";
-
           return (
-            <ProgressBar
-              className="my-a"
+            <Progress
               key={title}
-              color={color}
-              min={0}
-              max={episodeFileCount}
-              now={progress}
+              size="xl"
+              color={episodeMissingCount === 0 ? "blue" : "yellow"}
+              value={progress}
               label={label}
-            ></ProgressBar>
+            ></Progress>
           );
         },
       },
@@ -91,10 +96,12 @@ const SeriesView: FunctionComponent = () => {
         Cell: ({ row: { original } }) => {
           const { show } = useModalControl();
           return (
-            <ActionBadge
-              icon={faWrench}
+            <ActionIcon
+              variant="light"
               onClick={() => show(ItemEditorModal, original)}
-            ></ActionBadge>
+            >
+              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
+            </ActionIcon>
           );
         },
       },
@@ -103,7 +110,7 @@ const SeriesView: FunctionComponent = () => {
   );
 
   return (
-    <Container fluid>
+    <Container px={0} fluid>
       <Helmet>
         <title>Series - Bazarr</title>
       </Helmet>

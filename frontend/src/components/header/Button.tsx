@@ -1,7 +1,7 @@
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button } from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import {
   FunctionComponent,
   MouseEvent,
@@ -30,18 +30,14 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   return (
     <Button
       color="dark"
-      className="d-flex flex-column text-nowrap py-1"
+      variant="subtle"
       disabled={disabled || updating}
       onClick={onClick}
+      leftIcon={
+        <FontAwesomeIcon icon={displayIcon} spin={updating}></FontAwesomeIcon>
+      }
     >
-      <FontAwesomeIcon
-        className="mx-auto my-1"
-        icon={displayIcon}
-        spin={updating}
-      ></FontAwesomeIcon>
-      <span className="align-bottom text-themecolor small text-center">
-        {children}
-      </span>
+      <Text size="xs">{children}</Text>
     </Button>
   );
 };

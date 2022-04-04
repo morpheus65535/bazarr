@@ -83,7 +83,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   );
   return (
     <Container fluid>
-      <ContentHeader scroll={false}>
+      <ContentHeader>
         <ContentHeader.Group pos="start">
           <Select
             disabled={selections.length === 0}
