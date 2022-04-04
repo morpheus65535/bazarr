@@ -1,5 +1,7 @@
+import Navbar from "@/App/Navbar";
 import { LoadingIndicator } from "@/components";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { Layout } from "@/constants";
 import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
@@ -7,7 +9,7 @@ import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import Header from "./Header";
 
@@ -45,8 +47,13 @@ const App: FunctionComponent = () => {
 
   return (
     <ErrorBoundary>
-      <AppShell header={<Header></Header>}>
-        <Outlet></Outlet>
+      <AppShell
+        navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
+        header={<Header></Header>}
+        navbar={<Navbar></Navbar>}
+      >
+        {/* <Outlet></Outlet> */}
+        <span>Content</span>
       </AppShell>
     </ErrorBoundary>
   );

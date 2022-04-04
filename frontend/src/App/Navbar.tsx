@@ -1,13 +1,14 @@
+import { Layout } from "@/constants";
 import { setSidebar } from "@/modules/redux/actions";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
-import { BuildKey, Environment, pathJoin } from "@/utilities";
+import { BuildKey, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Collapse, Container, Image } from "@mantine/core";
+import { Accordion, Badge, Navbar as MantineNavbar } from "@mantine/core";
 import clsx from "clsx";
 import {
   createContext,
@@ -80,10 +81,9 @@ function useIsActive(parent: string, route: RouteObject) {
   );
 }
 
-// Actual sidebar
-const Sidebar: FunctionComponent = () => {
+const Navbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
-  const isShow = useReduxStore((s) => s.site.showSidebar);
+  const sidebarOpened = useReduxStore((s) => s.site.showSidebar);
 
   const showSidebar = useReduxAction(setSidebar);
 
@@ -98,8 +98,13 @@ const Sidebar: FunctionComponent = () => {
 
   return (
     <Selection.Provider value={{ selection, select }}>
-      <nav className={clsx("sidebar-container", { open: isShow })}>
-        <Container className="sidebar-title d-flex align-items-center d-md-none">
+      <MantineNavbar
+        p="xs"
+        width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
+        hidden={!sidebarOpened}
+        hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
+      >
+        {/* <Container className="sidebar-title d-flex align-items-center d-md-none">
           <Image
             alt="brand"
             src={`${Environment.baseUrl}/static/logo64.png`}
@@ -108,21 +113,19 @@ const Sidebar: FunctionComponent = () => {
             onClick={goHome}
             className="cursor-pointer"
           ></Image>
-        </Container>
-        {/* <ListGroup color="flush" style={{ paddingBottom: "16rem" }}>
-          {routes.map((route, idx) => (
-            <RouteItem
-              key={BuildKey("nav", idx)}
-              parent="/"
-              route={route}
-            ></RouteItem>
-          ))}
-        </ListGroup> */}
-      </nav>
-      <div
-        className={clsx("sidebar-overlay", { open: isShow })}
-        onClick={() => showSidebar(false)}
-      ></div>
+        </Container> */}
+        <MantineNavbar.Section>
+          <Accordion>
+            {routes.map((route, idx) => (
+              <RouteItem
+                key={BuildKey("nav", idx)}
+                parent="/"
+                route={route}
+              ></RouteItem>
+            ))}
+          </Accordion>
+        </MantineNavbar.Section>
+      </MantineNavbar>
     </Selection.Provider>
   );
 };
@@ -170,34 +173,27 @@ const RouteItem: FunctionComponent<{
 
     if (name) {
       return (
-        <div className={clsx("sidebar-collapse-box", { active: isOpen })}>
-          {/* <ListGroupItem
-            action
-            className={clsx("button", { active: isOpen })}
-            onClick={() => {
-              LOG("info", "clicked", link);
+        <Accordion.Item
+          label={
+            <RouteItemContent name={name ?? link} icon={icon} badge={badge}>
+              {elements}
+            </RouteItemContent>
+          }
+        ></Accordion.Item>
 
-              if (isValidated) {
-                navigate(link);
-              }
+        // onClick={() => {
+        //   LOG("info", "clicked", link);
 
-              if (isOpen) {
-                select(null);
-              } else {
-                select(link);
-              }
-            }}
-          >
-            <RouteItemContent
-              name={name ?? link}
-              icon={icon}
-              badge={badge}
-            ></RouteItemContent>
-          </ListGroupItem> */}
-          <Collapse in={isOpen}>
-            <div className="indent">{elements}</div>
-          </Collapse>
-        </div>
+        //   if (isValidated) {
+        //     navigate(link);
+        //   }
+
+        //   if (isOpen) {
+        //     select(null);
+        //   } else {
+        //     select(link);
+        //   }
+        // }}
       );
     } else {
       return <>{elements}</>;
@@ -246,4 +242,4 @@ const RouteItemContent: FunctionComponent<ItemComponentProps> = ({
   );
 };
 
-export default Sidebar;
+export default Navbar;

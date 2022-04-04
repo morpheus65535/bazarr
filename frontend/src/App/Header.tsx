@@ -48,28 +48,32 @@ const Header: FunctionComponent = () => {
       </Helmet>
       <Group position="apart" style={{ height: "100%" }}>
         <Group>
-          <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
-            <>
-              <Image
-                alt="brand"
-                src={`${Environment.baseUrl}/static/logo64.png`}
-                height={32}
-                width={32}
-                onClick={goHome}
-                role="button"
-              ></Image>
-              <Badge size="lg" radius="sm" color="gray">
-                Bazarr
-              </Badge>
-            </>
+          <MediaQuery
+            smallerThan={Layout.MOBILE_BREAKPOINT}
+            styles={{ display: "none" }}
+          >
+            <Image
+              alt="brand"
+              src={`${Environment.baseUrl}/static/logo64.png`}
+              height={32}
+              width={32}
+              onClick={goHome}
+              role="button"
+            ></Image>
           </MediaQuery>
-          <MediaQuery largerThan="sm" styles={{ display: "none" }}>
+          <MediaQuery
+            largerThan={Layout.MOBILE_BREAKPOINT}
+            styles={{ display: "none" }}
+          >
             <Burger
               opened={sidebarOpened}
               onClick={() => changeSidebar(!sidebarOpened)}
               size="sm"
             ></Burger>
           </MediaQuery>
+          <Badge size="lg" radius="sm" color="gray">
+            Bazarr
+          </Badge>
         </Group>
         <Group spacing="xs" position="right">
           {/* NotificationCenter */}
