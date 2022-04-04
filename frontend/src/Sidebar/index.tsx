@@ -7,14 +7,7 @@ import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  Badge,
-  Collapse,
-  Container,
-  Image,
-  ListGroup,
-  ListGroupItem,
-} from "@mantine/core";
+import { Badge, Collapse, Container, Image } from "@mantine/core";
 import clsx from "clsx";
 import {
   createContext,
@@ -116,7 +109,7 @@ const Sidebar: FunctionComponent = () => {
             className="cursor-pointer"
           ></Image>
         </Container>
-        <ListGroup color="flush" style={{ paddingBottom: "16rem" }}>
+        {/* <ListGroup color="flush" style={{ paddingBottom: "16rem" }}>
           {routes.map((route, idx) => (
             <RouteItem
               key={BuildKey("nav", idx)}
@@ -124,7 +117,7 @@ const Sidebar: FunctionComponent = () => {
               route={route}
             ></RouteItem>
           ))}
-        </ListGroup>
+        </ListGroup> */}
       </nav>
       <div
         className={clsx("sidebar-overlay", { open: isShow })}
@@ -178,7 +171,7 @@ const RouteItem: FunctionComponent<{
     if (name) {
       return (
         <div className={clsx("sidebar-collapse-box", { active: isOpen })}>
-          <ListGroupItem
+          {/* <ListGroupItem
             action
             className={clsx("button", { active: isOpen })}
             onClick={() => {
@@ -200,7 +193,7 @@ const RouteItem: FunctionComponent<{
               icon={icon}
               badge={badge}
             ></RouteItemContent>
-          </ListGroupItem>
+          </ListGroupItem> */}
           <Collapse in={isOpen}>
             <div className="indent">{elements}</div>
           </Collapse>

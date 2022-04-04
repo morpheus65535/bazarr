@@ -1,4 +1,3 @@
-import { Modal } from "@mantine/core";
 import { FunctionComponent, ReactNode } from "react";
 import { useModalData } from "./hooks";
 
@@ -13,11 +12,13 @@ export const StandardModalView: FunctionComponent<StandardModalProps> = ({
   title,
 }) => {
   const { closeable } = useModalData();
-  return (
-    <>
-      <Modal.Header closeButton={closeable}>{title}</Modal.Header>
-      <Modal.Body>{children}</Modal.Body>
-      <Modal.Footer hidden={footer === undefined}>{footer}</Modal.Footer>
-    </>
-  );
+  // return (
+  //   <>
+  //     <Modal.Header closeButton={closeable}>{title}</Modal.Header>
+  //     <Modal.Body>{children}</Modal.Body>
+  //     <Modal.Footer hidden={footer === undefined}>{footer}</Modal.Footer>
+  //   </>
+  // );
+
+  return <>{children}</>;
 };
