@@ -8,7 +8,7 @@ import { LOG } from "@/utilities/console";
 import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Accordion, Badge, Navbar as MantineNavbar } from "@mantine/core";
+import { Accordion, Badge, Navbar as MantineNavbar, Text } from "@mantine/core";
 import clsx from "clsx";
 import {
   createContext,
@@ -104,16 +104,6 @@ const Navbar: FunctionComponent = () => {
         hidden={!sidebarOpened}
         hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
       >
-        {/* <Container className="sidebar-title d-flex align-items-center d-md-none">
-          <Image
-            alt="brand"
-            src={`${Environment.baseUrl}/static/logo64.png`}
-            width="32"
-            height="32"
-            onClick={goHome}
-            className="cursor-pointer"
-          ></Image>
-        </Container> */}
         <MantineNavbar.Section>
           <Accordion>
             {routes.map((route, idx) => (
@@ -123,6 +113,8 @@ const Navbar: FunctionComponent = () => {
                 route={route}
               ></RouteItem>
             ))}
+            <Text>Pure Text</Text>
+            <Accordion.Item label="Test"></Accordion.Item>
           </Accordion>
         </MantineNavbar.Section>
       </MantineNavbar>
@@ -173,13 +165,9 @@ const RouteItem: FunctionComponent<{
 
     if (name) {
       return (
-        <Accordion.Item
-          label={
-            <RouteItemContent name={name ?? link} icon={icon} badge={badge}>
-              {elements}
-            </RouteItemContent>
-          }
-        ></Accordion.Item>
+        <RouteItemContent name={name ?? link} icon={icon} badge={badge}>
+          {elements}
+        </RouteItemContent>
 
         // onClick={() => {
         //   LOG("info", "clicked", link);

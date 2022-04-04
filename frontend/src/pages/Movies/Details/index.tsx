@@ -95,7 +95,7 @@ const MovieDetailView: FunctionComponent = () => {
         <title>{movie.title} - Bazarr (Movies)</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeader.Group pos="start">
+        <div>
           <ContentHeader.Button
             icon={faSync}
             disabled={hasTask}
@@ -140,9 +140,8 @@ const MovieDetailView: FunctionComponent = () => {
           >
             Tools
           </ContentHeader.Button>
-        </ContentHeader.Group>
-
-        <ContentHeader.Group pos="end">
+        </div>
+        <div>
           <ContentHeader.Button
             disabled={!allowEdit || movie.profileId === null || hasTask}
             icon={faCloudUploadAlt}
@@ -157,7 +156,7 @@ const MovieDetailView: FunctionComponent = () => {
           >
             Edit Movie
           </ContentHeader.Button>
-        </ContentHeader.Group>
+        </div>
       </ContentHeader>
       <Row>
         <Alert

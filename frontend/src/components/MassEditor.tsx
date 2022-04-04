@@ -82,12 +82,12 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     [selections]
   );
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <ContentHeader>
-        <ContentHeader.Group pos="start">
+        <div>
           <Select
+            placeholder="Change Profile"
             disabled={selections.length === 0}
-            label="Change Profile"
             data={[]}
           ></Select>
           {/* <Dropdown onSelect={setProfiles}>
@@ -96,8 +96,8 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
             </Dropdown.Toggle>
             <Dropdown.Menu>{profileOptions}</Dropdown.Menu>
           </Dropdown> */}
-        </ContentHeader.Group>
-        <ContentHeader.Group pos="end">
+        </div>
+        <div>
           <ContentHeader.Button icon={faUndo} onClick={onEnded}>
             Cancel
           </ContentHeader.Button>
@@ -109,7 +109,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           >
             Save
           </ContentHeader.AsyncButton>
-        </ContentHeader.Group>
+        </div>
       </ContentHeader>
       <SimpleTable
         columns={columns}

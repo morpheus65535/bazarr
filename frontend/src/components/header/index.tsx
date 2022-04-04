@@ -1,7 +1,6 @@
 import { createStyles, Group } from "@mantine/core";
 import { FunctionComponent } from "react";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
-import ContentHeaderGroup from "./Group";
 
 const useStyles = createStyles((theme) => ({
   group: {
@@ -12,7 +11,6 @@ const useStyles = createStyles((theme) => ({
 declare type Header = FunctionComponent & {
   Button: typeof ContentHeaderButton;
   AsyncButton: typeof ContentHeaderAsyncButton;
-  Group: typeof ContentHeaderGroup;
 };
 
 export const ContentHeader: Header = ({ children }) => {
@@ -25,7 +23,6 @@ export const ContentHeader: Header = ({ children }) => {
 };
 
 ContentHeader.Button = ContentHeaderButton;
-ContentHeader.Group = ContentHeaderGroup;
 ContentHeader.AsyncButton = ContentHeaderAsyncButton;
 
 export default ContentHeader;
