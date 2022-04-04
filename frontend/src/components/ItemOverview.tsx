@@ -16,7 +16,15 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Grid, Group, Image, Stack, Title } from "@mantine/core";
+import {
+  BackgroundImage,
+  Badge,
+  Grid,
+  Group,
+  Image,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import Language from "./bazarr/Language";
 
@@ -117,37 +125,27 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   // );
 
   return (
-    <Grid
-      style={{
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
-        backgroundPosition: "top center",
-        backgroundImage: `url('${item.fanart}')`,
-      }}
-    >
-      <Grid.Col>
-        <Image
-          className="d-none d-sm-block my-2"
-          style={{
-            maxHeight: 250,
-          }}
-          src={item.poster}
-        ></Image>
-      </Grid.Col>
-      <Grid.Col>
-        <Stack>
-          <Group>
-            {isMovie(item) ? (
-              <FontAwesomeIcon
-                className="mx-2 mt-2"
-                title={item.monitored ? "monitored" : "unmonitored"}
-                icon={item.monitored ? faBookmark : farBookmark}
-                size="2x"
-              ></FontAwesomeIcon>
-            ) : null}
-            <Title>{item.title}</Title>
-          </Group>
-          {/* <Row>
+    <BackgroundImage src={item.fanart}>
+      <Grid align="flex-start" grow gutter="xs" m={24}>
+        <Grid.Col span={2}>
+          <Image src={item.poster} withPlaceholder></Image>
+        </Grid.Col>
+        <Grid.Col span={8}>
+          <Stack align="flex-start" spacing="xs" mx={6}>
+            <Group>
+              {isMovie(item) ? (
+                <FontAwesomeIcon
+                  className="mx-2 mt-2"
+                  title={item.monitored ? "monitored" : "unmonitored"}
+                  icon={item.monitored ? faBookmark : farBookmark}
+                  size="2x"
+                ></FontAwesomeIcon>
+              ) : null}
+              <Text size="xl" weight="bold" color="white">
+                {item.title}
+              </Text>
+            </Group>
+            {/* <Row>
             <h1>{item.title}</h1>
             <span hidden={item.alternativeTitles.length === 0}>
               <OverlayTrigger overlay={alternativePopover}>
@@ -158,13 +156,16 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
               </OverlayTrigger>
             </span>
           </Row> */}
-          {detailBadges}
-          {audioBadges}
-          {languageBadges}
-          <Title>{item.overview}</Title>
-        </Stack>
-      </Grid.Col>
-    </Grid>
+            <Group spacing="xs">{detailBadges}</Group>
+            <Group spacing="xs">{audioBadges}</Group>
+            <Group spacing="xs">{languageBadges}</Group>
+            <Text size="sm" color="white">
+              {item.overview}
+            </Text>
+          </Stack>
+        </Grid.Col>
+      </Grid>
+    </BackgroundImage>
   );
 };
 
@@ -179,9 +180,11 @@ const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge title={desc} color="secondary" className="mr-2 my-1 text-truncate">
-    <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-    <span className="ml-1">{children}</span>
+  <Badge radius="sm" title={desc} color="dark" size="xs">
+    <Text inherit color="white">
+      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+      {children}
+    </Text>
   </Badge>
 );
 

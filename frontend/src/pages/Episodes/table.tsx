@@ -21,7 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ActionIcon, Badge, Group } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { SubtitleAction } from "./components";
+import { Subtitle } from "./components";
 
 interface Props {
   series?: Item.Series;
@@ -107,7 +107,7 @@ const Table: FunctionComponent<Props> = ({
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge color="secondary" key={v.code2}>
+            <Badge color="teal" key={v.code2}>
               {v.name}
             </Badge>
           ));
@@ -125,13 +125,13 @@ const Table: FunctionComponent<Props> = ({
             const episodeid = episode.sonarrEpisodeId;
 
             const missing = episode.missing_subtitles.map((val, idx) => (
-              <SubtitleAction
+              <Subtitle
                 missing
                 key={BuildKey(idx, val.code2, "missing")}
                 seriesId={seriesid}
                 episodeId={episodeid}
                 subtitle={val}
-              ></SubtitleAction>
+              ></Subtitle>
             ));
 
             let raw_subtitles = episode.subtitles;
@@ -140,18 +140,18 @@ const Table: FunctionComponent<Props> = ({
             }
 
             const subtitles = raw_subtitles.map((val, idx) => (
-              <SubtitleAction
+              <Subtitle
                 key={BuildKey(idx, val.code2, "valid")}
                 seriesId={seriesid}
                 episodeId={episodeid}
                 subtitle={val}
-              ></SubtitleAction>
+              ></Subtitle>
             ));
 
             return [...missing, ...subtitles];
           }, [episode, seriesid]);
 
-          return elements;
+          return <Group spacing="xs">{elements}</Group>;
         },
       },
       {
@@ -160,7 +160,7 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const { show } = useModalControl();
           return (
-            <Group>
+            <Group spacing="xs">
               <ActionIcon
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {

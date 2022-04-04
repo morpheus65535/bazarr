@@ -67,7 +67,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
   }
 
   return (
-    <Container fluid>
+    <Container px={0} fluid>
       <Helmet>
         <title>{series.title} - Bazarr (Series)</title>
       </Helmet>

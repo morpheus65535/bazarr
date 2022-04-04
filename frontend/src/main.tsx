@@ -3,6 +3,7 @@ import store from "@/modules/redux/store";
 // TODO
 // import "@/styles/index.scss";
 import "@fontsource/roboto/300.css";
+import { TypographyStylesProvider } from "@mantine/core";
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { Provider } from "react-redux";
@@ -19,13 +20,15 @@ const RouteApp = () => {
 export const Main = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
-      <Router>
-        {/* TODO: Enabled Strict Mode after @mantine/core upgrade to bootstrap 5 */}
-        {/* <StrictMode> */}
-        {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
-        <RouteApp></RouteApp>
-        {/* </StrictMode> */}
-      </Router>
+      <TypographyStylesProvider>
+        <Router>
+          {/* TODO: Enabled Strict Mode after @mantine/core upgrade to bootstrap 5 */}
+          {/* <StrictMode> */}
+          {Environment.queryDev && <ReactQueryDevtools initialIsOpen={false} />}
+          <RouteApp></RouteApp>
+          {/* </StrictMode> */}
+        </Router>
+      </TypographyStylesProvider>
     </QueryClientProvider>
   </Provider>
 );
