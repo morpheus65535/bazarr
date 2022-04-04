@@ -1,5 +1,6 @@
-import { Table } from "@mantine/core";
-import { useMemo } from "react";
+import { usePageSize } from "@/utilities/storage";
+import { Skeleton, Table } from "@mantine/core";
+import { ReactNode, useMemo } from "react";
 import {
   HeaderGroup,
   Row,
@@ -21,11 +22,8 @@ export interface BaseTableProps<T extends object> extends TableStyleProps<T> {
 
 export interface TableStyleProps<T extends object> {
   emptyText?: string;
-  responsive?: boolean;
-  hoverable?: boolean;
   striped?: boolean;
-  borderless?: boolean;
-  small?: boolean;
+  placeholder?: boolean;
   hideHeader?: boolean;
   headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
   rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
@@ -41,24 +39,18 @@ export function useStyleAndOptions<T extends object>(
 ): ExtractResult<T> {
   const {
     emptyText,
-    responsive,
-    hoverable,
     striped,
-    borderless,
-    small,
     hideHeader,
     headersRenderer,
     rowRenderer,
+    placeholder,
     ...options
   } = props;
   return {
     style: {
       emptyText,
-      responsive,
-      hoverable,
+      placeholder,
       striped,
-      borderless,
-      small,
       hideHeader,
       headersRenderer,
       rowRenderer,
@@ -90,17 +82,13 @@ function DefaultRowRenderer<T extends object>(row: Row<T>): JSX.Element | null {
 export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const {
     emptyText,
-    responsive,
-    hoverable,
-    striped,
-    borderless,
-    small,
+    striped = true,
+    placeholder = false,
     hideHeader,
-
     headers,
     rows,
-    headersRenderer,
-    rowRenderer,
+    headersRenderer = DefaultHeaderRenderer,
+    rowRenderer = DefaultRowRenderer,
     prepareRow,
     tableProps,
     tableBodyProps,
@@ -115,36 +103,44 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   const empty = rows.length === 0;
 
-  const hRenderer = headersRenderer ?? DefaultHeaderRenderer;
-  const rRenderer = rowRenderer ?? DefaultRowRenderer;
+  const [pageSize] = usePageSize();
+
+  let body: ReactNode;
+  if (placeholder) {
+    body = Array(pageSize)
+      .fill(0)
+      .map((_, i) => (
+        <tr>
+          <td colSpan={colCount}>
+            <Skeleton height={24}></Skeleton>
+          </td>
+        </tr>
+      ));
+  } else if (empty && emptyText) {
+    body = (
+      <tr>
+        <td colSpan={colCount} className="text-center">
+          {emptyText}
+        </td>
+      </tr>
+    );
+  } else {
+    body = rows.map((row) => {
+      prepareRow(row);
+      return rowRenderer(row);
+    });
+  }
 
   return (
-    <Table
-      fontSize={small ? "sm" : undefined}
-      striped={striped ?? true}
-      {...tableProps}
-    >
+    <Table striped={striped} {...tableProps}>
       <thead hidden={hideHeader}>
         {headers.map((headerGroup) => (
           <tr {...headerGroup.getHeaderGroupProps()}>
-            {hRenderer(headerGroup.headers)}
+            {headersRenderer(headerGroup.headers)}
           </tr>
         ))}
       </thead>
-      <tbody {...tableBodyProps}>
-        {emptyText && empty ? (
-          <tr>
-            <td colSpan={colCount} className="text-center">
-              {emptyText}
-            </td>
-          </tr>
-        ) : (
-          rows.map((row) => {
-            prepareRow(row);
-            return rRenderer(row);
-          })
-        )}
-      </tbody>
+      <tbody {...tableBodyProps}>{body}</tbody>
     </Table>
   );
 }

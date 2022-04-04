@@ -7,9 +7,9 @@ import { useEnabledStatus } from "@/modules/redux/hooks";
 import Episodes from "@/pages/Episodes";
 // import MoviesHistoryView from "@/pages/History/Movies";
 // import SeriesHistoryView from "@/pages/History/Series";
-// import MovieView from "@/pages/Movies";
-// import MovieDetailView from "@/pages/Movies/Details";
-// import MovieMassEditor from "@/pages/Movies/Editor";
+import MovieView from "@/pages/Movies";
+import MovieDetailView from "@/pages/Movies/Details";
+import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
 // import SettingsGeneralView from "@/pages/Settings/General";
@@ -29,7 +29,7 @@ import SeriesMassEditor from "@/pages/Series/Editor";
 // import WantedMoviesView from "@/pages/Wanted/Movies";
 // import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faFilm, faPlay } from "@fortawesome/free-solid-svg-icons";
 // import {
 //   faClock,
 //   faCogs,
@@ -90,27 +90,27 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faFilm,
-          //     name: "Movies",
-          //     path: "movies",
-          //     hidden: !radarr,
-          //     children: [
-          //       {
-          //         index: true,
-          //         element: <MovieView></MovieView>,
-          //       },
-          //       {
-          //         path: "edit",
-          //         hidden: true,
-          //         element: <MovieMassEditor></MovieMassEditor>,
-          //       },
-          //       {
-          //         path: ":id",
-          //         element: <MovieDetailView></MovieDetailView>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faFilm,
+            name: "Movies",
+            path: "movies",
+            hidden: !radarr,
+            children: [
+              {
+                index: true,
+                element: <MovieView></MovieView>,
+              },
+              {
+                path: "edit",
+                hidden: true,
+                element: <MovieMassEditor></MovieMassEditor>,
+              },
+              {
+                path: ":id",
+                element: <MovieDetailView></MovieDetailView>,
+              },
+            ],
+          },
           //   {
           //     icon: faClock,
           //     name: "History",

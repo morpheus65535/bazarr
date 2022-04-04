@@ -1,5 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { AsyncButton, SimpleTable } from "@/components";
+import { SimpleTable } from "@/components";
+import { AsyncButton } from "@/components/async";
 import Language from "@/components/bazarr/Language";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { filterSubtitleBy } from "@/utilities";
@@ -83,8 +84,6 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                     },
                   })
                 }
-                color="light"
-                size="sm"
               >
                 <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
               </AsyncButton>
@@ -93,8 +92,6 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
             return (
               <AsyncButton
                 disabled={disabled}
-                color="light"
-                size="sm"
                 promise={() =>
                   remove.mutateAsync({
                     radarrId,

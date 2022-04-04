@@ -1,5 +1,5 @@
 import { useMovieModification, useMovies } from "@/apis/hooks";
-import { QueryOverlay } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
 import { BuildKey } from "@/utilities";

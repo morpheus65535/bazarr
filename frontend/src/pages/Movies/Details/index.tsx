@@ -31,7 +31,7 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Alert, Container, Row } from "@mantine/core";
+import { Container, Stack } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
@@ -90,7 +90,7 @@ const MovieDetailView: FunctionComponent = () => {
   const allowEdit = movie.profileId !== undefined;
 
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <Helmet>
         <title>{movie.title} - Bazarr (Movies)</title>
       </Helmet>
@@ -158,22 +158,10 @@ const MovieDetailView: FunctionComponent = () => {
           </ContentHeader.Button>
         </div>
       </ContentHeader>
-      <Row>
-        <Alert
-          className="w-100 m-0 py-2"
-          show={hasTask}
-          style={{ borderRadius: 0 }}
-          color="light"
-        >
-          A background task is running for this movie, actions are unavailable
-        </Alert>
-      </Row>
-      <Row>
+      <Stack>
         <ItemOverview item={movie} details={[]}></ItemOverview>
-      </Row>
-      <Row>
         <Table movie={movie} profile={profile} disabled={hasTask}></Table>
-      </Row>
+      </Stack>
       <ItemEditorModal mutation={mutation}></ItemEditorModal>
       <SubtitleTools></SubtitleTools>
       <MovieHistoryModal></MovieHistoryModal>

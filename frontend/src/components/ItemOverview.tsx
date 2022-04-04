@@ -19,6 +19,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   BackgroundImage,
   Badge,
+  Box,
   Grid,
   Group,
   Image,
@@ -133,15 +134,15 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         <Grid.Col span={8}>
           <Stack align="flex-start" spacing="xs" mx={6}>
             <Group>
-              {isMovie(item) ? (
-                <FontAwesomeIcon
-                  className="mx-2 mt-2"
-                  title={item.monitored ? "monitored" : "unmonitored"}
-                  icon={item.monitored ? faBookmark : farBookmark}
-                  size="2x"
-                ></FontAwesomeIcon>
-              ) : null}
               <Text size="xl" weight="bold" color="white">
+                <Box component="span" mr={6}>
+                  {isMovie(item) ? (
+                    <FontAwesomeIcon
+                      title={item.monitored ? "monitored" : "unmonitored"}
+                      icon={item.monitored ? faBookmark : farBookmark}
+                    ></FontAwesomeIcon>
+                  ) : null}
+                </Box>
                 {item.title}
               </Text>
             </Group>

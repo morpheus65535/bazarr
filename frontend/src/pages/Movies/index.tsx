@@ -1,5 +1,4 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
-import { ActionBadge, TextPopover } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditorModal } from "@/components/modals";
@@ -9,7 +8,7 @@ import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Container } from "@mantine/core";
+import { ActionIcon, Anchor, Badge, Container } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
@@ -38,11 +37,9 @@ const MovieView: FunctionComponent = () => {
         Cell: ({ row, value }) => {
           const target = `/movies/${row.original.radarrId}`;
           return (
-            <TextPopover text={row.original.sceneName} delay={1}>
-              <Link to={target}>
-                <span>{value}</span>
-              </Link>
-            </TextPopover>
+            <Anchor component={Link} to={target}>
+              <span>{value}</span>
+            </Anchor>
           );
         },
       },
@@ -51,13 +48,7 @@ const MovieView: FunctionComponent = () => {
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge
-              color="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.code2, v.hi)}
-            >
-              {v.name}
-            </Badge>
+            <Badge key={BuildKey(v.code2, v.code2, v.hi)}>{v.name}</Badge>
           ));
         },
       },
@@ -91,10 +82,12 @@ const MovieView: FunctionComponent = () => {
         Cell: ({ row }) => {
           const { show } = useModalControl();
           return (
-            <ActionBadge
-              icon={faWrench}
+            <ActionIcon
+              variant="light"
               onClick={() => show(ItemEditorModal, row.original)}
-            ></ActionBadge>
+            >
+              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
+            </ActionIcon>
           );
         },
       },
@@ -103,7 +96,7 @@ const MovieView: FunctionComponent = () => {
   );
 
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <Helmet>
         <title>Movies - Bazarr</title>
       </Helmet>
