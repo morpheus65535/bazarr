@@ -1,14 +1,10 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDidUpdate, useMediaMatch } from "rooks";
+import { useDidUpdate } from "rooks";
 
 export function useGotoHomepage() {
   const navigate = useNavigate();
   return useCallback(() => navigate("/"), [navigate]);
-}
-
-export function useIsMobile() {
-  return useMediaMatch("(max-width: 576px)");
 }
 
 export function useIsArrayExtended(arr: unknown[]) {

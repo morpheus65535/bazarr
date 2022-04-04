@@ -4,7 +4,6 @@ import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
-import Sidebar from "@/Sidebar";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
@@ -46,7 +45,7 @@ const App: FunctionComponent = () => {
 
   return (
     <ErrorBoundary>
-      <AppShell header={<Header></Header>} navbar={<Sidebar></Sidebar>}>
+      <AppShell header={<Header></Header>}>
         <Outlet></Outlet>
       </AppShell>
     </ErrorBoundary>

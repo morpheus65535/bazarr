@@ -1,30 +1,35 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
-import { SearchBar } from "@/components";
+import { Layout } from "@/constants";
 import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
-import { useReduxAction } from "@/modules/redux/hooks/base";
-import { Environment, useGotoHomepage, useIsMobile } from "@/utilities";
+import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { Environment, useGotoHomepage } from "@/utilities";
 import {
-  faBars,
+  faGear,
   faHeart,
   faNetworkWired,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  ActionIcon,
   Anchor,
+  Badge,
+  Burger,
   Button,
   Divider,
-  Grid,
   Group,
+  Header as MantineHeader,
   Image,
+  MediaQuery,
   Menu,
-  Navbar,
+  Text,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
 
 const Header: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
+  const sidebarOpened = useReduxStore((s) => s.site.showSidebar);
 
   const hasLogout = (settings?.auth.type ?? "none") === "form";
 
@@ -32,97 +37,74 @@ const Header: FunctionComponent = () => {
 
   const offline = useIsOffline();
 
-  const isMobile = useIsMobile();
-
   const { shutdown, restart, logout } = useSystem();
-
-  const serverActions = (
-    <Menu>
-      <Menu.Item>Restart</Menu.Item>
-      <Menu.Item>Shutdown</Menu.Item>
-      <Divider></Divider>
-      <Menu.Item>Logout</Menu.Item>
-    </Menu>
-    // <Dropdown alignRight>
-    //   <Dropdown.Toggle className="hide-arrow" as={Button}>
-    //     <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-    //   </Dropdown.Toggle>
-    //   <Dropdown.Menu>
-    //     <Dropdown.Item
-    //       onClick={() => {
-    //         restart();
-    //       }}
-    //     >
-    //       Restart
-    //     </Dropdown.Item>
-    //     <Dropdown.Item
-    //       onClick={() => {
-    //         shutdown();
-    //       }}
-    //     >
-    //       Shutdown
-    //     </Dropdown.Item>
-    //     <Dropdown.Divider hidden={!hasLogout}></Dropdown.Divider>
-    //     <Dropdown.Item
-    //       hidden={!hasLogout}
-    //       onClick={() => {
-    //         logout();
-    //       }}
-    //     >
-    //       Logout
-    //     </Dropdown.Item>
-    //   </Dropdown.Menu>
-    // </Dropdown>
-  );
 
   const goHome = useGotoHomepage();
 
   return (
-    <Navbar>
+    <MantineHeader height={Layout.HEADER_HEIGHT} p="xs">
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
-      <div className="header-icon px-3 m-0 d-none d-md-block">
-        <Image
-          alt="brand"
-          src={`${Environment.baseUrl}/static/logo64.png`}
-          width="32"
-          height="32"
-          onClick={goHome}
-          role="button"
-        ></Image>
-      </div>
-      <Button
-        className="mx-2 m-0 d-md-none"
-        onClick={() => changeSidebar(true)}
-      >
-        <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
-      </Button>
-      <Grid>
-        <Grid.Col span={6} xs={4}>
-          <SearchBar></SearchBar>
-        </Grid.Col>
-        <Grid.Col span={6} xs={4}>
-          <Group>
-            {/* NotificationCenter */}
-            <Anchor
-              href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
-              target="_blank"
-            >
+      <Group position="apart" style={{ height: "100%" }}>
+        <Group>
+          <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
+            <>
+              <Image
+                alt="brand"
+                src={`${Environment.baseUrl}/static/logo64.png`}
+                height={32}
+                width={32}
+                onClick={goHome}
+                role="button"
+              ></Image>
+              <Badge size="lg" radius="sm" color="gray">
+                Bazarr
+              </Badge>
+            </>
+          </MediaQuery>
+          <MediaQuery largerThan="sm" styles={{ display: "none" }}>
+            <Burger
+              opened={sidebarOpened}
+              onClick={() => changeSidebar(!sidebarOpened)}
+              size="sm"
+            ></Burger>
+          </MediaQuery>
+        </Group>
+        <Group spacing="xs" position="right">
+          {/* NotificationCenter */}
+          <Anchor
+            href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
+            target="_blank"
+          >
+            <ActionIcon variant="light" color="red">
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
-            </Anchor>
-            {offline ? (
-              <Button color="yellow">
-                <FontAwesomeIcon icon={faNetworkWired}></FontAwesomeIcon>
-                Connecting...
-              </Button>
-            ) : (
-              serverActions
-            )}
-          </Group>
-        </Grid.Col>
-      </Grid>
-    </Navbar>
+            </ActionIcon>
+          </Anchor>
+          {offline ? (
+            <Button color="yellow">
+              <FontAwesomeIcon icon={faNetworkWired}></FontAwesomeIcon>
+              <Text pl={10}>Connecting...</Text>
+            </Button>
+          ) : (
+            <Menu
+              control={
+                <ActionIcon variant="light">
+                  <FontAwesomeIcon icon={faGear}></FontAwesomeIcon>
+                </ActionIcon>
+              }
+            >
+              <Menu.Item onClick={() => restart()}>Restart</Menu.Item>
+              <Menu.Item onClick={() => shutdown()}>Shutdown</Menu.Item>
+              <Divider></Divider>
+              <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
+                Logout
+              </Menu.Item>
+            </Menu>
+          )}
+        </Group>
+      </Group>
+    </MantineHeader>
   );
 };
 

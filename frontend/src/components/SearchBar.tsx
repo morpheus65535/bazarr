@@ -1,4 +1,5 @@
 import { useServerSearch } from "@/apis/hooks";
+import { Autocomplete } from "@mantine/core";
 import { uniqueId } from "lodash";
 import {
   FunctionComponent,
@@ -90,7 +91,7 @@ export const SearchBar: FunctionComponent<Props> = ({
   //   return its;
   // }, [results]);
 
-  return null;
+  return <Autocomplete data={[]}></Autocomplete>;
   // return (
   //   <Dropdown
   //     show={query.length !== 0}

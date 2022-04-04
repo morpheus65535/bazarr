@@ -1,6 +1,6 @@
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
 import { QueryOverlay } from "@/components";
-import { GithubRepoRoot } from "@/utilities/constants";
+import { GithubRepoRoot } from "@/constants";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faDiscord,

@@ -1,5 +1,5 @@
+import { GithubRepoRoot } from "@/constants";
 import { Reload } from "@/utilities";
-import { GithubRepoRoot } from "@/utilities/constants";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Container } from "@mantine/core";
