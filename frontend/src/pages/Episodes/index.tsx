@@ -72,7 +72,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
         <title>{series.title} - Bazarr (Series)</title>
       </Helmet>
       <ContentHeader>
-        <ContentHeader.Group pos="start">
+        <div>
           <ContentHeader.Button
             icon={faSync}
             disabled={!available || hasTask}
@@ -101,8 +101,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
           >
             Search
           </ContentHeader.Button>
-        </ContentHeader.Group>
-        <ContentHeader.Group pos="end">
+        </div>
+        <div>
           <ContentHeader.Button
             disabled={series.episodeFileCount === 0 || !available || hasTask}
             icon={faBriefcase}
@@ -128,7 +128,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
           >
             Edit Series
           </ContentHeader.Button>
-        </ContentHeader.Group>
+        </div>
       </ContentHeader>
 
       <Stack>

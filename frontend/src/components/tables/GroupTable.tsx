@@ -1,5 +1,6 @@
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Box, Text } from "@mantine/core";
 import {
   Cell,
   HeaderGroup,
@@ -36,17 +37,15 @@ function renderRow<T extends object>(row: Row<T>) {
             {...cell.getCellProps()}
             colSpan={row.cells.length}
           >
-            <span
-              {...row.getToggleRowExpandedProps()}
-              className="d-flex align-items-center p-2"
-            >
+            <Text {...row.getToggleRowExpandedProps()} p={2}>
               {cell.render("Cell")}
-              <FontAwesomeIcon
-                className="mx-2"
-                icon={faChevronCircleRight}
-                rotation={rotation}
-              ></FontAwesomeIcon>
-            </span>
+              <Box component="span" mx={12}>
+                <FontAwesomeIcon
+                  icon={faChevronCircleRight}
+                  rotation={rotation}
+                ></FontAwesomeIcon>
+              </Box>
+            </Text>
           </td>
         </tr>
       );

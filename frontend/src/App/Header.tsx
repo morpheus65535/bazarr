@@ -13,13 +13,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   ActionIcon,
   Anchor,
+  Avatar,
   Badge,
   Burger,
   Button,
   Divider,
   Group,
   Header as MantineHeader,
-  Image,
   MediaQuery,
   Menu,
   Text,
@@ -52,14 +52,11 @@ const Header: FunctionComponent = () => {
             smallerThan={Layout.MOBILE_BREAKPOINT}
             styles={{ display: "none" }}
           >
-            <Image
+            <Avatar
               alt="brand"
               src={`${Environment.baseUrl}/static/logo64.png`}
-              height={32}
-              width={32}
               onClick={goHome}
-              role="button"
-            ></Image>
+            ></Avatar>
           </MediaQuery>
           <MediaQuery
             largerThan={Layout.MOBILE_BREAKPOINT}

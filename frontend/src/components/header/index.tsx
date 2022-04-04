@@ -18,7 +18,7 @@ declare type Header = FunctionComponent & {
 export const ContentHeader: Header = ({ children }) => {
   const { classes } = useStyles();
   return (
-    <Group p={12} className={classes.group}>
+    <Group p={12} position="apart" className={classes.group}>
       {children}
     </Group>
   );
