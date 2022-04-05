@@ -42,7 +42,6 @@ export const Slider: FunctionComponent<SliderProps> = ({
       marks={marks}
       min={min}
       max={max}
-      className="custom-rc-slider"
       step={step}
       defaultValue={defaultValue}
       onChange={onChange}
