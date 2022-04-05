@@ -9,12 +9,9 @@ import {
   useMovieModification,
 } from "@/apis/hooks/movies";
 import { ContentHeader, LoadingIndicator } from "@/components";
+import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
-import {
-  ItemEditorModal,
-  MovieHistoryModal,
-  MovieUploadModal,
-} from "@/components/modals";
+import { MovieHistoryModal, MovieUploadModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import SubtitleTools, {
   SubtitleToolModal,
@@ -31,8 +28,8 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Stack } from "@mantine/core";
-import { FunctionComponent, useCallback } from "react";
+import { Container, Popover, Stack } from "@mantine/core";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -78,6 +75,8 @@ const MovieDetailView: FunctionComponent = () => {
   );
 
   const hasTask = useIsMovieActionRunning();
+
+  const [isEditing, setIsEditing] = useState(false);
 
   if (isNaN(id) || (isFetched && !movie)) {
     return <Navigate to="/not-found"></Navigate>;
@@ -149,20 +148,30 @@ const MovieDetailView: FunctionComponent = () => {
           >
             Upload
           </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faWrench}
-            disabled={hasTask}
-            onClick={() => show(ItemEditorModal, movie)}
+          <Popover
+            opened={isEditing}
+            onClose={() => setIsEditing(false)}
+            placement="end"
+            title="Edit Movie"
+            transition="scale"
+            target={
+              <ContentHeader.Button
+                icon={faWrench}
+                disabled={hasTask}
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Movie
+              </ContentHeader.Button>
+            }
           >
-            Edit Movie
-          </ContentHeader.Button>
+            <ItemEditForm mutation={mutation} item={movie}></ItemEditForm>
+          </Popover>
         </div>
       </ContentHeader>
       <Stack>
         <ItemOverview item={movie} details={[]}></ItemOverview>
         <Table movie={movie} profile={profile} disabled={hasTask}></Table>
       </Stack>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
       <SubtitleTools></SubtitleTools>
       <MovieHistoryModal></MovieHistoryModal>
       <MovieUploadModal></MovieUploadModal>

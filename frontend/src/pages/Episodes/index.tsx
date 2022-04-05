@@ -6,8 +6,9 @@ import {
   useSeriesModification,
 } from "@/apis/hooks";
 import { ContentHeader, LoadingIndicator } from "@/components";
+import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
-import { ItemEditorModal, SeriesUploadModal } from "@/components/modals";
+import { SeriesUploadModal } from "@/components/modals";
 import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import { useModalControl } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
@@ -21,8 +22,8 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Stack } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { Container, Popover, Stack } from "@mantine/core";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -57,6 +58,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const profile = useLanguageProfileBy(series?.profileId);
 
   const hasTask = useIsAnyActionRunning();
+
+  const [isEditing, setIsEditing] = useState(false);
 
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to="/not-found"></Navigate>;
@@ -121,13 +124,24 @@ const SeriesEpisodesView: FunctionComponent = () => {
           >
             Upload
           </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faWrench}
-            disabled={hasTask}
-            onClick={() => show(ItemEditorModal, series)}
+          <Popover
+            opened={isEditing}
+            onClose={() => setIsEditing(false)}
+            placement="end"
+            title="Edit Series"
+            transition="scale"
+            target={
+              <ContentHeader.Button
+                icon={faWrench}
+                disabled={hasTask}
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Series
+              </ContentHeader.Button>
+            }
           >
-            Edit Series
-          </ContentHeader.Button>
+            <ItemEditForm mutation={mutation} item={series}></ItemEditForm>
+          </Popover>
         </div>
       </ContentHeader>
 
@@ -144,7 +158,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
           ></Table>
         )}
       </Stack>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
       <SeriesUploadModal episodes={episodes ?? []}></SeriesUploadModal>
     </Container>
   );

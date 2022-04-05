@@ -1,6 +1,6 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
-import { ItemEditorModal } from "@/components/modals";
+import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
@@ -98,7 +98,7 @@ const SeriesView: FunctionComponent = () => {
           return (
             <ActionIcon
               variant="light"
-              onClick={() => show(ItemEditorModal, original)}
+              onClick={() => show(ItemEditModal, original)}
             >
               <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
             </ActionIcon>
@@ -115,7 +115,7 @@ const SeriesView: FunctionComponent = () => {
         <title>Series - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
+      <ItemEditModal mutation={mutation}></ItemEditModal>
     </Container>
   );
 };

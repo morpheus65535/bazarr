@@ -110,7 +110,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
     body = Array(pageSize)
       .fill(0)
       .map((_, i) => (
-        <tr>
+        <tr key={i}>
           <td colSpan={colCount}>
             <Skeleton height={24}></Skeleton>
           </td>

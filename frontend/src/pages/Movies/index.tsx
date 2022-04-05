@@ -1,7 +1,7 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
-import { ItemEditorModal } from "@/components/modals";
+import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
@@ -84,7 +84,7 @@ const MovieView: FunctionComponent = () => {
           return (
             <ActionIcon
               variant="light"
-              onClick={() => show(ItemEditorModal, row.original)}
+              onClick={() => show(ItemEditModal, row.original)}
             >
               <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
             </ActionIcon>
@@ -101,7 +101,7 @@ const MovieView: FunctionComponent = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditorModal mutation={mutation}></ItemEditorModal>
+      <ItemEditModal mutation={mutation}></ItemEditModal>
     </Container>
   );
 };
