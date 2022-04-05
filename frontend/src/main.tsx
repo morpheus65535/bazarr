@@ -10,6 +10,7 @@ import { ReactQueryDevtools } from "react-query/devtools";
 import { Provider } from "react-redux";
 import { useRoutes } from "react-router-dom";
 import { Router, useRouteItems } from "./Router";
+import Theme from "./theme";
 import { Environment } from "./utilities";
 
 const RouteApp = () => {
@@ -21,7 +22,7 @@ const RouteApp = () => {
 export const Main = () => (
   <Provider store={store}>
     <QueryClientProvider client={queryClient}>
-      <MantineProvider withGlobalStyles withNormalizeCSS>
+      <MantineProvider withGlobalStyles withNormalizeCSS theme={Theme}>
         <TypographyStylesProvider>
           <Router>
             <StrictMode>
