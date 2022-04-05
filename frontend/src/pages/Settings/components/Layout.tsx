@@ -137,7 +137,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   }
 
   return (
-    <Container fluid px={0}>
+    <>
       <Helmet>
         <title>{name} - Bazarr (Settings)</title>
       </Helmet>
@@ -158,10 +158,12 @@ const Layout: FunctionComponent<Props> = (props) => {
           </ContentHeader.Button>
         </ContentHeader>
         <StagedChangesContext.Provider value={[stagedChange, setChange]}>
-          {children}
+          <Container size="xl" mx={0}>
+            {children}
+          </Container>
         </StagedChangesContext.Provider>
       </Stack>
-    </Container>
+    </>
   );
 };
 

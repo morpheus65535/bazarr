@@ -2,9 +2,8 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Card as MantineCard,
-  Col,
+  Center,
   Divider,
-  Group as MantineGroup,
   Stack,
   Text,
   Title,
@@ -41,10 +40,10 @@ export const Input: FunctionComponent<InputProps> = ({
   hidden,
 }) => {
   return (
-    <MantineGroup hidden={hidden}>
+    <Stack hidden={hidden}>
       {name && <Text>{name}</Text>}
       {children}
-    </MantineGroup>
+    </Stack>
   );
 };
 
@@ -55,14 +54,7 @@ interface CardProps {
   onClick?: () => void;
 }
 
-export const ColCard: FunctionComponent<CardProps> = (props) => {
-  return (
-    <Col className="p-2" xs={6} lg={4}>
-      <Card {...props}></Card>
-    </Col>
-  );
-};
-
+// TODO: Change to button
 export const Card: FunctionComponent<CardProps> = ({
   header,
   subheader,
@@ -70,11 +62,16 @@ export const Card: FunctionComponent<CardProps> = ({
   onClick,
 }) => {
   return (
-    <MantineCard className="settings-card" onClick={() => onClick && onClick()}>
+    <MantineCard
+      style={{ width: "100%", minHeight: "5.6rem" }}
+      p="lg"
+      shadow="sm"
+      onClick={() => onClick && onClick()}
+    >
       {plus ? (
-        <MantineCard.Section>
+        <Center style={{ height: "100%" }}>
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
-        </MantineCard.Section>
+        </Center>
       ) : (
         <>
           <MantineCard.Section>

@@ -7,10 +7,9 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
-import { Button, Container, Grid, Stack, Textarea } from "@mantine/core";
+import { Button, SimpleGrid, Stack, Textarea } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
-import { ColCard, useLatestArray, useUpdateArray } from "../components";
+import { Card, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
 interface Props {
@@ -147,24 +146,17 @@ export const NotificationView: FunctionComponent = () => {
     return notifications
       ?.filter((v) => v.enabled)
       .map((v, idx) => (
-        <Grid.Col key={BuildKey(idx, v.name)}>
-          <ColCard
-            header={v.name}
-            onClick={() => show(NotificationModal, v)}
-          ></ColCard>
-        </Grid.Col>
+        <Card header={v.name} onClick={() => show(NotificationModal, v)}></Card>
       ));
   }, [notifications, show]);
 
   return (
-    <Container fluid>
-      <Grid>
+    <>
+      <SimpleGrid cols={3}>
         {elements}
-        <Grid.Col>
-          <ColCard plus onClick={() => show(NotificationModal)}></ColCard>
-        </Grid.Col>
-      </Grid>
+        <Card plus onClick={() => show(NotificationModal)}></Card>
+      </SimpleGrid>
       <NotificationModal selections={notifications ?? []}></NotificationModal>
-    </Container>
+    </>
   );
 };

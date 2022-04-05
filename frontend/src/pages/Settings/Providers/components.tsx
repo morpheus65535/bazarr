@@ -5,8 +5,8 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { BuildKey, isReactText } from "@/utilities";
-import { Button, Col, Container, Grid, Group, Stack } from "@mantine/core";
+import { isReactText } from "@/utilities";
+import { Button, Group, SimpleGrid, Stack } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   FunctionComponent,
@@ -17,8 +17,8 @@ import {
 } from "react";
 import { components } from "react-select";
 import {
+  Card,
   Check,
-  ColCard,
   Message,
   StagedChangesContext,
   Text,
@@ -53,13 +53,11 @@ export const ProviderView: FunctionComponent = () => {
           }
         })
         .map((v, idx) => (
-          <Grid.Col key={BuildKey(idx, v.name)}>
-            <ColCard
-              header={v.name ?? capitalize(v.key)}
-              subheader={v.description}
-              onClick={() => select(v)}
-            ></ColCard>
-          </Grid.Col>
+          <Card
+            header={v.name ?? capitalize(v.key)}
+            subheader={v.description}
+            onClick={() => select(v)}
+          ></Card>
         ));
     } else {
       return [];
@@ -67,15 +65,13 @@ export const ProviderView: FunctionComponent = () => {
   }, [providers, select]);
 
   return (
-    <Container fluid>
-      <Grid>
+    <>
+      <SimpleGrid cols={3}>
         {cards}
-        <Grid.Col key="add-card">
-          <ColCard plus onClick={select}></ColCard>
-        </Grid.Col>
-      </Grid>
+        <Card plus onClick={select}></Card>
+      </SimpleGrid>
       <ProviderModal></ProviderModal>
-    </Container>
+    </>
   );
 };
 
@@ -175,13 +171,11 @@ const ProviderTool: FunctionComponent = () => {
 
       if (isReactText(value)) {
         elements.push(
-          <Col key={key} xs={12} className="mt-2">
-            <Text
-              password={key === "password"}
-              placeholder={visibleKey}
-              settingKey={`settings-${itemKey}-${key}`}
-            ></Text>
-          </Col>
+          <Text
+            password={key === "password"}
+            placeholder={visibleKey}
+            settingKey={`settings-${itemKey}-${key}`}
+          ></Text>
         );
       } else if (isBoolean(value)) {
         checks.push(
