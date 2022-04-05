@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent } from "react";
+import { Navigate } from "react-router-dom";
 
 const Authentication: FunctionComponent = () => {
   const { login } = useSystem();
@@ -28,7 +29,7 @@ const Authentication: FunctionComponent = () => {
   );
 
   if (authenticated) {
-    // return <Navigate to="/"></Navigate>;
+    return <Navigate to="/"></Navigate>;
   }
 
   return (
