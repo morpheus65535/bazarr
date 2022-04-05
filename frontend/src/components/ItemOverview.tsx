@@ -23,6 +23,7 @@ import {
   Grid,
   Group,
   Image,
+  MediaQuery,
   Stack,
   Text,
 } from "@mantine/core";
@@ -128,9 +129,11 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   return (
     <BackgroundImage src={item.fanart}>
       <Grid align="flex-start" grow gutter="xs" m={24}>
-        <Grid.Col span={2}>
-          <Image src={item.poster} withPlaceholder></Image>
-        </Grid.Col>
+        <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
+          <Grid.Col span={2}>
+            <Image src={item.poster} withPlaceholder></Image>
+          </Grid.Col>
+        </MediaQuery>
         <Grid.Col span={8}>
           <Stack align="flex-start" spacing="xs" mx={6}>
             <Group>
@@ -181,9 +184,11 @@ const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge radius="sm" title={desc} color="dark" size="xs">
+  <Badge radius="sm" title={desc} color="dark" size="md">
     <Text inherit color="white">
-      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+      <Box component="span" mr={8}>
+        <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
+      </Box>
       {children}
     </Text>
   </Badge>

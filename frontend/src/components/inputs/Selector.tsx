@@ -12,6 +12,7 @@ import { useCallback, useMemo, useRef } from "react";
 export type SelectorOption<T> = Override<
   {
     value: T;
+    label: string;
   },
   SelectItem
 >;
@@ -20,7 +21,7 @@ type SelectItemWithPayload<T> = SelectItem & {
   payload: T;
 };
 
-function DefaultLabelBuilder<T>(value: T) {
+function DefaultKeyBuilder<T>(value: T) {
   if (typeof value === "string") {
     return value;
   } else if (typeof value === "number") {
@@ -39,7 +40,7 @@ export type SelectorProps<T> = Override<
     defaultValue?: T | null;
     options: SelectorOption<T>[];
     onChange?: (value: T | null) => void;
-    getLabel?: (value: T) => string;
+    getKey?: (value: T) => string;
   },
   Omit<SelectProps, "data">
 >;
@@ -49,16 +50,16 @@ export function Selector<T>({
   defaultValue,
   options,
   onChange,
-  getLabel = DefaultLabelBuilder,
+  getKey = DefaultKeyBuilder,
   ...select
 }: SelectorProps<T>) {
-  const labelRef = useRef(getLabel);
+  const keyRef = useRef(getKey);
 
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, label, ...option }) => ({
         label,
-        value: label,
+        value: keyRef.current(value),
         payload: value,
         ...option,
       })),
@@ -69,7 +70,7 @@ export function Selector<T>({
     if (isNull(value) || isUndefined(value)) {
       return value;
     } else {
-      return labelRef.current(value);
+      return keyRef.current(value);
     }
   }, [value]);
 
@@ -77,16 +78,14 @@ export function Selector<T>({
     if (isNull(defaultValue) || isUndefined(defaultValue)) {
       return defaultValue;
     } else {
-      return labelRef.current(defaultValue);
+      return keyRef.current(defaultValue);
     }
   }, [defaultValue]);
 
   const wrappedOnChange = useCallback(
     (value: string) => {
-      const payload = data.find((v) => v.value === value)?.payload;
-      if (payload) {
-        onChange?.(payload);
-      }
+      const payload = data.find((v) => v.value === value)?.payload ?? null;
+      onChange?.(payload);
     },
     [data, onChange]
   );
@@ -118,7 +117,7 @@ export function MultiSelector<T>({
   defaultValue,
   options,
   onChange,
-  getLabel = DefaultLabelBuilder,
+  getLabel = DefaultKeyBuilder,
   ...select
 }: MultiSelectorProps<T>) {
   const labelRef = useRef(getLabel);

@@ -164,7 +164,12 @@ const MovieDetailView: FunctionComponent = () => {
               </ContentHeader.Button>
             }
           >
-            <ItemEditForm mutation={mutation} item={movie}></ItemEditForm>
+            <ItemEditForm
+              mutation={mutation}
+              item={movie}
+              onCancel={() => setIsEditing(false)}
+              onComplete={() => setIsEditing(false)}
+            ></ItemEditForm>
           </Popover>
         </div>
       </ContentHeader>

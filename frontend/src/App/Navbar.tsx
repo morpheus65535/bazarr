@@ -170,6 +170,7 @@ const RouteItem: FunctionComponent<{
 
               if (isValidated) {
                 navigate(link);
+                showSidebar(false);
               }
 
               if (isOpen) {

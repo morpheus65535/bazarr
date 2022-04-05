@@ -27,6 +27,7 @@ const Editor: FunctionComponent<Props> = ({ mutation }) => {
         mutation={mutation}
         item={payload}
         onCancel={hide}
+        onComplete={hide}
       ></ItemEditForm>
     </Modal>
   );

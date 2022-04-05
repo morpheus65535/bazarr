@@ -140,7 +140,12 @@ const SeriesEpisodesView: FunctionComponent = () => {
               </ContentHeader.Button>
             }
           >
-            <ItemEditForm mutation={mutation} item={series}></ItemEditForm>
+            <ItemEditForm
+              mutation={mutation}
+              item={series}
+              onCancel={() => setIsEditing(false)}
+              onComplete={() => setIsEditing(false)}
+            ></ItemEditForm>
           </Popover>
         </div>
       </ContentHeader>

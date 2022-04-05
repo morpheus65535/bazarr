@@ -33,7 +33,8 @@ const ItemEditForm: FunctionComponent<Props> = ({
 
   const profileOptions = useSelectorOptions(
     data ?? [],
-    (v) => v.name ?? "Unknown"
+    (v) => v.name ?? "Unknown",
+    (v) => v.profileId.toString() ?? "-1"
   );
 
   const profile = useMemo(
