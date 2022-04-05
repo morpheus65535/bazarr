@@ -1,7 +1,8 @@
 import { useSystemTasks } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { ContentHeader } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
 import Table from "./table";
@@ -13,7 +14,7 @@ const SystemTasksView: FunctionComponent = () => {
 
   return (
     <QueryOverlay result={tasks}>
-      <Container fluid>
+      <Container fluid px={0}>
         <Helmet>
           <title>Tasks - Bazarr (System)</title>
         </Helmet>
@@ -26,9 +27,7 @@ const SystemTasksView: FunctionComponent = () => {
             Refresh
           </ContentHeader.Button>
         </ContentHeader>
-        <Row>
-          <Table tasks={data ?? []}></Table>
-        </Row>
+        <Table tasks={data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

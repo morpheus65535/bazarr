@@ -1,7 +1,6 @@
 import { useBadges } from "@/apis/hooks";
 import App from "@/App";
 import { Lazy } from "@/components/async";
-// import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
@@ -22,11 +21,11 @@ import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
 import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
 import SettingsUIView from "@/pages/Settings/UI";
-// import SystemBackupsView from "@/pages/System/Backups";
-// import SystemLogsView from "@/pages/System/Logs";
-// import SystemProvidersView from "@/pages/System/Providers";
-// import SystemReleasesView from "@/pages/System/Releases";
-// import SystemTasksView from "@/pages/System/Tasks";
+import SystemBackupsView from "@/pages/System/Backups";
+import SystemLogsView from "@/pages/System/Logs";
+import SystemProvidersView from "@/pages/System/Providers";
+import SystemReleasesView from "@/pages/System/Releases";
+import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
@@ -36,6 +35,7 @@ import {
   faExclamationTriangle,
   faFileExcel,
   faFilm,
+  faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 // import {
@@ -244,48 +244,48 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faLaptop,
-          //     name: "System",
-          //     path: "system",
-          //     children: [
-          //       {
-          //         path: "tasks",
-          //         name: "Tasks",
-          //         element: <SystemTasksView></SystemTasksView>,
-          //       },
-          //       {
-          //         path: "logs",
-          //         name: "Logs",
-          //         element: <SystemLogsView></SystemLogsView>,
-          //       },
-          //       {
-          //         path: "providers",
-          //         name: "Providers",
-          //         badge: data?.providers,
-          //         element: <SystemProvidersView></SystemProvidersView>,
-          //       },
-          //       {
-          //         path: "backup",
-          //         name: "Backups",
-          //         element: <SystemBackupsView></SystemBackupsView>,
-          //       },
-          //       {
-          //         path: "status",
-          //         name: "Status",
-          //         element: (
-          //           <Lazy>
-          //             <SystemStatusView></SystemStatusView>
-          //           </Lazy>
-          //         ),
-          //       },
-          //       {
-          //         path: "releases",
-          //         name: "Releases",
-          //         element: <SystemReleasesView></SystemReleasesView>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faLaptop,
+            name: "System",
+            path: "system",
+            children: [
+              {
+                path: "tasks",
+                name: "Tasks",
+                element: <SystemTasksView></SystemTasksView>,
+              },
+              {
+                path: "logs",
+                name: "Logs",
+                element: <SystemLogsView></SystemLogsView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                badge: data?.providers,
+                element: <SystemProvidersView></SystemProvidersView>,
+              },
+              {
+                path: "backup",
+                name: "Backups",
+                element: <SystemBackupsView></SystemBackupsView>,
+              },
+              {
+                path: "status",
+                name: "Status",
+                element: (
+                  <Lazy>
+                    <SystemStatusView></SystemStatusView>
+                  </Lazy>
+                ),
+              },
+              {
+                path: "releases",
+                name: "Releases",
+                element: <SystemReleasesView></SystemReleasesView>,
+              },
+            ],
+          },
         ],
       },
       // {

@@ -1,5 +1,6 @@
 import { useRunTask } from "@/apis/hooks";
-import { AsyncButton, SimpleTable } from "@/components";
+import { SimpleTable } from "@/components";
+import { AsyncButton } from "@/components/async";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent, useMemo } from "react";

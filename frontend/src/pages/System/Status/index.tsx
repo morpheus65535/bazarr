@@ -1,5 +1,5 @@
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
-import { QueryOverlay } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { GithubRepoRoot } from "@/constants";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Col, Container, Row } from "@mantine/core";
+import { Container, Divider, Grid, Stack, Text } from "@mantine/core";
 import moment from "moment";
 import { FunctionComponent, ReactNode, useState } from "react";
 import { Helmet } from "react-helmet";
@@ -21,15 +21,15 @@ interface InfoProps {
   children: ReactNode;
 }
 
-function CRow(props: InfoProps): JSX.Element {
+function Row(props: InfoProps): JSX.Element {
   const { title, children } = props;
   return (
-    <Row>
-      <Col sm={4}>
-        <b>{title}</b>
-      </Col>
-      <Col>{children}</Col>
-    </Row>
+    <Grid>
+      <Grid.Col span={5}>
+        <Text weight="bold">{title}</Text>
+      </Grid.Col>
+      <Grid.Col span={12 - 5}>{children}</Grid.Col>
+    </Grid>
   );
 }
 
@@ -56,11 +56,11 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   children,
 }) => {
   return (
-    <Container className="py-3">
+    <Stack>
       <h4>{title}</h4>
-      <hr></hr>
+      <Divider></Divider>
       {children}
-    </Container>
+    </Stack>
   );
 };
 
@@ -91,74 +91,70 @@ const SystemStatusView: FunctionComponent = () => {
   );
 
   return (
-    <Container className="p-5">
+    <Container fluid>
       <Helmet>
         <title>Status - Bazarr (System)</title>
       </Helmet>
-      <Row>
+      <Stack>
         <InfoContainer title="Health">
           <QueryOverlay result={health}>
             <Table health={health.data ?? []}></Table>
           </QueryOverlay>
         </InfoContainer>
-      </Row>
-      <Row>
         <InfoContainer title="About">
-          <CRow title="Bazarr Version">
+          <Row title="Bazarr Version">
             <span>{status?.bazarr_version}</span>
-          </CRow>
+          </Row>
           {status?.package_version !== "" && (
-            <CRow title="Package Version">
+            <Row title="Package Version">
               <span>{status?.package_version}</span>
-            </CRow>
+            </Row>
           )}
-          <CRow title="Sonarr Version">
+          <Row title="Sonarr Version">
             <span>{status?.sonarr_version}</span>
-          </CRow>
-          <CRow title="Radarr Version">
+          </Row>
+          <Row title="Radarr Version">
             <span>{status?.radarr_version}</span>
-          </CRow>
-          <CRow title="Operating System">
+          </Row>
+          <Row title="Operating System">
             <span>{status?.operating_system}</span>
-          </CRow>
-          <CRow title="Python Version">
+          </Row>
+          <Row title="Python Version">
             <span>{status?.python_version}</span>
-          </CRow>
-          <CRow title="Bazarr Directory">
+          </Row>
+          <Row title="Bazarr Directory">
             <span>{status?.bazarr_directory}</span>
-          </CRow>
-          <CRow title="Bazarr Config Directory">
+          </Row>
+          <Row title="Bazarr Config Directory">
             <span>{status?.bazarr_config_directory}</span>
-          </CRow>
-          <CRow title="Uptime">
+          </Row>
+          <Row title="Uptime">
             <span>{uptime}</span>
-          </CRow>
+          </Row>
         </InfoContainer>
-      </Row>
-      <Row>
         <InfoContainer title="More Info">
-          <CRow title="Home Page">
+          <Row title="Home Page">
             <Label icon={faPaperPlane} link="https://www.bazarr.media/">
               Bazarr Website
             </Label>
-          </CRow>
-          <CRow title="Source">
+          </Row>
+          <Row title="Source">
             <Label icon={faGithub} link={GithubRepoRoot}>
               Bazarr on Github
             </Label>
-          </CRow>
-          <CRow title="Wiki">
+          </Row>
+          <Row title="Wiki">
             <Label icon={faWikipediaW} link="https://wiki.bazarr.media">
               Bazarr Wiki
             </Label>
-          </CRow>
-          <CRow title="Discord">
+          </Row>
+          <Row title="Discord">
             <Label icon={faDiscord} link="https://discord.gg/MH2e2eb">
               Bazarr on Discord
             </Label>
-          </CRow>
+          </Row>
         </InfoContainer>
-      </Row>
+      </Stack>
     </Container>
   );
 };

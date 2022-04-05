@@ -1,8 +1,9 @@
 import { useDeleteLogs, useSystemLogs } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { ContentHeader } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { Environment } from "@/utilities";
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
 import { Helmet } from "react-helmet";
 import Table from "./table";
@@ -19,7 +20,7 @@ const SystemLogsView: FunctionComponent = () => {
 
   return (
     <QueryOverlay result={logs}>
-      <Container fluid>
+      <Container fluid px={0}>
         <Helmet>
           <title>Logs - Bazarr (System)</title>
         </Helmet>
@@ -42,9 +43,7 @@ const SystemLogsView: FunctionComponent = () => {
             Empty
           </ContentHeader.Button>
         </ContentHeader>
-        <Row>
-          <Table logs={data ?? []}></Table>
-        </Row>
+        <Table logs={data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

@@ -1,12 +1,12 @@
 import { useRestoreBackups } from "@/apis/hooks/system";
-import { AsyncButton } from "@/components";
+import { AsyncButton } from "@/components/async";
 import {
   useModal,
   useModalControl,
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { Button } from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import React, { FunctionComponent } from "react";
 
 const SystemBackupRestoreModal: FunctionComponent = () => {
@@ -21,7 +21,8 @@ const SystemBackupRestoreModal: FunctionComponent = () => {
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
       <div>
         <Button
-          color="outline-secondary"
+          color="gray"
+          variant="outline"
           className="mr-2"
           onClick={() => hide()}
         >
@@ -46,10 +47,10 @@ const SystemBackupRestoreModal: FunctionComponent = () => {
 
   return (
     <Modal title="Restore Backup" footer={footer}>
-      <span>
+      <Text>
         Are you sure you want to restore the backup '{result}'? Bazarr will
         automatically restart and reload the UI during the restore process.
-      </span>
+      </Text>
     </Modal>
   );
 };

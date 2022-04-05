@@ -1,7 +1,8 @@
 import { useResetProvider, useSystemProviders } from "@/apis/hooks";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { ContentHeader } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
 import Table from "./table";
@@ -15,7 +16,7 @@ const SystemProvidersView: FunctionComponent = () => {
 
   return (
     <QueryOverlay result={providers}>
-      <Container fluid>
+      <Container fluid px={0}>
         <Helmet>
           <title>Providers - Bazarr (System)</title>
         </Helmet>
@@ -35,9 +36,7 @@ const SystemProvidersView: FunctionComponent = () => {
             Reset
           </ContentHeader.Button>
         </ContentHeader>
-        <Row>
-          <Table providers={data ?? []}></Table>
-        </Row>
+        <Table providers={data ?? []}></Table>
       </Container>
     </QueryOverlay>
   );

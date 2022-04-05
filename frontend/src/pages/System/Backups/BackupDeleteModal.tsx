@@ -1,11 +1,11 @@
-import { AsyncButton } from "@/components";
+import { AsyncButton } from "@/components/async";
 import {
   useModal,
   useModalControl,
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { Button } from "@mantine/core";
+import { Button, Text } from "@mantine/core";
 import React, { FunctionComponent } from "react";
 import { useDeleteBackups } from "../../../apis/hooks";
 
@@ -21,7 +21,8 @@ const SystemBackupDeleteModal: FunctionComponent = () => {
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
       <div>
         <Button
-          color="outline-secondary"
+          color="gray"
+          variant="outline"
           className="mr-2"
           onClick={() => hide()}
         >
@@ -46,7 +47,7 @@ const SystemBackupDeleteModal: FunctionComponent = () => {
 
   return (
     <Modal title="Delete Backup" footer={footer}>
-      <span>Are you sure you want to delete the backup '{result}'?</span>
+      <Text>Are you sure you want to delete the backup '{result}'?</Text>
     </Modal>
   );
 };
