@@ -3,8 +3,8 @@ import App from "@/App";
 import { Lazy } from "@/components/async";
 // import Lazy from "@/components/Lazy";
 import { useEnabledStatus } from "@/modules/redux/hooks";
-// import BlacklistMoviesView from "@/pages/Blacklist/Movies";
-// import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import BlacklistMoviesView from "@/pages/Blacklist/Movies";
+import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
@@ -33,6 +33,7 @@ import { Environment } from "@/utilities";
 import {
   faClock,
   faExclamationTriangle,
+  faFileExcel,
   faFilm,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
@@ -168,26 +169,26 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faFileExcel,
-          //     name: "Blacklist",
-          //     path: "blacklist",
-          //     hidden: !sonarr && !radarr,
-          //     children: [
-          //       {
-          //         path: "series",
-          //         name: "Episodes",
-          //         hidden: !sonarr,
-          //         element: <BlacklistSeriesView></BlacklistSeriesView>,
-          //       },
-          //       {
-          //         path: "movies",
-          //         name: "Movies",
-          //         hidden: !radarr,
-          //         element: <BlacklistMoviesView></BlacklistMoviesView>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faFileExcel,
+            name: "Blacklist",
+            path: "blacklist",
+            hidden: !sonarr && !radarr,
+            children: [
+              {
+                path: "series",
+                name: "Episodes",
+                hidden: !sonarr,
+                element: <BlacklistSeriesView></BlacklistSeriesView>,
+              },
+              {
+                path: "movies",
+                name: "Movies",
+                hidden: !radarr,
+                element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+            ],
+          },
           //   {
           //     icon: faCogs,
           //     name: "Settings",

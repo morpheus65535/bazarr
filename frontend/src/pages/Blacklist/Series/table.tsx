@@ -1,8 +1,11 @@
 import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
-import { AsyncButton, PageTable, TextPopover } from "@/components";
+import { PageTable } from "@/components";
+import { AsyncButton } from "@/components/async";
 import Language from "@/components/bazarr/Language";
+import TextPopover from "@/components/TextPopover";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -55,8 +58,8 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         Cell: (row) => {
           if (row.value) {
             return (
-              <TextPopover text={row.row.original.parsed_timestamp} delay={1}>
-                <span>{row.value}</span>
+              <TextPopover text={row.row.original.parsed_timestamp}>
+                <Text>{row.value}</Text>
               </TextPopover>
             );
           } else {
@@ -71,8 +74,6 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
 
           return (
             <AsyncButton
-              size="sm"
-              color="light"
               noReset
               promise={() =>
                 mutateAsync({

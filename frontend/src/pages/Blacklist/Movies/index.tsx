@@ -2,9 +2,10 @@ import {
   useMovieBlacklist,
   useMovieDeleteBlacklist,
 } from "@/apis/hooks/movies";
-import { ContentHeader, QueryOverlay } from "@/components";
+import { ContentHeader } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container, Stack } from "@mantine/core";
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
 import Table from "./table";
@@ -17,22 +18,22 @@ const BlacklistMoviesView: FunctionComponent = () => {
 
   return (
     <QueryOverlay result={blacklist}>
-      <Container fluid>
+      <Container fluid px={0}>
         <Helmet>
           <title>Movies Blacklist - Bazarr</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeader.AsyncButton
-            icon={faTrash}
-            disabled={data?.length === 0}
-            promise={() => mutateAsync({ all: true })}
-          >
-            Remove All
-          </ContentHeader.AsyncButton>
-        </ContentHeader>
-        <Row>
+        <Stack>
+          <ContentHeader>
+            <ContentHeader.AsyncButton
+              icon={faTrash}
+              disabled={data?.length === 0}
+              promise={() => mutateAsync({ all: true })}
+            >
+              Remove All
+            </ContentHeader.AsyncButton>
+          </ContentHeader>
           <Table blacklist={data ?? []}></Table>
-        </Row>
+        </Stack>
       </Container>
     </QueryOverlay>
   );
