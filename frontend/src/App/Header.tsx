@@ -19,7 +19,6 @@ import {
   Button,
   Divider,
   Group,
-  Header as MantineHeader,
   MediaQuery,
   Menu,
   Text,
@@ -27,7 +26,7 @@ import {
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
 
-const Header: FunctionComponent = () => {
+const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
   const sidebarOpened = useReduxStore((s) => s.site.showSidebar);
 
@@ -42,7 +41,7 @@ const Header: FunctionComponent = () => {
   const goHome = useGotoHomepage();
 
   return (
-    <MantineHeader height={Layout.HEADER_HEIGHT} p="xs">
+    <>
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
@@ -105,8 +104,8 @@ const Header: FunctionComponent = () => {
           )}
         </Group>
       </Group>
-    </MantineHeader>
+    </>
   );
 };
 
-export default Header;
+export default AppHeader;

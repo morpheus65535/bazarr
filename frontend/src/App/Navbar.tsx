@@ -1,11 +1,9 @@
-import { Layout } from "@/constants";
 import { setSidebar } from "@/modules/redux/actions";
-import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { useReduxAction } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
 import { BuildKey, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
-import { useGotoHomepage } from "@/utilities/hooks";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -88,13 +86,8 @@ function useIsActive(parent: string, route: RouteObject) {
   );
 }
 
-const Navbar: FunctionComponent = () => {
+const AppNavbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
-  const sidebarOpened = useReduxStore((s) => s.site.showSidebar);
-
-  const showSidebar = useReduxAction(setSidebar);
-
-  const goHome = useGotoHomepage();
 
   const routes = useRouteItems();
 
@@ -105,22 +98,15 @@ const Navbar: FunctionComponent = () => {
 
   return (
     <Selection.Provider value={{ selection, select }}>
-      <MantineNavbar
-        p="xs"
-        width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
-        hidden={!sidebarOpened}
-        hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
-      >
-        <MantineNavbar.Section>
-          {routes.map((route, idx) => (
-            <RouteItem
-              key={BuildKey("nav", idx)}
-              parent="/"
-              route={route}
-            ></RouteItem>
-          ))}
-        </MantineNavbar.Section>
-      </MantineNavbar>
+      <MantineNavbar.Section>
+        {routes.map((route, idx) => (
+          <RouteItem
+            key={BuildKey("nav", idx)}
+            parent="/"
+            route={route}
+          ></RouteItem>
+        ))}
+      </MantineNavbar.Section>
     </Selection.Provider>
   );
 };
@@ -137,6 +123,8 @@ const RouteItem: FunctionComponent<{
       children?.find((v) => v.index === true) !== undefined,
     [element, children]
   );
+
+  const showSidebar = useReduxAction(setSidebar);
 
   const { select } = useSelection();
 
@@ -202,7 +190,7 @@ const RouteItem: FunctionComponent<{
     }
   } else {
     return (
-      <NavLink to={link}>
+      <NavLink to={link} onClick={() => showSidebar(false)}>
         <NavbarItem name={name ?? link} icon={icon} badge={badge}></NavbarItem>
       </NavLink>
     );
@@ -235,4 +223,4 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   );
 };
 
-export default Navbar;
+export default AppNavbar;

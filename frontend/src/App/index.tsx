@@ -1,4 +1,4 @@
-import Navbar from "@/App/Navbar";
+import AppNavbar from "@/App/Navbar";
 import { LoadingIndicator } from "@/components";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Layout } from "@/constants";
@@ -7,14 +7,14 @@ import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
-import { AppShell } from "@mantine/core";
+import { AppShell, Header, Navbar } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
-import Header from "./Header";
+import AppHeader from "./Header";
 
 const App: FunctionComponent = () => {
-  const { status } = useReduxStore((s) => s.site);
+  const { status, showSidebar } = useReduxStore((s) => s.site);
 
   useEffect(() => {
     SocketIO.initialize();
@@ -49,9 +49,23 @@ const App: FunctionComponent = () => {
     <ErrorBoundary>
       <AppShell
         navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
-        header={<Header></Header>}
-        navbar={<Navbar></Navbar>}
+        header={
+          <Header p="md" height={Layout.HEADER_HEIGHT}>
+            <AppHeader></AppHeader>
+          </Header>
+        }
+        navbar={
+          <Navbar
+            p="xs"
+            hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
+            hidden={!showSidebar}
+            width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
+          >
+            <AppNavbar></AppNavbar>
+          </Navbar>
+        }
         padding={0}
+        fixed
       >
         <Outlet></Outlet>
       </AppShell>
