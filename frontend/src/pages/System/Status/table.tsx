@@ -24,7 +24,6 @@ const Table: FunctionComponent<Props> = ({ health }) => {
 
   return (
     <SimpleTable
-      responsive
       columns={columns}
       data={health}
       emptyText="No issues with your configuration"

@@ -345,7 +345,6 @@ function SubtitleUploader<T>(props: Props<T>) {
             <SimpleTable
               columns={columnsWithAction}
               data={pending}
-              responsive={false}
             ></SimpleTable>
           </RowContext.Provider>
         </div>
