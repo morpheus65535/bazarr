@@ -1,5 +1,5 @@
 import { useModal, useModalControl } from "@/modules/modals";
-import { useSelectorOptions } from "@/utilities";
+import { useLatestRef, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
   faCheck,
@@ -16,7 +16,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { Column } from "react-table";
@@ -84,7 +83,7 @@ function SubtitleUploader<T>(props: Props<T>) {
 
   const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
 
-  const initialRef = useRef(initial);
+  const initialRef = useLatestRef(initial);
 
   const setFiles = useCallback(
     async (files: File[]) => {

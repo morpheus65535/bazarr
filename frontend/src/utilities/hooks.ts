@@ -45,3 +45,10 @@ export function useSelectorOptions<T>(
     getKey: keyRef.current ?? labelRef.current,
   };
 }
+
+export function useLatestRef<T>(item: T) {
+  const ref = useRef<T>(item);
+  ref.current = item;
+
+  return ref;
+}

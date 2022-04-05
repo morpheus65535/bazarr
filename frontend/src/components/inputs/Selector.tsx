@@ -1,3 +1,4 @@
+import { useLatestRef } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
   MultiSelect,
@@ -7,7 +8,7 @@ import {
   SelectProps,
 } from "@mantine/core";
 import { isNull, isUndefined } from "lodash";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 export type SelectorOption<T> = Override<
   {
@@ -53,7 +54,7 @@ export function Selector<T>({
   getKey = DefaultKeyBuilder,
   ...select
 }: SelectorProps<T>) {
-  const keyRef = useRef(getKey);
+  const keyRef = useLatestRef(getKey);
 
   const data = useMemo(
     () =>
@@ -63,7 +64,7 @@ export function Selector<T>({
         payload: value,
         ...option,
       })),
-    [options]
+    [keyRef, options]
   );
 
   const wrappedValue = useMemo(() => {
@@ -72,7 +73,7 @@ export function Selector<T>({
     } else {
       return keyRef.current(value);
     }
-  }, [value]);
+  }, [keyRef, value]);
 
   const wrappedDefaultValue = useMemo(() => {
     if (isNull(defaultValue) || isUndefined(defaultValue)) {
@@ -80,7 +81,7 @@ export function Selector<T>({
     } else {
       return keyRef.current(defaultValue);
     }
-  }, [defaultValue]);
+  }, [defaultValue, keyRef]);
 
   const wrappedOnChange = useCallback(
     (value: string) => {
@@ -120,7 +121,7 @@ export function MultiSelector<T>({
   getLabel = DefaultKeyBuilder,
   ...select
 }: MultiSelectorProps<T>) {
-  const labelRef = useRef(getLabel);
+  const labelRef = useLatestRef(getLabel);
 
   const data = useMemo(
     () =>
@@ -129,16 +130,16 @@ export function MultiSelector<T>({
         payload: value,
         ...option,
       })),
-    [options]
+    [labelRef, options]
   );
 
   const wrappedValue = useMemo(
     () => value && value.map(labelRef.current),
-    [value]
+    [labelRef, value]
   );
   const wrappedDefaultValue = useMemo(
     () => defaultValue && defaultValue.map(labelRef.current),
-    [defaultValue]
+    [defaultValue, labelRef]
   );
 
   const wrappedOnChange = useCallback(
