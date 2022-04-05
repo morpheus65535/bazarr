@@ -1,4 +1,3 @@
-import { SelectorOption } from "@/components";
 import {
   faClock,
   faCode,
@@ -12,6 +11,7 @@ import {
   faPlay,
   faTextHeight,
 } from "@fortawesome/free-solid-svg-icons";
+import { SelectItem } from "@mantine/core";
 import ColorTool from "./ColorTool";
 import FrameRateTool from "./FrameRateTool";
 import TimeTool from "./TimeTool";
@@ -189,7 +189,7 @@ export const availableTranslation = {
   he: "Hebrew",
 };
 
-export const colorOptions: SelectorOption<string>[] = [
+export const colorOptions: SelectItem[] = [
   {
     label: "White",
     value: "white",

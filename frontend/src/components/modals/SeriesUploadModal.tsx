@@ -2,13 +2,14 @@ import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import api from "@/apis/raw";
 import { usePayload, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { useSelectorOptions } from "@/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
 } from "@/utilities/languages";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
-import { Selector, SelectorOption } from "../inputs";
+import { Selector } from "../inputs";
 import SubtitleUploader, {
   PendingSubtitle,
   useRowMutation,
@@ -133,17 +134,17 @@ const SeriesUploadModal: FunctionComponent<SeriesProps> = ({ episodes }) => {
         accessor: "payload",
         className: "vw-1",
         Cell: ({ value, row }) => {
-          const options = episodes.map<SelectorOption<Item.Episode>>((ep) => ({
-            label: `(${ep.season}x${ep.episode}) ${ep.title}`,
-            value: ep,
-          }));
+          const options = useSelectorOptions(
+            episodes,
+            (ep) => `(${ep.season}x${ep.episode}) ${ep.title}`
+          );
 
           const mutate = useRowMutation();
 
           return (
             <Selector
+              {...options}
               disabled={row.original.state === "fetching"}
-              options={options}
               value={value.instance}
               onChange={(ep: Nullable<Item.Episode>) => {
                 if (ep) {

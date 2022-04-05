@@ -9,7 +9,7 @@ import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
 import QueryOverlay from "../async/QueryOverlay";
-import { HistoryIcon } from "../bazarr/HistoryIcon";
+import { HistoryIcon } from "../bazarr";
 import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
 import TextPopover from "../TextPopover";

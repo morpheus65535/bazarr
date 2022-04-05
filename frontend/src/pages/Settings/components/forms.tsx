@@ -1,11 +1,10 @@
 import {
   FileBrowser,
   FileBrowserProps,
-  Selector as CSelector,
-  SelectorProps as CSelectorProps,
-  SelectorValueType,
-  Slider as CSlider,
-  SliderProps as CSliderProps,
+  Selector as GlobalSelector,
+  SelectorProps as GlobalSelectorProps,
+  Slider as GlobalSlider,
+  SliderProps as GlobalSliderProps,
 } from "@/components";
 import { isReactText } from "@/utilities";
 import {
@@ -25,7 +24,11 @@ import { OverrideFuncType, useSingleUpdate } from "./hooks";
 export const Message: FunctionComponent<{
   type?: "warning" | "info";
 }> = ({ type, children }) => {
-  return <MantineText>{children}</MantineText>;
+  return (
+    <MantineText size="sm" color="dimmed">
+      {children}
+    </MantineText>
+  );
 };
 
 export interface BaseInput<T> {
@@ -90,7 +93,6 @@ export interface CheckProps extends BaseInput<boolean> {
 
 export const Check: FunctionComponent<CheckProps> = ({
   label,
-  inline,
   override,
   disabled,
   settingKey,
@@ -117,47 +119,39 @@ export const Check: FunctionComponent<CheckProps> = ({
 };
 
 function selectorValidator<T>(v: unknown): v is T {
-  return isString(v) || isNumber(v) || isArray(v);
+  return isString(v) || isNumber(v);
 }
 
-type SelectorProps<T, M extends boolean> = BaseInput<SelectorValueType<T, M>> &
-  CSelectorProps<T, M>;
+type SelectorProps<T> = BaseInput<T> & GlobalSelectorProps<T>;
 
-export function Selector<
-  T extends string | string[] | number | number[],
-  M extends boolean = false
->(props: SelectorProps<T, M>) {
+export function Selector<T extends string | number>(props: SelectorProps<T>) {
   const update = useSingleUpdate();
   const collapse = useCollapse();
 
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const value = useLatest<SelectorValueType<T, M>>(
-    settingKey,
-    selectorValidator,
-    override
-  );
+  const value = useLatest<T>(settingKey, selectorValidator, override);
 
   useEffect(() => {
     if (isString(value) || isNull(value)) {
       collapse && collapse(value ?? "");
     }
-  });
+  }, [collapse, value]);
 
   return (
-    <CSelector
+    <GlobalSelector
       {...selector}
-      value={value as SelectorValueType<T, M>}
+      value={value}
       onChange={(v) => {
-        const result = beforeStaged ? beforeStaged(v) : v;
+        const result = beforeStaged && v ? beforeStaged(v) : v;
         update(result, settingKey);
       }}
-    ></CSelector>
+    ></GlobalSelector>
   );
 }
 
 type SliderProps = BaseInput<number> &
-  Omit<CSliderProps, "onChange" | "onAfterChange">;
+  Omit<GlobalSliderProps, "onChange" | "onAfterChange">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { settingKey, override, ...slider } = props;
@@ -167,13 +161,13 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
   const defaultValue = useLatest<number>(settingKey, isNumber, override);
 
   return (
-    <CSlider
+    <GlobalSlider
       onAfterChange={(v) => {
         update(v, settingKey);
       }}
       defaultValue={defaultValue ?? undefined}
       {...slider}
-    ></CSlider>
+    ></GlobalSlider>
   );
 };
 

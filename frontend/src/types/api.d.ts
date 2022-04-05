@@ -33,8 +33,8 @@ declare namespace Language {
     profileId: number;
     cutoff: number | null;
     items: ProfileItem[];
-    mustContain: string[];
-    mustNotContain: string[];
+    mustContain: string[] | null;
+    mustNotContain: string[] | null;
     originalFormat: boolean | null;
   }
 }

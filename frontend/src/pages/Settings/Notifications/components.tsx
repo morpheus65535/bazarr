@@ -112,7 +112,7 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
           options={options}
           value={current}
           onChange={setCurrent}
-          label={getLabel}
+          getLabel={getLabel}
         ></Selector>
         <div hidden={current === null}>
           <Textarea

@@ -1,4 +1,4 @@
-import { Selector, SelectorComponents, SelectorOption } from "@/components";
+import { Selector, SelectorOption } from "@/components";
 import {
   useModal,
   useModalControl,
@@ -15,7 +15,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { components } from "react-select";
 import {
   Card,
   Check,
@@ -197,22 +196,22 @@ const ProviderTool: FunctionComponent = () => {
     );
   }, [info]);
 
-  const selectorComponents = useMemo<
-    Partial<SelectorComponents<ProviderInfo, false>>
-  >(
-    () => ({
-      Option: ({ data, ...other }) => {
-        const { label, value } = data;
-        return (
-          <components.Option data={data} {...other}>
-            {label}
-            <p className="small m-0 text-muted">{value.description}</p>
-          </components.Option>
-        );
-      },
-    }),
-    []
-  );
+  // const selectorComponents = useMemo<
+  //   Partial<SelectorComponents<ProviderInfo, false>>
+  // >(
+  //   () => ({
+  //     Option: ({ data, ...other }) => {
+  //       const { label, value } = data;
+  //       return (
+  //         <components.Option data={data} {...other}>
+  //           {label}
+  //           <p className="small m-0 text-muted">{value.description}</p>
+  //         </components.Option>
+  //       );
+  //     },
+  //   }),
+  //   []
+  // );
 
   const getLabel = useCallback(
     (v: ProviderInfo) => v.name ?? capitalize(v.key),
@@ -235,11 +234,11 @@ const ProviderTool: FunctionComponent = () => {
       <StagedChangesContext.Provider value={[staged, setChange]}>
         <Stack>
           <Selector
-            components={selectorComponents}
+            // components={selectorComponents}
             disabled={payload !== null}
             options={options}
             value={info}
-            label={getLabel}
+            getLabel={getLabel}
             onChange={onSelect}
           ></Selector>
 

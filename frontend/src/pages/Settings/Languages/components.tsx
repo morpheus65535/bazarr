@@ -1,7 +1,6 @@
-import {
-  LanguageSelector as CLanguageSelector,
-  SelectorOption,
-} from "@/components";
+import { MultiSelector, SelectorOption } from "@/components";
+import { Language } from "@/components/bazarr";
+import { useSelectorOptions } from "@/utilities";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { BaseInput, Selector, useSingleUpdate } from "../components";
@@ -16,15 +15,18 @@ export const LanguageSelector: FunctionComponent<
   const enabled = useLatestEnabledLanguages();
   const update = useSingleUpdate();
 
+  const wrappedOptions = useSelectorOptions(options, (value) => value.name);
+
   return (
-    <CLanguageSelector
-      multiple
+    <MultiSelector
+      {...wrappedOptions}
       value={enabled}
-      options={options}
+      searchable
+      getLabel={(v: Language.Info) => v.name}
       onChange={(val) => {
         update(val, settingKey);
       }}
-    ></CLanguageSelector>
+    ></MultiSelector>
   );
 };
 

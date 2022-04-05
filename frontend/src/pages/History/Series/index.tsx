@@ -2,7 +2,7 @@ import {
   useEpisodeAddBlacklist,
   useEpisodeHistoryPagination,
 } from "@/apis/hooks";
-import { HistoryIcon } from "@/components/bazarr/HistoryIcon";
+import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import { BlacklistButton } from "@/components/inputs/blacklist";
 import TextPopover from "@/components/TextPopover";

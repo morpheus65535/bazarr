@@ -1,5 +1,7 @@
-import { LanguageSelector } from "@/components/LanguageSelector";
+import { Selector } from "@/components";
+import { Language } from "@/components/bazarr";
 import { useModal, withModal } from "@/modules/modals";
+import { useSelectorOptions } from "@/utilities";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { Button, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
@@ -27,6 +29,8 @@ const TranslationTool: FunctionComponent = () => {
     }
   }, [process, selectedLanguage]);
 
+  const options = useSelectorOptions(available, (v) => v.name);
+
   const footer = (
     <Button disabled={!selectedLanguage} onClick={submit}>
       Translate
@@ -37,10 +41,7 @@ const TranslationTool: FunctionComponent = () => {
       <Text>
         Enabled languages not listed here are unsupported by Google Translate.
       </Text>
-      <LanguageSelector
-        options={available}
-        onChange={setLanguage}
-      ></LanguageSelector>
+      <Selector {...options} onChange={setLanguage}></Selector>
     </Modal>
   );
 };

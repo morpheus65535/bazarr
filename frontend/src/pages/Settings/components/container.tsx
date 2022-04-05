@@ -21,7 +21,7 @@ export const Group: FunctionComponent<GroupProps> = ({
   children,
 }) => {
   return (
-    <Stack hidden={hidden}>
+    <Stack hidden={hidden} spacing="xs">
       <Title order={4}>{header}</Title>
       <Divider></Divider>
       {children}
@@ -40,7 +40,7 @@ export const Input: FunctionComponent<InputProps> = ({
   hidden,
 }) => {
   return (
-    <Stack hidden={hidden}>
+    <Stack hidden={hidden} spacing="xs" mb="md">
       {name && <Text>{name}</Text>}
       {children}
     </Stack>

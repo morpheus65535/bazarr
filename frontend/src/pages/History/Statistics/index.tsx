@@ -1,7 +1,12 @@
-import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
-import { ContentHeader, Selector, SelectorOption } from "@/components";
+import {
+  useHistoryStats,
+  useLanguages,
+  useSystemProviders,
+} from "@/apis/hooks";
+import { ContentHeader, Selector } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
+import { useSelectorOptions } from "@/utilities";
 import { Container, Grid, Stack } from "@mantine/core";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";
@@ -21,14 +26,18 @@ import { actionOptions, timeFrameOptions } from "./options";
 const HistoryStats: FunctionComponent = () => {
   const { data: providers } = useSystemProviders(true);
 
-  const providerOptions = useMemo<SelectorOption<System.Provider>[]>(
-    () => providers?.map((value) => ({ label: value.name, value })) ?? [],
-    [providers]
+  const providerOptions = useSelectorOptions(providers ?? [], (v) => v.name);
+
+  const { data: historyLanguages } = useLanguages(true);
+
+  const languageOptions = useSelectorOptions(
+    historyLanguages ?? [],
+    (value) => value.name
   );
 
   const [timeFrame, setTimeFrame] = useState<History.TimeFrameOptions>("month");
   const [action, setAction] = useState<Nullable<History.ActionOptions>>(null);
-  const [lang, setLanguage] = useState<Nullable<Language.Info>>(null);
+  const [lang, setLanguage] = useState<Nullable<Language.Server>>(null);
   const [provider, setProvider] = useState<Nullable<System.Provider>>(null);
 
   const stats = useHistoryStats(timeFrame, action, provider, lang);
@@ -79,20 +88,20 @@ const HistoryStats: FunctionComponent = () => {
               </Grid.Col>
               <Grid.Col span={3}>
                 <Selector
+                  {...providerOptions}
                   placeholder="Provider..."
                   clearable
-                  options={providerOptions}
                   value={provider}
                   onChange={setProvider}
                 ></Selector>
               </Grid.Col>
               <Grid.Col span={3}>
-                <Language.Selector
+                <Selector
+                  {...languageOptions}
                   clearable
                   value={lang}
                   onChange={setLanguage}
-                  history
-                ></Language.Selector>
+                ></Selector>
               </Grid.Col>
             </Grid>
           </ContentHeader>

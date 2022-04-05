@@ -1,4 +1,5 @@
 import { useModal, useModalControl } from "@/modules/modals";
+import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
   faCheck,
@@ -19,7 +20,8 @@ import {
   useState,
 } from "react";
 import { Column } from "react-table";
-import { LanguageSelector } from "..";
+import { Language } from "../bazarr";
+import { Selector } from "../inputs";
 import MessageIcon from "../MessageIcon";
 import { SimpleTable } from "../tables";
 
@@ -67,6 +69,8 @@ function SubtitleUploader<T>(props: Props<T>) {
     availableLanguages,
     hideAllLanguages,
   } = props;
+
+  const languageOptions = useSelectorOptions(availableLanguages, (v) => v.name);
 
   const [pending, setPending] = useState<PendingSubtitle<T>[]>([]);
 
@@ -239,9 +243,9 @@ function SubtitleUploader<T>(props: Props<T>) {
         Cell: ({ row, value }) => {
           const mutate = useRowMutation();
           return (
-            <LanguageSelector
+            <Selector
               disabled={row.original.state === "fetching"}
-              options={availableLanguages}
+              {...languageOptions}
               value={value}
               onChange={(lang) => {
                 if (lang) {
@@ -250,7 +254,7 @@ function SubtitleUploader<T>(props: Props<T>) {
                   mutate(row.index, newInfo);
                 }
               }}
-            ></LanguageSelector>
+            ></Selector>
           );
         },
       },
@@ -275,7 +279,7 @@ function SubtitleUploader<T>(props: Props<T>) {
         },
       },
     ],
-    [columns, availableLanguages]
+    [columns, languageOptions]
   );
 
   const canUpload = useMemo(
@@ -308,8 +312,8 @@ function SubtitleUploader<T>(props: Props<T>) {
         </Button>
       </div>
       <div className="w-25" hidden={hideAllLanguages}>
-        <LanguageSelector
-          options={availableLanguages}
+        <Selector
+          {...languageOptions}
           value={null}
           disabled={!showTable}
           onChange={(lang) => {
@@ -321,7 +325,7 @@ function SubtitleUploader<T>(props: Props<T>) {
               );
             }
           }}
-        ></LanguageSelector>
+        ></Selector>
       </div>
     </div>
   );

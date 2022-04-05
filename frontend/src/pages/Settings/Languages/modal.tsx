@@ -1,15 +1,12 @@
-import {
-  LanguageSelector,
-  Selector,
-  SelectorOption,
-  SimpleTable,
-} from "@/components";
+import { Selector, SelectorOption, SimpleTable } from "@/components";
+import { Language } from "@/components/bazarr";
 import {
   useModal,
   useModalControl,
   usePayload,
   withModal,
 } from "@/modules/modals";
+import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -18,6 +15,7 @@ import {
   Button,
   Checkbox,
   MultiSelect,
+  Switch,
   TextInput,
 } from "@mantine/core";
 import {
@@ -65,6 +63,8 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
   const { hide } = useModalControl();
 
   const languages = useLatestEnabledLanguages();
+
+  const languageOptions = useSelectorOptions(languages, (l) => l.name);
 
   const [current, setProfile] = useState(createDefaultProfile);
 
@@ -148,14 +148,16 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
           const code = value;
           const item = row.original;
           const lang = useMemo(
-            () => languages.find((l) => l.code2 === code) ?? null,
+            () =>
+              languageOptions.options.find((l) => l.value.code2 === code)
+                ?.value ?? null,
             [code]
           );
           const mutate = useRowMutation();
           return (
             <div style={{ width: "8rem" }}>
-              <LanguageSelector
-                options={languages}
+              <Selector
+                {...languageOptions}
                 value={lang}
                 onChange={(l) => {
                   if (l) {
@@ -163,7 +165,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
                     mutate(row.index, item);
                   }
                 }}
-              ></LanguageSelector>
+              ></Selector>
             </div>
           );
         },
@@ -232,7 +234,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
         },
       },
     ],
-    [languages]
+    [languageOptions]
   );
 
   const footer = (
@@ -278,10 +280,12 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
       <Input name="Release info must contain">
         <MultiSelect
           creatable
-          data={current.mustContain}
+          searchable
+          value={current?.mustContain ?? []}
+          data={current?.mustContain ?? []}
           onChange={(mc) => updateProfile("mustContain", mc)}
           onCreate={(v) =>
-            updateProfile("mustContain", [...current.mustContain, v])
+            updateProfile("mustContain", [...(current.mustContain ?? []), v])
           }
         ></MultiSelect>
         <Message>
@@ -292,12 +296,17 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
       <Input name="Release info must not contain">
         <MultiSelect
           creatable
-          data={current.mustNotContain}
+          searchable
+          value={current?.mustNotContain ?? []}
+          data={current?.mustNotContain ?? []}
           onChange={(mnc: string[]) => {
             updateProfile("mustNotContain", mnc);
           }}
           onCreate={(v) =>
-            updateProfile("mustNotContain", [...current.mustNotContain, v])
+            updateProfile("mustNotContain", [
+              ...(current?.mustNotContain ?? []),
+              v,
+            ])
           }
         ></MultiSelect>
         <Message>
@@ -305,15 +314,14 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
           will be excluded from search results (regex supported).
         </Message>
       </Input>
-      <Input name="Original Format">
-        <Selector
-          options={[
-            { label: "Enable", value: true },
-            { label: "Disable", value: false },
-          ]}
-          value={current.originalFormat || false}
-          onChange={(value) => updateProfile("originalFormat", value)}
-        ></Selector>
+      <Input>
+        <Switch
+          label="Use Original Format"
+          checked={current.originalFormat ?? false}
+          onChange={({ currentTarget: { checked } }) =>
+            updateProfile("originalFormat", checked)
+          }
+        ></Switch>
         <Message>Download subtitle file without format conversion</Message>
       </Input>
     </Modal>

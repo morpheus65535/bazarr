@@ -13,6 +13,5 @@ export const LoadingIndicator: FunctionComponent = ({ children }) => {
 export * from "./buttons";
 export * from "./header";
 export * from "./inputs";
-export * from "./LanguageSelector";
 export * from "./SearchBar";
 export * from "./tables";

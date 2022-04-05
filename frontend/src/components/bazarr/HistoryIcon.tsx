@@ -18,7 +18,7 @@ enum HistoryAction {
   Sync,
 }
 
-export const HistoryIcon: FunctionComponent<{
+const HistoryIcon: FunctionComponent<{
   action: number;
   title?: string;
 }> = ({ action, title }) => {
@@ -50,3 +50,5 @@ export const HistoryIcon: FunctionComponent<{
     return null;
   }
 };
+
+export default HistoryIcon;

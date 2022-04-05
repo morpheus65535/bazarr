@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { SelectorOption } from "@/components";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDidUpdate } from "rooks";
 
@@ -17,4 +18,19 @@ export function useIsArrayExtended(arr: unknown[]) {
   }, [arr.length]);
 
   return isExtended;
+}
+
+export function useSelectorOptions<T>(
+  options: readonly T[],
+  label: (value: T) => string
+): { options: SelectorOption<T>[]; getLabel: (value: T) => string } {
+  const labelRef = useRef(label);
+  labelRef.current = label;
+
+  const wrappedOptions = useMemo(
+    () => options.map((value) => ({ value, label: labelRef.current(value) })),
+    [options, labelRef]
+  );
+
+  return { options: wrappedOptions, getLabel: labelRef.current };
 }

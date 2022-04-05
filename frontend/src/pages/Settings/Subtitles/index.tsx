@@ -27,7 +27,7 @@ const subzeroOverride = (key: string) => {
 
 const subzeroColorOverride = (settings: Settings) => {
   return (
-    settings.general.subzero_mods?.find((v) => v.startsWith("color")) ?? null
+    settings.general.subzero_mods?.find((v) => v.startsWith("color")) ?? ""
   );
 };
 

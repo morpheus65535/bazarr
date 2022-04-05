@@ -1,5 +1,3 @@
-import { useLanguages } from "@/apis/hooks";
-import { Selector, SelectorOption, SelectorProps } from "@/components";
 import { FunctionComponent, useMemo } from "react";
 
 interface TextProps {
@@ -10,7 +8,6 @@ interface TextProps {
 
 declare type LanguageComponent = {
   Text: typeof LanguageText;
-  Selector: typeof LanguageSelector;
 };
 
 const LanguageText: FunctionComponent<TextProps> = ({
@@ -44,45 +41,8 @@ const LanguageText: FunctionComponent<TextProps> = ({
   );
 };
 
-type LanguageSelectorProps<M extends boolean> = Omit<
-  SelectorProps<Language.Info, M>,
-  "label" | "options"
-> & {
-  history?: boolean;
-};
-
-function getLabel(lang: Language.Info) {
-  return lang.name;
-}
-
-export function LanguageSelector<M extends boolean = false>(
-  props: LanguageSelectorProps<M>
-) {
-  const { history, ...rest } = props;
-  const { data: options } = useLanguages(history);
-
-  const items = useMemo<SelectorOption<Language.Info>[]>(
-    () =>
-      options?.map((v) => ({
-        label: v.name,
-        value: v,
-      })) ?? [],
-    [options]
-  );
-
-  return (
-    <Selector
-      placeholder="Language..."
-      options={items}
-      label={getLabel}
-      {...rest}
-    ></Selector>
-  );
-}
-
 const Components: LanguageComponent = {
   Text: LanguageText,
-  Selector: LanguageSelector,
 };
 
 export default Components;
