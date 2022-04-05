@@ -1,13 +1,14 @@
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
-import { GetItemId } from "@/utilities";
+import { GetItemId, useSelectorOptions } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
-import { Container, Select } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { uniqBy } from "lodash";
 import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
 import { ContentHeader, SimpleTable } from ".";
+import { Selector } from "./inputs";
 import { useCustomSelection } from "./tables/plugins";
 
 interface MassEditorProps<T extends Item.Base = Item.Base> {
@@ -33,24 +34,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     [dirties, raw]
   );
 
-  // const profileOptions = useMemo(() => {
-  //   const items: JSX.Element[] = [];
-  //   if (profiles) {
-  //     items.push(
-  //       <Dropdown.Item key="clear-profile">Clear Profile</Dropdown.Item>
-  //     );
-  //     items.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
-  //     items.push(
-  //       ...profiles.map((v) => (
-  //         <Dropdown.Item key={v.profileId} eventKey={v.profileId.toString()}>
-  //           {v.name}
-  //         </Dropdown.Item>
-  //       ))
-  //     );
-  //   }
-
-  //   return items;
-  // }, [profiles]);
+  const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
 
   const { mutateAsync } = mutation;
 
@@ -70,9 +54,8 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   }, [dirties, mutateAsync]);
 
   const setProfiles = useCallback(
-    (key: Nullable<string>) => {
-      const id = key ? parseInt(key) : null;
-
+    (profile: Language.Profile | null) => {
+      const id = profile?.profileId ?? null;
       const newItems = selections.map((v) => ({ ...v, profileId: id }));
 
       setDirties((dirty) => {
@@ -85,17 +68,12 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
     <Container fluid px={0}>
       <ContentHeader>
         <div>
-          <Select
+          <Selector
             placeholder="Change Profile"
+            {...profileOptions}
             disabled={selections.length === 0}
-            data={[]}
-          ></Select>
-          {/* <Dropdown onSelect={setProfiles}>
-            <Dropdown.Toggle disabled={selections.length === 0} color="light">
-              Change Profile
-            </Dropdown.Toggle>
-            <Dropdown.Menu>{profileOptions}</Dropdown.Menu>
-          </Dropdown> */}
+            onChange={setProfiles}
+          ></Selector>
         </div>
         <div>
           <ContentHeader.Button icon={faUndo} onClick={onEnded}>

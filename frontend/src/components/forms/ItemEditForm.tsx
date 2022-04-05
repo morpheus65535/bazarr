@@ -12,7 +12,7 @@ import {
   Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
-import { FunctionComponent } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { UseMutationResult } from "react-query";
 
 interface Props {
@@ -36,9 +36,14 @@ const ItemEditForm: FunctionComponent<Props> = ({
     (v) => v.name ?? "Unknown"
   );
 
+  const profile = useMemo(
+    () => data?.find((v) => v.profileId === item?.profileId) ?? null,
+    [data, item?.profileId]
+  );
+
   const form = useForm({
     initialValues: {
-      profileId: item?.profileId ?? null,
+      profile: profile ?? null,
     },
   });
 
@@ -46,16 +51,17 @@ const ItemEditForm: FunctionComponent<Props> = ({
 
   return (
     <form
-      onSubmit={form.onSubmit(({ profileId }) => {
+      onSubmit={form.onSubmit(({ profile }) => {
         if (item) {
           const itemId = GetItemId(item);
           if (itemId) {
-            mutate({ id: [itemId], profileid: [profileId] });
+            mutate({ id: [itemId], profileid: [profile?.profileId ?? null] });
+            onComplete?.();
             return;
           }
         }
 
-        form.setErrors({ profileId: "Invalid profile" });
+        form.setErrors({ profile: "Invalid profile" });
       })}
     >
       <LoadingOverlay visible={isOverlayVisible}></LoadingOverlay>
@@ -72,7 +78,8 @@ const ItemEditForm: FunctionComponent<Props> = ({
         </div>
         <Selector
           {...profileOptions}
-          {...form.getInputProps("profileId")}
+          {...form.getInputProps("profile")}
+          clearable
           label="Languages Profiles"
         ></Selector>
         <Divider></Divider>

@@ -8,10 +8,8 @@ import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Badge,
-  Box,
   Button,
   Collapse,
-  Group,
   Navbar as MantineNavbar,
   Text,
 } from "@mantine/core";
@@ -159,7 +157,14 @@ const RouteItem: FunctionComponent<{
         <div>
           <Button
             fullWidth
-            variant="subtle"
+            px="sm"
+            variant={isOpen ? "filled" : "subtle"}
+            leftIcon={icon && <FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+            rightIcon={badge && <Badge hidden={badge === 0}>{badge}</Badge>}
+            styles={{
+              inner: { justifyContent: "flex-start" },
+              icon: { width: "1.2rem", justifyContent: "center" },
+            }}
             onClick={() => {
               LOG("info", "clicked", link);
 
@@ -174,11 +179,7 @@ const RouteItem: FunctionComponent<{
               }
             }}
           >
-            <NavbarItem
-              name={name ?? link}
-              icon={icon}
-              badge={badge}
-            ></NavbarItem>
+            <NavbarItem name={name ?? link}></NavbarItem>
           </Button>
           <Collapse in={isOpen}>
             <div>{elements}</div>
@@ -208,19 +209,7 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   name,
   badge,
 }) => {
-  return (
-    <Group position="apart">
-      <Text>
-        <Box component="span" mr={8}>
-          {icon && <FontAwesomeIcon size="1x" icon={icon} />}
-        </Box>
-        {name}
-      </Text>
-      <Badge color="gray" hidden={badge === undefined || badge === 0}>
-        {badge}
-      </Badge>
-    </Group>
-  );
+  return <Text>{name}</Text>;
 };
 
 export default AppNavbar;

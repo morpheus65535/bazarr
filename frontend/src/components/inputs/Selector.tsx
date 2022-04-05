@@ -57,6 +57,7 @@ export function Selector<T>({
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, label, ...option }) => ({
+        label,
         value: label,
         payload: value,
         ...option,

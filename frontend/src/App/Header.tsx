@@ -45,7 +45,7 @@ const AppHeader: FunctionComponent = () => {
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
-      <Group position="apart" style={{ height: "100%" }}>
+      <Group position="apart">
         <Group>
           <MediaQuery
             smallerThan={Layout.MOBILE_BREAKPOINT}
