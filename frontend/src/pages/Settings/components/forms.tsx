@@ -1,6 +1,4 @@
 import {
-  Chips as CChips,
-  ChipsProps as CChipsProps,
   FileBrowser,
   FileBrowserProps,
   Selector as CSelector,
@@ -11,9 +9,13 @@ import {
 } from "@/components";
 import { isReactText } from "@/utilities";
 import {
-  Button as BSButton,
-  ButtonProps as BSButtonProps,
-  Form,
+  Button as MantineButton,
+  ButtonProps as MantineButtonProps,
+  MultiSelect,
+  MultiSelectProps,
+  Switch,
+  Text as MantineText,
+  TextInput,
 } from "@mantine/core";
 import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import { FunctionComponent, ReactText, useEffect } from "react";
@@ -23,10 +25,7 @@ import { OverrideFuncType, useSingleUpdate } from "./hooks";
 export const Message: FunctionComponent<{
   type?: "warning" | "info";
 }> = ({ type, children }) => {
-  const cls = ["pr-4"];
-  cls.push(type === "warning" ? "text-warning" : "text-muted");
-
-  return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
+  return <MantineText>{children}</MantineText>;
 };
 
 export interface BaseInput<T> {
@@ -69,8 +68,7 @@ export const Text: FunctionComponent<TextProps> = ({
   };
 
   return (
-    <Form.Control
-      type={fieldType()}
+    <TextInput
       placeholder={placeholder?.toString()}
       disabled={disabled}
       defaultValue={controlled ? undefined : value ?? undefined}
@@ -81,7 +79,7 @@ export const Text: FunctionComponent<TextProps> = ({
         const value = beforeStaged ? beforeStaged(val) : val;
         update(value, settingKey);
       }}
-    ></Form.Control>
+    ></TextInput>
   );
 };
 
@@ -105,11 +103,8 @@ export const Check: FunctionComponent<CheckProps> = ({
   useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
   return (
-    <Form.Check
-      custom
-      type="checkbox"
+    <Switch
       id={settingKey}
-      inline={inline}
       label={label}
       onChange={(e) => {
         const { checked } = e.currentTarget;
@@ -117,7 +112,7 @@ export const Check: FunctionComponent<CheckProps> = ({
       }}
       disabled={disabled}
       checked={value ?? undefined}
-    ></Form.Check>
+    ></Switch>
   );
 };
 
@@ -183,7 +178,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<CChipsProps, "onChange" | "defaultValue">;
+  Omit<MultiSelectProps, "onChange" | "data">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { settingKey, override, ...chips } = props;
@@ -193,13 +188,17 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const value = useLatest<string[]>(settingKey, isArray, override);
 
   return (
-    <CChips
-      value={value ?? undefined}
+    <MultiSelect
+      data={[...(value ?? [])]}
       onChange={(v) => {
         update(v, settingKey);
       }}
+      creatable
+      onCreate={(v) => {
+        update([...(value ?? []), v], settingKey);
+      }}
       {...chips}
-    ></CChips>
+    ></MultiSelect>
   );
 };
 
@@ -211,21 +210,21 @@ type ButtonProps = {
   ) => void;
 } & Omit<BaseInput<string>, "override" | "beforeStaged">;
 
-export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
-  props
-) => {
+export const Button: FunctionComponent<
+  Override<ButtonProps, MantineButtonProps<"button">>
+> = (props) => {
   const { onClick, settingKey, ...button } = props;
 
   const value = useLatest<string>(settingKey, isString);
   const update = useSingleUpdate();
 
   return (
-    <BSButton
+    <MantineButton
       onClick={() => {
         onClick && onClick(update, settingKey, value ?? undefined);
       }}
       {...button}
-    ></BSButton>
+    ></MantineButton>
   );
 };
 

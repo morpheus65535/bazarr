@@ -6,7 +6,7 @@ import {
   withModal,
 } from "@/modules/modals";
 import { BuildKey, isReactText } from "@/utilities";
-import { Button, Col, Container, Row } from "@mantine/core";
+import { Button, Col, Container, Grid, Group, Stack } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   FunctionComponent,
@@ -53,12 +53,13 @@ export const ProviderView: FunctionComponent = () => {
           }
         })
         .map((v, idx) => (
-          <ColCard
-            key={BuildKey(idx, v.name)}
-            header={v.name ?? capitalize(v.key)}
-            subheader={v.description}
-            onClick={() => select(v)}
-          ></ColCard>
+          <Grid.Col key={BuildKey(idx, v.name)}>
+            <ColCard
+              header={v.name ?? capitalize(v.key)}
+              subheader={v.description}
+              onClick={() => select(v)}
+            ></ColCard>
+          </Grid.Col>
         ));
     } else {
       return [];
@@ -67,10 +68,12 @@ export const ProviderView: FunctionComponent = () => {
 
   return (
     <Container fluid>
-      <Row>
+      <Grid>
         {cards}
-        <ColCard key="add-card" plus onClick={select}></ColCard>
-      </Row>
+        <Grid.Col key="add-card">
+          <ColCard plus onClick={select}></ColCard>
+        </Grid.Col>
+      </Grid>
       <ProviderModal></ProviderModal>
     </Container>
   );
@@ -193,12 +196,10 @@ const ProviderTool: FunctionComponent = () => {
     }
 
     return (
-      <Row>
+      <Stack>
         {elements}
-        <Col hidden={checks.length === 0} className="mt-2">
-          {checks}
-        </Col>
-      </Row>
+        <Group hidden={checks.length === 0}>{checks}</Group>
+      </Stack>
     );
   }, [info]);
 
@@ -238,31 +239,22 @@ const ProviderTool: FunctionComponent = () => {
   return (
     <Modal title="Provider" footer={footer}>
       <StagedChangesContext.Provider value={[staged, setChange]}>
-        <Container>
-          <Row>
-            <Col>
-              <Selector
-                components={selectorComponents}
-                disabled={payload !== null}
-                options={options}
-                value={info}
-                label={getLabel}
-                onChange={onSelect}
-              ></Selector>
-            </Col>
-          </Row>
-          <Row>
-            <Col className="mb-2">
-              <Message>{info?.description}</Message>
-            </Col>
-          </Row>
+        <Stack>
+          <Selector
+            components={selectorComponents}
+            disabled={payload !== null}
+            options={options}
+            value={info}
+            label={getLabel}
+            onChange={onSelect}
+          ></Selector>
+
+          <Message>{info?.description}</Message>
           {modification}
-          <Row hidden={info?.message === undefined}>
-            <Col>
-              <Message>{info?.message}</Message>
-            </Col>
-          </Row>
-        </Container>
+          <div hidden={info?.message === undefined}>
+            <Message>{info?.message}</Message>
+          </div>
+        </Stack>
       </StagedChangesContext.Provider>
     </Modal>
   );

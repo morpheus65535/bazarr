@@ -13,15 +13,15 @@ import MovieDetailView from "@/pages/Movies/Details";
 import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
-// import SettingsGeneralView from "@/pages/Settings/General";
-// import SettingsLanguagesView from "@/pages/Settings/Languages";
-// import SettingsNotificationsView from "@/pages/Settings/Notifications";
-// import SettingsProvidersView from "@/pages/Settings/Providers";
-// import SettingsRadarrView from "@/pages/Settings/Radarr";
-// import SettingsSchedulerView from "@/pages/Settings/Scheduler";
-// import SettingsSonarrView from "@/pages/Settings/Sonarr";
-// import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
-// import SettingsUIView from "@/pages/Settings/UI";
+import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsLanguagesView from "@/pages/Settings/Languages";
+import SettingsNotificationsView from "@/pages/Settings/Notifications";
+import SettingsProvidersView from "@/pages/Settings/Providers";
+import SettingsRadarrView from "@/pages/Settings/Radarr";
+import SettingsSchedulerView from "@/pages/Settings/Scheduler";
+import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsUIView from "@/pages/Settings/UI";
 // import SystemBackupsView from "@/pages/System/Backups";
 // import SystemLogsView from "@/pages/System/Logs";
 // import SystemProvidersView from "@/pages/System/Providers";
@@ -32,6 +32,7 @@ import WantedSeriesView from "@/pages/Wanted/Series";
 import { Environment } from "@/utilities";
 import {
   faClock,
+  faCogs,
   faExclamationTriangle,
   faFileExcel,
   faFilm,
@@ -189,60 +190,60 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
-          //   {
-          //     icon: faCogs,
-          //     name: "Settings",
-          //     path: "settings",
-          //     children: [
-          //       {
-          //         path: "general",
-          //         name: "General",
-          //         element: <SettingsGeneralView></SettingsGeneralView>,
-          //       },
-          //       {
-          //         path: "languages",
-          //         name: "Languages",
-          //         element: <SettingsLanguagesView></SettingsLanguagesView>,
-          //       },
-          //       {
-          //         path: "providers",
-          //         name: "Providers",
-          //         element: <SettingsProvidersView></SettingsProvidersView>,
-          //       },
-          //       {
-          //         path: "subtitles",
-          //         name: "Subtitles",
-          //         element: <SettingsSubtitlesView></SettingsSubtitlesView>,
-          //       },
-          //       {
-          //         path: "sonarr",
-          //         name: "Sonarr",
-          //         element: <SettingsSonarrView></SettingsSonarrView>,
-          //       },
-          //       {
-          //         path: "radarr",
-          //         name: "Radarr",
-          //         element: <SettingsRadarrView></SettingsRadarrView>,
-          //       },
-          //       {
-          //         path: "notifications",
-          //         name: "Notifications",
-          //         element: (
-          //           <SettingsNotificationsView></SettingsNotificationsView>
-          //         ),
-          //       },
-          //       {
-          //         path: "scheduler",
-          //         name: "Scheduler",
-          //         element: <SettingsSchedulerView></SettingsSchedulerView>,
-          //       },
-          //       {
-          //         path: "ui",
-          //         name: "UI",
-          //         element: <SettingsUIView></SettingsUIView>,
-          //       },
-          //     ],
-          //   },
+          {
+            icon: faCogs,
+            name: "Settings",
+            path: "settings",
+            children: [
+              {
+                path: "general",
+                name: "General",
+                element: <SettingsGeneralView></SettingsGeneralView>,
+              },
+              {
+                path: "languages",
+                name: "Languages",
+                element: <SettingsLanguagesView></SettingsLanguagesView>,
+              },
+              {
+                path: "providers",
+                name: "Providers",
+                element: <SettingsProvidersView></SettingsProvidersView>,
+              },
+              {
+                path: "subtitles",
+                name: "Subtitles",
+                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+              },
+              {
+                path: "sonarr",
+                name: "Sonarr",
+                element: <SettingsSonarrView></SettingsSonarrView>,
+              },
+              {
+                path: "radarr",
+                name: "Radarr",
+                element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "notifications",
+                name: "Notifications",
+                element: (
+                  <SettingsNotificationsView></SettingsNotificationsView>
+                ),
+              },
+              {
+                path: "scheduler",
+                name: "Scheduler",
+                element: <SettingsSchedulerView></SettingsSchedulerView>,
+              },
+              {
+                path: "ui",
+                name: "UI",
+                element: <SettingsUIView></SettingsUIView>,
+              },
+            ],
+          },
           //   {
           //     icon: faLaptop,
           //     name: "System",

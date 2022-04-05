@@ -3,7 +3,7 @@ import { ContentHeader, LoadingIndicator } from "@/components";
 import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
-import { Container, Row } from "@mantine/core";
+import { Container, Stack } from "@mantine/core";
 import { merge } from "lodash";
 import {
   createContext,
@@ -137,7 +137,7 @@ const Layout: FunctionComponent<Props> = (props) => {
   }
 
   return (
-    <Container fluid>
+    <Container fluid px={0}>
       <Helmet>
         <title>{name} - Bazarr (Settings)</title>
       </Helmet>
@@ -146,21 +146,21 @@ const Layout: FunctionComponent<Props> = (props) => {
         when={Object.keys(stagedChange).length > 0}
         message="You have unsaved changes, are you sure you want to leave?"
       ></Prompt> */}
-      <ContentHeader>
-        <ContentHeader.Button
-          icon={faSave}
-          updating={isMutating}
-          disabled={Object.keys(stagedChange).length === 0}
-          onClick={submit}
-        >
-          Save
-        </ContentHeader.Button>
-      </ContentHeader>
-      <StagedChangesContext.Provider value={[stagedChange, setChange]}>
-        <Row className="p-4">
-          <Container>{children}</Container>
-        </Row>
-      </StagedChangesContext.Provider>
+      <Stack>
+        <ContentHeader>
+          <ContentHeader.Button
+            icon={faSave}
+            updating={isMutating}
+            disabled={Object.keys(stagedChange).length === 0}
+            onClick={submit}
+          >
+            Save
+          </ContentHeader.Button>
+        </ContentHeader>
+        <StagedChangesContext.Provider value={[stagedChange, setChange]}>
+          {children}
+        </StagedChangesContext.Provider>
+      </Stack>
     </Container>
   );
 };

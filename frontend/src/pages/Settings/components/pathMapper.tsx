@@ -1,8 +1,8 @@
-import { ActionButton, FileBrowser, SimpleTable } from "@/components";
+import { FileBrowser, SimpleTable } from "@/components";
 import { LOG } from "@/utilities/console";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button } from "@mantine/core";
+import { ActionIcon, Button } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   createContext,
@@ -112,7 +112,6 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
 
           return (
             <FileBrowser
-              drop="up"
               type={type}
               defaultValue={value}
               onChange={(path) => {
@@ -138,7 +137,6 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           const mutate = useRowMutation();
           return (
             <FileBrowser
-              drop="up"
               defaultValue={value}
               type="bazarr"
               onChange={(path) => {
@@ -157,10 +155,9 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           const mutate = useRowMutation();
 
           return (
-            <ActionButton
-              icon={faTrash}
-              onClick={() => mutate(row.index)}
-            ></ActionButton>
+            <ActionIcon onClick={() => mutate(row.index)}>
+              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+            </ActionIcon>
           );
         },
       },
@@ -173,11 +170,10 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       <RowContext.Provider value={updateCell}>
         <SimpleTable
           emptyText="No Mapping"
-          responsive={false}
           columns={columns}
           data={data}
         ></SimpleTable>
-        <Button block color="light" onClick={addRow}>
+        <Button fullWidth color="light" onClick={addRow}>
           Add
         </Button>
       </RowContext.Provider>

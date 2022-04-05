@@ -1,4 +1,4 @@
-import { ActionButton, PageTable } from "@/components";
+import { ActionIcon, PageTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -58,10 +58,10 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
           const { show } = useModalControl();
           if (!isUndefined(value)) {
             return (
-              <ActionButton
+              <ActionIcon
                 icon={faLayerGroup}
                 onClick={() => show(SystemLogModal, value)}
-              ></ActionButton>
+              ></ActionIcon>
             );
           } else {
             return null;

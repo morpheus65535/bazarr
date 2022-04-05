@@ -1,6 +1,4 @@
 import {
-  ActionButton,
-  Chips,
   LanguageSelector,
   Selector,
   SelectorOption,
@@ -12,10 +10,16 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Button, Form } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  MultiSelect,
+  TextInput,
+} from "@mantine/core";
 import {
   createContext,
   FunctionComponent,
@@ -171,15 +175,13 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
           const item = row.original;
           const mutate = useRowMutation();
           return (
-            <Form.Check
-              custom
-              id={BuildKey(item.id, item.language, "forced")}
+            <Checkbox
               checked={value === "True"}
               onChange={(v) => {
                 item.forced = v.target.checked ? "True" : "False";
                 mutate(row.index, item);
               }}
-            ></Form.Check>
+            ></Checkbox>
           );
         },
       },
@@ -190,15 +192,13 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
           const item = row.original;
           const mutate = useRowMutation();
           return (
-            <Form.Check
-              custom
-              id={BuildKey(item.id, item.language, "hi")}
+            <Checkbox
               checked={value === "True"}
               onChange={(v) => {
                 item.hi = v.target.checked ? "True" : "False";
                 mutate(row.index, item);
               }}
-            ></Form.Check>
+            ></Checkbox>
           );
         },
       },
@@ -209,15 +209,13 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
           const item = row.original;
           const mutate = useRowMutation();
           return (
-            <Form.Check
-              custom
-              id={BuildKey(item.id, item.language, "audio")}
+            <Checkbox
               checked={value === "True"}
               onChange={(v) => {
                 item.audio_exclude = v.target.checked ? "True" : "False";
                 mutate(row.index, item);
               }}
-            ></Form.Check>
+            ></Checkbox>
           );
         },
       },
@@ -227,10 +225,9 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
         Cell: ({ row }) => {
           const mutate = useRowMutation();
           return (
-            <ActionButton
-              icon={faTrash}
-              onClick={() => mutate(row.index)}
-            ></ActionButton>
+            <ActionIcon onClick={() => mutate(row.index)}>
+              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+            </ActionIcon>
           );
         },
       },
@@ -253,24 +250,19 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
   return (
     <Modal title="Languages Profile" footer={footer}>
       <Input>
-        <Form.Control
-          type="text"
+        <TextInput
           placeholder="Name"
           value={current.name}
           onChange={(v) => {
             updateProfile("name", v.target.value);
           }}
-        ></Form.Control>
+        ></TextInput>
       </Input>
       <Input>
         <RowContext.Provider value={mutateRow}>
-          <SimpleTable
-            responsive={false}
-            columns={columns}
-            data={current.items}
-          ></SimpleTable>
+          <SimpleTable columns={columns} data={current.items}></SimpleTable>
         </RowContext.Provider>
-        <Button block color="light" onClick={addItem}>
+        <Button fullWidth color="light" onClick={addItem}>
           Add
         </Button>
       </Input>
@@ -284,22 +276,30 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
         <Message>Ignore others if existing</Message>
       </Input>
       <Input name="Release info must contain">
-        <Chips
-          value={current.mustContain}
+        <MultiSelect
+          creatable
+          data={current.mustContain}
           onChange={(mc) => updateProfile("mustContain", mc)}
-        ></Chips>
+          onCreate={(v) =>
+            updateProfile("mustContain", [...current.mustContain, v])
+          }
+        ></MultiSelect>
         <Message>
           Subtitles release info must include one of those words or they will be
           excluded from search results (regex supported).
         </Message>
       </Input>
       <Input name="Release info must not contain">
-        <Chips
-          value={current.mustNotContain}
+        <MultiSelect
+          creatable
+          data={current.mustNotContain}
           onChange={(mnc: string[]) => {
             updateProfile("mustNotContain", mnc);
           }}
-        ></Chips>
+          onCreate={(v) =>
+            updateProfile("mustNotContain", [...current.mustNotContain, v])
+          }
+        ></MultiSelect>
         <Message>
           Subtitles release info including one of those words (case insensitive)
           will be excluded from search results (regex supported).

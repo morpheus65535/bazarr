@@ -1,4 +1,3 @@
-import { InputGroup } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
 import {
   Check,
@@ -45,16 +44,16 @@ const SettingsSonarrView: FunctionComponent = () => {
               ></Text>
             </Input>
             <Input name="Base URL">
-              <InputGroup>
+              {/* <InputGroup>
                 <InputGroup.Prepend>
                   <InputGroup.Text>/</InputGroup.Text>
-                </InputGroup.Prepend>
-                <Text
-                  settingKey="settings-sonarr-base_url"
-                  override={baseUrlOverride}
-                  beforeStaged={(v) => "/" + v}
-                ></Text>
-              </InputGroup>
+                </InputGroup.Prepend> */}
+              <Text
+                settingKey="settings-sonarr-base_url"
+                override={baseUrlOverride}
+                beforeStaged={(v) => "/" + v}
+              ></Text>
+              {/* </InputGroup> */}
             </Input>
             <Input name="API Key">
               <Text settingKey="settings-sonarr-apikey"></Text>

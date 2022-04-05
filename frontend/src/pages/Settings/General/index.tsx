@@ -1,14 +1,6 @@
-import { copyToClipboard, Environment, toggleState } from "@/utilities";
-import {
-  faCheck,
-  faClipboard,
-  faSync,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { InputGroup } from "@mantine/core";
+import { Environment } from "@/utilities";
 import { FunctionComponent, useState } from "react";
 import {
-  Button,
   Check,
   Chips,
   CollapseBox,
@@ -53,16 +45,16 @@ const SettingsGeneralView: FunctionComponent = () => {
           ></Text>
         </Input>
         <Input name="Base URL">
-          <InputGroup>
+          {/* <InputGroup>
             <InputGroup.Prepend>
               <InputGroup.Text>/</InputGroup.Text>
-            </InputGroup.Prepend>
-            <Text
-              settingKey="settings-general-base_url"
-              override={baseUrlOverride}
-              beforeStaged={(v) => "/" + v}
-            ></Text>
-          </InputGroup>
+            </InputGroup.Prepend> */}
+          <Text
+            settingKey="settings-general-base_url"
+            override={baseUrlOverride}
+            beforeStaged={(v) => "/" + v}
+          ></Text>
+          {/* </InputGroup> */}
           <Message>Reverse proxy support</Message>
         </Input>
       </Group>
@@ -88,9 +80,9 @@ const SettingsGeneralView: FunctionComponent = () => {
           </CollapseBox.Content>
         </CollapseBox>
         <Input name="API Key">
-          <InputGroup>
-            <Text disabled controlled settingKey={settingApiKey}></Text>
-            <InputGroup.Append>
+          {/* <InputGroup> */}
+          <Text disabled controlled settingKey={settingApiKey}></Text>
+          {/* <InputGroup.Append>
               <Button
                 color={copied ? "success" : "light"}
                 settingKey={settingApiKey}
@@ -115,7 +107,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                 <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
               </Button>
             </InputGroup.Append>
-          </InputGroup>
+          </InputGroup> */}
         </Input>
       </Group>
       <Group header="Proxy">
@@ -189,15 +181,15 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>Absolute path to the backup directory</Message>
         </Input>
         <Input name="Retention">
-          <InputGroup>
-            <Text
-              settingKey="settings-backup-retention"
-              numberWithArrows={true}
-            ></Text>
-            <InputGroup.Prepend>
+          {/* <InputGroup> */}
+          <Text
+            settingKey="settings-backup-retention"
+            numberWithArrows={true}
+          ></Text>
+          {/* <InputGroup.Prepend>
               <InputGroup.Text>Days</InputGroup.Text>
             </InputGroup.Prepend>
-          </InputGroup>
+          </InputGroup> */}
         </Input>
       </Group>
       <Group header="Analytics">

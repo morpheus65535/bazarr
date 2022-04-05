@@ -1,8 +1,9 @@
-import { ActionButton, SimpleTable } from "@/components";
+import { SimpleTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Button, ButtonGroup } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ActionIcon, Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
 import {
   createContext,
@@ -145,18 +146,18 @@ const Table: FunctionComponent = () => {
           const mutate = useRowMutation();
 
           return (
-            <ButtonGroup>
-              <ActionButton
-                icon={faWrench}
+            <Group>
+              <ActionIcon
                 onClick={() => {
                   mutate(row.index, profile);
                 }}
-              ></ActionButton>
-              <ActionButton
-                icon={faTrash}
-                onClick={() => mutate(row.index)}
-              ></ActionButton>
-            </ButtonGroup>
+              >
+                <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
+              </ActionIcon>
+              <ActionIcon onClick={() => mutate(row.index)}>
+                <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+              </ActionIcon>
+            </Group>
           );
         },
       },
@@ -172,7 +173,7 @@ const Table: FunctionComponent = () => {
         <SimpleTable columns={columns} data={profiles}></SimpleTable>
       </RowContext.Provider>
       <Button
-        block
+        fullWidth
         disabled={!canAdd}
         color="light"
         onClick={() => {

@@ -130,7 +130,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   //   const others = tools.slice(1);
 
   //   return (
-  //     <Dropdown as={ButtonGroup} onSelect={(k) => k && process(k)}>
+  //     <Dropdown as={Group} onSelect={(k) => k && process(k)}>
   //       <ActionButton
   //         size="sm"
   //         disabled={count === 0}

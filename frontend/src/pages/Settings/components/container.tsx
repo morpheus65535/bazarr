@@ -1,6 +1,14 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Card as BSCard, Col, Form, Row } from "@mantine/core";
+import {
+  Card as MantineCard,
+  Col,
+  Divider,
+  Group as MantineGroup,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { FunctionComponent } from "react";
 
 interface GroupProps {
@@ -14,13 +22,11 @@ export const Group: FunctionComponent<GroupProps> = ({
   children,
 }) => {
   return (
-    <Row hidden={hidden} className="flex-column mt-3">
-      <Col>
-        <h4>{header}</h4>
-        <hr></hr>
-      </Col>
-      <Col>{children}</Col>
-    </Row>
+    <Stack hidden={hidden}>
+      <Title order={4}>{header}</Title>
+      <Divider></Divider>
+      {children}
+    </Stack>
   );
 };
 
@@ -35,10 +41,10 @@ export const Input: FunctionComponent<InputProps> = ({
   hidden,
 }) => {
   return (
-    <Form.Group hidden={hidden}>
-      {name && <Form.Label>{name}</Form.Label>}
+    <MantineGroup hidden={hidden}>
+      {name && <Text>{name}</Text>}
       {children}
-    </Form.Group>
+    </MantineGroup>
   );
 };
 
@@ -64,24 +70,21 @@ export const Card: FunctionComponent<CardProps> = ({
   onClick,
 }) => {
   return (
-    <BSCard className="settings-card" onClick={() => onClick && onClick()}>
+    <MantineCard className="settings-card" onClick={() => onClick && onClick()}>
       {plus ? (
-        <BSCard.Body className="d-flex justify-content-center align-items-center">
+        <MantineCard.Section>
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
-        </BSCard.Body>
+        </MantineCard.Section>
       ) : (
-        <BSCard.Body>
-          <BSCard.Title className="text-nowrap text-truncate">
-            {header}
-          </BSCard.Title>
-          <BSCard.Subtitle
-            hidden={subheader === undefined}
-            className="small text-nowrap text-truncate"
-          >
-            {subheader}
-          </BSCard.Subtitle>
-        </BSCard.Body>
+        <>
+          <MantineCard.Section>
+            <Text>{header}</Text>
+          </MantineCard.Section>
+          <MantineCard.Section hidden={subheader === undefined}>
+            <Text>{subheader}</Text>
+          </MantineCard.Section>
+        </>
       )}
-    </BSCard>
+    </MantineCard>
   );
 };

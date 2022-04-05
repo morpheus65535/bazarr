@@ -1,5 +1,6 @@
 import api from "@/apis/raw";
-import { AsyncButton, Selector, SelectorOption } from "@/components";
+import { Selector, SelectorOption } from "@/components";
+import { AsyncButton } from "@/components/async";
 import {
   useModal,
   useModalControl,
@@ -7,7 +8,7 @@ import {
   withModal,
 } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
-import { Button, Col, Container, Form, Row } from "@mantine/core";
+import { Button, Container, Grid, Stack, Textarea } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
@@ -67,9 +68,7 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
   const footer = (
     <>
       <AsyncButton
-        className="mr-auto"
         disabled={!canSave}
-        color="outline-secondary"
         promise={() => {
           if (current && current.url) {
             return api.system.testNotification(current.url);
@@ -108,33 +107,27 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
 
   return (
     <Modal title="Notification" footer={footer}>
-      <Container fluid>
-        <Row>
-          <Col xs={12}>
-            <Selector
-              disabled={payload !== null}
-              options={options}
-              value={current}
-              onChange={setCurrent}
-              label={getLabel}
-            ></Selector>
-          </Col>
-          <Col hidden={current === null}>
-            <Form.Group className="mt-4">
-              <Form.Control
-                as="textarea"
-                rows={4}
-                placeholder="URL"
-                value={current?.url ?? ""}
-                onChange={(e) => {
-                  const value = e.currentTarget.value;
-                  updateUrl(value);
-                }}
-              ></Form.Control>
-            </Form.Group>
-          </Col>
-        </Row>
-      </Container>
+      <Stack>
+        <Selector
+          disabled={payload !== null}
+          options={options}
+          value={current}
+          onChange={setCurrent}
+          label={getLabel}
+        ></Selector>
+        <div hidden={current === null}>
+          <Textarea
+            minRows={1}
+            maxRows={4}
+            placeholder="URL"
+            value={current?.url ?? ""}
+            onChange={(e) => {
+              const value = e.currentTarget.value;
+              updateUrl(value);
+            }}
+          ></Textarea>
+        </div>
+      </Stack>
     </Modal>
   );
 };
@@ -154,20 +147,23 @@ export const NotificationView: FunctionComponent = () => {
     return notifications
       ?.filter((v) => v.enabled)
       .map((v, idx) => (
-        <ColCard
-          key={BuildKey(idx, v.name)}
-          header={v.name}
-          onClick={() => show(NotificationModal, v)}
-        ></ColCard>
+        <Grid.Col key={BuildKey(idx, v.name)}>
+          <ColCard
+            header={v.name}
+            onClick={() => show(NotificationModal, v)}
+          ></ColCard>
+        </Grid.Col>
       ));
   }, [notifications, show]);
 
   return (
     <Container fluid>
-      <Row>
-        {elements}{" "}
-        <ColCard plus onClick={() => show(NotificationModal)}></ColCard>
-      </Row>
+      <Grid>
+        {elements}
+        <Grid.Col>
+          <ColCard plus onClick={() => show(NotificationModal)}></ColCard>
+        </Grid.Col>
+      </Grid>
       <NotificationModal selections={notifications ?? []}></NotificationModal>
     </Container>
   );

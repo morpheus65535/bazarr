@@ -2,7 +2,7 @@ import { GithubRepoRoot } from "@/constants";
 import { Reload } from "@/utilities";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Container } from "@mantine/core";
+import { Anchor, Button, Container } from "@mantine/core";
 import { FunctionComponent } from "react";
 
 interface Props {
@@ -17,14 +17,9 @@ const UIError: FunctionComponent<Props> = ({ error }) => (
     </h1>
     <p>{error.message}</p>
     <div className="d-flex flex-row">
-      <Button
-        className="mx-1"
-        href={`${GithubRepoRoot}/issues/new/choose`}
-        target="_blank"
-        color="warning"
-      >
-        Report Issue
-      </Button>
+      <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
+        <Button color="yellow">Report Issue</Button>
+      </Anchor>
       <Button className="mx-1" onClick={Reload} color="light">
         Reload Page
       </Button>
