@@ -38,15 +38,6 @@ import {
   faLaptop,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-// import {
-//   faClock,
-//   faCogs,
-//   faExclamationTriangle,
-//   faFileExcel,
-//   faFilm,
-//   faLaptop,
-//   faPlay,
-// } from "@fortawesome/free-solid-svg-icons";
 import React, {
   createContext,
   FunctionComponent,
@@ -288,24 +279,24 @@ function useRoutes(): CustomRouteObject[] {
           },
         ],
       },
-      // {
-      //   path: "/login",
-      //   hidden: true,
-      //   element: (
-      //     <Lazy>
-      //       <Authentication></Authentication>
-      //     </Lazy>
-      //   ),
-      // },
-      // {
-      //   path: "*",
-      //   hidden: true,
-      //   element: (
-      //     <Lazy>
-      //       <NotFound></NotFound>
-      //     </Lazy>
-      //   ),
-      // },
+      {
+        path: "/login",
+        hidden: true,
+        element: (
+          <Lazy>
+            <Authentication></Authentication>
+          </Lazy>
+        ),
+      },
+      {
+        path: "*",
+        hidden: true,
+        element: (
+          <Lazy>
+            <NotFound></NotFound>
+          </Lazy>
+        ),
+      },
     ],
     [data?.episodes, data?.movies, data?.providers, radarr, sonarr]
   );

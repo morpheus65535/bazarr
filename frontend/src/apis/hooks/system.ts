@@ -216,7 +216,7 @@ export function useSystem() {
       shutdown,
       restart,
       login,
-      isWorking: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
+      isMutating: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
     }),
     [
       isLoggingIn,

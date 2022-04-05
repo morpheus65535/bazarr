@@ -2,7 +2,16 @@ import { GithubRepoRoot } from "@/constants";
 import { Reload } from "@/utilities";
 import { faDizzy } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Button, Container } from "@mantine/core";
+import {
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Container,
+  Group,
+  Text,
+  Title,
+} from "@mantine/core";
 import { FunctionComponent } from "react";
 
 interface Props {
@@ -10,20 +19,28 @@ interface Props {
 }
 
 const UIError: FunctionComponent<Props> = ({ error }) => (
-  <Container className="d-flex flex-column align-items-center my-5">
-    <h1>
-      <FontAwesomeIcon className="mr-2" icon={faDizzy}></FontAwesomeIcon>
-      Oops! UI is crashed!
-    </h1>
-    <p>{error.message}</p>
-    <div className="d-flex flex-row">
+  <Container my="lg">
+    <Center>
+      <Title>
+        <Box component="span" mr="md">
+          <FontAwesomeIcon icon={faDizzy}></FontAwesomeIcon>
+        </Box>
+        <Text component="span" inherit>
+          Oops! UI is crashed!
+        </Text>
+      </Title>
+    </Center>
+    <Center>
+      <Text mb="lg">{error.message}</Text>
+    </Center>
+    <Group position="center">
       <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
         <Button color="yellow">Report Issue</Button>
       </Anchor>
       <Button className="mx-1" onClick={Reload} color="light">
         Reload Page
       </Button>
-    </div>
+    </Group>
   </Container>
 );
 
