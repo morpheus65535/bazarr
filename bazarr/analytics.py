@@ -12,7 +12,8 @@ from pyga.entities import CustomVariable
 
 from get_args import args
 from config import settings
-from utils import get_sonarr_info, get_radarr_info
+from utils import get_radarr_info
+from bazarr.sonarr.info import get_sonarr_info
 
 sonarr_version = get_sonarr_info.version()
 radarr_version = get_radarr_info.version()

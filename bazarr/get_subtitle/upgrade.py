@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 from config import settings
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
-from utils import history_log, history_log_movie
+from utils import history_log_movie
+from bazarr.sonarr.history import history_log
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers
 from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \

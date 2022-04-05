@@ -1,20 +1,18 @@
 # coding=utf-8
 
-import os
-import requests
 import logging
 from peewee import IntegrityError
 
-from config import settings, url_sonarr
-from list_subtitles import list_missing_subtitles
-from get_rootfolder import check_sonarr_rootfolder
-from database import TableShows, TableEpisodes
-from get_episodes import sync_episodes
-from utils import get_sonarr_info
-from helper import path_mappings
-from event_handler import event_stream, show_progress, hide_progress
+from bazarr.config import settings, url_sonarr
+from bazarr.list_subtitles import list_missing_subtitles
+from bazarr.sonarr.rootfolder import check_sonarr_rootfolder
+from bazarr.database import TableShows, TableEpisodes
+from .episodes import sync_episodes
+from bazarr.helper import path_mappings
+from bazarr.event_handler import event_stream, show_progress, hide_progress
 
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+from .parser import seriesParser
+from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
 
 
 def update_series(send_event=True):
@@ -214,152 +212,3 @@ def update_one_series(series_id, action):
             event_stream(type='series', action='update', payload=int(series_id))
             logging.debug('BAZARR inserted this series into the database:{}'.format(path_mappings.path_replace(
                 series['path'])))
-
-
-def get_profile_list():
-    apikey_sonarr = settings.sonarr.apikey
-    profiles_list = []
-
-    # Get profiles data from Sonarr
-    if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
-    else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
-
-    try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
-    except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
-        return None
-    except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
-        return None
-    except requests.exceptions.RequestException:
-        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
-        return None
-
-    # Parsing data returned from Sonarr
-    if get_sonarr_info.is_legacy():
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['language'].capitalize()])
-    else:
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['name'].capitalize()])
-
-    return profiles_list
-
-
-def profile_id_to_language(id_, profiles):
-    profiles_to_return = []
-    for profile in profiles:
-        if id_ == profile[0]:
-            profiles_to_return.append(profile[1])
-    return profiles_to_return
-
-
-def get_tags():
-    apikey_sonarr = settings.sonarr.apikey
-    tagsDict = []
-
-    # Get tags data from Sonarr
-    if get_sonarr_info.is_legacy():
-        url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
-    else:
-        url_sonarr_api_series = url_sonarr() + "/api/v3/tag?apikey=" + apikey_sonarr
-
-    try:
-        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
-    except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
-        return []
-    except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get tags from Sonarr. Timeout Error.")
-        return []
-    except requests.exceptions.RequestException:
-        logging.exception("BAZARR Error trying to get tags from Sonarr.")
-        return []
-    else:
-        return tagsDict.json()
-
-
-def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
-    overview = show['overview'] if 'overview' in show else ''
-    poster = ''
-    fanart = ''
-    for image in show['images']:
-        if image['coverType'] == 'poster':
-            poster_big = image['url'].split('?')[0]
-            poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
-
-        if image['coverType'] == 'fanart':
-            fanart = image['url'].split('?')[0]
-
-    alternate_titles = None
-    if show['alternateTitles'] is not None:
-        alternate_titles = str([item['title'] for item in show['alternateTitles']])
-
-    audio_language = []
-    if get_sonarr_info.is_legacy():
-        audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
-    else:
-        audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
-
-    tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
-
-    imdbId = show['imdbId'] if 'imdbId' in show else None
-
-    if action == 'update':
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': int(show["tvdbId"]),
-                'sonarrSeriesId': int(show["id"]),
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternateTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId}
-    else:
-        return {'title': show["title"],
-                'path': show["path"],
-                'tvdbId': show["tvdbId"],
-                'sonarrSeriesId': show["id"],
-                'overview': overview,
-                'poster': poster,
-                'fanart': fanart,
-                'audio_language': str(audio_language),
-                'sortTitle': show['sortTitle'],
-                'year': str(show['year']),
-                'alternateTitles': alternate_titles,
-                'tags': str(tags),
-                'seriesType': show['seriesType'],
-                'imdbId': imdbId,
-                'profileId': serie_default_profile}
-
-
-def get_series_from_sonarr_api(url, apikey_sonarr, sonarr_series_id=None):
-    url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-        '' if get_sonarr_info.is_legacy() else 'v3/', sonarr_series_id if sonarr_series_id else "", apikey_sonarr)
-    try:
-        r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
-        r.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code:
-            raise requests.exceptions.HTTPError
-        logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
-        return
-    except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
-        return
-    except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
-        return
-    except requests.exceptions.RequestException:
-        logging.exception("BAZARR Error trying to get series from Sonarr.")
-        return
-    else:
-        return r.json()

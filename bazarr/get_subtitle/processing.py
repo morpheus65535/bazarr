@@ -8,7 +8,8 @@ from helper import path_mappings, pp_replace
 from get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
 from database import TableEpisodes, TableMovies
 from analytics import track_event
-from utils import notify_sonarr, notify_radarr
+from utils import notify_radarr
+from bazarr.sonarr.notify import notify_sonarr
 from event_handler import event_stream
 from .utils import _get_download_code3
 from .sync import sync_subtitles

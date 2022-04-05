@@ -2,7 +2,8 @@ import logging
 import os
 from ffsubsync.ffsubsync import run, make_parser
 from utils import get_binary
-from utils import history_log, history_log_movie
+from utils import history_log_movie
+from bazarr.sonarr.history import history_log
 from get_languages import language_from_alpha2
 from helper import path_mappings
 from config import settings

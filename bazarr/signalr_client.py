@@ -11,11 +11,11 @@ from requests.exceptions import ConnectionError
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 
 from config import settings, url_sonarr, url_radarr
-from get_episodes import sync_episodes, sync_one_episode
-from get_series import update_series, update_one_series
+from sonarr.sync.episodes import sync_episodes, sync_one_episode
+from sonarr.sync.series import update_series, update_one_series
 from get_movies import update_movies, update_one_movie
 from scheduler import scheduler
-from utils import get_sonarr_info
+from bazarr.sonarr.info import get_sonarr_info
 from get_args import args
 
 

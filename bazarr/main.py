@@ -29,15 +29,14 @@ from flask import request, redirect, abort, render_template, Response, session, 
 from threading import Thread  # noqa E402
 import requests  # noqa E402
 
-from get_series import *  # noqa E402
-from get_episodes import *  # noqa E402
 from get_movies import *  # noqa E402
 from signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 
 from check_update import apply_update, check_releases  # noqa E402
 from server import app, webserver  # noqa E402
 from functools import wraps  # noqa E402
-from utils import check_credentials, get_sonarr_info, get_radarr_info  # noqa E402
+from utils import check_credentials, get_radarr_info  # noqa E402
+from bazarr.sonarr.info import get_sonarr_info  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':

@@ -7,7 +7,8 @@ from flask import jsonify
 from flask_restful import Resource
 
 from ..utils import authenticate
-from utils import get_sonarr_info, get_radarr_info
+from utils import get_radarr_info
+from bazarr.sonarr.info import get_sonarr_info
 from get_args import args
 from init import startTime
 

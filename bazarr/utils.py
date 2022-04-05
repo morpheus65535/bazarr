@@ -9,24 +9,26 @@ import pysubs2
 import json
 import hashlib
 import stat
+import datetime
+import glob
 
 from whichcraft import which
-from get_args import args
-from config import settings, url_sonarr, url_radarr
-from custom_lang import CustomLanguage
-from database import TableHistory, TableHistoryMovie, TableBlacklist, TableBlacklistMovie, TableShowsRootfolder, \
-    TableMoviesRootfolder
-from event_handler import event_stream
-from get_languages import language_from_alpha2, alpha3_from_alpha2
-from helper import path_mappings
-from list_subtitles import store_subtitles, store_subtitles_movie
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 from dogpile.cache import make_region
-import datetime
-import glob
+
+from get_args import args
+from config import settings, url_radarr
+from custom_lang import CustomLanguage
+from database import TableHistoryMovie, TableBlacklistMovie, TableShowsRootfolder, TableMoviesRootfolder
+from event_handler import event_stream
+from get_languages import language_from_alpha2, alpha3_from_alpha2
+from helper import path_mappings
+from list_subtitles import store_subtitles, store_subtitles_movie
+from bazarr.sonarr.history import history_log
+from bazarr.sonarr.notify import notify_sonarr
 
 region = make_region().configure('dogpile.cache.memory')
 headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
@@ -34,48 +36,6 @@ headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 class BinaryNotFound(Exception):
     pass
-
-
-def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
-                score=None, subs_id=None, subtitles_path=None):
-    TableHistory.insert({
-        TableHistory.action: action,
-        TableHistory.sonarrSeriesId: sonarr_series_id,
-        TableHistory.sonarrEpisodeId: sonarr_episode_id,
-        TableHistory.timestamp: time.time(),
-        TableHistory.description: description,
-        TableHistory.video_path: video_path,
-        TableHistory.language: language,
-        TableHistory.provider: provider,
-        TableHistory.score: score,
-        TableHistory.subs_id: subs_id,
-        TableHistory.subtitles_path: subtitles_path
-    }).execute()
-    event_stream(type='episode-history')
-
-
-def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
-    TableBlacklist.insert({
-        TableBlacklist.sonarr_series_id: sonarr_series_id,
-        TableBlacklist.sonarr_episode_id: sonarr_episode_id,
-        TableBlacklist.timestamp: time.time(),
-        TableBlacklist.provider: provider,
-        TableBlacklist.subs_id: subs_id,
-        TableBlacklist.language: language
-    }).execute()
-    event_stream(type='episode-blacklist')
-
-
-def blacklist_delete(provider, subs_id):
-    TableBlacklist.delete().where((TableBlacklist.provider == provider) and
-                                  (TableBlacklist.subs_id == subs_id))\
-        .execute()
-    event_stream(type='episode-blacklist', action='delete')
-
-
-def blacklist_delete_all():
-    TableBlacklist.delete().execute()
-    event_stream(type='episode-blacklist', action='delete')
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
@@ -198,11 +158,8 @@ def get_binary(name):
                 return exe
 
 
-def get_blacklist(media_type):
-    if media_type == 'series':
-        blacklist_db = TableBlacklist.select(TableBlacklist.provider, TableBlacklist.subs_id).dicts()
-    else:
-        blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
+def get_blacklist_movie():
+    blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
 
     blacklist_list = []
     for item in blacklist_db:
@@ -233,71 +190,6 @@ def cache_maintenance():
     # archive cache
     for fn in glob.iglob(os.path.join(args.config_dir, "*.archive")):
         remove_expired(fn, pack_cache_validity)
-
-
-class GetSonarrInfo:
-    @staticmethod
-    def version():
-        """
-        Call system/status API endpoint and get the Sonarr version
-        @return: str
-        """
-        sonarr_version = region.get("sonarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if sonarr_version:
-            region.set("sonarr_version", sonarr_version)
-            return sonarr_version
-        else:
-            sonarr_version = ''
-        if settings.general.getboolean('use_sonarr'):
-            try:
-                sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
-                sonarr_json = requests.get(sv, timeout=60, verify=False, headers=headers).json()
-                if 'version' in sonarr_json:
-                    sonarr_version = sonarr_json['version']
-                else:
-                    raise json.decoder.JSONDecodeError
-            except json.decoder.JSONDecodeError:
-                try:
-                    sv = url_sonarr() + "/api/v3/system/status?apikey=" + settings.sonarr.apikey
-                    sonarr_version = requests.get(sv, timeout=60, verify=False, headers=headers).json()['version']
-                except json.decoder.JSONDecodeError:
-                    logging.debug('BAZARR cannot get Sonarr version')
-                    sonarr_version = 'unknown'
-            except Exception:
-                logging.debug('BAZARR cannot get Sonarr version')
-                sonarr_version = 'unknown'
-        logging.debug('BAZARR got this Sonarr version from its API: {}'.format(sonarr_version))
-        region.set("sonarr_version", sonarr_version)
-        return sonarr_version
-
-    def is_legacy(self):
-        """
-        Call self.version() and parse the result to determine if it's a legacy version of Sonarr API
-        @return: bool
-        """
-        sonarr_version = self.version()
-        if sonarr_version.startswith(('0.', '2.')):
-            return True
-        else:
-            return False
-
-
-get_sonarr_info = GetSonarrInfo()
-
-
-def notify_sonarr(sonarr_series_id):
-    try:
-        if get_sonarr_info.is_legacy():
-            url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
-        else:
-            url = url_sonarr() + "/api/v3/command?apikey=" + settings.sonarr.apikey
-        data = {
-            'name': 'RescanSeries',
-            'seriesId': int(sonarr_series_id)
-        }
-        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception:
-        logging.exception('BAZARR cannot notify Sonarr')
 
 
 class GetRadarrInfo:
@@ -520,7 +412,8 @@ def check_credentials(user, pw):
 
 
 def check_health():
-    from get_rootfolder import check_sonarr_rootfolder, check_radarr_rootfolder
+    from bazarr.sonarr.rootfolder import check_sonarr_rootfolder
+    from get_rootfolder import check_radarr_rootfolder
     if settings.general.getboolean('use_sonarr'):
         check_sonarr_rootfolder()
     if settings.general.getboolean('use_radarr'):

@@ -9,7 +9,7 @@ from functools import reduce
 
 from helper import path_mappings
 from list_subtitles import store_subtitles
-from utils import history_log
+from bazarr.sonarr.history import history_log
 from notifier import send_notifications
 from get_providers import get_providers
 from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes

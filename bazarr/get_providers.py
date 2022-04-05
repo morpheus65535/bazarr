@@ -13,7 +13,8 @@ import tzlocal
 from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
-from utils import get_binary, blacklist_log, blacklist_log_movie
+from utils import get_binary, blacklist_log_movie
+from bazarr.sonarr.blacklist import blacklist_log
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
     MustGetBlacklisted, SearchLimitReached
 from subliminal.providers.opensubtitles import DownloadLimitReached
@@ -231,7 +232,7 @@ def get_providers_auth():
 
 def _handle_mgb(name, exception):
     # There's no way to get Radarr/Sonarr IDs from subliminal_patch. Blacklisted subtitles
-    # will not appear on fronted but they will work with utils.get_blacklist
+    # will not appear on fronted but they will work with get_blacklist
     if exception.media_type == "series":
         blacklist_log("", "", name, exception.id, "")
     else:

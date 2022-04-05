@@ -6,7 +6,8 @@ import time
 
 from inspect import getfullargspec
 
-from utils import get_blacklist
+from utils import get_blacklist_movie
+from bazarr.sonarr.blacklist import get_blacklist
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from .utils import get_ban_list
 
@@ -17,7 +18,7 @@ def _init_pool(media_type, profile_id=None, providers=None):
     return pool(
         providers=providers or get_providers(),
         provider_configs=get_providers_auth(),
-        blacklist=get_blacklist(media_type),
+        blacklist=get_blacklist() if media_type == 'series' else get_blacklist_movie(),
         throttle_callback=provider_throttle,
         ban_list=get_ban_list(profile_id),
         language_hook=None,
@@ -52,7 +53,7 @@ def _update_pool(media_type, profile_id=None):
     return pool.update(
         get_providers(),
         get_providers_auth(),
-        get_blacklist(media_type),
+        get_blacklist() if media_type == 'series' else get_blacklist_movie(),
         get_ban_list(profile_id),
     )
 

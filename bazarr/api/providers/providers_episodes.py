@@ -7,7 +7,7 @@ from database import TableEpisodes, TableShows, get_audio_profile_languages, get
 from helper import path_mappings
 from get_providers import get_providers
 from get_subtitle.manual import manual_search, manual_download_subtitle
-from utils import history_log
+from bazarr.sonarr.history import history_log
 from config import settings
 from notifier import send_notifications
 from list_subtitles import store_subtitles

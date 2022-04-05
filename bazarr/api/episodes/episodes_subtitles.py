@@ -12,7 +12,8 @@ from ..utils import authenticate
 from helper import path_mappings
 from get_subtitle.upload import manual_upload_subtitle
 from get_subtitle.download import generate_subtitles
-from utils import history_log, delete_subtitles
+from utils import delete_subtitles
+from bazarr.sonarr.history import history_log
 from notifier import send_notifications
 from list_subtitles import store_subtitles
 from event_handler import event_stream

@@ -8,7 +8,8 @@ from flask_restful import Resource
 
 from database import TableEpisodes, TableShows, TableBlacklist
 from ..utils import authenticate, postprocessEpisode
-from utils import blacklist_log, delete_subtitles, blacklist_delete_all, blacklist_delete
+from utils import delete_subtitles
+from bazarr.sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from helper import path_mappings
 from get_subtitle.mass_download import episode_download_subtitles
 from event_handler import event_stream
