@@ -1,5 +1,5 @@
 import { useSystemTasks } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
@@ -18,15 +18,15 @@ const SystemTasksView: FunctionComponent = () => {
         <Helmet>
           <title>Tasks - Bazarr (System)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
+        <Toolbox>
+          <Toolbox.Button
+            loading={isFetching}
             icon={faSync}
             onClick={() => refetch()}
           >
             Refresh
-          </ContentHeader.Button>
-        </ContentHeader>
+          </Toolbox.Button>
+        </Toolbox>
         <Table tasks={data ?? []}></Table>
       </Container>
     </QueryOverlay>

@@ -7,7 +7,7 @@ import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
-import { ContentHeader, SimpleTable } from ".";
+import { SimpleTable, Toolbox } from ".";
 import { Selector } from "./inputs";
 import { useCustomSelection } from "./tables/plugins";
 
@@ -66,7 +66,7 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
   );
   return (
     <Container fluid px={0}>
-      <ContentHeader>
+      <Toolbox>
         <div>
           <Selector
             placeholder="Change Profile"
@@ -76,19 +76,19 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
           ></Selector>
         </div>
         <div>
-          <ContentHeader.Button icon={faUndo} onClick={onEnded}>
+          <Toolbox.Button icon={faUndo} onClick={onEnded}>
             Cancel
-          </ContentHeader.Button>
-          <ContentHeader.AsyncButton
+          </Toolbox.Button>
+          <Toolbox.MutateButton
             icon={faCheck}
             disabled={dirties.length === 0 || hasTask}
             promise={save}
             onSuccess={onEnded}
           >
             Save
-          </ContentHeader.AsyncButton>
+          </Toolbox.MutateButton>
         </div>
-      </ContentHeader>
+      </Toolbox>
       <SimpleTable
         columns={columns}
         data={data}

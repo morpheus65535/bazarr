@@ -1,5 +1,5 @@
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { LoadingProvider } from "@/contexts";
 import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
@@ -144,16 +144,16 @@ const Layout: FunctionComponent<Props> = (props) => {
         message="You have unsaved changes, are you sure you want to leave?"
       ></Prompt> */}
       <Stack>
-        <ContentHeader>
-          <ContentHeader.Button
+        <Toolbox>
+          <Toolbox.Button
             icon={faSave}
-            updating={isMutating}
+            loading={isMutating}
             disabled={Object.keys(stagedChange).length === 0}
             onClick={submit}
           >
             Save
-          </ContentHeader.Button>
-        </ContentHeader>
+          </Toolbox.Button>
+        </Toolbox>
         <StagedChangesContext.Provider value={[stagedChange, setChange]}>
           <Container size="xl" mx={0}>
             {children}

@@ -1,5 +1,5 @@
 import { useResetProvider, useSystemProviders } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
@@ -20,22 +20,22 @@ const SystemProvidersView: FunctionComponent = () => {
         <Helmet>
           <title>Providers - Bazarr (System)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
+        <Toolbox>
+          <Toolbox.Button
+            loading={isFetching}
             icon={faSync}
             onClick={() => refetch()}
           >
             Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button
+          </Toolbox.Button>
+          <Toolbox.Button
             icon={faTrash}
-            updating={isResetting}
+            loading={isResetting}
             onClick={() => reset()}
           >
             Reset
-          </ContentHeader.Button>
-        </ContentHeader>
+          </Toolbox.Button>
+        </Toolbox>
         <Table providers={data ?? []}></Table>
       </Container>
     </QueryOverlay>

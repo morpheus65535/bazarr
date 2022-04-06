@@ -1,5 +1,5 @@
 import { useDeleteLogs, useSystemLogs } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { Environment } from "@/utilities";
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -24,25 +24,25 @@ const SystemLogsView: FunctionComponent = () => {
         <Helmet>
           <title>Logs - Bazarr (System)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
-            updating={isFetching}
+        <Toolbox>
+          <Toolbox.Button
+            loading={isFetching}
             icon={faSync}
             onClick={() => refetch()}
           >
             Refresh
-          </ContentHeader.Button>
-          <ContentHeader.Button icon={faDownload} onClick={download}>
+          </Toolbox.Button>
+          <Toolbox.Button icon={faDownload} onClick={download}>
             Download
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            updating={isLoading}
+          </Toolbox.Button>
+          <Toolbox.Button
+            loading={isLoading}
             icon={faTrash}
             onClick={() => mutate()}
           >
             Empty
-          </ContentHeader.Button>
-        </ContentHeader>
+          </Toolbox.Button>
+        </Toolbox>
         <Table logs={data ?? []}></Table>
       </QueryOverlay>
     </Container>

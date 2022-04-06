@@ -5,7 +5,7 @@ import {
   useSeriesById,
   useSeriesModification,
 } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
@@ -76,9 +76,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
         <Helmet>
           <title>{series?.title ?? "Unknown Series"} - Bazarr (Series)</title>
         </Helmet>
-        <ContentHeader>
+        <Toolbox>
           <Group spacing="xs">
-            <ContentHeader.Button
+            <Toolbox.Button
               icon={faSync}
               disabled={!available || hasTask}
               onClick={() => {
@@ -91,8 +91,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
               }}
             >
               Scan Disk
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faSearch}
               onClick={() => {
                 if (series) {
@@ -115,10 +115,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
               }
             >
               Search
-            </ContentHeader.Button>
+            </Toolbox.Button>
           </Group>
           <Group spacing="xs">
-            <ContentHeader.Button
+            <Toolbox.Button
               disabled={
                 series === undefined ||
                 series.episodeFileCount === 0 ||
@@ -129,8 +129,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
               onClick={() => show(SubtitleToolModal, episodes)}
             >
               Tools
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               disabled={
                 series === undefined ||
                 series.episodeFileCount === 0 ||
@@ -141,7 +141,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
               onClick={() => show(SeriesUploadModal, series)}
             >
               Upload
-            </ContentHeader.Button>
+            </Toolbox.Button>
             <Popover
               opened={isEditing}
               onClose={() => setIsEditing(false)}
@@ -149,13 +149,13 @@ const SeriesEpisodesView: FunctionComponent = () => {
               title="Edit Series"
               transition="scale"
               target={
-                <ContentHeader.Button
+                <Toolbox.Button
                   icon={faWrench}
                   disabled={hasTask}
                   onClick={() => setIsEditing(true)}
                 >
                   Edit Series
-                </ContentHeader.Button>
+                </Toolbox.Button>
               }
             >
               <ItemEditForm
@@ -166,7 +166,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
               ></ItemEditForm>
             </Popover>
           </Group>
-        </ContentHeader>
+        </Toolbox>
         <Stack>
           <ItemOverview item={series ?? null} details={details}></ItemOverview>
           <QueryOverlay result={episodesQuery}>

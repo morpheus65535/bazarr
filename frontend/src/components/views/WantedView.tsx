@@ -5,7 +5,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
-import { ContentHeader, QueryPageTable } from "..";
+import { QueryPageTable, Toolbox } from "..";
 
 interface Props<T extends Wanted.Base> {
   name: string;
@@ -28,8 +28,8 @@ function WantedView<T extends Wanted.Base>({
       <Helmet>
         <title>Wanted {name} - Bazarr</title>
       </Helmet>
-      <ContentHeader>
-        <ContentHeader.Button
+      <Toolbox>
+        <Toolbox.Button
           disabled={hasTask || dataCount === 0}
           onClick={() => {
             createAndDispatchTask(name, "search-subtitles", searchAll);
@@ -37,8 +37,8 @@ function WantedView<T extends Wanted.Base>({
           icon={faSearch}
         >
           Search All
-        </ContentHeader.Button>
-      </ContentHeader>
+        </Toolbox.Button>
+      </Toolbox>
       <QueryPageTable
         emptyText={`No Missing ${name} Subtitles`}
         query={query}

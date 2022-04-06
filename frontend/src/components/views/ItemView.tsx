@@ -3,7 +3,7 @@ import { TableStyleProps } from "@/components/tables/BaseTable";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { Column, TableOptions } from "react-table";
-import { ContentHeader, QueryPageTable } from "..";
+import { QueryPageTable, Toolbox } from "..";
 
 interface Props<T extends Item.Base = Item.Base> {
   query: UsePaginationQueryResult<T>;
@@ -19,15 +19,15 @@ function ItemView<T extends Item.Base>({ query, columns }: Props<T>) {
 
   return (
     <>
-      <ContentHeader>
-        <ContentHeader.Button
+      <Toolbox>
+        <Toolbox.Button
           disabled={query.paginationStatus.totalCount === 0}
           icon={faList}
           onClick={() => navigate("edit")}
         >
           Mass Edit
-        </ContentHeader.Button>
-      </ContentHeader>
+        </Toolbox.Button>
+      </Toolbox>
       <QueryPageTable
         {...options}
         columns={columns}

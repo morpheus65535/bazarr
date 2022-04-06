@@ -3,7 +3,7 @@ import {
   useLanguages,
   useSystemProviders,
 } from "@/apis/hooks";
-import { ContentHeader, Selector } from "@/components";
+import { Selector, Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
 import { useSelectorOptions } from "@/utilities";
@@ -67,7 +67,7 @@ const HistoryStats: FunctionComponent = () => {
       </Helmet>
       <QueryOverlay result={stats}>
         <Stack>
-          <ContentHeader>
+          <Toolbox>
             <Grid grow>
               <Grid.Col span={3}>
                 <Selector
@@ -104,7 +104,7 @@ const HistoryStats: FunctionComponent = () => {
                 ></Selector>
               </Grid.Col>
             </Grid>
-          </ContentHeader>
+          </Toolbox>
           <ResponsiveContainer height="100%">
             <BarChart data={convertedData}>
               <CartesianGrid strokeDasharray="4 2"></CartesianGrid>

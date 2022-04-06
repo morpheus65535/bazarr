@@ -1,5 +1,5 @@
 import { useCreateBackups, useSystemBackups } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faFileArchive } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
@@ -18,15 +18,15 @@ const SystemBackupsView: FunctionComponent = () => {
         <Helmet>
           <title>Backups - Bazarr (System)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeader.Button
+        <Toolbox>
+          <Toolbox.Button
             icon={faFileArchive}
-            updating={isResetting}
+            loading={isResetting}
             onClick={() => backup()}
           >
             Backup Now
-          </ContentHeader.Button>
-        </ContentHeader>
+          </Toolbox.Button>
+        </Toolbox>
         <Table backups={backups.data ?? []}></Table>
       </Container>
     </QueryOverlay>

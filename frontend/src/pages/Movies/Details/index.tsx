@@ -8,7 +8,7 @@ import {
   useMovieById,
   useMovieModification,
 } from "@/apis/hooks/movies";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
@@ -93,9 +93,9 @@ const MovieDetailView: FunctionComponent = () => {
         <Helmet>
           <title>{movie?.title ?? "Unknown Movie"} - Bazarr (Movies)</title>
         </Helmet>
-        <ContentHeader>
+        <Toolbox>
           <Group spacing="xs">
-            <ContentHeader.Button
+            <Toolbox.Button
               icon={faSync}
               disabled={hasTask}
               onClick={() => {
@@ -108,8 +108,8 @@ const MovieDetailView: FunctionComponent = () => {
               }}
             >
               Scan Disk
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faSearch}
               disabled={!isNumber(movie?.profileId)}
               onClick={() => {
@@ -127,36 +127,36 @@ const MovieDetailView: FunctionComponent = () => {
               }}
             >
               Search
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faUser}
               disabled={!isNumber(movie?.profileId) || hasTask}
               onClick={() => show(MovieSearchModal, movie)}
             >
               Manual
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faHistory}
               onClick={() => show(MovieHistoryModal, movie)}
             >
               History
-            </ContentHeader.Button>
-            <ContentHeader.Button
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faToolbox}
               disabled={hasTask}
               onClick={() => show(SubtitleToolModal, [movie])}
             >
               Tools
-            </ContentHeader.Button>
+            </Toolbox.Button>
           </Group>
           <Group spacing="xs">
-            <ContentHeader.Button
+            <Toolbox.Button
               disabled={!allowEdit || movie.profileId === null || hasTask}
               icon={faCloudUploadAlt}
               onClick={() => show(MovieUploadModal, movie)}
             >
               Upload
-            </ContentHeader.Button>
+            </Toolbox.Button>
             <Popover
               opened={isEditing}
               onClose={() => setIsEditing(false)}
@@ -164,13 +164,13 @@ const MovieDetailView: FunctionComponent = () => {
               title="Edit Movie"
               transition="scale"
               target={
-                <ContentHeader.Button
+                <Toolbox.Button
                   icon={faWrench}
                   disabled={hasTask}
                   onClick={() => setIsEditing(true)}
                 >
                   Edit Movie
-                </ContentHeader.Button>
+                </Toolbox.Button>
               }
             >
               <ItemEditForm
@@ -181,7 +181,7 @@ const MovieDetailView: FunctionComponent = () => {
               ></ItemEditForm>
             </Popover>
           </Group>
-        </ContentHeader>
+        </Toolbox>
         <Stack>
           <ItemOverview item={movie ?? null} details={[]}></ItemOverview>
           <Table

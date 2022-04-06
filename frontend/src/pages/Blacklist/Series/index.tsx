@@ -1,5 +1,5 @@
 import { useEpisodeBlacklist, useEpisodeDeleteBlacklist } from "@/apis/hooks";
-import { ContentHeader } from "@/components";
+import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Container, Stack } from "@mantine/core";
@@ -19,15 +19,15 @@ const BlacklistSeriesView: FunctionComponent = () => {
           <title>Series Blacklist - Bazarr</title>
         </Helmet>
         <Stack>
-          <ContentHeader>
-            <ContentHeader.AsyncButton
+          <Toolbox>
+            <Toolbox.MutateButton
               icon={faTrash}
               disabled={data?.length === 0}
               promise={() => mutateAsync({ all: true })}
             >
               Remove All
-            </ContentHeader.AsyncButton>
-          </ContentHeader>
+            </Toolbox.MutateButton>
+          </Toolbox>
           <Table blacklist={data ?? []}></Table>
         </Stack>
       </Container>
