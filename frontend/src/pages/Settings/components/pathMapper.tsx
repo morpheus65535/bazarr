@@ -1,8 +1,8 @@
-import { FileBrowser, SimpleTable } from "@/components";
+import { Action, FileBrowser, SimpleTable } from "@/components";
 import { LOG } from "@/utilities/console";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Button } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
 import {
   createContext,
@@ -155,9 +155,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
           const mutate = useRowMutation();
 
           return (
-            <ActionIcon onClick={() => mutate(row.index)}>
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </ActionIcon>
+            <Action icon={faTrash} onClick={() => mutate(row.index)}></Action>
           );
         },
       },

@@ -1,5 +1,5 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { GroupTable } from "@/components";
+import { Action, GroupTable } from "@/components";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import SubtitleTools, {
@@ -18,7 +18,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Badge, Group, Text } from "@mantine/core";
+import { Badge, Group, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Subtitle } from "./components";
@@ -161,30 +161,27 @@ const Table: FunctionComponent<Props> = ({
           const { show } = useModalControl();
           return (
             <Group spacing="xs">
-              <ActionIcon
+              <Action
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
                   show(EpisodeSearchModal, row.original);
                 }}
-              >
-                <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-              </ActionIcon>
-              <ActionIcon
+                icon={faUser}
+              ></Action>
+              <Action
                 disabled={disabled}
                 onClick={() => {
                   show(EpisodeHistoryModal, row.original);
                 }}
-              >
-                <FontAwesomeIcon icon={faHistory}></FontAwesomeIcon>
-              </ActionIcon>
-              <ActionIcon
+                icon={faHistory}
+              ></Action>
+              <Action
                 disabled={disabled}
                 onClick={() => {
                   show(SubtitleToolModal, [row.original]);
                 }}
-              >
-                <FontAwesomeIcon icon={faBriefcase}></FontAwesomeIcon>
-              </ActionIcon>
+                icon={faBriefcase}
+              ></Action>
             </Group>
           );
         },

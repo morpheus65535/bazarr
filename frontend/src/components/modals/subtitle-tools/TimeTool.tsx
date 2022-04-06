@@ -1,7 +1,7 @@
+import { Action } from "@/components";
 import { useModal, withModal } from "@/modules/modals";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Button, Group, NumberInput } from "@mantine/core";
+import { Button, Group, NumberInput } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
 import { useProcess } from "./ToolContext";
 
@@ -54,13 +54,12 @@ const TimeAdjustmentTool: FunctionComponent = () => {
   return (
     <Modal title="Adjust Times" footer={footer}>
       <Group spacing="xs" noWrap>
-        <ActionIcon
+        <Action
+          icon={isPlus ? faPlus : faMinus}
           color="gray"
           variant="filled"
           onClick={() => setPlus((p) => !p)}
-        >
-          <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
-        </ActionIcon>
+        ></Action>
         <NumberInput
           placeholder="hour"
           onChange={updateOffset(0)}

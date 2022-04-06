@@ -1,4 +1,5 @@
 import {
+  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
   Selector as GlobalSelector,
@@ -6,10 +7,9 @@ import {
   Slider as GlobalSlider,
   SliderProps as GlobalSliderProps,
 } from "@/components";
+import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import { isReactText } from "@/utilities";
 import {
-  ActionIcon,
-  ActionIconProps,
   MultiSelect,
   MultiSelectProps,
   NumberInput,
@@ -227,7 +227,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
   );
 };
 
-type ButtonProps = {
+type ActionProps = {
   onClick?: (
     update: (v: unknown, key: string) => void,
     key: string,
@@ -235,8 +235,8 @@ type ButtonProps = {
   ) => void;
 } & Omit<BaseInput<string>, "override" | "beforeStaged">;
 
-export const Button: FunctionComponent<
-  Override<ButtonProps, ActionIconProps<"button">>
+export const Action: FunctionComponent<
+  Override<ActionProps, GlobalActionProps>
 > = (props) => {
   const { onClick, settingKey, ...button } = props;
 
@@ -244,12 +244,12 @@ export const Button: FunctionComponent<
   const update = useSingleUpdate();
 
   return (
-    <ActionIcon
+    <GlobalAction
       onClick={() => {
         onClick && onClick(update, settingKey, value ?? undefined);
       }}
       {...button}
-    ></ActionIcon>
+    ></GlobalAction>
   );
 };
 

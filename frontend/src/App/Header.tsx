@@ -1,4 +1,5 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
+import { Action } from "@/components";
 import { Layout } from "@/constants";
 import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
@@ -7,7 +8,6 @@ import { Environment, useGotoHomepage } from "@/utilities";
 import { faGear, faNetworkWired } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  ActionIcon,
   Avatar,
   Badge,
   Burger,
@@ -74,13 +74,7 @@ const AppHeader: FunctionComponent = () => {
               <Text pl={10}>Connecting...</Text>
             </Button>
           ) : (
-            <Menu
-              control={
-                <ActionIcon variant="light">
-                  <FontAwesomeIcon icon={faGear}></FontAwesomeIcon>
-                </ActionIcon>
-              }
-            >
+            <Menu control={<Action icon={faGear} variant="light"></Action>}>
               <Menu.Item onClick={() => restart()}>Restart</Menu.Item>
               <Menu.Item onClick={() => shutdown()}>Shutdown</Menu.Item>
               <Divider></Divider>

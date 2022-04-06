@@ -4,11 +4,10 @@ import {
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Group as MantineGroup } from "@mantine/core";
 import { FunctionComponent, useState } from "react";
 import {
-  Button,
+  Action,
   Check,
   Chips,
   CollapseBox,
@@ -95,31 +94,27 @@ const SettingsGeneralView: FunctionComponent = () => {
             rightSectionProps={{ style: { justifyContent: "flex-end" } }}
             rightSection={
               <MantineGroup spacing="xs" mx="xs" position="right">
-                <Button
+                <Action
                   variant="light"
                   settingKey={settingApiKey}
                   color={copied ? "green" : undefined}
+                  icon={copied ? faCheck : faClipboard}
                   onClick={(update, key, value) => {
                     if (value) {
                       copyToClipboard(value);
                       toggleState(setCopy, 1500);
                     }
                   }}
-                >
-                  <FontAwesomeIcon
-                    icon={copied ? faCheck : faClipboard}
-                  ></FontAwesomeIcon>
-                </Button>
-                <Button
+                ></Action>
+                <Action
                   variant="light"
                   settingKey={settingApiKey}
                   color="red"
+                  icon={faSync}
                   onClick={(update, key) => {
                     update(generateApiKey(), key);
                   }}
-                >
-                  <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
-                </Button>
+                ></Action>
               </MantineGroup>
             }
             settingKey={settingApiKey}

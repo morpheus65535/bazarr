@@ -1,3 +1,4 @@
+import { Action } from "@/components";
 import { setSidebar } from "@/modules/redux/actions";
 import { useReduxAction } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
@@ -12,7 +13,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  ActionIcon,
   Anchor,
   Badge,
   Button,
@@ -121,20 +121,17 @@ const AppNavbar: FunctionComponent = () => {
       <Divider></Divider>
       <MantineNavbar.Section mt="xs">
         <Group spacing="xs">
-          <ActionIcon
+          <Action
             color={dark ? "yellow" : "indigo"}
             variant="light"
             onClick={() => toggleColorScheme()}
-          >
-            <FontAwesomeIcon icon={dark ? faSun : faMoon}></FontAwesomeIcon>
-          </ActionIcon>
+            icon={dark ? faSun : faMoon}
+          ></Action>
           <Anchor
             href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
             target="_blank"
           >
-            <ActionIcon variant="light" color="red">
-              <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
-            </ActionIcon>
+            <Action icon={faHeart} variant="light" color="red"></Action>
           </Anchor>
         </Group>
       </MantineNavbar.Section>

@@ -1,19 +1,12 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
+import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  ActionIcon,
-  Anchor,
-  Badge,
-  Container,
-  Progress,
-  Text,
-} from "@mantine/core";
+import { Anchor, Badge, Container, Progress, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
@@ -96,12 +89,11 @@ const SeriesView: FunctionComponent = () => {
         Cell: ({ row: { original } }) => {
           const { show } = useModalControl();
           return (
-            <ActionIcon
+            <Action
               variant="light"
               onClick={() => show(ItemEditModal, original)}
-            >
-              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
-            </ActionIcon>
+              icon={faWrench}
+            ></Action>
           );
         },
       },

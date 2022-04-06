@@ -1,4 +1,4 @@
-import { Selector, SelectorOption, SimpleTable } from "@/components";
+import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { Language } from "@/components/bazarr";
 import {
   useModal,
@@ -9,9 +9,7 @@ import {
 import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  ActionIcon,
   Button,
   Checkbox,
   MultiSelect,
@@ -227,9 +225,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
         Cell: ({ row }) => {
           const mutate = useRowMutation();
           return (
-            <ActionIcon onClick={() => mutate(row.index)}>
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </ActionIcon>
+            <Action icon={faTrash} onClick={() => mutate(row.index)}></Action>
           );
         },
       },

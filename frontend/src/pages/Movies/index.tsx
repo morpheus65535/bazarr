@@ -1,4 +1,5 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
+import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/modals";
@@ -8,7 +9,7 @@ import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Anchor, Badge, Container, Text } from "@mantine/core";
+import { Anchor, Badge, Container, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
@@ -82,12 +83,11 @@ const MovieView: FunctionComponent = () => {
         Cell: ({ row }) => {
           const { show } = useModalControl();
           return (
-            <ActionIcon
+            <Action
               variant="light"
               onClick={() => show(ItemEditModal, row.original)}
-            >
-              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
-            </ActionIcon>
+              icon={faWrench}
+            ></Action>
           );
         },
       },

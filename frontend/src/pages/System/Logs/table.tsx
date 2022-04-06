@@ -1,4 +1,4 @@
-import { PageTable } from "@/components";
+import { Action, PageTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -10,7 +10,6 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon } from "@mantine/core";
 import { isUndefined } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
@@ -59,9 +58,10 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
           const { show } = useModalControl();
           if (!isUndefined(value)) {
             return (
-              <ActionIcon onClick={() => show(SystemLogModal, value)}>
-                <FontAwesomeIcon icon={faLayerGroup}></FontAwesomeIcon>
-              </ActionIcon>
+              <Action
+                icon={faLayerGroup}
+                onClick={() => show(SystemLogModal, value)}
+              ></Action>
             );
           } else {
             return null;

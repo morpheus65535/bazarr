@@ -1,8 +1,8 @@
-import { PageTable } from "@/components";
+import { Action, PageTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Group } from "@mantine/core";
+import { Group } from "@mantine/core";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import SystemBackupDeleteModal from "./BackupDeleteModal";
@@ -40,20 +40,18 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           const { show } = useModalControl();
           return (
             <Group>
-              <ActionIcon
+              <Action
                 onClick={() =>
                   show(SystemBackupRestoreModal, row.row.original.filename)
                 }
-              >
-                <FontAwesomeIcon icon={faHistory}></FontAwesomeIcon>
-              </ActionIcon>
-              <ActionIcon
+                icon={faHistory}
+              ></Action>
+              <Action
                 onClick={() =>
                   show(SystemBackupDeleteModal, row.row.original.filename)
                 }
-              >
-                <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-              </ActionIcon>
+                icon={faTrash}
+              ></Action>
             </Group>
           );
         },

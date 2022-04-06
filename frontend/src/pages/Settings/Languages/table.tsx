@@ -1,9 +1,8 @@
-import { SimpleTable } from "@/components";
+import { Action, SimpleTable } from "@/components";
 import { useModalControl } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Badge, Button, Group } from "@mantine/core";
+import { Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
 import {
   createContext,
@@ -147,16 +146,13 @@ const Table: FunctionComponent = () => {
 
           return (
             <Group>
-              <ActionIcon
+              <Action
+                icon={faWrench}
                 onClick={() => {
                   mutate(row.index, profile);
                 }}
-              >
-                <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
-              </ActionIcon>
-              <ActionIcon onClick={() => mutate(row.index)}>
-                <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-              </ActionIcon>
+              ></Action>
+              <Action icon={faTrash} onClick={() => mutate(row.index)}></Action>
             </Group>
           );
         },
