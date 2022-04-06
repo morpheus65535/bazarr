@@ -93,7 +93,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       {
         Header: "Release",
         accessor: "release_info",
-        className: "text-nowrap",
         Cell: (row) => {
           const value = row.value;
 
@@ -119,7 +118,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
               {value.length > 1 && (
                 <FontAwesomeIcon
-                  className="release-icon"
                   icon={faCaretDown}
                   rotation={open ? 180 : undefined}
                 ></FontAwesomeIcon>

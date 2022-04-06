@@ -16,7 +16,6 @@ const Table: FunctionComponent<Props> = ({ health }) => {
       {
         Header: "Issue",
         accessor: "issue",
-        className: "status-issue",
       },
     ],
     []

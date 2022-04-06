@@ -32,11 +32,7 @@ function renderRow<T extends object>(row: Row<T>) {
       const rotation = row.isExpanded ? 90 : undefined;
       return (
         <tr {...row.getRowProps()}>
-          <td
-            className="p-0"
-            {...cell.getCellProps()}
-            colSpan={row.cells.length}
-          >
+          <td {...cell.getCellProps()} colSpan={row.cells.length}>
             <Text {...row.getToggleRowExpandedProps()} p={2}>
               {cell.render("Cell")}
               <Box component="span" mx={12}>
@@ -58,9 +54,7 @@ function renderRow<T extends object>(row: Row<T>) {
         {row.cells
           .filter((cell) => !cell.isPlaceholder)
           .map((cell) => (
-            <td className={cell.column.className} {...cell.getCellProps()}>
-              {renderCell(cell, row)}
-            </td>
+            <td {...cell.getCellProps()}>{renderCell(cell, row)}</td>
           ))}
       </tr>
     );

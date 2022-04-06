@@ -34,7 +34,6 @@ const MovieView: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ row, value }) => {
           const target = `/movies/${row.original.radarrId}`;
           return (
@@ -47,10 +46,8 @@ const MovieView: FunctionComponent = () => {
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge key={BuildKey(v.code2, v.code2, v.hi)}>{v.name}</Badge>
-          ));
+        Cell: ({ value }) => {
+          return <Language.List value={value}></Language.List>;
         },
       },
       {
@@ -69,8 +66,8 @@ const MovieView: FunctionComponent = () => {
           const missing = row.value;
           return missing.map((v) => (
             <Badge
-              className="mx-2"
-              color="warning"
+              mr="xs"
+              color="yellow"
               key={BuildKey(v.code2, v.hi, v.forced)}
             >
               <Language.Text value={v}></Language.Text>

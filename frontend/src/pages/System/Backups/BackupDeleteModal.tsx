@@ -5,7 +5,7 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { Button, Text } from "@mantine/core";
+import { Button, Group, Text } from "@mantine/core";
 import React, { FunctionComponent } from "react";
 import { useDeleteBackups } from "../../../apis/hooks";
 
@@ -18,26 +18,19 @@ const SystemBackupDeleteModal: FunctionComponent = () => {
   const { hide } = useModalControl();
 
   const footer = (
-    <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
-      <div>
-        <Button
-          color="gray"
-          variant="outline"
-          className="mr-2"
-          onClick={() => hide()}
-        >
-          Cancel
-        </Button>
-        <MutateButton
-          noReset
-          mutation={remove}
-          args={() => result ?? null}
-          onSuccess={() => hide()}
-        >
-          Delete
-        </MutateButton>
-      </div>
-    </div>
+    <Group position="apart">
+      <Button color="gray" variant="outline" onClick={() => hide()}>
+        Cancel
+      </Button>
+      <MutateButton
+        noReset
+        mutation={remove}
+        args={() => result ?? null}
+        onSuccess={() => hide()}
+      >
+        Delete
+      </MutateButton>
+    </Group>
   );
 
   return (

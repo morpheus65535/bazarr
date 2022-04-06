@@ -94,12 +94,7 @@ const Table: FunctionComponent = () => {
           return items.map((v) => {
             const isCutoff = v.id === cutoff || cutoff === anyCutoff;
             return (
-              <ItemBadge
-                key={v.id}
-                cutoff={isCutoff}
-                className="mx-1"
-                item={v}
-              ></ItemBadge>
+              <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
             );
           });
         },
@@ -113,11 +108,7 @@ const Table: FunctionComponent = () => {
             return false;
           }
           return items.map((v) => {
-            return (
-              <Badge className={"mx-1"} color={"secondary"}>
-                {v}
-              </Badge>
-            );
+            return <Badge color="gray">{v}</Badge>;
           });
         },
       },
@@ -130,11 +121,7 @@ const Table: FunctionComponent = () => {
             return false;
           }
           return items.map((v) => {
-            return (
-              <Badge className={"mx-1"} color={"secondary"}>
-                {v}
-              </Badge>
-            );
+            return <Badge color="gray">{v}</Badge>;
           });
         },
       },
@@ -145,7 +132,7 @@ const Table: FunctionComponent = () => {
           const mutate = useRowMutation();
 
           return (
-            <Group>
+            <Group spacing="xs">
               <Action
                 icon={faWrench}
                 onClick={() => {
@@ -193,16 +180,11 @@ const Table: FunctionComponent = () => {
 };
 
 interface ItemProps {
-  className?: string;
   item: Language.ProfileItem;
   cutoff: boolean;
 }
 
-const ItemBadge: FunctionComponent<ItemProps> = ({
-  cutoff,
-  item,
-  className,
-}) => {
+const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
     let result = item.language;
     if (item.hi === "True") {
@@ -214,7 +196,6 @@ const ItemBadge: FunctionComponent<ItemProps> = ({
   }, [item.hi, item.forced, item.language]);
   return (
     <Badge
-      className={className}
       title={cutoff ? "Ignore others if this one is available" : undefined}
       color={cutoff ? "primary" : "secondary"}
     >

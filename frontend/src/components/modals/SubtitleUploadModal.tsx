@@ -9,7 +9,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Checkbox, Container } from "@mantine/core";
+import { Button, Center, Checkbox, Container, Group } from "@mantine/core";
 import {
   createContext,
   useCallback,
@@ -154,7 +154,6 @@ function SubtitleUploader<T>(props: Props<T>) {
       {
         id: "icon",
         accessor: "state",
-        className: "text-center",
         Cell: ({ value, row }) => {
           let icon = faCircleNotch;
           let color: string | undefined = undefined;
@@ -181,12 +180,14 @@ function SubtitleUploader<T>(props: Props<T>) {
           const messages = row.original.messages;
 
           return (
-            <MessageIcon
-              messages={messages}
-              color={color}
-              icon={icon}
-              spin={spin}
-            ></MessageIcon>
+            <Center>
+              <MessageIcon
+                messages={messages}
+                color={color}
+                icon={icon}
+                spin={spin}
+              ></MessageIcon>
+            </Center>
           );
         },
       },
@@ -238,7 +239,6 @@ function SubtitleUploader<T>(props: Props<T>) {
         id: "language",
         Header: "Language",
         accessor: "language",
-        className: "w-25",
         Cell: ({ row, value }) => {
           const mutate = useRowMutation();
           return (
@@ -289,12 +289,27 @@ function SubtitleUploader<T>(props: Props<T>) {
   );
 
   const footer = (
-    <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
-      <div>
+    <Group position="apart">
+      <Selector
+        {...languageOptions}
+        hidden={hideAllLanguages}
+        value={null}
+        disabled={!showTable}
+        onChange={(lang) => {
+          if (lang) {
+            setPending((pd) =>
+              pd
+                .map((v) => ({ ...v, language: lang }))
+                .map((v) => ({ ...v, ...validate(v) }))
+            );
+          }
+        }}
+      ></Selector>
+      <Group>
         <Button
           hidden={!showTable}
-          color="outline-secondary"
-          className="mr-2"
+          color="gray"
+          variant="outline"
           onClick={() => setFiles([])}
         >
           Clean
@@ -309,29 +324,13 @@ function SubtitleUploader<T>(props: Props<T>) {
         >
           Upload
         </Button>
-      </div>
-      <div className="w-25" hidden={hideAllLanguages}>
-        <Selector
-          {...languageOptions}
-          value={null}
-          disabled={!showTable}
-          onChange={(lang) => {
-            if (lang) {
-              setPending((pd) =>
-                pd
-                  .map((v) => ({ ...v, language: lang }))
-                  .map((v) => ({ ...v, ...validate(v) }))
-              );
-            }
-          }}
-        ></Selector>
-      </div>
-    </div>
+      </Group>
+    </Group>
   );
 
   return (
     <Modal title="Update Subtitles" footer={footer}>
-      <Container fluid className="flex-column">
+      <Container fluid>
         {/* <Form>
           <Form.Group>
             <FileForm

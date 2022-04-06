@@ -23,7 +23,6 @@ const SeriesHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
         Cell: ({ value }) => <HistoryIcon action={value}></HistoryIcon>,
       },
       {

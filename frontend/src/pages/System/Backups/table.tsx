@@ -22,17 +22,14 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
       {
         Header: "Name",
         accessor: "filename",
-        className: "text-nowrap",
       },
       {
         Header: "Size",
         accessor: "size",
-        className: "text-nowrap",
       },
       {
         Header: "Time",
         accessor: "date",
-        className: "text-nowrap",
       },
       {
         accessor: "id",

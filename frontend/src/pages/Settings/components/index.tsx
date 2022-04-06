@@ -51,12 +51,7 @@ export const URLTestButton: FunctionComponent<{
   }, [address, port, url, apikey, ssl]);
 
   return (
-    <Button
-      onClick={click}
-      color={color}
-      title={title}
-      className="text-truncate text-nowrap"
-    >
+    <Button onClick={click} color={color} title={title}>
       {title}
     </Button>
   );

@@ -50,7 +50,6 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       {
         Header: "Date",
         accessor: "timestamp",
-        className: "text-nowrap",
       },
       {
         accessor: "exception",

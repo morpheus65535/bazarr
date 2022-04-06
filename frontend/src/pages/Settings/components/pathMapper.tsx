@@ -125,7 +125,6 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
       },
       {
         id: "arrow",
-        className: "text-center",
         Cell: () => (
           <FontAwesomeIcon icon={faArrowCircleRight}></FontAwesomeIcon>
         ),

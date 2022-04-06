@@ -72,9 +72,7 @@ function DefaultRowRenderer<T extends object>(row: Row<T>): JSX.Element | null {
   return (
     <tr {...row.getRowProps()}>
       {row.cells.map((cell) => (
-        <td className={cell.column.className} {...cell.getCellProps()}>
-          {cell.render("Cell")}
-        </td>
+        <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
       ))}
     </tr>
   );
@@ -121,7 +119,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   } else if (empty && emptyText) {
     body = (
       <tr>
-        <td colSpan={colCount} className="text-center">
+        <td colSpan={colCount}>
           <Text align="center">{emptyText}</Text>
         </td>
       </tr>

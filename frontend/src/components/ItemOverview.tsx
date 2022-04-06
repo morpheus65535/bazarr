@@ -26,6 +26,7 @@ import {
   MediaQuery,
   Stack,
   Text,
+  Title,
 } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import Language from "./bazarr/Language";
@@ -131,26 +132,34 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
   return (
     <BackgroundImage src={item?.fanart ?? ""}>
-      <Grid align="flex-start" grow gutter="xs" m={24}>
+      <Grid
+        align="flex-start"
+        grow
+        gutter="xs"
+        p={24}
+        style={{ backgroundColor: "rgba(0,0,0,0.7)", flexWrap: "nowrap" }}
+      >
         <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
-          <Grid.Col span={2}>
+          <Grid.Col span={3}>
             <Image src={item?.poster} withPlaceholder></Image>
           </Grid.Col>
         </MediaQuery>
         <Grid.Col span={8}>
           <Stack align="flex-start" spacing="xs" mx={6}>
             <Group>
-              <Text size="xl" weight="bold" color="white">
-                <Box component="span" mr={6}>
-                  {item && isMovie(item) ? (
-                    <FontAwesomeIcon
-                      title={item.monitored ? "monitored" : "unmonitored"}
-                      icon={item.monitored ? faBookmark : farBookmark}
-                    ></FontAwesomeIcon>
-                  ) : null}
-                </Box>
-                {item?.title}
-              </Text>
+              <Title style={{ marginTop: 0, marginBottom: 0 }}>
+                <Text inherit color="white">
+                  <Box component="span" mr={12}>
+                    {item && isMovie(item) ? (
+                      <FontAwesomeIcon
+                        title={item.monitored ? "monitored" : "unmonitored"}
+                        icon={item.monitored ? faBookmark : farBookmark}
+                      ></FontAwesomeIcon>
+                    ) : null}
+                  </Box>
+                  {item?.title}
+                </Text>
+              </Title>
             </Group>
             {/* <Row>
             <h1>{item.title}</h1>
@@ -187,11 +196,15 @@ const IconBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge radius="sm" title={desc} color="dark" size="md">
-    <Text inherit color="white">
-      <Box component="span" mr={8}>
-        <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-      </Box>
+  <Badge
+    leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+    radius="sm"
+    title={desc}
+    color="dark"
+    size="md"
+    style={{ textTransform: "none" }}
+  >
+    <Text size="xs" color="white">
       {children}
     </Text>
   </Badge>

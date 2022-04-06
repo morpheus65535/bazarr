@@ -1,12 +1,12 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
+import { Language } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
 import { useModalControl } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Badge, Container, Progress, Text } from "@mantine/core";
+import { Anchor, Container, Progress, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
@@ -22,7 +22,6 @@ const SeriesView: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ row, value }) => {
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
@@ -35,16 +34,8 @@ const SeriesView: FunctionComponent = () => {
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge
-              color="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.forced, v.hi)}
-            >
-              {v.name}
-            </Badge>
-          ));
+        Cell: ({ value }) => {
+          return <Language.List value={value}></Language.List>;
         },
       },
       {

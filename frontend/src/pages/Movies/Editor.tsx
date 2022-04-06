@@ -1,9 +1,8 @@
 import { useMovieModification, useMovies } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
+import { Language } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
-import { BuildKey } from "@/utilities";
-import { Badge } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Column } from "react-table";
@@ -17,21 +16,12 @@ const MovieMassEditor: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
       },
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge
-              color="secondary"
-              className="mr-2"
-              key={BuildKey(v.code2, v.code2, v.hi)}
-            >
-              {v.name}
-            </Badge>
-          ));
+        Cell: ({ value }) => {
+          return <Language.List value={value}></Language.List>;
         },
       },
       {

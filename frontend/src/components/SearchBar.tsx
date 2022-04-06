@@ -36,16 +36,11 @@ export interface SearchResult {
 }
 
 interface Props {
-  className?: string;
   onFocus?: () => void;
   onBlur?: () => void;
 }
 
-export const SearchBar: FunctionComponent<Props> = ({
-  onFocus,
-  onBlur,
-  className,
-}) => {
+export const SearchBar: FunctionComponent<Props> = ({ onFocus, onBlur }) => {
   // const [display, setDisplay] = useState("");
   // const [query, setQuery] = useState("");
 

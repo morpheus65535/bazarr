@@ -19,7 +19,6 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
           return (

@@ -132,7 +132,6 @@ const SeriesUploadModal: FunctionComponent<SeriesProps> = ({ episodes }) => {
         id: "instance",
         Header: "Episode",
         accessor: "payload",
-        className: "vw-1",
         Cell: ({ value, row }) => {
           const options = useSelectorOptions(
             episodes,

@@ -6,7 +6,7 @@ import {
   usePayload,
   withModal,
 } from "@/modules/modals";
-import { Button, Text } from "@mantine/core";
+import { Button, Group, Text } from "@mantine/core";
 import React, { FunctionComponent } from "react";
 
 const SystemBackupRestoreModal: FunctionComponent = () => {
@@ -18,25 +18,18 @@ const SystemBackupRestoreModal: FunctionComponent = () => {
   const restore = useRestoreBackups();
 
   const footer = (
-    <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
-      <div>
-        <Button
-          color="gray"
-          variant="outline"
-          className="mr-2"
-          onClick={() => hide()}
-        >
-          Cancel
-        </Button>
-        <MutateButton
-          mutation={restore}
-          args={() => result ?? null}
-          onSuccess={() => hide()}
-        >
-          Restore
-        </MutateButton>
-      </div>
-    </div>
+    <Group>
+      <Button color="gray" variant="outline" onClick={() => hide()}>
+        Cancel
+      </Button>
+      <MutateButton
+        mutation={restore}
+        args={() => result ?? null}
+        onSuccess={() => hide()}
+      >
+        Restore
+      </MutateButton>
+    </Group>
   );
 
   return (

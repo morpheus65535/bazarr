@@ -95,7 +95,6 @@ const Table: FunctionComponent<Props> = ({
       {
         Header: "Title",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ value, row }) => (
           <TextPopover text={row.original.sceneName}>
             <Text>{value}</Text>
@@ -160,7 +159,7 @@ const Table: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           const { show } = useModalControl();
           return (
-            <Group spacing="xs">
+            <Group spacing="xs" noWrap>
               <Action
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {

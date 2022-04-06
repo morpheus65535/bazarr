@@ -12,7 +12,6 @@ const LaunchError: FunctionComponent<Props> = ({ children }) => (
   <Container my="xl">
     <Alert
       title="Something is wrong!"
-      className="d-flex flex-nowrap justify-content-between align-items-center"
       color="red"
       icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
       withCloseButton

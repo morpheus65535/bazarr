@@ -1,4 +1,5 @@
-import { Text, TextProps } from "@mantine/core";
+import { BuildKey } from "@/utilities";
+import { Badge, Group, Text, TextProps } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
 type LanguageTextProps = TextProps<"div"> & {
@@ -8,6 +9,7 @@ type LanguageTextProps = TextProps<"div"> & {
 
 declare type LanguageComponent = {
   Text: typeof LanguageText;
+  List: typeof LanguageList;
 };
 
 const LanguageText: FunctionComponent<LanguageTextProps> = ({
@@ -41,8 +43,23 @@ const LanguageText: FunctionComponent<LanguageTextProps> = ({
   );
 };
 
+type LanguageListProps = {
+  value: Language.Info[];
+};
+
+const LanguageList: FunctionComponent<LanguageListProps> = ({ value }) => {
+  return (
+    <Group spacing="xs">
+      {value.map((v) => (
+        <Badge key={BuildKey(v.code2, v.code2, v.hi)}>{v.name}</Badge>
+      ))}
+    </Group>
+  );
+};
+
 const Components: LanguageComponent = {
   Text: LanguageText,
+  List: LanguageList,
 };
 
 export default Components;

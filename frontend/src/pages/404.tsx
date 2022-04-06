@@ -9,10 +9,7 @@ const NotFound: FunctionComponent = () => {
       <Center>
         <Title order={1}>
           <Box component="span" mr="md">
-            <FontAwesomeIcon
-              className="mr-2"
-              icon={fasEyeSlash}
-            ></FontAwesomeIcon>
+            <FontAwesomeIcon icon={fasEyeSlash}></FontAwesomeIcon>
           </Box>
           404
         </Title>

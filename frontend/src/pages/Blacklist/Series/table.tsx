@@ -19,7 +19,6 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         Header: "Series",
         accessor: "seriesTitle",
-        className: "text-nowrap",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (

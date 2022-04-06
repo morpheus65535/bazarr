@@ -6,7 +6,7 @@ import {
 } from "@/apis/hooks";
 import { useModal, usePayload, withModal } from "@/modules/modals";
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
-import { Text } from "@mantine/core";
+import { Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
@@ -29,10 +29,11 @@ const MovieHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
-        Cell: (row) => {
-          return <HistoryIcon action={row.value}></HistoryIcon>;
-        },
+        Cell: (row) => (
+          <Center>
+            <HistoryIcon action={row.value}></HistoryIcon>
+          </Center>
+        ),
       },
       {
         Header: "Language",
@@ -126,10 +127,11 @@ const EpisodeHistoryView: FunctionComponent = () => {
     () => [
       {
         accessor: "action",
-        className: "text-center",
-        Cell: (row) => {
-          return <HistoryIcon action={row.value}></HistoryIcon>;
-        },
+        Cell: (row) => (
+          <Center>
+            <HistoryIcon action={row.value}></HistoryIcon>
+          </Center>
+        ),
       },
       {
         Header: "Language",

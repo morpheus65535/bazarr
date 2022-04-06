@@ -15,17 +15,14 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       {
         Header: "Name",
         accessor: "name",
-        className: "text-nowrap",
       },
       {
         Header: "Interval",
         accessor: "interval",
-        className: "text-nowrap",
       },
       {
         Header: "Next Execution",
         accessor: "next_run_in",
-        className: "text-nowrap",
       },
       {
         accessor: "job_running",

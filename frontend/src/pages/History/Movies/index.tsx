@@ -25,7 +25,6 @@ const MoviesHistoryView: FunctionComponent = () => {
       {
         Header: "Name",
         accessor: "title",
-        className: "text-nowrap",
         Cell: ({ row, value }) => {
           const target = `/movies/${row.original.radarrId}`;
           return (
