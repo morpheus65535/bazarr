@@ -3,13 +3,13 @@ import {
   useEpisodeWantedPagination,
   useSeriesAction,
 } from "@/apis/hooks";
-import { AsyncButton } from "@/components/async";
+import MutateButton from "@/components/async/MutateButton";
 import Language from "@/components/bazarr/Language";
 import WantedView from "@/components/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Text } from "@mantine/core";
+import { Anchor, Group, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -47,25 +47,30 @@ const WantedSeriesView: FunctionComponent = () => {
 
           const { download } = useEpisodeSubtitleModification();
 
-          return value.map((item, idx) => (
-            <AsyncButton
-              key={BuildKey(idx, item.code2)}
-              promise={() =>
-                download.mutateAsync({
-                  seriesId,
-                  episodeId,
-                  form: {
-                    language: item.code2,
-                    hi,
-                    forced: false,
-                  },
-                })
-              }
-            >
-              <Language.Text px="xs" value={item}></Language.Text>
-              <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
-            </AsyncButton>
-          ));
+          return (
+            <Group spacing="sm">
+              {value.map((item, idx) => (
+                <MutateButton
+                  key={BuildKey(idx, item.code2)}
+                  compact
+                  size="xs"
+                  mutation={download}
+                  leftIcon={<FontAwesomeIcon icon={faSearch} />}
+                  args={() => ({
+                    seriesId,
+                    episodeId,
+                    form: {
+                      language: item.code2,
+                      hi,
+                      forced: false,
+                    },
+                  })}
+                >
+                  <Language.Text px="xs" value={item}></Language.Text>
+                </MutateButton>
+              ))}
+            </Group>
+          );
         },
       },
     ],

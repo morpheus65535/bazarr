@@ -1,6 +1,6 @@
 import api from "@/apis/raw";
 import { Selector, SelectorOption } from "@/components";
-import { AsyncButton } from "@/components/async";
+import MutateButton from "@/components/async/MutateButton";
 import {
   useModal,
   useModalControl,
@@ -9,6 +9,7 @@ import {
 } from "@/modules/modals";
 import { Button, SimpleGrid, Stack, Textarea } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { useMutation } from "react-query";
 import { Card, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
@@ -64,20 +65,17 @@ const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
 
   const { hide } = useModalControl();
 
+  const test = useMutation((url: string) => api.system.testNotification(url));
+
   const footer = (
     <>
-      <AsyncButton
+      <MutateButton
         disabled={!canSave}
-        promise={() => {
-          if (current && current.url) {
-            return api.system.testNotification(current.url);
-          } else {
-            return null;
-          }
-        }}
+        mutation={test}
+        args={() => current?.url ?? null}
       >
         Test
-      </AsyncButton>
+      </MutateButton>
       <Button
         hidden={payload === null}
         color="danger"

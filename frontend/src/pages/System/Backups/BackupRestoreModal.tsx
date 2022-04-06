@@ -1,5 +1,5 @@
 import { useRestoreBackups } from "@/apis/hooks/system";
-import { AsyncButton } from "@/components/async";
+import MutateButton from "@/components/async/MutateButton";
 import {
   useModal,
   useModalControl,
@@ -15,7 +15,7 @@ const SystemBackupRestoreModal: FunctionComponent = () => {
   const Modal = useModal();
   const { hide } = useModalControl();
 
-  const { mutateAsync } = useRestoreBackups();
+  const restore = useRestoreBackups();
 
   const footer = (
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
@@ -28,19 +28,13 @@ const SystemBackupRestoreModal: FunctionComponent = () => {
         >
           Cancel
         </Button>
-        <AsyncButton
-          noReset
-          promise={() => {
-            if (result) {
-              return mutateAsync(result);
-            } else {
-              return null;
-            }
-          }}
+        <MutateButton
+          mutation={restore}
+          args={() => result ?? null}
           onSuccess={() => hide()}
         >
           Restore
-        </AsyncButton>
+        </MutateButton>
       </div>
     </div>
   );

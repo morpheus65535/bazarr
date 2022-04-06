@@ -1,4 +1,4 @@
-import { AsyncButton } from "@/components/async";
+import MutateButton from "@/components/async/MutateButton";
 import {
   useModal,
   useModalControl,
@@ -10,7 +10,7 @@ import React, { FunctionComponent } from "react";
 import { useDeleteBackups } from "../../../apis/hooks";
 
 const SystemBackupDeleteModal: FunctionComponent = () => {
-  const { mutateAsync } = useDeleteBackups();
+  const remove = useDeleteBackups();
 
   const result = usePayload<string>();
 
@@ -28,19 +28,14 @@ const SystemBackupDeleteModal: FunctionComponent = () => {
         >
           Cancel
         </Button>
-        <AsyncButton
+        <MutateButton
           noReset
-          promise={() => {
-            if (result) {
-              return mutateAsync(result);
-            } else {
-              return null;
-            }
-          }}
+          mutation={remove}
+          args={() => result ?? null}
           onSuccess={() => hide()}
         >
           Delete
-        </AsyncButton>
+        </MutateButton>
       </div>
     </div>
   );
