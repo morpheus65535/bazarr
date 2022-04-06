@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Container, Divider, Grid, Stack, Text } from "@mantine/core";
+import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
 import moment from "moment";
 import { FunctionComponent, ReactNode, useState } from "react";
 import { Helmet } from "react-helmet";
@@ -28,7 +28,9 @@ function Row(props: InfoProps): JSX.Element {
       <Grid.Col span={5}>
         <Text weight="bold">{title}</Text>
       </Grid.Col>
-      <Grid.Col span={12 - 5}>{children}</Grid.Col>
+      <Grid.Col span={12 - 5}>
+        <Text>{children}</Text>
+      </Grid.Col>
     </Grid>
   );
 }
@@ -44,9 +46,9 @@ function Label(props: IconProps): JSX.Element {
   return (
     <>
       <FontAwesomeIcon icon={icon} style={{ width: "2rem" }}></FontAwesomeIcon>
-      <a href={link} target="_blank" rel="noopener noreferrer">
+      <Anchor href={link} target="_blank" rel="noopener noreferrer">
         {children}
-      </a>
+      </Anchor>
     </>
   );
 }
@@ -102,35 +104,19 @@ const SystemStatusView: FunctionComponent = () => {
           </QueryOverlay>
         </InfoContainer>
         <InfoContainer title="About">
-          <Row title="Bazarr Version">
-            <span>{status?.bazarr_version}</span>
-          </Row>
+          <Row title="Bazarr Version">{status?.bazarr_version}</Row>
           {status?.package_version !== "" && (
-            <Row title="Package Version">
-              <span>{status?.package_version}</span>
-            </Row>
+            <Row title="Package Version">{status?.package_version}</Row>
           )}
-          <Row title="Sonarr Version">
-            <span>{status?.sonarr_version}</span>
-          </Row>
-          <Row title="Radarr Version">
-            <span>{status?.radarr_version}</span>
-          </Row>
-          <Row title="Operating System">
-            <span>{status?.operating_system}</span>
-          </Row>
-          <Row title="Python Version">
-            <span>{status?.python_version}</span>
-          </Row>
-          <Row title="Bazarr Directory">
-            <span>{status?.bazarr_directory}</span>
-          </Row>
+          <Row title="Sonarr Version">{status?.sonarr_version}</Row>
+          <Row title="Radarr Version">{status?.radarr_version}</Row>
+          <Row title="Operating System">{status?.operating_system}</Row>
+          <Row title="Python Version">{status?.python_version}</Row>
+          <Row title="Bazarr Directory">{status?.bazarr_directory}</Row>
           <Row title="Bazarr Config Directory">
-            <span>{status?.bazarr_config_directory}</span>
+            {status?.bazarr_config_directory}
           </Row>
-          <Row title="Uptime">
-            <span>{uptime}</span>
-          </Row>
+          <Row title="Uptime">{uptime}</Row>
         </InfoContainer>
         <InfoContainer title="More Info">
           <Row title="Home Page">

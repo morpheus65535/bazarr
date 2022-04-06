@@ -1,9 +1,10 @@
+import { ModalProps } from "@mantine/core";
 import { createContext, Dispatch, SetStateAction } from "react";
 
 export interface ModalData {
   key: string;
   closeable: boolean;
-  size: "sm" | "lg" | "xl" | undefined;
+  size: ModalProps["size"] | undefined;
 }
 
 export type ModalSetter = {

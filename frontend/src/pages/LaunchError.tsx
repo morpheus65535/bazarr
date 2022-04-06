@@ -1,7 +1,7 @@
 import { Reload } from "@/utilities";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, Container } from "@mantine/core";
+import { Alert, Container, Text } from "@mantine/core";
 import { FunctionComponent } from "react";
 
 interface Props {
@@ -9,21 +9,17 @@ interface Props {
 }
 
 const LaunchError: FunctionComponent<Props> = ({ children }) => (
-  <Container className="my-3">
+  <Container my="xl">
     <Alert
+      title="Something is wrong!"
       className="d-flex flex-nowrap justify-content-between align-items-center"
-      color="danger"
+      color="red"
+      icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
+      withCloseButton
+      closeButtonLabel="Reload"
+      onClose={Reload}
     >
-      <div>
-        <FontAwesomeIcon
-          className="mr-2"
-          icon={faExclamationTriangle}
-        ></FontAwesomeIcon>
-        <span>{children}</span>
-      </div>
-      <Button color="outline-danger" onClick={Reload}>
-        Reload
-      </Button>
+      <Text color="red">{children}</Text>
     </Alert>
   </Container>
 );

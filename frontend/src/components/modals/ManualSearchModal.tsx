@@ -7,8 +7,15 @@ import {
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Badge, Button, Collapse, Stack } from "@mantine/core";
-import clsx from "clsx";
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Button,
+  Collapse,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
@@ -74,9 +81,9 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           const { url } = row.row.original;
           if (url) {
             return (
-              <a href={url} target="_blank" rel="noopener noreferrer">
+              <Anchor href={url} target="_blank" rel="noopener noreferrer">
                 {value}
-              </a>
+              </Anchor>
             );
           } else {
             return value;
@@ -93,29 +100,18 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           const [open, setOpen] = useState(false);
 
           const items = useMemo(
-            () =>
-              value.slice(1).map((v, idx) => (
-                <span className="release-text hidden-item" key={idx}>
-                  {v}
-                </span>
-              )),
+            () => value.slice(1).map((v, idx) => <Text key={idx}>{v}</Text>),
             [value]
           );
 
           if (value.length === 0) {
-            return <span className="text-muted">Cannot get release info</span>;
+            return <Text color="dimmed">Cannot get release info</Text>;
           }
 
           return (
-            <div
-              className={clsx(
-                "release-container d-flex justify-content-between align-items-center",
-                { "release-multi": value.length > 1 }
-              )}
-              onClick={() => setOpen((o) => !o)}
-            >
-              <div className="text-container">
-                <span className="release-text">{value[0]}</span>
+            <div onClick={() => setOpen((o) => !o)}>
+              <div>
+                <Text>{value[0]}</Text>
                 <Collapse in={open}>
                   <div>{items}</div>
                 </Collapse>

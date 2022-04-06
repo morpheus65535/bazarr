@@ -18,7 +18,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Badge, Group } from "@mantine/core";
+import { ActionIcon, Badge, Group, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Subtitle } from "./components";
@@ -98,7 +98,7 @@ const Table: FunctionComponent<Props> = ({
         className: "text-nowrap",
         Cell: ({ value, row }) => (
           <TextPopover text={row.original.sceneName}>
-            <span>{value}</span>
+            <Text>{value}</Text>
           </TextPopover>
         ),
       },

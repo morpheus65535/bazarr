@@ -7,7 +7,7 @@ import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge } from "@mantine/core";
+import { Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
@@ -33,7 +33,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           if (value === null || value.length === 0) {
             return "Video File Subtitle Track";
           } else if (value === missingText) {
-            return <span className="text-muted">{value}</span>;
+            return <Text color="dimmed">{value}</Text>;
           } else {
             return value;
           }

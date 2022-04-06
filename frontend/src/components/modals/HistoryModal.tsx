@@ -5,6 +5,7 @@ import {
   useMovieHistory,
 } from "@/apis/hooks";
 import { useModal, usePayload, withModal } from "@/modules/modals";
+import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
@@ -54,16 +55,12 @@ const MovieHistoryView: FunctionComponent = () => {
       {
         Header: "Date",
         accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
-            return (
-              <TextPopover text={row.row.original.parsed_timestamp}>
-                <span>{row.value}</span>
-              </TextPopover>
-            );
-          } else {
-            return null;
-          }
+        Cell: ({ value, row }) => {
+          return (
+            <TextPopover text={row.original.parsed_timestamp}>
+              <Text>{value}</Text>
+            </TextPopover>
+          );
         },
       },
       {
@@ -140,16 +137,12 @@ const EpisodeHistoryView: FunctionComponent = () => {
       {
         Header: "Date",
         accessor: "timestamp",
-        Cell: (row) => {
-          if (row.value) {
-            return (
-              <TextPopover text={row.row.original.parsed_timestamp}>
-                <span>{row.value}</span>
-              </TextPopover>
-            );
-          } else {
-            return null;
-          }
+        Cell: ({ row, value }) => {
+          return (
+            <TextPopover text={row.original.parsed_timestamp}>
+              <Text>{value}</Text>
+            </TextPopover>
+          );
         },
       },
       {

@@ -5,7 +5,7 @@ import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Text } from "@mantine/core";
+import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -24,9 +24,9 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor component={Link} to={target}>
+              <Text>{row.value}</Text>
+            </Anchor>
           );
         },
       },

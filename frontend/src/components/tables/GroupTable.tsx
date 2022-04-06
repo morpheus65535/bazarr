@@ -16,7 +16,7 @@ import SimpleTable from "./SimpleTable";
 function renderCell<T extends object = object>(cell: Cell<T>, row: Row<T>) {
   if (cell.isGrouped) {
     return (
-      <span {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</span>
+      <div {...row.getToggleRowExpandedProps()}>{cell.render("Cell")}</div>
     );
   } else if (row.canExpand || cell.isAggregated) {
     return null;

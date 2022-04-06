@@ -277,6 +277,15 @@ function useRoutes(): CustomRouteObject[] {
               },
             ],
           },
+          {
+            path: "*",
+            hidden: true,
+            element: (
+              <Lazy>
+                <NotFound></NotFound>
+              </Lazy>
+            ),
+          },
         ],
       },
       {
@@ -285,15 +294,6 @@ function useRoutes(): CustomRouteObject[] {
         element: (
           <Lazy>
             <Authentication></Authentication>
-          </Lazy>
-        ),
-      },
-      {
-        path: "*",
-        hidden: true,
-        element: (
-          <Lazy>
-            <NotFound></NotFound>
           </Lazy>
         ),
       },

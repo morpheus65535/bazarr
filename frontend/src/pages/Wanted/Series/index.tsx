@@ -9,6 +9,7 @@ import WantedView from "@/components/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -22,9 +23,9 @@ const WantedSeriesView: FunctionComponent = () => {
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor component={Link} to={target}>
+              <Text>{row.value}</Text>
+            </Anchor>
           );
         },
       },
@@ -61,7 +62,7 @@ const WantedSeriesView: FunctionComponent = () => {
                 })
               }
             >
-              <Language.Text className="pr-1" value={item}></Language.Text>
+              <Language.Text px="xs" value={item}></Language.Text>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
             </AsyncButton>
           ));

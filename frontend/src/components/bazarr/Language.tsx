@@ -1,19 +1,19 @@
+import { Text, TextProps } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
-interface TextProps {
+type LanguageTextProps = TextProps<"div"> & {
   value: Language.Info;
-  className?: string;
   long?: boolean;
-}
+};
 
 declare type LanguageComponent = {
   Text: typeof LanguageText;
 };
 
-const LanguageText: FunctionComponent<TextProps> = ({
+const LanguageText: FunctionComponent<LanguageTextProps> = ({
   value,
-  className,
   long,
+  ...props
 }) => {
   const result = useMemo(() => {
     let lang = value.code2;
@@ -35,9 +35,9 @@ const LanguageText: FunctionComponent<TextProps> = ({
   }, [value, long]);
 
   return (
-    <span title={value.name} className={className}>
+    <Text inherit {...props}>
       {result}
-    </span>
+    </Text>
   );
 };
 

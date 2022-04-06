@@ -6,7 +6,7 @@ import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/components/views/HistoryView";
 import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Text } from "@mantine/core";
+import { Anchor, Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -22,13 +22,12 @@ const MoviesHistoryView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         className: "text-nowrap",
-        Cell: (row) => {
-          const target = `/movies/${row.row.original.radarrId}`;
-
+        Cell: ({ row, value }) => {
+          const target = `/movies/${row.original.radarrId}`;
           return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
+            <Anchor component={Link} to={target}>
+              <Text>{value}</Text>
+            </Anchor>
           );
         },
       },
@@ -38,7 +37,7 @@ const MoviesHistoryView: FunctionComponent = () => {
         Cell: ({ value }) => {
           if (value) {
             return (
-              <Badge color="secondary">
+              <Badge>
                 <Language.Text value={value} long></Language.Text>
               </Badge>
             );

@@ -1,3 +1,4 @@
+import { Anchor } from "@mantine/core";
 import { FunctionComponent } from "react";
 import {
   Check,
@@ -117,9 +118,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </CollapseBox.Control>
           <CollapseBox.Content eventKey="anti-captcha">
             <Input>
-              <a href="http://getcaptchasolution.com/eixxo1rsnw">
+              <Anchor href="http://getcaptchasolution.com/eixxo1rsnw">
                 Anti-Captcha.com
-              </a>
+              </Anchor>
             </Input>
             <Input name="Account Key">
               <Text settingKey="settings-anticaptcha-anti_captcha_key"></Text>
@@ -127,7 +128,9 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </CollapseBox.Content>
           <CollapseBox.Content eventKey="death-by-captcha">
             <Input>
-              <a href="https://www.deathbycaptcha.com">DeathByCaptcha.com</a>
+              <Anchor href="https://www.deathbycaptcha.com">
+                DeathByCaptcha.com
+              </Anchor>
             </Input>
             <Input name="Username">
               <Text settingKey="settings-deathbycaptcha-username"></Text>

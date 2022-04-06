@@ -1,26 +1,29 @@
 import { useModal, usePayload, withModal } from "@/modules/modals";
+import { Code, ScrollArea, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
 const SystemLogModal: FunctionComponent = () => {
   const stack = usePayload<string>();
 
-  const Modal = useModal();
+  const Modal = useModal({ size: "xl" });
 
   const result = useMemo(
     () =>
       stack?.split("\\n").map((v, idx) => (
-        <p key={idx} className="text-nowrap my-1">
+        <Text my="xs" inherit key={idx}>
           {v}
-        </p>
+        </Text>
       )),
     [stack]
   );
 
   return (
     <Modal title="Stack traceback">
-      <pre>
-        <code>{result}</code>
-      </pre>
+      <ScrollArea>
+        <pre>
+          <Code>{result}</Code>
+        </pre>
+      </ScrollArea>
     </Modal>
   );
 };
