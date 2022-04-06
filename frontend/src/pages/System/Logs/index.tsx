@@ -19,8 +19,8 @@ const SystemLogsView: FunctionComponent = () => {
   }, []);
 
   return (
-    <QueryOverlay result={logs}>
-      <Container fluid px={0}>
+    <Container fluid px={0}>
+      <QueryOverlay result={logs}>
         <Helmet>
           <title>Logs - Bazarr (System)</title>
         </Helmet>
@@ -44,8 +44,8 @@ const SystemLogsView: FunctionComponent = () => {
           </ContentHeader.Button>
         </ContentHeader>
         <Table logs={data ?? []}></Table>
-      </Container>
-    </QueryOverlay>
+      </QueryOverlay>
+    </Container>
   );
 };
 

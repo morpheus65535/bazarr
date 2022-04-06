@@ -1,3 +1,4 @@
+import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
 import { Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
@@ -23,7 +24,7 @@ export interface BaseTableProps<T extends object> extends TableStyleProps<T> {
 export interface TableStyleProps<T extends object> {
   emptyText?: string;
   striped?: boolean;
-  placeholder?: boolean;
+  placeholder?: number;
   hideHeader?: boolean;
   headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
   rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
@@ -49,8 +50,8 @@ export function useStyleAndOptions<T extends object>(
   return {
     style: {
       emptyText,
-      placeholder,
       striped,
+      placeholder,
       hideHeader,
       headersRenderer,
       rowRenderer,
@@ -83,7 +84,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const {
     emptyText,
     striped = true,
-    placeholder = false,
+    placeholder,
     hideHeader,
     headers,
     rows,
@@ -104,10 +105,11 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const empty = rows.length === 0;
 
   const [pageSize] = usePageSize();
+  const isLoading = useIsLoading();
 
   let body: ReactNode;
-  if (placeholder) {
-    body = Array(pageSize)
+  if (isLoading) {
+    body = Array(placeholder ?? pageSize)
       .fill(0)
       .map((_, i) => (
         <tr key={i}>

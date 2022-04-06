@@ -13,8 +13,6 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
   DataWrapperWithTotal<T>
 > & {
   controls: {
-    previousPage: () => void;
-    nextPage: () => void;
     gotoPage: (index: number) => void;
   };
   paginationStatus: {
@@ -22,8 +20,6 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
     pageSize: number;
     pageCount: number;
     page: number;
-    canPrevious: boolean;
-    canNext: boolean;
   };
 };
 
@@ -67,16 +63,6 @@ export function usePaginationQuery<
   const totalCount = data?.total ?? 0;
   const pageCount = Math.ceil(totalCount / pageSize);
 
-  const previousPage = useCallback(() => {
-    setIndex((index) => Math.max(0, index - 1));
-  }, []);
-
-  const nextPage = useCallback(() => {
-    if (pageCount > 0) {
-      setIndex((index) => Math.min(pageCount - 1, index + 1));
-    }
-  }, [pageCount]);
-
   const gotoPage = useCallback(
     (idx: number) => {
       if (idx >= 0 && idx < pageCount) {
@@ -104,13 +90,9 @@ export function usePaginationQuery<
       pageCount,
       pageSize,
       page,
-      canPrevious: page > 0,
-      canNext: page < pageCount - 1,
     },
     controls: {
       gotoPage,
-      previousPage,
-      nextPage,
     },
   };
 }

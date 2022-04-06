@@ -1,23 +1,25 @@
-import { FunctionComponent, ReactElement } from "react";
+import { LoadingProvider } from "@/contexts";
+import { LoadingOverlay } from "@mantine/core";
+import { FunctionComponent, ReactNode } from "react";
 import { UseQueryResult } from "react-query";
-import { LoadingIndicator } from "..";
 
 interface QueryOverlayProps {
   result: UseQueryResult<unknown, unknown>;
-  children: ReactElement;
+  global?: boolean;
+  children: ReactNode;
 }
 
 const QueryOverlay: FunctionComponent<QueryOverlayProps> = ({
   children,
+  global = false,
   result: { isLoading, isError, error },
 }) => {
-  if (isLoading) {
-    return <LoadingIndicator></LoadingIndicator>;
-  } else if (isError) {
-    return <p>{error as string}</p>;
-  }
-
-  return children;
+  return (
+    <LoadingProvider value={isLoading}>
+      <LoadingOverlay visible={global && isLoading}></LoadingOverlay>
+      {children}
+    </LoadingProvider>
+  );
 };
 
 export default QueryOverlay;

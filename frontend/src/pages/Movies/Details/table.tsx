@@ -14,7 +14,7 @@ import { Column } from "react-table";
 const missingText = "Missing Subtitles";
 
 interface Props {
-  movie: Item.Movie;
+  movie: Item.Movie | null;
   disabled?: boolean;
   profile?: Language.Profile;
 }
@@ -66,6 +66,11 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           } = row.row;
 
           const { download, remove } = useMovieSubtitleModification();
+
+          if (movie === null) {
+            return null;
+          }
+
           const { radarrId } = movie;
 
           if (path === null || path.length === 0) {
@@ -115,18 +120,19 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
   );
 
   const data: Subtitle[] = useMemo(() => {
-    const missing = movie.missing_subtitles.map((item) => ({
-      ...item,
-      path: missingText,
-    }));
+    const missing =
+      movie?.missing_subtitles.map((item) => ({
+        ...item,
+        path: missingText,
+      })) ?? [];
 
-    let raw_subtitles = movie.subtitles;
+    let raw_subtitles = movie?.subtitles ?? [];
     if (onlyDesired) {
       raw_subtitles = filterSubtitleBy(raw_subtitles, profileItems);
     }
 
     return [...raw_subtitles, ...missing];
-  }, [movie.missing_subtitles, movie.subtitles, onlyDesired, profileItems]);
+  }, [movie, onlyDesired, profileItems]);
 
   return (
     <SimpleTable

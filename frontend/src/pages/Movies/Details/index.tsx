@@ -8,7 +8,8 @@ import {
   useMovieById,
   useMovieModification,
 } from "@/apis/hooks/movies";
-import { ContentHeader, LoadingIndicator } from "@/components";
+import { ContentHeader } from "@/components";
+import { QueryOverlay } from "@/components/async";
 import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
 import { MovieHistoryModal, MovieUploadModal } from "@/components/modals";
@@ -28,7 +29,8 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Popover, Stack } from "@mantine/core";
+import { Container, Group, Popover, Stack } from "@mantine/core";
+import { isNumber } from "lodash";
 import { FunctionComponent, useCallback, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
@@ -37,7 +39,8 @@ import Table from "./table";
 const MovieDetailView: FunctionComponent = () => {
   const param = useParams();
   const id = Number.parseInt(param.id ?? "");
-  const { data: movie, isFetched } = useMovieById(id);
+  const movieQuery = useMovieById(id);
+  const { data: movie, isFetched } = movieQuery;
 
   const profile = useLanguageProfileBy(movie?.profileId);
 
@@ -82,108 +85,119 @@ const MovieDetailView: FunctionComponent = () => {
     return <Navigate to="/not-found"></Navigate>;
   }
 
-  if (!movie) {
-    return <LoadingIndicator></LoadingIndicator>;
-  }
-
-  const allowEdit = movie.profileId !== undefined;
+  const allowEdit = movie?.profileId !== undefined;
 
   return (
     <Container fluid px={0}>
-      <Helmet>
-        <title>{movie.title} - Bazarr (Movies)</title>
-      </Helmet>
-      <ContentHeader>
-        <div>
-          <ContentHeader.Button
-            icon={faSync}
+      <QueryOverlay result={movieQuery}>
+        <Helmet>
+          <title>{movie?.title ?? "Unknown Movie"} - Bazarr (Movies)</title>
+        </Helmet>
+        <ContentHeader>
+          <Group spacing="xs">
+            <ContentHeader.Button
+              icon={faSync}
+              disabled={hasTask}
+              onClick={() => {
+                if (movie) {
+                  createAndDispatchTask(movie.title, "scan-disk", action, {
+                    action: "scan-disk",
+                    radarrid: id,
+                  });
+                }
+              }}
+            >
+              Scan Disk
+            </ContentHeader.Button>
+            <ContentHeader.Button
+              icon={faSearch}
+              disabled={!isNumber(movie?.profileId)}
+              onClick={() => {
+                if (movie) {
+                  createAndDispatchTask(
+                    movie.title,
+                    "search-subtitles",
+                    action,
+                    {
+                      action: "search-missing",
+                      radarrid: id,
+                    }
+                  );
+                }
+              }}
+            >
+              Search
+            </ContentHeader.Button>
+            <ContentHeader.Button
+              icon={faUser}
+              disabled={!isNumber(movie?.profileId) || hasTask}
+              onClick={() => show(MovieSearchModal, movie)}
+            >
+              Manual
+            </ContentHeader.Button>
+            <ContentHeader.Button
+              icon={faHistory}
+              onClick={() => show(MovieHistoryModal, movie)}
+            >
+              History
+            </ContentHeader.Button>
+            <ContentHeader.Button
+              icon={faToolbox}
+              disabled={hasTask}
+              onClick={() => show(SubtitleToolModal, [movie])}
+            >
+              Tools
+            </ContentHeader.Button>
+          </Group>
+          <Group spacing="xs">
+            <ContentHeader.Button
+              disabled={!allowEdit || movie.profileId === null || hasTask}
+              icon={faCloudUploadAlt}
+              onClick={() => show(MovieUploadModal, movie)}
+            >
+              Upload
+            </ContentHeader.Button>
+            <Popover
+              opened={isEditing}
+              onClose={() => setIsEditing(false)}
+              placement="end"
+              title="Edit Movie"
+              transition="scale"
+              target={
+                <ContentHeader.Button
+                  icon={faWrench}
+                  disabled={hasTask}
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Movie
+                </ContentHeader.Button>
+              }
+            >
+              <ItemEditForm
+                mutation={mutation}
+                item={movie ?? null}
+                onCancel={() => setIsEditing(false)}
+                onComplete={() => setIsEditing(false)}
+              ></ItemEditForm>
+            </Popover>
+          </Group>
+        </ContentHeader>
+        <Stack>
+          <ItemOverview item={movie ?? null} details={[]}></ItemOverview>
+          <Table
+            movie={movie ?? null}
+            profile={profile}
             disabled={hasTask}
-            onClick={() => {
-              createAndDispatchTask(movie.title, "scan-disk", action, {
-                action: "scan-disk",
-                radarrid: id,
-              });
-            }}
-          >
-            Scan Disk
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faSearch}
-            disabled={movie.profileId === null}
-            onClick={() => {
-              createAndDispatchTask(movie.title, "search-subtitles", action, {
-                action: "search-missing",
-                radarrid: id,
-              });
-            }}
-          >
-            Search
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faUser}
-            disabled={movie.profileId === null || hasTask}
-            onClick={() => show(MovieSearchModal, movie)}
-          >
-            Manual
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faHistory}
-            onClick={() => show(MovieHistoryModal, movie)}
-          >
-            History
-          </ContentHeader.Button>
-          <ContentHeader.Button
-            icon={faToolbox}
-            disabled={hasTask}
-            onClick={() => show(SubtitleToolModal, [movie])}
-          >
-            Tools
-          </ContentHeader.Button>
-        </div>
-        <div>
-          <ContentHeader.Button
-            disabled={!allowEdit || movie.profileId === null || hasTask}
-            icon={faCloudUploadAlt}
-            onClick={() => show(MovieUploadModal, movie)}
-          >
-            Upload
-          </ContentHeader.Button>
-          <Popover
-            opened={isEditing}
-            onClose={() => setIsEditing(false)}
-            placement="end"
-            title="Edit Movie"
-            transition="scale"
-            target={
-              <ContentHeader.Button
-                icon={faWrench}
-                disabled={hasTask}
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Movie
-              </ContentHeader.Button>
-            }
-          >
-            <ItemEditForm
-              mutation={mutation}
-              item={movie}
-              onCancel={() => setIsEditing(false)}
-              onComplete={() => setIsEditing(false)}
-            ></ItemEditForm>
-          </Popover>
-        </div>
-      </ContentHeader>
-      <Stack>
-        <ItemOverview item={movie} details={[]}></ItemOverview>
-        <Table movie={movie} profile={profile} disabled={hasTask}></Table>
-      </Stack>
-      <SubtitleTools></SubtitleTools>
-      <MovieHistoryModal></MovieHistoryModal>
-      <MovieUploadModal></MovieUploadModal>
-      <MovieSearchModal
-        download={download}
-        query={useMoviesProvider}
-      ></MovieSearchModal>
+          ></Table>
+        </Stack>
+        <SubtitleTools></SubtitleTools>
+        <MovieHistoryModal></MovieHistoryModal>
+        <MovieUploadModal></MovieUploadModal>
+        <MovieSearchModal
+          download={download}
+          query={useMoviesProvider}
+        ></MovieSearchModal>
+      </QueryOverlay>
     </Container>
   );
 };

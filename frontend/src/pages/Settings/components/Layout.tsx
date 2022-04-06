@@ -1,5 +1,6 @@
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
-import { ContentHeader, LoadingIndicator } from "@/components";
+import { ContentHeader } from "@/components";
+import { LoadingProvider } from "@/contexts";
 import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
@@ -132,12 +133,8 @@ const Layout: FunctionComponent<Props> = (props) => {
     defaultDispatcher(lostValues);
   }, [stagedChange, dispatcher, defaultDispatcher]);
 
-  if (isLoading) {
-    return <LoadingIndicator></LoadingIndicator>;
-  }
-
   return (
-    <>
+    <LoadingProvider value={isLoading || isMutating}>
       <Helmet>
         <title>{name} - Bazarr (Settings)</title>
       </Helmet>
@@ -163,7 +160,7 @@ const Layout: FunctionComponent<Props> = (props) => {
           </Container>
         </StagedChangesContext.Provider>
       </Stack>
-    </>
+    </LoadingProvider>
   );
 };
 

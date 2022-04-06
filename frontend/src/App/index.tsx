@@ -1,5 +1,4 @@
 import AppNavbar from "@/App/Navbar";
-import { LoadingIndicator } from "@/components";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Layout } from "@/constants";
 import { useNotification } from "@/modules/redux/hooks";
@@ -7,7 +6,7 @@ import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
-import { AppShell, Header, Navbar } from "@mantine/core";
+import { AppShell, Header, LoadingOverlay, Navbar } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
@@ -35,18 +34,13 @@ const App: FunctionComponent = () => {
 
   if (status === "unauthenticated") {
     return <Navigate to="/login"></Navigate>;
-  } else if (status === "uninitialized") {
-    return (
-      <LoadingIndicator>
-        <span>Please wait</span>
-      </LoadingIndicator>
-    );
   } else if (status === "error") {
     return <LaunchError>Cannot Initialize Bazarr</LaunchError>;
   }
 
   return (
     <ErrorBoundary>
+      <LoadingOverlay visible={status === "uninitialized"}></LoadingOverlay>
       <AppShell
         navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
         header={

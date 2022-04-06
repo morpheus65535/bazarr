@@ -1,4 +1,5 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
 import { useEffect } from "react";
 import { PluginHook, TableOptions, useTable } from "react-table";
@@ -40,10 +41,9 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   }, [page]);
 
   return (
-    <>
+    <LoadingProvider value={isFetching}>
       <BaseTable
         {...style}
-        placeholder={isFetching}
         headers={headerGroups}
         rows={rows}
         prepareRow={prepareRow}
@@ -56,8 +56,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
         size={pageSize}
         total={totalCount}
         goto={gotoPage}
-        loading={isFetching}
       ></PageControl>
-    </>
+    </LoadingProvider>
   );
 }

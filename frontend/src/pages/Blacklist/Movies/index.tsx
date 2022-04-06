@@ -17,8 +17,8 @@ const BlacklistMoviesView: FunctionComponent = () => {
   const { mutateAsync } = useMovieDeleteBlacklist();
 
   return (
-    <QueryOverlay result={blacklist}>
-      <Container fluid px={0}>
+    <Container fluid px={0}>
+      <QueryOverlay result={blacklist}>
         <Helmet>
           <title>Movies Blacklist - Bazarr</title>
         </Helmet>
@@ -34,8 +34,8 @@ const BlacklistMoviesView: FunctionComponent = () => {
           </ContentHeader>
           <Table blacklist={data ?? []}></Table>
         </Stack>
-      </Container>
-    </QueryOverlay>
+      </QueryOverlay>
+    </Container>
   );
 };
 

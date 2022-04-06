@@ -1,14 +1,18 @@
 import { useModal, usePayload, withModal } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { GetItemId, isMovie } from "@/utilities";
-import { faCaretDown, faDownload } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCaretDown,
+  faDownload,
+  faInfoCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Button, Collapse } from "@mantine/core";
+import { Alert, Badge, Button, Collapse, Stack } from "@mantine/core";
 import clsx from "clsx";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
-import { LoadingIndicator, PageTable } from "..";
+import { PageTable } from "..";
 import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -169,32 +173,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     [download, item]
   );
 
-  const content = () => {
-    if (results.isFetching) {
-      return <LoadingIndicator></LoadingIndicator>;
-    } else if (isStale) {
-      return (
-        <div className="px-4 py-5">
-          <p className="mb-3 small">{item?.path ?? ""}</p>
-          <Button color="primary" onClick={search}>
-            Start Search
-          </Button>
-        </div>
-      );
-    } else {
-      return (
-        <>
-          <p className="mb-3 small">{item?.path ?? ""}</p>
-          <PageTable
-            emptyText="No Result"
-            columns={columns}
-            data={results.data ?? []}
-          ></PageTable>
-        </>
-      );
-    }
-  };
-
   const title = useMemo(() => {
     let title = "Unknown";
 
@@ -222,14 +200,29 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
   });
 
   const footer = (
-    <Button color="light" hidden={isStale} onClick={search}>
-      Search Again
+    <Button loading={results.isFetching} fullWidth onClick={search}>
+      {isStale ? "Search" : "Search Again"}
     </Button>
   );
 
   return (
     <Modal title={title} footer={footer}>
-      {content()}
+      <Stack>
+        <Alert
+          title="Resource"
+          icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
+        >
+          {item?.path}
+        </Alert>
+        <Collapse in={!isStale && !results.isFetching}>
+          <PageTable
+            emptyText="No Result"
+            columns={columns}
+            placeholder={10}
+            data={results.data ?? []}
+          ></PageTable>
+        </Collapse>
+      </Stack>
     </Modal>
   );
 }

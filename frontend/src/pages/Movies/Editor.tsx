@@ -47,16 +47,14 @@ const MovieMassEditor: FunctionComponent = () => {
 
   return (
     <QueryOverlay result={query}>
-      <>
-        <Helmet>
-          <title>Movies - Bazarr (Mass Editor)</title>
-        </Helmet>
-        <MassEditor
-          columns={columns}
-          data={query.data ?? []}
-          mutation={mutation}
-        ></MassEditor>
-      </>
+      <Helmet>
+        <title>Movies - Bazarr (Mass Editor)</title>
+      </Helmet>
+      <MassEditor
+        columns={columns}
+        data={query.data ?? []}
+        mutation={mutation}
+      ></MassEditor>
     </QueryOverlay>
   );
 };

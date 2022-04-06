@@ -31,7 +31,7 @@ import { FunctionComponent, useMemo } from "react";
 import Language from "./bazarr/Language";
 
 interface Props {
-  item: Item.Base;
+  item: Item.Base | null;
   details?: { icon: IconDefinition; text: string }[];
 }
 
@@ -40,46 +40,49 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
   const detailBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
-    badges.push(
-      <DetailBadge key="file-path" icon={faFolder} desc="File Path">
-        {item.path}
-      </DetailBadge>
-    );
 
-    badges.push(
-      ...(details?.map((val, idx) => (
-        <DetailBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
-          {val.text}
-        </DetailBadge>
-      )) ?? [])
-    );
-
-    if (item.tags.length > 0) {
+    if (item) {
       badges.push(
-        <DetailBadge key="tags" icon={faTags} desc="Tags">
-          {item.tags.join("|")}
-        </DetailBadge>
+        <IconBadge key="file-path" icon={faFolder} desc="File Path">
+          {item.path}
+        </IconBadge>
       );
+
+      badges.push(
+        ...(details?.map((val, idx) => (
+          <IconBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
+            {val.text}
+          </IconBadge>
+        )) ?? [])
+      );
+
+      if (item.tags.length > 0) {
+        badges.push(
+          <IconBadge key="tags" icon={faTags} desc="Tags">
+            {item.tags.join("|")}
+          </IconBadge>
+        );
+      }
     }
 
     return badges;
-  }, [details, item.path, item.tags]);
+  }, [details, item]);
 
   const audioBadges = useMemo(
     () =>
-      item.audio_language.map((v, idx) => (
-        <DetailBadge
+      item?.audio_language.map((v, idx) => (
+        <IconBadge
           key={BuildKey(idx, "audio", v.code2)}
           icon={faMusic}
           desc="Audio Language"
         >
           {v.name}
-        </DetailBadge>
-      )),
-    [item.audio_language]
+        </IconBadge>
+      )) ?? [],
+    [item?.audio_language]
   );
 
-  const profile = useLanguageProfileBy(item.profileId);
+  const profile = useLanguageProfileBy(item?.profileId);
   const profileItems = useProfileItemsToLanguages(profile);
 
   const languageBadges = useMemo(() => {
@@ -87,24 +90,24 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
     if (profile) {
       badges.push(
-        <DetailBadge
+        <IconBadge
           key="language-profile"
           icon={faStream}
           desc="Languages Profile"
         >
           {profile.name}
-        </DetailBadge>
+        </IconBadge>
       );
 
       badges.push(
         ...profileItems.map((v, idx) => (
-          <DetailBadge
+          <IconBadge
             key={BuildKey(idx, "lang", v.code2)}
             icon={faLanguage}
             desc="Language"
           >
             <Language.Text long value={v}></Language.Text>
-          </DetailBadge>
+          </IconBadge>
         ))
       );
     }
@@ -127,11 +130,11 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   // );
 
   return (
-    <BackgroundImage src={item.fanart}>
+    <BackgroundImage src={item?.fanart ?? ""}>
       <Grid align="flex-start" grow gutter="xs" m={24}>
         <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
           <Grid.Col span={2}>
-            <Image src={item.poster} withPlaceholder></Image>
+            <Image src={item?.poster} withPlaceholder></Image>
           </Grid.Col>
         </MediaQuery>
         <Grid.Col span={8}>
@@ -139,14 +142,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Group>
               <Text size="xl" weight="bold" color="white">
                 <Box component="span" mr={6}>
-                  {isMovie(item) ? (
+                  {item && isMovie(item) ? (
                     <FontAwesomeIcon
                       title={item.monitored ? "monitored" : "unmonitored"}
                       icon={item.monitored ? faBookmark : farBookmark}
                     ></FontAwesomeIcon>
                   ) : null}
                 </Box>
-                {item.title}
+                {item?.title}
               </Text>
             </Group>
             {/* <Row>
@@ -164,7 +167,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Group spacing="xs">{audioBadges}</Group>
             <Group spacing="xs">{languageBadges}</Group>
             <Text size="sm" color="white">
-              {item.overview}
+              {item?.overview}
             </Text>
           </Stack>
         </Grid.Col>
@@ -179,7 +182,7 @@ interface ItemBadgeProps {
   desc?: string;
 }
 
-const DetailBadge: FunctionComponent<ItemBadgeProps> = ({
+const IconBadge: FunctionComponent<ItemBadgeProps> = ({
   icon,
   desc,
   children,
