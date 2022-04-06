@@ -42,6 +42,7 @@ const Checkbox = forwardRef<
 
   return (
     <MantineCheckbox
+      key={idIn}
       disabled={disabled}
       ref={resolvedRef}
       {...rest}

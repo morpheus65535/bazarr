@@ -1,44 +1,34 @@
-import { useServerSearch } from "@/apis/hooks";
 import { Autocomplete } from "@mantine/core";
-import { uniqueId } from "lodash";
-import {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import { useThrottle } from "rooks";
+import { FunctionComponent } from "react";
 
-function useSearch(query: string) {
-  const { data } = useServerSearch(query, query.length > 0);
+// function useSearch(query: string) {
+//   const { data } = useServerSearch(query, query.length > 0);
 
-  return useMemo(
-    () =>
-      data?.map((v) => {
-        let link: string;
-        let id: string;
-        if (v.sonarrSeriesId) {
-          link = `/series/${v.sonarrSeriesId}`;
-          id = `series-${v.sonarrSeriesId}`;
-        } else if (v.radarrId) {
-          link = `/movies/${v.radarrId}`;
-          id = `movie-${v.radarrId}`;
-        } else {
-          link = "";
-          id = uniqueId("unknown");
-        }
+//   return useMemo(
+//     () =>
+//       data?.map((v) => {
+//         let link: string;
+//         let id: string;
+//         if (v.sonarrSeriesId) {
+//           link = `/series/${v.sonarrSeriesId}`;
+//           id = `series-${v.sonarrSeriesId}`;
+//         } else if (v.radarrId) {
+//           link = `/movies/${v.radarrId}`;
+//           id = `movie-${v.radarrId}`;
+//         } else {
+//           link = "";
+//           id = uniqueId("unknown");
+//         }
 
-        return {
-          name: `${v.title} (${v.year})`,
-          link,
-          id,
-        };
-      }) ?? [],
-    [data]
-  );
-}
+//         return {
+//           name: `${v.title} (${v.year})`,
+//           link,
+//           id,
+//         };
+//       }) ?? [],
+//     [data]
+//   );
+// }
 export interface SearchResult {
   id: string;
   name: string;
@@ -56,22 +46,22 @@ export const SearchBar: FunctionComponent<Props> = ({
   onBlur,
   className,
 }) => {
-  const [display, setDisplay] = useState("");
-  const [query, setQuery] = useState("");
+  // const [display, setDisplay] = useState("");
+  // const [query, setQuery] = useState("");
 
-  const [debounce] = useThrottle(setQuery, 500);
-  useEffect(() => {
-    debounce(display);
-  }, [debounce, display]);
+  // const [debounce] = useThrottle(setQuery, 500);
+  // useEffect(() => {
+  //   debounce(display);
+  // }, [debounce, display]);
 
-  const results = useSearch(query);
+  // const results = useSearch(query);
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const clear = useCallback(() => {
-    setDisplay("");
-    setQuery("");
-  }, []);
+  // const clear = useCallback(() => {
+  //   setDisplay("");
+  //   setQuery("");
+  // }, []);
 
   // const items = useMemo(() => {
   //   const its = results.map((v) => (

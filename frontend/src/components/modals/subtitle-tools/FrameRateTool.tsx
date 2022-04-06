@@ -1,5 +1,5 @@
 import { useModal, withModal } from "@/modules/modals";
-import { Button } from "@mantine/core";
+import { Button, Group, NumberInput } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
 import { useProcess } from "./ToolContext";
 
@@ -32,32 +32,16 @@ const FrameRateTool: FunctionComponent = () => {
 
   return (
     <Modal title="Change Frame Rate" footer={footer}>
-      {/* <InputGroup className="px-2">
-        <Form.Control
+      <Group spacing="xs">
+        <NumberInput
           placeholder="From"
-          type="number"
-          onChange={(e) => {
-            const value = parseFloat(e.currentTarget.value);
-            if (isNaN(value)) {
-              setFrom(null);
-            } else {
-              setFrom(value);
-            }
-          }}
-        ></Form.Control>
-        <Form.Control
+          onChange={(num) => setFrom(num ?? null)}
+        ></NumberInput>
+        <NumberInput
           placeholder="To"
-          type="number"
-          onChange={(e) => {
-            const value = parseFloat(e.currentTarget.value);
-            if (isNaN(value)) {
-              setTo(null);
-            } else {
-              setTo(value);
-            }
-          }}
-        ></Form.Control>
-      </InputGroup> */}
+          onChange={(num) => setTo(num ?? null)}
+        ></NumberInput>
+      </Group>
     </Modal>
   );
 };

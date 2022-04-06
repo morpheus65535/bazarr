@@ -1,24 +1,23 @@
-import { useFileSystem } from "@/apis/hooks";
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { FunctionComponent } from "react";
 
-const backKey = "--back--";
+// const backKey = "--back--";
 
-function getLastSeparator(path: string): number {
-  let idx = path.lastIndexOf("/");
-  if (idx === -1) {
-    idx = path.lastIndexOf("\\");
-  }
-  return idx;
-}
+// function getLastSeparator(path: string): number {
+//   let idx = path.lastIndexOf("/");
+//   if (idx === -1) {
+//     idx = path.lastIndexOf("\\");
+//   }
+//   return idx;
+// }
 
-function extractPath(raw: string) {
-  if (raw.endsWith("/") || raw.endsWith("\\")) {
-    return raw;
-  } else {
-    const idx = getLastSeparator(raw);
-    return raw.slice(0, idx + 1);
-  }
-}
+// function extractPath(raw: string) {
+//   if (raw.endsWith("/") || raw.endsWith("\\")) {
+//     return raw;
+//   } else {
+//     const idx = getLastSeparator(raw);
+//     return raw.slice(0, idx + 1);
+//   }
+// }
 
 export interface FileBrowserProps {
   defaultValue?: string;
@@ -31,21 +30,21 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   type,
   onChange,
 }) => {
-  const [show, canShow] = useState(false);
-  const [text, setText] = useState(defaultValue ?? "");
-  const [path, setPath] = useState(() => extractPath(text));
+  // const [show, canShow] = useState(false);
+  // const [text, setText] = useState(defaultValue ?? "");
+  // const [path, setPath] = useState(() => extractPath(text));
 
-  const { data: tree, isFetching } = useFileSystem(type, path, show);
+  // const { data: tree, isFetching } = useFileSystem(type, path, show);
 
-  const filter = useMemo(() => {
-    const idx = getLastSeparator(text);
-    return text.slice(idx + 1);
-  }, [text]);
+  // const filter = useMemo(() => {
+  //   const idx = getLastSeparator(text);
+  //   return text.slice(idx + 1);
+  // }, [text]);
 
-  const previous = useMemo(() => {
-    const idx = getLastSeparator(path.slice(0, -1));
-    return path.slice(0, idx + 1);
-  }, [path]);
+  // const previous = useMemo(() => {
+  //   const idx = getLastSeparator(path.slice(0, -1));
+  //   return path.slice(0, idx + 1);
+  // }, [path]);
 
   // const requestItems = () => {
   //   if (isFetching) {
@@ -92,19 +91,19 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   //   }
   // };
 
-  useEffect(() => {
-    if (text === path) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (text === path) {
+  //     return;
+  //   }
 
-    const newPath = extractPath(text);
-    if (newPath !== path) {
-      setPath(newPath);
-      onChange && onChange(newPath);
-    }
-  }, [path, text, onChange]);
+  //   const newPath = extractPath(text);
+  //   if (newPath !== path) {
+  //     setPath(newPath);
+  //     onChange && onChange(newPath);
+  //   }
+  // }, [path, text, onChange]);
 
-  const input = useRef<HTMLInputElement>(null);
+  // const input = useRef<HTMLInputElement>(null);
 
   return null;
 

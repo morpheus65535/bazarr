@@ -7,6 +7,7 @@ import {
   Input,
   Layout,
   Message,
+  Number,
   PathMappingTable,
   Slider,
   Text,
@@ -36,10 +37,7 @@ const SettingsRadarrView: FunctionComponent = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text
-                settingKey="settings-radarr-port"
-                numberWithArrows={true}
-              ></Text>
+              <Number settingKey="settings-radarr-port"></Number>
             </Input>
             <Input name="Base URL">
               {/* <InputGroup>

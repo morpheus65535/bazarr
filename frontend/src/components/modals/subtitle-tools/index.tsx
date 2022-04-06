@@ -11,7 +11,8 @@ import {
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { isMovie } from "@/utilities";
 import { LOG } from "@/utilities/console";
-import { Badge } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Badge, Button, Group, Menu } from "@mantine/core";
 import { isObject } from "lodash";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Column, useRowSelect } from "react-table";
@@ -125,48 +126,40 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 
   const process = useProcess();
 
-  // const footer = useMemo(() => {
-  //   const action = tools[0];
-  //   const others = tools.slice(1);
-
-  //   return (
-  //     <Dropdown as={Group} onSelect={(k) => k && process(k)}>
-  //       <ActionButton
-  //         size="sm"
-  //         disabled={count === 0}
-  //         icon={action.icon}
-  //         onClick={() => process(action.key)}
-  //       >
-  //         {action.name}
-  //       </ActionButton>
-  //       <Dropdown.Toggle
-  //         disabled={count === 0}
-  //         split
-  //         color="light"
-  //         size="sm"
-  //         className="px-2"
-  //       ></Dropdown.Toggle>
-  //       <Dropdown.Menu>
-  //         {others.map((v) => (
-  //           <Dropdown.Item
-  //             key={v.key}
-  //             eventKey={v.modal ? undefined : v.key}
-  //             onSelect={() => {
-  //               if (v.modal) {
-  //                 show(v.modal);
-  //               }
-  //             }}
-  //           >
-  //             <ActionButtonItem icon={v.icon}>{v.name}</ActionButtonItem>
-  //           </Dropdown.Item>
-  //         ))}
-  //       </Dropdown.Menu>
-  //     </Dropdown>
-  //   );
-  // }, [count, process, show, tools]);
+  const footer = useMemo(() => {
+    return (
+      <Group>
+        <Menu
+          withArrow
+          placement="center"
+          control={
+            <Button disabled={count === 0} variant="light">
+              Select Action
+            </Button>
+          }
+        >
+          {tools.map((tool) => (
+            <Menu.Item
+              key={tool.key}
+              icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+              onClick={() => {
+                if (tool.modal) {
+                  show(tool.modal);
+                } else {
+                  process(tool.key);
+                }
+              }}
+            >
+              {tool.name}
+            </Menu.Item>
+          ))}
+        </Menu>
+      </Group>
+    );
+  }, [count, process, show, tools]);
 
   return (
-    <Modal title="Subtitle Tools">
+    <Modal title="Subtitle Tools" footer={footer}>
       <SimpleTable
         emptyText="No External Subtitles Found"
         plugins={plugins}

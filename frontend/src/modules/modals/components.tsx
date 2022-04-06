@@ -1,5 +1,5 @@
+import { Container, Divider } from "@mantine/core";
 import { FunctionComponent, ReactNode } from "react";
-import { useModalData } from "./hooks";
 
 interface StandardModalProps {
   title: string;
@@ -11,14 +11,11 @@ export const StandardModalView: FunctionComponent<StandardModalProps> = ({
   footer,
   title,
 }) => {
-  const { closeable } = useModalData();
-  // return (
-  //   <>
-  //     <Modal.Header closeButton={closeable}>{title}</Modal.Header>
-  //     <Modal.Body>{children}</Modal.Body>
-  //     <Modal.Footer hidden={footer === undefined}>{footer}</Modal.Footer>
-  //   </>
-  // );
-
-  return <>{children}</>;
+  return (
+    <Container px={0}>
+      {children}
+      {footer && <Divider my="md"></Divider>}
+      {footer}
+    </Container>
+  );
 };

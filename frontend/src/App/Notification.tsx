@@ -1,26 +1,6 @@
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import { useIsArrayExtended } from "@/utilities";
-import {
-  faBug,
-  faCircleNotch,
-  faExclamationTriangle,
-  faInfoCircle,
-  faStream,
-  IconDefinition,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-  FontAwesomeIcon,
-  FontAwesomeIconProps,
-} from "@fortawesome/react-fontawesome";
-import {
-  FunctionComponent,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { useDidUpdate, useTimeoutWhen } from "rooks";
 
 enum State {
@@ -58,8 +38,8 @@ function useHasErrorNotification(notifications: Server.Notification[]) {
 const NotificationCenter: FunctionComponent = () => {
   const { progress, notifications, notifier } = useReduxStore((s) => s.site);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [hasNew, setHasNew] = useState(false);
+  // const dropdownRef = useRef<HTMLDivElement>(null);
+  const [, setHasNew] = useState(false);
 
   const hasNewProgress = useIsArrayExtended(progress);
   const hasNewNotifications = useIsArrayExtended(notifications);
@@ -75,7 +55,7 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [progress.length, notifications.length]);
 
-  const [btnState, setBtnState] = useState(State.Idle);
+  const [, setBtnState] = useState(State.Idle);
 
   const totalProgress = useTotalProgress(progress);
   const hasError = useHasErrorNotification(notifications);
@@ -90,61 +70,61 @@ const NotificationCenter: FunctionComponent = () => {
     }
   }, [totalProgress, hasError]);
 
-  const iconProps = useMemo<FontAwesomeIconProps>(() => {
-    switch (btnState) {
-      case State.Idle:
-        return {
-          icon: faStream,
-        };
-      case State.Working:
-        return {
-          icon: faCircleNotch,
-          spin: true,
-        };
-      default:
-        return {
-          icon: faExclamationTriangle,
-        };
-    }
-  }, [btnState]);
+  // const iconProps = useMemo<FontAwesomeIconProps>(() => {
+  //   switch (btnState) {
+  //     case State.Idle:
+  //       return {
+  //         icon: faStream,
+  //       };
+  //     case State.Working:
+  //       return {
+  //         icon: faCircleNotch,
+  //         spin: true,
+  //       };
+  //     default:
+  //       return {
+  //         icon: faExclamationTriangle,
+  //       };
+  //   }
+  // }, [btnState]);
 
-  const content = useMemo<ReactNode>(() => {
-    const nodes: JSX.Element[] = [];
+  // const content = useMemo<ReactNode>(() => {
+  //   const nodes: JSX.Element[] = [];
 
-    // nodes.push(
-    //   <Dropdown.Header key="notifications-header">
-    //     {notifications.length > 0 ? "Notifications" : "No Notifications"}
-    //   </Dropdown.Header>
-    // );
-    // nodes.push(
-    //   ...notifications.map((v, idx) => (
-    //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "notification")}>
-    //       <Notification {...v}></Notification>
-    //     </Dropdown.Item>
-    //   ))
-    // );
+  // nodes.push(
+  //   <Dropdown.Header key="notifications-header">
+  //     {notifications.length > 0 ? "Notifications" : "No Notifications"}
+  //   </Dropdown.Header>
+  // );
+  // nodes.push(
+  //   ...notifications.map((v, idx) => (
+  //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "notification")}>
+  //       <Notification {...v}></Notification>
+  //     </Dropdown.Item>
+  //   ))
+  // );
 
-    // nodes.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
+  // nodes.push(<Dropdown.Divider key="dropdown-divider"></Dropdown.Divider>);
 
-    // nodes.push(
-    //   <Dropdown.Header key="background-task-header">
-    //     {progress.length > 0 ? "Background Tasks" : "No Background Tasks"}
-    //   </Dropdown.Header>
-    // );
-    // nodes.push(
-    //   ...progress.map((v, idx) => (
-    //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "progress")}>
-    //       <Progress {...v}></Progress>
-    //     </Dropdown.Item>
-    //   ))
-    // );
+  // nodes.push(
+  //   <Dropdown.Header key="background-task-header">
+  //     {progress.length > 0 ? "Background Tasks" : "No Background Tasks"}
+  //   </Dropdown.Header>
+  // );
+  // nodes.push(
+  //   ...progress.map((v, idx) => (
+  //     <Dropdown.Item disabled key={BuildKey(idx, v.id, "progress")}>
+  //       <Progress {...v}></Progress>
+  //     </Dropdown.Item>
+  //   ))
+  // );
 
-    return nodes;
-  }, [progress, notifications]);
+  //   return nodes;
+  // }, [progress, notifications]);
 
-  const onToggleClick = useCallback(() => {
-    setHasNew(false);
-  }, []);
+  // const onToggleClick = useCallback(() => {
+  //   setHasNew(false);
+  // }, []);
 
   // Tooltip Controller
   const [showTooltip, setTooltip] = useState(false);
@@ -183,27 +163,27 @@ const NotificationCenter: FunctionComponent = () => {
   // );
 };
 
-const Notification: FunctionComponent<Server.Notification> = ({
-  type,
-  message,
-}) => {
-  const icon = useMemo<IconDefinition>(() => {
-    switch (type) {
-      case "info":
-        return faInfoCircle;
-      case "warning":
-        return faExclamationTriangle;
-      default:
-        return faBug;
-    }
-  }, [type]);
-  return (
-    <div className="notification-center-notification d-flex flex-nowrap align-items-center justify-content-start my-1">
-      <FontAwesomeIcon className="mr-2 text-dark" icon={icon}></FontAwesomeIcon>
-      <span className="text-dark small">{message}</span>
-    </div>
-  );
-};
+// const Notification: FunctionComponent<Server.Notification> = ({
+//   type,
+//   message,
+// }) => {
+//   const icon = useMemo<IconDefinition>(() => {
+//     switch (type) {
+//       case "info":
+//         return faInfoCircle;
+//       case "warning":
+//         return faExclamationTriangle;
+//       default:
+//         return faBug;
+//     }
+//   }, [type]);
+//   return (
+//     <div className="notification-center-notification d-flex flex-nowrap align-items-center justify-content-start my-1">
+//       <FontAwesomeIcon className="mr-2 text-dark" icon={icon}></FontAwesomeIcon>
+//       <span className="text-dark small">{message}</span>
+//     </div>
+//   );
+// };
 
 // const Progress: FunctionComponent<Site.Progress> = ({
 //   name,

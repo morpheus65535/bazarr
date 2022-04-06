@@ -81,7 +81,7 @@ function SubtitleUploader<T>(props: Props<T>) {
 
   const { hide } = useModalControl();
 
-  const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
+  // const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
 
   const initialRef = useLatestRef(initial);
 
@@ -116,7 +116,7 @@ function SubtitleUploader<T>(props: Props<T>) {
 
       setPending(list);
     },
-    [update, validate, availableLanguages]
+    [availableLanguages, update, initialRef, validate]
   );
 
   const modify = useCallback(
@@ -199,7 +199,7 @@ function SubtitleUploader<T>(props: Props<T>) {
         Header: "HI",
         accessor: "hi",
         Cell: ({ row, value }) => {
-          const { original, index } = row;
+          const { original } = row;
           const mutate = useRowMutation();
           return (
             <Checkbox
@@ -219,7 +219,7 @@ function SubtitleUploader<T>(props: Props<T>) {
         Header: "Forced",
         accessor: "forced",
         Cell: ({ row, value }) => {
-          const { original, index } = row;
+          const { original } = row;
           const mutate = useRowMutation();
           return (
             <Checkbox

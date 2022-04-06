@@ -7,6 +7,7 @@ import {
   Input,
   Layout,
   Message,
+  Number,
   PathMappingTable,
   Selector,
   Slider,
@@ -38,10 +39,7 @@ const SettingsSonarrView: FunctionComponent = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text
-                settingKey="settings-sonarr-port"
-                numberWithArrows={true}
-              ></Text>
+              <Number settingKey="settings-sonarr-port"></Number>
             </Input>
             <Input name="Base URL">
               {/* <InputGroup>

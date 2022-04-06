@@ -6,6 +6,7 @@ import {
   Input,
   Layout,
   Message,
+  Password,
   Selector,
   Slider,
   Text,
@@ -132,10 +133,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
               <Text settingKey="settings-deathbycaptcha-username"></Text>
             </Input>
             <Input name="Password">
-              <Text
-                password
-                settingKey="settings-deathbycaptcha-password"
-              ></Text>
+              <Password settingKey="settings-deathbycaptcha-password"></Password>
             </Input>
           </CollapseBox.Content>
         </CollapseBox>

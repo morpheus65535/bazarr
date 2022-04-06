@@ -1,6 +1,14 @@
-import { Environment } from "@/utilities";
+import { copyToClipboard, Environment, toggleState } from "@/utilities";
+import {
+  faCheck,
+  faClipboard,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Group as MantineGroup } from "@mantine/core";
 import { FunctionComponent, useState } from "react";
 import {
+  Button,
   Check,
   Chips,
   CollapseBox,
@@ -9,6 +17,8 @@ import {
   Input,
   Layout,
   Message,
+  Number,
+  Password,
   Selector,
   Text,
 } from "../components";
@@ -38,11 +48,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
         </Input>
         <Input name="Port">
-          <Text
-            placeholder={6767}
+          <Number
+            placeholder="6767"
             settingKey="settings-general-port"
-            numberWithArrows={true}
-          ></Text>
+          ></Number>
         </Input>
         <Input name="Base URL">
           {/* <InputGroup>
@@ -75,39 +84,46 @@ const SettingsGeneralView: FunctionComponent = () => {
               <Text settingKey="settings-auth-username"></Text>
             </Input>
             <Input name="Password">
-              <Text password settingKey="settings-auth-password"></Text>
+              <Password settingKey="settings-auth-password"></Password>
             </Input>
           </CollapseBox.Content>
         </CollapseBox>
         <Input name="API Key">
-          {/* <InputGroup> */}
-          <Text disabled controlled settingKey={settingApiKey}></Text>
-          {/* <InputGroup.Append>
-              <Button
-                color={copied ? "success" : "light"}
-                settingKey={settingApiKey}
-                onClick={(update, key, value) => {
-                  if (value) {
-                    copyToClipboard(value);
-                    toggleState(setCopy, 1500);
-                  }
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={copied ? faCheck : faClipboard}
-                ></FontAwesomeIcon>
-              </Button>
-              <Button
-                color="danger"
-                settingKey={settingApiKey}
-                onClick={(update, key) => {
-                  update(generateApiKey(), key);
-                }}
-              >
-                <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
-              </Button>
-            </InputGroup.Append>
-          </InputGroup> */}
+          <Text
+            disabled
+            rightSectionWidth={95}
+            rightSectionProps={{ style: { justifyContent: "flex-end" } }}
+            rightSection={
+              <MantineGroup spacing="xs" mx="xs" position="right">
+                <Button
+                  variant="light"
+                  settingKey={settingApiKey}
+                  color={copied ? "green" : undefined}
+                  onClick={(update, key, value) => {
+                    if (value) {
+                      copyToClipboard(value);
+                      toggleState(setCopy, 1500);
+                    }
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={copied ? faCheck : faClipboard}
+                  ></FontAwesomeIcon>
+                </Button>
+                <Button
+                  variant="light"
+                  settingKey={settingApiKey}
+                  color="red"
+                  onClick={(update, key) => {
+                    update(generateApiKey(), key);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
+                </Button>
+              </MantineGroup>
+            }
+            settingKey={settingApiKey}
+          ></Text>
         </Input>
       </Group>
       <Group header="Proxy">
@@ -127,16 +143,13 @@ const SettingsGeneralView: FunctionComponent = () => {
               <Text settingKey="settings-proxy-url"></Text>
             </Input>
             <Input name="Port">
-              <Text
-                settingKey="settings-proxy-port"
-                numberWithArrows={true}
-              ></Text>
+              <Number settingKey="settings-proxy-port"></Number>
             </Input>
             <Input name="Username">
               <Text settingKey="settings-proxy-username"></Text>
             </Input>
             <Input name="Password">
-              <Text password settingKey="settings-proxy-password"></Text>
+              <Password settingKey="settings-proxy-password"></Password>
               <Message>
                 You only need to enter a username and password if one is
                 required. Leave them blank otherwise
@@ -182,10 +195,7 @@ const SettingsGeneralView: FunctionComponent = () => {
         </Input>
         <Input name="Retention">
           {/* <InputGroup> */}
-          <Text
-            settingKey="settings-backup-retention"
-            numberWithArrows={true}
-          ></Text>
+          <Number settingKey="settings-backup-retention"></Number>
           {/* <InputGroup.Prepend>
               <InputGroup.Text>Days</InputGroup.Text>
             </InputGroup.Prepend>

@@ -1,12 +1,7 @@
 import { useModal, usePayload, withModal } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { GetItemId, isMovie } from "@/utilities";
-import {
-  faCaretDown,
-  faCheck,
-  faDownload,
-  faInfoCircle,
-} from "@fortawesome/free-solid-svg-icons";
+import { faCaretDown, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Badge, Button, Collapse } from "@mantine/core";
 import clsx from "clsx";
@@ -252,31 +247,31 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   matches,
   dont,
 }) => {
-  let icon = faCheck;
-  let color = "var(--success)";
-  if (dont.length > 0) {
-    icon = faInfoCircle;
-    color = "var(--warning)";
-  }
+  // let icon = faCheck;
+  // let color = "var(--success)";
+  // if (dont.length > 0) {
+  //   icon = faInfoCircle;
+  //   color = "var(--warning)";
+  // }
 
-  const matchElements = useMemo(
-    () =>
-      matches.map((v, idx) => (
-        <p key={`match-${idx}`} className="text-nowrap m-0">
-          {v}
-        </p>
-      )),
-    [matches]
-  );
-  const dontElements = useMemo(
-    () =>
-      dont.map((v, idx) => (
-        <p key={`dont-${idx}`} className="text-nowrap m-0">
-          {v}
-        </p>
-      )),
-    [dont]
-  );
+  // const matchElements = useMemo(
+  //   () =>
+  //     matches.map((v, idx) => (
+  //       <p key={`match-${idx}`} className="text-nowrap m-0">
+  //         {v}
+  //       </p>
+  //     )),
+  //   [matches]
+  // );
+  // const dontElements = useMemo(
+  //   () =>
+  //     dont.map((v, idx) => (
+  //       <p key={`dont-${idx}`} className="text-nowrap m-0">
+  //         {v}
+  //       </p>
+  //     )),
+  //   [dont]
+  // );
 
   return null;
   // const popover = (

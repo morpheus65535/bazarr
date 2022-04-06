@@ -18,7 +18,7 @@ const Editor: FunctionComponent<Props> = ({ mutation }) => {
   const { hide } = useModalControl();
 
   const Modal = useModal({
-    closeable: mutation.isLoading,
+    closeable: !mutation.isLoading,
   });
 
   return (

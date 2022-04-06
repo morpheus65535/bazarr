@@ -19,15 +19,8 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   const {
     data,
     isFetching,
-    paginationStatus: {
-      page,
-      pageCount,
-      totalCount,
-      canPrevious,
-      canNext,
-      pageSize,
-    },
-    controls: { previousPage, nextPage, gotoPage },
+    paginationStatus: { page, pageCount, totalCount, pageSize },
+    controls: { gotoPage },
   } = query;
 
   const instance = useTable(

@@ -8,13 +8,18 @@ import {
 } from "@/components";
 import { isReactText } from "@/utilities";
 import {
-  Button as MantineButton,
-  ButtonProps as MantineButtonProps,
+  ActionIcon,
+  ActionIconProps,
   MultiSelect,
   MultiSelectProps,
+  NumberInput,
+  NumberInputProps,
+  PasswordInput,
+  PasswordInputProps,
   Switch,
   Text as MantineText,
   TextInput,
+  TextInputProps,
 } from "@mantine/core";
 import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import { FunctionComponent, ReactText, useEffect } from "react";
@@ -38,44 +43,46 @@ export interface BaseInput<T> {
   beforeStaged?: (v: T) => unknown;
 }
 
-export interface TextProps extends BaseInput<ReactText> {
-  placeholder?: ReactText;
-  password?: boolean;
-  controlled?: boolean;
-  numberWithArrows?: boolean;
-}
+export type NumberProps = BaseInput<number> & NumberInputProps;
+
+export const Number: FunctionComponent<NumberProps> = ({
+  beforeStaged,
+  override,
+  settingKey,
+  ...props
+}) => {
+  const value = useLatest<number>(settingKey, isNumber, override);
+
+  const update = useSingleUpdate();
+  return (
+    <NumberInput
+      {...props}
+      value={value ?? undefined}
+      onChange={(val = 0) => {
+        const value = beforeStaged ? beforeStaged(val) : val;
+        update(value, settingKey);
+      }}
+    ></NumberInput>
+  );
+};
+
+export type TextProps = BaseInput<ReactText> & TextInputProps;
 
 export const Text: FunctionComponent<TextProps> = ({
-  placeholder,
-  disabled,
   beforeStaged,
-  controlled,
   override,
-  password,
   settingKey,
-  numberWithArrows,
+  ...props
 }) => {
   const value = useLatest<ReactText>(settingKey, isReactText, override);
 
   const update = useSingleUpdate();
   const collapse = useCollapse();
 
-  const fieldType = () => {
-    if (password) {
-      return "password";
-    } else if (numberWithArrows) {
-      return "number";
-    } else {
-      return "text";
-    }
-  };
-
   return (
     <TextInput
-      placeholder={placeholder?.toString()}
-      disabled={disabled}
-      defaultValue={controlled ? undefined : value ?? undefined}
-      value={controlled ? value ?? undefined : undefined}
+      {...props}
+      value={value ?? undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
         collapse && collapse(val.toString());
@@ -83,6 +90,30 @@ export const Text: FunctionComponent<TextProps> = ({
         update(value, settingKey);
       }}
     ></TextInput>
+  );
+};
+
+export type PasswordProps = BaseInput<string> & PasswordInputProps;
+
+export const Password: FunctionComponent<PasswordProps> = ({
+  settingKey,
+  override,
+  beforeStaged,
+  ...props
+}) => {
+  const value = useLatest<ReactText>(settingKey, isReactText, override);
+  const update = useSingleUpdate();
+
+  return (
+    <PasswordInput
+      {...props}
+      value={value ?? undefined}
+      onChange={(e) => {
+        const val = e.currentTarget.value;
+        const value = beforeStaged ? beforeStaged(val) : val;
+        update(value, settingKey);
+      }}
+    ></PasswordInput>
   );
 };
 
@@ -205,7 +236,7 @@ type ButtonProps = {
 } & Omit<BaseInput<string>, "override" | "beforeStaged">;
 
 export const Button: FunctionComponent<
-  Override<ButtonProps, MantineButtonProps<"button">>
+  Override<ButtonProps, ActionIconProps<"button">>
 > = (props) => {
   const { onClick, settingKey, ...button } = props;
 
@@ -213,12 +244,12 @@ export const Button: FunctionComponent<
   const update = useSingleUpdate();
 
   return (
-    <MantineButton
+    <ActionIcon
       onClick={() => {
         onClick && onClick(update, settingKey, value ?? undefined);
       }}
       {...button}
-    ></MantineButton>
+    ></ActionIcon>
   );
 };
 

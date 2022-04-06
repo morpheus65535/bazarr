@@ -19,7 +19,15 @@ export const ModalWrapper: FunctionComponent<Props> = ({ children }) => {
   }, [isShowed, hideModal, key]);
 
   return (
-    <Modal centered size={size} opened={isShowed} onClose={exit}>
+    <Modal
+      centered
+      size={size}
+      opened={isShowed}
+      onClose={exit}
+      withCloseButton={closeable}
+      closeOnClickOutside={closeable}
+      closeOnEscape={closeable}
+    >
       {children}
     </Modal>
   );

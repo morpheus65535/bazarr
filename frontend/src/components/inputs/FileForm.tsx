@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
+import { FunctionComponent } from "react";
 
 export interface FileFormProps {
   disabled?: boolean;
@@ -15,32 +15,32 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
   disabled,
   onChange,
 }) => {
-  const [fileList, setFileList] = useState<File[]>([]);
+  // const [fileList, setFileList] = useState<File[]>([]);
 
-  const input = useRef<HTMLInputElement>(null);
+  // const input = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (files) {
-      setFileList(files);
+  // useEffect(() => {
+  //   if (files) {
+  //     setFileList(files);
 
-      if (files.length === 0 && input.current) {
-        // Manual reset file input
-        input.current.value = "";
-      }
-    }
-  }, [files]);
+  //     if (files.length === 0 && input.current) {
+  //       // Manual reset file input
+  //       input.current.value = "";
+  //     }
+  //   }
+  // }, [files]);
 
-  const label = useMemo(() => {
-    if (fileList.length === 0) {
-      return emptyText;
-    } else {
-      if (multiple) {
-        return `${fileList.length} Files`;
-      } else {
-        return fileList[0].name;
-      }
-    }
-  }, [fileList, emptyText, multiple]);
+  // const label = useMemo(() => {
+  //   if (fileList.length === 0) {
+  //     return emptyText;
+  //   } else {
+  //     if (multiple) {
+  //       return `${fileList.length} Files`;
+  //     } else {
+  //       return fileList[0].name;
+  //     }
+  //   }
+  // }, [fileList, emptyText, multiple]);
 
   return null;
   // return (

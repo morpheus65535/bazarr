@@ -19,6 +19,7 @@ import {
   Card,
   Check,
   Message,
+  Password,
   StagedChangesContext,
   Text,
   useLatest,
@@ -169,13 +170,21 @@ const ProviderTool: FunctionComponent = () => {
       }
 
       if (isReactText(value)) {
-        elements.push(
-          <Text
-            password={key === "password"}
-            placeholder={visibleKey}
-            settingKey={`settings-${itemKey}-${key}`}
-          ></Text>
-        );
+        if (key === "password") {
+          elements.push(
+            <Password
+              placeholder={visibleKey}
+              settingKey={`settings-${itemKey}-${key}`}
+            ></Password>
+          );
+        } else {
+          elements.push(
+            <Text
+              placeholder={visibleKey}
+              settingKey={`settings-${itemKey}-${key}`}
+            ></Text>
+          );
+        }
       } else if (isBoolean(value)) {
         checks.push(
           <Check

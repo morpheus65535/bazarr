@@ -20,7 +20,7 @@ const TextPopover: FunctionComponent<TextPopoverProps> = ({
 
   return (
     <Tooltip opened={hovered} label={text}>
-      {children}
+      <div ref={ref}>{children}</div>
     </Tooltip>
   );
 };

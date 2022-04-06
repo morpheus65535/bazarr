@@ -1,11 +1,8 @@
 import { useModal, withModal } from "@/modules/modals";
-import { Button } from "@mantine/core";
-import {
-  ChangeEventHandler,
-  FunctionComponent,
-  useCallback,
-  useState,
-} from "react";
+import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ActionIcon, Button, Group, NumberInput } from "@mantine/core";
+import { FunctionComponent, useCallback, useState } from "react";
 import { useProcess } from "./ToolContext";
 
 function submodProcessOffset(h: number, m: number, s: number, ms: number) {
@@ -21,14 +18,10 @@ const TimeAdjustmentTool: FunctionComponent = () => {
   const Modal = useModal();
 
   const updateOffset = useCallback(
-    (idx: number): ChangeEventHandler<HTMLInputElement> => {
-      return (e) => {
-        let value = parseFloat(e.currentTarget.value);
-        if (isNaN(value)) {
-          value = 0;
-        }
+    (idx: number) => {
+      return (num: number | undefined) => {
         const newOffset = [...offset] as [number, number, number, number];
-        newOffset[idx] = value;
+        newOffset[idx] = num ?? 0;
         setOffset(newOffset);
       };
     },
@@ -60,37 +53,22 @@ const TimeAdjustmentTool: FunctionComponent = () => {
 
   return (
     <Modal title="Adjust Times" footer={footer}>
-      {/* <InputGroup>
-        <InputGroup.Prepend>
-          <Button
-            color="secondary"
-            title={isPlus ? "Later" : "Earlier"}
-            onClick={() => setPlus(!isPlus)}
-          >
-            <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
-          </Button>
-        </InputGroup.Prepend>
-        <Form.Control
-          type="number"
+      <Group spacing="xs" noWrap>
+        <ActionIcon
+          color="gray"
+          variant="filled"
+          onClick={() => setPlus((p) => !p)}
+        >
+          <FontAwesomeIcon icon={isPlus ? faPlus : faMinus}></FontAwesomeIcon>
+        </ActionIcon>
+        <NumberInput
           placeholder="hour"
           onChange={updateOffset(0)}
-        ></Form.Control>
-        <Form.Control
-          type="number"
-          placeholder="min"
-          onChange={updateOffset(1)}
-        ></Form.Control>
-        <Form.Control
-          type="number"
-          placeholder="sec"
-          onChange={updateOffset(2)}
-        ></Form.Control>
-        <Form.Control
-          type="number"
-          placeholder="ms"
-          onChange={updateOffset(3)}
-        ></Form.Control>
-      </InputGroup> */}
+        ></NumberInput>
+        <NumberInput placeholder="min" onChange={updateOffset(1)}></NumberInput>
+        <NumberInput placeholder="sec" onChange={updateOffset(2)}></NumberInput>
+        <NumberInput placeholder="ms" onChange={updateOffset(3)}></NumberInput>
+      </Group>
     </Modal>
   );
 };
