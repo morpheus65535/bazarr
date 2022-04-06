@@ -1,7 +1,5 @@
 import queryClient from "@/apis/queries";
 import store from "@/modules/redux/store";
-// TODO
-// import "@/styles/index.scss";
 import "@fontsource/roboto/300.css";
 import {
   ColorScheme,

@@ -1,6 +1,14 @@
 import { MantineThemeOverride } from "@mantine/core";
 
 const Theme: MantineThemeOverride = {
+  fontFamily: [
+    "Roboto",
+    "open sans",
+    "Helvetica Neue",
+    "Helvetica",
+    "Arial",
+    "sans-serif",
+  ],
   colors: {
     brand: [
       "#F8F0FC",
