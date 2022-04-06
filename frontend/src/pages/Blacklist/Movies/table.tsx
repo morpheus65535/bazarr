@@ -1,10 +1,9 @@
 import { useMovieDeleteBlacklist } from "@/apis/hooks";
 import { PageTable } from "@/components";
-import { AsyncButton } from "@/components/async";
+import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -63,23 +62,21 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         accessor: "subs_id",
         Cell: ({ row, value }) => {
-          const { mutateAsync } = useMovieDeleteBlacklist();
+          const remove = useMovieDeleteBlacklist();
 
           return (
-            <AsyncButton
+            <MutateAction
               noReset
-              promise={() =>
-                mutateAsync({
-                  all: false,
-                  form: {
-                    provider: row.original.provider,
-                    subs_id: value,
-                  },
-                })
-              }
-            >
-              <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-            </AsyncButton>
+              icon={faTrash}
+              mutation={remove}
+              args={() => ({
+                all: false,
+                form: {
+                  provider: row.original.provider,
+                  subs_id: value,
+                },
+              })}
+            ></MutateAction>
           );
         },
       },

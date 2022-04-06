@@ -77,7 +77,7 @@ const SeriesView: FunctionComponent = () => {
             <Progress
               key={title}
               size="xl"
-              color={episodeMissingCount === 0 ? "blue" : "yellow"}
+              color={episodeMissingCount === 0 ? "brand" : "yellow"}
               value={progress}
               label={label}
             ></Progress>

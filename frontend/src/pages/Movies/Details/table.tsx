@@ -1,12 +1,11 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
-import { AsyncButton } from "@/components/async";
+import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
@@ -77,40 +76,36 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
             return null;
           } else if (path === missingText) {
             return (
-              <AsyncButton
+              <MutateAction
                 disabled={disabled}
-                promise={() =>
-                  download.mutateAsync({
-                    radarrId,
-                    form: {
-                      language: code2,
-                      hi,
-                      forced,
-                    },
-                  })
-                }
-              >
-                <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
-              </AsyncButton>
+                icon={faSearch}
+                mutation={download}
+                args={() => ({
+                  radarrId,
+                  form: {
+                    language: code2,
+                    hi,
+                    forced,
+                  },
+                })}
+              ></MutateAction>
             );
           } else {
             return (
-              <AsyncButton
+              <MutateAction
                 disabled={disabled}
-                promise={() =>
-                  remove.mutateAsync({
-                    radarrId,
-                    form: {
-                      language: code2,
-                      hi,
-                      forced,
-                      path,
-                    },
-                  })
-                }
-              >
-                <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-              </AsyncButton>
+                icon={faTrash}
+                mutation={remove}
+                args={() => ({
+                  radarrId,
+                  form: {
+                    language: code2,
+                    hi,
+                    forced,
+                    path,
+                  },
+                })}
+              ></MutateAction>
             );
           }
         },

@@ -1,10 +1,14 @@
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
+import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
-import { BlacklistButton } from "@/components/inputs/blacklist";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/components/views/HistoryView";
-import { faInfoCircle, faRecycle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFileExcel,
+  faInfoCircle,
+  faRecycle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
@@ -91,15 +95,31 @@ const MoviesHistoryView: FunctionComponent = () => {
       },
       {
         accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const { radarrId } = row.original;
-          const { mutateAsync } = useMovieAddBlacklist();
-          return (
-            <BlacklistButton
-              history={row.original}
-              promise={(form) => mutateAsync({ id: radarrId, form })}
-            ></BlacklistButton>
-          );
+        Cell: ({ row, value }) => {
+          const add = useMovieAddBlacklist();
+          const { radarrId, provider, subs_id, language, subtitles_path } =
+            row.original;
+
+          if (subs_id && provider && language) {
+            return (
+              <MutateAction
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
+                  id: radarrId,
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
         },
       },
     ],

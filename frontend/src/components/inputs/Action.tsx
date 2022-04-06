@@ -4,23 +4,21 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 import { ActionIcon, ActionIconProps } from "@mantine/core";
-import { FunctionComponent } from "react";
+import { forwardRef } from "react";
 
 export type ActionProps = ActionIconProps<"button"> & {
   icon: IconDefinition;
   iconProps?: Omit<FontAwesomeIconProps, "icon">;
 };
 
-const Action: FunctionComponent<ActionProps> = ({
-  icon,
-  iconProps,
-  ...props
-}) => {
-  return (
-    <ActionIcon {...props}>
-      <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
-    </ActionIcon>
-  );
-};
+const Action = forwardRef<HTMLButtonElement, ActionProps>(
+  ({ icon, iconProps, ...props }, ref) => {
+    return (
+      <ActionIcon {...props} ref={ref}>
+        <FontAwesomeIcon icon={icon} {...iconProps}></FontAwesomeIcon>
+      </ActionIcon>
+    );
+  }
+);
 
 export default Action;

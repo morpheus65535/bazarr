@@ -1,8 +1,7 @@
 import { useRunTask } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
-import { AsyncButton } from "@/components/async";
+import MutateAction from "@/components/async/MutateAction";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
 
@@ -30,17 +29,17 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       },
       {
         accessor: "job_running",
-        Cell: (row) => {
-          const { job_id } = row.row.original;
-          const { mutateAsync } = useRunTask();
+        Cell: ({ row, value }) => {
+          const { job_id } = row.original;
+          const runTask = useRunTask();
+
           return (
-            <AsyncButton
-              promise={() => mutateAsync(job_id)}
-              disabled={row.value}
-              animation={false}
-            >
-              <FontAwesomeIcon icon={faSync} spin={row.value}></FontAwesomeIcon>
-            </AsyncButton>
+            <MutateAction
+              icon={faSync}
+              iconProps={{ spin: value }}
+              mutation={runTask}
+              args={() => job_id}
+            ></MutateAction>
           );
         },
       },

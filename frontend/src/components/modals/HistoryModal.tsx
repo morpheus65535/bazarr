@@ -5,14 +5,15 @@ import {
   useMovieHistory,
 } from "@/apis/hooks";
 import { useModal, usePayload, withModal } from "@/modules/modals";
+import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
+import MutateAction from "../async/MutateAction";
 import QueryOverlay from "../async/QueryOverlay";
 import { HistoryIcon } from "../bazarr";
 import Language from "../bazarr/Language";
-import { BlacklistButton } from "../inputs/blacklist";
 import TextPopover from "../TextPopover";
 
 const MovieHistoryView: FunctionComponent = () => {
@@ -66,20 +67,35 @@ const MovieHistoryView: FunctionComponent = () => {
       {
         // Actions
         accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const { radarrId } = row.original;
-          const { mutateAsync } = useMovieAddBlacklist();
-          return (
-            <BlacklistButton
-              update={history.refetch}
-              promise={(form) => mutateAsync({ id: radarrId, form })}
-              history={row.original}
-            ></BlacklistButton>
-          );
+        Cell: ({ row, value }) => {
+          const add = useMovieAddBlacklist();
+          const { radarrId, provider, subs_id, language, subtitles_path } =
+            row.original;
+
+          if (subs_id && provider && language) {
+            return (
+              <MutateAction
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
+                  id: radarrId,
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
         },
       },
     ],
-    [history.refetch]
+    []
   );
 
   return (
@@ -148,23 +164,38 @@ const EpisodeHistoryView: FunctionComponent = () => {
       {
         // Actions
         accessor: "blacklisted",
-        Cell: ({ row }) => {
-          const original = row.original;
+        Cell: ({ row, value }) => {
+          const {
+            sonarrEpisodeId,
+            sonarrSeriesId,
+            provider,
+            subs_id,
+            language,
+            subtitles_path,
+          } = row.original;
+          const add = useEpisodeAddBlacklist();
 
-          const { sonarrEpisodeId, sonarrSeriesId } = original;
-          const { mutateAsync } = useEpisodeAddBlacklist();
-          return (
-            <BlacklistButton
-              history={original}
-              promise={(form) =>
-                mutateAsync({
+          if (subs_id && provider && language) {
+            return (
+              <MutateAction
+                disabled={value}
+                icon={faFileExcel}
+                mutation={add}
+                args={() => ({
                   seriesId: sonarrSeriesId,
                   episodeId: sonarrEpisodeId,
-                  form,
-                })
-              }
-            ></BlacklistButton>
-          );
+                  form: {
+                    provider,
+                    subs_id,
+                    subtitles_path,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
         },
       },
     ],
