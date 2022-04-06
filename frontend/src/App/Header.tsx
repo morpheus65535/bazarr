@@ -4,15 +4,10 @@ import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { Environment, useGotoHomepage } from "@/utilities";
-import {
-  faGear,
-  faHeart,
-  faNetworkWired,
-} from "@fortawesome/free-solid-svg-icons";
+import { faGear, faNetworkWired } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   ActionIcon,
-  Anchor,
   Avatar,
   Badge,
   Burger,
@@ -73,14 +68,6 @@ const AppHeader: FunctionComponent = () => {
         </Group>
         <Group spacing="xs" position="right">
           {/* NotificationCenter */}
-          <Anchor
-            href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
-            target="_blank"
-          >
-            <ActionIcon variant="light" color="red">
-              <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
-            </ActionIcon>
-          </Anchor>
           {offline ? (
             <Button color="yellow">
               <FontAwesomeIcon icon={faNetworkWired}></FontAwesomeIcon>

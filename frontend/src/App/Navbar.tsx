@@ -4,14 +4,24 @@ import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
 import { BuildKey, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import {
+  faHeart,
+  faMoon,
+  faSun,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  ActionIcon,
+  Anchor,
   Badge,
   Button,
   Collapse,
+  Divider,
+  Group,
   Navbar as MantineNavbar,
   Text,
+  useMantineColorScheme,
 } from "@mantine/core";
 import {
   createContext,
@@ -87,6 +97,9 @@ function useIsActive(parent: string, route: RouteObject) {
 const AppNavbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
 
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const dark = colorScheme === "dark";
+
   const routes = useRouteItems();
 
   const { pathname } = useLocation();
@@ -96,7 +109,7 @@ const AppNavbar: FunctionComponent = () => {
 
   return (
     <Selection.Provider value={{ selection, select }}>
-      <MantineNavbar.Section>
+      <MantineNavbar.Section grow>
         {routes.map((route, idx) => (
           <RouteItem
             key={BuildKey("nav", idx)}
@@ -104,6 +117,26 @@ const AppNavbar: FunctionComponent = () => {
             route={route}
           ></RouteItem>
         ))}
+      </MantineNavbar.Section>
+      <Divider></Divider>
+      <MantineNavbar.Section mt="xs">
+        <Group spacing="xs">
+          <ActionIcon
+            color={dark ? "yellow" : "indigo"}
+            variant="light"
+            onClick={() => toggleColorScheme()}
+          >
+            <FontAwesomeIcon icon={dark ? faSun : faMoon}></FontAwesomeIcon>
+          </ActionIcon>
+          <Anchor
+            href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
+            target="_blank"
+          >
+            <ActionIcon variant="light" color="red">
+              <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
+            </ActionIcon>
+          </Anchor>
+        </Group>
       </MantineNavbar.Section>
     </Selection.Provider>
   );

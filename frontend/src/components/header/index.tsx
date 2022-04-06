@@ -4,7 +4,8 @@ import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 
 const useStyles = createStyles((theme) => ({
   group: {
-    backgroundColor: theme.colors.gray[4],
+    backgroundColor:
+      theme.colorScheme === "light" ? theme.colors.dark[0] : undefined,
   },
 }));
 
