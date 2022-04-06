@@ -55,6 +55,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "bsplayer",
     name: "BSplayer",
+    description:
+      "Provider removed from Bazarr because it was causing too much issues so it will always return no subtitles",
   },
   {
     key: "embeddedsubtitles",

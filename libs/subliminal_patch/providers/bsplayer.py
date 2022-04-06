@@ -86,8 +86,9 @@ class BSPlayerProvider(Provider):
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
 
-        self.search_url = self.get_sub_domain()
-        self.login()
+        # commented out this part to prevent usage of this provider and return no subtitles
+        # self.search_url = self.get_sub_domain()
+        # self.login()
 
     def terminate(self):
         self.session.close()
@@ -238,7 +239,9 @@ class BSPlayerProvider(Provider):
         return subtitles
 
     def list_subtitles(self, video, languages):
-        return self.query(video, video.hashes["bsplayer"], languages)
+        return []
+        # commented out this part to prevent usage of this provider and return no subtitles
+        # return self.query(video, video.hashes["bsplayer"], languages)
 
     def get_sub_domain(self):
         # API_URL_TEMPLATE = None
