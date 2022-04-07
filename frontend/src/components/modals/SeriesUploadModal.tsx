@@ -1,6 +1,9 @@
-import { useEpisodeSubtitleModification } from "@/apis/hooks";
+import {
+  useEpisodesBySeriesId,
+  useEpisodeSubtitleModification,
+} from "@/apis/hooks";
 import api from "@/apis/raw";
-import { usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import { useSelectorOptions } from "@/utilities";
 import {
@@ -20,13 +23,12 @@ interface Payload {
   instance: Item.Episode | null;
 }
 
-interface SeriesProps {
-  episodes: readonly Item.Episode[];
+interface Props {
+  payload: Item.Series;
 }
 
-const SeriesUploadModal: FunctionComponent<SeriesProps> = ({ episodes }) => {
-  const payload = usePayload<Item.Series>();
-
+const SeriesUploadModal: FunctionComponent<Props> = ({ payload }) => {
+  const { data: episodes = [] } = useEpisodesBySeriesId(payload.sonarrSeriesId);
   const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);

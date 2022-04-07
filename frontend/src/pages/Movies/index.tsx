@@ -4,7 +4,7 @@ import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -16,8 +16,6 @@ import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
 const MovieView: FunctionComponent = () => {
-  const mutation = useMovieModification();
-
   const query = useMoviesPagination();
 
   const columns: Column<Item.Movie>[] = useMemo<Column<Item.Movie>[]>(
@@ -78,11 +76,17 @@ const MovieView: FunctionComponent = () => {
       {
         accessor: "radarrId",
         Cell: ({ row }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
+          const mutation = useMovieModification();
           return (
             <Action
               variant="light"
-              onClick={() => show(ItemEditModal, row.original)}
+              onClick={() =>
+                modals.openContextModal(ItemEditModal, {
+                  mutation,
+                  item: row.original,
+                })
+              }
               icon={faWrench}
             ></Action>
           );
@@ -98,7 +102,6 @@ const MovieView: FunctionComponent = () => {
         <title>Movies - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditModal mutation={mutation}></ItemEditModal>
     </Container>
   );
 };

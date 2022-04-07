@@ -4,7 +4,7 @@ import { Language } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/modals";
 import ItemView from "@/components/views/ItemView";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Anchor, Container, Progress, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
@@ -78,18 +78,23 @@ const SeriesView: FunctionComponent = () => {
       {
         accessor: "sonarrSeriesId",
         Cell: ({ row: { original } }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           return (
             <Action
               variant="light"
-              onClick={() => show(ItemEditModal, original)}
+              onClick={() =>
+                modals.openContextModal(ItemEditModal, {
+                  mutation,
+                  item: original,
+                })
+              }
               icon={faWrench}
             ></Action>
           );
         },
       },
     ],
-    []
+    [mutation]
   );
 
   return (
@@ -98,7 +103,6 @@ const SeriesView: FunctionComponent = () => {
         <title>Series - Bazarr</title>
       </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
-      <ItemEditModal mutation={mutation}></ItemEditModal>
     </Container>
   );
 };

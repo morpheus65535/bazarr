@@ -1,17 +1,15 @@
 import { Selector } from "@/components";
-import { useModal, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { submodProcessColor } from "@/utilities";
-import { Button } from "@mantine/core";
+import { Button, Divider, Stack } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { useProcess } from "./ToolContext";
+import { useProcess } from ".";
 import { colorOptions } from "./tools";
 
 const ColorTool: FunctionComponent = () => {
   const [selection, setSelection] = useState<Nullable<string>>(null);
 
-  const Modal = useModal();
-
-  const process = useProcess();
+  const process = useProcess([]);
 
   const submit = useCallback(() => {
     if (selection) {
@@ -20,16 +18,14 @@ const ColorTool: FunctionComponent = () => {
     }
   }, [process, selection]);
 
-  const footer = (
-    <Button disabled={selection === null} onClick={submit}>
-      Save
-    </Button>
-  );
-
   return (
-    <Modal title="Choose Color" footer={footer}>
+    <Stack>
       <Selector options={colorOptions} onChange={setSelection}></Selector>
-    </Modal>
+      <Divider></Divider>
+      <Button disabled={selection === null} onClick={submit}>
+        Save
+      </Button>
+    </Stack>
   );
 };
 

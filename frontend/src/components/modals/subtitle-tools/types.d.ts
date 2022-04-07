@@ -5,5 +5,5 @@ export interface ToolOptions {
   key: string;
   icon: IconDefinition;
   name: string;
-  modal?: ModalComponent<unknown>;
+  modal?: ModalComponent;
 }

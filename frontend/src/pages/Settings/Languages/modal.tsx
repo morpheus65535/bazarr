@@ -1,18 +1,15 @@
 import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { Language } from "@/components/bazarr";
-import {
-  useModal,
-  useModalControl,
-  usePayload,
-  withModal,
-} from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
   Button,
   Checkbox,
+  Divider,
   MultiSelect,
+  Stack,
   Switch,
   TextInput,
 } from "@mantine/core";
@@ -40,38 +37,21 @@ function useRowMutation() {
 }
 
 interface Props {
-  update: (profile: Language.Profile) => void;
+  onComplete: (profile: Language.Profile) => void;
+  profile: Language.Profile;
 }
 
-function createDefaultProfile(): Language.Profile {
-  return {
-    profileId: -1,
-    name: "",
-    items: [],
-    cutoff: null,
-    mustContain: [],
-    mustNotContain: [],
-    originalFormat: false,
-  };
-}
-
-const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
-  const profile = usePayload<Language.Profile>();
-
-  const { hide } = useModalControl();
-
+const LanguagesProfileModal: FunctionComponent<Props> = ({
+  onComplete,
+  profile,
+}) => {
   const languages = useLatestEnabledLanguages();
 
   const languageOptions = useSelectorOptions(languages, (l) => l.name);
 
-  const [current, setProfile] = useState(createDefaultProfile);
+  const [current, setProfile] = useState(profile);
 
-  const Modal = useModal({
-    size: "lg",
-    onMounted: () => {
-      setProfile(profile ?? createDefaultProfile);
-    },
-  });
+  const modals = useModals();
 
   const cutoff: SelectorOption<number>[] = useMemo(() => {
     const options = [...cutoffOptions];
@@ -233,20 +213,8 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
     [languageOptions]
   );
 
-  const footer = (
-    <Button
-      disabled={!canSave}
-      onClick={() => {
-        hide();
-        update(current);
-      }}
-    >
-      Save
-    </Button>
-  );
-
   return (
-    <Modal title="Languages Profile" footer={footer}>
+    <Stack>
       <Input>
         <TextInput
           placeholder="Name"
@@ -320,7 +288,17 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
         ></Switch>
         <Message>Download subtitle file without format conversion</Message>
       </Input>
-    </Modal>
+      <Divider></Divider>
+      <Button
+        disabled={!canSave}
+        onClick={() => {
+          onComplete(current);
+          modals.closeAll();
+        }}
+      >
+        Save
+      </Button>
+    </Stack>
   );
 };
 

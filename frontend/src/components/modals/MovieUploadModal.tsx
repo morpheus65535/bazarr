@@ -1,5 +1,5 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
@@ -11,10 +11,12 @@ import SubtitleUploader, {
   Validator,
 } from "./SubtitleUploadModal";
 
-const MovieUploadModal: FunctionComponent = () => {
-  const payload = usePayload<Item.Movie>();
+interface Props {
+  payload: Item.Movie;
+}
 
-  const profile = useLanguageProfileBy(payload?.profileId);
+const MovieUploadModal: FunctionComponent<Props> = ({ payload }) => {
+  const profile = useLanguageProfileBy(payload.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
@@ -34,7 +36,7 @@ const MovieUploadModal: FunctionComponent = () => {
           messages: ["Language is not selected"],
         };
       } else if (
-        payload?.subtitles.find((v) => v.code2 === item.language?.code2) !==
+        payload.subtitles.find((v) => v.code2 === item.language?.code2) !==
         undefined
       ) {
         return {
@@ -47,15 +49,11 @@ const MovieUploadModal: FunctionComponent = () => {
         messages: [],
       };
     },
-    [payload?.subtitles]
+    [payload.subtitles]
   );
 
   const upload = useCallback(
     (items: PendingSubtitle<unknown>[]) => {
-      if (payload === null) {
-        return;
-      }
-
       const { radarrId } = payload;
 
       const tasks = items

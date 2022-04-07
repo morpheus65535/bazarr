@@ -2,11 +2,9 @@ import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { Action, GroupTable } from "@/components";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import SubtitleTools, {
-  SubtitleToolModal,
-} from "@/components/modals/subtitle-tools";
+import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import TextPopover from "@/components/TextPopover";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
@@ -157,27 +155,35 @@ const Table: FunctionComponent<Props> = ({
         Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: ({ row }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           return (
             <Group spacing="xs" noWrap>
               <Action
                 disabled={series?.profileId === null || disabled}
                 onClick={() => {
-                  show(EpisodeSearchModal, row.original);
+                  modals.openContextModal(EpisodeSearchModal, {
+                    item: row.original,
+                    download,
+                    query: useEpisodesProvider,
+                  });
                 }}
                 icon={faUser}
               ></Action>
               <Action
                 disabled={disabled}
                 onClick={() => {
-                  show(EpisodeHistoryModal, row.original);
+                  modals.openContextModal(EpisodeHistoryModal, {
+                    episode: row.original,
+                  });
                 }}
                 icon={faHistory}
               ></Action>
               <Action
                 disabled={disabled}
                 onClick={() => {
-                  show(SubtitleToolModal, [row.original]);
+                  modals.openContextModal(SubtitleToolModal, {
+                    payload: [row.original],
+                  });
                 }}
                 icon={faBriefcase}
               ></Action>
@@ -186,7 +192,7 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, series, disabled]
+    [onlyDesired, profileItems, series?.profileId, disabled, download]
   );
 
   const maxSeason = useMemo(
@@ -196,29 +202,21 @@ const Table: FunctionComponent<Props> = ({
   );
 
   return (
-    <>
-      <GroupTable
-        columns={columns}
-        data={episodes}
-        initialState={{
-          sortBy: [
-            { id: "season", desc: true },
-            { id: "episode", desc: true },
-          ],
-          groupBy: ["season"],
-          expanded: {
-            [`season:${maxSeason}`]: true,
-          },
-        }}
-        emptyText="No Episode Found For This Series"
-      ></GroupTable>
-      <SubtitleTools></SubtitleTools>
-      <EpisodeHistoryModal></EpisodeHistoryModal>
-      <EpisodeSearchModal
-        download={download}
-        query={useEpisodesProvider}
-      ></EpisodeSearchModal>
-    </>
+    <GroupTable
+      columns={columns}
+      data={episodes}
+      initialState={{
+        sortBy: [
+          { id: "season", desc: true },
+          { id: "episode", desc: true },
+        ],
+        groupBy: ["season"],
+        expanded: {
+          [`season:${maxSeason}`]: true,
+        },
+      }}
+      emptyText="No Episode Found For This Series"
+    ></GroupTable>
   );
 };
 

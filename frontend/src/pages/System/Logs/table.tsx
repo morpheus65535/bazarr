@@ -1,5 +1,5 @@
 import { Action, PageTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBug,
@@ -54,12 +54,14 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
       {
         accessor: "exception",
         Cell: ({ value }) => {
-          const { show } = useModalControl();
+          const modals = useModals();
           if (!isUndefined(value)) {
             return (
               <Action
                 icon={faLayerGroup}
-                onClick={() => show(SystemLogModal, value)}
+                onClick={() =>
+                  modals.openContextModal(SystemLogModal, { stack: value })
+                }
               ></Action>
             );
           } else {
@@ -74,7 +76,6 @@ const Table: FunctionComponent<Props> = ({ logs }) => {
   return (
     <>
       <PageTable columns={columns} data={logs}></PageTable>
-      <SystemLogModal></SystemLogModal>
     </>
   );
 };

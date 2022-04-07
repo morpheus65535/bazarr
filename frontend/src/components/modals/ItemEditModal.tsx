@@ -1,35 +1,25 @@
-import {
-  useModal,
-  useModalControl,
-  usePayload,
-  withModal,
-} from "@/modules/modals";
-import { FunctionComponent } from "react";
+import { useModals, withModal } from "@/modules/modals";
+import { FunctionComponent, useCallback } from "react";
 import { UseMutationResult } from "react-query";
 import ItemEditForm from "../forms/ItemEditForm";
 
 interface Props {
+  item: Item.Base;
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem, unknown>;
 }
 
-const Editor: FunctionComponent<Props> = ({ mutation }) => {
-  const payload = usePayload<Item.Base>();
+const Editor: FunctionComponent<Props> = ({ mutation, item }) => {
+  const modals = useModals();
 
-  const { hide } = useModalControl();
-
-  const Modal = useModal({
-    closeable: !mutation.isLoading,
-  });
+  const hide = useCallback(() => modals.closeSelf(), [modals]);
 
   return (
-    <Modal title={payload?.title ?? "Item Editor"}>
-      <ItemEditForm
-        mutation={mutation}
-        item={payload}
-        onCancel={hide}
-        onComplete={hide}
-      ></ItemEditForm>
-    </Modal>
+    <ItemEditForm
+      mutation={mutation}
+      item={item}
+      onCancel={hide}
+      onComplete={hide}
+    ></ItemEditForm>
   );
 };
 

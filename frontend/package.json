@@ -13,14 +13,14 @@
   },
   "private": true,
   "dependencies": {
+    "@mantine/core": "^4",
+    "@mantine/hooks": "^4",
     "axios": "^0.26",
     "react": "^17",
     "react-dom": "^17",
     "react-query": "^3.34",
     "react-redux": "^7.2",
     "react-router-dom": "^6.2.1",
-    "@mantine/core": "^4",
-    "@mantine/hooks": "^4",
     "socket.io-client": "^4"
   },
   "devDependencies": {
@@ -30,6 +30,7 @@
     "@fortawesome/free-regular-svg-icons": "^6",
     "@fortawesome/free-solid-svg-icons": "^6",
     "@fortawesome/react-fontawesome": "^0.1",
+    "@mantine/modals": "^4.1.2",
     "@reduxjs/toolkit": "^1",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "12",

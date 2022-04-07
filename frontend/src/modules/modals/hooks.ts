@@ -1,90 +1,55 @@
-import {
-  hideModalAction,
-  showModalAction,
-} from "@/modules/redux/actions/modal";
-import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
-import { StandardModalView } from "./components";
-import {
-  ModalData,
-  ModalDataContext,
-  ModalSetterContext,
-} from "./ModalContext";
-import { ModalComponent } from "./WithModal";
+/* eslint-disable @typescript-eslint/ban-types */
+import { useModals as useMantineModals } from "@mantine/modals";
+import { ModalSettings } from "@mantine/modals/lib/context";
+import { useCallback, useContext, useEffect, useMemo } from "react";
+import { ModalComponent, ModalIdContext } from "./WithModal";
 
-type ModalProps = Partial<Omit<ModalData, "key">> & {
-  onMounted?: () => void;
-};
+export function useModals() {
+  const { openContextModal: openMantineContextModal, ...rest } =
+    useMantineModals();
 
-export function useModal(props?: ModalProps): typeof StandardModalView {
-  const setter = useContext(ModalSetterContext);
-
-  useEffect(() => {
-    if (setter && props) {
-      setter.closeable(props.closeable ?? true);
-      setter.size(props.size);
-    }
-  }, [props, setter]);
-
-  const ref = useRef<ModalProps["onMounted"]>(props?.onMounted);
-  ref.current = props?.onMounted;
-
-  const layer = useCurrentLayer();
-
-  useEffect(() => {
-    if (layer !== -1 && ref.current) {
-      ref.current();
-    }
-  }, [layer]);
-
-  return StandardModalView;
-}
-
-export function useModalControl() {
-  const showAction = useReduxAction(showModalAction);
-
-  const show = useCallback(
-    <P>(comp: ModalComponent<P>, payload?: unknown) => {
-      showAction({ key: comp.modalKey, payload });
+  const openContextModal = useCallback(
+    <ARGS extends {}>(
+      modal: ModalComponent<ARGS>,
+      props: ARGS,
+      settings?: ModalSettings
+    ) => {
+      openMantineContextModal(modal.modalKey, {
+        ...settings,
+        innerProps: props,
+      });
     },
-    [showAction]
+    [openMantineContextModal]
   );
 
-  const hideAction = useReduxAction(hideModalAction);
-
-  const hide = useCallback(
-    (key?: string) => {
-      hideAction(key);
+  const closeContextModal = useCallback(
+    (modal: ModalComponent) => {
+      rest.closeModal(modal.modalKey);
     },
-    [hideAction]
+    [rest]
   );
 
-  return { show, hide };
-}
+  const id = useContext(ModalIdContext);
 
-export function useModalData(): ModalData {
-  const data = useContext(ModalDataContext);
+  const closeSelf = useCallback(() => {
+    if (id) {
+      rest.closeModal(id);
+    }
+  }, [id, rest]);
 
-  if (data === null) {
-    throw new Error("useModalData should be used inside Modal");
-  }
-
-  return data;
-}
-
-export function usePayload<T>(): T | null {
-  const { key } = useModalData();
-  const stack = useReduxStore((s) => s.modal.stack);
-
+  // TODO: Performance
   return useMemo(
-    () => (stack.find((m) => m.key === key)?.payload as T) ?? null,
-    [stack, key]
+    () => ({ openContextModal, closeContextModal, closeSelf, ...rest }),
+    [closeContextModal, closeSelf, openContextModal, rest]
   );
 }
 
-export function useCurrentLayer() {
-  const { key } = useModalData();
-  const stack = useReduxStore((s) => s.modal.stack);
+export function useModalRegistration(modals: ModalComponent[]) {
+  useEffect(() => {
+    // TODO: register
 
-  return useMemo(() => stack.findIndex((m) => m.key === key), [stack, key]);
+    return () => {
+      // TODO: unregister
+    };
+  }, [modals]);
 }

@@ -1,12 +1,11 @@
+import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
 import { Action, PageTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Group } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import SystemBackupDeleteModal from "./BackupDeleteModal";
-import SystemBackupRestoreModal from "./BackupRestoreModal";
 
 interface Props {
   backups: readonly System.Backups[];
@@ -32,20 +31,45 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
         accessor: "date",
       },
       {
-        accessor: "id",
-        Cell: (row) => {
-          const { show } = useModalControl();
+        id: "actions",
+        accessor: "filename",
+        Cell: ({ value }) => {
+          const modals = useModals();
+          const restore = useRestoreBackups();
+          const remove = useDeleteBackups();
           return (
             <Group>
               <Action
                 onClick={() =>
-                  show(SystemBackupRestoreModal, row.row.original.filename)
+                  modals.openConfirmModal({
+                    title: "Restore Backup",
+                    children: (
+                      <Text size="sm">
+                        Are you sure you want to restore the backup ({value})?
+                        Bazarr will automatically restart and reload the UI
+                        during the restore process.
+                      </Text>
+                    ),
+                    labels: { confirm: "Restore", cancel: "Cancel" },
+                    confirmProps: { color: "red" },
+                    onConfirm: () => restore.mutate(value),
+                  })
                 }
                 icon={faHistory}
               ></Action>
               <Action
                 onClick={() =>
-                  show(SystemBackupDeleteModal, row.row.original.filename)
+                  modals.openConfirmModal({
+                    title: "Delete Backup",
+                    children: (
+                      <Text size="sm">
+                        Are you sure you want to delete the backup ({value})?
+                      </Text>
+                    ),
+                    labels: { confirm: "Delete", cancel: "Cancel" },
+                    confirmProps: { color: "red" },
+                    onConfirm: () => remove.mutate(value),
+                  })
                 }
                 icon={faTrash}
               ></Action>
@@ -57,13 +81,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
     []
   );
 
-  return (
-    <React.Fragment>
-      <PageTable columns={columns} data={backups}></PageTable>
-      <SystemBackupRestoreModal></SystemBackupRestoreModal>
-      <SystemBackupDeleteModal></SystemBackupDeleteModal>
-    </React.Fragment>
-  );
+  return <PageTable columns={columns} data={backups}></PageTable>;
 };
 
 export default Table;

@@ -4,7 +4,7 @@ import {
   useMovieAddBlacklist,
   useMovieHistory,
 } from "@/apis/hooks";
-import { useModal, usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
@@ -16,12 +16,14 @@ import { HistoryIcon } from "../bazarr";
 import Language from "../bazarr/Language";
 import TextPopover from "../TextPopover";
 
-const MovieHistoryView: FunctionComponent = () => {
-  const movie = usePayload<Item.Movie>();
+interface MovieHistoryViewProps {
+  movie: Item.Movie;
+}
 
-  const Modal = useModal({ size: "lg" });
-
-  const history = useMovieHistory(movie?.radarrId);
+const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
+  movie,
+}) => {
+  const history = useMovieHistory(movie.radarrId);
 
   const { data } = history;
 
@@ -100,26 +102,26 @@ const MovieHistoryView: FunctionComponent = () => {
   );
 
   return (
-    <Modal title={`History - ${movie?.title ?? ""}`}>
-      <QueryOverlay result={history}>
-        <PageTable
-          emptyText="No History Found"
-          columns={columns}
-          data={data ?? []}
-        ></PageTable>
-      </QueryOverlay>
-    </Modal>
+    <QueryOverlay result={history}>
+      <PageTable
+        emptyText="No History Found"
+        columns={columns}
+        data={data ?? []}
+      ></PageTable>
+    </QueryOverlay>
   );
 };
 
 export const MovieHistoryModal = withModal(MovieHistoryView, "movie-history");
 
-const EpisodeHistoryView: FunctionComponent = () => {
-  const episode = usePayload<Item.Episode>();
+interface EpisodeHistoryViewProps {
+  episode: Item.Episode;
+}
 
-  const Modal = useModal({ size: "lg" });
-
-  const history = useEpisodeHistory(episode?.sonarrEpisodeId);
+const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
+  episode,
+}) => {
+  const history = useEpisodeHistory(episode.sonarrEpisodeId);
 
   const { data } = history;
 
@@ -205,15 +207,14 @@ const EpisodeHistoryView: FunctionComponent = () => {
   );
 
   return (
-    <Modal title={`History - ${episode?.title ?? ""}`}>
-      <QueryOverlay result={history}>
-        <PageTable
-          emptyText="No History Found"
-          columns={columns}
-          data={data ?? []}
-        ></PageTable>
-      </QueryOverlay>
-    </Modal>
+    <QueryOverlay result={history}>
+      <PageTable
+        emptyText="No History Found"
+        columns={columns}
+        placeholder={5}
+        data={data ?? []}
+      ></PageTable>
+    </QueryOverlay>
   );
 };
 

@@ -1,4 +1,3 @@
-import { useModal, useModalControl } from "@/modules/modals";
 import { useLatestRef, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
@@ -9,7 +8,14 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Center, Checkbox, Container, Group } from "@mantine/core";
+import {
+  Button,
+  Center,
+  Checkbox,
+  Container,
+  Divider,
+  Group,
+} from "@mantine/core";
 import {
   createContext,
   useCallback,
@@ -75,11 +81,9 @@ function SubtitleUploader<T>(props: Props<T>) {
 
   const showTable = pending.length > 0;
 
-  const Modal = useModal({
-    size: showTable ? "xl" : "lg",
-  });
-
-  const { hide } = useModalControl();
+  // const Modal = useModal({
+  //   size: showTable ? "xl" : "lg",
+  // });
 
   // const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
 
@@ -288,50 +292,9 @@ function SubtitleUploader<T>(props: Props<T>) {
     [pending]
   );
 
-  const footer = (
-    <Group position="apart">
-      <Selector
-        {...languageOptions}
-        hidden={hideAllLanguages}
-        value={null}
-        disabled={!showTable}
-        onChange={(lang) => {
-          if (lang) {
-            setPending((pd) =>
-              pd
-                .map((v) => ({ ...v, language: lang }))
-                .map((v) => ({ ...v, ...validate(v) }))
-            );
-          }
-        }}
-      ></Selector>
-      <Group>
-        <Button
-          hidden={!showTable}
-          color="gray"
-          variant="outline"
-          onClick={() => setFiles([])}
-        >
-          Clean
-        </Button>
-        <Button
-          disabled={!canUpload || !showTable}
-          onClick={() => {
-            upload(pending);
-            setFiles([]);
-            hide();
-          }}
-        >
-          Upload
-        </Button>
-      </Group>
-    </Group>
-  );
-
   return (
-    <Modal title="Update Subtitles" footer={footer}>
-      <Container fluid>
-        {/* <Form>
+    <Container fluid>
+      {/* <Form>
           <Form.Group>
             <FileForm
               disabled={showTable}
@@ -342,16 +305,49 @@ function SubtitleUploader<T>(props: Props<T>) {
             ></FileForm>
           </Form.Group>
         </Form> */}
-        <div hidden={!showTable}>
-          <RowContext.Provider value={modify as ModifyFn<unknown>}>
-            <SimpleTable
-              columns={columnsWithAction}
-              data={pending}
-            ></SimpleTable>
-          </RowContext.Provider>
-        </div>
-      </Container>
-    </Modal>
+      <div hidden={!showTable}>
+        <RowContext.Provider value={modify as ModifyFn<unknown>}>
+          <SimpleTable columns={columnsWithAction} data={pending}></SimpleTable>
+        </RowContext.Provider>
+      </div>
+      <Divider></Divider>
+      <Group position="apart">
+        <Selector
+          {...languageOptions}
+          hidden={hideAllLanguages}
+          value={null}
+          disabled={!showTable}
+          onChange={(lang) => {
+            if (lang) {
+              setPending((pd) =>
+                pd
+                  .map((v) => ({ ...v, language: lang }))
+                  .map((v) => ({ ...v, ...validate(v) }))
+              );
+            }
+          }}
+        ></Selector>
+        <Group>
+          <Button
+            hidden={!showTable}
+            color="gray"
+            variant="outline"
+            onClick={() => setFiles([])}
+          >
+            Clean
+          </Button>
+          <Button
+            disabled={!canUpload || !showTable}
+            onClick={() => {
+              upload(pending);
+              setFiles([]);
+            }}
+          >
+            Upload
+          </Button>
+        </Group>
+      </Group>
+    </Container>
   );
 }
 

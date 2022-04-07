@@ -1,20 +1,9 @@
 import { Selector, SelectorOption } from "@/components";
-import {
-  useModal,
-  useModalControl,
-  usePayload,
-  withModal,
-} from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { isReactText } from "@/utilities";
-import { Button, Group, SimpleGrid, Stack } from "@mantine/core";
+import { Button, Divider, Group, SimpleGrid, Stack } from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
-import {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Card,
   Check,
@@ -32,13 +21,15 @@ const ProviderKey = "settings-general-enabled_providers";
 export const ProviderView: FunctionComponent = () => {
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
-  const { show } = useModalControl();
+  const modals = useModals();
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      show(ProviderModal, v ?? null);
+      if (v) {
+        modals.openContextModal(ProviderModal, { payload: v });
+      }
     },
-    [show]
+    [modals]
   );
 
   const cards = useMemo(() => {
@@ -65,26 +56,21 @@ export const ProviderView: FunctionComponent = () => {
   }, [providers, select]);
 
   return (
-    <>
-      <SimpleGrid cols={3}>
-        {cards}
-        <Card plus onClick={select}></Card>
-      </SimpleGrid>
-      <ProviderModal></ProviderModal>
-    </>
+    <SimpleGrid cols={3}>
+      {cards}
+      <Card plus onClick={select}></Card>
+    </SimpleGrid>
   );
 };
 
-const ProviderTool: FunctionComponent = () => {
-  const payload = usePayload<ProviderInfo>();
-  const Modal = useModal();
-  const { hide } = useModalControl();
+interface ProviderToolProps {
+  payload: ProviderInfo;
+}
 
+const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
   const [staged, setChange] = useState<LooseObject>({});
 
-  useEffect(() => {
-    setInfo(payload);
-  }, [payload]);
+  const modals = useModals();
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
@@ -99,10 +85,10 @@ const ProviderTool: FunctionComponent = () => {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
         updateGlobal({ [ProviderKey]: newProviders });
-        hide();
+        modals.closeAll();
       }
     }
-  }, [payload, providers, updateGlobal, hide]);
+  }, [payload, providers, updateGlobal, modals]);
 
   const addProvider = useCallback(() => {
     if (info && providers) {
@@ -115,9 +101,9 @@ const ProviderTool: FunctionComponent = () => {
       }
 
       updateGlobal(changes);
-      hide();
+      modals.closeAll();
     }
-  }, [info, providers, staged, updateGlobal, hide]);
+  }, [info, providers, staged, updateGlobal, modals]);
 
   const canSave = info !== null;
 
@@ -227,38 +213,34 @@ const ProviderTool: FunctionComponent = () => {
     []
   );
 
-  const footer = (
-    <>
-      <Button hidden={!payload} color="danger" onClick={deletePayload}>
-        Delete
-      </Button>
-      <Button disabled={!canSave} onClick={addProvider}>
-        Save
-      </Button>
-    </>
-  );
-
   return (
-    <Modal title="Provider" footer={footer}>
-      <StagedChangesContext.Provider value={[staged, setChange]}>
-        <Stack>
-          <Selector
-            // components={selectorComponents}
-            disabled={payload !== null}
-            options={options}
-            value={info}
-            getKey={getLabel}
-            onChange={onSelect}
-          ></Selector>
+    <StagedChangesContext.Provider value={[staged, setChange]}>
+      <Stack>
+        <Selector
+          // components={selectorComponents}
+          disabled={payload !== null}
+          options={options}
+          value={info}
+          getKey={getLabel}
+          onChange={onSelect}
+        ></Selector>
 
-          <Message>{info?.description}</Message>
-          {modification}
-          <div hidden={info?.message === undefined}>
-            <Message>{info?.message}</Message>
-          </div>
-        </Stack>
-      </StagedChangesContext.Provider>
-    </Modal>
+        <Message>{info?.description}</Message>
+        {modification}
+        <div hidden={info?.message === undefined}>
+          <Message>{info?.message}</Message>
+        </div>
+      </Stack>
+      <Divider></Divider>
+      <Group>
+        <Button hidden={!payload} color="danger" onClick={deletePayload}>
+          Delete
+        </Button>
+        <Button disabled={!canSave} onClick={addProvider}>
+          Save
+        </Button>
+      </Group>
+    </StagedChangesContext.Provider>
   );
 };
 

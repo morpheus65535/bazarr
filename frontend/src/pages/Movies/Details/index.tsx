@@ -14,10 +14,8 @@ import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
 import { MovieHistoryModal, MovieUploadModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
-import SubtitleTools, {
-  SubtitleToolModal,
-} from "@/components/modals/subtitle-tools";
-import { useModalControl } from "@/modules/modals";
+import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
+import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -44,7 +42,7 @@ const MovieDetailView: FunctionComponent = () => {
 
   const profile = useLanguageProfileBy(movie?.profileId);
 
-  const { show } = useModalControl();
+  const modals = useModals();
 
   const mutation = useMovieModification();
   const { mutateAsync: action } = useMovieAction();
@@ -131,20 +129,38 @@ const MovieDetailView: FunctionComponent = () => {
             <Toolbox.Button
               icon={faUser}
               disabled={!isNumber(movie?.profileId) || hasTask}
-              onClick={() => show(MovieSearchModal, movie)}
+              onClick={() => {
+                if (movie) {
+                  modals.openContextModal(MovieSearchModal, {
+                    item: movie,
+                    download,
+                    query: useMoviesProvider,
+                  });
+                }
+              }}
             >
               Manual
             </Toolbox.Button>
             <Toolbox.Button
               icon={faHistory}
-              onClick={() => show(MovieHistoryModal, movie)}
+              onClick={() => {
+                if (movie) {
+                  modals.openContextModal(MovieHistoryModal, { movie });
+                }
+              }}
             >
               History
             </Toolbox.Button>
             <Toolbox.Button
               icon={faToolbox}
               disabled={hasTask}
-              onClick={() => show(SubtitleToolModal, [movie])}
+              onClick={() => {
+                if (movie) {
+                  modals.openContextModal(SubtitleToolModal, {
+                    payload: [movie],
+                  });
+                }
+              }}
             >
               Tools
             </Toolbox.Button>
@@ -153,7 +169,11 @@ const MovieDetailView: FunctionComponent = () => {
             <Toolbox.Button
               disabled={!allowEdit || movie.profileId === null || hasTask}
               icon={faCloudUploadAlt}
-              onClick={() => show(MovieUploadModal, movie)}
+              onClick={() => {
+                if (movie) {
+                  modals.openContextModal(MovieUploadModal, { payload: movie });
+                }
+              }}
             >
               Upload
             </Toolbox.Button>
@@ -190,13 +210,6 @@ const MovieDetailView: FunctionComponent = () => {
             disabled={hasTask}
           ></Table>
         </Stack>
-        <SubtitleTools></SubtitleTools>
-        <MovieHistoryModal></MovieHistoryModal>
-        <MovieUploadModal></MovieUploadModal>
-        <MovieSearchModal
-          download={download}
-          query={useMoviesProvider}
-        ></MovieSearchModal>
       </QueryOverlay>
     </Container>
   );

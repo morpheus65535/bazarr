@@ -1,9 +1,9 @@
 import { Action } from "@/components";
-import { useModal, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { Button, Group, NumberInput } from "@mantine/core";
+import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
 import { FunctionComponent, useCallback, useState } from "react";
-import { useProcess } from "./ToolContext";
+import { useProcess } from ".";
 
 function submodProcessOffset(h: number, m: number, s: number, ms: number) {
   return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
@@ -14,8 +14,6 @@ const TimeAdjustmentTool: FunctionComponent = () => {
   const [offset, setOffset] = useState<[number, number, number, number]>([
     0, 0, 0, 0,
   ]);
-
-  const Modal = useModal();
 
   const updateOffset = useCallback(
     (idx: number) => {
@@ -30,7 +28,7 @@ const TimeAdjustmentTool: FunctionComponent = () => {
 
   const canSave = offset.some((v) => v !== 0);
 
-  const process = useProcess();
+  const process = useProcess([]);
 
   const submit = useCallback(() => {
     if (canSave) {
@@ -45,14 +43,8 @@ const TimeAdjustmentTool: FunctionComponent = () => {
     }
   }, [canSave, offset, process, isPlus]);
 
-  const footer = (
-    <Button disabled={!canSave} onClick={submit}>
-      Save
-    </Button>
-  );
-
   return (
-    <Modal title="Adjust Times" footer={footer}>
+    <Stack>
       <Group spacing="xs" noWrap>
         <Action
           icon={isPlus ? faPlus : faMinus}
@@ -68,7 +60,11 @@ const TimeAdjustmentTool: FunctionComponent = () => {
         <NumberInput placeholder="sec" onChange={updateOffset(2)}></NumberInput>
         <NumberInput placeholder="ms" onChange={updateOffset(3)}></NumberInput>
       </Group>
-    </Modal>
+      <Divider></Divider>
+      <Button disabled={!canSave} onClick={submit}>
+        Save
+      </Button>
+    </Stack>
   );
 };
 

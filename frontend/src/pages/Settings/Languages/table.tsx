@@ -1,5 +1,5 @@
 import { Action, SimpleTable } from "@/components";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button, Group } from "@mantine/core";
@@ -42,7 +42,7 @@ const Table: FunctionComponent = () => {
 
   const update = useSingleUpdate();
 
-  const { show } = useModalControl();
+  const modals = useModals();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
@@ -69,14 +69,17 @@ const Table: FunctionComponent = () => {
   const mutateRow = useCallback<ModifyFn>(
     (index, item) => {
       if (item) {
-        show(Modal, cloneDeep(item));
+        modals.openContextModal(Modal, {
+          profile: cloneDeep(item),
+          onComplete: updateProfile,
+        });
       } else {
         const list = [...profiles];
         list.splice(index, 1);
         submitProfiles(list);
       }
     },
-    [show, profiles, submitProfiles]
+    [modals, updateProfile, profiles, submitProfiles]
   );
 
   const columns = useMemo<Column<Language.Profile>[]>(
@@ -169,12 +172,14 @@ const Table: FunctionComponent = () => {
             mustNotContain: [],
             originalFormat: false,
           };
-          show(Modal, profile);
+          modals.openContextModal(Modal, {
+            profile,
+            onComplete: updateProfile,
+          });
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
-      <Modal update={updateProfile}></Modal>
     </>
   );
 };

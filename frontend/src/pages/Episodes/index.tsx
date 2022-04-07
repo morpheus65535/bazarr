@@ -11,7 +11,7 @@ import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
 import { SeriesUploadModal } from "@/components/modals";
 import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
-import { useModalControl } from "@/modules/modals";
+import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -58,7 +58,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
     [series]
   );
 
-  const { show } = useModalControl();
+  const modals = useModals();
 
   const profile = useLanguageProfileBy(series?.profileId);
 
@@ -126,7 +126,13 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 hasTask
               }
               icon={faBriefcase}
-              onClick={() => show(SubtitleToolModal, episodes)}
+              onClick={() => {
+                if (episodes) {
+                  modals.openContextModal(SubtitleToolModal, {
+                    payload: episodes,
+                  });
+                }
+              }}
             >
               Tools
             </Toolbox.Button>
@@ -138,7 +144,13 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 !available
               }
               icon={faCloudUploadAlt}
-              onClick={() => show(SeriesUploadModal, series)}
+              onClick={() => {
+                if (series) {
+                  modals.openContextModal(SeriesUploadModal, {
+                    payload: series,
+                  });
+                }
+              }}
             >
               Upload
             </Toolbox.Button>
@@ -178,7 +190,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
             ></Table>
           </QueryOverlay>
         </Stack>
-        <SeriesUploadModal episodes={episodes ?? []}></SeriesUploadModal>
       </QueryOverlay>
     </Container>
   );

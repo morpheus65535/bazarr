@@ -1,15 +1,15 @@
-import { useModal, usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { Code, ScrollArea, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
-const SystemLogModal: FunctionComponent = () => {
-  const stack = usePayload<string>();
+interface Props {
+  stack: string;
+}
 
-  const Modal = useModal({ size: "xl" });
-
+const SystemLogModal: FunctionComponent<Props> = ({ stack }) => {
   const result = useMemo(
     () =>
-      stack?.split("\\n").map((v, idx) => (
+      stack.split("\\n").map((v, idx) => (
         <Text my="xs" inherit key={idx}>
           {v}
         </Text>
@@ -18,13 +18,11 @@ const SystemLogModal: FunctionComponent = () => {
   );
 
   return (
-    <Modal title="Stack traceback">
-      <ScrollArea>
-        <pre>
-          <Code>{result}</Code>
-        </pre>
-      </ScrollArea>
-    </Modal>
+    <ScrollArea>
+      <pre>
+        <Code>{result}</Code>
+      </pre>
+    </ScrollArea>
   );
 };
 

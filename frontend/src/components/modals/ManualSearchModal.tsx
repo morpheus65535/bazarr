@@ -1,6 +1,6 @@
-import { useModal, usePayload, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task/utilities";
-import { GetItemId, isMovie } from "@/utilities";
+import { GetItemId } from "@/utilities";
 import {
   faCaretDown,
   faDownload,
@@ -13,6 +13,7 @@ import {
   Badge,
   Button,
   Collapse,
+  Divider,
   Stack,
   Text,
 } from "@mantine/core";
@@ -29,12 +30,11 @@ interface Props<T extends SupportType> {
   query: (
     id?: number
   ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
+  item: T;
 }
 
 function ManualSearchView<T extends SupportType>(props: Props<T>) {
-  const { download, query: useSearch } = props;
-
-  const item = usePayload<T>();
+  const { download, query: useSearch, item } = props;
 
   const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
 
@@ -45,10 +45,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
   const isStale = results.data === undefined;
 
   const search = useCallback(() => {
-    if (itemId !== undefined) {
-      setId(itemId);
-      results.refetch();
-    }
+    setId(itemId);
+    results.refetch();
   }, [itemId, results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
@@ -167,57 +165,53 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     [download, item]
   );
 
-  const title = useMemo(() => {
-    let title = "Unknown";
+  // const title = useMemo(() => {
+  //   let title = "Unknown";
 
-    if (item) {
-      if (item.sceneName) {
-        title = item.sceneName;
-      } else if (isMovie(item)) {
-        title = item.title;
-      } else {
-        title = item.title;
-      }
-    }
-    return `Search - ${title}`;
-  }, [item]);
+  //   if (item) {
+  //     if (item.sceneName) {
+  //       title = item.sceneName;
+  //     } else if (isMovie(item)) {
+  //       title = item.title;
+  //     } else {
+  //       title = item.title;
+  //     }
+  //   }
+  //   return `Search - ${title}`;
+  // }, [item]);
 
-  const Modal = useModal({
-    size: "xl",
-    closeable: results.isFetching === false,
-    onMounted: () => {
-      // Cleanup the ID when user switches episode / movie
-      if (itemId !== id) {
-        setId(undefined);
-      }
-    },
-  });
-
-  const footer = (
-    <Button loading={results.isFetching} fullWidth onClick={search}>
-      {isStale ? "Search" : "Search Again"}
-    </Button>
-  );
+  // const Modal = useModal({
+  //   size: "xl",
+  //   closeable: results.isFetching === false,
+  //   onMounted: () => {
+  //     // Cleanup the ID when user switches episode / movie
+  //     if (itemId !== id) {
+  //       setId(undefined);
+  //     }
+  //   },
+  // });
 
   return (
-    <Modal title={title} footer={footer}>
-      <Stack>
-        <Alert
-          title="Resource"
-          icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
-        >
-          {item?.path}
-        </Alert>
-        <Collapse in={!isStale && !results.isFetching}>
-          <PageTable
-            emptyText="No Result"
-            columns={columns}
-            placeholder={10}
-            data={results.data ?? []}
-          ></PageTable>
-        </Collapse>
-      </Stack>
-    </Modal>
+    <Stack>
+      <Alert
+        title="Resource"
+        icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
+      >
+        {item?.path}
+      </Alert>
+      <Collapse in={!isStale && !results.isFetching}>
+        <PageTable
+          emptyText="No Result"
+          columns={columns}
+          placeholder={10}
+          data={results.data ?? []}
+        ></PageTable>
+      </Collapse>
+      <Divider></Divider>
+      <Button loading={results.isFetching} fullWidth onClick={search}>
+        {isStale ? "Search" : "Search Again"}
+      </Button>
+    </Stack>
   );
 }
 

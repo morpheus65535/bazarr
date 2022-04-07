@@ -1,11 +1,11 @@
 import { Selector } from "@/components";
 import { Language } from "@/components/bazarr";
-import { useModal, withModal } from "@/modules/modals";
+import { withModal } from "@/modules/modals";
 import { useSelectorOptions } from "@/utilities";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { Button, Text } from "@mantine/core";
+import { Button, Divider, Stack, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
-import { useProcess } from "./ToolContext";
+import { useProcess } from ".";
 import { availableTranslation } from "./tools";
 
 const TranslationTool: FunctionComponent = () => {
@@ -16,12 +16,10 @@ const TranslationTool: FunctionComponent = () => {
     [languages]
   );
 
-  const Modal = useModal();
-
   const [selectedLanguage, setLanguage] =
     useState<Nullable<Language.Info>>(null);
 
-  const process = useProcess();
+  const process = useProcess([]);
 
   const submit = useCallback(() => {
     if (selectedLanguage) {
@@ -31,18 +29,17 @@ const TranslationTool: FunctionComponent = () => {
 
   const options = useSelectorOptions(available, (v) => v.name);
 
-  const footer = (
-    <Button disabled={!selectedLanguage} onClick={submit}>
-      Translate
-    </Button>
-  );
   return (
-    <Modal title="Translation" footer={footer}>
+    <Stack>
       <Text>
         Enabled languages not listed here are unsupported by Google Translate.
       </Text>
       <Selector {...options} onChange={setLanguage}></Selector>
-    </Modal>
+      <Divider></Divider>
+      <Button disabled={!selectedLanguage} onClick={submit}>
+        Translate
+      </Button>
+    </Stack>
   );
 };
 

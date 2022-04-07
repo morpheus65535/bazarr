@@ -13,6 +13,7 @@ import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { Provider } from "react-redux";
 import { useRoutes } from "react-router-dom";
+import ModalsProvider from "./modules/modals/ModalsProvider";
 import { Router, useRouteItems } from "./Router";
 import Theme from "./theme";
 import { Environment } from "./utilities";
@@ -48,16 +49,18 @@ export const Main = () => {
             withNormalizeCSS
             theme={{ colorScheme, ...Theme }}
           >
-            <TypographyStylesProvider>
-              <Router>
-                <StrictMode>
-                  {Environment.queryDev && (
-                    <ReactQueryDevtools initialIsOpen={false} />
-                  )}
-                  <RouteApp></RouteApp>
-                </StrictMode>
-              </Router>
-            </TypographyStylesProvider>
+            <ModalsProvider>
+              <TypographyStylesProvider>
+                <Router>
+                  <StrictMode>
+                    {Environment.queryDev && (
+                      <ReactQueryDevtools initialIsOpen={false} />
+                    )}
+                    <RouteApp></RouteApp>
+                  </StrictMode>
+                </Router>
+              </TypographyStylesProvider>
+            </ModalsProvider>
           </MantineProvider>
         </ColorSchemeProvider>
       </QueryClientProvider>
