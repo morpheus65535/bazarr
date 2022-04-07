@@ -1,20 +1,14 @@
 import { QueryKeys } from "@/apis/queries/keys";
-import queryClient from "../../apis/queries";
 import {
-  addNotifications,
-  setOfflineStatus,
-  setSiteStatus,
-  siteAddProgress,
-  siteRemoveProgress,
-} from "../redux/actions";
+  hideNotification,
+  showNotification,
+  updateNotification,
+} from "@mantine/notifications";
+import queryClient from "../../apis/queries";
+import { notification } from "../notifications";
+import { setOfflineStatus, setSiteStatus } from "../redux/actions";
 import { AnyActionCreator } from "../redux/actions/types";
 import reduxStore from "../redux/store";
-
-function bindReduxAction<T extends AnyActionCreator>(action: T) {
-  return (...args: Parameters<T>) => {
-    reduxStore.dispatch(action(...args));
-  };
-}
 
 function bindReduxActionWithParam<T extends AnyActionCreator>(
   action: T,
@@ -51,22 +45,36 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     {
       key: "message",
       update: (msg) => {
-        if (msg) {
-          const notifications = msg.map<Server.Notification>((message) => ({
-            message,
-            type: "info",
-            id: "backend-message",
-            timeout: 5 * 1000,
-          }));
-
-          reduxStore.dispatch(addNotifications(notifications));
-        }
+        msg
+          .map((message) => notification.info("Notification", message))
+          .forEach(showNotification);
       },
     },
     {
       key: "progress",
-      update: bindReduxAction(siteAddProgress),
-      delete: bindReduxAction(siteRemoveProgress),
+      update: (progress) => {
+        progress.forEach((item) => {
+          const props = notification.progress(
+            item.id,
+            item.header,
+            item.name,
+            item.value + 1,
+            item.count
+          );
+
+          if (item.value === 0) {
+            showNotification(props);
+          } else {
+            updateNotification(props);
+          }
+        });
+      },
+      delete: (ids) => {
+        setTimeout(
+          () => ids.forEach(hideNotification),
+          notification.PROGRESS_TIMEOUT
+        );
+      },
     },
     {
       key: "series",

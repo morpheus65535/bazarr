@@ -1,61 +1,64 @@
-// A background task manager, use for dispatching task one by one
-class TaskManager {
-  private tasks: Task.Callable[] = [];
-  constructor() {
-    this.tasks = [];
-    window.addEventListener("beforeunload", this.onBeforeUnload.bind(this));
-  }
+import { showNotification, updateNotification } from "@mantine/notifications";
+import { notification } from "../notifications";
+import TaskGroups, { GroupName } from "./group";
 
-  private onBeforeUnload(e: BeforeUnloadEvent) {
-    const message = "Background tasks are still running";
+export function createTask<T extends Task.AnyCallable>(
+  name: string,
+  callable: T,
+  ...parameters: Parameters<T>
+): Task.Callable<T> {
+  // Clone this function
+  const task = callable.bind({}) as Task.Callable<T>;
+  task.parameters = parameters;
+  task.description = name;
 
-    if (this.tasks.some((t) => t.status === "running")) {
-      e.preventDefault();
-      e.returnValue = message;
-      return;
-    }
-    delete e["returnValue"];
-  }
-
-  private findTask(ref: Task.TaskRef): Task.Callable | undefined {
-    return this.tasks.find((t) => t.id === ref.callableId);
-  }
-
-  create<T extends Task.AnyCallable>(fn: T, parameters: Parameters<T>): symbol {
-    // Clone this function
-    const newTask = fn.bind({}) as Task.Callable<T>;
-    newTask.status = "idle";
-    newTask.parameters = parameters;
-    newTask.id = Symbol(this.tasks.length);
-
-    this.tasks.push(newTask);
-
-    return newTask.id;
-  }
-
-  async run(taskRef: Task.TaskRef) {
-    const task = this.findTask(taskRef);
-
-    if (task === undefined) {
-      throw new Error(`Task ${taskRef.name} not found`);
-    }
-
-    if (task.status !== "idle") {
-      return;
-    }
-
-    task.status = "running";
-
-    try {
-      await task(...task.parameters);
-      task.status = "success";
-    } catch (err) {
-      task.status = "failure";
-      throw err;
-    }
-  }
+  return task;
 }
 
-const taskManager = new TaskManager();
+export function dispatchTask(tasks: Task.Callable[], group: GroupName) {
+  setTimeout(async () => {
+    const { description, notify } = TaskGroups[group];
 
-export default taskManager;
+    const notifyStart = notification.progress(
+      group,
+      notify,
+      description,
+      0,
+      tasks.length
+    );
+    showNotification(notifyStart);
+
+    for (let index = 0; index < tasks.length; index++) {
+      const task = tasks[index];
+
+      const notifyInProgress = notification.progress(
+        group,
+        notify,
+        task.description,
+        index,
+        tasks.length
+      );
+      updateNotification(notifyInProgress);
+      await task(...task.parameters);
+    }
+
+    const notifyEnd = notification.progress(
+      group,
+      notify,
+      "All Tasks Completed",
+      tasks.length,
+      tasks.length
+    );
+    updateNotification(notifyEnd);
+  });
+}
+
+export function createAndDispatchTask<T extends Task.AnyCallable>(
+  name: string,
+  group: GroupName,
+  callable: T,
+  ...parameters: Parameters<T>
+) {
+  const task = createTask(name, callable, ...parameters);
+  dispatchTask([task], group);
+}

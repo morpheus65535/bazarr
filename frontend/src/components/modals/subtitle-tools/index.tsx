@@ -3,7 +3,7 @@ import Language from "@/components/bazarr/Language";
 import { SimpleTable } from "@/components/tables";
 import { useCustomSelection } from "@/components/tables/plugins";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task";
 import { isMovie } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

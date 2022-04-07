@@ -1,6 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task/utilities";
+import { createTask, dispatchTask } from "@/modules/task";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,

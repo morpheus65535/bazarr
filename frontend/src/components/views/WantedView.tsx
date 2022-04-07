@@ -1,6 +1,6 @@
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { createAndDispatchTask } from "@/modules/task/utilities";
+import { createAndDispatchTask } from "@/modules/task";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
 import { Helmet } from "react-helmet";

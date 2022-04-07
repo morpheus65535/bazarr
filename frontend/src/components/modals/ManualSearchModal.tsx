@@ -1,5 +1,5 @@
 import { withModal } from "@/modules/modals";
-import { createAndDispatchTask } from "@/modules/task/utilities";
+import { createAndDispatchTask } from "@/modules/task";
 import { GetItemId } from "@/utilities";
 import {
   faCaretDown,
