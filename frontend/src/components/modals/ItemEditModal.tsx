@@ -23,4 +23,4 @@ const Editor: FunctionComponent<Props> = ({ mutation, item }) => {
   );
 };
 
-export default withModal(Editor, "edit");
+export default withModal(Editor, "item-editor");
