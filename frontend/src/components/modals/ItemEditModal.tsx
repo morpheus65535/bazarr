@@ -1,5 +1,5 @@
 import { useModals, withModal } from "@/modules/modals";
-import { FunctionComponent, useCallback } from "react";
+import { FunctionComponent } from "react";
 import { UseMutationResult } from "react-query";
 import ItemEditForm from "../forms/ItemEditForm";
 
@@ -11,16 +11,17 @@ interface Props {
 const Editor: FunctionComponent<Props> = ({ mutation, item }) => {
   const modals = useModals();
 
-  const hide = useCallback(() => modals.closeSelf(), [modals]);
-
   return (
     <ItemEditForm
       mutation={mutation}
       item={item}
-      onCancel={hide}
-      onComplete={hide}
+      onCancel={modals.closeSelf}
+      onComplete={modals.closeSelf}
     ></ItemEditForm>
   );
 };
 
-export default withModal(Editor, "item-editor");
+export default withModal(Editor, "item-editor", {
+  title: "Editor",
+  size: "md",
+});

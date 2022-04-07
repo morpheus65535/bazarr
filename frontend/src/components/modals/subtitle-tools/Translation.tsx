@@ -43,4 +43,6 @@ const TranslationTool: FunctionComponent = () => {
   );
 };
 
-export default withModal(TranslationTool, "translation-tool");
+export default withModal(TranslationTool, "translation-tool", {
+  title: "Translation",
+});

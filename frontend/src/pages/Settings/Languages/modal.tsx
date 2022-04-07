@@ -302,4 +302,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({
   );
 };
 
-export default withModal(LanguagesProfileModal, "languages-profile-editor");
+export default withModal(LanguagesProfileModal, "languages-profile-editor", {
+  title: "Languages Profile",
+  size: "lg",
+});

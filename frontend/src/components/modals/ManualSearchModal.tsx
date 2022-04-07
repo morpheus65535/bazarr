@@ -217,11 +217,13 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,
-  "movie-manual-search"
+  "movie-manual-search",
+  { size: "xl" }
 );
 export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   ManualSearchView,
-  "episode-manual-search"
+  "episode-manual-search",
+  { size: "xl" }
 );
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({

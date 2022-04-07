@@ -26,4 +26,7 @@ const SystemLogModal: FunctionComponent<Props> = ({ stack }) => {
   );
 };
 
-export default withModal(SystemLogModal, "system-log");
+export default withModal(SystemLogModal, "system-log", {
+  title: "Stack Traceback",
+  size: "xl",
+});

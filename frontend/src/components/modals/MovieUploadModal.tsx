@@ -94,4 +94,4 @@ const MovieUploadModal: FunctionComponent<Props> = ({ payload }) => {
   );
 };
 
-export default withModal(MovieUploadModal, "movie-upload");
+export default withModal(MovieUploadModal, "movie-upload", { size: "xl" });

@@ -42,4 +42,6 @@ const FrameRateTool: FunctionComponent = () => {
   );
 };
 
-export default withModal(FrameRateTool, "frame-rate-tool");
+export default withModal(FrameRateTool, "frame-rate-tool", {
+  title: "Change Frame Rate",
+});

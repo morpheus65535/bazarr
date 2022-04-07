@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { useModals as useMantineModals } from "@mantine/modals";
 import { ModalSettings } from "@mantine/modals/lib/context";
-import { useCallback, useContext, useEffect, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { ModalComponent, ModalIdContext } from "./WithModal";
 
 export function useModals() {
@@ -15,6 +15,7 @@ export function useModals() {
       settings?: ModalSettings
     ) => {
       openMantineContextModal(modal.modalKey, {
+        ...modal.settings,
         ...settings,
         innerProps: props,
       });
@@ -42,14 +43,4 @@ export function useModals() {
     () => ({ openContextModal, closeContextModal, closeSelf, ...rest }),
     [closeContextModal, closeSelf, openContextModal, rest]
   );
-}
-
-export function useModalRegistration(modals: ModalComponent[]) {
-  useEffect(() => {
-    // TODO: register
-
-    return () => {
-      // TODO: unregister
-    };
-  }, [modals]);
 }

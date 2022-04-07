@@ -174,4 +174,4 @@ const SeriesUploadModal: FunctionComponent<Props> = ({ payload }) => {
   );
 };
 
-export default withModal(SeriesUploadModal, "series-upload");
+export default withModal(SeriesUploadModal, "series-upload", { size: "xl" });

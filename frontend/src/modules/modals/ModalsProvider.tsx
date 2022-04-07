@@ -13,7 +13,9 @@ const ModalsProvider: FunctionComponent = ({ children }) => {
   );
 
   return (
-    <MantineModalsProvider modals={modals}>{children}</MantineModalsProvider>
+    <MantineModalsProvider modalProps={{ centered: true }} modals={modals}>
+      {children}
+    </MantineModalsProvider>
   );
 };
 

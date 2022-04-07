@@ -244,4 +244,6 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
   );
 };
 
-const ProviderModal = withModal(ProviderTool, "provider-tool");
+const ProviderModal = withModal(ProviderTool, "provider-tool", {
+  title: "Provider",
+});

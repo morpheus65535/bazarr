@@ -124,7 +124,9 @@ const NotificationTool: FunctionComponent<Props> = ({
   );
 };
 
-const NotificationModal = withModal(NotificationTool, "notification-tool");
+const NotificationModal = withModal(NotificationTool, "notification-tool", {
+  title: "Notification",
+});
 
 export const NotificationView: FunctionComponent = () => {
   const notifications = useLatestArray<Settings.NotificationInfo>(

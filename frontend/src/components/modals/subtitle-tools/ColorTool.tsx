@@ -29,4 +29,4 @@ const ColorTool: FunctionComponent = () => {
   );
 };
 
-export default withModal(ColorTool, "color-tool");
+export default withModal(ColorTool, "color-tool", { title: "Change Color" });

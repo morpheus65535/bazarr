@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Badge, Button, Divider, Group, Menu, Stack } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Column, useRowSelect } from "react-table";
-import { tools } from "./tools";
+import { useTools } from "./tools";
 
 type SupportType = Item.Episode | Item.Movie;
 
@@ -129,6 +129,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   const plugins = [useRowSelect, useCustomSelection];
 
   const process = useProcess([]);
+  const tools = useTools();
 
   return (
     <Stack>
@@ -157,7 +158,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
               icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
               onClick={() => {
                 if (tool.modal) {
-                  modals.openContextModal(tool.modal, {});
+                  modals.openContextModal(tool.modal, {}, { title: tool.name });
                 } else {
                   process(tool.key);
                 }
@@ -172,4 +173,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   );
 };
 
-export const SubtitleToolModal = withModal(SubtitleToolView, "subtitle-tools");
+export const SubtitleToolModal = withModal(SubtitleToolView, "subtitle-tools", {
+  title: "Subtitle Tools",
+  size: "xl",
+});
