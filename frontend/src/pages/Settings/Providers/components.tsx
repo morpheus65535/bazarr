@@ -221,7 +221,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
           disabled={payload !== null}
           options={options}
           value={info}
-          getKey={getLabel}
+          getkey={getLabel}
           onChange={onSelect}
         ></Selector>
 

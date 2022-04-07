@@ -24,7 +24,7 @@ export function useSelectorOptions<T>(
   options: readonly T[],
   label: (value: T) => string,
   key?: (value: T) => string
-): Pick<SelectorProps<T>, "options" | "getKey"> {
+): Pick<SelectorProps<T>, "options" | "getkey"> {
   const labelRef = useRef(label);
   labelRef.current = label;
 
@@ -42,7 +42,7 @@ export function useSelectorOptions<T>(
 
   return {
     options: wrappedOptions,
-    getKey: keyRef.current ?? labelRef.current,
+    getkey: keyRef.current ?? labelRef.current,
   };
 }
 

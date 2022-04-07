@@ -41,7 +41,7 @@ export type SelectorProps<T> = Override<
     defaultValue?: T | null;
     options: SelectorOption<T>[];
     onChange?: (value: T | null) => void;
-    getKey?: (value: T) => string;
+    getkey?: (value: T) => string;
   },
   Omit<SelectProps, "data">
 >;
@@ -51,10 +51,10 @@ export function Selector<T>({
   defaultValue,
   options,
   onChange,
-  getKey = DefaultKeyBuilder,
+  getkey = DefaultKeyBuilder,
   ...select
 }: SelectorProps<T>) {
-  const keyRef = useLatestRef(getKey);
+  const keyRef = useLatestRef(getkey);
 
   const data = useMemo(
     () =>
