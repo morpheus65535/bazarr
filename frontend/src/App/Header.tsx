@@ -8,12 +8,14 @@ import { Environment, useGotoHomepage } from "@/utilities";
 import { faGear, faNetworkWired } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  Anchor,
   Avatar,
   Badge,
   Burger,
   Button,
   Divider,
   Group,
+  Header,
   MediaQuery,
   Menu,
   Text,
@@ -36,7 +38,7 @@ const AppHeader: FunctionComponent = () => {
   const goHome = useGotoHomepage();
 
   return (
-    <>
+    <Header p="md" height={Layout.HEADER_HEIGHT}>
       <Helmet>
         <meta name="theme-color" content="#911f93" />
       </Helmet>
@@ -46,11 +48,13 @@ const AppHeader: FunctionComponent = () => {
             smallerThan={Layout.MOBILE_BREAKPOINT}
             styles={{ display: "none" }}
           >
-            <Avatar
-              alt="brand"
-              src={`${Environment.baseUrl}/static/logo64.png`}
-              onClick={goHome}
-            ></Avatar>
+            <Anchor onClick={goHome}>
+              <Avatar
+                alt="brand"
+                size={32}
+                src={`${Environment.baseUrl}/static/logo64.png`}
+              ></Avatar>
+            </Anchor>
           </MediaQuery>
           <MediaQuery
             largerThan={Layout.MOBILE_BREAKPOINT}
@@ -85,7 +89,7 @@ const AppHeader: FunctionComponent = () => {
           )}
         </Group>
       </Group>
-    </>
+    </Header>
   );
 };
 

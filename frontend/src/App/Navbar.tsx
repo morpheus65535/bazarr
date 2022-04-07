@@ -1,6 +1,7 @@
 import { Action } from "@/components";
+import { Layout } from "@/constants";
 import { setSidebar } from "@/modules/redux/actions";
-import { useReduxAction } from "@/modules/redux/hooks/base";
+import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
 import { BuildKey, pathJoin } from "@/utilities";
@@ -20,6 +21,7 @@ import {
   Divider,
   Group,
   Navbar as MantineNavbar,
+  Stack,
   Text,
   useMantineColorScheme,
 } from "@mantine/core";
@@ -95,6 +97,7 @@ function useIsActive(parent: string, route: RouteObject) {
 }
 
 const AppNavbar: FunctionComponent = () => {
+  const showSidebar = useReduxStore((s) => s.site.showSidebar);
   const [selection, select] = useState<string | null>(null);
 
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -108,34 +111,51 @@ const AppNavbar: FunctionComponent = () => {
   }, [pathname]);
 
   return (
-    <Selection.Provider value={{ selection, select }}>
-      <MantineNavbar.Section grow>
-        {routes.map((route, idx) => (
-          <RouteItem
-            key={BuildKey("nav", idx)}
-            parent="/"
-            route={route}
-          ></RouteItem>
-        ))}
-      </MantineNavbar.Section>
-      <Divider></Divider>
-      <MantineNavbar.Section mt="xs">
-        <Group spacing="xs">
-          <Action
-            color={dark ? "yellow" : "indigo"}
-            variant="light"
-            onClick={() => toggleColorScheme()}
-            icon={dark ? faSun : faMoon}
-          ></Action>
-          <Anchor
-            href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
-            target="_blank"
-          >
-            <Action icon={faHeart} variant="light" color="red"></Action>
-          </Anchor>
-        </Group>
-      </MantineNavbar.Section>
-    </Selection.Provider>
+    <MantineNavbar
+      p="xs"
+      hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
+      hidden={!showSidebar}
+      width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
+      styles={(theme) => ({
+        root: {
+          backgroundColor:
+            theme.colorScheme === "light"
+              ? theme.colors.gray[2]
+              : theme.colors.dark[6],
+        },
+      })}
+    >
+      <Selection.Provider value={{ selection, select }}>
+        <MantineNavbar.Section grow>
+          <Stack spacing="xs">
+            {routes.map((route, idx) => (
+              <RouteItem
+                key={BuildKey("nav", idx)}
+                parent="/"
+                route={route}
+              ></RouteItem>
+            ))}
+          </Stack>
+        </MantineNavbar.Section>
+        <Divider></Divider>
+        <MantineNavbar.Section mt="xs">
+          <Group spacing="xs">
+            <Action
+              color={dark ? "yellow" : "indigo"}
+              variant="hover"
+              onClick={() => toggleColorScheme()}
+              icon={dark ? faSun : faMoon}
+            ></Action>
+            <Anchor
+              href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
+              target="_blank"
+            >
+              <Action icon={faHeart} variant="hover" color="red"></Action>
+            </Anchor>
+          </Group>
+        </MantineNavbar.Section>
+      </Selection.Provider>
+    </MantineNavbar>
   );
 };
 
@@ -186,14 +206,16 @@ const RouteItem: FunctionComponent<{
       return (
         <div>
           <Button
+            color="dark"
             fullWidth
             px="sm"
             variant={isOpen ? "filled" : "subtle"}
-            leftIcon={icon && <FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+            leftIcon={icon && <FontAwesomeIcon icon={icon} />}
             rightIcon={badge && <Badge hidden={badge === 0}>{badge}</Badge>}
             styles={{
               inner: { justifyContent: "flex-start" },
               icon: { width: "1.2rem", justifyContent: "center" },
+              rightIcon: { justifySelf: "flex-end" },
             }}
             onClick={() => {
               LOG("info", "clicked", link);
@@ -212,7 +234,7 @@ const RouteItem: FunctionComponent<{
           >
             <NavbarItem name={name ?? link}></NavbarItem>
           </Button>
-          <Collapse in={isOpen}>
+          <Collapse hidden={children.length === 0} in={isOpen}>
             <div>{elements}</div>
           </Collapse>
         </div>
@@ -222,9 +244,9 @@ const RouteItem: FunctionComponent<{
     }
   } else {
     return (
-      <NavLink to={link} onClick={() => showSidebar(false)}>
+      <Anchor component={NavLink} to={link} onClick={() => setSidebar(false)}>
         <NavbarItem name={name ?? link} icon={icon} badge={badge}></NavbarItem>
-      </NavLink>
+      </Anchor>
     );
   }
 };

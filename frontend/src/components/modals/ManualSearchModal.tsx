@@ -20,7 +20,7 @@ import {
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
-import { PageTable } from "..";
+import { Action, PageTable } from "..";
 import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
@@ -140,9 +140,10 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Cell: ({ row }) => {
           const result = row.original;
           return (
-            <Button
-              size="sm"
-              color="light"
+            <Action
+              icon={faDownload}
+              color="brand"
+              variant="light"
               disabled={item === null}
               onClick={() => {
                 if (!item) return;
@@ -155,9 +156,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
                   result
                 );
               }}
-            >
-              <FontAwesomeIcon icon={faDownload}></FontAwesomeIcon>
-            </Button>
+            ></Action>
           );
         },
       },
@@ -195,6 +194,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     <Stack>
       <Alert
         title="Resource"
+        color="gray"
         icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
       >
         {item?.path}
@@ -218,12 +218,12 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,
   "movie-manual-search",
-  { size: "xl" }
+  { title: "Search Subtitles", size: "xl" }
 );
 export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
   ManualSearchView,
   "episode-manual-search",
-  { size: "xl" }
+  { title: "Search Subtitles", size: "xl" }
 );
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({

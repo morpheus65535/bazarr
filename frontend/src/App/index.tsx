@@ -1,19 +1,21 @@
 import AppNavbar from "@/App/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Layout } from "@/constants";
+import ModalsProvider from "@/modules/modals/ModalsProvider";
 import { useNotification } from "@/modules/redux/hooks";
 import { useReduxStore } from "@/modules/redux/hooks/base";
 import SocketIO from "@/modules/socketio";
 import LaunchError from "@/pages/LaunchError";
 import { Environment } from "@/utilities";
-import { AppShell, Header, LoadingOverlay, Navbar } from "@mantine/core";
+import { AppShell, LoadingOverlay } from "@mantine/core";
 import { FunctionComponent, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffectOnceWhen } from "rooks";
 import AppHeader from "./Header";
+import ThemeProvider from "./theme";
 
 const App: FunctionComponent = () => {
-  const { status, showSidebar } = useReduxStore((s) => s.site);
+  const { status } = useReduxStore((s) => s.site);
 
   useEffect(() => {
     SocketIO.initialize();
@@ -40,29 +42,20 @@ const App: FunctionComponent = () => {
 
   return (
     <ErrorBoundary>
-      <LoadingOverlay visible={status === "uninitialized"}></LoadingOverlay>
-      <AppShell
-        navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
-        header={
-          <Header p="md" height={Layout.HEADER_HEIGHT}>
-            <AppHeader></AppHeader>
-          </Header>
-        }
-        navbar={
-          <Navbar
-            p="xs"
-            hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
-            hidden={!showSidebar}
-            width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
+      <ThemeProvider>
+        <ModalsProvider>
+          <LoadingOverlay visible={status === "uninitialized"}></LoadingOverlay>
+          <AppShell
+            navbarOffsetBreakpoint={Layout.MOBILE_BREAKPOINT}
+            header={<AppHeader></AppHeader>}
+            navbar={<AppNavbar></AppNavbar>}
+            padding={0}
+            fixed
           >
-            <AppNavbar></AppNavbar>
-          </Navbar>
-        }
-        padding={0}
-        fixed
-      >
-        <Outlet></Outlet>
-      </AppShell>
+            <Outlet></Outlet>
+          </AppShell>
+        </ModalsProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 };
