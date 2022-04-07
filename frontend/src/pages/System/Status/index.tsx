@@ -10,10 +10,10 @@ import {
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
+import { useInterval } from "@mantine/hooks";
 import moment from "moment";
-import { FunctionComponent, ReactNode, useState } from "react";
+import { FunctionComponent, ReactNode, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { useIntervalWhen } from "rooks";
 import Table from "./table";
 
 interface InfoProps {
@@ -70,27 +70,27 @@ const SystemStatusView: FunctionComponent = () => {
   const health = useSystemHealth();
   const { data: status } = useSystemStatus();
 
-  const [uptime, setState] = useState<string>();
-  const [intervalWhenState] = useState(true);
+  const [uptime, setUptime] = useState<string>();
 
-  useIntervalWhen(
-    () => {
-      if (status) {
-        const duration = moment.duration(
-            moment().utc().unix() - status.start_time,
-            "seconds"
-          ),
-          days = duration.days(),
-          hours = duration.hours().toString().padStart(2, "0"),
-          minutes = duration.minutes().toString().padStart(2, "0"),
-          seconds = duration.seconds().toString().padStart(2, "0");
-        setState(days + "d " + hours + ":" + minutes + ":" + seconds);
-      }
-    },
-    1000,
-    intervalWhenState,
-    true
-  );
+  const interval = useInterval(() => {
+    if (status) {
+      const duration = moment.duration(
+          moment().utc().unix() - status.start_time,
+          "seconds"
+        ),
+        days = duration.days(),
+        hours = duration.hours().toString().padStart(2, "0"),
+        minutes = duration.minutes().toString().padStart(2, "0"),
+        seconds = duration.seconds().toString().padStart(2, "0");
+      setUptime(days + "d " + hours + ":" + minutes + ":" + seconds);
+    }
+  }, 1000);
+
+  useEffect(() => {
+    interval.start();
+    return interval.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Container fluid>

@@ -1,7 +1,7 @@
 import { SelectorOption, SelectorProps } from "@/components";
+import { useDidUpdate } from "@mantine/hooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDidUpdate } from "rooks";
 
 export function useGotoHomepage() {
   const navigate = useNavigate();

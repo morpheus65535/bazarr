@@ -13,7 +13,6 @@ import {
 } from "@mantine/notifications";
 import { FunctionComponent, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useEffectOnceWhen } from "rooks";
 import AppHeader from "./Header";
 import ThemeProvider from "./theme";
 
@@ -24,14 +23,14 @@ const App: FunctionComponent = () => {
     SocketIO.initialize();
   }, []);
 
-  useEffectOnceWhen(() => {
-    if (Environment.hasUpdate) {
+  useEffect(() => {
+    if (Environment.hasUpdate && status === "initialized") {
       showNotification({
         title: "Update Available",
         message: "A new version of Bazarr is ready, restart is required",
       });
     }
-  }, status === "initialized");
+  }, [status]);
 
   if (status === "unauthenticated") {
     return <Navigate to="/login"></Navigate>;

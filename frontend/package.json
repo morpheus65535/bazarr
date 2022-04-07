@@ -58,7 +58,6 @@
     "react-helmet": "^6.1",
     "react-table": "^7",
     "recharts": "^2.0.8",
-    "rooks": "^5",
     "sass": "^1",
     "typescript": "^4",
     "vite": "latest",

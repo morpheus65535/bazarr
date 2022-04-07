@@ -5,20 +5,17 @@ import { setSidebar } from "@/modules/redux/actions";
 import { useIsOffline } from "@/modules/redux/hooks";
 import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
 import { Environment, useGotoHomepage } from "@/utilities";
-import { faGear, faNetworkWired } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
   Anchor,
   Avatar,
   Badge,
   Burger,
-  Button,
   Divider,
   Group,
   Header,
   MediaQuery,
   Menu,
-  Text,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
 import { Helmet } from "react-helmet";
@@ -71,22 +68,23 @@ const AppHeader: FunctionComponent = () => {
           </Badge>
         </Group>
         <Group spacing="xs" position="right">
-          {/* NotificationCenter */}
-          {offline ? (
-            <Button color="yellow">
-              <FontAwesomeIcon icon={faNetworkWired}></FontAwesomeIcon>
-              <Text pl={10}>Connecting...</Text>
-            </Button>
-          ) : (
-            <Menu control={<Action icon={faGear} variant="light"></Action>}>
-              <Menu.Item onClick={() => restart()}>Restart</Menu.Item>
-              <Menu.Item onClick={() => shutdown()}>Shutdown</Menu.Item>
-              <Divider></Divider>
-              <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
-                Logout
-              </Menu.Item>
-            </Menu>
-          )}
+          <Menu
+            control={
+              <Action
+                loading={offline}
+                color={offline ? "yellow" : undefined}
+                icon={faGear}
+                variant="light"
+              ></Action>
+            }
+          >
+            <Menu.Item onClick={() => restart()}>Restart</Menu.Item>
+            <Menu.Item onClick={() => shutdown()}>Shutdown</Menu.Item>
+            <Divider></Divider>
+            <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
+              Logout
+            </Menu.Item>
+          </Menu>
         </Group>
       </Group>
     </Header>

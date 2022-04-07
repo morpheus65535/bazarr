@@ -12,23 +12,11 @@ interface Site {
   // Initialization state or error message
   status: Site.Status;
   offline: boolean;
-  progress: Site.Progress[];
-  notifier: {
-    content: string | null;
-    timestamp: string;
-  };
-  notifications: Server.Notification[];
   showSidebar: boolean;
 }
 
 const defaultSite: Site = {
   status: "uninitialized",
-  progress: [],
-  notifier: {
-    content: null,
-    timestamp: String(Date.now()),
-  },
-  notifications: [],
   showSidebar: false,
   offline: false,
 };
