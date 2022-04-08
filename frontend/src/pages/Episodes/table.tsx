@@ -164,9 +164,15 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
               <Action
                 disabled={disabled}
                 onClick={() => {
-                  modals.openContextModal(EpisodeHistoryModal, {
-                    episode: row.original,
-                  });
+                  modals.openContextModal(
+                    EpisodeHistoryModal,
+                    {
+                      episode: row.original,
+                    },
+                    {
+                      title: `History - ${row.original.title}`,
+                    }
+                  );
                 }}
                 icon={faHistory}
               ></Action>

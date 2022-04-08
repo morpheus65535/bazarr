@@ -44,7 +44,7 @@ interface Subtitle {
   name: string;
   forced: boolean;
   hi: boolean;
-  path: string | null;
+  path: string | null | undefined; // TODO: FIX ME!!!!!!
 }
 
 interface PathType {

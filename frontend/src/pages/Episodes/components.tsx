@@ -30,7 +30,7 @@ export const Subtitle: FunctionComponent<Props> = ({
   const selections = useMemo<FormType.ModifySubtitle[]>(() => {
     const list: FormType.ModifySubtitle[] = [];
 
-    if (subtitle.path !== null) {
+    if (subtitle.path) {
       list.push({
         id: episodeId,
         type: "episode",
@@ -65,7 +65,7 @@ export const Subtitle: FunctionComponent<Props> = ({
               },
             }
           );
-        } else if (action === "delete" && subtitle.path !== null) {
+        } else if (action === "delete" && subtitle.path) {
           createAndDispatchTask(
             subtitle.name,
             "Deleting subtitle...",

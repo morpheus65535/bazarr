@@ -8,6 +8,7 @@ import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Text } from "@mantine/core";
+import { isString } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
@@ -30,7 +31,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Header: "Subtitle Path",
         accessor: "path",
         Cell: ({ value }) => {
-          if (value === null || value.length === 0) {
+          if (!isString(value) || value.length === 0) {
             return "Video File Subtitle Track";
           } else if (value === missingText) {
             return <Text color="dimmed">{value}</Text>;
@@ -70,7 +71,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           const selections = useMemo(() => {
             const list: FormType.ModifySubtitle[] = [];
 
-            if (path !== null && path !== missingText && movie !== null) {
+            if (path && path !== missingText && movie !== null) {
               list.push({
                 type: "movie",
                 path,
@@ -106,7 +107,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                       },
                     }
                   );
-                } else if (action === "delete" && path !== null) {
+                } else if (action === "delete" && path) {
                   createAndDispatchTask(
                     movie.title,
                     "Deleting subtitle...",
@@ -125,7 +126,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               }}
             >
               <Action
-                disabled={path === null || path.length === 0 || disabled}
+                disabled={!isString(path) || path.length === 0 || disabled}
                 icon={faEllipsis}
               ></Action>
             </SubtitleToolsMenu>

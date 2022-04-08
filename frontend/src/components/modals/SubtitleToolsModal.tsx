@@ -72,10 +72,10 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 
   const data = useMemo<TableColumnType[]>(
     () =>
-      payload?.flatMap((item) => {
+      payload.flatMap((item) => {
         const [id, type] = getIdAndType(item);
         return item.subtitles.flatMap((v) => {
-          if (v.path !== null) {
+          if (v.path) {
             return [
               {
                 id,
@@ -89,7 +89,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             return [];
           }
         });
-      }) ?? [],
+      }),
     [payload]
   );
 
