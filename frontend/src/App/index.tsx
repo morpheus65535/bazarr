@@ -17,6 +17,9 @@ const App: FunctionComponent = () => {
   const navigate = useNavigate();
 
   const [criticalError, setCriticalError] = useState<string | null>(null);
+  const [navbar, setNavbar] = useState(false);
+  const [online, setOnline] = useState(true);
+
   useWindowEvent("app-critical-error", ({ detail }) => {
     setCriticalError(detail.message);
   });
@@ -39,9 +42,6 @@ const App: FunctionComponent = () => {
       );
     }
   }, []);
-
-  const [navbar, setNavbar] = useState(false);
-  const [online, setOnline] = useState(true);
 
   if (criticalError !== null) {
     return <CriticalError message={criticalError}></CriticalError>;
