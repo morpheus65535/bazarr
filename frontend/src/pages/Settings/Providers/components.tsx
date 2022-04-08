@@ -1,9 +1,22 @@
-import { Selector, SelectorOption } from "@/components";
+import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
-import { isReactText } from "@/utilities";
-import { Button, Divider, Group, SimpleGrid, Stack } from "@mantine/core";
+import { BuildKey, isReactText, useSelectorOptions } from "@/utilities";
+import {
+  Button,
+  Divider,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text as MantineText,
+} from "@mantine/core";
 import { capitalize, isArray, isBoolean } from "lodash";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import {
+  forwardRef,
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import {
   Card,
   Check,
@@ -25,9 +38,7 @@ export const ProviderView: FunctionComponent = () => {
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      if (v) {
-        modals.openContextModal(ProviderModal, { payload: v });
-      }
+      modals.openContextModal(ProviderModal, { payload: v ?? null });
     },
     [modals]
   );
@@ -45,6 +56,7 @@ export const ProviderView: FunctionComponent = () => {
         })
         .map((v, idx) => (
           <Card
+            key={BuildKey(v.key, idx)}
             header={v.name ?? capitalize(v.key)}
             subheader={v.description}
             onClick={() => select(v)}
@@ -64,8 +76,20 @@ export const ProviderView: FunctionComponent = () => {
 };
 
 interface ProviderToolProps {
-  payload: ProviderInfo;
+  payload: ProviderInfo | null;
 }
+
+const SelectItem = forwardRef<
+  HTMLDivElement,
+  { payload: ProviderInfo; label: string }
+>(({ payload: { description }, label, ...other }, ref) => {
+  return (
+    <Stack spacing={1} ref={ref} {...other}>
+      <MantineText size="md">{label}</MantineText>
+      <MantineText size="xs">{description}</MantineText>
+    </Stack>
+  );
+});
 
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
   const [staged, setChange] = useState<LooseObject>({});
@@ -118,15 +142,18 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
     }
   }, []);
 
-  const options = useMemo<SelectorOption<ProviderInfo>[]>(
+  const availableOptions = useMemo(
     () =>
       ProviderList.filter(
-        (v) => providers?.find((p) => p === v.key) === undefined
-      ).map((v) => ({
-        label: v.name ?? capitalize(v.key),
-        value: v,
-      })),
-    [providers]
+        (v) =>
+          providers?.find((p) => p === v.key && p !== info?.key) === undefined
+      ),
+    [info?.key, providers]
+  );
+
+  const options = useSelectorOptions(
+    availableOptions,
+    (v) => v.name ?? capitalize(v.key)
   );
 
   const modification = useMemo(() => {
@@ -147,26 +174,28 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
 
     for (const key in defaultKey) {
       const value = defaultKey[key];
-      let visibleKey = key;
+      let label = key;
 
-      if (visibleKey in override) {
-        visibleKey = override[visibleKey];
+      if (label in override) {
+        label = override[label];
       } else {
-        visibleKey = capitalize(key);
+        label = capitalize(key);
       }
 
       if (isReactText(value)) {
         if (key === "password") {
           elements.push(
             <Password
-              placeholder={visibleKey}
+              key={BuildKey(itemKey, key)}
+              label={label}
               settingKey={`settings-${itemKey}-${key}`}
             ></Password>
           );
         } else {
           elements.push(
             <Text
-              placeholder={visibleKey}
+              key={BuildKey(itemKey, key)}
+              label={label}
               settingKey={`settings-${itemKey}-${key}`}
             ></Text>
           );
@@ -176,7 +205,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
           <Check
             key={key}
             inline
-            label={visibleKey}
+            label={label}
             settingKey={`settings-${itemKey}-${key}`}
           ></Check>
         );
@@ -184,62 +213,40 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
     }
 
     return (
-      <Stack>
+      <Stack spacing="xs">
         {elements}
         <Group hidden={checks.length === 0}>{checks}</Group>
       </Stack>
     );
   }, [info]);
 
-  // const selectorComponents = useMemo<
-  //   Partial<SelectorComponents<ProviderInfo, false>>
-  // >(
-  //   () => ({
-  //     Option: ({ data, ...other }) => {
-  //       const { label, value } = data;
-  //       return (
-  //         <components.Option data={data} {...other}>
-  //           {label}
-  //           <p className="small m-0 text-muted">{value.description}</p>
-  //         </components.Option>
-  //       );
-  //     },
-  //   }),
-  //   []
-  // );
-
-  const getLabel = useCallback(
-    (v: ProviderInfo) => v.name ?? capitalize(v.key),
-    []
-  );
-
   return (
     <StagedChangesContext.Provider value={[staged, setChange]}>
       <Stack>
-        <Selector
-          // components={selectorComponents}
-          disabled={payload !== null}
-          options={options}
-          value={info}
-          getkey={getLabel}
-          onChange={onSelect}
-        ></Selector>
-
-        <Message>{info?.description}</Message>
-        {modification}
-        <div hidden={info?.message === undefined}>
-          <Message>{info?.message}</Message>
-        </div>
+        <Stack spacing="xs">
+          <Selector
+            itemComponent={SelectItem}
+            disabled={payload !== null}
+            {...options}
+            value={info}
+            onChange={onSelect}
+          ></Selector>
+          <Message>{info?.description}</Message>
+          {modification}
+          <div hidden={info?.message === undefined}>
+            <Message>{info?.message}</Message>
+          </div>
+        </Stack>
+        <Divider></Divider>
+        <Group>
+          <Button hidden={!payload} color="danger" onClick={deletePayload}>
+            Delete
+          </Button>
+          <Button disabled={!canSave} onClick={addProvider}>
+            Save
+          </Button>
+        </Group>
       </Stack>
-      <Divider></Divider>
-      <Group>
-        <Button hidden={!payload} color="danger" onClick={deletePayload}>
-          Delete
-        </Button>
-        <Button disabled={!canSave} onClick={addProvider}>
-          Save
-        </Button>
-      </Group>
     </StagedChangesContext.Provider>
   );
 };

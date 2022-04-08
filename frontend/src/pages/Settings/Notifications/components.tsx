@@ -1,8 +1,8 @@
 import api from "@/apis/raw";
-import { Selector, SelectorOption } from "@/components";
+import { Selector } from "@/components";
 import MutateButton from "@/components/async/MutateButton";
 import { useModals, withModal } from "@/modules/modals";
-import { BuildKey } from "@/utilities";
+import { BuildKey, useSelectorOptions } from "@/utilities";
 import {
   Button,
   Divider,
@@ -25,16 +25,11 @@ const NotificationTool: FunctionComponent<Props> = ({
   selections,
   payload,
 }) => {
-  const options = useMemo<SelectorOption<Settings.NotificationInfo>[]>(
-    () =>
-      selections
-        .filter((v) => !v.enabled)
-        .map((v) => ({
-          label: v.name,
-          value: v,
-        })),
+  const availableSelections = useMemo(
+    () => selections.filter((v) => !v.enabled),
     [selections]
   );
+  const options = useSelectorOptions(availableSelections, (v) => v.name);
 
   const update = useUpdateArray<Settings.NotificationInfo>(
     notificationsKey,
@@ -62,23 +57,19 @@ const NotificationTool: FunctionComponent<Props> = ({
   const canSave =
     current !== null && current?.url !== null && current?.url.length !== 0;
 
-  const getLabel = useCallback((v: Settings.NotificationInfo) => v.name, []);
-
   const test = useMutation((url: string) => api.system.testNotification(url));
 
   return (
     <Stack>
       <Selector
         disabled={payload !== null}
-        options={options}
+        {...options}
         value={current}
         onChange={setCurrent}
-        getkey={getLabel}
       ></Selector>
       <div hidden={current === null}>
         <Textarea
-          minRows={1}
-          maxRows={4}
+          minRows={4}
           placeholder="URL"
           value={current?.url ?? ""}
           onChange={(e) => {
@@ -88,7 +79,7 @@ const NotificationTool: FunctionComponent<Props> = ({
         ></Textarea>
       </div>
       <Divider></Divider>
-      <Group>
+      <Group position="right">
         <MutateButton
           disabled={!canSave}
           mutation={test}
@@ -114,7 +105,7 @@ const NotificationTool: FunctionComponent<Props> = ({
             if (current) {
               update({ ...current, enabled: true });
             }
-            modals.closeAll();
+            modals.closeSelf();
           }}
         >
           Save
