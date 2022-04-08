@@ -76,7 +76,7 @@ const MovieUploadModal: FunctionComponent<Props> = ({ payload }) => {
           });
         });
 
-      dispatchTask(tasks, "upload-subtitles");
+      dispatchTask(tasks, "Uploading subtitles...");
     },
     [mutateAsync, payload]
   );

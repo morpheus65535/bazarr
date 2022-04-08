@@ -150,7 +150,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
 
                 createAndDispatchTask(
                   item.title,
-                  "download-subtitles",
+                  "Downloading subtitles...",
                   download,
                   item,
                   result

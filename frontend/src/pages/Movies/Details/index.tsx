@@ -99,10 +99,15 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={hasTask}
               onClick={() => {
                 if (movie) {
-                  createAndDispatchTask(movie.title, "scan-disk", action, {
-                    action: "scan-disk",
-                    radarrid: id,
-                  });
+                  createAndDispatchTask(
+                    movie.title,
+                    "Scanning disk...",
+                    action,
+                    {
+                      action: "scan-disk",
+                      radarrid: id,
+                    }
+                  );
                 }
               }}
             >
@@ -115,7 +120,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   createAndDispatchTask(
                     movie.title,
-                    "search-subtitles",
+                    "Searching subtitles...",
                     action,
                     {
                       action: "search-missing",

@@ -1,11 +1,12 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
-import { SimpleTable } from "@/components";
-import MutateAction from "@/components/async/MutateAction";
+import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
+import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
+import { createAndDispatchTask } from "@/modules/task";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
@@ -61,10 +62,25 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         accessor: "code2",
         Cell: (row) => {
           const {
-            original: { code2, hi, forced, path },
+            original: { code2, path, hi, forced },
           } = row.row;
 
           const { download, remove } = useMovieSubtitleModification();
+
+          const selections = useMemo(() => {
+            const list: FormType.ModifySubtitle[] = [];
+
+            if (path !== null && path !== missingText && movie !== null) {
+              list.push({
+                type: "movie",
+                path,
+                id: movie.radarrId,
+                language: code2,
+              });
+            }
+
+            return list;
+          }, [code2, path]);
 
           if (movie === null) {
             return null;
@@ -72,42 +88,48 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
           const { radarrId } = movie;
 
-          if (path === null || path.length === 0) {
-            return null;
-          } else if (path === missingText) {
-            return (
-              <MutateAction
-                disabled={disabled}
-                icon={faSearch}
-                mutation={download}
-                args={() => ({
-                  radarrId,
-                  form: {
-                    language: code2,
-                    hi,
-                    forced,
-                  },
-                })}
-              ></MutateAction>
-            );
-          } else {
-            return (
-              <MutateAction
-                disabled={disabled}
-                icon={faTrash}
-                mutation={remove}
-                args={() => ({
-                  radarrId,
-                  form: {
-                    language: code2,
-                    hi,
-                    forced,
-                    path,
-                  },
-                })}
-              ></MutateAction>
-            );
-          }
+          return (
+            <SubtitleToolsMenu
+              selections={selections}
+              onAction={(action) => {
+                if (action === "search") {
+                  createAndDispatchTask(
+                    movie.title,
+                    "Searching subtitle...",
+                    download.mutateAsync,
+                    {
+                      radarrId,
+                      form: {
+                        language: code2,
+                        forced,
+                        hi,
+                      },
+                    }
+                  );
+                } else if (action === "delete" && path !== null) {
+                  createAndDispatchTask(
+                    movie.title,
+                    "Deleting subtitle...",
+                    remove.mutateAsync,
+                    {
+                      radarrId,
+                      form: {
+                        language: code2,
+                        forced,
+                        hi,
+                        path,
+                      },
+                    }
+                  );
+                }
+              }}
+            >
+              <Action
+                disabled={path === null || path.length === 0 || disabled}
+                icon={faEllipsis}
+              ></Action>
+            </SubtitleToolsMenu>
+          );
         },
       },
     ],

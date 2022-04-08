@@ -1,7 +1,7 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
-import { EpisodeHistoryModal, SubtitleToolsModal } from "@/components/modals";
+import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
@@ -10,7 +10,6 @@ import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,
-  faBriefcase,
   faHistory,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
@@ -170,15 +169,6 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
                   });
                 }}
                 icon={faHistory}
-              ></Action>
-              <Action
-                disabled={disabled}
-                onClick={() => {
-                  modals.openContextModal(SubtitleToolsModal, {
-                    payload: [row.original],
-                  });
-                }}
-                icon={faBriefcase}
               ></Action>
             </Group>
           );

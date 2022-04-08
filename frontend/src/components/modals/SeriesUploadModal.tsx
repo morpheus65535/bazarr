@@ -123,7 +123,7 @@ const SeriesUploadModal: FunctionComponent<Props> = ({ payload }) => {
           });
         });
 
-      dispatchTask(tasks, "upload-subtitles");
+      dispatchTask(tasks, "Uploading subtitles...");
     },
     [mutateAsync, payload]
   );

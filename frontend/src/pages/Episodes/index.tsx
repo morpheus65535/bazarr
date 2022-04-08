@@ -80,10 +80,15 @@ const SeriesEpisodesView: FunctionComponent = () => {
               disabled={!available || hasTask}
               onClick={() => {
                 if (series) {
-                  createAndDispatchTask(series.title, "scan-disk", action, {
-                    action: "scan-disk",
-                    seriesid: id,
-                  });
+                  createAndDispatchTask(
+                    series.title,
+                    "Scanning disk...",
+                    action,
+                    {
+                      action: "scan-disk",
+                      seriesid: id,
+                    }
+                  );
                 }
               }}
             >
@@ -95,7 +100,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   createAndDispatchTask(
                     series.title,
-                    "search-subtitles",
+                    "Searching Subtitles...",
                     action,
                     {
                       action: "search-missing",

@@ -6,7 +6,6 @@ import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { createTask, dispatchTask } from "@/modules/task";
-import { LOG } from "@/utilities/console";
 import {
   faClock,
   faCode,
@@ -18,6 +17,7 @@ import {
   faMagic,
   faPaintBrush,
   faPlay,
+  faSearch,
   faTextHeight,
   faTrash,
   IconDefinition,
@@ -106,12 +106,14 @@ interface Props {
   selections: FormType.ModifySubtitle[];
   children?: ReactElement;
   menu?: Omit<MenuProps, "control" | "children">;
+  onAction?: (action: "delete" | "search") => void;
 }
 
 const SubtitleToolsMenu: FunctionComponent<Props> = ({
   selections,
   children,
   menu,
+  onAction,
 }) => {
   const { mutateAsync } = useSubtitleAction();
 
@@ -135,12 +137,15 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const tools = useTools();
   const modals = useModals();
 
+  const disabledTools = selections.length === 0;
+
   return (
     <Menu control={children} {...menu}>
       <Menu.Label>Tools</Menu.Label>
       {tools.map((tool) => (
         <Menu.Item
           key={tool.key}
+          disabled={disabledTools}
           icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
           onClick={() => {
             if (tool.modal) {
@@ -158,7 +163,18 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         </Menu.Item>
       ))}
       <Divider></Divider>
+      <Menu.Label>Actions</Menu.Label>
       <Menu.Item
+        disabled={selections.length !== 0 || onAction === undefined}
+        icon={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
+        onClick={() => {
+          onAction?.("search");
+        }}
+      >
+        Search
+      </Menu.Item>
+      <Menu.Item
+        disabled={selections.length === 0 || onAction === undefined}
         color="red"
         icon={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
         onClick={() => {
@@ -166,7 +182,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
             title: "The following subtitles will be deleted",
             size: "lg",
             children: (
-              <ScrollArea style={{ height: "20rem" }}>
+              <ScrollArea style={{ maxHeight: "20rem" }}>
                 <List>
                   {selections.map((s) => (
                     <List.Item my="md" key={s.path}>
@@ -177,8 +193,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
               </ScrollArea>
             ),
             onConfirm: () => {
-              // TODO: Implement this
-              LOG("error", "Not implemented");
+              onAction?.("delete");
             },
             labels: { confirm: "Delete", cancel: "Cancel" },
             confirmProps: { color: "red" },

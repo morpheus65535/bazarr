@@ -32,7 +32,11 @@ function WantedView<T extends Wanted.Base>({
         <Toolbox.Button
           disabled={hasTask || dataCount === 0}
           onClick={() => {
-            createAndDispatchTask(name, "search-subtitles", searchAll);
+            createAndDispatchTask(
+              name,
+              "Searching missing subtitles...",
+              searchAll
+            );
           }}
           icon={faSearch}
         >
