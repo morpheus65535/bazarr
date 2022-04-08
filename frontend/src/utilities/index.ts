@@ -2,16 +2,6 @@ import { difference, differenceWith } from "lodash";
 import { Dispatch } from "react";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
-export function copyToClipboard(s: string) {
-  const field = document.createElement("textarea");
-  field.innerText = s;
-  document.body.appendChild(field);
-  field.select();
-  field.setSelectionRange(0, 9999);
-  document.execCommand("copy");
-  field.remove();
-}
-
 export function toggleState(
   dispatch: Dispatch<boolean>,
   wait: number,

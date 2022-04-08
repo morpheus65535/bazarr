@@ -1,23 +1,10 @@
 import { SelectorOption, SelectorProps } from "@/components";
-import { useDidUpdate } from "@mantine/hooks";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function useGotoHomepage() {
   const navigate = useNavigate();
   return useCallback(() => navigate("/"), [navigate]);
-}
-
-export function useIsArrayExtended(arr: unknown[]) {
-  const [size, setSize] = useState(arr.length);
-  const [isExtended, setExtended] = useState(arr.length !== 0);
-
-  useDidUpdate(() => {
-    setExtended(arr.length > size);
-    setSize(arr.length);
-  }, [arr.length]);
-
-  return isExtended;
 }
 
 export function useSelectorOptions<T>(

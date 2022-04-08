@@ -149,14 +149,14 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Group>
               <Title style={{ marginTop: 0, marginBottom: 0 }}>
                 <Text inherit color="white">
-                  <Box component="span" mr={12}>
-                    {item && isMovie(item) ? (
+                  {item && isMovie(item) ? (
+                    <Box component="span" mr={12}>
                       <FontAwesomeIcon
                         title={item.monitored ? "monitored" : "unmonitored"}
                         icon={item.monitored ? faBookmark : farBookmark}
                       ></FontAwesomeIcon>
-                    ) : null}
-                  </Box>
+                    </Box>
+                  ) : null}
                   {item?.title}
                 </Text>
               </Title>
@@ -196,18 +196,18 @@ const IconBadge: FunctionComponent<ItemBadgeProps> = ({
   desc,
   children,
 }) => (
-  <Badge
-    leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
-    radius="sm"
-    title={desc}
-    color="dark"
-    size="md"
-    style={{ textTransform: "none" }}
-  >
-    <Text size="xs" color="white">
+  <Text size="xs" color="white">
+    <Badge
+      leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+      radius="sm"
+      title={desc}
+      color="dark"
+      size="sm"
+      style={{ textTransform: "none" }}
+    >
       {children}
-    </Text>
-  </Badge>
+    </Badge>
+  </Text>
 );
 
 export default ItemOverview;

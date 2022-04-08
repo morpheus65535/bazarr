@@ -10,9 +10,12 @@ import {
 } from "@/apis/hooks/movies";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
-import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
-import { MovieHistoryModal, MovieUploadModal } from "@/components/modals";
+import {
+  ItemEditModal,
+  MovieHistoryModal,
+  MovieUploadModal,
+} from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import { useModals } from "@/modules/modals";
@@ -27,9 +30,9 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, Popover, Stack } from "@mantine/core";
+import { Container, Group, Stack } from "@mantine/core";
 import { isNumber } from "lodash";
-import { FunctionComponent, useCallback, useState } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -76,8 +79,6 @@ const MovieDetailView: FunctionComponent = () => {
   );
 
   const hasTask = useIsMovieActionRunning();
-
-  const [isEditing, setIsEditing] = useState(false);
 
   if (isNaN(id) || (isFetched && !movie)) {
     return <Navigate to="/not-found"></Navigate>;
@@ -177,29 +178,20 @@ const MovieDetailView: FunctionComponent = () => {
             >
               Upload
             </Toolbox.Button>
-            <Popover
-              opened={isEditing}
-              onClose={() => setIsEditing(false)}
-              placement="end"
-              title="Edit Movie"
-              transition="scale"
-              target={
-                <Toolbox.Button
-                  icon={faWrench}
-                  disabled={hasTask}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Movie
-                </Toolbox.Button>
-              }
+            <Toolbox.Button
+              icon={faWrench}
+              disabled={hasTask}
+              onClick={() => {
+                if (movie) {
+                  modals.openContextModal(ItemEditModal, {
+                    item: movie,
+                    mutation,
+                  });
+                }
+              }}
             >
-              <ItemEditForm
-                mutation={mutation}
-                item={movie ?? null}
-                onCancel={() => setIsEditing(false)}
-                onComplete={() => setIsEditing(false)}
-              ></ItemEditForm>
-            </Popover>
+              Edit Movie
+            </Toolbox.Button>
           </Group>
         </Toolbox>
         <Stack>

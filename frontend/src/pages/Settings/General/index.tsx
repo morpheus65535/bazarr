@@ -1,10 +1,11 @@
-import { copyToClipboard, Environment, toggleState } from "@/utilities";
+import { Environment, toggleState } from "@/utilities";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { Group as MantineGroup } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { FunctionComponent, useState } from "react";
 import {
   Action,
@@ -38,6 +39,8 @@ const baseUrlOverride = (settings: Settings) =>
 
 const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
+
+  const clipboard = useClipboard();
 
   return (
     <Layout name="General">
@@ -101,7 +104,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                   icon={copied ? faCheck : faClipboard}
                   onClick={(update, key, value) => {
                     if (value) {
-                      copyToClipboard(value);
+                      clipboard.copy(value);
                       toggleState(setCopy, 1500);
                     }
                   }}

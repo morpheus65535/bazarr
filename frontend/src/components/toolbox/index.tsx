@@ -5,7 +5,9 @@ import ToolboxButton, { ToolboxMutateButton } from "./Button";
 const useStyles = createStyles((theme) => ({
   group: {
     backgroundColor:
-      theme.colorScheme === "light" ? theme.colors.dark[1] : undefined,
+      theme.colorScheme === "light"
+        ? theme.colors.gray[3]
+        : theme.colors.dark[8],
   },
 }));
 
@@ -14,7 +16,7 @@ declare type ToolboxComp = FunctionComponent & {
   MutateButton: typeof ToolboxMutateButton;
 };
 
-export const Toolbox: ToolboxComp = ({ children }) => {
+const Toolbox: ToolboxComp = ({ children }) => {
   const { classes } = useStyles();
   return (
     <Group p={12} position="apart" className={classes.group}>

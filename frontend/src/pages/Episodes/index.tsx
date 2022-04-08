@@ -7,9 +7,8 @@ import {
 } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
-import ItemEditForm from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
-import { SeriesUploadModal } from "@/components/modals";
+import { ItemEditModal, SeriesUploadModal } from "@/components/modals";
 import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
@@ -23,8 +22,8 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, Popover, Stack } from "@mantine/core";
-import { FunctionComponent, useMemo, useState } from "react";
+import { Container, Group, Stack } from "@mantine/core";
+import { FunctionComponent, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -63,8 +62,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
   const profile = useLanguageProfileBy(series?.profileId);
 
   const hasTask = useIsAnyActionRunning();
-
-  const [isEditing, setIsEditing] = useState(false);
 
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to="/not-found"></Navigate>;
@@ -154,29 +151,20 @@ const SeriesEpisodesView: FunctionComponent = () => {
             >
               Upload
             </Toolbox.Button>
-            <Popover
-              opened={isEditing}
-              onClose={() => setIsEditing(false)}
-              placement="end"
-              title="Edit Series"
-              transition="scale"
-              target={
-                <Toolbox.Button
-                  icon={faWrench}
-                  disabled={hasTask}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Series
-                </Toolbox.Button>
-              }
+            <Toolbox.Button
+              icon={faWrench}
+              disabled={hasTask}
+              onClick={() => {
+                if (series) {
+                  modals.openContextModal(ItemEditModal, {
+                    item: series,
+                    mutation,
+                  });
+                }
+              }}
             >
-              <ItemEditForm
-                mutation={mutation}
-                item={series ?? null}
-                onCancel={() => setIsEditing(false)}
-                onComplete={() => setIsEditing(false)}
-              ></ItemEditForm>
-            </Popover>
+              Edit Series
+            </Toolbox.Button>
           </Group>
         </Toolbox>
         <Stack>
