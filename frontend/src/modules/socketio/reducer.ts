@@ -1,4 +1,5 @@
 import { QueryKeys } from "@/apis/queries/keys";
+import { setCriticalError, setOnlineStatus } from "@/utilities/event";
 import {
   hideNotification,
   showNotification,
@@ -6,41 +7,22 @@ import {
 } from "@mantine/notifications";
 import queryClient from "../../apis/queries";
 import { notification } from "../notifications";
-import { setOfflineStatus, setSiteStatus } from "../redux/actions";
-import { AnyActionCreator } from "../redux/actions/types";
-import reduxStore from "../redux/store";
-
-function bindReduxActionWithParam<T extends AnyActionCreator>(
-  action: T,
-  ...param: Parameters<T>
-) {
-  return () => {
-    reduxStore.dispatch(action(...param));
-  };
-}
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
     {
       key: "connect",
-      any: bindReduxActionWithParam(setOfflineStatus, false),
-    },
-    {
-      key: "connect",
-      any: () => {
-        // init
-        reduxStore.dispatch(setSiteStatus("initialized"));
-      },
+      any: () => setOnlineStatus(true),
     },
     {
       key: "connect_error",
       any: () => {
-        reduxStore.dispatch(setSiteStatus("error"));
+        setCriticalError("Cannot connect to backend");
       },
     },
     {
       key: "disconnect",
-      any: bindReduxActionWithParam(setOfflineStatus, true),
+      any: () => setOnlineStatus(false),
     },
     {
       key: "message",

@@ -1,5 +1,4 @@
 import { useSystem } from "@/apis/hooks";
-import { useReduxStore } from "@/modules/redux/hooks/base";
 import {
   Avatar,
   Button,
@@ -12,7 +11,6 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Navigate } from "react-router-dom";
 
 const Authentication: FunctionComponent = () => {
   const { login } = useSystem();
@@ -24,13 +22,13 @@ const Authentication: FunctionComponent = () => {
     },
   });
 
-  const authenticated = useReduxStore(
-    (s) => s.site.status !== "unauthenticated"
-  );
+  // const authenticated = useReduxStore(
+  //   (s) => s.site.status !== "unauthenticated"
+  // );
 
-  if (authenticated) {
-    return <Navigate to="/"></Navigate>;
-  }
+  // if (authenticated) {
+  //   return <Navigate to="/"></Navigate>;
+  // }
 
   return (
     <Container my="xl" size={400}>

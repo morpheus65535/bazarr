@@ -1,8 +1,8 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
+import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
-import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";

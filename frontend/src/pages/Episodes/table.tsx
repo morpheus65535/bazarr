@@ -1,11 +1,11 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
+import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
-import { useShowOnlyDesired } from "@/modules/redux/hooks";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";

@@ -5,10 +5,10 @@ import { Alert, Container, Text } from "@mantine/core";
 import { FunctionComponent } from "react";
 
 interface Props {
-  children: string;
+  message: string;
 }
 
-const LaunchError: FunctionComponent<Props> = ({ children }) => (
+const CriticalError: FunctionComponent<Props> = ({ message }) => (
   <Container my="xl">
     <Alert
       title="Something is wrong!"
@@ -18,9 +18,9 @@ const LaunchError: FunctionComponent<Props> = ({ children }) => (
       closeButtonLabel="Reload"
       onClose={Reload}
     >
-      <Text color="red">{children}</Text>
+      <Text color="red">{message}</Text>
     </Alert>
   </Container>
 );
 
-export default LaunchError;
+export default CriticalError;

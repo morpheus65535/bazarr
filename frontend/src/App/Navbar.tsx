@@ -1,7 +1,6 @@
 import { Action } from "@/components";
 import { Layout } from "@/constants";
-import { setSidebar } from "@/modules/redux/actions";
-import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { useNavbar } from "@/contexts/Navbar";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
 import { BuildKey, pathJoin } from "@/utilities";
@@ -97,7 +96,7 @@ function useIsActive(parent: string, route: RouteObject) {
 }
 
 const AppNavbar: FunctionComponent = () => {
-  const showSidebar = useReduxStore((s) => s.site.showSidebar);
+  const { showed } = useNavbar();
   const [selection, select] = useState<string | null>(null);
 
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -114,7 +113,7 @@ const AppNavbar: FunctionComponent = () => {
     <MantineNavbar
       p="xs"
       hiddenBreakpoint={Layout.MOBILE_BREAKPOINT}
-      hidden={!showSidebar}
+      hidden={!showed}
       width={{ [Layout.MOBILE_BREAKPOINT]: Layout.NAVBAR_WIDTH }}
       styles={(theme) => ({
         root: {
@@ -172,7 +171,7 @@ const RouteItem: FunctionComponent<{
     [element, children]
   );
 
-  const showSidebar = useReduxAction(setSidebar);
+  const { show } = useNavbar();
 
   const { select } = useSelection();
 
@@ -222,7 +221,7 @@ const RouteItem: FunctionComponent<{
 
               if (isValidated) {
                 navigate(link);
-                showSidebar(false);
+                show(false);
               }
 
               if (isOpen) {
@@ -244,7 +243,7 @@ const RouteItem: FunctionComponent<{
     }
   } else {
     return (
-      <Anchor component={NavLink} to={link} onClick={() => setSidebar(false)}>
+      <Anchor component={NavLink} to={link} onClick={() => show(false)}>
         <NavbarItem name={name ?? link} icon={icon} badge={badge}></NavbarItem>
       </Anchor>
     );

@@ -1,15 +1,15 @@
+import SocketIO from "@/modules/socketio";
+import { setLoginRequired } from "@/utilities/event";
 import Axios, { AxiosError, AxiosInstance, CancelTokenSource } from "axios";
-import { setUnauthenticated } from "../../modules/redux/actions";
-import { AppDispatch } from "../../modules/redux/store";
-import { Environment, isProdEnv } from "../../utilities";
+import { Environment } from "../../utilities";
 class BazarrClient {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
-  dispatch!: AppDispatch;
 
   constructor() {
     const baseUrl = `${Environment.baseUrl}/api/`;
     this.initialize(baseUrl, Environment.apiKey);
+    SocketIO.initialize();
   }
 
   initialize(url: string, apikey?: string) {
@@ -48,16 +48,10 @@ class BazarrClient {
     );
   }
 
-  _resetApi(apikey: string) {
-    if (!isProdEnv) {
-      this.axios.defaults.headers.common["X-API-KEY"] = apikey;
-    }
-  }
-
   handleError(code: number) {
     switch (code) {
       case 401:
-        this.dispatch(setUnauthenticated());
+        setLoginRequired();
         break;
       case 500:
         break;

@@ -1,9 +1,8 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
 import { Action } from "@/components";
 import { Layout } from "@/constants";
-import { setSidebar } from "@/modules/redux/actions";
-import { useIsOffline } from "@/modules/redux/hooks";
-import { useReduxAction, useReduxStore } from "@/modules/redux/hooks/base";
+import { useNavbar } from "@/contexts/Navbar";
+import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -22,13 +21,12 @@ import { Helmet } from "react-helmet";
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
-  const sidebarOpened = useReduxStore((s) => s.site.showSidebar);
+  const hasLogout = settings?.auth.type === "form";
 
-  const hasLogout = (settings?.auth.type ?? "none") === "form";
+  const { show, showed } = useNavbar();
 
-  const changeSidebar = useReduxAction(setSidebar);
-
-  const offline = useIsOffline();
+  const online = useIsOnline();
+  const offline = !online;
 
   const { shutdown, restart, logout } = useSystem();
 
@@ -58,8 +56,8 @@ const AppHeader: FunctionComponent = () => {
             styles={{ display: "none" }}
           >
             <Burger
-              opened={sidebarOpened}
-              onClick={() => changeSidebar(!sidebarOpened)}
+              opened={showed}
+              onClick={() => show(!showed)}
               size="sm"
             ></Burger>
           </MediaQuery>

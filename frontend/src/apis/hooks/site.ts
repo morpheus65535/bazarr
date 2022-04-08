@@ -1,9 +1,4 @@
-import { useSystemSettings } from "@/apis/hooks";
-import { useReduxStore } from "./base";
-
-export function useIsOffline() {
-  return useReduxStore((s) => s.site.offline);
-}
+import { useSystemSettings } from ".";
 
 export function useEnabledStatus() {
   const { data } = useSystemSettings();

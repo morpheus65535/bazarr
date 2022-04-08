@@ -1,4 +1,4 @@
-import { useEnabledStatus } from "@/modules/redux/hooks";
+import { useEnabledStatus } from "@/apis/hooks/site";
 import { FunctionComponent } from "react";
 import { Navigate } from "react-router-dom";
 

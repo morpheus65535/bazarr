@@ -1,7 +1,6 @@
+import { setLoginRequired } from "@/utilities/event";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { setUnauthenticated } from "../../modules/redux/actions";
-import store from "../../modules/redux/store";
 import { QueryKeys } from "../queries/keys";
 import api from "../raw";
 
@@ -173,7 +172,7 @@ export function useSystem() {
     () => api.system.logout(),
     {
       onSuccess: () => {
-        store.dispatch(setUnauthenticated());
+        setLoginRequired();
         client.clear();
       },
     }

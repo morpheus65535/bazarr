@@ -1,7 +1,7 @@
 import { useBadges } from "@/apis/hooks";
+import { useEnabledStatus } from "@/apis/hooks/site";
 import App from "@/App";
 import { Lazy } from "@/components/async";
-import { useEnabledStatus } from "@/modules/redux/hooks";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
 import Episodes from "@/pages/Episodes";
