@@ -1,5 +1,5 @@
 import { useSubtitleAction } from "@/apis/hooks";
-import { withModal } from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
@@ -13,10 +13,12 @@ function convertToAction(from: number, to: number) {
 
 interface Props {
   selections: FormType.ModifySubtitle[];
+  onSubmit?: VoidFunction;
 }
 
-const FrameRateForm: FunctionComponent<Props> = ({ selections }) => {
+const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
   const { mutateAsync } = useSubtitleAction();
+  const modals = useModals();
 
   const form = useForm({
     initialValues: {
@@ -42,6 +44,8 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections }) => {
         );
 
         dispatchTask(tasks, TaskName);
+        onSubmit?.();
+        modals.closeSelf();
       })}
     >
       <Stack>

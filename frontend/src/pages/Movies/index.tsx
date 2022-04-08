@@ -2,7 +2,7 @@ import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
-import { ItemEditModal } from "@/components/modals";
+import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import ItemView from "@/components/views/ItemView";
 import { useModals } from "@/modules/modals";
 import { BuildKey } from "@/utilities";

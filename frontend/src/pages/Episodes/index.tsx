@@ -7,12 +7,9 @@ import {
 } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
+import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
-import {
-  ItemEditModal,
-  SeriesUploadModal,
-  SubtitleToolsModal,
-} from "@/components/modals";
+import { SeriesUploadModal, SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
 import { useLanguageProfileBy } from "@/utilities/languages";

@@ -1,6 +1,6 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { Selector, SelectorOption } from "@/components";
-import { withModal } from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
 import { Button, Divider, Stack } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
@@ -81,10 +81,12 @@ export const colorOptions: SelectorOption<string>[] = [
 
 interface Props {
   selections: FormType.ModifySubtitle[];
+  onSubmit?: VoidFunction;
 }
 
-const ColorToolForm: FunctionComponent<Props> = ({ selections }) => {
+const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
   const { mutateAsync } = useSubtitleAction();
+  const modals = useModals();
 
   const form = useForm({
     initialValues: {
@@ -108,6 +110,8 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections }) => {
         );
 
         dispatchTask(tasks, TaskName);
+        onSubmit?.();
+        modals.closeSelf();
       })}
     >
       <Stack>

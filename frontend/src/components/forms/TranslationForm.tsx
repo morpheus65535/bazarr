@@ -1,5 +1,5 @@
 import { useSubtitleAction } from "@/apis/hooks";
-import { withModal } from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 import { useEnabledLanguages } from "@/utilities/languages";
@@ -122,10 +122,16 @@ const translations = {
 
 interface Props {
   selections: FormType.ModifySubtitle[];
+  onSubmit?: VoidFunction;
 }
 
-const TranslationForm: FunctionComponent<Props> = ({ selections }) => {
+const TranslationForm: FunctionComponent<Props> = ({
+  selections,
+  onSubmit,
+}) => {
   const { mutateAsync } = useSubtitleAction();
+  const modals = useModals();
+
   const { data: languages } = useEnabledLanguages();
 
   const form = useForm({
@@ -163,6 +169,8 @@ const TranslationForm: FunctionComponent<Props> = ({ selections }) => {
           );
 
           dispatchTask(tasks, TaskName);
+          onSubmit?.();
+          modals.closeSelf();
         }
       })}
     >

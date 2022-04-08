@@ -1,4 +1,8 @@
 import { Action, SimpleTable } from "@/components";
+import {
+  anyCutoff,
+  ProfileEditModal,
+} from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
 import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -15,8 +19,6 @@ import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
-import Modal from "./modal";
-import { anyCutoff } from "./options";
 
 type ModifyFn = (index: number, item?: Language.Profile) => void;
 
@@ -69,7 +71,8 @@ const Table: FunctionComponent = () => {
   const mutateRow = useCallback<ModifyFn>(
     (index, item) => {
       if (item) {
-        modals.openContextModal(Modal, {
+        modals.openContextModal(ProfileEditModal, {
+          languages,
           profile: cloneDeep(item),
           onComplete: updateProfile,
         });
@@ -79,7 +82,7 @@ const Table: FunctionComponent = () => {
         submitProfiles(list);
       }
     },
-    [modals, updateProfile, profiles, submitProfiles]
+    [modals, languages, updateProfile, profiles, submitProfiles]
   );
 
   const columns = useMemo<Column<Language.Profile>[]>(
@@ -172,7 +175,8 @@ const Table: FunctionComponent = () => {
             mustNotContain: [],
             originalFormat: false,
           };
-          modals.openContextModal(Modal, {
+          modals.openContextModal(ProfileEditModal, {
+            languages,
             profile,
             onComplete: updateProfile,
           });

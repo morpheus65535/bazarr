@@ -1,5 +1,6 @@
 import { useLanguageProfiles } from "@/apis/hooks";
 import { Selector } from "@/components/inputs";
+import { useModals, withModal } from "@/modules/modals";
 import { BuildKey, GetItemId, useSelectorOptions } from "@/utilities";
 import {
   Badge,
@@ -30,6 +31,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
 }) => {
   const { data, isFetching } = useLanguageProfiles();
   const { isLoading, mutate } = mutation;
+  const modals = useModals();
 
   const profileOptions = useSelectorOptions(
     data ?? [],
@@ -58,6 +60,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           if (itemId) {
             mutate({ id: [itemId], profileid: [profile?.profileId ?? null] });
             onComplete?.();
+            modals.closeSelf();
             return;
           }
         }
@@ -87,7 +90,10 @@ const ItemEditForm: FunctionComponent<Props> = ({
         <Group position="apart">
           <Button
             disabled={isOverlayVisible}
-            onClick={onCancel}
+            onClick={() => {
+              onCancel?.();
+              modals.closeSelf();
+            }}
             color="gray"
             variant="subtle"
           >
@@ -101,5 +107,10 @@ const ItemEditForm: FunctionComponent<Props> = ({
     </form>
   );
 };
+
+export const ItemEditModal = withModal(ItemEditForm, "item-editor", {
+  title: "Editor",
+  size: "md",
+});
 
 export default ItemEditForm;

@@ -1,5 +1,5 @@
 import { useSubtitleAction } from "@/apis/hooks";
-import { withModal } from "@/modules/modals";
+import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,10 +15,12 @@ function convertToAction(h: number, m: number, s: number, ms: number) {
 
 interface Props {
   selections: FormType.ModifySubtitle[];
+  onSubmit?: VoidFunction;
 }
 
-const TimeOffsetForm: FunctionComponent<Props> = ({ selections }) => {
+const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
   const { mutateAsync } = useSubtitleAction();
+  const modals = useModals();
 
   const form = useForm({
     initialValues: {
@@ -55,6 +57,8 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections }) => {
         );
 
         dispatchTask(tasks, TaskName);
+        onSubmit?.();
+        modals.closeSelf();
       })}
     >
       <Stack>

@@ -10,9 +10,9 @@ import {
 } from "@/apis/hooks/movies";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
+import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import ItemOverview from "@/components/ItemOverview";
 import {
-  ItemEditModal,
   MovieHistoryModal,
   MovieUploadModal,
   SubtitleToolsModal,

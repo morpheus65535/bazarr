@@ -24,7 +24,7 @@ export function useSelectorOptions<T>(
         value,
         label: labelRef.current(value),
       })),
-    [options, labelRef]
+    [options]
   );
 
   return {
