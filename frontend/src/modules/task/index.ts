@@ -1,6 +1,5 @@
 import { showNotification, updateNotification } from "@mantine/notifications";
 import { notification } from "../notifications";
-import TaskGroups, { GroupName } from "./group";
 
 export function createTask<T extends Task.AnyCallable>(
   name: string,
@@ -15,14 +14,12 @@ export function createTask<T extends Task.AnyCallable>(
   return task;
 }
 
-export function dispatchTask(tasks: Task.Callable[], group: GroupName) {
+export function dispatchTask(tasks: Task.Callable[], group: string) {
   setTimeout(async () => {
-    const { description, notify } = TaskGroups[group];
-
     const notifyStart = notification.progress(
       group,
-      notify,
-      description,
+      group,
+      "Starting Tasks...",
       0,
       tasks.length
     );
@@ -33,7 +30,7 @@ export function dispatchTask(tasks: Task.Callable[], group: GroupName) {
 
       const notifyInProgress = notification.progress(
         group,
-        notify,
+        group,
         task.description,
         index,
         tasks.length
@@ -44,7 +41,7 @@ export function dispatchTask(tasks: Task.Callable[], group: GroupName) {
 
     const notifyEnd = notification.progress(
       group,
-      notify,
+      group,
       "All Tasks Completed",
       tasks.length,
       tasks.length
@@ -55,7 +52,7 @@ export function dispatchTask(tasks: Task.Callable[], group: GroupName) {
 
 export function createAndDispatchTask<T extends Task.AnyCallable>(
   name: string,
-  group: GroupName,
+  group: string,
   callable: T,
   ...parameters: Parameters<T>
 ) {

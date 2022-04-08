@@ -6,7 +6,7 @@ import {
 } from "@/apis/hooks";
 import { withModal } from "@/modules/modals";
 import { faFileExcel } from "@fortawesome/free-solid-svg-icons";
-import { Center, Text } from "@mantine/core";
+import { Badge, Center, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 import { PageTable } from "..";
@@ -42,7 +42,11 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <Language.Text value={value} long></Language.Text>;
+            return (
+              <Badge>
+                <Language.Text value={value} long></Language.Text>
+              </Badge>
+            );
           } else {
             return null;
           }
@@ -142,7 +146,11 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <Language.Text value={value} long></Language.Text>;
+            return (
+              <Badge>
+                <Language.Text value={value} long></Language.Text>
+              </Badge>
+            );
           } else {
             return null;
           }

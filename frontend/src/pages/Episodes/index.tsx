@@ -8,8 +8,11 @@ import {
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import ItemOverview from "@/components/ItemOverview";
-import { ItemEditModal, SeriesUploadModal } from "@/components/modals";
-import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
+import {
+  ItemEditModal,
+  SeriesUploadModal,
+  SubtitleToolsModal,
+} from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -125,7 +128,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
               icon={faBriefcase}
               onClick={() => {
                 if (episodes) {
-                  modals.openContextModal(SubtitleToolModal, {
+                  modals.openContextModal(SubtitleToolsModal, {
                     payload: episodes,
                   });
                 }
@@ -171,10 +174,9 @@ const SeriesEpisodesView: FunctionComponent = () => {
           <ItemOverview item={series ?? null} details={details}></ItemOverview>
           <QueryOverlay result={episodesQuery}>
             <Table
-              series={series}
-              episodes={episodes ?? []}
+              episodes={episodes ?? null}
               profile={profile}
-              disabled={hasTask}
+              disabled={hasTask || !series || series.profileId === null}
             ></Table>
           </QueryOverlay>
         </Stack>

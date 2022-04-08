@@ -1,9 +1,8 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
-import { EpisodeHistoryModal } from "@/components/modals";
+import { EpisodeHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
-import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
@@ -22,18 +21,12 @@ import { Column } from "react-table";
 import { Subtitle } from "./components";
 
 interface Props {
-  series?: Item.Series;
-  episodes: Item.Episode[];
+  episodes: Item.Episode[] | null;
   disabled?: boolean;
   profile?: Language.Profile;
 }
 
-const Table: FunctionComponent<Props> = ({
-  series,
-  episodes,
-  profile,
-  disabled,
-}) => {
+const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
   const onlyDesired = useShowOnlyDesired();
 
   const profileItems = useProfileItemsToLanguages(profile);
@@ -159,7 +152,7 @@ const Table: FunctionComponent<Props> = ({
           return (
             <Group spacing="xs" noWrap>
               <Action
-                disabled={series?.profileId === null || disabled}
+                disabled={disabled}
                 onClick={() => {
                   modals.openContextModal(EpisodeSearchModal, {
                     item: row.original,
@@ -181,7 +174,7 @@ const Table: FunctionComponent<Props> = ({
               <Action
                 disabled={disabled}
                 onClick={() => {
-                  modals.openContextModal(SubtitleToolModal, {
+                  modals.openContextModal(SubtitleToolsModal, {
                     payload: [row.original],
                   });
                 }}
@@ -192,19 +185,22 @@ const Table: FunctionComponent<Props> = ({
         },
       },
     ],
-    [onlyDesired, profileItems, series?.profileId, disabled, download]
+    [onlyDesired, profileItems, disabled, download]
   );
 
   const maxSeason = useMemo(
     () =>
-      episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
+      episodes?.reduce<number>(
+        (prev, curr) => Math.max(prev, curr.season),
+        0
+      ) ?? 0,
     [episodes]
   );
 
   return (
     <GroupTable
       columns={columns}
-      data={episodes}
+      data={episodes ?? []}
       initialState={{
         sortBy: [
           { id: "season", desc: true },

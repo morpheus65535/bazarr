@@ -11,10 +11,6 @@ export function toggleState(
   setTimeout(() => dispatch(start), wait);
 }
 
-export function submodProcessColor(s: string) {
-  return `color(name=${s})`;
-}
-
 export function GetItemId<T extends object>(item: T): number | undefined {
   if (isMovie(item)) {
     return item.radarrId;
@@ -61,12 +57,6 @@ export function filterSubtitleBy(
     );
     return difference(subtitles, result);
   }
-}
-
-export async function waitFor(time: number) {
-  return new Promise((resolved) => {
-    setTimeout(resolved, time);
-  });
 }
 
 export * from "./env";

@@ -15,9 +15,9 @@ import {
   ItemEditModal,
   MovieHistoryModal,
   MovieUploadModal,
+  SubtitleToolsModal,
 } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
-import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -157,7 +157,7 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={hasTask}
               onClick={() => {
                 if (movie) {
-                  modals.openContextModal(SubtitleToolModal, {
+                  modals.openContextModal(SubtitleToolsModal, {
                     payload: [movie],
                   });
                 }
