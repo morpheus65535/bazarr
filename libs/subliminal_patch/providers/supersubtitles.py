@@ -412,7 +412,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         season_pack_list = {}
 
         # Check the results:
-        if results:
+        if results and not isinstance(results, list):
             for result in results.values():
                 '''
                 Gonna get back multiple records for the same subtitle, in case it is compatible with multiple releases,
@@ -446,6 +446,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     }
                 else:
                     target[sub_id]['releases'].append(release)
+        else:
+            logger.debug("Invalid results: %s", results)
 
         return subtitle_list, season_pack_list
 
