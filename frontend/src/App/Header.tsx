@@ -17,7 +17,6 @@ import {
   Menu,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
-import { Helmet } from "react-helmet";
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
@@ -34,9 +33,6 @@ const AppHeader: FunctionComponent = () => {
 
   return (
     <Header p="md" height={Layout.HEADER_HEIGHT}>
-      <Helmet>
-        <meta name="theme-color" content="#911f93" />
-      </Helmet>
       <Group position="apart">
         <Group>
           <MediaQuery

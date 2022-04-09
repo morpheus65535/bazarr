@@ -3,8 +3,8 @@ import { QueryOverlay } from "@/components/async";
 import { Language } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/components/MassEditor";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Helmet } from "react-helmet";
 import { Column } from "react-table";
 
 const MovieMassEditor: FunctionComponent = () => {
@@ -35,11 +35,10 @@ const MovieMassEditor: FunctionComponent = () => {
     []
   );
 
+  useDocumentTitle("Movies - Bazarr (Mass Editor)");
+
   return (
     <QueryOverlay result={query}>
-      <Helmet>
-        <title>Movies - Bazarr (Mass Editor)</title>
-      </Helmet>
       <MassEditor
         columns={columns}
         data={query.data ?? []}

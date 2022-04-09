@@ -29,9 +29,9 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { isNumber } from "lodash";
 import { FunctionComponent, useCallback, useRef } from "react";
-import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
@@ -91,6 +91,8 @@ const MovieDetailView: FunctionComponent = () => {
 
   const hasTask = useIsMovieActionRunning();
 
+  useDocumentTitle(`${movie?.title ?? "Unknown Movie"} - Bazarr (Movies)`);
+
   if (isNaN(id) || (isFetched && !movie)) {
     return <Navigate to="/not-found"></Navigate>;
   }
@@ -100,9 +102,6 @@ const MovieDetailView: FunctionComponent = () => {
   return (
     <Container fluid px={0}>
       <QueryOverlay result={movieQuery}>
-        <Helmet>
-          <title>{movie?.title ?? "Unknown Movie"} - Bazarr (Movies)</title>
-        </Helmet>
         <FileOverlay
           disabled={profile === undefined}
           accept={[""]}

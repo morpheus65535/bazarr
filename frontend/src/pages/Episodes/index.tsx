@@ -25,8 +25,8 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useCallback, useMemo, useRef } from "react";
-import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
@@ -78,6 +78,8 @@ const SeriesEpisodesView: FunctionComponent = () => {
     [modals, profile, series]
   );
 
+  useDocumentTitle(`${series?.title ?? "Unknown Series"} - Bazarr (Series)`);
+
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to="/not-found"></Navigate>;
   }
@@ -85,9 +87,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <QueryOverlay result={seriesQuery}>
-        <Helmet>
-          <title>{series?.title ?? "Unknown Series"} - Bazarr (Series)</title>
-        </Helmet>
         <FileOverlay
           disabled={profile === undefined}
           accept={[""]}

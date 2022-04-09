@@ -3,8 +3,8 @@ import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemProvidersView: FunctionComponent = () => {
@@ -14,12 +14,11 @@ const SystemProvidersView: FunctionComponent = () => {
 
   const { mutate: reset, isLoading: isResetting } = useResetProvider();
 
+  useDocumentTitle("Providers - Bazarr (System)");
+
   return (
     <QueryOverlay result={providers}>
       <Container fluid px={0}>
-        <Helmet>
-          <title>Providers - Bazarr (System)</title>
-        </Helmet>
         <Toolbox>
           <Toolbox.Button
             loading={isFetching}

@@ -5,6 +5,7 @@ import { LOG } from "@/utilities/console";
 import { useUpdateLocalStorage } from "@/utilities/storage";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 import { Container, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { merge } from "lodash";
 import {
   createContext,
@@ -14,7 +15,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Helmet } from "react-helmet";
 import {
   enabledLanguageKey,
   languageProfileKey,
@@ -133,11 +133,10 @@ const Layout: FunctionComponent<Props> = (props) => {
     defaultDispatcher(lostValues);
   }, [stagedChange, dispatcher, defaultDispatcher]);
 
+  useDocumentTitle(`${name} - Bazarr (Settings)`);
+
   return (
     <LoadingProvider value={isLoading || isMutating}>
-      <Helmet>
-        <title>{name} - Bazarr (Settings)</title>
-      </Helmet>
       {/* TODO */}
       {/* <Prompt
         when={Object.keys(stagedChange).length > 0}

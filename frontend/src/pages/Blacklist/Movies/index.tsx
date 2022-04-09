@@ -6,8 +6,8 @@ import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Container, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const BlacklistMoviesView: FunctionComponent = () => {
@@ -16,12 +16,11 @@ const BlacklistMoviesView: FunctionComponent = () => {
 
   const { mutateAsync } = useMovieDeleteBlacklist();
 
+  useDocumentTitle("Movies Blacklist - Bazarr");
+
   return (
     <Container fluid px={0}>
       <QueryOverlay result={blacklist}>
-        <Helmet>
-          <title>Movies Blacklist - Bazarr</title>
-        </Helmet>
         <Stack>
           <Toolbox>
             <Toolbox.MutateButton

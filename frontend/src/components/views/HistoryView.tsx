@@ -1,6 +1,6 @@
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { Container } from "@mantine/core";
-import { Helmet } from "react-helmet";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Column } from "react-table";
 import { QueryPageTable } from "..";
 
@@ -15,11 +15,9 @@ function HistoryView<T extends History.Base = History.Base>({
   name,
   query,
 }: Props<T>) {
+  useDocumentTitle(`${name} History - Bazarr`);
   return (
     <Container fluid px={0}>
-      <Helmet>
-        <title>{name} History - Bazarr</title>
-      </Helmet>
       <QueryPageTable
         emptyText={`Nothing Found in ${name} History`}
         columns={columns}

@@ -3,7 +3,7 @@ import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { createAndDispatchTask } from "@/modules/task";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
-import { Helmet } from "react-helmet";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Column } from "react-table";
 import { QueryPageTable, Toolbox } from "..";
 
@@ -23,11 +23,10 @@ function WantedView<T extends Wanted.Base>({
   const dataCount = query.paginationStatus.totalCount;
   const hasTask = useIsAnyActionRunning();
 
+  useDocumentTitle(`Wanted ${name} - Bazarr`);
+
   return (
     <Container fluid px={0}>
-      <Helmet>
-        <title>Wanted {name} - Bazarr</title>
-      </Helmet>
       <Toolbox>
         <Toolbox.Button
           disabled={hasTask || dataCount === 0}

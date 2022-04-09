@@ -4,8 +4,8 @@ import { QueryOverlay } from "@/components/async";
 import { Environment } from "@/utilities";
 import { faDownload, faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useCallback } from "react";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemLogsView: FunctionComponent = () => {
@@ -18,12 +18,11 @@ const SystemLogsView: FunctionComponent = () => {
     window.open(`${Environment.baseUrl}/bazarr.log`);
   }, []);
 
+  useDocumentTitle("Logs - Bazarr (System)");
+
   return (
     <Container fluid px={0}>
       <QueryOverlay result={logs}>
-        <Helmet>
-          <title>Logs - Bazarr (System)</title>
-        </Helmet>
         <Toolbox>
           <Toolbox.Button
             loading={isFetching}

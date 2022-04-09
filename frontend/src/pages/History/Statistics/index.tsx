@@ -8,9 +8,9 @@ import { QueryOverlay } from "@/components/async";
 import Language from "@/components/bazarr/Language";
 import { useSelectorOptions } from "@/utilities";
 import { Container, Grid, Stack } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { merge } from "lodash";
 import { FunctionComponent, useMemo, useState } from "react";
-import { Helmet } from "react-helmet";
 import {
   Bar,
   BarChart,
@@ -60,11 +60,10 @@ const HistoryStats: FunctionComponent = () => {
     }
   }, [data]);
 
+  useDocumentTitle("History Statistics - Bazarr");
+
   return (
     <Container fluid px={0}>
-      <Helmet>
-        <title>History Statistics - Bazarr</title>
-      </Helmet>
       <QueryOverlay result={stats}>
         <Stack>
           <Toolbox>

@@ -3,8 +3,8 @@ import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 const SystemTasksView: FunctionComponent = () => {
@@ -12,12 +12,11 @@ const SystemTasksView: FunctionComponent = () => {
 
   const { isFetching, data, refetch } = tasks;
 
+  useDocumentTitle("Tasks - Bazarr (System)");
+
   return (
     <QueryOverlay result={tasks}>
       <Container fluid px={0}>
-        <Helmet>
-          <title>Tasks - Bazarr (System)</title>
-        </Helmet>
         <Toolbox>
           <Toolbox.Button
             loading={isFetching}

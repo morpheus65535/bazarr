@@ -10,10 +10,9 @@ import {
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Container, Divider, Grid, Stack, Text } from "@mantine/core";
-import { useInterval } from "@mantine/hooks";
+import { useDocumentTitle, useInterval } from "@mantine/hooks";
 import moment from "moment";
 import { FunctionComponent, ReactNode, useEffect, useState } from "react";
-import { Helmet } from "react-helmet";
 import Table from "./table";
 
 interface InfoProps {
@@ -92,11 +91,10 @@ const SystemStatusView: FunctionComponent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useDocumentTitle("Status - Bazarr (System)");
+
   return (
     <Container fluid>
-      <Helmet>
-        <title>Status - Bazarr (System)</title>
-      </Helmet>
       <Stack>
         <InfoContainer title="Health">
           <QueryOverlay result={health}>

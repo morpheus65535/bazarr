@@ -11,18 +11,17 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Helmet } from "react-helmet";
 
 const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
   const { data } = releases;
 
+  useDocumentTitle("Releases - Bazarr (System)");
+
   return (
     <Container size={600} py={12}>
-      <Helmet>
-        <title>Releases - Bazarr (System)</title>
-      </Helmet>
       <QueryOverlay result={releases}>
         <Stack spacing="lg">
           {data?.map((v, idx) => (

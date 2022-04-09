@@ -7,8 +7,8 @@ import ItemView from "@/components/views/ItemView";
 import { useModals } from "@/modules/modals";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Anchor, Container, Progress, Text } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -97,11 +97,10 @@ const SeriesView: FunctionComponent = () => {
     [mutation]
   );
 
+  useDocumentTitle("Series - Bazarr");
+
   return (
     <Container px={0} fluid>
-      <Helmet>
-        <title>Series - Bazarr</title>
-      </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
     </Container>
   );

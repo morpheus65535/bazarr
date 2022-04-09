@@ -10,8 +10,8 @@ import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Anchor, Badge, Container, Text } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
-import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -96,11 +96,10 @@ const MovieView: FunctionComponent = () => {
     []
   );
 
+  useDocumentTitle("Movies - Bazarr");
+
   return (
     <Container fluid px={0}>
-      <Helmet>
-        <title>Movies - Bazarr</title>
-      </Helmet>
       <ItemView query={query} columns={columns}></ItemView>
     </Container>
   );
