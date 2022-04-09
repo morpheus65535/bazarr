@@ -8,8 +8,10 @@ import {
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
+import File, { FileOverlay } from "@/components/inputs/File";
 import ItemOverview from "@/components/ItemOverview";
-import { SeriesUploadModal, SubtitleToolsModal } from "@/components/modals";
+import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -23,7 +25,7 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo, useRef } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -63,6 +65,19 @@ const SeriesEpisodesView: FunctionComponent = () => {
 
   const hasTask = useIsAnyActionRunning();
 
+  const dialogRef = useRef<VoidFunction>(null);
+  const onDrop = useCallback(
+    (files: File[]) => {
+      if (series && profile) {
+        modals.openContextModal(SeriesUploadModal, {
+          files,
+          series,
+        });
+      }
+    },
+    [modals, profile, series]
+  );
+
   if (isNaN(id) || (isFetched && !series)) {
     return <Navigate to="/not-found"></Navigate>;
   }
@@ -73,6 +88,20 @@ const SeriesEpisodesView: FunctionComponent = () => {
         <Helmet>
           <title>{series?.title ?? "Unknown Series"} - Bazarr (Series)</title>
         </Helmet>
+        <FileOverlay
+          disabled={profile === undefined}
+          accept={[""]}
+          onDrop={onDrop}
+        ></FileOverlay>
+        <div hidden>
+          {/* A workaround to allow click to upload files */}
+          <File
+            disabled={profile === undefined}
+            accept={[""]}
+            openRef={dialogRef}
+            onDrop={onDrop}
+          ></File>
+        </div>
         <Toolbox>
           <Group spacing="xs">
             <Toolbox.Button
@@ -146,13 +175,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 !available
               }
               icon={faCloudUploadAlt}
-              onClick={() => {
-                if (series) {
-                  modals.openContextModal(SeriesUploadModal, {
-                    payload: series,
-                  });
-                }
-              }}
+              onClick={() => dialogRef.current?.()}
             >
               Upload
             </Toolbox.Button>
