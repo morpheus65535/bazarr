@@ -1,3 +1,4 @@
+import { Language } from "@/components/bazarr";
 import { BuildKey, isMovie } from "@/utilities";
 import {
   useLanguageProfileBy,
@@ -29,7 +30,6 @@ import {
   Title,
 } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
-import Language from "./bazarr/Language";
 
 interface Props {
   item: Item.Base | null;

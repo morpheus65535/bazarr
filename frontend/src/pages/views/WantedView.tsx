@@ -5,7 +5,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { Column } from "react-table";
-import { QueryPageTable, Toolbox } from "..";
+import { QueryPageTable, Toolbox } from "../../components";
 
 interface Props<T extends Wanted.Base> {
   name: string;

@@ -164,32 +164,6 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     [download, item]
   );
 
-  // const title = useMemo(() => {
-  //   let title = "Unknown";
-
-  //   if (item) {
-  //     if (item.sceneName) {
-  //       title = item.sceneName;
-  //     } else if (isMovie(item)) {
-  //       title = item.title;
-  //     } else {
-  //       title = item.title;
-  //     }
-  //   }
-  //   return `Search - ${title}`;
-  // }, [item]);
-
-  // const Modal = useModal({
-  //   size: "xl",
-  //   closeable: results.isFetching === false,
-  //   onMounted: () => {
-  //     // Cleanup the ID when user switches episode / movie
-  //     if (itemId !== id) {
-  //       setId(undefined);
-  //     }
-  //   },
-  // });
-
   return (
     <Stack>
       <Alert

@@ -5,7 +5,7 @@ import {
 } from "@/apis/hooks";
 import MutateButton from "@/components/async/MutateButton";
 import Language from "@/components/bazarr/Language";
-import WantedView from "@/components/views/WantedView";
+import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

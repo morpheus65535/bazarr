@@ -2,7 +2,7 @@ import { useMovieModification, useMovies } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
 import { Language } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
-import MassEditor from "@/components/MassEditor";
+import MassEditor from "@/pages/views/MassEditor";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";

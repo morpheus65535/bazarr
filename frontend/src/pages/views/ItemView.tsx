@@ -3,7 +3,7 @@ import { TableStyleProps } from "@/components/tables/BaseTable";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { Column, TableOptions } from "react-table";
-import { QueryPageTable, Toolbox } from "..";
+import { QueryPageTable, Toolbox } from "../../components";
 
 interface Props<T extends Item.Base = Item.Base> {
   query: UsePaginationQueryResult<T>;

@@ -22,14 +22,6 @@ const Authentication: FunctionComponent = () => {
     },
   });
 
-  // const authenticated = useReduxStore(
-  //   (s) => s.site.status !== "unauthenticated"
-  // );
-
-  // if (authenticated) {
-  //   return <Navigate to="/"></Navigate>;
-  // }
-
   return (
     <Container my="xl" size={400}>
       <Card shadow="xl">

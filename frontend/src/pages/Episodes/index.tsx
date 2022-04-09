@@ -10,10 +10,10 @@ import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import File, { FileOverlay } from "@/components/inputs/File";
-import ItemOverview from "@/components/ItemOverview";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
+import ItemOverview from "@/pages/views/ItemOverview";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faAdjust,

@@ -187,7 +187,7 @@ const TranslationForm: FunctionComponent<Props> = ({
 };
 
 export const TranslationModal = withModal(TranslationForm, "translation-tool", {
-  title: "Translation",
+  title: "Translate Subtitle(s)",
 });
 
 export default TranslationForm;

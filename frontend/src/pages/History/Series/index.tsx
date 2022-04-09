@@ -6,7 +6,7 @@ import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
-import HistoryView from "@/components/views/HistoryView";
+import HistoryView from "@/pages/views/HistoryView";
 import {
   faFileExcel,
   faInfoCircle,

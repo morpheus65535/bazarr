@@ -7,9 +7,9 @@ import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
-import { SimpleTable, Toolbox } from ".";
-import { Selector } from "./inputs";
-import { useCustomSelection } from "./tables/plugins";
+import { SimpleTable, Toolbox } from "../../components";
+import { Selector } from "../../components/inputs";
+import { useCustomSelection } from "../../components/tables/plugins";
 
 interface MassEditorProps<T extends Item.Base = Item.Base> {
   columns: Column<T>[];

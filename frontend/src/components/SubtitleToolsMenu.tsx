@@ -149,11 +149,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           icon={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
           onClick={() => {
             if (tool.modal) {
-              modals.openContextModal(
-                tool.modal,
-                { selections },
-                { title: tool.name }
-              );
+              modals.openContextModal(tool.modal, { selections });
             } else {
               process(tool.key, tool.name);
             }
