@@ -24,7 +24,7 @@
     "axios": "^0.24",
     "bootstrap": "^4",
     "lodash": "^4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "rc-slider": "^9.7",
     "react": "^17",
     "react-bootstrap": "^1",
