@@ -11,7 +11,7 @@ import {
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
-import { SubtitleUploadModal } from "@/components/forms/SubtitleUploadForm";
+import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
 import File, { FileOverlay } from "@/components/inputs/File";
 import ItemOverview from "@/components/ItemOverview";
 import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
@@ -79,17 +79,14 @@ const MovieDetailView: FunctionComponent = () => {
   const dialogRef = useRef<VoidFunction>(null);
   const onDrop = useCallback(
     (files: File[]) => {
-      if (profile) {
-        modals.openContextModal(SubtitleUploadModal, {
+      if (movie && profile) {
+        modals.openContextModal(MovieUploadModal, {
           files,
-          profile,
-          onComplete: (files) => {
-            //
-          },
+          movie,
         });
       }
     },
-    [modals, profile]
+    [modals, movie, profile]
   );
 
   const hasTask = useIsMovieActionRunning();
@@ -205,9 +202,6 @@ const MovieDetailView: FunctionComponent = () => {
               icon={faCloudUploadAlt}
               onClick={() => {
                 dialogRef.current?.();
-                // if (movie) {
-                //   modals.openContextModal(MovieUploadModal, { payload: movie });
-                // }
               }}
             >
               Upload

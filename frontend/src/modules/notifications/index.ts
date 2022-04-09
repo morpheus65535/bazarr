@@ -32,7 +32,7 @@ export const notification = {
       title,
       message: `[${current}/${total}] ${body}`,
       loading: current < total,
-      autoClose: 10 * 1000,
+      autoClose: 2 * 60 * 1000,
       disallowClose: current < total,
     };
   },

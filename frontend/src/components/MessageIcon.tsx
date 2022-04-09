@@ -17,6 +17,7 @@ const MessageIcon: FunctionComponent<MessageIconProps> = (props) => {
 
   return (
     <Popover
+      disabled={messages.length === 0}
       target={
         <FontAwesomeIcon forwardedRef={ref} {...iconProps}></FontAwesomeIcon>
       }
