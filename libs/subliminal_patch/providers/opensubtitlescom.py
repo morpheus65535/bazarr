@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 SHOW_EXPIRATION_TIME = datetime.timedelta(weeks=1).total_seconds()
 TOKEN_EXPIRATION_TIME = datetime.timedelta(hours=12).total_seconds()
 
-retry_amount = 5
+retry_amount = 3
 
 
 def fix_tv_naming(title):
@@ -440,6 +440,7 @@ def checked(fn, raise_api_limit=False, validate_token=False, validate_json=False
         status_code = None
     else:
         if status_code == 401:
+            time.sleep(1)
             if validate_token:
                 return 401
             else:
