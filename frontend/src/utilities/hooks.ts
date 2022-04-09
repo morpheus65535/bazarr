@@ -1,5 +1,5 @@
 import { SelectorOption, SelectorProps } from "@/components";
-import { Dispatch, SetStateAction, useCallback, useMemo, useRef } from "react";
+import { Dispatch, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function useGotoHomepage() {
@@ -37,7 +37,7 @@ export function useSelectorOptions<T>(
 }
 
 // High performance action wrapper for array, typically used for table updates
-export function useArrayAction<T>(setData: Dispatch<SetStateAction<T[]>>) {
+export function useArrayAction<T>(setData: Dispatch<(prev: T[]) => T[]>) {
   const setDataRef = useRef(setData);
   setDataRef.current = setData;
 

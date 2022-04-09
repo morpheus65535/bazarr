@@ -4,31 +4,16 @@ import {
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
-import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
-import {
-  createContext,
-  FunctionComponent,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 
 type ModifyFn = (index: number, item?: Language.Profile) => void;
-
-const RowContext = createContext<ModifyFn>(() => {
-  LOG("error", "RowContext not initialized");
-});
-
-function useRowMutation() {
-  return useContext(RowContext);
-}
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -135,32 +120,32 @@ const Table: FunctionComponent = () => {
         accessor: "profileId",
         Cell: ({ row }) => {
           const profile = row.original;
-          const mutate = useRowMutation();
-
           return (
             <Group spacing="xs">
               <Action
                 icon={faWrench}
                 onClick={() => {
-                  mutate(row.index, profile);
+                  mutateRow(row.index, profile);
                 }}
               ></Action>
-              <Action icon={faTrash} onClick={() => mutate(row.index)}></Action>
+              <Action
+                icon={faTrash}
+                onClick={() => mutateRow(row.index)}
+              ></Action>
             </Group>
           );
         },
       },
     ],
-    []
+    // TODO: Optimize this
+    [mutateRow]
   );
 
   const canAdd = languages.length !== 0;
 
   return (
     <>
-      <RowContext.Provider value={mutateRow}>
-        <SimpleTable columns={columns} data={profiles}></SimpleTable>
-      </RowContext.Provider>
+      <SimpleTable columns={columns} data={profiles}></SimpleTable>
       <Button
         fullWidth
         disabled={!canAdd}
