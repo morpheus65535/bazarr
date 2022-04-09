@@ -64,7 +64,9 @@ function DefaultHeaderRenderer<T extends object>(
   headers: HeaderGroup<T>[]
 ): JSX.Element[] {
   return headers.map((col) => (
-    <th {...col.getHeaderProps()}>{col.render("Header")}</th>
+    <th style={{ whiteSpace: "nowrap" }} {...col.getHeaderProps()}>
+      {col.render("Header")}
+    </th>
   ));
 }
 

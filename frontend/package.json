@@ -31,6 +31,7 @@
     "@fortawesome/react-fontawesome": "^0.1",
     "@mantine/modals": "^4",
     "@mantine/notifications": "^4",
+    "@mantine/dropzone": "^4",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "12",
     "@testing-library/react-hooks": "latest",

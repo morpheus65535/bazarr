@@ -11,12 +11,10 @@ import {
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { SubtitleUploadModal } from "@/components/forms/SubtitleUploadForm";
+import File, { FileOverlay } from "@/components/inputs/File";
 import ItemOverview from "@/components/ItemOverview";
-import {
-  MovieHistoryModal,
-  MovieUploadModal,
-  SubtitleToolsModal,
-} from "@/components/modals";
+import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
@@ -32,7 +30,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Container, Group, Stack } from "@mantine/core";
 import { isNumber } from "lodash";
-import { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet";
 import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
@@ -78,6 +76,22 @@ const MovieDetailView: FunctionComponent = () => {
     [downloadAsync]
   );
 
+  const dialogRef = useRef<VoidFunction>(null);
+  const onDrop = useCallback(
+    (files: File[]) => {
+      if (profile) {
+        modals.openContextModal(SubtitleUploadModal, {
+          files,
+          profile,
+          onComplete: (files) => {
+            //
+          },
+        });
+      }
+    },
+    [modals, profile]
+  );
+
   const hasTask = useIsMovieActionRunning();
 
   if (isNaN(id) || (isFetched && !movie)) {
@@ -92,6 +106,20 @@ const MovieDetailView: FunctionComponent = () => {
         <Helmet>
           <title>{movie?.title ?? "Unknown Movie"} - Bazarr (Movies)</title>
         </Helmet>
+        <FileOverlay
+          disabled={profile === undefined}
+          accept={[""]}
+          onDrop={onDrop}
+        ></FileOverlay>
+        <div hidden>
+          {/* A workaround to allow click to upload files */}
+          <File
+            disabled={profile === undefined}
+            accept={[""]}
+            openRef={dialogRef}
+            onDrop={onDrop}
+          ></File>
+        </div>
         <Toolbox>
           <Group spacing="xs">
             <Toolbox.Button
@@ -176,9 +204,10 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={!allowEdit || movie.profileId === null || hasTask}
               icon={faCloudUploadAlt}
               onClick={() => {
-                if (movie) {
-                  modals.openContextModal(MovieUploadModal, { payload: movie });
-                }
+                dialogRef.current?.();
+                // if (movie) {
+                //   modals.openContextModal(MovieUploadModal, { payload: movie });
+                // }
               }}
             >
               Upload

@@ -1,4 +1,4 @@
-import { useLatestRef, useSelectorOptions } from "@/utilities";
+import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import {
   faCheck,
@@ -12,6 +12,7 @@ import {
   Button,
   Center,
   Checkbox,
+  Collapse,
   Container,
   Divider,
   Group,
@@ -22,11 +23,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Column } from "react-table";
 import { Language } from "../bazarr";
 import { Selector } from "../inputs";
+import File from "../inputs/File";
 import MessageIcon from "../MessageIcon";
 import { SimpleTable } from "../tables";
 
@@ -87,7 +90,8 @@ function SubtitleUploader<T>(props: Props<T>) {
 
   // const fileList = useMemo(() => pending.map((v) => v.file), [pending]);
 
-  const initialRef = useLatestRef(initial);
+  const initialRef = useRef(initial);
+  initialRef.current = initial;
 
   const setFiles = useCallback(
     async (files: File[]) => {
@@ -120,7 +124,7 @@ function SubtitleUploader<T>(props: Props<T>) {
 
       setPending(list);
     },
-    [availableLanguages, update, initialRef, validate]
+    [availableLanguages, update, validate]
   );
 
   const modify = useCallback(
@@ -294,59 +298,48 @@ function SubtitleUploader<T>(props: Props<T>) {
 
   return (
     <Container fluid>
-      {/* <Form>
-          <Form.Group>
-            <FileForm
-              disabled={showTable}
-              emptyText="Select..."
-              multiple
-              value={fileList}
-              onChange={setFiles}
-            ></FileForm>
-          </Form.Group>
-        </Form> */}
-      <div hidden={!showTable}>
+      <Collapse in={false}>
         <RowContext.Provider value={modify as ModifyFn<unknown>}>
           <SimpleTable columns={columnsWithAction} data={pending}></SimpleTable>
         </RowContext.Provider>
-      </div>
-      <Divider></Divider>
-      <Group position="apart">
-        <Selector
-          {...languageOptions}
-          hidden={hideAllLanguages}
-          value={null}
-          disabled={!showTable}
-          onChange={(lang) => {
-            if (lang) {
-              setPending((pd) =>
-                pd
-                  .map((v) => ({ ...v, language: lang }))
-                  .map((v) => ({ ...v, ...validate(v) }))
-              );
-            }
-          }}
-        ></Selector>
-        <Group>
-          <Button
-            hidden={!showTable}
-            color="gray"
-            variant="outline"
-            onClick={() => setFiles([])}
-          >
-            Clean
-          </Button>
-          <Button
-            disabled={!canUpload || !showTable}
-            onClick={() => {
-              upload(pending);
-              setFiles([]);
+        <Divider></Divider>
+        <Group position="apart">
+          <Selector
+            {...languageOptions}
+            hidden={hideAllLanguages}
+            value={null}
+            disabled={!showTable}
+            onChange={(lang) => {
+              if (lang) {
+                setPending((pd) =>
+                  pd
+                    .map((v) => ({ ...v, language: lang }))
+                    .map((v) => ({ ...v, ...validate(v) }))
+                );
+              }
             }}
-          >
-            Upload
-          </Button>
+          ></Selector>
+          <Group>
+            <Button
+              hidden={!showTable}
+              color="gray"
+              variant="outline"
+              onClick={() => setFiles([])}
+            >
+              Clean
+            </Button>
+            <Button
+              disabled={!canUpload || !showTable}
+              onClick={() => {
+                upload(pending);
+                setFiles([]);
+              }}
+            >
+              Upload
+            </Button>
+          </Group>
         </Group>
-      </Group>
+      </Collapse>
     </Container>
   );
 }
