@@ -19,7 +19,9 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script>
-      window.Bazarr = {{BAZARR_SERVER_INJECT | tojson | safe}};
+      try {
+        window.Bazarr = JSON.parse(`{{BAZARR_SERVER_INJECT | tojson | safe}}`);
+      } catch (error) {}
     </script>
     <script type="module" src="./src/dom.tsx"></script>
   </body>
