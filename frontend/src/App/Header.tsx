@@ -10,6 +10,7 @@ import {
   Avatar,
   Badge,
   Burger,
+  createStyles,
   Divider,
   Group,
   Header,
@@ -17,6 +18,16 @@ import {
   Menu,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
+
+const useStyles = createStyles((theme) => {
+  const headerBackgroundColor =
+    theme.colorScheme === "light" ? theme.colors.gray[0] : theme.colors.dark[4];
+  return {
+    header: {
+      backgroundColor: headerBackgroundColor,
+    },
+  };
+});
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
@@ -31,8 +42,10 @@ const AppHeader: FunctionComponent = () => {
 
   const goHome = useGotoHomepage();
 
+  const { classes } = useStyles();
+
   return (
-    <Header p="md" height={Layout.HEADER_HEIGHT}>
+    <Header p="md" height={Layout.HEADER_HEIGHT} className={classes.header}>
       <Group position="apart">
         <Group>
           <MediaQuery
@@ -57,7 +70,7 @@ const AppHeader: FunctionComponent = () => {
               size="sm"
             ></Burger>
           </MediaQuery>
-          <Badge size="lg" radius="sm" color="gray">
+          <Badge size="lg" radius="sm">
             Bazarr
           </Badge>
         </Group>
