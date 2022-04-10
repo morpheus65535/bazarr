@@ -6,7 +6,7 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
-import { Anchor, Container, Progress, Text } from "@mantine/core";
+import { Anchor, Container, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -26,7 +26,7 @@ const SeriesView: FunctionComponent = () => {
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
             <Anchor component={Link} to={target}>
-              <Text>{value}</Text>
+              {value}
             </Anchor>
           );
         },

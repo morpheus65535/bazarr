@@ -9,7 +9,7 @@ import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Group, Text } from "@mantine/core";
+import { Anchor, Group } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -24,7 +24,7 @@ const WantedMoviesView: FunctionComponent = () => {
           const target = `/movies/${row.row.original.radarrId}`;
           return (
             <Anchor component={Link} to={target}>
-              <Text>{row.value}</Text>
+              {row.value}
             </Anchor>
           );
         },

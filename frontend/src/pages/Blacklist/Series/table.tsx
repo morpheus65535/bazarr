@@ -23,7 +23,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
             <Anchor component={Link} to={target}>
-              <Text>{row.value}</Text>
+              {row.value}
             </Anchor>
           );
         },

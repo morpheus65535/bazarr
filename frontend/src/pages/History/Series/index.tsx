@@ -33,7 +33,7 @@ const SeriesHistoryView: FunctionComponent = () => {
 
           return (
             <Anchor component={Link} to={target}>
-              <Text>{row.value}</Text>
+              {row.value}
             </Anchor>
           );
         },

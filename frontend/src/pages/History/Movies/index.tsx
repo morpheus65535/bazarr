@@ -29,7 +29,7 @@ const MoviesHistoryView: FunctionComponent = () => {
           const target = `/movies/${row.original.radarrId}`;
           return (
             <Anchor component={Link} to={target}>
-              <Text>{value}</Text>
+              {value}
             </Anchor>
           );
         },

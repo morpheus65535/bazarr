@@ -9,7 +9,7 @@ import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Badge, Container, Text } from "@mantine/core";
+import { Anchor, Badge, Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -36,7 +36,7 @@ const MovieView: FunctionComponent = () => {
           const target = `/movies/${row.original.radarrId}`;
           return (
             <Anchor component={Link} to={target}>
-              <Text>{value}</Text>
+              {value}
             </Anchor>
           );
         },
