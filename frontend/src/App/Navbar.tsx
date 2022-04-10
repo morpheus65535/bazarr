@@ -15,8 +15,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
   Badge,
-  Button,
+  Box,
   Collapse,
+  createStyles,
   Divider,
   Group,
   Navbar as MantineNavbar,
@@ -24,6 +25,7 @@ import {
   Text,
   useMantineColorScheme,
 } from "@mantine/core";
+import clsx from "clsx";
 import {
   createContext,
   FunctionComponent,
@@ -32,13 +34,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import {
-  matchPath,
-  NavLink,
-  RouteObject,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { matchPath, NavLink, RouteObject, useLocation } from "react-router-dom";
 
 const Selection = createContext<{
   selection: string | null;
@@ -126,7 +122,7 @@ const AppNavbar: FunctionComponent = () => {
     >
       <Selection.Provider value={{ selection, select }}>
         <MantineNavbar.Section grow>
-          <Stack spacing="xs">
+          <Stack spacing={0}>
             {routes.map((route, idx) => (
               <RouteItem
                 key={BuildKey("nav", idx)}
@@ -164,18 +160,7 @@ const RouteItem: FunctionComponent<{
 }> = ({ route, parent }) => {
   const { children, name, path, icon, hidden, element } = route;
 
-  const isValidated = useMemo(
-    () =>
-      element !== undefined ||
-      children?.find((v) => v.index === true) !== undefined,
-    [element, children]
-  );
-
-  const { show } = useNavbar();
-
   const { select } = useSelection();
-
-  const navigate = useNavigate();
 
   const link = useMemo(() => pathJoin(parent, path ?? ""), [parent, path]);
 
@@ -183,45 +168,42 @@ const RouteItem: FunctionComponent<{
 
   const isOpen = useIsActive(parent, route);
 
-  if (hidden === true) {
-    return null;
-  }
-
   // Ignore path if it is using match
-  if (path === undefined || path.includes(":")) {
+  if (hidden === true || path === undefined || path.includes(":")) {
     return null;
   }
 
   if (children !== undefined) {
-    const elements = children.map((child, idx) => (
-      <RouteItem
-        parent={link}
-        key={BuildKey(link, "nav", idx)}
-        route={child}
-      ></RouteItem>
-    ));
+    const elements = (
+      <Stack spacing={0}>
+        {children.map((child, idx) => (
+          <RouteItem
+            parent={link}
+            key={BuildKey(link, "nav", idx)}
+            route={child}
+          ></RouteItem>
+        ))}
+      </Stack>
+    );
 
     if (name) {
       return (
-        <div>
-          <Button
-            color="dark"
-            fullWidth
-            px="sm"
-            variant={isOpen ? "filled" : "subtle"}
-            leftIcon={icon && <FontAwesomeIcon icon={icon} />}
-            rightIcon={badge && <Badge hidden={badge === 0}>{badge}</Badge>}
-            styles={{
-              inner: { justifyContent: "flex-start" },
-              icon: { width: "1.2rem", justifyContent: "center" },
-              rightIcon: { justifySelf: "flex-end" },
-            }}
-            onClick={() => {
+        <Stack spacing={0}>
+          <NavbarItem
+            primary
+            name={name}
+            link={link}
+            icon={icon}
+            badge={badge}
+            onClick={(event) => {
               LOG("info", "clicked", link);
 
-              if (isValidated) {
-                navigate(link);
-                show(false);
+              const validated =
+                element !== undefined ||
+                children?.find((v) => v.index === true) !== undefined;
+
+              if (!validated) {
+                event.preventDefault();
               }
 
               if (isOpen) {
@@ -230,38 +212,121 @@ const RouteItem: FunctionComponent<{
                 select(link);
               }
             }}
-          >
-            <NavbarItem name={name ?? link}></NavbarItem>
-          </Button>
+          ></NavbarItem>
           <Collapse hidden={children.length === 0} in={isOpen}>
-            <div>{elements}</div>
+            {elements}
           </Collapse>
-        </div>
+        </Stack>
       );
     } else {
-      return <>{elements}</>;
+      return elements;
     }
   } else {
     return (
-      <Anchor component={NavLink} to={link} onClick={() => show(false)}>
-        <NavbarItem name={name ?? link} icon={icon} badge={badge}></NavbarItem>
-      </Anchor>
+      <NavbarItem
+        name={name ?? link}
+        link={link}
+        icon={icon}
+        badge={badge}
+      ></NavbarItem>
     );
   }
 };
 
+const useStyles = createStyles((theme) => {
+  const borderColor =
+    theme.colorScheme === "light" ? theme.colors.gray[5] : theme.colors.dark[4];
+
+  const activeBorderColor =
+    theme.colorScheme === "light"
+      ? theme.colors.brand[4]
+      : theme.colors.brand[8];
+
+  const activeBackgroundColor =
+    theme.colorScheme === "light" ? theme.colors.gray[1] : theme.colors.dark[8];
+
+  return {
+    text: { display: "inline-flex", alignItems: "center", width: "100%" },
+    anchor: {
+      textDecoration: "none",
+      borderLeft: `2px solid ${borderColor}`,
+    },
+    active: {
+      backgroundColor: activeBackgroundColor,
+      borderLeft: `2px solid ${activeBorderColor}`,
+    },
+    iconBox: {},
+    icon: { width: "1.4rem", marginRight: theme.spacing.xs },
+    badge: { marginLeft: "auto", textDecoration: "none" },
+  };
+});
+
 interface NavbarItemProps {
   name: string;
+  link: string;
   icon?: IconDefinition;
   badge?: number;
+  primary?: boolean;
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 const NavbarItem: FunctionComponent<NavbarItemProps> = ({
   icon,
+  link,
   name,
   badge,
+  onClick,
+  primary = false,
 }) => {
-  return <Text>{name}</Text>;
+  const { classes } = useStyles();
+
+  const { show } = useNavbar();
+
+  return (
+    <NavLink
+      to={link}
+      onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+        onClick?.(event);
+        if (!event.isDefaultPrevented()) {
+          show(false);
+        }
+      }}
+      className={({ isActive }) =>
+        clsx(
+          clsx(classes.anchor, {
+            [classes.active]: isActive,
+          })
+        )
+      }
+    >
+      <Text
+        inline
+        p="xs"
+        size="sm"
+        color="gray"
+        weight={primary ? "bold" : "normal"}
+        className={classes.text}
+      >
+        <Box component="span" className={classes.iconBox}>
+          {icon && (
+            <FontAwesomeIcon
+              className={classes.icon}
+              icon={icon}
+            ></FontAwesomeIcon>
+          )}
+        </Box>
+        {name}
+        <Badge
+          className={classes.badge}
+          color="gray"
+          radius="xs"
+          hidden={badge === undefined || badge === 0}
+        >
+          {badge}
+        </Badge>
+      </Text>
+    </NavLink>
+  );
 };
 
 export default AppNavbar;
