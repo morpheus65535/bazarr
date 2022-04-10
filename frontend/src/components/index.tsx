@@ -1,4 +1,4 @@
 export * from "./inputs";
-export * from "./SearchBar";
+export { default as Search } from "./Search";
 export * from "./tables";
 export { default as Toolbox } from "./toolbox";

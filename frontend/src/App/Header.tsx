@@ -1,5 +1,5 @@
 import { useSystem, useSystemSettings } from "@/apis/hooks";
-import { Action } from "@/components";
+import { Action, Search } from "@/components";
 import { Layout } from "@/constants";
 import { useNavbar } from "@/contexts/Navbar";
 import { useIsOnline } from "@/contexts/Online";
@@ -75,6 +75,7 @@ const AppHeader: FunctionComponent = () => {
           </Badge>
         </Group>
         <Group spacing="xs" position="right">
+          <Search></Search>
           <Menu
             control={
               <Action

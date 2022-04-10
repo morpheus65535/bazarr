@@ -1,5 +1,12 @@
 import { SelectorOption, SelectorProps } from "@/components";
-import { Dispatch, useCallback, useMemo, useRef } from "react";
+import {
+  Dispatch,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 
 export function useGotoHomepage() {
@@ -86,4 +93,34 @@ export function useArrayAction<T>(setData: Dispatch<(prev: T[]) => T[]>) {
     }),
     [add, mutate, remove, update]
   );
+}
+
+export function useThrottle<F extends GenericFunction>(fn: F, ms: number) {
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+
+  const timer = useRef<number>();
+
+  return useCallback(
+    (...args: Parameters<F>) => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = undefined;
+      }
+      timer.current = window.setTimeout(() => fnRef.current(...args), ms);
+    },
+    [ms]
+  );
+}
+
+export function useDebouncedValue<T>(item: T, ms: number) {
+  const [value, setValue] = useState(item);
+
+  const debouncedSetValue = useThrottle(setValue, ms);
+
+  useEffect(() => {
+    debouncedSetValue(item);
+  }, [debouncedSetValue, item]);
+
+  return value;
 }
