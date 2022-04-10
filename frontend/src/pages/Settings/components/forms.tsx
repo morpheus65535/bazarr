@@ -8,10 +8,9 @@ import {
   SliderProps as GlobalSliderProps,
 } from "@/components";
 import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
+import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
 import { isReactText } from "@/utilities";
 import {
-  MultiSelect,
-  MultiSelectProps,
   NumberInput,
   NumberInputProps,
   PasswordInput,
@@ -203,7 +202,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<MultiSelectProps, "onChange" | "data">;
+  Omit<ChipInputProps, "onChange" | "data">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { settingKey, override, ...chips } = props;
@@ -213,17 +212,13 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const value = useLatest<string[]>(settingKey, isArray, override);
 
   return (
-    <MultiSelect
-      data={[...(value ?? [])]}
+    <ChipInput
+      value={value ?? []}
       onChange={(v) => {
         update(v, settingKey);
       }}
-      creatable
-      onCreate={(v) => {
-        update([...(value ?? []), v], settingKey);
-      }}
       {...chips}
-    ></MultiSelect>
+    ></ChipInput>
   );
 };
 

@@ -1,10 +1,4 @@
-import {
-  Action,
-  MultiSelector,
-  Selector,
-  SelectorOption,
-  SimpleTable,
-} from "@/components";
+import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -21,6 +15,7 @@ import {
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
+import ChipInput from "../inputs/ChipInput";
 
 export const anyCutoff = 65535;
 
@@ -251,38 +246,20 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           </Accordion.Item>
           <Accordion.Item label="Release Info">
             <Stack>
-              <MultiSelector
-                creatable
-                searchable
+              <ChipInput
                 label="Must contain"
                 {...mustContainOptions}
                 {...form.getInputProps("mustContain")}
-                getCreateLabel={(query) => `Add "${query}"`}
-                onCreate={(query) => {
-                  form.setValues((values) => ({
-                    ...values,
-                    mustContain: [...(values.mustContain ?? []), query],
-                  }));
-                }}
-              ></MultiSelector>
+              ></ChipInput>
               <Text size="sm">
                 Subtitles release info must include one of those words or they
                 will be excluded from search results (regex supported).
               </Text>
-              <MultiSelector
-                creatable
-                searchable
+              <ChipInput
                 label="Must not contain"
                 {...mustNotContainOptions}
                 {...form.getInputProps("mustNotContain")}
-                getCreateLabel={(query) => `Add "${query}"`}
-                onCreate={(query) => {
-                  form.setValues((values) => ({
-                    ...values,
-                    mustNotContain: [...(values.mustNotContain ?? []), query],
-                  }));
-                }}
-              ></MultiSelector>
+              ></ChipInput>
               <Text size="sm">
                 Subtitles release info including one of those words (case
                 insensitive) will be excluded from search results (regex

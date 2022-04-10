@@ -102,7 +102,7 @@ export function Selector<T>({
   );
 }
 
-type MultiSelectorProps<T> = Override<
+export type MultiSelectorProps<T> = Override<
   {
     value?: readonly T[];
     defaultValue?: readonly T[];
