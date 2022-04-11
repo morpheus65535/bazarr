@@ -3,6 +3,7 @@ import { PageTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
+import { useTableStyles } from "@/styles";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Anchor, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
@@ -20,9 +21,10 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
+          const { classes } = useTableStyles();
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {row.value}
             </Anchor>
           );

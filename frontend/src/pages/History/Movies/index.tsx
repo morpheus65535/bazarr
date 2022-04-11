@@ -4,6 +4,7 @@ import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
+import { useTableStyles } from "@/styles";
 import {
   faFileExcel,
   faInfoCircle,
@@ -26,9 +27,10 @@ const MoviesHistoryView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         Cell: ({ row, value }) => {
+          const { classes } = useTableStyles();
           const target = `/movies/${row.original.radarrId}`;
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {value}
             </Anchor>
           );

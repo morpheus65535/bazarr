@@ -1,7 +1,8 @@
 import { Action, Selector, SelectorOption, SimpleTable } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
+import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import {
   Accordion,
   Alert,
@@ -122,17 +123,20 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       {
         Header: "Language",
         accessor: "language",
-        Cell: ({ value, row: { original: item, index } }) => {
-          const code = value;
+        Cell: ({ value: code, row: { original: item, index } }) => {
           const language = useMemo(
             () =>
               languageOptions.options.find((l) => l.value.code2 === code)
                 ?.value ?? null,
             [code]
           );
+
+          const { classes } = useTableStyles();
+
           return (
             <Selector
               {...languageOptions}
+              className={classes.select}
               value={language}
               onChange={(value) => {
                 if (value) {
@@ -201,7 +205,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         Cell: ({ row }) => {
           return (
             <Action
-              icon={faTrash}
+              icon={faXmark}
+              color="red"
               onClick={() => action.remove(row.index)}
             ></Action>
           );
@@ -225,6 +230,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           multiple
           iconPosition="right"
           initialItem={0}
+          styles={(theme) => ({
+            contentInner: {
+              [theme.fn.smallerThan("md")]: {
+                padding: 0,
+              },
+            },
+          })}
         >
           <Accordion.Item label="Languages">
             <Stack>

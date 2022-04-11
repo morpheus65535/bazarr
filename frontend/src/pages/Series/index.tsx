@@ -1,10 +1,11 @@
 import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
-import { Language } from "@/components/bazarr";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { useTableStyles } from "@/styles";
 import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import { Anchor, Container, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -23,9 +24,10 @@ const SeriesView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         Cell: ({ row, value }) => {
+          const { classes } = useTableStyles();
           const target = `/series/${row.original.sonarrSeriesId}`;
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {value}
             </Anchor>
           );
@@ -35,7 +37,7 @@ const SeriesView: FunctionComponent = () => {
         Header: "Audio",
         accessor: "audio_language",
         Cell: ({ value }) => {
-          return <Language.List value={value}></Language.List>;
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {

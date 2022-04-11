@@ -1,6 +1,18 @@
-import { ModalsProvider as MantineModalsProvider } from "@mantine/modals";
+import {
+  ModalsProvider as MantineModalsProvider,
+  ModalsProviderProps as MantineModalsProviderProps,
+} from "@mantine/modals";
 import { FunctionComponent, useMemo } from "react";
 import { ModalComponent, StaticModals } from "./WithModal";
+
+const DefaultModalProps: MantineModalsProviderProps["modalProps"] = {
+  centered: true,
+  styles: {
+    modal: {
+      maxWidth: "100%",
+    },
+  },
+};
 
 const ModalsProvider: FunctionComponent = ({ children }) => {
   const modals = useMemo(
@@ -13,7 +25,7 @@ const ModalsProvider: FunctionComponent = ({ children }) => {
   );
 
   return (
-    <MantineModalsProvider modalProps={{ centered: true }} modals={modals}>
+    <MantineModalsProvider modalProps={DefaultModalProps} modals={modals}>
       {children}
     </MantineModalsProvider>
   );

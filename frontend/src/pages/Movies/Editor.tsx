@@ -1,6 +1,6 @@
 import { useMovieModification, useMovies } from "@/apis/hooks";
 import { QueryOverlay } from "@/components/async";
-import { Language } from "@/components/bazarr";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import MassEditor from "@/pages/views/MassEditor";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -21,7 +21,7 @@ const MovieMassEditor: FunctionComponent = () => {
         Header: "Audio",
         accessor: "audio_language",
         Cell: ({ value }) => {
-          return <Language.List value={value}></Language.List>;
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {

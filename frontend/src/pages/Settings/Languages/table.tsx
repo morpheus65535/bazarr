@@ -4,7 +4,7 @@ import {
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
-import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
+import { faWrench, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
@@ -82,12 +82,16 @@ const Table: FunctionComponent = () => {
         Cell: (row) => {
           const items = row.value;
           const cutoff = row.row.original.cutoff;
-          return items.map((v) => {
-            const isCutoff = v.id === cutoff || cutoff === anyCutoff;
-            return (
-              <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
-            );
-          });
+          return (
+            <Group spacing="xs" noWrap>
+              {items.map((v) => {
+                const isCutoff = v.id === cutoff || cutoff === anyCutoff;
+                return (
+                  <ItemBadge key={v.id} cutoff={isCutoff} item={v}></ItemBadge>
+                );
+              })}
+            </Group>
+          );
         },
       },
       {
@@ -121,7 +125,7 @@ const Table: FunctionComponent = () => {
         Cell: ({ row }) => {
           const profile = row.original;
           return (
-            <Group spacing="xs">
+            <Group spacing="xs" noWrap>
               <Action
                 icon={faWrench}
                 onClick={() => {
@@ -129,7 +133,8 @@ const Table: FunctionComponent = () => {
                 }}
               ></Action>
               <Action
-                icon={faTrash}
+                icon={faXmark}
+                color="red"
                 onClick={() => mutateRow(row.index)}
               ></Action>
             </Group>

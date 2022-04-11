@@ -7,6 +7,7 @@ import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
+import { useTableStyles } from "@/styles";
 import {
   faFileExcel,
   faInfoCircle,
@@ -29,10 +30,11 @@ const SeriesHistoryView: FunctionComponent = () => {
         Header: "Series",
         accessor: "seriesTitle",
         Cell: (row) => {
+          const { classes } = useTableStyles();
           const target = `/series/${row.row.original.sonarrSeriesId}`;
 
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {row.value}
             </Anchor>
           );
@@ -45,6 +47,10 @@ const SeriesHistoryView: FunctionComponent = () => {
       {
         Header: "Title",
         accessor: "episodeTitle",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Language",

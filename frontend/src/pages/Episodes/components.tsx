@@ -47,8 +47,6 @@ export const Subtitle: FunctionComponent<Props> = ({
       menu={{
         trigger: "hover",
         opened: subtitle.path === null ? false : undefined,
-        position: "left",
-        placement: "end",
       }}
       selections={selections}
       onAction={(action) => {

@@ -6,10 +6,11 @@ import {
 import MutateButton from "@/components/async/MutateButton";
 import Language from "@/components/bazarr/Language";
 import WantedView from "@/pages/views/WantedView";
+import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Group } from "@mantine/core";
+import { Anchor, Group, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -22,8 +23,9 @@ const WantedSeriesView: FunctionComponent = () => {
         accessor: "seriesTitle",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
+          const { classes } = useTableStyles();
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {row.value}
             </Anchor>
           );
@@ -35,6 +37,11 @@ const WantedSeriesView: FunctionComponent = () => {
       },
       {
         accessor: "episodeTitle",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Missing",

@@ -1,10 +1,12 @@
 import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -33,9 +35,10 @@ const MovieView: FunctionComponent = () => {
         Header: "Name",
         accessor: "title",
         Cell: ({ row, value }) => {
+          const { classes } = useTableStyles();
           const target = `/movies/${row.original.radarrId}`;
           return (
-            <Anchor component={Link} to={target}>
+            <Anchor className={classes.primary} component={Link} to={target}>
               {value}
             </Anchor>
           );
@@ -45,7 +48,7 @@ const MovieView: FunctionComponent = () => {
         Header: "Audio",
         accessor: "audio_language",
         Cell: ({ value }) => {
-          return <Language.List value={value}></Language.List>;
+          return <AudioList audios={value}></AudioList>;
         },
       },
       {

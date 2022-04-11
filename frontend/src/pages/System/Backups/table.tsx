@@ -1,6 +1,7 @@
 import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
 import { Action, PageTable } from "@/components";
 import { useModals } from "@/modules/modals";
+import { useTableStyles } from "@/styles";
 import { faClock, faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Group, Text } from "@mantine/core";
@@ -21,14 +22,26 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
       {
         Header: "Name",
         accessor: "filename",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{value}</Text>;
+        },
       },
       {
         Header: "Size",
         accessor: "size",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Time",
         accessor: "date",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         id: "actions",
@@ -38,7 +51,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           const restore = useRestoreBackups();
           const remove = useDeleteBackups();
           return (
-            <Group>
+            <Group spacing="xs" noWrap>
               <Action
                 onClick={() =>
                   modals.openConfirmModal({

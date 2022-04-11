@@ -4,7 +4,12 @@ import { Layout } from "@/constants";
 import { useNavbar } from "@/contexts/Navbar";
 import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
-import { faGear } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRotateLeft,
+  faCircleRight,
+  faGear,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
   Avatar,
@@ -46,8 +51,8 @@ const AppHeader: FunctionComponent = () => {
 
   return (
     <Header p="md" height={Layout.HEADER_HEIGHT} className={classes.header}>
-      <Group position="apart">
-        <Group>
+      <Group position="apart" noWrap>
+        <Group noWrap>
           <MediaQuery
             smallerThan={Layout.MOBILE_BREAKPOINT}
             styles={{ display: "none" }}
@@ -74,7 +79,7 @@ const AppHeader: FunctionComponent = () => {
             Bazarr
           </Badge>
         </Group>
-        <Group spacing="xs" position="right">
+        <Group spacing="xs" position="right" noWrap>
           <Search></Search>
           <Menu
             control={
@@ -82,13 +87,24 @@ const AppHeader: FunctionComponent = () => {
                 loading={offline}
                 color={offline ? "yellow" : undefined}
                 icon={faGear}
+                size="lg"
                 variant="light"
               ></Action>
             }
           >
-            <Menu.Item onClick={() => restart()}>Restart</Menu.Item>
-            <Menu.Item onClick={() => shutdown()}>Shutdown</Menu.Item>
-            <Divider></Divider>
+            <Menu.Item
+              icon={<FontAwesomeIcon icon={faCircleRight} />}
+              onClick={() => restart()}
+            >
+              Restart
+            </Menu.Item>
+            <Menu.Item
+              icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+              onClick={() => shutdown()}
+            >
+              Shutdown
+            </Menu.Item>
+            <Divider hidden={!hasLogout}></Divider>
             <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
               Logout
             </Menu.Item>

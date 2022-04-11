@@ -1,10 +1,12 @@
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
+import { useTableStyles } from "@/styles";
 import { BuildKey, filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
@@ -14,7 +16,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Badge, Group, Text } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { Subtitle } from "./components";
@@ -85,22 +87,20 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
       {
         Header: "Title",
         accessor: "title",
-        Cell: ({ value, row }) => (
-          <TextPopover text={row.original.sceneName}>
-            <Text>{value}</Text>
-          </TextPopover>
-        ),
+        Cell: ({ value, row }) => {
+          const { classes } = useTableStyles();
+
+          return (
+            <TextPopover text={row.original.sceneName}>
+              <Text className={classes.primary}>{value}</Text>
+            </TextPopover>
+          );
+        },
       },
       {
         Header: "Audio",
         accessor: "audio_language",
-        Cell: (row) => {
-          return row.value.map((v) => (
-            <Badge color="teal" key={v.code2}>
-              {v.name}
-            </Badge>
-          ));
-        },
+        Cell: ({ value }) => <AudioList audios={value}></AudioList>,
       },
       {
         Header: "Subtitles",
@@ -140,7 +140,11 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
             return [...missing, ...subtitles];
           }, [episode, seriesid]);
 
-          return <Group spacing="xs">{elements}</Group>;
+          return (
+            <Group spacing="xs" noWrap>
+              {elements}
+            </Group>
+          );
         },
       },
       {

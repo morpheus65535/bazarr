@@ -107,10 +107,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
       ></SimpleTable>
       <Divider></Divider>
       <Group>
-        <SubtitleToolsMenu
-          menu={{ position: "left", placement: "center", withArrow: true }}
-          selections={selections}
-        >
+        <SubtitleToolsMenu selections={selections}>
           <Button disabled={selections.length === 0} variant="light">
             Select Action
           </Button>

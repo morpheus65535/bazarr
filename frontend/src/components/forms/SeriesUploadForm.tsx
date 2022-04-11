@@ -5,6 +5,7 @@ import {
 } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
+import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import {
   useLanguageProfileBy,
@@ -18,7 +19,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Checkbox, Divider, Stack } from "@mantine/core";
+import { Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { isString } from "lodash";
 import { FunctionComponent, useEffect, useMemo } from "react";
@@ -85,7 +86,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
   const episodes = useEpisodesBySeriesId(series.sonarrSeriesId);
   const episodeOptions = useSelectorOptions(
     episodes.data ?? [],
-    (v) => `(${v.season}x${v.episode}) ${v.title})`,
+    (v) => `(${v.season}x${v.episode}) ${v.title}`,
     (v) => v.sonarrEpisodeId.toString()
   );
 
@@ -186,7 +187,12 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       },
       {
         Header: "File",
-        accessor: (d) => d.file.name,
+        id: "filename",
+        accessor: "file",
+        Cell: ({ value: { name } }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{name}</Text>;
+        },
       },
       {
         Header: "Forced",
@@ -234,9 +240,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         ),
         accessor: "language",
         Cell: ({ row: { original, index }, value }) => {
+          const { classes } = useTableStyles();
           return (
             <Selector
               {...languageOptions}
+              className={classes.select}
               value={value}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });
@@ -250,9 +258,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
         Header: "episode",
         accessor: "episode",
         Cell: ({ value, row }) => {
+          const { classes } = useTableStyles();
           return (
             <Selector
               {...episodeOptions}
+              className={classes.select}
               value={value}
               onChange={(item) => {
                 action.mutate(row.index, { ...row.original, episode: item });

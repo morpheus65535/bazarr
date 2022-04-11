@@ -15,7 +15,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Anchor,
   Badge,
-  Box,
   Collapse,
   createStyles,
   Divider,
@@ -25,6 +24,7 @@ import {
   Text,
   useMantineColorScheme,
 } from "@mantine/core";
+import { useHover } from "@mantine/hooks";
 import clsx from "clsx";
 import {
   createContext,
@@ -245,6 +245,9 @@ const useStyles = createStyles((theme) => {
   const activeBackgroundColor =
     theme.colorScheme === "light" ? theme.colors.gray[1] : theme.colors.dark[8];
 
+  const hoverBackgroundColor =
+    theme.colorScheme === "light" ? theme.colors.gray[0] : theme.colors.dark[7];
+
   return {
     text: { display: "inline-flex", alignItems: "center", width: "100%" },
     anchor: {
@@ -255,7 +258,9 @@ const useStyles = createStyles((theme) => {
       backgroundColor: activeBackgroundColor,
       borderLeft: `2px solid ${activeBorderColor}`,
     },
-    iconBox: {},
+    hover: {
+      backgroundColor: hoverBackgroundColor,
+    },
     icon: { width: "1.4rem", marginRight: theme.spacing.xs },
     badge: { marginLeft: "auto", textDecoration: "none" },
   };
@@ -282,6 +287,8 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
 
   const { show } = useNavbar();
 
+  const { ref, hovered } = useHover();
+
   return (
     <NavLink
       to={link}
@@ -295,11 +302,13 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         clsx(
           clsx(classes.anchor, {
             [classes.active]: isActive,
+            [classes.hover]: hovered,
           })
         )
       }
     >
       <Text
+        ref={ref}
         inline
         p="xs"
         size="sm"
@@ -307,14 +316,12 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         weight={primary ? "bold" : "normal"}
         className={classes.text}
       >
-        <Box component="span" className={classes.iconBox}>
-          {icon && (
-            <FontAwesomeIcon
-              className={classes.icon}
-              icon={icon}
-            ></FontAwesomeIcon>
-          )}
-        </Box>
+        {icon && (
+          <FontAwesomeIcon
+            className={classes.icon}
+            icon={icon}
+          ></FontAwesomeIcon>
+        )}
         {name}
         <Badge
           className={classes.badge}

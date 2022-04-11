@@ -1,6 +1,6 @@
 import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
-import { Skeleton, Table, Text } from "@mantine/core";
+import { Box, createStyles, Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
 import {
   HeaderGroup,
@@ -60,6 +60,19 @@ export function useStyleAndOptions<T extends object>(
   };
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    container: {
+      display: "block",
+      maxWidth: "100%",
+      overflowX: "auto",
+    },
+    table: {
+      maxWidth: "200%",
+    },
+  };
+});
+
 function DefaultHeaderRenderer<T extends object>(
   headers: HeaderGroup<T>[]
 ): JSX.Element[] {
@@ -94,6 +107,8 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
     tableProps,
     tableBodyProps,
   } = props;
+
+  const { classes } = useStyles();
 
   const colCount = useMemo(() => {
     return headers.reduce(
@@ -134,15 +149,17 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   }
 
   return (
-    <Table striped={striped} {...tableProps}>
-      <thead hidden={hideHeader}>
-        {headers.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headersRenderer(headerGroup.headers)}
-          </tr>
-        ))}
-      </thead>
-      <tbody {...tableBodyProps}>{body}</tbody>
-    </Table>
+    <Box className={classes.container}>
+      <Table className={classes.table} striped={striped} {...tableProps}>
+        <thead hidden={hideHeader}>
+          {headers.map((headerGroup) => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headersRenderer(headerGroup.headers)}
+            </tr>
+          ))}
+        </thead>
+        <tbody {...tableBodyProps}>{body}</tbody>
+      </Table>
+    </Box>
   );
 }

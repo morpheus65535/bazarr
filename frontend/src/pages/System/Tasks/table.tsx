@@ -1,7 +1,9 @@
 import { useRunTask } from "@/apis/hooks";
 import { SimpleTable } from "@/components";
 import MutateAction from "@/components/async/MutateAction";
+import { useTableStyles } from "@/styles";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Column, useSortBy } from "react-table";
 
@@ -15,10 +17,18 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       {
         Header: "Name",
         accessor: "name",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.primary}>{value}</Text>;
+        },
       },
       {
         Header: "Interval",
         accessor: "interval",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}</Text>;
+        },
       },
       {
         Header: "Next Execution",

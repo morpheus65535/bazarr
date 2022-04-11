@@ -1,6 +1,7 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
 import { createTask, dispatchTask } from "@/modules/task";
+import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import {
   useLanguageProfileBy,
@@ -14,10 +15,10 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Checkbox, Divider, Stack } from "@mantine/core";
+import { Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { isString } from "lodash";
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useEffect, useMemo } from "react";
 import { Column } from "react-table";
 import { Action, Selector } from "../inputs";
 import { SimpleTable } from "../tables";
@@ -118,6 +119,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
     },
   });
 
+  useEffect(() => {
+    if (form.values.files.length <= 0) {
+      modals.closeSelf();
+    }
+  }, [form.values.files.length, modals]);
+
   const action = useArrayAction<SubtitleFile>((fn) => {
     form.setValues(({ files, ...rest }) => {
       const newFiles = fn(files);
@@ -156,7 +163,13 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       },
       {
         Header: "File",
-        accessor: (d) => d.file.name,
+        id: "filename",
+        accessor: "file",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+
+          return <Text className={classes.primary}>{value.name}</Text>;
+        },
       },
       {
         Header: "Forced",
@@ -190,9 +203,11 @@ const MovieUploadForm: FunctionComponent<Props> = ({
         Header: "Language",
         accessor: "language",
         Cell: ({ row: { original, index }, value }) => {
+          const { classes } = useTableStyles();
           return (
             <Selector
               {...languageOptions}
+              className={classes.select}
               value={value}
               onChange={(item) => {
                 action.mutate(index, { ...original, language: item });

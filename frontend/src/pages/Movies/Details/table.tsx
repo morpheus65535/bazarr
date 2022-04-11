@@ -4,10 +4,11 @@ import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { createAndDispatchTask } from "@/modules/task";
+import { useTableStyles } from "@/styles";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Text } from "@mantine/core";
+import { Badge, Text, TextProps } from "@mantine/core";
 import { isString } from "lodash";
 import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
@@ -31,12 +32,22 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         Header: "Subtitle Path",
         accessor: "path",
         Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+
+          const props: TextProps<"div"> = {
+            className: classes.noWrap,
+          };
+
           if (!isString(value) || value.length === 0) {
-            return "Video File Subtitle Track";
+            return <Text {...props}>Video File Subtitle Track</Text>;
           } else if (value === missingText) {
-            return <Text color="dimmed">{value}</Text>;
+            return (
+              <Text {...props} color="dimmed">
+                {value}
+              </Text>
+            );
           } else {
-            return value;
+            return <Text {...props}>{value}</Text>;
           }
         },
       },
