@@ -1,3 +1,4 @@
+import { Environment } from "@/utilities";
 import { setLoginRequired } from "@/utilities/event";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
@@ -184,7 +185,8 @@ export function useSystem() {
       api.system.login(param.username, param.password),
     {
       onSuccess: () => {
-        window.location.reload();
+        // TODO: Hard-coded value
+        window.location.replace(`/${Environment.baseUrl}`);
       },
     }
   );
