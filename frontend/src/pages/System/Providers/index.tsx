@@ -2,7 +2,7 @@ import { useResetProvider, useSystemProviders } from "@/apis/hooks";
 import { Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { Container } from "@mantine/core";
+import { Container, Group } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { FunctionComponent } from "react";
 import Table from "./table";
@@ -20,20 +20,22 @@ const SystemProvidersView: FunctionComponent = () => {
     <QueryOverlay result={providers}>
       <Container fluid px={0}>
         <Toolbox>
-          <Toolbox.Button
-            loading={isFetching}
-            icon={faSync}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Toolbox.Button>
-          <Toolbox.Button
-            icon={faTrash}
-            loading={isResetting}
-            onClick={() => reset()}
-          >
-            Reset
-          </Toolbox.Button>
+          <Group>
+            <Toolbox.Button
+              loading={isFetching}
+              icon={faSync}
+              onClick={() => refetch()}
+            >
+              Refresh
+            </Toolbox.Button>
+            <Toolbox.Button
+              icon={faTrash}
+              loading={isResetting}
+              onClick={() => reset()}
+            >
+              Reset
+            </Toolbox.Button>
+          </Group>
         </Toolbox>
         <Table providers={data ?? []}></Table>
       </Container>

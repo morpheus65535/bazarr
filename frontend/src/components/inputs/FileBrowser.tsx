@@ -1,23 +1,27 @@
-import { FunctionComponent } from "react";
+import { useFileSystem } from "@/apis/hooks";
+import { faFolder } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Autocomplete } from "@mantine/core";
+import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 
-// const backKey = "--back--";
+const backKey = "[back]";
 
-// function getLastSeparator(path: string): number {
-//   let idx = path.lastIndexOf("/");
-//   if (idx === -1) {
-//     idx = path.lastIndexOf("\\");
-//   }
-//   return idx;
-// }
+function getLastSeparator(path: string): number {
+  let idx = path.lastIndexOf("/");
+  if (idx === -1) {
+    idx = path.lastIndexOf("\\");
+  }
+  return idx;
+}
 
-// function extractPath(raw: string) {
-//   if (raw.endsWith("/") || raw.endsWith("\\")) {
-//     return raw;
-//   } else {
-//     const idx = getLastSeparator(raw);
-//     return raw.slice(0, idx + 1);
-//   }
-// }
+function extractPath(raw: string) {
+  if (raw.endsWith("/") || raw.endsWith("\\")) {
+    return raw;
+  } else {
+    const idx = getLastSeparator(raw);
+    return raw.slice(0, idx + 1);
+  }
+}
 
 export interface FileBrowserProps {
   defaultValue?: string;
@@ -25,128 +29,75 @@ export interface FileBrowserProps {
   onChange?: (path: string) => void;
 }
 
+type FileTreeItem = {
+  value: string;
+  item?: FileTree;
+};
+
 export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   defaultValue,
   type,
   onChange,
 }) => {
-  // const [show, canShow] = useState(false);
-  // const [text, setText] = useState(defaultValue ?? "");
-  // const [path, setPath] = useState(() => extractPath(text));
+  const [isShow, setIsShow] = useState(false);
+  const [value, setValue] = useState(defaultValue ?? "");
+  const [path, setPath] = useState(() => extractPath(value));
 
-  // const { data: tree, isFetching } = useFileSystem(type, path, show);
+  const { data: tree } = useFileSystem(type, path, isShow);
 
-  // const filter = useMemo(() => {
-  //   const idx = getLastSeparator(text);
-  //   return text.slice(idx + 1);
-  // }, [text]);
+  const data = useMemo<FileTreeItem[]>(
+    () => [
+      { value: backKey },
+      ...(tree?.map((v) => ({
+        value: v.path,
+        item: v,
+      })) ?? []),
+    ],
+    [tree]
+  );
 
-  // const previous = useMemo(() => {
-  //   const idx = getLastSeparator(path.slice(0, -1));
-  //   return path.slice(0, idx + 1);
-  // }, [path]);
+  const parent = useMemo(() => {
+    const idx = getLastSeparator(path.slice(0, -1));
+    return path.slice(0, idx + 1);
+  }, [path]);
 
-  // const requestItems = () => {
-  //   if (isFetching) {
-  //     return (
-  //       <Dropdown.Item>
-  //         <Spinner size="sm" animation="border"></Spinner>
-  //       </Dropdown.Item>
-  //     );
-  //   }
+  useEffect(() => {
+    if (value === path) {
+      return;
+    }
 
-  //   const elements = [];
+    const newPath = extractPath(value);
+    if (newPath !== path) {
+      setPath(newPath);
+      onChange && onChange(newPath);
+    }
+  }, [path, value, onChange]);
 
-  //   if (tree) {
-  //     elements.push(
-  //       ...tree
-  //         .filter((v) => v.name.startsWith(filter))
-  //         .map((v) => (
-  //           <Dropdown.Item eventKey={v.path} key={v.name}>
-  //             <FontAwesomeIcon
-  //               icon={v.children ? faFolder : faFile}
-  //               className="mr-2"
-  //             ></FontAwesomeIcon>
-  //             <span>{v.name}</span>
-  //           </Dropdown.Item>
-  //         ))
-  //     );
-  //   }
+  const ref = useRef<HTMLInputElement>(null);
 
-  //   if (elements.length === 0) {
-  //     elements.push(<Dropdown.Header key="no-files">No Files</Dropdown.Header>);
-  //   }
-
-  //   if (previous.length !== 0) {
-  //     return [
-  //       <Dropdown.Item eventKey={backKey} key="back">
-  //         <FontAwesomeIcon icon={faReply} className="mr-2"></FontAwesomeIcon>
-  //         <span>Back</span>
-  //       </Dropdown.Item>,
-  //       <Dropdown.Divider key="back-divider"></Dropdown.Divider>,
-  //       ...elements,
-  //     ];
-  //   } else {
-  //     return elements;
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (text === path) {
-  //     return;
-  //   }
-
-  //   const newPath = extractPath(text);
-  //   if (newPath !== path) {
-  //     setPath(newPath);
-  //     onChange && onChange(newPath);
-  //   }
-  // }, [path, text, onChange]);
-
-  // const input = useRef<HTMLInputElement>(null);
-
-  return null;
-
-  // return (
-  //   <Dropdown
-  //     show={show}
-  //     drop={drop}
-  //     onSelect={(key) => {
-  //       if (!key) {
-  //         return;
-  //       }
-
-  //       if (key !== backKey) {
-  //         setText(key);
-  //       } else {
-  //         setText(previous);
-  //       }
-  //       input.current?.focus();
-  //     }}
-  //     onToggle={(open, _, meta) => {
-  //       if (!open && meta.source !== "select") {
-  //         canShow(false);
-  //       } else if (open) {
-  //         canShow(true);
-  //       }
-  //     }}
-  //   >
-  //     <Dropdown.Toggle
-  //       as={Form.Control}
-  //       placeholder="Click to start"
-  //       type="text"
-  //       value={text}
-  //       onChange={(e: ChangeEvent<HTMLInputElement>) => {
-  //         setText(e.currentTarget.value);
-  //       }}
-  //       ref={input}
-  //     ></Dropdown.Toggle>
-  //     <Dropdown.Menu
-  //       className="w-100"
-  //       style={{ maxHeight: 256, overflowY: "auto" }}
-  //     >
-  //       {requestItems()}
-  //     </Dropdown.Menu>
-  //   </Dropdown>
-  // );
+  return (
+    <Autocomplete
+      ref={ref}
+      icon={<FontAwesomeIcon icon={faFolder}></FontAwesomeIcon>}
+      placeholder="Click to start"
+      data={data}
+      value={value}
+      filter={(value, item) => {
+        if (item.value === backKey) {
+          return true;
+        } else {
+          return item.value.includes(value);
+        }
+      }}
+      onChange={(val) => {
+        if (val !== backKey) {
+          setValue(val);
+        } else {
+          setValue(parent);
+        }
+      }}
+      onFocus={() => setIsShow(true)}
+      onBlur={() => setIsShow(false)}
+    ></Autocomplete>
+  );
 };
