@@ -63,7 +63,7 @@ jobs:
         run: npm run build:ci
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.UI_ARTIFACT_NAME }}
           path: "${{ env.UI_DIRECTORY }}/build"
