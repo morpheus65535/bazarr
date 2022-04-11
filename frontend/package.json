@@ -15,7 +15,7 @@
   "dependencies": {
     "axios": "^0.26",
     "react": "^17",
-    "react-bootstrap": "^1",
+    "react-bootstrap": "^2",
     "react-dom": "^17",
     "react-query": "^3.34",
     "react-redux": "^7.2",
