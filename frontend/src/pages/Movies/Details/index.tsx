@@ -8,7 +8,7 @@ import {
   useMovieById,
   useMovieModification,
 } from "@/apis/hooks/movies";
-import { Toolbox } from "@/components";
+import { Action, Toolbox } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
@@ -21,6 +21,7 @@ import ItemOverview from "@/pages/views/ItemOverview";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
   faCloudUploadAlt,
+  faEllipsis,
   faHistory,
   faSearch,
   faSync,
@@ -28,7 +29,8 @@ import {
   faUser,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Container, Group, Stack } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Container, Group, Menu, Stack } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { isNumber } from "lodash";
 import { FunctionComponent, useCallback, useRef } from "react";
@@ -171,29 +173,6 @@ const MovieDetailView: FunctionComponent = () => {
             >
               Manual
             </Toolbox.Button>
-            <Toolbox.Button
-              icon={faHistory}
-              onClick={() => {
-                if (movie) {
-                  modals.openContextModal(MovieHistoryModal, { movie });
-                }
-              }}
-            >
-              History
-            </Toolbox.Button>
-            <Toolbox.Button
-              icon={faToolbox}
-              disabled={hasTask}
-              onClick={() => {
-                if (movie) {
-                  modals.openContextModal(SubtitleToolsModal, {
-                    payload: [movie],
-                  });
-                }
-              }}
-            >
-              Tools
-            </Toolbox.Button>
           </Group>
           <Group spacing="xs">
             <Toolbox.Button
@@ -210,15 +189,43 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={hasTask}
               onClick={() => {
                 if (movie) {
-                  modals.openContextModal(ItemEditModal, {
-                    item: movie,
-                    mutation,
-                  });
+                  modals.openContextModal(
+                    ItemEditModal,
+                    {
+                      item: movie,
+                      mutation,
+                    },
+                    { title: movie.title }
+                  );
                 }
               }}
             >
               Edit Movie
             </Toolbox.Button>
+            <Menu control={<Action icon={faEllipsis} disabled={hasTask} />}>
+              <Menu.Item
+                icon={<FontAwesomeIcon icon={faToolbox} />}
+                onClick={() => {
+                  if (movie) {
+                    modals.openContextModal(SubtitleToolsModal, {
+                      payload: [movie],
+                    });
+                  }
+                }}
+              >
+                Tools
+              </Menu.Item>
+              <Menu.Item
+                icon={<FontAwesomeIcon icon={faHistory} />}
+                onClick={() => {
+                  if (movie) {
+                    modals.openContextModal(MovieHistoryModal, { movie });
+                  }
+                }}
+              >
+                History
+              </Menu.Item>
+            </Menu>
           </Group>
         </Toolbox>
         <Stack>

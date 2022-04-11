@@ -7,7 +7,7 @@ import { createAndDispatchTask } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
-import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Text, TextProps } from "@mantine/core";
 import { isString } from "lodash";
 import { FunctionComponent, useMemo } from "react";
@@ -35,7 +35,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           const { classes } = useTableStyles();
 
           const props: TextProps<"div"> = {
-            className: classes.noWrap,
+            className: classes.primary,
           };
 
           if (!isString(value) || value.length === 0) {
@@ -100,11 +100,12 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
           const { radarrId } = movie;
 
-          return (
-            <SubtitleToolsMenu
-              selections={selections}
-              onAction={(action) => {
-                if (action === "search") {
+          if (selections.length === 0) {
+            return (
+              <Action
+                icon={faSearch}
+                disabled={disabled}
+                onClick={() => {
                   createAndDispatchTask(
                     movie.title,
                     "Searching subtitle...",
@@ -118,7 +119,16 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                       },
                     }
                   );
-                } else if (action === "delete" && path) {
+                }}
+              ></Action>
+            );
+          }
+
+          return (
+            <SubtitleToolsMenu
+              selections={selections}
+              onAction={(action) => {
+                if (action === "delete" && path) {
                   createAndDispatchTask(
                     movie.title,
                     "Deleting subtitle...",
@@ -132,6 +142,10 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                         path,
                       },
                     }
+                  );
+                } else if (action === "search") {
+                  throw new Error(
+                    "This shouldn't happen, please report the bug"
                   );
                 }
               }}

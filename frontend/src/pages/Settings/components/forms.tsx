@@ -143,7 +143,7 @@ export const Check: FunctionComponent<CheckProps> = ({
         update(checked, settingKey);
       }}
       disabled={disabled}
-      checked={value ?? undefined}
+      checked={value ?? false}
     ></Switch>
   );
 };

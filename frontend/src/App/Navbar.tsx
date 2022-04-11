@@ -257,12 +257,17 @@ const useStyles = createStyles((theme) => {
     active: {
       backgroundColor: activeBackgroundColor,
       borderLeft: `2px solid ${activeBorderColor}`,
+      boxShadow: theme.shadows.xs,
     },
     hover: {
       backgroundColor: hoverBackgroundColor,
     },
     icon: { width: "1.4rem", marginRight: theme.spacing.xs },
-    badge: { marginLeft: "auto", textDecoration: "none" },
+    badge: {
+      marginLeft: "auto",
+      textDecoration: "none",
+      boxShadow: theme.shadows.xs,
+    },
   };
 });
 

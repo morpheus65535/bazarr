@@ -4,7 +4,7 @@ import {
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { Group as MantineGroup } from "@mantine/core";
+import { Group as MantineGroup, Text as MantineText } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { FunctionComponent, useState } from "react";
 import {
@@ -56,16 +56,12 @@ const SettingsGeneralView: FunctionComponent = () => {
           ></Number>
         </Input>
         <Input name="Base URL">
-          {/* <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>/</InputGroup.Text>
-            </InputGroup.Prepend> */}
           <Text
+            icon="/"
             settingKey="settings-general-base_url"
             override={baseUrlOverride}
             beforeStaged={(v) => "/" + v}
           ></Text>
-          {/* </InputGroup> */}
           <Message>Reverse proxy support</Message>
         </Input>
       </Group>
@@ -192,12 +188,17 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>Absolute path to the backup directory</Message>
         </Input>
         <Input name="Retention">
-          {/* <InputGroup> */}
-          <Number settingKey="settings-backup-retention"></Number>
-          {/* <InputGroup.Prepend>
-              <InputGroup.Text>Days</InputGroup.Text>
-            </InputGroup.Prepend>
-          </InputGroup> */}
+          <Number
+            settingKey="settings-backup-retention"
+            styles={{
+              rightSection: { width: "4rem", justifyContent: "flex-end" },
+            }}
+            rightSection={
+              <MantineText size="xs" px="sm" color="dimmed">
+                Days
+              </MantineText>
+            }
+          ></Number>
         </Input>
       </Group>
       <Group header="Analytics">

@@ -22,7 +22,7 @@ export const LanguageSelector: FunctionComponent<
       {...wrappedOptions}
       value={enabled}
       searchable
-      getLabel={(v: Language.Info) => v.name}
+      getkey={(v: Language.Info) => v.name}
       onChange={(val) => {
         update(val, settingKey);
       }}

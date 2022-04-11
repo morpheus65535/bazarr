@@ -40,16 +40,12 @@ const SettingsRadarrView: FunctionComponent = () => {
               <Number settingKey="settings-radarr-port"></Number>
             </Input>
             <Input name="Base URL">
-              {/* <InputGroup>
-                <InputGroup.Prepend>
-                  <InputGroup.Text>/</InputGroup.Text>
-                </InputGroup.Prepend> */}
               <Text
+                icon="/"
                 settingKey="settings-radarr-base_url"
                 override={baseUrlOverride}
                 beforeStaged={(v) => "/" + v}
               ></Text>
-              {/* </InputGroup> */}
             </Input>
             <Input name="API Key">
               <Text settingKey="settings-radarr-apikey"></Text>

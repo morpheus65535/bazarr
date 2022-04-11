@@ -1,5 +1,5 @@
 import { withModal } from "@/modules/modals";
-import { Code, ScrollArea, Text } from "@mantine/core";
+import { Code, Text } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
 interface Props {
@@ -17,13 +17,7 @@ const SystemLogModal: FunctionComponent<Props> = ({ stack }) => {
     [stack]
   );
 
-  return (
-    <ScrollArea>
-      <pre>
-        <Code>{result}</Code>
-      </pre>
-    </ScrollArea>
-  );
+  return <Code block>{result}</Code>;
 };
 
 export default withModal(SystemLogModal, "system-log", {

@@ -1,10 +1,15 @@
 import { withModal } from "@/modules/modals";
 import { createAndDispatchTask } from "@/modules/task";
-import { GetItemId } from "@/utilities";
+import { useTableStyles } from "@/styles";
+import { BuildKey, GetItemId } from "@/utilities";
 import {
   faCaretDown,
+  faCheck,
+  faCheckCircle,
   faDownload,
+  faExclamationCircle,
   faInfoCircle,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,9 +19,13 @@ import {
   Button,
   Collapse,
   Divider,
+  Group,
+  List,
+  Popover,
   Stack,
   Text,
 } from "@mantine/core";
+import { useHover } from "@mantine/hooks";
 import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
@@ -53,7 +62,11 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     () => [
       {
         Header: "Score",
-        accessor: (d) => `${d.score}%`,
+        accessor: "score",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value}%</Text>;
+        },
       },
       {
         accessor: "language",
@@ -65,7 +78,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             name: "",
           };
           return (
-            <Badge color="secondary">
+            <Badge>
               <Language.Text value={lang}></Language.Text>
             </Badge>
           );
@@ -75,11 +88,17 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         Header: "Provider",
         accessor: "provider",
         Cell: (row) => {
+          const { classes } = useTableStyles();
           const value = row.value;
           const { url } = row.row.original;
           if (url) {
             return (
-              <Anchor href={url} target="_blank" rel="noopener noreferrer">
+              <Anchor
+                className={classes.noWrap}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {value}
               </Anchor>
             );
@@ -91,9 +110,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       {
         Header: "Release",
         accessor: "release_info",
-        Cell: (row) => {
-          const value = row.value;
-
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
           const [open, setOpen] = useState(false);
 
           const items = useMemo(
@@ -106,27 +124,30 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
           }
 
           return (
-            <div onClick={() => setOpen((o) => !o)}>
-              <div>
-                <Text>{value[0]}</Text>
-                <Collapse in={open}>
-                  <div>{items}</div>
-                </Collapse>
-              </div>
-
-              {value.length > 1 && (
-                <FontAwesomeIcon
-                  icon={faCaretDown}
-                  rotation={open ? 180 : undefined}
-                ></FontAwesomeIcon>
-              )}
-            </div>
+            <Stack spacing={0} onClick={() => setOpen((o) => !o)}>
+              <Text className={classes.primary}>
+                {value[0]}
+                {value.length > 1 && (
+                  <FontAwesomeIcon
+                    icon={faCaretDown}
+                    rotation={open ? 180 : undefined}
+                  ></FontAwesomeIcon>
+                )}
+              </Text>
+              <Collapse in={open}>
+                <>{items}</>
+              </Collapse>
+            </Stack>
           );
         },
       },
       {
         Header: "Upload",
-        accessor: (d) => d.uploader ?? "-",
+        accessor: "uploader",
+        Cell: ({ value }) => {
+          const { classes } = useTableStyles();
+          return <Text className={classes.noWrap}>{value ?? "-"}</Text>;
+        },
       },
       {
         accessor: "matches",
@@ -204,61 +225,45 @@ const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   matches,
   dont,
 }) => {
-  // let icon = faCheck;
-  // let color = "var(--success)";
-  // if (dont.length > 0) {
-  //   icon = faInfoCircle;
-  //   color = "var(--warning)";
-  // }
+  const hasIssues = dont.length > 0;
 
-  // const matchElements = useMemo(
-  //   () =>
-  //     matches.map((v, idx) => (
-  //       <p key={`match-${idx}`} className="text-nowrap m-0">
-  //         {v}
-  //       </p>
-  //     )),
-  //   [matches]
-  // );
-  // const dontElements = useMemo(
-  //   () =>
-  //     dont.map((v, idx) => (
-  //       <p key={`dont-${idx}`} className="text-nowrap m-0">
-  //         {v}
-  //       </p>
-  //     )),
-  //   [dont]
-  // );
+  const { ref, hovered } = useHover();
 
-  return null;
-  // const popover = (
-  //   <Popover className="w-100" id="manual-search-matches-info">
-  //     <Popover.Content>
-  //       <Container fluid>
-  //         <Row>
-  //           <Col xs={6}>
-  //             <FontAwesomeIcon
-  //               color="var(--success)"
-  //               icon={faCheck}
-  //             ></FontAwesomeIcon>
-  //             {matchElements}
-  //           </Col>
-  //           <Col xs={6}>
-  //             <FontAwesomeIcon
-  //               color="var(--danger)"
-  //               icon={faTimes}
-  //             ></FontAwesomeIcon>
-  //             {dontElements}
-  //           </Col>
-  //         </Row>
-  //       </Container>
-  //     </Popover.Content>
-  //   </Popover>
-  // );
-
-  // return (
-  //   <OverlayTrigger overlay={popover} placement={"left"}>
-  //     <FontAwesomeIcon icon={icon} color={color}></FontAwesomeIcon>
-  //   </OverlayTrigger>
-  // );
+  return (
+    <Popover
+      opened={hovered}
+      placement="center"
+      position="top"
+      target={
+        <Text color={hasIssues ? "yellow" : "green"} ref={ref}>
+          <FontAwesomeIcon
+            icon={hasIssues ? faExclamationCircle : faCheckCircle}
+          ></FontAwesomeIcon>
+        </Text>
+      }
+    >
+      <Group align="flex-start" spacing="xl">
+        <Stack align="flex-start" spacing="xs">
+          <Text color="green">
+            <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
+          </Text>
+          <List>
+            {matches.map((v, idx) => (
+              <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
+            ))}
+          </List>
+        </Stack>
+        <Stack align="flex-start" spacing="xs">
+          <Text color="yellow">
+            <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
+          </Text>
+          <List>
+            {dont.map((v, idx) => (
+              <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
+            ))}
+          </List>
+        </Stack>
+      </Group>
+    </Popover>
+  );
 };

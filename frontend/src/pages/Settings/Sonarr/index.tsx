@@ -42,16 +42,12 @@ const SettingsSonarrView: FunctionComponent = () => {
               <Number settingKey="settings-sonarr-port"></Number>
             </Input>
             <Input name="Base URL">
-              {/* <InputGroup>
-                <InputGroup.Prepend>
-                  <InputGroup.Text>/</InputGroup.Text>
-                </InputGroup.Prepend> */}
               <Text
+                icon="/"
                 settingKey="settings-sonarr-base_url"
                 override={baseUrlOverride}
                 beforeStaged={(v) => "/" + v}
               ></Text>
-              {/* </InputGroup> */}
             </Input>
             <Input name="API Key">
               <Text settingKey="settings-sonarr-apikey"></Text>

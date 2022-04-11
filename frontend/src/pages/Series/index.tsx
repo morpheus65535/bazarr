@@ -85,10 +85,16 @@ const SeriesView: FunctionComponent = () => {
             <Action
               variant="light"
               onClick={() =>
-                modals.openContextModal(ItemEditModal, {
-                  mutation,
-                  item: original,
-                })
+                modals.openContextModal(
+                  ItemEditModal,
+                  {
+                    mutation,
+                    item: original,
+                  },
+                  {
+                    title: original.title,
+                  }
+                )
               }
               icon={faWrench}
             ></Action>

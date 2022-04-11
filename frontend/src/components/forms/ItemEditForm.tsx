@@ -1,17 +1,8 @@
 import { useLanguageProfiles } from "@/apis/hooks";
-import { Selector } from "@/components/inputs";
+import { MultiSelector, Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
-import { BuildKey, GetItemId, useSelectorOptions } from "@/utilities";
-import {
-  Badge,
-  Button,
-  Divider,
-  Group,
-  LoadingOverlay,
-  SimpleGrid,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { GetItemId, useSelectorOptions } from "@/utilities";
+import { Button, Divider, Group, LoadingOverlay, Stack } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 import { UseMutationResult } from "react-query";
@@ -50,6 +41,12 @@ const ItemEditForm: FunctionComponent<Props> = ({
     },
   });
 
+  const options = useSelectorOptions(
+    item?.audio_language ?? [],
+    (v) => v.name,
+    (v) => v.code2
+  );
+
   const isOverlayVisible = isLoading || isFetching || item === null;
 
   return (
@@ -70,16 +67,12 @@ const ItemEditForm: FunctionComponent<Props> = ({
     >
       <LoadingOverlay visible={isOverlayVisible}></LoadingOverlay>
       <Stack>
-        <div>
-          <Text size="sm" weight="normal" mb="xs">
-            Audio Languages
-          </Text>
-          <SimpleGrid>
-            {item?.audio_language.map((v, i) => (
-              <Badge key={BuildKey(v, i)}>{v.name}</Badge>
-            ))}
-          </SimpleGrid>
-        </div>
+        <MultiSelector
+          label="Audio Languages"
+          disabled
+          {...options}
+          value={item?.audio_language ?? []}
+        ></MultiSelector>
         <Selector
           {...profileOptions}
           {...form.getInputProps("profile")}
@@ -87,7 +80,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           label="Languages Profiles"
         ></Selector>
         <Divider></Divider>
-        <Group position="apart">
+        <Group position="right">
           <Button
             disabled={isOverlayVisible}
             onClick={() => {
@@ -99,8 +92,8 @@ const ItemEditForm: FunctionComponent<Props> = ({
           >
             Cancel
           </Button>
-          <Button disabled={isOverlayVisible} uppercase type="submit">
-            Submit
+          <Button disabled={isOverlayVisible} type="submit">
+            Save
           </Button>
         </Group>
       </Stack>

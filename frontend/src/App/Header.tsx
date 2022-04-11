@@ -6,8 +6,8 @@ import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
 import {
   faArrowRotateLeft,
-  faCircleRight,
   faGear,
+  faPowerOff,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -93,13 +93,13 @@ const AppHeader: FunctionComponent = () => {
             }
           >
             <Menu.Item
-              icon={<FontAwesomeIcon icon={faCircleRight} />}
+              icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
               onClick={() => restart()}
             >
               Restart
             </Menu.Item>
             <Menu.Item
-              icon={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+              icon={<FontAwesomeIcon icon={faPowerOff} />}
               onClick={() => shutdown()}
             >
               Shutdown

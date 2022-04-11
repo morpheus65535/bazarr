@@ -4,6 +4,7 @@ import {
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
 import { useModals } from "@/modules/modals";
+import { BuildKey, useArrayAction } from "@/utilities";
 import { faWrench, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button, Group } from "@mantine/core";
 import { cloneDeep } from "lodash";
@@ -12,8 +13,6 @@ import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
-
-type ModifyFn = (index: number, item?: Language.Profile) => void;
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -53,22 +52,10 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const mutateRow = useCallback<ModifyFn>(
-    (index, item) => {
-      if (item) {
-        modals.openContextModal(ProfileEditModal, {
-          languages,
-          profile: cloneDeep(item),
-          onComplete: updateProfile,
-        });
-      } else {
-        const list = [...profiles];
-        list.splice(index, 1);
-        submitProfiles(list);
-      }
-    },
-    [modals, languages, updateProfile, profiles, submitProfiles]
-  );
+  const action = useArrayAction<Language.Profile>((fn) => {
+    const list = [...profiles];
+    submitProfiles(fn(list));
+  });
 
   const columns = useMemo<Column<Language.Profile>[]>(
     () => [
@@ -102,8 +89,12 @@ const Table: FunctionComponent = () => {
           if (!items) {
             return false;
           }
-          return items.map((v) => {
-            return <Badge color="gray">{v}</Badge>;
+          return items.map((v, idx) => {
+            return (
+              <Badge key={BuildKey(idx, v)} color="gray">
+                {v}
+              </Badge>
+            );
           });
         },
       },
@@ -115,8 +106,12 @@ const Table: FunctionComponent = () => {
           if (!items) {
             return false;
           }
-          return items.map((v) => {
-            return <Badge color="gray">{v}</Badge>;
+          return items.map((v, idx) => {
+            return (
+              <Badge key={BuildKey(idx, v)} color="gray">
+                {v}
+              </Badge>
+            );
           });
         },
       },
@@ -129,13 +124,17 @@ const Table: FunctionComponent = () => {
               <Action
                 icon={faWrench}
                 onClick={() => {
-                  mutateRow(row.index, profile);
+                  modals.openContextModal(ProfileEditModal, {
+                    languages,
+                    profile: cloneDeep(profile),
+                    onComplete: updateProfile,
+                  });
                 }}
               ></Action>
               <Action
                 icon={faXmark}
                 color="red"
-                onClick={() => mutateRow(row.index)}
+                onClick={() => action.remove(row.index)}
               ></Action>
             </Group>
           );
@@ -143,7 +142,7 @@ const Table: FunctionComponent = () => {
       },
     ],
     // TODO: Optimize this
-    [mutateRow]
+    [action, languages, modals, updateProfile]
   );
 
   const canAdd = languages.length !== 0;

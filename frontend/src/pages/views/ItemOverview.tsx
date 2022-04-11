@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,
+  faClone,
   faLanguage,
   faMusic,
   faStream,
@@ -24,11 +25,14 @@ import {
   Grid,
   Group,
   Image,
+  List,
   MediaQuery,
+  Popover,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
+import { useHover } from "@mantine/hooks";
 import { FunctionComponent, useMemo } from "react";
 
 interface Props {
@@ -116,19 +120,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [profile, profileItems]);
 
-  // const alternativePopover = useMemo(
-  //   () => (
-  //     <Popover id="item-overview-alternative">
-  //       <Popover.Title>Alternate Titles</Popover.Title>
-  //       <Popover.Content>
-  //         {item.alternativeTitles.map((v, idx) => (
-  //           <li key={idx}>{v}</li>
-  //         ))}
-  //       </Popover.Content>
-  //     </Popover>
-  //   ),
-  //   [item.alternativeTitles]
-  // );
+  const { ref, hovered } = useHover();
 
   return (
     <BackgroundImage src={item?.fanart ?? ""}>
@@ -137,6 +129,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         grow
         gutter="xs"
         p={24}
+        m={0}
         style={{ backgroundColor: "rgba(0,0,0,0.7)", flexWrap: "nowrap" }}
       >
         <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
@@ -146,8 +139,8 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         </MediaQuery>
         <Grid.Col span={8}>
           <Stack align="flex-start" spacing="xs" mx={6}>
-            <Group>
-              <Title style={{ marginTop: 0, marginBottom: 0 }}>
+            <Group align="flex-start" noWrap>
+              <Title my={0}>
                 <Text inherit color="white">
                   {item && isMovie(item) ? (
                     <Box component="span" mr={12}>
@@ -160,18 +153,27 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                   {item?.title}
                 </Text>
               </Title>
+              <Popover
+                opened={hovered}
+                position="bottom"
+                withArrow
+                target={
+                  <Text
+                    hidden={item?.alternativeTitles.length === 0}
+                    color="white"
+                    ref={ref}
+                  >
+                    <FontAwesomeIcon icon={faClone} />
+                  </Text>
+                }
+              >
+                <List>
+                  {item?.alternativeTitles.map((v, idx) => (
+                    <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
+                  ))}
+                </List>
+              </Popover>
             </Group>
-            {/* <Row>
-            <h1>{item.title}</h1>
-            <span hidden={item.alternativeTitles.length === 0}>
-              <OverlayTrigger overlay={alternativePopover}>
-                <FontAwesomeIcon
-                  className="mx-2"
-                  icon={fasClone}
-                ></FontAwesomeIcon>
-              </OverlayTrigger>
-            </span>
-          </Row> */}
             <Group spacing="xs">{detailBadges}</Group>
             <Group spacing="xs">{audioBadges}</Group>
             <Group spacing="xs">{languageBadges}</Group>

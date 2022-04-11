@@ -183,10 +183,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
               disabled={hasTask}
               onClick={() => {
                 if (series) {
-                  modals.openContextModal(ItemEditModal, {
-                    item: series,
-                    mutation,
-                  });
+                  modals.openContextModal(
+                    ItemEditModal,
+                    {
+                      item: series,
+                      mutation,
+                    },
+                    { title: series.title }
+                  );
                 }
               }}
             >

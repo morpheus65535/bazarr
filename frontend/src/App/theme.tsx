@@ -61,6 +61,7 @@ const ThemeProvider: FunctionComponent = ({ children }) => {
         withGlobalStyles
         withNormalizeCSS
         theme={{ colorScheme, ...theme }}
+        emotionOptions={{ key: "bazarr" }}
       >
         {children}
       </MantineProvider>

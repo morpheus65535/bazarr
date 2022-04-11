@@ -85,10 +85,16 @@ const MovieView: FunctionComponent = () => {
             <Action
               variant="light"
               onClick={() =>
-                modals.openContextModal(ItemEditModal, {
-                  mutation,
-                  item: row.original,
-                })
+                modals.openContextModal(
+                  ItemEditModal,
+                  {
+                    mutation,
+                    item: row.original,
+                  },
+                  {
+                    title: row.original.title,
+                  }
+                )
               }
               icon={faWrench}
             ></Action>

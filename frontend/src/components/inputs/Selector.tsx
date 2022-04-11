@@ -108,7 +108,7 @@ export type MultiSelectorProps<T> = Override<
     defaultValue?: readonly T[];
     options: readonly SelectorOption<T>[];
     onChange?: (value: T[]) => void;
-    getLabel?: (value: T) => string;
+    getkey?: (value: T) => string;
   },
   Omit<MultiSelectProps, "data">
 >;
@@ -118,11 +118,11 @@ export function MultiSelector<T>({
   defaultValue,
   options,
   onChange,
-  getLabel = DefaultKeyBuilder,
+  getkey = DefaultKeyBuilder,
   ...select
 }: MultiSelectorProps<T>) {
-  const labelRef = useRef(getLabel);
-  labelRef.current = getLabel;
+  const labelRef = useRef(getkey);
+  labelRef.current = getkey;
 
   const data = useMemo(
     () =>
