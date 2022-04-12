@@ -21,6 +21,14 @@ interface Props {
   profile?: Language.Profile;
 }
 
+function isSubtitleTrack(path: string | undefined | null) {
+  return !isString(path) || path.length === 0;
+}
+
+function isSubtitleMissing(path: string | undefined | null) {
+  return path === missingText;
+}
+
 const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
   const onlyDesired = useShowOnlyDesired();
 
@@ -38,9 +46,9 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
             className: classes.primary,
           };
 
-          if (!isString(value) || value.length === 0) {
+          if (isSubtitleTrack(value)) {
             return <Text {...props}>Video File Subtitle Track</Text>;
-          } else if (value === missingText) {
+          } else if (isSubtitleMissing(value)) {
             return (
               <Text {...props} color="dimmed">
                 {value}
@@ -72,17 +80,17 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
       },
       {
         accessor: "code2",
-        Cell: (row) => {
+        Cell: ({ row }) => {
           const {
             original: { code2, path, hi, forced },
-          } = row.row;
+          } = row;
 
           const { download, remove } = useMovieSubtitleModification();
 
           const selections = useMemo(() => {
             const list: FormType.ModifySubtitle[] = [];
 
-            if (path && path !== missingText && movie !== null) {
+            if (path && !isSubtitleMissing(path) && movie !== null) {
               list.push({
                 type: "movie",
                 path,
@@ -100,7 +108,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
           const { radarrId } = movie;
 
-          if (selections.length === 0 && path?.length === 0) {
+          if (isSubtitleMissing(path)) {
             return (
               <Action
                 icon={faSearch}
@@ -151,7 +159,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               }}
             >
               <Action
-                disabled={!isString(path) || path.length === 0 || disabled}
+                disabled={isSubtitleTrack(path)}
                 icon={faEllipsis}
               ></Action>
             </SubtitleToolsMenu>
