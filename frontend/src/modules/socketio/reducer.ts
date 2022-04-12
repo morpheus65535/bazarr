@@ -1,9 +1,8 @@
+import queryClient from "@/apis/queries";
 import { QueryKeys } from "@/apis/queries/keys";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
 import { showNotification } from "@mantine/notifications";
-import queryClient from "../../apis/queries";
-import { notification } from "../notifications";
-import { task } from "../task";
+import { notification, task } from "../task";
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [

@@ -1,4 +1,7 @@
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
+import { SimpleTable, Toolbox } from "@/components";
+import { Selector } from "@/components/inputs";
+import { useCustomSelection } from "@/components/tables/plugins";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
@@ -7,9 +10,6 @@ import { useCallback, useMemo, useState } from "react";
 import { UseMutationResult } from "react-query";
 import { useNavigate } from "react-router-dom";
 import { Column, useRowSelect } from "react-table";
-import { SimpleTable, Toolbox } from "../../components";
-import { Selector } from "../../components/inputs";
-import { useCustomSelection } from "../../components/tables/plugins";
 
 interface MassEditorProps<T extends Item.Base = Item.Base> {
   columns: Column<T>[];

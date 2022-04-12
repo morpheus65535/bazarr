@@ -5,7 +5,7 @@ import {
   updateNotification,
 } from "@mantine/notifications";
 import { uniqueId } from "lodash";
-import { notification } from "../notifications";
+import { notification } from "./notification";
 
 class TaskDispatcher {
   private running: boolean;
@@ -136,3 +136,4 @@ class TaskDispatcher {
 
 export const task = new TaskDispatcher();
 export * from "./group";
+export * from "./notification";

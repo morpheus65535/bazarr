@@ -3,7 +3,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { Layout } from "@/constants";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
-import { notification } from "@/modules/notifications";
+import { notification } from "@/modules/task";
 import CriticalError from "@/pages/CriticalError";
 import { Environment } from "@/utilities";
 import { AppShell } from "@mantine/core";
