@@ -4,7 +4,7 @@ import {
   useSeriesAction,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { useTableStyles } from "@/styles";
 import { BuildKey } from "@/utilities";
@@ -63,9 +63,9 @@ const WantedSeriesView: FunctionComponent = () => {
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    createAndDispatchTask(
+                    task.create(
                       item.name,
-                      "Searching subtitles...",
+                      TaskGroup.SearchSubtitle,
                       download.mutateAsync,
                       {
                         seriesId,

@@ -1,6 +1,6 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task } from "@/modules/task";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent } from "react";
@@ -36,14 +36,13 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       onSubmit={form.onSubmit(({ from, to }) => {
         const action = convertToAction(from, to);
 
-        const tasks = selections.map((s) =>
-          createTask(s.path, mutateAsync, {
+        selections.forEach((s) =>
+          task.create(s.path, TaskName, mutateAsync, {
             action,
             form: s,
           })
         );
 
-        dispatchTask(tasks, TaskName);
         onSubmit?.();
         modals.closeSelf();
       })}

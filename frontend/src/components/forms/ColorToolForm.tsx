@@ -1,7 +1,7 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { Selector, SelectorOption } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task } from "@/modules/task";
 import { Button, Divider, Stack } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
 import { FunctionComponent } from "react";
@@ -102,14 +102,13 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       onSubmit={form.onSubmit(({ color }) => {
         const action = convertToAction(color);
 
-        const tasks = selections.map((s) =>
-          createTask(s.path, mutateAsync, {
+        selections.forEach((s) =>
+          task.create(s.path, TaskName, mutateAsync, {
             action,
             form: s,
           })
         );
 
-        dispatchTask(tasks, TaskName);
         onSubmit?.();
         modals.closeSelf();
       })}

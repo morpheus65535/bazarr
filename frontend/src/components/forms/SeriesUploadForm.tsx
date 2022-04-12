@@ -4,7 +4,7 @@ import {
   useSubtitleInfos,
 } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import {
@@ -295,7 +295,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { sonarrSeriesId: seriesId } = series;
 
-        const tasks = files.map((value) => {
+        files.forEach((value) => {
           const { file, hi, forced, language, episode } = value;
 
           if (language === null || episode === null) {
@@ -307,7 +307,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           const { code2 } = language;
           const { sonarrEpisodeId: episodeId } = episode;
 
-          return createTask(file.name, upload.mutateAsync, {
+          task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
             seriesId,
             episodeId,
             form: {
@@ -318,8 +318,6 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             },
           });
         });
-
-        dispatchTask(tasks, "Uploading subtitles...");
 
         onComplete?.();
         modals.closeSelf();

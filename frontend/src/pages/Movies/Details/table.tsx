@@ -3,7 +3,7 @@ import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, SimpleTable } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { filterSubtitleBy } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
@@ -114,9 +114,9 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
                 icon={faSearch}
                 disabled={disabled}
                 onClick={() => {
-                  createAndDispatchTask(
+                  task.create(
                     movie.title,
-                    "Searching subtitle...",
+                    TaskGroup.SearchSubtitle,
                     download.mutateAsync,
                     {
                       radarrId,
@@ -137,9 +137,9 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
               selections={selections}
               onAction={(action) => {
                 if (action === "delete" && path) {
-                  createAndDispatchTask(
+                  task.create(
                     movie.title,
-                    "Deleting subtitle...",
+                    TaskGroup.DeleteSubtitle,
                     remove.mutateAsync,
                     {
                       radarrId,

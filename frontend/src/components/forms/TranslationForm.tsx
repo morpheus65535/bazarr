@@ -1,6 +1,6 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { Alert, Button, Divider, Stack } from "@mantine/core";
@@ -158,8 +158,8 @@ const TranslationForm: FunctionComponent<Props> = ({
     <form
       onSubmit={form.onSubmit(({ language }) => {
         if (language) {
-          const tasks = selections.map((s) =>
-            createTask(s.path, mutateAsync, {
+          selections.forEach((s) =>
+            task.create(s.path, TaskName, mutateAsync, {
               action: "translate",
               form: {
                 ...s,
@@ -168,7 +168,6 @@ const TranslationForm: FunctionComponent<Props> = ({
             })
           );
 
-          dispatchTask(tasks, TaskName);
           onSubmit?.();
           modals.closeSelf();
         }

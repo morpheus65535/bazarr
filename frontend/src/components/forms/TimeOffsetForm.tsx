@@ -1,6 +1,6 @@
 import { useSubtitleAction } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task } from "@/modules/task";
 import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Divider, Group, NumberInput, Stack } from "@mantine/core";
@@ -49,14 +49,13 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       onSubmit={form.onSubmit(({ positive, hour, min, sec, ms }) => {
         const action = convertToAction(hour, min, sec, ms);
 
-        const tasks = selections.map((s) =>
-          createTask(s.path, mutateAsync, {
+        selections.forEach((s) =>
+          task.create(s.path, TaskName, mutateAsync, {
             action,
             form: s,
           })
         );
 
-        dispatchTask(tasks, TaskName);
         onSubmit?.();
         modals.closeSelf();
       })}

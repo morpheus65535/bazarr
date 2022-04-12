@@ -5,7 +5,7 @@ import { TimeOffsetModal } from "@/components/forms/TimeOffsetForm";
 import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task } from "@/modules/task";
 import {
   faClock,
   faCode,
@@ -119,17 +119,15 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
 
   const process = useCallback(
     (action: string, name: string) => {
-      const tasks = selections.map((s) => {
+      selections.forEach((s) => {
         const form: FormType.ModifySubtitle = {
           id: s.id,
           type: s.type,
           language: s.language,
           path: s.path,
         };
-        return createTask(s.path, mutateAsync, { action, form });
+        task.create(s.path, name, mutateAsync, { action, form });
       });
-
-      dispatchTask(tasks, name);
     },
     [mutateAsync, selections]
   );

@@ -1,7 +1,7 @@
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import { Badge, DefaultMantineColor } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 
@@ -51,9 +51,9 @@ export const Subtitle: FunctionComponent<Props> = ({
       selections={selections}
       onAction={(action) => {
         if (action === "search") {
-          createAndDispatchTask(
+          task.create(
             subtitle.name,
-            "Searching subtitle...",
+            TaskGroup.SearchSubtitle,
             download.mutateAsync,
             {
               seriesId,
@@ -66,9 +66,9 @@ export const Subtitle: FunctionComponent<Props> = ({
             }
           );
         } else if (action === "delete" && subtitle.path) {
-          createAndDispatchTask(
+          task.create(
             subtitle.name,
-            "Deleting subtitle...",
+            TaskGroup.DeleteSubtitle,
             remove.mutateAsync,
             {
               seriesId,

@@ -1,12 +1,9 @@
 import { QueryKeys } from "@/apis/queries/keys";
 import { setCriticalError, setOnlineStatus } from "@/utilities/event";
-import {
-  hideNotification,
-  showNotification,
-  updateNotification,
-} from "@mantine/notifications";
+import { showNotification } from "@mantine/notifications";
 import queryClient from "../../apis/queries";
 import { notification } from "../notifications";
+import { task } from "../task";
 
 export function createDefaultReducer(): SocketIO.Reducer[] {
   return [
@@ -34,29 +31,8 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
     },
     {
       key: "progress",
-      update: (progress) => {
-        progress.forEach((item) => {
-          const props = notification.progress(
-            item.id,
-            item.header,
-            item.name,
-            item.value + 1,
-            item.count
-          );
-
-          if (item.value === 0) {
-            showNotification(props);
-          } else {
-            updateNotification(props);
-          }
-        });
-      },
-      delete: (ids) => {
-        setTimeout(
-          () => ids.forEach(hideNotification),
-          notification.PROGRESS_TIMEOUT
-        );
-      },
+      update: task.updateProgress.bind(task),
+      delete: task.removeProgress.bind(task),
     },
     {
       key: "series",

@@ -20,20 +20,42 @@ export const notification = {
 
   PROGRESS_TIMEOUT: 10 * 1000,
 
-  progress: (
-    id: string,
-    title: string,
-    body: string,
-    current: number,
-    total: number
-  ): NotificationProps & { id: string } => {
-    return {
-      id,
-      title,
-      message: `[${current}/${total}] ${body}`,
-      loading: current < total,
-      autoClose: 2 * 60 * 1000,
-      disallowClose: current < total,
-    };
+  progress: {
+    pending: (
+      id: string,
+      header: string
+    ): NotificationProps & { id: string } => {
+      return {
+        id,
+        title: header,
+        message: "Starting Tasks...",
+        color: "gray",
+        loading: true,
+      };
+    },
+    update: (
+      id: string,
+      header: string,
+      body: string,
+      current: number,
+      total: number
+    ): NotificationProps & { id: string } => {
+      return {
+        id,
+        title: header,
+        message: `[${current}/${total}] ${body}`,
+        loading: true,
+        autoClose: 2 * 60 * 1000,
+      };
+    },
+    end: (id: string, header: string): NotificationProps & { id: string } => {
+      return {
+        id,
+        title: header,
+        message: "All Tasks Completed",
+        color: "green",
+        autoClose: 2 * 1000,
+      };
+    },
   },
 };

@@ -1,6 +1,5 @@
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { createAndDispatchTask } from "@/modules/task";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -30,13 +29,7 @@ function WantedView<T extends Wanted.Base>({
       <Toolbox>
         <Toolbox.Button
           disabled={hasTask || dataCount === 0}
-          onClick={() => {
-            createAndDispatchTask(
-              name,
-              "Searching missing subtitles...",
-              searchAll
-            );
-          }}
+          onClick={searchAll}
           icon={faSearch}
         >
           Search All

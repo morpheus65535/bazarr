@@ -4,10 +4,8 @@ declare namespace Task {
   export type Callable<T extends AnyCallable = AnyCallable> = T & {
     parameters: Parameters<T>;
     description: string;
+    id: string;
   };
 
-  export interface Group {
-    description: string;
-    notify: string;
-  }
+  export type Ref = string;
 }

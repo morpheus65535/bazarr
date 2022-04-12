@@ -12,7 +12,7 @@ import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import File, { FileOverlay } from "@/components/inputs/File";
 import { SubtitleToolsModal } from "@/components/modals";
 import { useModals } from "@/modules/modals";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -108,15 +108,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
               disabled={!available || hasTask}
               onClick={() => {
                 if (series) {
-                  createAndDispatchTask(
-                    series.title,
-                    "Scanning disk...",
-                    action,
-                    {
-                      action: "scan-disk",
-                      seriesid: id,
-                    }
-                  );
+                  task.create(series.title, TaskGroup.ScanDisk, action, {
+                    action: "scan-disk",
+                    seriesid: id,
+                  });
                 }
               }}
             >
@@ -126,15 +121,10 @@ const SeriesEpisodesView: FunctionComponent = () => {
               icon={faSearch}
               onClick={() => {
                 if (series) {
-                  createAndDispatchTask(
-                    series.title,
-                    "Searching Subtitles...",
-                    action,
-                    {
-                      action: "search-missing",
-                      seriesid: id,
-                    }
-                  );
+                  task.create(series.title, TaskGroup.SearchSubtitle, action, {
+                    action: "search-missing",
+                    seriesid: id,
+                  });
                 }
               }}
               disabled={

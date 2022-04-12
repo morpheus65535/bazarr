@@ -16,7 +16,7 @@ import File, { FileOverlay } from "@/components/inputs/File";
 import { MovieHistoryModal, SubtitleToolsModal } from "@/components/modals";
 import { MovieSearchModal } from "@/components/modals/ManualSearchModal";
 import { useModals } from "@/modules/modals";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { useLanguageProfileBy } from "@/utilities/languages";
 import {
@@ -125,15 +125,10 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={hasTask}
               onClick={() => {
                 if (movie) {
-                  createAndDispatchTask(
-                    movie.title,
-                    "Scanning disk...",
-                    action,
-                    {
-                      action: "scan-disk",
-                      radarrid: id,
-                    }
-                  );
+                  task.create(movie.title, TaskGroup.ScanDisk, action, {
+                    action: "scan-disk",
+                    radarrid: id,
+                  });
                 }
               }}
             >
@@ -144,15 +139,10 @@ const MovieDetailView: FunctionComponent = () => {
               disabled={!isNumber(movie?.profileId)}
               onClick={() => {
                 if (movie) {
-                  createAndDispatchTask(
-                    movie.title,
-                    "Searching subtitles...",
-                    action,
-                    {
-                      action: "search-missing",
-                      radarrid: id,
-                    }
-                  );
+                  task.create(movie.title, TaskGroup.SearchSubtitle, action, {
+                    action: "search-missing",
+                    radarrid: id,
+                  });
                 }
               }}
             >

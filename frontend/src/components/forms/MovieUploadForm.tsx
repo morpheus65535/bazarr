@@ -1,6 +1,6 @@
 import { useMovieSubtitleModification } from "@/apis/hooks";
 import { useModals, withModal } from "@/modules/modals";
-import { createTask, dispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import {
@@ -240,18 +240,16 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { radarrId } = movie;
 
-        const tasks = files.map(({ file, language, hi, forced }) => {
+        files.forEach(({ file, language, hi, forced }) => {
           if (language === null) {
             throw new Error("Language is not selected");
           }
 
-          return createTask(file.name, upload.mutateAsync, {
+          task.create(file.name, TaskGroup.UploadSubtitle, upload.mutateAsync, {
             radarrId,
             form: { file, language: language.code2, hi, forced },
           });
         });
-
-        dispatchTask(tasks, "Uploading subtitles");
 
         onComplete?.();
         modals.closeSelf();

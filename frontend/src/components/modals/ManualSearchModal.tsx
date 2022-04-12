@@ -1,5 +1,5 @@
 import { withModal } from "@/modules/modals";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import { useTableStyles } from "@/styles";
 import { BuildKey, GetItemId } from "@/utilities";
 import {
@@ -169,9 +169,9 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
               onClick={() => {
                 if (!item) return;
 
-                createAndDispatchTask(
+                task.create(
                   item.title,
-                  "Downloading subtitles...",
+                  TaskGroup.DownloadSubtitle,
                   download,
                   item,
                   result

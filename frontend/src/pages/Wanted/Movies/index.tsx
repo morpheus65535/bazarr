@@ -4,7 +4,7 @@ import {
   useMovieWantedPagination,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
-import { createAndDispatchTask } from "@/modules/task";
+import { task, TaskGroup } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -47,9 +47,9 @@ const WantedMoviesView: FunctionComponent = () => {
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    createAndDispatchTask(
+                    task.create(
                       item.name,
-                      "Searching subtitles...",
+                      TaskGroup.SearchSubtitle,
                       download.mutateAsync,
                       {
                         radarrId,
