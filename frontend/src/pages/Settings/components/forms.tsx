@@ -4,17 +4,17 @@ import {
   FileBrowserProps,
   Selector as GlobalSelector,
   SelectorProps as GlobalSelectorProps,
-  Slider as GlobalSlider,
-  SliderProps as GlobalSliderProps,
 } from "@/components";
 import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
-import { isReactText } from "@/utilities";
+import { isReactText, useSliderMarks } from "@/utilities";
 import {
   NumberInput,
   NumberInputProps,
   PasswordInput,
   PasswordInputProps,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
   Switch,
   Text as MantineText,
   TextInput,
@@ -181,7 +181,7 @@ export function Selector<T extends string | number>(props: SelectorProps<T>) {
 }
 
 type SliderProps = BaseInput<number> &
-  Omit<GlobalSliderProps, "onChange" | "onAfterChange">;
+  Omit<MantineSliderProps, "onChange" | "onChangeEnd" | "marks">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { settingKey, override, ...slider } = props;
@@ -190,14 +190,17 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 
   const defaultValue = useLatest<number>(settingKey, isNumber, override);
 
+  const marks = useSliderMarks([(slider.min = 0), (slider.max = 100)]);
+
   return (
-    <GlobalSlider
-      onAfterChange={(v) => {
+    <MantineSlider
+      marks={marks}
+      onChangeEnd={(v) => {
         update(v, settingKey);
       }}
       defaultValue={defaultValue ?? undefined}
       {...slider}
-    ></GlobalSlider>
+    ></MantineSlider>
   );
 };
 

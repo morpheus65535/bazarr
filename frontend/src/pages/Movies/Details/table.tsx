@@ -100,7 +100,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
           const { radarrId } = movie;
 
-          if (selections.length === 0) {
+          if (selections.length === 0 && path?.length === 0) {
             return (
               <Action
                 icon={faSearch}

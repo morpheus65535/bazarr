@@ -21,7 +21,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   BackgroundImage,
   Badge,
+  BadgeProps,
   Box,
+  createStyles,
   Grid,
   Group,
   Image,
@@ -40,32 +42,48 @@ interface Props {
   details?: { icon: IconDefinition; text: string }[];
 }
 
+const useStyles = createStyles((theme) => {
+  return {
+    poster: {
+      maxWidth: "250px",
+    },
+    col: {
+      maxWidth: "100%",
+    },
+    group: {
+      maxWidth: "100%",
+    },
+  };
+});
+
 const ItemOverview: FunctionComponent<Props> = (props) => {
   const { item, details } = props;
+
+  const { classes } = useStyles();
 
   const detailBadges = useMemo(() => {
     const badges: (JSX.Element | null)[] = [];
 
     if (item) {
       badges.push(
-        <IconBadge key="file-path" icon={faFolder} desc="File Path">
+        <ItemBadge key="file-path" icon={faFolder} title="File Path">
           {item.path}
-        </IconBadge>
+        </ItemBadge>
       );
 
       badges.push(
         ...(details?.map((val, idx) => (
-          <IconBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
+          <ItemBadge key={BuildKey(idx, "detail", val.text)} icon={val.icon}>
             {val.text}
-          </IconBadge>
+          </ItemBadge>
         )) ?? [])
       );
 
       if (item.tags.length > 0) {
         badges.push(
-          <IconBadge key="tags" icon={faTags} desc="Tags">
+          <ItemBadge key="tags" icon={faTags} title="Tags">
             {item.tags.join("|")}
-          </IconBadge>
+          </ItemBadge>
         );
       }
     }
@@ -76,13 +94,13 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   const audioBadges = useMemo(
     () =>
       item?.audio_language.map((v, idx) => (
-        <IconBadge
+        <ItemBadge
           key={BuildKey(idx, "audio", v.code2)}
           icon={faMusic}
-          desc="Audio Language"
+          title="Audio Language"
         >
           {v.name}
-        </IconBadge>
+        </ItemBadge>
       )) ?? [],
     [item?.audio_language]
   );
@@ -95,24 +113,24 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
     if (profile) {
       badges.push(
-        <IconBadge
+        <ItemBadge
           key="language-profile"
           icon={faStream}
-          desc="Languages Profile"
+          title="Languages Profile"
         >
           {profile.name}
-        </IconBadge>
+        </ItemBadge>
       );
 
       badges.push(
         ...profileItems.map((v, idx) => (
-          <IconBadge
+          <ItemBadge
             key={BuildKey(idx, "lang", v.code2)}
             icon={faLanguage}
-            desc="Language"
+            title="Language"
           >
             <Language.Text long value={v}></Language.Text>
-          </IconBadge>
+          </ItemBadge>
         ))
       );
     }
@@ -130,16 +148,24 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
         gutter="xs"
         p={24}
         m={0}
-        style={{ backgroundColor: "rgba(0,0,0,0.7)", flexWrap: "nowrap" }}
+        style={{
+          backgroundColor: "rgba(0,0,0,0.7)",
+          flexWrap: "nowrap",
+        }}
       >
         <MediaQuery smallerThan="sm" styles={{ display: "none" }}>
           <Grid.Col span={3}>
-            <Image src={item?.poster} withPlaceholder></Image>
+            <Image
+              src={item?.poster}
+              mx="auto"
+              className={classes.poster}
+              withPlaceholder
+            ></Image>
           </Grid.Col>
         </MediaQuery>
-        <Grid.Col span={8}>
+        <Grid.Col span={8} className={classes.col}>
           <Stack align="flex-start" spacing="xs" mx={6}>
-            <Group align="flex-start" noWrap>
+            <Group align="flex-start" noWrap className={classes.group}>
               <Title my={0}>
                 <Text inherit color="white">
                   {item && isMovie(item) ? (
@@ -174,9 +200,15 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                 </List>
               </Popover>
             </Group>
-            <Group spacing="xs">{detailBadges}</Group>
-            <Group spacing="xs">{audioBadges}</Group>
-            <Group spacing="xs">{languageBadges}</Group>
+            <Group spacing="xs" className={classes.group}>
+              {detailBadges}
+            </Group>
+            <Group spacing="xs" className={classes.group}>
+              {audioBadges}
+            </Group>
+            <Group spacing="xs" className={classes.group}>
+              {languageBadges}
+            </Group>
             <Text size="sm" color="white">
               {item?.overview}
             </Text>
@@ -187,29 +219,19 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 };
 
-interface ItemBadgeProps {
+type ItemBadgeProps = Omit<BadgeProps<"div">, "leftSection"> & {
   icon: IconDefinition;
-  children: string | JSX.Element;
-  desc?: string;
-}
+};
 
-const IconBadge: FunctionComponent<ItemBadgeProps> = ({
-  icon,
-  desc,
-  children,
-}) => (
-  <Text size="xs" color="white">
-    <Badge
-      leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
-      radius="sm"
-      title={desc}
-      color="dark"
-      size="sm"
-      style={{ textTransform: "none" }}
-    >
-      {children}
-    </Badge>
-  </Text>
+const ItemBadge: FunctionComponent<ItemBadgeProps> = ({ icon, ...props }) => (
+  <Badge
+    leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
+    radius="sm"
+    color="dark"
+    size="xs"
+    style={{ textTransform: "none" }}
+    {...props}
+  ></Badge>
 );
 
 export default ItemOverview;

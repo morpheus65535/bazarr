@@ -3,13 +3,13 @@ import {
   useMovieSubtitleModification,
   useMovieWantedPagination,
 } from "@/apis/hooks";
-import MutateButton from "@/components/async/MutateButton";
 import Language from "@/components/bazarr/Language";
+import { createAndDispatchTask } from "@/modules/task";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Anchor, Group } from "@mantine/core";
+import { Anchor, Badge, Group } from "@mantine/core";
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
@@ -41,23 +41,29 @@ const WantedMoviesView: FunctionComponent = () => {
           return (
             <Group spacing="sm">
               {value.map((item, idx) => (
-                <MutateButton
+                <Badge
+                  color={download.isLoading ? "gray" : undefined}
+                  leftSection={<FontAwesomeIcon icon={faSearch} />}
                   key={BuildKey(idx, item.code2)}
-                  compact
-                  size="xs"
-                  mutation={download}
-                  leftIcon={<FontAwesomeIcon icon={faSearch} />}
-                  args={() => ({
-                    radarrId,
-                    form: {
-                      language: item.code2,
-                      hi,
-                      forced: false,
-                    },
-                  })}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    createAndDispatchTask(
+                      item.name,
+                      "Searching subtitles...",
+                      download.mutateAsync,
+                      {
+                        radarrId,
+                        form: {
+                          language: item.code2,
+                          hi,
+                          forced: false,
+                        },
+                      }
+                    );
+                  }}
                 >
-                  <Language.Text pr="xs" value={item}></Language.Text>
-                </MutateButton>
+                  <Language.Text value={item}></Language.Text>
+                </Badge>
               ))}
             </Group>
           );

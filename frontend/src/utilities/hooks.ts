@@ -1,4 +1,5 @@
 import { SelectorOption, SelectorProps } from "@/components";
+import { SliderProps } from "@mantine/core";
 import {
   Dispatch,
   useCallback,
@@ -40,6 +41,17 @@ export function useSelectorOptions<T>(
       getkey: keyRef.current ?? labelRef.current,
     }),
     [wrappedOptions]
+  );
+}
+
+export function useSliderMarks(values: number[]): SliderProps["marks"] {
+  return useMemo<SliderProps["marks"]>(
+    () =>
+      values.map((value) => ({
+        value: value,
+        label: value.toString(),
+      })),
+    [values]
   );
 }
 
