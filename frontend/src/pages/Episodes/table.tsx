@@ -17,8 +17,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Group, Text } from "@mantine/core";
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
+import {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { Column, TableInstance } from "react-table";
 import { Subtitle } from "./components";
 
 interface Props {
@@ -108,17 +114,17 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
         Cell: ({ row }) => {
           const episode = row.original;
 
-          const seriesid = episode.sonarrSeriesId;
+          const seriesId = episode.sonarrSeriesId;
 
           const elements = useMemo(() => {
-            const episodeid = episode.sonarrEpisodeId;
+            const episodeId = episode.sonarrEpisodeId;
 
             const missing = episode.missing_subtitles.map((val, idx) => (
               <Subtitle
                 missing
                 key={BuildKey(idx, val.code2, "missing")}
-                seriesId={seriesid}
-                episodeId={episodeid}
+                seriesId={seriesId}
+                episodeId={episodeId}
                 subtitle={val}
               ></Subtitle>
             ));
@@ -131,14 +137,14 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
             const subtitles = raw_subtitles.map((val, idx) => (
               <Subtitle
                 key={BuildKey(idx, val.code2, "valid")}
-                seriesId={seriesid}
-                episodeId={episodeid}
+                seriesId={seriesId}
+                episodeId={episodeId}
                 subtitle={val}
               ></Subtitle>
             ));
 
             return [...missing, ...subtitles];
-          }, [episode, seriesid]);
+          }, [episode, seriesId]);
 
           return (
             <Group spacing="xs" noWrap>
@@ -197,19 +203,25 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
     [episodes]
   );
 
+  const instance = useRef<TableInstance<Item.Episode> | null>(null);
+
+  useEffect(() => {
+    if (instance.current) {
+      instance.current.toggleRowExpanded([`season:${maxSeason}`], true);
+    }
+  }, [maxSeason]);
+
   return (
     <GroupTable
       columns={columns}
       data={episodes ?? []}
+      instanceRef={instance}
       initialState={{
         sortBy: [
           { id: "season", desc: true },
           { id: "episode", desc: true },
         ],
         groupBy: ["season"],
-        expanded: {
-          [`season:${maxSeason}`]: true,
-        },
       }}
       emptyText="No Episode Found For This Series"
     ></GroupTable>

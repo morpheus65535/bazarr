@@ -22,7 +22,6 @@ function HistoryView<T extends History.Base = History.Base>({
         emptyText={`Nothing Found in ${name} History`}
         columns={columns}
         query={query}
-        data={[]}
       ></QueryPageTable>
     </Container>
   );

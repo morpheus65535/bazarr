@@ -39,7 +39,6 @@ function WantedView<T extends Wanted.Base>({
         emptyText={`No Missing ${name} Subtitles`}
         query={query}
         columns={columns}
-        data={[]}
       ></QueryPageTable>
     </Container>
   );

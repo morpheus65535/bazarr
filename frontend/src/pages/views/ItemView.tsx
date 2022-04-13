@@ -32,7 +32,6 @@ function ItemView<T extends Item.Base>({ query, columns }: Props<T>) {
         {...options}
         columns={columns}
         query={query}
-        data={[]}
       ></QueryPageTable>
     </>
   );

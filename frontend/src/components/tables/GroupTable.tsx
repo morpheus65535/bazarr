@@ -5,13 +5,11 @@ import {
   Cell,
   HeaderGroup,
   Row,
-  TableOptions,
   useExpanded,
   useGroupBy,
   useSortBy,
 } from "react-table";
-import { TableStyleProps } from "./BaseTable";
-import SimpleTable from "./SimpleTable";
+import SimpleTable, { SimpleTableProps } from "./SimpleTable";
 
 function renderCell<T extends object = object>(cell: Cell<T>, row: Row<T>) {
   if (cell.isGrouped) {
@@ -69,7 +67,10 @@ function renderHeaders<T extends object>(
     .map((col) => <th {...col.getHeaderProps()}>{col.render("Header")}</th>);
 }
 
-type Props<T extends object> = TableOptions<T> & TableStyleProps<T>;
+type Props<T extends object> = Omit<
+  SimpleTableProps<T>,
+  "plugins" | "headersRenderer" | "rowRenderer"
+>;
 
 function GroupTable<T extends object = object>(props: Props<T>) {
   const plugins = [useGroupBy, useSortBy, useExpanded];
