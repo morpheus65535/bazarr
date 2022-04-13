@@ -409,10 +409,8 @@ def update_profile_id_list():
     profile_id_list = list(profile_id_list)
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
-        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else \
-            profile['mustContain']
-        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else \
-            profile['mustNotContain']
+        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
+        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else []
 
 
 def get_profiles_list(profile_id=None):

@@ -391,8 +391,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             results = None
 
         '''
-        The result will be a JSON like this:
-        [{
+        In order to work, the result should be a JSON like this:
+        {
             "10": {
                 "language":"Angol",
                 "nev":"The Flash (Season 5) (1080p)",
@@ -404,15 +404,15 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 "feltolto":"J1GG4",
                 "pontos_talalat":"111",
                 "evadpakk":"1"
-            }
-        },...]
+            }, ...
+        }
         '''
 
         subtitle_list = {}
         season_pack_list = {}
 
-        # Check the results:
-        if results:
+        # Check the results. If a list or a Nonetype is returned, ignore it:
+        if results and not isinstance(results, list):
             for result in results.values():
                 '''
                 Gonna get back multiple records for the same subtitle, in case it is compatible with multiple releases,
@@ -446,6 +446,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     }
                 else:
                     target[sub_id]['releases'].append(release)
+        else:
+            logger.debug("Invalid results: %s", results)
 
         return subtitle_list, season_pack_list
 
