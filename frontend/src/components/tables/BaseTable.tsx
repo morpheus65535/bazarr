@@ -2,62 +2,20 @@ import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
 import { Box, createStyles, Skeleton, Table, Text } from "@mantine/core";
 import { ReactNode, useMemo } from "react";
-import {
-  HeaderGroup,
-  Row,
-  TableBodyProps,
-  TableOptions,
-  TableProps,
-} from "react-table";
+import { HeaderGroup, Row, TableInstance } from "react-table";
 
-export interface BaseTableProps<T extends object> extends TableStyleProps<T> {
-  // Table Options
-  headers: HeaderGroup<T>[];
-  rows: Row<T>[];
-  headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
-  rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
-  prepareRow: (row: Row<T>) => void;
-  tableProps: TableProps;
-  tableBodyProps: TableBodyProps;
-}
+export type BaseTableProps<T extends object> = TableInstance<T> & {
+  tableStyles?: TableStyleProps<T>;
+};
 
 export interface TableStyleProps<T extends object> {
   emptyText?: string;
   striped?: boolean;
   placeholder?: number;
   hideHeader?: boolean;
+  fixHeader?: boolean;
   headersRenderer?: (headers: HeaderGroup<T>[]) => JSX.Element[];
   rowRenderer?: (row: Row<T>) => Nullable<JSX.Element>;
-}
-
-interface ExtractResult<T extends object> {
-  style: TableStyleProps<T>;
-  options: TableOptions<T>;
-}
-
-export function useStyleAndOptions<T extends object>(
-  props: TableStyleProps<T> & TableOptions<T>
-): ExtractResult<T> {
-  const {
-    emptyText,
-    striped,
-    hideHeader,
-    headersRenderer,
-    rowRenderer,
-    placeholder,
-    ...options
-  } = props;
-  return {
-    style: {
-      emptyText,
-      striped,
-      placeholder,
-      hideHeader,
-      headersRenderer,
-      rowRenderer,
-    },
-    options,
-  };
 }
 
 const useStyles = createStyles((theme) => {
@@ -68,8 +26,9 @@ const useStyles = createStyles((theme) => {
       overflowX: "auto",
     },
     table: {
-      maxWidth: "200%",
+      borderCollapse: "collapse",
     },
+    header: {},
   };
 });
 
@@ -95,27 +54,25 @@ function DefaultRowRenderer<T extends object>(row: Row<T>): JSX.Element | null {
 
 export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const {
-    emptyText,
-    striped = true,
-    placeholder,
-    hideHeader,
-    headers,
+    headerGroups,
     rows,
-    headersRenderer = DefaultHeaderRenderer,
-    rowRenderer = DefaultRowRenderer,
     prepareRow,
-    tableProps,
-    tableBodyProps,
+    getTableProps,
+    getTableBodyProps,
+    tableStyles,
   } = props;
+
+  const headersRenderer = tableStyles?.headersRenderer ?? DefaultHeaderRenderer;
+  const rowRenderer = tableStyles?.rowRenderer ?? DefaultRowRenderer;
 
   const { classes } = useStyles();
 
   const colCount = useMemo(() => {
-    return headers.reduce(
+    return headerGroups.reduce(
       (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
       0
     );
-  }, [headers]);
+  }, [headerGroups]);
 
   const empty = rows.length === 0;
 
@@ -124,7 +81,7 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   let body: ReactNode;
   if (isLoading) {
-    body = Array(placeholder ?? pageSize)
+    body = Array(tableStyles?.placeholder ?? pageSize)
       .fill(0)
       .map((_, i) => (
         <tr key={i}>
@@ -133,11 +90,11 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
           </td>
         </tr>
       ));
-  } else if (empty && emptyText) {
+  } else if (empty && tableStyles?.emptyText) {
     body = (
       <tr>
         <td colSpan={colCount}>
-          <Text align="center">{emptyText}</Text>
+          <Text align="center">{tableStyles.emptyText}</Text>
         </td>
       </tr>
     );
@@ -150,15 +107,19 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
 
   return (
     <Box className={classes.container}>
-      <Table className={classes.table} striped={striped} {...tableProps}>
-        <thead hidden={hideHeader}>
-          {headers.map((headerGroup) => (
+      <Table
+        className={classes.table}
+        striped={tableStyles?.striped ?? true}
+        {...getTableProps()}
+      >
+        <thead className={classes.header} hidden={tableStyles?.hideHeader}>
+          {headerGroups.map((headerGroup) => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headersRenderer(headerGroup.headers)}
             </tr>
           ))}
         </thead>
-        <tbody {...tableBodyProps}>{body}</tbody>
+        <tbody {...getTableBodyProps()}>{body}</tbody>
       </Table>
     </Box>
   );

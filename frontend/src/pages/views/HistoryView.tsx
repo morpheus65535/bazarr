@@ -19,7 +19,7 @@ function HistoryView<T extends History.Base = History.Base>({
   return (
     <Container fluid px={0}>
       <QueryPageTable
-        emptyText={`Nothing Found in ${name} History`}
+        tableStyles={{ emptyText: `Nothing Found in ${name} History` }}
         columns={columns}
         query={query}
       ></QueryPageTable>

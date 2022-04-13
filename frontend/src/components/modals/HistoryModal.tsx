@@ -108,9 +108,9 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
   return (
     <QueryOverlay result={history}>
       <PageTable
-        emptyText="No History Found"
         columns={columns}
         data={data ?? []}
+        tableStyles={{ emptyText: "No history found" }}
       ></PageTable>
     </QueryOverlay>
   );
@@ -220,9 +220,8 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
   return (
     <QueryOverlay result={history}>
       <PageTable
-        emptyText="No History Found"
+        tableStyles={{ emptyText: "No history found", placeholder: 5 }}
         columns={columns}
-        placeholder={5}
         data={data ?? []}
       ></PageTable>
     </QueryOverlay>

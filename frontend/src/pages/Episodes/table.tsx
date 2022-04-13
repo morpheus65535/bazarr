@@ -60,7 +60,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
           forced,
           provider,
           subtitle,
-          original_format: original_format,
+          original_format,
         },
       });
     },
@@ -223,7 +223,7 @@ const Table: FunctionComponent<Props> = ({ episodes, profile, disabled }) => {
         ],
         groupBy: ["season"],
       }}
-      emptyText="No Episode Found For This Series"
+      tableStyles={{ emptyText: "No Episode Found For This Series" }}
     ></GroupTable>
   );
 };

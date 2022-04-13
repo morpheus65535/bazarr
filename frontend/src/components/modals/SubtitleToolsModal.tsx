@@ -98,7 +98,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   return (
     <Stack>
       <SimpleTable
-        emptyText="No External Subtitles Found"
+        tableStyles={{ emptyText: "No external subtitles found" }}
         plugins={plugins}
         columns={columns}
         onSelect={setSelections}

@@ -36,7 +36,7 @@ function WantedView<T extends Wanted.Base>({
         </Toolbox.Button>
       </Toolbox>
       <QueryPageTable
-        emptyText={`No Missing ${name} Subtitles`}
+        tableStyles={{ emptyText: `No missing ${name} subtitles` }}
         query={query}
         columns={columns}
       ></QueryPageTable>

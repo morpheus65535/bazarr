@@ -189,7 +189,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
     <SimpleTable
       columns={columns}
       data={data}
-      emptyText="No Subtitles Found For This Movie"
+      tableStyles={{ emptyText: "No subtitles found for this movie" }}
     ></SimpleTable>
   );
 };

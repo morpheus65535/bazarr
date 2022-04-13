@@ -93,7 +93,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
   );
   return (
     <PageTable
-      emptyText="No Blacklisted Series Subtitles"
+      tableStyles={{ emptyText: "No blacklisted series subtitles" }}
       columns={columns}
       data={blacklist}
     ></PageTable>

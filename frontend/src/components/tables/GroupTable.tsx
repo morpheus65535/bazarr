@@ -72,14 +72,14 @@ type Props<T extends object> = Omit<
   "plugins" | "headersRenderer" | "rowRenderer"
 >;
 
+const plugins = [useGroupBy, useSortBy, useExpanded];
+
 function GroupTable<T extends object = object>(props: Props<T>) {
-  const plugins = [useGroupBy, useSortBy, useExpanded];
   return (
     <SimpleTable
       {...props}
       plugins={plugins}
-      headersRenderer={renderHeaders}
-      rowRenderer={renderRow}
+      tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
     ></SimpleTable>
   );
 }

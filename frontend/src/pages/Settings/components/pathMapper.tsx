@@ -135,7 +135,7 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     return (
       <>
         <SimpleTable
-          emptyText="No Mapping"
+          tableStyles={{ emptyText: "No mapping" }}
           columns={columns}
           data={data}
         ></SimpleTable>

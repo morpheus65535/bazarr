@@ -13,7 +13,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   const { query, ...remain } = props;
 
   const {
-    data,
+    data = { data: [], total: 0 },
     paginationStatus: { page, pageCount, totalCount, pageSize, isPageLoading },
     controls: { gotoPage },
   } = query;
@@ -24,7 +24,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
 
   return (
     <LoadingProvider value={isPageLoading}>
-      <SimpleTable {...remain} data={data?.data ?? []}></SimpleTable>
+      <SimpleTable {...remain} data={data.data}></SimpleTable>
       <PageControl
         count={pageCount}
         index={page}

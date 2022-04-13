@@ -196,9 +196,8 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       </Alert>
       <Collapse in={!isStale && !results.isFetching}>
         <PageTable
-          emptyText="No Result"
+          tableStyles={{ emptyText: "No result", placeholder: 10 }}
           columns={columns}
-          placeholder={10}
           data={results.data ?? []}
         ></PageTable>
       </Collapse>

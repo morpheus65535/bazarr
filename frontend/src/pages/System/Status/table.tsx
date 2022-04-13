@@ -35,7 +35,7 @@ const Table: FunctionComponent<Props> = ({ health }) => {
     <SimpleTable
       columns={columns}
       data={health}
-      emptyText="No issues with your configuration"
+      tableStyles={{ emptyText: "No issues with your configuration" }}
     ></SimpleTable>
   );
 };
