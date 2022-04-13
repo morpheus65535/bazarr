@@ -77,12 +77,12 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   );
 
   const mustContainOptions = useSelectorOptions(
-    form.values.mustContain ?? [],
+    form.values.mustContain,
     (v) => v
   );
 
   const mustNotContainOptions = useSelectorOptions(
-    form.values.mustNotContain ?? [],
+    form.values.mustNotContain,
     (v) => v
   );
 
