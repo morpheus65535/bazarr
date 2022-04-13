@@ -156,7 +156,7 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
                 onChange={(l) => {
                   if (l) {
                     item.language = l.code2;
-                    mutate(row.index, item);
+                    mutate(row.index, { ...item, language: l.code2 });
                   }
                 }}
               ></LanguageSelector>
@@ -176,8 +176,10 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
               id={BuildKey(item.id, item.language, "forced")}
               checked={value === "True"}
               onChange={(v) => {
-                item.forced = v.target.checked ? "True" : "False";
-                mutate(row.index, item);
+                mutate(row.index, {
+                  ...item,
+                  forced: v.target.checked ? "True" : "False",
+                });
               }}
             ></Form.Check>
           );
@@ -195,8 +197,10 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
               id={BuildKey(item.id, item.language, "hi")}
               checked={value === "True"}
               onChange={(v) => {
-                item.hi = v.target.checked ? "True" : "False";
-                mutate(row.index, item);
+                mutate(row.index, {
+                  ...item,
+                  hi: v.target.checked ? "True" : "False",
+                });
               }}
             ></Form.Check>
           );
@@ -214,8 +218,10 @@ const LanguagesProfileModal: FunctionComponent<Props> = ({ update }) => {
               id={BuildKey(item.id, item.language, "audio")}
               checked={value === "True"}
               onChange={(v) => {
-                item.audio_exclude = v.target.checked ? "True" : "False";
-                mutate(row.index, item);
+                mutate(row.index, {
+                  ...item,
+                  audio_exclude: v.target.checked ? "True" : "False",
+                });
               }}
             ></Form.Check>
           );
