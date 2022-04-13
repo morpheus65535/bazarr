@@ -1,12 +1,13 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  Card as MantineCard,
   Center,
+  createStyles,
   Divider,
   Stack,
   Text,
   Title,
+  UnstyledButton,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
 
@@ -47,9 +48,26 @@ export const Input: FunctionComponent<InputProps> = ({
   );
 };
 
+const useCardStyles = createStyles((theme) => {
+  return {
+    card: {
+      borderRadius: theme.radius.sm,
+      border: `1px solid ${theme.colors.gray[7]}`,
+
+      "&:hover": {
+        boxShadow: theme.shadows.md,
+        border: `1px solid ${theme.colors.brand[5]}`,
+      },
+    },
+    stack: {
+      height: "100%",
+    },
+  };
+});
+
 interface CardProps {
   header?: string;
-  subheader?: string;
+  description?: string;
   plus?: boolean;
   onClick?: () => void;
 }
@@ -57,31 +75,23 @@ interface CardProps {
 // TODO: Change to button
 export const Card: FunctionComponent<CardProps> = ({
   header,
-  subheader,
+  description,
   plus,
   onClick,
 }) => {
+  const { classes } = useCardStyles();
   return (
-    <MantineCard
-      style={{ width: "100%", minHeight: "5.6rem" }}
-      p="lg"
-      shadow="sm"
-      onClick={() => onClick && onClick()}
-    >
+    <UnstyledButton p="lg" onClick={onClick} className={classes.card}>
       {plus ? (
-        <Center style={{ height: "100%" }}>
+        <Center>
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
         </Center>
       ) : (
-        <>
-          <MantineCard.Section>
-            <Text>{header}</Text>
-          </MantineCard.Section>
-          <MantineCard.Section hidden={subheader === undefined}>
-            <Text>{subheader}</Text>
-          </MantineCard.Section>
-        </>
+        <Stack className={classes.stack} spacing={0} align="flex-start">
+          <Text weight="bold">{header}</Text>
+          <Text hidden={description === undefined}>{description}</Text>
+        </Stack>
       )}
-    </MantineCard>
+    </UnstyledButton>
   );
 };

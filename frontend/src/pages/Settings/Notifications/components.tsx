@@ -11,7 +11,8 @@ import {
   Stack,
   Textarea,
 } from "@mantine/core";
-import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { useForm } from "@mantine/hooks";
+import { FunctionComponent, useMemo } from "react";
 import { useMutation } from "react-query";
 import { Card, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
@@ -19,103 +20,82 @@ import { notificationsKey } from "../keys";
 interface Props {
   selections: readonly Settings.NotificationInfo[];
   payload: Settings.NotificationInfo | null;
+  onComplete: (info: Settings.NotificationInfo) => void;
 }
 
-const NotificationTool: FunctionComponent<Props> = ({
+const NotificationForm: FunctionComponent<Props> = ({
   selections,
   payload,
+  onComplete,
 }) => {
   const availableSelections = useMemo(
-    () => selections.filter((v) => !v.enabled),
-    [selections]
+    () => selections.filter((v) => !v.enabled || v.name === payload?.name),
+    [payload?.name, selections]
   );
   const options = useSelectorOptions(availableSelections, (v) => v.name);
 
-  const update = useUpdateArray<Settings.NotificationInfo>(
-    notificationsKey,
-    "name"
-  );
-
   const modals = useModals();
 
-  const [current, setCurrent] =
-    useState<Nullable<Settings.NotificationInfo>>(payload);
-
-  const updateUrl = useCallback((url: string) => {
-    setCurrent((current) => {
-      if (current) {
-        return {
-          ...current,
-          url,
-        };
-      } else {
-        return current;
-      }
-    });
-  }, []);
-
-  const canSave =
-    current !== null && current?.url !== null && current?.url.length !== 0;
+  const form = useForm({
+    initialValues: {
+      selection: payload,
+      url: payload?.url ?? "",
+    },
+    validationRules: {
+      selection: (value) => value !== null,
+      url: (value) => value.trim() !== "",
+    },
+  });
 
   const test = useMutation((url: string) => api.system.testNotification(url));
 
   return (
-    <Stack>
-      <Selector
-        disabled={payload !== null}
-        {...options}
-        value={current}
-        onChange={setCurrent}
-      ></Selector>
-      <div hidden={current === null}>
-        <Textarea
-          minRows={4}
-          placeholder="URL"
-          value={current?.url ?? ""}
-          onChange={(e) => {
-            const value = e.currentTarget.value;
-            updateUrl(value);
-          }}
-        ></Textarea>
-      </div>
-      <Divider></Divider>
-      <Group position="right">
-        <MutateButton
-          disabled={!canSave}
-          mutation={test}
-          args={() => current?.url ?? null}
-        >
-          Test
-        </MutateButton>
-        <Button
-          hidden={payload === null}
-          color="danger"
-          onClick={() => {
-            if (current) {
-              update({ ...current, enabled: false });
-            }
-            modals.closeAll();
-          }}
-        >
-          Remove
-        </Button>
-        <Button
-          disabled={!canSave}
-          onClick={() => {
-            if (current) {
-              update({ ...current, enabled: true });
-            }
-            modals.closeSelf();
-          }}
-        >
-          Save
-        </Button>
-      </Group>
-    </Stack>
+    <form
+      onSubmit={form.onSubmit(({ selection, url }) => {
+        if (selection) {
+          onComplete({ ...selection, enabled: true, url });
+        }
+        modals.closeSelf();
+      })}
+    >
+      <Stack>
+        <Selector
+          disabled={payload !== null}
+          {...options}
+          {...form.getInputProps("selection")}
+        ></Selector>
+        <div hidden={form.values.selection === null}>
+          <Textarea
+            minRows={4}
+            placeholder="URL"
+            {...form.getInputProps("url")}
+          ></Textarea>
+        </div>
+        <Divider></Divider>
+        <Group position="right">
+          <MutateButton mutation={test} args={() => form.values.url}>
+            Test
+          </MutateButton>
+          <Button
+            hidden={payload === null}
+            color="red"
+            onClick={() => {
+              if (payload) {
+                onComplete({ ...payload, enabled: false });
+              }
+              modals.closeAll();
+            }}
+          >
+            Remove
+          </Button>
+          <Button type="submit">Save</Button>
+        </Group>
+      </Stack>
+    </form>
   );
 };
 
-const NotificationModal = withModal(NotificationTool, "notification-tool", {
+const NotificationModal = withModal(NotificationForm, "notification-tool", {
   title: "Notification",
 });
 
@@ -126,24 +106,30 @@ export const NotificationView: FunctionComponent = () => {
     (s) => s.notifications.providers
   );
 
+  const update = useUpdateArray<Settings.NotificationInfo>(
+    notificationsKey,
+    "name"
+  );
+
   const modals = useModals();
 
   const elements = useMemo(() => {
     return notifications
       ?.filter((v) => v.enabled)
-      .map((v, idx) => (
+      .map((payload, idx) => (
         <Card
-          key={BuildKey(idx, v.name)}
-          header={v.name}
+          key={BuildKey(idx, payload.name)}
+          header={payload.name}
           onClick={() =>
             modals.openContextModal(NotificationModal, {
-              payload: v,
+              payload,
               selections: notifications,
+              onComplete: update,
             })
           }
         ></Card>
       ));
-  }, [modals, notifications]);
+  }, [modals, notifications, update]);
 
   return (
     <SimpleGrid cols={3}>
@@ -154,6 +140,7 @@ export const NotificationView: FunctionComponent = () => {
           modals.openContextModal(NotificationModal, {
             payload: null,
             selections: notifications ?? [],
+            onComplete: update,
           })
         }
       ></Card>

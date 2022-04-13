@@ -58,7 +58,7 @@ export const ProviderView: FunctionComponent = () => {
           <Card
             key={BuildKey(v.key, idx)}
             header={v.name ?? capitalize(v.key)}
-            subheader={v.description}
+            description={v.description}
             onClick={() => select(v)}
           ></Card>
         ));
