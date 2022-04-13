@@ -136,3 +136,17 @@ export function useDebouncedValue<T>(item: T, ms: number) {
 
   return value;
 }
+
+export function useOnValueChange<T>(value: T, onChange: VoidFunction) {
+  const valueRef = useRef<T | null>(null);
+
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    if (valueRef.current !== value) {
+      valueRef.current = value;
+      onChangeRef.current();
+    }
+  }, [value]);
+}

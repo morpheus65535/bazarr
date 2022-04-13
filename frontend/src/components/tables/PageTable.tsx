@@ -11,17 +11,13 @@ type Props<T extends object> = TableOptions<T> &
     plugins?: PluginHook<T>[];
   };
 
+const tablePlugins = [useDefaultSettings, usePagination];
+
 export default function PageTable<T extends object>(props: Props<T>) {
   const { autoScroll, plugins, ...remain } = props;
   const { style, options } = useStyleAndOptions(remain);
 
-  const allPlugins: PluginHook<T>[] = [useDefaultSettings, usePagination];
-
-  if (plugins) {
-    allPlugins.push(...plugins);
-  }
-
-  const instance = useTable(options, ...allPlugins);
+  const instance = useTable(options, ...tablePlugins, ...(plugins ?? []));
 
   const {
     getTableProps,

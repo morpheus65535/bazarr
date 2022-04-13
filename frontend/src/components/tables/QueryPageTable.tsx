@@ -19,8 +19,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
 
   const {
     data,
-    isFetching,
-    paginationStatus: { page, pageCount, totalCount, pageSize },
+    paginationStatus: { page, pageCount, totalCount, pageSize, isPageLoading },
     controls: { gotoPage },
   } = query;
 
@@ -41,7 +40,7 @@ export default function QueryPageTable<T extends object>(props: Props<T>) {
   }, [page]);
 
   return (
-    <LoadingProvider value={isFetching}>
+    <LoadingProvider value={isPageLoading}>
       <BaseTable
         {...style}
         headers={headerGroups}

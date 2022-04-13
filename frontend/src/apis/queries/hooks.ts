@@ -1,4 +1,4 @@
-import { GetItemId } from "@/utilities";
+import { GetItemId, useOnValueChange } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -16,6 +16,7 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
     gotoPage: (index: number) => void;
   };
   paginationStatus: {
+    isPageLoading: boolean;
     totalCount: number;
     pageSize: number;
     pageCount: number;
@@ -72,6 +73,20 @@ export function usePaginationQuery<
     [pageCount]
   );
 
+  const [isPageLoading, setIsPageLoading] = useState(false);
+
+  useOnValueChange(page, () => {
+    if (results.isFetching) {
+      setIsPageLoading(true);
+    }
+  });
+
+  useEffect(() => {
+    if (!results.isFetching) {
+      setIsPageLoading(false);
+    }
+  }, [results.isFetching]);
+
   // Reset page index if we out of bound
   useEffect(() => {
     if (pageCount === 0) return;
@@ -86,6 +101,7 @@ export function usePaginationQuery<
   return {
     ...results,
     paginationStatus: {
+      isPageLoading,
       totalCount,
       pageCount,
       pageSize,
