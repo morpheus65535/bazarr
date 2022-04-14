@@ -1,3 +1,4 @@
+import { Code } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
 import {
   Check,
@@ -74,10 +75,12 @@ const SettingsRadarrView: FunctionComponent = () => {
               subtitles as soon as movies are imported.
             </Message>
             <Message>
-              Search can be triggered using this command: `curl -d
-              "radarr_moviefile_id=$radarr_moviefile_id" -H "x-api-key:
-              ###############################" -X POST
-              http://localhost:6767/api/webhooks/radarr`
+              Search can be triggered using this command
+              <Code>
+                curl -d "radarr_moviefile_id=$radarr_moviefile_id" -H
+                "x-api-key: ###############################" -X POST
+                http://localhost:6767/api/webhooks/radarr
+              </Code>
             </Message>
           </Section>
           <Section header="Path Mappings">

@@ -1,3 +1,4 @@
+import { Code } from "@mantine/core";
 import { FunctionComponent, useCallback } from "react";
 import {
   Check,
@@ -85,10 +86,12 @@ const SettingsSonarrView: FunctionComponent = () => {
               subtitles as soon as episodes are imported.
             </Message>
             <Message>
-              Search can be triggered using this command: `curl -d
-              "sonarr_episodefile_id=$sonarr_episodefile_id" -H "x-api-key:
-              ###############################" -X POST
-              http://localhost:6767/api/webhooks/sonarr`
+              Search can be triggered using this command
+              <Code>
+                curl -d "sonarr_episodefile_id=$sonarr_episodefile_id" -H
+                "x-api-key: ###############################" -X POST
+                http://localhost:6767/api/webhooks/sonarr
+              </Code>
             </Message>
             <Check
               label="Exclude season zero (extras)"
