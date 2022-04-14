@@ -5,10 +5,9 @@ import { FunctionComponent } from "react";
 import {
   Check,
   CollapseBox,
-  Group,
-  Input,
   Layout,
   Message,
+  Section,
   useLatest,
 } from "../components";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
@@ -41,70 +40,65 @@ const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();
   return (
     <Layout name="Languages">
-      <Group header="Subtitles Language">
-        <Input>
-          <Check
-            label="Single Language"
-            settingKey="settings-general-single_language"
-          ></Check>
-          <Message>
-            Download a single Subtitles file without adding the language code to
-            the filename.
-          </Message>
-          <Message type="warning">
-            We don't recommend enabling this option unless absolutely required
-            (ie: media player not supporting language code in subtitles
-            filename). Results may vary.
-          </Message>
-        </Input>
-        <Input name="Languages Filter">
-          <LanguageSelector
-            settingKey={enabledLanguageKey}
-            options={languages ?? []}
-          ></LanguageSelector>
-        </Input>
-      </Group>
-      <Group header="Languages Profiles">
+      <Section header="Subtitles Language">
+        <Check
+          label="Single Language"
+          settingKey="settings-general-single_language"
+        ></Check>
+        <Message>
+          Download a single Subtitles file without adding the language code to
+          the filename.
+        </Message>
+        <Message type="warning">
+          We don't recommend enabling this option unless absolutely required
+          (ie: media player not supporting language code in subtitles filename).
+          Results may vary.
+        </Message>
+        <LanguageSelector
+          label="Languages Filter"
+          settingKey={enabledLanguageKey}
+          options={languages ?? []}
+        ></LanguageSelector>
+      </Section>
+      <Section header="Languages Profiles">
         <Table></Table>
-      </Group>
-      <Group header="Default Settings">
+      </Section>
+      <Section header="Default Settings">
         <CollapseBox>
           <CollapseBox.Control>
-            <Input>
-              <Check
-                label="Series"
-                settingKey="settings-general-serie_default_enabled"
-              ></Check>
-              <Message>
-                Apply only to Series added to Bazarr after enabling this option.
-              </Message>
-            </Input>
+            <Check
+              label="Series"
+              settingKey="settings-general-serie_default_enabled"
+            ></Check>
+            <Message>
+              Apply only to Series added to Bazarr after enabling this option.
+            </Message>
           </CollapseBox.Control>
           <CollapseBox.Content indent>
-            <Input name="Profile">
-              <ProfileSelector settingKey="settings-general-serie_default_profile"></ProfileSelector>
-            </Input>
+            <ProfileSelector
+              label="Profile"
+              settingKey="settings-general-serie_default_profile"
+            ></ProfileSelector>
           </CollapseBox.Content>
         </CollapseBox>
         <CollapseBox>
           <CollapseBox.Control>
-            <Input>
-              <Check
-                label="Movies"
-                settingKey="settings-general-movie_default_enabled"
-              ></Check>
-              <Message>
-                Apply only to Movies added to Bazarr after enabling this option.
-              </Message>
-            </Input>
+            <Check
+              label="Movies"
+              settingKey="settings-general-movie_default_enabled"
+            ></Check>
+            <Message>
+              Apply only to Movies added to Bazarr after enabling this option.
+            </Message>
           </CollapseBox.Control>
           <CollapseBox.Content>
-            <Input name="Profile">
-              <ProfileSelector settingKey="settings-general-movie_default_profile"></ProfileSelector>
-            </Input>
+            <ProfileSelector
+              label="Profile"
+              settingKey="settings-general-movie_default_profile"
+            ></ProfileSelector>
           </CollapseBox.Content>
         </CollapseBox>
-      </Group>
+      </Section>
     </Layout>
   );
 };

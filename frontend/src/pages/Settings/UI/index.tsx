@@ -1,21 +1,20 @@
 import { uiPageSizeKey, usePageSize } from "@/utilities/storage";
 import { FunctionComponent } from "react";
-import { Group, Input, Layout, Selector } from "../components";
+import { Layout, Section, Selector } from "../components";
 import { pageSizeOptions } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {
   const [pageSize] = usePageSize();
   return (
     <Layout name="Interface">
-      <Group header="UI">
-        <Input name="Page Size">
-          <Selector
-            options={pageSizeOptions}
-            settingKey={uiPageSizeKey}
-            override={(_) => pageSize}
-          ></Selector>
-        </Input>
-      </Group>
+      <Section header="UI">
+        <Selector
+          label="Page Size"
+          options={pageSizeOptions}
+          settingKey={uiPageSizeKey}
+          override={(_) => pageSize}
+        ></Selector>
+      </Section>
     </Layout>
   );
 };

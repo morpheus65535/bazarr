@@ -3,50 +3,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Center,
   createStyles,
-  Divider,
   Stack,
   Text,
-  Title,
   UnstyledButton,
 } from "@mantine/core";
 import { FunctionComponent } from "react";
-
-interface GroupProps {
-  header: string;
-  hidden?: boolean;
-}
-
-export const Group: FunctionComponent<GroupProps> = ({
-  header,
-  hidden,
-  children,
-}) => {
-  return (
-    <Stack hidden={hidden} spacing="xs">
-      <Title order={4}>{header}</Title>
-      <Divider></Divider>
-      {children}
-    </Stack>
-  );
-};
-
-export interface InputProps {
-  name?: string;
-  hidden?: boolean;
-}
-
-export const Input: FunctionComponent<InputProps> = ({
-  children,
-  name,
-  hidden,
-}) => {
-  return (
-    <Stack hidden={hidden} spacing="xs" mb="md">
-      {name && <Text>{name}</Text>}
-      {children}
-    </Stack>
-  );
-};
 
 const useCardStyles = createStyles((theme) => {
   return {
@@ -72,7 +33,6 @@ interface CardProps {
   onClick?: () => void;
 }
 
-// TODO: Change to button
 export const Card: FunctionComponent<CardProps> = ({
   header,
   description,

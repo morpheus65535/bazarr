@@ -1,7 +1,7 @@
 import { useFileSystem } from "@/apis/hooks";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Autocomplete } from "@mantine/core";
+import { Autocomplete, AutocompleteProps } from "@mantine/core";
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from "react";
 
 const backKey = "[back]";
@@ -23,11 +23,9 @@ function extractPath(raw: string) {
   }
 }
 
-export interface FileBrowserProps {
-  defaultValue?: string;
+export type FileBrowserProps = Omit<AutocompleteProps, "data"> & {
   type: "sonarr" | "radarr" | "bazarr";
-  onChange?: (path: string) => void;
-}
+};
 
 type FileTreeItem = {
   value: string;
@@ -38,6 +36,7 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
   defaultValue,
   type,
   onChange,
+  ...props
 }) => {
   const [isShow, setIsShow] = useState(false);
   const [value, setValue] = useState(defaultValue ?? "");
@@ -77,6 +76,7 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
 
   return (
     <Autocomplete
+      {...props}
       ref={ref}
       icon={<FontAwesomeIcon icon={faFolder}></FontAwesomeIcon>}
       placeholder="Click to start"

@@ -16,7 +16,6 @@ import {
   Slider as MantineSlider,
   SliderProps as MantineSliderProps,
   Switch,
-  Text as MantineText,
   TextInput,
   TextInputProps,
 } from "@mantine/core";
@@ -24,16 +23,6 @@ import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import { FunctionComponent, ReactText, useEffect } from "react";
 import { useCollapse, useLatest } from ".";
 import { OverrideFuncType, useSingleUpdate } from "./hooks";
-
-export const Message: FunctionComponent<{
-  type?: "warning" | "info";
-}> = ({ type, children }) => {
-  return (
-    <MantineText size="sm" color="dimmed">
-      {children}
-    </MantineText>
-  );
-};
 
 export interface BaseInput<T> {
   disabled?: boolean;
@@ -152,7 +141,7 @@ function selectorValidator<T>(v: unknown): v is T {
   return isString(v) || isNumber(v);
 }
 
-type SelectorProps<T> = BaseInput<T> & GlobalSelectorProps<T>;
+export type SelectorProps<T> = BaseInput<T> & GlobalSelectorProps<T>;
 
 export function Selector<T extends string | number>(props: SelectorProps<T>) {
   const update = useSingleUpdate();

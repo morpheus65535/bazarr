@@ -12,8 +12,8 @@ import {
   pathMappingsMovieKey,
   seriesEnabledKey,
 } from "../keys";
-import { Message } from "./forms";
 import { useExtract, useLatest, useSingleUpdate } from "./hooks";
+import { Message } from "./Message";
 
 type SupportType = "sonarr" | "radarr";
 
