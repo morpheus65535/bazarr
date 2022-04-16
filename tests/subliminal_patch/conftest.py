@@ -27,6 +27,7 @@ def movies():
             resolution="1080p",
             source="Web",
             # other="Rip",
+            imdb_id="tt1160419",
             alternative_titles=["Dune: Part One"],
             audio_codec="Dolby Digital",
             video_codec="H.264",
