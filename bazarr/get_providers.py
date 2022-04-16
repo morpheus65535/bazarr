@@ -226,6 +226,7 @@ def get_providers_auth():
             'cache_dir': os.path.join(args.config_dir, "cache"),
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
+            'timeout': settings.embeddedsubtitles.timeout,
         }
     }
 

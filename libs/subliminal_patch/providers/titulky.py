@@ -262,10 +262,10 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     def terminate(self):
         self.session.close()
 
-    def login(self):
+    def login(self, bypass_cache=False):
         # Reuse all cookies if found in cache and skip login.
         cached_cookiejar = cache.get('titulky_cookiejar')
-        if cached_cookiejar != NO_VALUE:
+        if not bypass_cache and cached_cookiejar != NO_VALUE:
             logger.info("Titulky.com: Reusing cached cookies.")
             self.session.cookies.update(cached_cookiejar)
             return True
@@ -314,10 +314,10 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
     # GET request a page. This functions acts as a requests.session.get proxy handling expired cached cookies 
     # and subsequent relogging and sending the original request again. If all went well, returns the response.
-    def get_request(self, url, ref=server_url, __recursion=0):
+    def get_request(self, url, ref=server_url, recursion=0):
         # That's deep... recursion... Stop. We don't have infinite memmory. And don't want to 
         # spam titulky's server either. So we have to just accept the defeat. Let it throw!
-        if __recursion >= 5:
+        if recursion >= 5:
             logger.debug(f"Titulky.com: Got into a loop while trying to send a request after relogging.")
             raise AuthenticationError("Got into a loop and couldn't get authenticated!")
 
@@ -335,8 +335,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
             location_qs = parse_qs(urlparse(res.headers['Location']).query)
             if location_qs['msg_type'][0] == 'e' and "Přihlašte se" in location_qs['msg'][0]:
                 logger.debug(f"Titulky.com: Login cookies expired.")
-                self.login()
-                return self.get_request(url, ref=ref, __recursion=++__recursion)
+                self.login(True)
+                return self.get_request(url, ref=ref, recursion=(recursion + 1))
         
         return res
 
