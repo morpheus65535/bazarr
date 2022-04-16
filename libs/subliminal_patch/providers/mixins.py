@@ -77,8 +77,11 @@ class ProviderSubtitleArchiveMixin(object):
         if len(subs_in_archive) == 1:
             matching_sub = subs_in_archive[0]
         else:
+            logger.debug("Subtitles in archive: %s", subs_in_archive)
+
             for sub_name in subs_in_archive:
                 guess = guessit(sub_name)
+
                 sub_name_lower = sub_name.lower()
 
                 # consider subtitle valid if:
@@ -94,8 +97,11 @@ class ProviderSubtitleArchiveMixin(object):
                         continue
 
                 episodes = guess.get("episode")
-                if is_episode and episodes and not isinstance(episodes, list):
+
+                if not isinstance(episodes, list):
                     episodes = [episodes]
+
+                episode_matches = episodes is not None and any(subtitle.episode == epi for epi in episodes)
 
                 if not is_episode or (
                         (
@@ -139,7 +145,11 @@ class ProviderSubtitleArchiveMixin(object):
                                 if asked_for_rlsgrp in sub_name_lower:
                                     release_group_matches = True
 
-                    if release_group_matches and source_matches:
+                    if not is_episode and release_group_matches and source_matches:
+                        matching_sub = sub_name
+                        break
+
+                    if is_episode and episode_matches:
                         matching_sub = sub_name
                         break
 
@@ -148,9 +158,13 @@ class ProviderSubtitleArchiveMixin(object):
                     else:
                         subs_fallback.append(sub_name)
 
+
         if not matching_sub and not subs_unsure and not subs_fallback:
             logger.error("None of expected subtitle found in archive")
             return
+
+        elif matching_sub:
+            logger.debug("Matched subtitle found: %s", matching_sub)
 
         elif subs_unsure:
             matching_sub = subs_unsure[0]
