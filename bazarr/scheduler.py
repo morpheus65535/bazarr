@@ -15,7 +15,7 @@ from random import randrange
 
 from sonarr.sync.series import update_series
 from sonarr.sync.episodes import sync_episodes, update_all_episodes
-from get_movies import update_movies, update_all_movies
+from bazarr.radarr.sync.movies import update_movies, update_all_movies
 from config import settings
 from get_subtitle.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
 from get_subtitle.upgrade import upgrade_subtitles

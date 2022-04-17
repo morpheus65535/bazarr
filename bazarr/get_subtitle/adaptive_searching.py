@@ -6,7 +6,7 @@ import logging
 
 from datetime import datetime, timedelta
 
-from config import settings
+from bazarr.config import settings
 
 
 def is_search_active(desired_language, attempt_string):

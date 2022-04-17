@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import time
 import platform
 import logging
 import requests
@@ -19,63 +18,24 @@ from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 from dogpile.cache import make_region
 
-from get_args import args
-from config import settings, url_radarr
-from custom_lang import CustomLanguage
-from database import TableHistoryMovie, TableBlacklistMovie, TableShowsRootfolder, TableMoviesRootfolder
-from event_handler import event_stream
-from get_languages import language_from_alpha2, alpha3_from_alpha2
-from helper import path_mappings
-from list_subtitles import store_subtitles, store_subtitles_movie
+from bazarr.get_args import args
+from bazarr.config import settings
+from bazarr.custom_lang import CustomLanguage
+from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder
+from bazarr.event_handler import event_stream
+from bazarr.get_languages import language_from_alpha2, alpha3_from_alpha2
+from bazarr.helper import path_mappings
+from bazarr.list_subtitles import store_subtitles, store_subtitles_movie
 from bazarr.sonarr.history import history_log
+from bazarr.radarr.history import history_log_movie
 from bazarr.sonarr.notify import notify_sonarr
+from bazarr.radarr.notify import notify_radarr
 
 region = make_region().configure('dogpile.cache.memory')
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class BinaryNotFound(Exception):
     pass
-
-
-def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
-                      subs_id=None, subtitles_path=None):
-    TableHistoryMovie.insert({
-        TableHistoryMovie.action: action,
-        TableHistoryMovie.radarrId: radarr_id,
-        TableHistoryMovie.timestamp: time.time(),
-        TableHistoryMovie.description: description,
-        TableHistoryMovie.video_path: video_path,
-        TableHistoryMovie.language: language,
-        TableHistoryMovie.provider: provider,
-        TableHistoryMovie.score: score,
-        TableHistoryMovie.subs_id: subs_id,
-        TableHistoryMovie.subtitles_path: subtitles_path
-    }).execute()
-    event_stream(type='movie-history')
-
-
-def blacklist_log_movie(radarr_id, provider, subs_id, language):
-    TableBlacklistMovie.insert({
-        TableBlacklistMovie.radarr_id: radarr_id,
-        TableBlacklistMovie.timestamp: time.time(),
-        TableBlacklistMovie.provider: provider,
-        TableBlacklistMovie.subs_id: subs_id,
-        TableBlacklistMovie.language: language
-    }).execute()
-    event_stream(type='movie-blacklist')
-
-
-def blacklist_delete_movie(provider, subs_id):
-    TableBlacklistMovie.delete().where((TableBlacklistMovie.provider == provider) and
-                                       (TableBlacklistMovie.subs_id == subs_id))\
-        .execute()
-    event_stream(type='movie-blacklist', action='delete')
-
-
-def blacklist_delete_all_movie():
-    TableBlacklistMovie.delete().execute()
-    event_stream(type='movie-blacklist', action='delete')
 
 
 @region.cache_on_arguments()
@@ -158,16 +118,6 @@ def get_binary(name):
                 return exe
 
 
-def get_blacklist_movie():
-    blacklist_db = TableBlacklistMovie.select(TableBlacklistMovie.provider, TableBlacklistMovie.subs_id).dicts()
-
-    blacklist_list = []
-    for item in blacklist_db:
-        blacklist_list.append((item['provider'], item['subs_id']))
-
-    return blacklist_list
-
-
 def cache_maintenance():
     main_cache_validity = 14  # days
     pack_cache_validity = 4  # days
@@ -190,71 +140,6 @@ def cache_maintenance():
     # archive cache
     for fn in glob.iglob(os.path.join(args.config_dir, "*.archive")):
         remove_expired(fn, pack_cache_validity)
-
-
-class GetRadarrInfo:
-    @staticmethod
-    def version():
-        """
-        Call system/status API endpoint and get the Radarr version
-        @return: str
-        """
-        radarr_version = region.get("radarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if radarr_version:
-            region.set("radarr_version", radarr_version)
-            return radarr_version
-        else:
-            radarr_version = ''
-        if settings.general.getboolean('use_radarr'):
-            try:
-                rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
-                radarr_json = requests.get(rv, timeout=60, verify=False, headers=headers).json()
-                if 'version' in radarr_json:
-                    radarr_version = radarr_json['version']
-                else:
-                    raise json.decoder.JSONDecodeError
-            except json.decoder.JSONDecodeError:
-                try:
-                    rv = url_radarr() + "/api/v3/system/status?apikey=" + settings.radarr.apikey
-                    radarr_version = requests.get(rv, timeout=60, verify=False, headers=headers).json()['version']
-                except json.decoder.JSONDecodeError:
-                    logging.debug('BAZARR cannot get Radarr version')
-                    radarr_version = 'unknown'
-            except Exception:
-                logging.debug('BAZARR cannot get Radarr version')
-                radarr_version = 'unknown'
-        logging.debug('BAZARR got this Radarr version from its API: {}'.format(radarr_version))
-        region.set("radarr_version", radarr_version)
-        return radarr_version
-
-    def is_legacy(self):
-        """
-        Call self.version() and parse the result to determine if it's a legacy version of Radarr
-        @return: bool
-        """
-        radarr_version = self.version()
-        if radarr_version.startswith('0.'):
-            return True
-        else:
-            return False
-
-
-get_radarr_info = GetRadarrInfo()
-
-
-def notify_radarr(radarr_id):
-    try:
-        if get_radarr_info.is_legacy():
-            url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
-        else:
-            url = url_radarr() + "/api/v3/command?apikey=" + settings.radarr.apikey
-        data = {
-            'name': 'RescanMovie',
-            'movieId': int(radarr_id)
-        }
-        requests.post(url, json=data, timeout=60, verify=False, headers=headers)
-    except Exception:
-        logging.exception('BAZARR cannot notify Radarr')
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
@@ -322,7 +207,7 @@ def subtitles_apply_mods(language, subtitle_path, mods, use_original_format):
     if not sub.is_valid():
         logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
         return
-    
+
     if use_original_format:
         return
 
@@ -413,7 +298,7 @@ def check_credentials(user, pw):
 
 def check_health():
     from bazarr.sonarr.rootfolder import check_sonarr_rootfolder
-    from get_rootfolder import check_radarr_rootfolder
+    from bazarr.radarr.rootfolder import check_radarr_rootfolder
     if settings.general.getboolean('use_sonarr'):
         check_sonarr_rootfolder()
     if settings.general.getboolean('use_radarr'):

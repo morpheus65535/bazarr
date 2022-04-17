@@ -1,13 +1,17 @@
+#
+
 import logging
 import os
+
 from ffsubsync.ffsubsync import run, make_parser
-from utils import get_binary
-from utils import history_log_movie
+
+from bazarr.utils import get_binary
+from bazarr.radarr.history import history_log_movie
 from bazarr.sonarr.history import history_log
-from get_languages import language_from_alpha2
-from helper import path_mappings
-from config import settings
-from get_args import args
+from bazarr.get_languages import language_from_alpha2
+from bazarr.helper import path_mappings
+from bazarr.config import settings
+from bazarr.get_args import args
 
 
 class SubSyncer:

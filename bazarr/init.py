@@ -5,17 +5,17 @@ import io
 import rarfile
 import sys
 import subprocess
-
-from config import settings, configure_captcha_func
-from get_args import args
-from logger import configure_logging
-from helper import path_mappings
-from backup import restore_from_backup
-
-from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
 import datetime
 import time
+
+from dogpile.cache.region import register_backend as register_cache_backend
+
+from bazarr.config import settings, configure_captcha_func
+from bazarr.get_args import args
+from bazarr.logger import configure_logging
+from bazarr.helper import path_mappings
+from bazarr.backup import restore_from_backup
 
 # set start time global variable as epoch
 global startTime
@@ -26,12 +26,6 @@ restore_from_backup()
 
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
-
-# set subliminal_patch hearing-impaired extension to use when naming subtitles
-os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
-
-# set anti-captcha provider and key
-configure_captcha_func()
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -50,9 +44,18 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
+if not os.path.exists(os.path.join(args.config_dir, 'backup')):
+    os.mkdir(os.path.join(args.config_dir, 'backup'))
 if not os.path.exists(os.path.join(args.config_dir, 'restore')):
     os.mkdir(os.path.join(args.config_dir, 'restore'))
 
+# set subliminal_patch hearing-impaired extension to use when naming subtitles
+os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
+
+# set anti-captcha provider and key
+configure_captcha_func()
+
+# configure logging
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402
 
@@ -163,7 +166,8 @@ if os.path.isfile(package_info_file):
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
 subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
-                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir})
+                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir},
+                            replace_existing_backend=True)
 subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
@@ -205,7 +209,7 @@ def init_binaries():
     return unrar
 
 
-from database import init_db, migrate_db  # noqa E402
+from bazarr.database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

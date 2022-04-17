@@ -3,7 +3,8 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableEpisodes
+from bazarr.database import TableEpisodes
+
 from ..utils import authenticate, postprocessEpisode
 
 

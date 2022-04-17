@@ -3,12 +3,14 @@
 import logging
 import os
 import pickle
-from knowit import api
 import enzyme
+
+from knowit import api
 from enzyme.exceptions import MalformedMKVError
-from custom_lang import CustomLanguage
-from database import TableEpisodes, TableMovies
-from helper import path_mappings
+
+from bazarr.custom_lang import CustomLanguage
+from bazarr.database import TableEpisodes, TableMovies
+from bazarr.helper import path_mappings
 
 logger = logging.getLogger(__name__)
 

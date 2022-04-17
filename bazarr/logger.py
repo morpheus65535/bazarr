@@ -10,8 +10,8 @@ import warnings
 from logging.handlers import TimedRotatingFileHandler
 from pytz_deprecation_shim import PytzUsageWarning
 
-from get_args import args
-from config import settings
+from bazarr.get_args import args
+from bazarr.config import settings
 
 
 logger = logging.getLogger()
@@ -54,6 +54,9 @@ class NoExceptionFormatter(logging.Formatter):
 
     def formatException(self, record):
         return ''
+
+
+fh = None
 
 
 def configure_logging(debug=False):
@@ -146,7 +149,7 @@ class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
     def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False,
                  atTime=None, errors=None):
         super(PatchedTimedRotatingFileHandler, self).__init__(filename, when, interval, backupCount, encoding, delay, utc,
-                                                       atTime, errors)
+                                                              atTime, errors)
 
     def getFilesToDelete(self):
         """

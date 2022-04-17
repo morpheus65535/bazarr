@@ -4,12 +4,11 @@ import os
 import requests
 import logging
 
-from config import settings, url_radarr
-from helper import path_mappings
-from database import TableMoviesRootfolder, TableMovies
-from utils import get_radarr_info
-
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+from bazarr.config import settings
+from bazarr.helper import path_mappings
+from bazarr.database import TableMoviesRootfolder, TableMovies
+from bazarr.radarr.info import get_radarr_info, url_radarr
+from bazarr.constants import headers
 
 
 def get_radarr_rootfolder():

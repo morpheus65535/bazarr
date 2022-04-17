@@ -1,14 +1,14 @@
 # coding=utf-8
 
+import operator
+
+from functools import reduce
 from flask import jsonify
 from flask_restful import Resource
 
-import operator
-from functools import reduce
-
-from database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
-from get_providers import get_throttled_providers
-from utils import get_health_issues
+from bazarr.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
+from bazarr.get_providers import get_throttled_providers
+from bazarr.utils import get_health_issues
 
 from ..utils import authenticate
 

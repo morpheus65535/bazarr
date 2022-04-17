@@ -1,25 +1,23 @@
 # coding=utf-8
 
 import logging
-
 import json
-import os
 import time
+
 from requests import Session
 from signalr import Connection
 from requests.exceptions import ConnectionError
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 
-from config import settings, url_sonarr, url_radarr
-from sonarr.sync.episodes import sync_episodes, sync_one_episode
-from sonarr.sync.series import update_series, update_one_series
-from get_movies import update_movies, update_one_movie
-from scheduler import scheduler
-from bazarr.sonarr.info import get_sonarr_info
-from get_args import args
-
-
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+from bazarr.config import settings
+from bazarr.sonarr.sync.episodes import sync_episodes, sync_one_episode
+from bazarr.sonarr.sync.series import update_series, update_one_series
+from bazarr.radarr.sync.movies import update_movies, update_one_movie
+from bazarr.scheduler import scheduler
+from bazarr.sonarr.info import get_sonarr_info, url_sonarr
+from bazarr.radarr.info import url_radarr
+from bazarr.get_args import args
+from bazarr.constants import headers
 
 
 class SonarrSignalrClientLegacy:

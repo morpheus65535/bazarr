@@ -4,8 +4,8 @@
 import logging
 import gc
 
-from config import settings
-from subsyncer import SubSyncer
+from bazarr.config import settings
+from bazarr.subsyncer import SubSyncer
 
 
 def sync_subtitles(video_path, srt_path, srt_lang, forced, media_type, percent_score, sonarr_series_id=None,

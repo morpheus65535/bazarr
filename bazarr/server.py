@@ -4,16 +4,17 @@ import warnings
 import logging
 import os
 import io
+
 from waitress.server import create_server
 
-from get_args import args
-from config import settings, base_url
-from database import database
+from bazarr.get_args import args
+from bazarr.config import settings, base_url
+from bazarr.database import database
+from bazarr.app import create_app
+from bazarr.api import api_bp_list
 
-from app import create_app
 app = create_app()
 
-from api import api_bp_list  # noqa E402
 for item in api_bp_list:
     app.register_blueprint(item, url_prefix=base_url.rstrip('/') + '/api')
 

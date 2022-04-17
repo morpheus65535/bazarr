@@ -5,12 +5,10 @@ import os
 import ast
 
 from urllib.parse import quote_plus
-
 from subliminal.cache import region
-
 from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
 
-from get_args import args
+from bazarr.get_args import args
 
 
 class SimpleConfigParser(simpleconfigparser):
@@ -538,76 +536,6 @@ def save_settings(settings_items):
             event_stream(type='reset-episode-wanted')
         if radarr_exclusion_updated:
             event_stream(type='reset-movie-wanted')
-
-
-def url_sonarr():
-    if settings.sonarr.getboolean('ssl'):
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-
-    if settings.sonarr.base_url == '':
-        settings.sonarr.base_url = "/"
-    if not settings.sonarr.base_url.startswith("/"):
-        settings.sonarr.base_url = "/" + settings.sonarr.base_url
-    if settings.sonarr.base_url.endswith("/"):
-        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
-
-    if settings.sonarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.sonarr.port}"
-
-    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"
-
-
-def url_sonarr_short():
-    if settings.sonarr.getboolean('ssl'):
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-
-    if settings.sonarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.sonarr.port}"
-
-    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}"
-
-
-def url_radarr():
-    if settings.radarr.getboolean('ssl'):
-        protocol_radarr = "https"
-    else:
-        protocol_radarr = "http"
-
-    if settings.radarr.base_url == '':
-        settings.radarr.base_url = "/"
-    if not settings.radarr.base_url.startswith("/"):
-        settings.radarr.base_url = "/" + settings.radarr.base_url
-    if settings.radarr.base_url.endswith("/"):
-        settings.radarr.base_url = settings.radarr.base_url[:-1]
-
-    if settings.radarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.radarr.port}"
-
-    return f"{protocol_radarr}://{settings.radarr.ip}{port}{settings.radarr.base_url}"
-
-
-def url_radarr_short():
-    if settings.radarr.getboolean('ssl'):
-        protocol_radarr = "https"
-    else:
-        protocol_radarr = "http"
-
-    if settings.radarr.port in empty_values:
-        port = ""
-    else:
-        port = f":{settings.radarr.port}"
-
-    return f"{protocol_radarr}://{settings.radarr.ip}{port}"
 
 
 def get_array_from(property):

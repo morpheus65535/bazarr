@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 import re
 
-from config import get_settings
-from database import TableCustomScoreProfileConditions as conditions_table
-from database import TableCustomScoreProfiles as profiles_table
+from bazarr.config import get_settings
+from bazarr.database import TableCustomScoreProfileConditions as conditions_table, TableCustomScoreProfiles as \
+    profiles_table
 
 logger = logging.getLogger(__name__)
 

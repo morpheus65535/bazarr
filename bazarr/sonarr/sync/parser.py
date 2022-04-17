@@ -1,13 +1,11 @@
 # coding=utf-8
 
 import os
-import logging
-import requests
 
-from .utils import headers
-from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 from bazarr.database import TableShows
 from bazarr.sonarr.info import get_sonarr_info
+
+from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
 
 def seriesParser(show, action, tags_dict, serie_default_profile, audio_profiles):
@@ -136,39 +134,3 @@ def episodeParser(episode):
                             'episode_file_id': episode['episodeFile']['id'],
                             'audio_language': str(audio_language),
                             'file_size': episode['episodeFile']['size']}
-
-
-def get_series_from_sonarr_api(series_id, url, apikey_sonarr):
-    if series_id:
-        url_sonarr_api_series = url + "/api/{0}series/{1}?apikey={2}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', series_id, apikey_sonarr)
-    else:
-        url_sonarr_api_series = url + "/api/{0}series?apikey={1}".format(
-            '' if get_sonarr_info.is_legacy() else 'v3/', apikey_sonarr)
-    try:
-        r = requests.get(url_sonarr_api_series, timeout=60, verify=False, headers=headers)
-        r.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code:
-            raise requests.exceptions.HTTPError
-        logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
-        return
-    except requests.exceptions.ConnectionError:
-        logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
-        return
-    except requests.exceptions.Timeout:
-        logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
-        return
-    except requests.exceptions.RequestException:
-        logging.exception("BAZARR Error trying to get series from Sonarr.")
-        return
-    else:
-        series_json = []
-        if series_id:
-            series_json.append(r.json())
-        else:
-            series_json = r.json()
-        series_list = []
-        for series in series_json:
-            series_list.append({'sonarrSeriesId': series['id'], 'title': series['title']})
-        return series_list

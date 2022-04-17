@@ -1,17 +1,18 @@
 # coding=utf-8
 
+import operator
+
 from flask import request, jsonify
 from flask_restful import Resource
-
-import operator
 from functools import reduce
 
-from database import get_exclusion_clause, TableEpisodes, TableShows
-from list_subtitles import list_missing_subtitles, series_scan_subtitles
-from get_subtitle.mass_download import series_download_subtitles
-from get_subtitle.wanted import wanted_search_missing_subtitles_series
+from bazarr.database import get_exclusion_clause, TableEpisodes, TableShows
+from bazarr.list_subtitles import list_missing_subtitles, series_scan_subtitles
+from bazarr.get_subtitle.mass_download import series_download_subtitles
+from bazarr.get_subtitle.wanted import wanted_search_missing_subtitles_series
+from bazarr.event_handler import event_stream
+
 from ..utils import authenticate, postprocessSeries, None_Keys
-from event_handler import event_stream
 
 
 class Series(Resource):

@@ -6,12 +6,14 @@ import pretty
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies, TableBlacklistMovie
+from bazarr.database import TableMovies, TableBlacklistMovie
+from bazarr.utils import delete_subtitles
+from bazarr.radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, blacklist_delete_movie
+from bazarr.helper import path_mappings
+from bazarr.get_subtitle.mass_download import movies_download_subtitles
+from bazarr.event_handler import event_stream
+
 from ..utils import authenticate, postprocessMovie
-from utils import blacklist_log_movie, delete_subtitles, blacklist_delete_all_movie, blacklist_delete_movie
-from helper import path_mappings
-from get_subtitle.mass_download import movies_download_subtitles
-from event_handler import event_stream
 
 
 # GET: get blacklist

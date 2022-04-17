@@ -3,8 +3,12 @@
 import pycountry
 
 from subzero.language import Language
-from custom_lang import CustomLanguage
-from database import TableSettingsLanguages
+
+from bazarr.custom_lang import CustomLanguage
+from bazarr.database import TableSettingsLanguages
+
+# must be defined to prevent NameError exception
+languages_dict = {}
 
 
 def load_language_in_db():
@@ -91,7 +95,3 @@ def get_language_set():
             language_set.add(custom.subzero_language())
 
     return language_set
-
-
-if __name__ == '__main__':
-    load_language_in_db()

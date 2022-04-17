@@ -3,7 +3,7 @@
 import apprise
 import logging
 
-from database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies
+from bazarr.database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies
 
 
 def update_notifier():

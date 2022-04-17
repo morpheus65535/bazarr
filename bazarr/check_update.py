@@ -6,11 +6,12 @@ import logging
 import json
 import requests
 import semver
+
 from shutil import rmtree
 from zipfile import ZipFile
 
-from get_args import args
-from config import settings
+from bazarr.get_args import args
+from bazarr.config import settings
 
 
 def check_releases():

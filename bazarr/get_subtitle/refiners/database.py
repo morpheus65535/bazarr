@@ -6,8 +6,9 @@ import re
 
 from subliminal import Episode, Movie
 
-from helper import path_mappings
-from database import TableShows, TableEpisodes, TableMovies
+from bazarr.helper import path_mappings
+from bazarr.database import TableShows, TableEpisodes, TableMovies
+
 from .utils import convert_to_guessit
 
 

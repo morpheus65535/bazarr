@@ -10,9 +10,9 @@ import codecs
 from pyga.requests import Event, Tracker, Session, Visitor, Config
 from pyga.entities import CustomVariable
 
-from get_args import args
-from config import settings
-from utils import get_radarr_info
+from bazarr.get_args import args
+from bazarr.config import settings
+from bazarr.radarr.info import get_radarr_info
 from bazarr.sonarr.info import get_sonarr_info
 
 sonarr_version = get_sonarr_info.version()

@@ -11,10 +11,11 @@ from functools import reduce
 from peewee import fn
 from datetime import timedelta
 
-from database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
+from bazarr.database import get_exclusion_clause, TableEpisodes, TableShows, TableHistory, TableBlacklist
+from bazarr.config import settings
+from bazarr.helper import path_mappings
+
 from ..utils import authenticate, postprocessEpisode
-from config import settings
-from helper import path_mappings
 
 
 class EpisodesHistory(Resource):

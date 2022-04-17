@@ -1,13 +1,11 @@
 # coding=utf-8
 
-import os
 import requests
 import logging
 
-from bazarr.config import settings, url_sonarr
-from bazarr.sonarr.info import get_sonarr_info
-
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
+from bazarr.config import settings
+from bazarr.sonarr.info import get_sonarr_info, url_sonarr
+from bazarr.constants import headers
 
 
 def get_profile_list():

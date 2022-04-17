@@ -1,16 +1,18 @@
 # coding=utf-8
 
 import logging
+
 from peewee import IntegrityError
 
-from bazarr.config import settings, url_sonarr
+from bazarr.config import settings
+from bazarr.sonarr.info import url_sonarr
 from bazarr.list_subtitles import list_missing_subtitles
 from bazarr.sonarr.rootfolder import check_sonarr_rootfolder
 from bazarr.database import TableShows, TableEpisodes
-from .episodes import sync_episodes
 from bazarr.helper import path_mappings
 from bazarr.event_handler import event_stream, show_progress, hide_progress
 
+from .episodes import sync_episodes
 from .parser import seriesParser
 from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
 

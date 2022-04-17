@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import os
 import logging
 import requests
 import datetime
@@ -8,10 +7,10 @@ import json
 
 from dogpile.cache import make_region
 
-from bazarr.config import settings, url_sonarr
+from bazarr.config import settings, empty_values
+from bazarr.constants import headers
 
 region = make_region().configure('dogpile.cache.memory')
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
 
 
 class GetSonarrInfo:
@@ -62,3 +61,24 @@ class GetSonarrInfo:
 
 
 get_sonarr_info = GetSonarrInfo()
+
+
+def url_sonarr():
+    if settings.sonarr.getboolean('ssl'):
+        protocol_sonarr = "https"
+    else:
+        protocol_sonarr = "http"
+
+    if settings.sonarr.base_url == '':
+        settings.sonarr.base_url = "/"
+    if not settings.sonarr.base_url.startswith("/"):
+        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+    if settings.sonarr.base_url.endswith("/"):
+        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
+
+    if settings.sonarr.port in empty_values:
+        port = ""
+    else:
+        port = f":{settings.sonarr.port}"
+
+    return f"{protocol_sonarr}://{settings.sonarr.ip}{port}{settings.sonarr.base_url}"

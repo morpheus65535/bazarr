@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
 from glob import glob
 
-from get_args import args
-from config import settings
+from bazarr.get_args import args
+from bazarr.config import settings
 
 
 def get_backup_path():
