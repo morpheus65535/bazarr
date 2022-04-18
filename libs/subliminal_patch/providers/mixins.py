@@ -101,7 +101,9 @@ class ProviderSubtitleArchiveMixin(object):
                 if not isinstance(episodes, list):
                     episodes = [episodes]
 
-                episode_matches = episodes is not None and any(subtitle.episode == epi for epi in episodes)
+                episode_matches = False
+                if is_episode:
+                    episode_matches = episodes is not None and any(subtitle.episode == epi for epi in episodes)
 
                 if not is_episode or (
                         (
