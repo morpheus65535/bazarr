@@ -63,6 +63,14 @@ def movies():
             video_codec="H.264",
             year=2013,
         ),
+        "inexistent": Movie(
+            "inexistent.movie.2013.720p.bluray.x264-sparks.mkv",
+            "231231asdklsad2321",
+            source="Blu-Ray",
+            resolution="720p",
+            video_codec="H.264",
+            year=2050,
+        ),
         "blade_runner": Movie(
             "Alien (1979) Theatrical HDR 1080p UHD BluRay x265 HEVC EAC3-SARTRE",
             "Alien",
@@ -118,4 +126,19 @@ def episodes():
             resolution="720p",
             video_codec="H.264",
         ),
+        "inexistent": Episode(
+            "Inexistent.TVShow.S01E01.720p.BluRay.X264-REWARD.mkv",
+            "121361asdfgh",
+            1,
+            1,
+            source="Blu-Ray",
+            release_group="REWARD",
+            resolution="720p",
+            video_codec="H.264",
+        ),
     }
+
+
+@pytest.fixture
+def data():
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

@@ -79,10 +79,26 @@ def test_list_subtitles_movie(movies):
         assert provider.list_subtitles(movies["dune"], {Language.fromalpha2("en")})
 
 
+def test_list_subtitles_inexistent_movie(movies):
+    with Subf2mProvider() as provider:
+        assert (
+            provider.list_subtitles(movies["inexistent"], {Language.fromalpha2("en")})
+            == []
+        )
+
+
 def test_list_subtitles_episode(episodes):
     with Subf2mProvider() as provider:
         assert provider.list_subtitles(
             episodes["breaking_bad_s01e01"], {Language.fromalpha2("en")}
+        )
+
+
+def test_list_subtitles_inexistent_episode(episodes):
+    with Subf2mProvider() as provider:
+        assert (
+            provider.list_subtitles(episodes["inexistent"], {Language.fromalpha2("en")})
+            == []
         )
 
 
