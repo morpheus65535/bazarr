@@ -198,6 +198,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Bulgarian Subtitles Provider",
   },
   {
+    key: "subf2m",
+    name: "subf2m.co",
+    description: "Subscene Alternative Provider",
+  },
+  {
     key: "subs4free",
     name: "Subs4Free",
     description: "Greek Subtitles Provider",
