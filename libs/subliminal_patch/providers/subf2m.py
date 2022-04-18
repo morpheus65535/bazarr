@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import io
 import logging
-
-from zipfile import ZipFile, is_zipfile
-from rarfile import RarFile, is_rarfile
 
 from guessit import guessit
 from requests import Session
@@ -16,7 +12,8 @@ from subliminal_patch.core import Movie
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.subtitle import guess_matches
-from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
+from subliminal_patch.providers.utils import get_archive_from_bytes
+from subliminal_patch.providers.utils import get_subtitle_from_archive
 
 from subzero.language import Language
 
@@ -88,7 +85,7 @@ _LANGUAGE_MAP = {
 }
 
 
-class Subf2mProvider(Provider, ProviderSubtitleArchiveMixin):
+class Subf2mProvider(Provider):
     provider_name = "subf2m"
 
     _supported_languages = {}
@@ -240,18 +237,12 @@ class Subf2mProvider(Provider, ProviderSubtitleArchiveMixin):
 
         downloaded = self._session.get(download_url, allow_redirects=True)
 
-        archive_stream = io.BytesIO(downloaded.content)
+        archive = get_archive_from_bytes(downloaded.content)
 
-        if is_zipfile(archive_stream):
-            logger.debug("Identified zip archive")
-            archive = ZipFile(archive_stream)
-        elif is_rarfile(archive_stream):
-            logger.debug("Identified rar archive")
-            archive = RarFile(archive_stream)
-        else:
+        if archive is None:
             raise APIThrottled(f"Invalid archive: {subtitle.page_link}")
 
-        subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
+        subtitle.content = get_subtitle_from_archive(archive, get_first_subtitle=True)
 
 
 def _get_subtitle_from_item(item, language):
