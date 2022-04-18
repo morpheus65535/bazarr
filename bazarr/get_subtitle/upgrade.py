@@ -9,16 +9,16 @@ from functools import reduce
 from peewee import fn
 from datetime import datetime, timedelta
 
-from bazarr.config import settings
-from bazarr.helper import path_mappings
-from bazarr.list_subtitles import store_subtitles, store_subtitles_movie
-from bazarr.radarr.history import history_log_movie
-from bazarr.sonarr.history import history_log
-from bazarr.notifier import send_notifications, send_notifications_movie
-from bazarr.get_providers import get_providers
-from bazarr.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
+from config import settings
+from helper import path_mappings
+from list_subtitles import store_subtitles, store_subtitles_movie
+from radarr.history import history_log_movie
+from sonarr.history import history_log
+from notifier import send_notifications, send_notifications_movie
+from get_providers import get_providers
+from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
     TableHistory, TableHistoryMovie
-from bazarr.event_handler import show_progress, hide_progress
+from event_handler import show_progress, hide_progress
 
 from .download import generate_subtitles
 

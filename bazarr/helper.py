@@ -7,7 +7,7 @@ import logging
 from charamel import Detector
 from bs4 import UnicodeDammit
 
-from bazarr.config import settings, get_array_from
+from config import settings, get_array_from
 
 
 class PathMappings:

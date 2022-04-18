@@ -8,8 +8,8 @@ import logging
 from flask import jsonify
 from flask_restful import Resource
 
-from bazarr.config import settings
-from bazarr.get_args import args
+from config import settings
+from get_args import args
 
 from ..utils import authenticate
 

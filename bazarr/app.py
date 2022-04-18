@@ -5,8 +5,8 @@ import os
 from flask import Flask
 from flask_socketio import SocketIO
 
-from bazarr.get_args import args
-from bazarr.config import settings, base_url
+from get_args import args
+from config import settings, base_url
 
 socketio = SocketIO()
 

@@ -3,8 +3,8 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from bazarr.config import settings
-from bazarr.database import TableShows, TableMovies
+from config import settings
+from database import TableShows, TableMovies
 
 from ..utils import authenticate
 

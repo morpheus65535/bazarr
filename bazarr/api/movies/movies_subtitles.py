@@ -7,16 +7,16 @@ from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from bazarr.database import TableMovies, get_audio_profile_languages, get_profile_id
-from bazarr.helper import path_mappings
-from bazarr.get_subtitle.upload import manual_upload_subtitle
-from bazarr.get_subtitle.download import generate_subtitles
-from bazarr.utils import delete_subtitles
-from bazarr.radarr.history import history_log_movie
-from bazarr.notifier import send_notifications_movie
-from bazarr.list_subtitles import store_subtitles_movie
-from bazarr.event_handler import event_stream
-from bazarr.config import settings
+from database import TableMovies, get_audio_profile_languages, get_profile_id
+from helper import path_mappings
+from get_subtitle.upload import manual_upload_subtitle
+from get_subtitle.download import generate_subtitles
+from utils import delete_subtitles
+from radarr.history import history_log_movie
+from notifier import send_notifications_movie
+from list_subtitles import store_subtitles_movie
+from event_handler import event_stream
+from config import settings
 
 from ..utils import authenticate
 

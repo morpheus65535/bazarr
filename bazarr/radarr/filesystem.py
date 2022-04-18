@@ -3,9 +3,9 @@
 import requests
 import logging
 
-from bazarr.config import settings
-from bazarr.radarr.info import get_radarr_info, url_radarr
-from bazarr.constants import headers
+from config import settings
+from radarr.info import get_radarr_info, url_radarr
+from constants import headers
 
 
 def browse_radarr_filesystem(path='#'):

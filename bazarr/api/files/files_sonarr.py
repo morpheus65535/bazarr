@@ -3,7 +3,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from bazarr.sonarr.filesystem import browse_sonarr_filesystem
+from sonarr.filesystem import browse_sonarr_filesystem
 
 from ..utils import authenticate
 

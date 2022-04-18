@@ -2,8 +2,8 @@
 
 import os
 
-from bazarr.radarr.info import get_radarr_info
-from bazarr.get_languages import language_from_alpha2
+from radarr.info import get_radarr_info
+from get_languages import language_from_alpha2
 
 from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 

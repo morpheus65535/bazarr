@@ -4,13 +4,13 @@ import logging
 
 from peewee import IntegrityError
 
-from bazarr.database import TableEpisodes
-from bazarr.config import settings
-from bazarr.helper import path_mappings
-from bazarr.list_subtitles import store_subtitles, series_full_scan_subtitles
-from bazarr.get_subtitle.mass_download import episode_download_subtitles
-from bazarr.event_handler import event_stream, show_progress, hide_progress
-from bazarr.sonarr.info import get_sonarr_info, url_sonarr
+from database import TableEpisodes
+from config import settings
+from helper import path_mappings
+from list_subtitles import store_subtitles, series_full_scan_subtitles
+from get_subtitle.mass_download import episode_download_subtitles
+from event_handler import event_stream, show_progress, hide_progress
+from sonarr.info import get_sonarr_info, url_sonarr
 
 from .parser import episodeParser
 from .utils import get_series_from_sonarr_api, get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api

@@ -6,12 +6,12 @@ import pretty
 from flask import request, jsonify
 from flask_restful import Resource
 
-from bazarr.database import TableEpisodes, TableShows, TableBlacklist
-from bazarr.utils import delete_subtitles
-from bazarr.sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
-from bazarr.helper import path_mappings
-from bazarr.get_subtitle.mass_download import episode_download_subtitles
-from bazarr.event_handler import event_stream
+from database import TableEpisodes, TableShows, TableBlacklist
+from utils import delete_subtitles
+from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
+from helper import path_mappings
+from get_subtitle.mass_download import episode_download_subtitles
+from event_handler import event_stream
 
 from ..utils import authenticate, postprocessEpisode
 

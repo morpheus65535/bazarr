@@ -13,11 +13,11 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import list_all_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
 
-from bazarr.get_languages import alpha3_from_alpha2
-from bazarr.config import settings, get_array_from
-from bazarr.helper import get_target_folder, force_unicode
-from bazarr.database import get_profiles_list
-from bazarr.score import movie_score, series_score
+from get_languages import alpha3_from_alpha2
+from config import settings, get_array_from
+from helper import get_target_folder, force_unicode
+from database import get_profiles_list
+from score import movie_score, series_score
 
 from .pool import update_pools, _get_pool, _init_pool
 from .utils import get_video, _get_lang_obj, _get_scores

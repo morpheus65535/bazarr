@@ -11,11 +11,11 @@ import time
 
 from dogpile.cache.region import register_backend as register_cache_backend
 
-from bazarr.config import settings, configure_captcha_func
-from bazarr.get_args import args
-from bazarr.logger import configure_logging
-from bazarr.helper import path_mappings
-from bazarr.backup import restore_from_backup
+from config import settings, configure_captcha_func
+from get_args import args
+from logger import configure_logging
+from helper import path_mappings
+from backup import restore_from_backup
 
 # set start time global variable as epoch
 global startTime
@@ -98,7 +98,7 @@ if not args.no_update:
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
-                    logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+                    logging.error('BAZARR Cannot create restart file: ' + repr(e))
                 else:
                     logging.info('Bazarr is being restarted...')
                     restart_file.write(str(''))
@@ -209,7 +209,7 @@ def init_binaries():
     return unrar
 
 
-from bazarr.database import init_db, migrate_db  # noqa E402
+from database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

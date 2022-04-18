@@ -6,9 +6,9 @@ import time
 
 from inspect import getfullargspec
 
-from bazarr.radarr.blacklist import get_blacklist_movie
-from bazarr.sonarr.blacklist import get_blacklist
-from bazarr.get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
+from radarr.blacklist import get_blacklist_movie
+from sonarr.blacklist import get_blacklist
+from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 
 from .utils import get_ban_list
 

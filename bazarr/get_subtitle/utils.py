@@ -7,9 +7,9 @@ import os
 from subzero.language import Language
 from subzero.video import parse_video
 
-from bazarr.custom_lang import CustomLanguage
-from bazarr.database import get_profiles_list
-from bazarr.score import movie_score, series_score
+from custom_lang import CustomLanguage
+from database import get_profiles_list
+from score import movie_score, series_score
 
 from .refiners import registered as registered_refiners
 

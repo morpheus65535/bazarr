@@ -18,18 +18,18 @@ from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 from dogpile.cache import make_region
 
-from bazarr.get_args import args
-from bazarr.config import settings
-from bazarr.custom_lang import CustomLanguage
-from bazarr.database import TableShowsRootfolder, TableMoviesRootfolder
-from bazarr.event_handler import event_stream
-from bazarr.get_languages import language_from_alpha2, alpha3_from_alpha2
-from bazarr.helper import path_mappings
-from bazarr.list_subtitles import store_subtitles, store_subtitles_movie
-from bazarr.sonarr.history import history_log
-from bazarr.radarr.history import history_log_movie
-from bazarr.sonarr.notify import notify_sonarr
-from bazarr.radarr.notify import notify_radarr
+from get_args import args
+from config import settings
+from custom_lang import CustomLanguage
+from database import TableShowsRootfolder, TableMoviesRootfolder
+from event_handler import event_stream
+from get_languages import language_from_alpha2, alpha3_from_alpha2
+from helper import path_mappings
+from list_subtitles import store_subtitles, store_subtitles_movie
+from sonarr.history import history_log
+from radarr.history import history_log_movie
+from sonarr.notify import notify_sonarr
+from radarr.notify import notify_radarr
 
 region = make_region().configure('dogpile.cache.memory')
 
@@ -297,8 +297,8 @@ def check_credentials(user, pw):
 
 
 def check_health():
-    from bazarr.sonarr.rootfolder import check_sonarr_rootfolder
-    from bazarr.radarr.rootfolder import check_radarr_rootfolder
+    from sonarr.rootfolder import check_sonarr_rootfolder
+    from radarr.rootfolder import check_radarr_rootfolder
     if settings.general.getboolean('use_sonarr'):
         check_sonarr_rootfolder()
     if settings.general.getboolean('use_radarr'):

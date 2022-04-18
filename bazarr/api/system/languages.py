@@ -4,8 +4,8 @@ from flask import request, jsonify
 from flask_restful import Resource
 from operator import itemgetter
 
-from bazarr.database import TableHistory, TableHistoryMovie, TableSettingsLanguages
-from bazarr.get_languages import alpha2_from_alpha3, language_from_alpha2
+from database import TableHistory, TableHistoryMovie, TableSettingsLanguages
+from get_languages import alpha2_from_alpha3, language_from_alpha2
 
 from ..utils import authenticate, False_Keys
 

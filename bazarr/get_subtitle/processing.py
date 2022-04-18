@@ -3,14 +3,14 @@
 
 import logging
 
-from bazarr.config import settings
-from bazarr.helper import path_mappings, pp_replace
-from bazarr.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from bazarr.database import TableEpisodes, TableMovies
-from bazarr.analytics import track_event
-from bazarr.radarr.notify import notify_radarr
-from bazarr.sonarr.notify import notify_sonarr
-from bazarr.event_handler import event_stream
+from config import settings
+from helper import path_mappings, pp_replace
+from get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
+from database import TableEpisodes, TableMovies
+from analytics import track_event
+from radarr.notify import notify_radarr
+from sonarr.notify import notify_sonarr
+from event_handler import event_stream
 
 from .utils import _get_download_code3
 from .sync import sync_subtitles

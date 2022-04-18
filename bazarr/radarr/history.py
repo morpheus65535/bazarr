@@ -2,8 +2,8 @@
 
 import time
 
-from bazarr.database import TableHistoryMovie
-from bazarr.event_handler import event_stream
+from database import TableHistoryMovie
+from event_handler import event_stream
 
 
 def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,

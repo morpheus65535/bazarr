@@ -3,10 +3,10 @@
 from flask import request
 from flask_restful import Resource
 
-from bazarr.database import TableMovies
-from bazarr.get_subtitle.mass_download import movies_download_subtitles
-from bazarr.list_subtitles import store_subtitles_movie
-from bazarr.helper import path_mappings
+from database import TableMovies
+from get_subtitle.mass_download import movies_download_subtitles
+from list_subtitles import store_subtitles_movie
+from helper import path_mappings
 
 from ..utils import authenticate
 

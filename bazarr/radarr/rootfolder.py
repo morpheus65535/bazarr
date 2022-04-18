@@ -4,11 +4,11 @@ import os
 import requests
 import logging
 
-from bazarr.config import settings
-from bazarr.helper import path_mappings
-from bazarr.database import TableMoviesRootfolder, TableMovies
-from bazarr.radarr.info import get_radarr_info, url_radarr
-from bazarr.constants import headers
+from config import settings
+from helper import path_mappings
+from database import TableMoviesRootfolder, TableMovies
+from radarr.info import get_radarr_info, url_radarr
+from constants import headers
 
 
 def get_radarr_rootfolder():
@@ -68,7 +68,7 @@ def check_radarr_rootfolder():
         if not os.path.isdir(path_mappings.path_replace_movie(root_path)):
             TableMoviesRootfolder.update({TableMoviesRootfolder.accessible: 0,
                                          TableMoviesRootfolder.error: 'This Radarr root directory does not seems to '
-                                                                      'be accessible by Bazarr. Please check path '
+                                                                      'be accessible by  Please check path '
                                                                       'mapping.'}) \
                 .where(TableMoviesRootfolder.id == item['id']) \
                 .execute()

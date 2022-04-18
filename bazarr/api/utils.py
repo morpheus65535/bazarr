@@ -6,10 +6,10 @@ from functools import wraps
 from flask import request, abort
 from operator import itemgetter
 
-from bazarr.config import settings, base_url
-from bazarr.get_languages import language_from_alpha2, alpha3_from_alpha2
-from bazarr.database import get_audio_profile_languages, get_desired_languages
-from bazarr.helper import path_mappings
+from config import settings, base_url
+from get_languages import language_from_alpha2, alpha3_from_alpha2
+from database import get_audio_profile_languages, get_desired_languages
+from helper import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
 

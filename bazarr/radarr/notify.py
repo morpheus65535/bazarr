@@ -3,9 +3,9 @@
 import logging
 import requests
 
-from bazarr.config import settings
-from bazarr.radarr.info import get_radarr_info, url_radarr
-from bazarr.constants import headers
+from config import settings
+from radarr.info import get_radarr_info, url_radarr
+from constants import headers
 
 
 def notify_radarr(radarr_id):

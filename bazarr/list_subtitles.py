@@ -11,13 +11,13 @@ from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
 from charamel import Detector
 
-from bazarr.custom_lang import CustomLanguage
-from bazarr.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
-from bazarr.get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
-from bazarr.config import settings
-from bazarr.helper import path_mappings, get_subtitle_destination_folder
-from bazarr.embedded_subs_reader import embedded_subs_reader
-from bazarr.event_handler import event_stream, show_progress, hide_progress
+from custom_lang import CustomLanguage
+from database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
+from get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
+from config import settings
+from helper import path_mappings, get_subtitle_destination_folder
+from embedded_subs_reader import embedded_subs_reader
+from event_handler import event_stream, show_progress, hide_progress
 
 gc.enable()
 

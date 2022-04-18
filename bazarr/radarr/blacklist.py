@@ -2,8 +2,8 @@
 
 import time
 
-from bazarr.database import TableBlacklistMovie
-from bazarr.event_handler import event_stream
+from database import TableBlacklistMovie
+from event_handler import event_stream
 
 
 def get_blacklist_movie():

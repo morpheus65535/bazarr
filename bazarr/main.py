@@ -12,7 +12,7 @@ if os.path.isfile(version_file):
 
 os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
-import bazarr.libs  # noqa W0611
+import libs  # noqa W0611
 import requests  # noqa E402
 
 from threading import Thread  # noqa E402
@@ -21,19 +21,19 @@ from urllib.parse import unquote  # noqa E402
 from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
     send_from_directory  # noqa E402
 
-from bazarr.get_args import args  # noqa E402
-from bazarr.config import settings, configure_proxy_func, base_url  # noqa E402
-from bazarr.init import *  # noqa E402
-from bazarr.database import System  # noqa E402
-from bazarr.notifier import update_notifier  # noqa E402
-from bazarr.get_languages import load_language_in_db  # noqa E402
-from bazarr.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
-from bazarr.check_update import apply_update, check_releases  # noqa E402
-from bazarr.server import app, webserver  # noqa E402
-from bazarr.utils import check_credentials  # noqa E402
-from bazarr.constants import headers  # noqa E402
-from bazarr.sonarr.info import get_sonarr_info, url_sonarr  # noqa E402
-from bazarr.radarr.info import get_radarr_info, url_radarr  # noqa E402
+from get_args import args  # noqa E402
+from config import settings, configure_proxy_func, base_url  # noqa E402
+from init import *  # noqa E402
+from database import System  # noqa E402
+from notifier import update_notifier  # noqa E402
+from get_languages import load_language_in_db  # noqa E402
+from signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
+from check_update import apply_update, check_releases  # noqa E402
+from server import app, webserver  # noqa E402
+from utils import check_credentials  # noqa E402
+from constants import headers  # noqa E402
+from sonarr.info import get_sonarr_info, url_sonarr  # noqa E402
+from radarr.info import get_radarr_info, url_radarr  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':

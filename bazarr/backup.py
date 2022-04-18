@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
 from glob import glob
 
-from bazarr.get_args import args
-from bazarr.config import settings
+from get_args import args
+from config import settings
 
 
 def get_backup_path():
@@ -102,7 +102,7 @@ def restore_from_backup():
             shutil.copy(restore_database_path, dest_database_path)
             os.remove(restore_database_path)
         except OSError:
-            logging.exception(f'Unable to restore or delete bazarr.db to {dest_database_path}')
+            logging.exception(f'Unable to restore or delete db to {dest_database_path}')
         else:
             try:
                 if os.path.isfile(dest_database_path + '-shm'):
@@ -117,7 +117,7 @@ def restore_from_backup():
         try:
             restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
         except Exception as e:
-            logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+            logging.error('BAZARR Cannot create restart file: ' + repr(e))
         else:
             logging.info('Bazarr is being restarted...')
             restart_file.write(str(''))

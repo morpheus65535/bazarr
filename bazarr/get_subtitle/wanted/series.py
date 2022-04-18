@@ -7,13 +7,13 @@ import operator
 
 from functools import reduce
 
-from bazarr.helper import path_mappings
-from bazarr.list_subtitles import store_subtitles
-from bazarr.sonarr.history import history_log
-from bazarr.notifier import send_notifications
-from bazarr.get_providers import get_providers
-from bazarr.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes
-from bazarr.event_handler import event_stream, show_progress, hide_progress
+from helper import path_mappings
+from list_subtitles import store_subtitles
+from sonarr.history import history_log
+from notifier import send_notifications
+from get_providers import get_providers
+from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes
+from event_handler import event_stream, show_progress, hide_progress
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles

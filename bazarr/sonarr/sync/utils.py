@@ -3,9 +3,9 @@
 import requests
 import logging
 
-from bazarr.config import settings
-from bazarr.sonarr.info import get_sonarr_info, url_sonarr
-from bazarr.constants import headers
+from config import settings
+from sonarr.info import get_sonarr_info, url_sonarr
+from constants import headers
 
 
 def get_profile_list():

@@ -7,8 +7,8 @@ import json
 
 from dogpile.cache import make_region
 
-from bazarr.config import settings, empty_values
-from bazarr.constants import headers
+from config import settings, empty_values
+from constants import headers
 
 region = make_region().configure('dogpile.cache.memory')
 

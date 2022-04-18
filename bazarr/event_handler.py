@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from bazarr.app import socketio
+from app import socketio
 
 
 def event_stream(type, action="update", payload=None):

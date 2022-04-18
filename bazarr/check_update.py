@@ -10,8 +10,8 @@ import semver
 from shutil import rmtree
 from zipfile import ZipFile
 
-from bazarr.get_args import args
-from bazarr.config import settings
+from get_args import args
+from config import settings
 
 
 def check_releases():

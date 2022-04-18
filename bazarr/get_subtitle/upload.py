@@ -8,15 +8,15 @@ from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.subtitle import Subtitle
 
-from bazarr.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, \
+from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, \
     alpha2_from_language, alpha3_from_language
-from bazarr.config import settings, get_array_from
-from bazarr.helper import path_mappings, pp_replace, get_target_folder, force_unicode
-from bazarr.radarr.notify import notify_radarr
-from bazarr.sonarr.notify import notify_sonarr
-from bazarr.custom_lang import CustomLanguage
-from bazarr.database import TableEpisodes, TableMovies
-from bazarr.event_handler import event_stream
+from config import settings, get_array_from
+from helper import path_mappings, pp_replace, get_target_folder, force_unicode
+from radarr.notify import notify_radarr
+from sonarr.notify import notify_sonarr
+from custom_lang import CustomLanguage
+from database import TableEpisodes, TableMovies
+from event_handler import event_stream
 
 from .sync import sync_subtitles
 from .post_processing import postprocessing

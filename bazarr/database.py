@@ -11,9 +11,9 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
-from bazarr.helper import path_mappings
-from bazarr.config import settings, get_array_from
-from bazarr.get_args import args
+from helper import path_mappings
+from config import settings, get_array_from
+from get_args import args
 
 database = SqliteQueueDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'),
                                use_gevent=False,
@@ -398,9 +398,6 @@ def get_exclusion_clause(exclusion_type):
             where_clause.append((TableEpisodes.season != 0))
 
     return where_clause
-
-
-profile_id_list = []
 
 
 def update_profile_id_list():

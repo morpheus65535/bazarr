@@ -10,7 +10,7 @@ from flask_restful import Resource
 from functools import reduce
 from peewee import fn
 
-from bazarr.database import TableHistory, TableHistoryMovie
+from database import TableHistory, TableHistoryMovie
 
 from ..utils import authenticate
 

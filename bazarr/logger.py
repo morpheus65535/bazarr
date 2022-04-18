@@ -10,8 +10,8 @@ import warnings
 from logging.handlers import TimedRotatingFileHandler
 from pytz_deprecation_shim import PytzUsageWarning
 
-from bazarr.get_args import args
-from bazarr.config import settings
+from get_args import args
+from config import settings
 
 
 logger = logging.getLogger()
@@ -54,9 +54,6 @@ class NoExceptionFormatter(logging.Formatter):
 
     def formatException(self, record):
         return ''
-
-
-fh = None
 
 
 def configure_logging(debug=False):

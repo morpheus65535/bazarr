@@ -3,7 +3,7 @@
 from flask import jsonify
 from flask_restful import Resource
 
-from bazarr.utils import get_health_issues
+from utils import get_health_issues
 
 from ..utils import authenticate
 

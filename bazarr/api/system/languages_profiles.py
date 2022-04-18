@@ -3,7 +3,7 @@
 from flask import jsonify
 from flask_restful import Resource
 
-from bazarr.database import get_profiles_list
+from database import get_profiles_list
 
 from ..utils import authenticate
 

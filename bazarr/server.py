@@ -7,11 +7,11 @@ import io
 
 from waitress.server import create_server
 
-from bazarr.get_args import args
-from bazarr.config import settings, base_url
-from bazarr.database import database
-from bazarr.app import create_app
-from bazarr.api import api_bp_list
+from get_args import args
+from config import settings, base_url
+from database import database
+from app import create_app
+from api import api_bp_list
 
 app = create_app()
 
@@ -52,7 +52,7 @@ class Server:
             try:
                 stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
             except Exception as e:
-                logging.error('BAZARR Cannot create bazarr.stop file: ' + repr(e))
+                logging.error('BAZARR Cannot create stop file: ' + repr(e))
             else:
                 logging.info('Bazarr is being shutdown...')
                 stop_file.write(str(''))
@@ -69,7 +69,7 @@ class Server:
             try:
                 restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
             except Exception as e:
-                logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+                logging.error('BAZARR Cannot create restart file: ' + repr(e))
             else:
                 logging.info('Bazarr is being restarted...')
                 restart_file.write(str(''))

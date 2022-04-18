@@ -17,12 +17,12 @@ from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
 
-from bazarr.get_args import args
-from bazarr.config import settings, get_array_from
-from bazarr.event_handler import event_stream
-from bazarr.utils import get_binary
-from bazarr.radarr.blacklist import blacklist_log_movie
-from bazarr.sonarr.blacklist import blacklist_log
+from get_args import args
+from config import settings, get_array_from
+from event_handler import event_stream
+from utils import get_binary
+from radarr.blacklist import blacklist_log_movie
+from sonarr.blacklist import blacklist_log
 
 
 def time_until_midnight(timezone):
@@ -278,9 +278,6 @@ def provider_throttle(name, exception):
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
                          if exception.args else None)
             update_throttled_provider()
-
-
-throttle_count = None
 
 
 def throttled_count(name):

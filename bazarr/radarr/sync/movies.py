@@ -4,14 +4,14 @@ import logging
 
 from peewee import IntegrityError
 
-from bazarr.config import settings
-from bazarr.radarr.info import url_radarr
-from bazarr.helper import path_mappings
-from bazarr.list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
-from bazarr.radarr.rootfolder import check_radarr_rootfolder
-from bazarr.get_subtitle.mass_download import movies_download_subtitles
-from bazarr.database import TableMovies
-from bazarr.event_handler import event_stream, show_progress, hide_progress
+from config import settings
+from radarr.info import url_radarr
+from helper import path_mappings
+from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
+from radarr.rootfolder import check_radarr_rootfolder
+from get_subtitle.mass_download import movies_download_subtitles
+from database import TableMovies
+from event_handler import event_stream, show_progress, hide_progress
 
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
 from .parser import movieParser

@@ -8,7 +8,7 @@ from urllib.parse import quote_plus
 from subliminal.cache import region
 from simpleconfigparser import simpleconfigparser, configparser, NoOptionError
 
-from bazarr.get_args import args
+from get_args import args
 
 
 class SimpleConfigParser(simpleconfigparser):

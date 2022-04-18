@@ -7,12 +7,12 @@ import gc
 from flask import request
 from flask_restful import Resource
 
-from bazarr.database import TableEpisodes, TableMovies
-from bazarr.helper import path_mappings
-from bazarr.subsyncer import SubSyncer
-from bazarr.utils import translate_subtitles_file, subtitles_apply_mods
-from bazarr.list_subtitles import store_subtitles, store_subtitles_movie
-from bazarr.config import settings
+from database import TableEpisodes, TableMovies
+from helper import path_mappings
+from subsyncer import SubSyncer
+from utils import translate_subtitles_file, subtitles_apply_mods
+from list_subtitles import store_subtitles, store_subtitles_movie
+from config import settings
 
 from ..utils import authenticate
 

@@ -2,8 +2,8 @@
 
 import os
 
-from bazarr.database import TableShows
-from bazarr.sonarr.info import get_sonarr_info
+from database import TableShows
+from sonarr.info import get_sonarr_info
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 

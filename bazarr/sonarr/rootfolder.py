@@ -4,11 +4,11 @@ import os
 import requests
 import logging
 
-from bazarr.config import settings
-from bazarr.database import TableShowsRootfolder, TableShows
-from bazarr.helper import path_mappings
-from bazarr.sonarr.info import get_sonarr_info, url_sonarr
-from bazarr.constants import headers
+from config import settings
+from database import TableShowsRootfolder, TableShows
+from helper import path_mappings
+from sonarr.info import get_sonarr_info, url_sonarr
+from constants import headers
 
 
 def get_sonarr_rootfolder():
@@ -69,7 +69,7 @@ def check_sonarr_rootfolder():
         if not os.path.isdir(path_mappings.path_replace(root_path)):
             TableShowsRootfolder.update({TableShowsRootfolder.accessible: 0,
                                          TableShowsRootfolder.error: 'This Sonarr root directory does not seems to '
-                                                                     'be accessible by Bazarr. Please check path '
+                                                                     'be accessible by  Please check path '
                                                                      'mapping.'})\
                 .where(TableShowsRootfolder.id == item['id'])\
                 .execute()

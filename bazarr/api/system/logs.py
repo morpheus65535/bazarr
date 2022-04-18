@@ -6,8 +6,8 @@ import os
 from flask import jsonify
 from flask_restful import Resource
 
-from bazarr.logger import empty_log
-from bazarr.get_args import args
+from logger import empty_log
+from get_args import args
 
 from ..utils import authenticate
 
