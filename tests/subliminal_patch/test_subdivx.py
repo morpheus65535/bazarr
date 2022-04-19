@@ -1,31 +1,32 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import copy
+
 from subliminal_patch.providers.subdivx import SubdivxSubtitlesProvider
 from subliminal_patch.providers.subdivx import SubdivxSubtitle
+from subliminal_patch.core import SZProviderPool
 from subliminal_patch.core import Episode
 from subzero.language import Language
 
 
-@pytest.mark.vcr
 def test_list_subtitles_movie(movies):
     item = movies["dune"]
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
-        assert subtitles
-        assert len(subtitles) == 9
+        assert len(subtitles) >= 9
 
 
-@pytest.mark.vcr
-def test_list_subtitles_episode(episodes):
-    item = episodes["breaking_bad_s01e01"]
+@pytest.mark.parametrize(
+    "episode_key,expected", [("breaking_bad_s01e01", 15), ("inexistent", 0)]
+)
+def test_list_subtitles_episode(episodes, episode_key, expected):
+    item = episodes[episode_key]
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(item, {Language("spa", "MX")})
-        assert subtitles
-        assert len(subtitles) == 15
+        assert len(subtitles) >= expected
 
 
-@pytest.mark.vcr
 def test_download_subtitle(movies):
     subtitle = SubdivxSubtitle(
         Language("spa", "MX"),
@@ -35,6 +36,24 @@ def test_download_subtitle(movies):
         "",
         "",
         "https://www.subdivx.com/bajar.php?id=631101&u=9",
+    )
+    with SubdivxSubtitlesProvider() as provider:
+        provider.download_subtitle(subtitle)
+        assert subtitle.content is not None
+
+
+def test_download_subtitle_episode_pack(episodes):
+    video = copy.copy(episodes["breaking_bad_s01e01"])
+    video.episode = 3
+
+    subtitle = SubdivxSubtitle(
+        Language("spa", "MX"),
+        video,
+        "https://www.subdivx.com/X66XMzY1NjEwX-breaking-bad-s01e0107.html",
+        "Breaking Bad S01E01-07",
+        "Son los del torrent que vienen Formato / Dimensiones 624x352 / Tamaño 351 MB -Incluye los Torrents-",
+        "",
+        "https://www.subdivx.com/bajar.php?id=365610&u=7",
     )
     with SubdivxSubtitlesProvider() as provider:
         provider.download_subtitle(subtitle)
@@ -59,7 +78,6 @@ def video():
     )
 
 
-@pytest.mark.vcr
 def test_subtitle_description_not_lowercase(video):
     with SubdivxSubtitlesProvider() as provider:
         subtitles = provider.list_subtitles(video, {Language("spa", "MX")})

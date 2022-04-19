@@ -1,27 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import io
 import logging
-import os
 import re
 import time
-import zipfile
 
-import rarfile
 from subzero.language import Language
 from requests import Session
 
 from subliminal import __short_version__
-from subliminal.exceptions import ServiceUnavailable
 from subliminal.providers import ParserBeautifulSoup
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, guess_matches
 from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import APIThrottled
 from six.moves import range
-from subliminal_patch.score import get_scores
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.providers import Provider
-from guessit import guessit
+from subliminal_patch.providers.utils import get_archive_from_bytes
+from subliminal_patch.providers.utils import get_subtitle_from_archive
+from subliminal_patch.providers.utils import update_matches
 
 _SERVER_URL = "https://www.subdivx.com"
 
@@ -72,15 +67,7 @@ class SubdivxSubtitle(Subtitle):
             # already matched in search query
             matches.update(["title", "year"])
 
-        # Special string comparisons are unnecessary. Guessit can match keys
-        # from any string and find even more keywords.
-        matches |= guess_matches(
-            video,
-            guessit(
-                self.description,
-                {"type": "episode" if isinstance(video, Episode) else "movie"},
-            ),
-        )
+        update_matches(matches, video, self.description)
 
         # Don't lowercase; otherwise it will match a lot of false positives
         if video.release_group and video.release_group in self.description:
@@ -100,7 +87,6 @@ class SubdivxSubtitlesProvider(Provider):
     subtitle_class = SubdivxSubtitle
 
     multi_result_throttle = 2
-    language_list = list(languages)
 
     def __init__(self):
         self.session = None
@@ -114,14 +100,27 @@ class SubdivxSubtitlesProvider(Provider):
         self.session.close()
 
     def query(self, video, languages):
+        subtitles = []
+
         if isinstance(video, Episode):
-            query = f"{video.series} S{video.season:02}E{video.episode:02}"
+            for query in (
+                f"{video.series} S{video.season:02}E{video.episode:02}",
+                f"{video.series} S{video.season:02}",
+            ):
+                subtitles += self._handle_multi_page_search(query, video)
+
+            # Fallback
+            if not subtitles:
+                subtitles += self._handle_multi_page_search(video.series, video)
         else:
             # Subdvix has problems searching foreign movies if the year is
             # appended. A proper solution would be filtering results with the
             # year in self._parse_subtitles_page.
-            query = video.title
+            subtitles += self._handle_multi_page_search(video.title, video)
 
+        return subtitles
+
+    def _handle_multi_page_search(self, query, video, max_loops=3):
         params = {
             "buscar2": query,
             "accion": "5",
@@ -130,23 +129,19 @@ class SubdivxSubtitlesProvider(Provider):
             "realiza_b": "1",
             "pg": "1",
         }
+        logger.debug("Query: %s", query)
 
-        logger.debug(f"Searching subtitles: {query}")
-        subtitles = []
-        language = self.language_list[0]
-        search_link = f"{_SERVER_URL}/index.php"
-        while True:
-            response = self.session.get(
-                search_link, params=params, allow_redirects=True, timeout=20
-            )
+        loops = 1
+        max_loops_not_met = True
 
-            try:
-                page_subtitles = self._parse_subtitles_page(video, response, language)
-            except Exception as e:
-                logger.error(f"Error parsing subtitles list: {e}")
-                break
+        while max_loops_not_met:
+            loops += 1
+            max_loops_not_met = loops < max_loops
 
-            subtitles += page_subtitles
+            page_subtitles = self._get_page_subtitles(params, video)
+
+            logger.debug("Yielding %d subtitles", len(page_subtitles))
+            yield from page_subtitles
 
             if len(page_subtitles) < 100:
                 break  # this is the last page
@@ -154,7 +149,19 @@ class SubdivxSubtitlesProvider(Provider):
             params["pg"] += 1  # search next page
             time.sleep(self.multi_result_throttle)
 
-        return subtitles
+    def _get_page_subtitles(self, params, video):
+        search_link = f"{_SERVER_URL}/index.php"
+        response = self.session.get(
+            search_link, params=params, allow_redirects=True, timeout=20
+        )
+
+        try:
+            page_subtitles = self._parse_subtitles_page(video, response)
+        except Exception as error:
+            logger.error(f"Error parsing subtitles list: {error}")
+            return []
+
+        return page_subtitles
 
     def list_subtitles(self, video, languages):
         return self.query(video, languages)
@@ -171,14 +178,19 @@ class SubdivxSubtitlesProvider(Provider):
         )
         response.raise_for_status()
 
-        # open the compressed archive
-        archive = _get_archive(response.content)
+        # TODO: add MustGetBlacklisted support
 
-        # extract the subtitle
-        subtitle_content = _get_subtitle_from_archive(archive, subtitle)
-        subtitle.content = fix_line_ending(subtitle_content)
+        archive = get_archive_from_bytes(response.content)
+        if archive is None:
+            raise APIThrottled("Unknwon compressed format")
 
-    def _parse_subtitles_page(self, video, response, language):
+        episode = None
+        if isinstance(subtitle.video, Episode):
+            episode = subtitle.video.episode
+
+        subtitle.content = get_subtitle_from_archive(archive, episode=episode)
+
+    def _parse_subtitles_page(self, video, response):
         subtitles = []
 
         page_soup = ParserBeautifulSoup(
@@ -239,79 +251,6 @@ def _clean_title(title):
         title = re.sub(og, new, title, flags=re.IGNORECASE)
 
     return title
-
-
-def _get_archive(content):
-    # open the archive
-    archive_stream = io.BytesIO(content)
-    if rarfile.is_rarfile(archive_stream):
-        logger.debug("Identified rar archive")
-        archive = rarfile.RarFile(archive_stream)
-    elif zipfile.is_zipfile(archive_stream):
-        logger.debug("Identified zip archive")
-        archive = zipfile.ZipFile(archive_stream)
-    else:
-        raise APIThrottled("Unsupported compressed format")
-
-    return archive
-
-
-def _get_subtitle_from_archive(archive, subtitle):
-    _valid_names = []
-    for name in archive.namelist():
-        # discard hidden files
-        # discard non-subtitle files
-        if not os.path.split(name)[-1].startswith(".") and name.lower().endswith(
-            SUBTITLE_EXTENSIONS
-        ):
-            _valid_names.append(name)
-
-    # archive with only 1 subtitle
-    if len(_valid_names) == 1:
-        logger.debug(
-            f"returning from archive: {_valid_names[0]} (single subtitle file)"
-        )
-        return archive.read(_valid_names[0])
-
-    # in archives with more than 1 subtitle (season pack) we try to guess the best subtitle file
-    _scores = get_scores(subtitle.video)
-    _max_score = 0
-    _max_name = ""
-    for name in _valid_names:
-        _guess = guessit(name)
-        if "season" not in _guess:
-            _guess["season"] = -1
-        if "episode" not in _guess:
-            _guess["episode"] = -1
-
-        if isinstance(subtitle.video, Episode):
-            logger.debug("guessing %s" % name)
-            logger.debug(
-                f"subtitle S{_guess['season']}E{_guess['episode']} video "
-                f"S{subtitle.video.season}E{subtitle.video.episode}"
-            )
-
-            if (
-                subtitle.video.episode != _guess["episode"]
-                or subtitle.video.season != _guess["season"]
-            ):
-                logger.debug("subtitle does not match video, skipping")
-                continue
-
-        matches = set()
-        matches |= guess_matches(subtitle.video, _guess)
-        _score = sum((_scores.get(match, 0) for match in matches))
-        logger.debug("srt matches: %s, score %d" % (matches, _score))
-        if _score > _max_score:
-            _max_score = _score
-            _max_name = name
-            logger.debug(f"new max: {name} {_score}")
-
-    if _max_score > 0:
-        logger.debug(f"returning from archive: {_max_name} scored {_max_score}")
-        return archive.read(_max_name)
-
-    raise APIThrottled("Can not find the subtitle in the compressed file")
 
 
 def _get_download_url(data):
