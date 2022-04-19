@@ -9,16 +9,17 @@ from functools import reduce
 from peewee import fn
 from datetime import datetime, timedelta
 
-from config import settings
-from helper import path_mappings
-from list_subtitles import store_subtitles, store_subtitles_movie
+from app.config import settings
+from utilities.helper import path_mappings
+from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.movies import store_subtitles_movie
 from radarr.history import history_log_movie
 from sonarr.history import history_log
-from notifier import send_notifications, send_notifications_movie
+from app.notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers
-from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies, \
     TableHistory, TableHistoryMovie
-from event_handler import show_progress, hide_progress
+from app.event_handler import show_progress, hide_progress
 
 from .download import generate_subtitles
 

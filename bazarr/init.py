@@ -11,11 +11,11 @@ import time
 
 from dogpile.cache.region import register_backend as register_cache_backend
 
-from config import settings, configure_captcha_func
-from get_args import args
-from logger import configure_logging
-from helper import path_mappings
-from backup import restore_from_backup
+from app.config import settings, configure_captcha_func
+from app.get_args import args
+from app.logger import configure_logging
+from utilities.helper import path_mappings
+from utilities.backup import restore_from_backup
 
 # set start time global variable as epoch
 global startTime
@@ -171,7 +171,7 @@ subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timed
 subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
-    from check_update import check_releases
+    from app.check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
@@ -193,7 +193,7 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 def init_binaries():
-    from utils import get_binary
+    from utilities.utils import get_binary
     exe = get_binary("unrar")
 
     rarfile.UNRAR_TOOL = exe
@@ -209,7 +209,7 @@ def init_binaries():
     return unrar
 
 
-from database import init_db, migrate_db  # noqa E402
+from app.database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

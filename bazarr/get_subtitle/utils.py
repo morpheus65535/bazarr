@@ -7,9 +7,9 @@ import os
 from subzero.language import Language
 from subzero.video import parse_video
 
-from custom_lang import CustomLanguage
-from database import get_profiles_list
-from score import movie_score, series_score
+from languages.custom_lang import CustomLanguage
+from app.database import get_profiles_list
+from subtitles.score import movie_score, series_score
 
 from .refiners import registered as registered_refiners
 

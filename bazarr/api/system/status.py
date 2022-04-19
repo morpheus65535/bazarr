@@ -8,7 +8,7 @@ from flask_restful import Resource
 
 from radarr.info import get_radarr_info
 from sonarr.info import get_sonarr_info
-from get_args import args
+from app.get_args import args
 from init import startTime
 
 from ..utils import authenticate

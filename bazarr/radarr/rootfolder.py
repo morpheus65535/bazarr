@@ -4,9 +4,9 @@ import os
 import requests
 import logging
 
-from config import settings
-from helper import path_mappings
-from database import TableMoviesRootfolder, TableMovies
+from app.config import settings
+from utilities.helper import path_mappings
+from app.database import TableMoviesRootfolder, TableMovies
 from radarr.info import get_radarr_info, url_radarr
 from constants import headers
 

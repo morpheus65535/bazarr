@@ -5,9 +5,9 @@ import logging
 
 from subliminal import Movie
 
-from helper import path_mappings
-from database import TableEpisodes, TableMovies
-from embedded_subs_reader import parse_video_metadata
+from utilities.helper import path_mappings
+from app.database import TableEpisodes, TableMovies
+from subtitles.embedded_subs_reader import parse_video_metadata
 
 
 def refine_from_ffprobe(path, video):

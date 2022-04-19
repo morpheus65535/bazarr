@@ -5,14 +5,14 @@ import logging
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies, get_audio_profile_languages, get_profile_id
-from helper import path_mappings
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id
+from utilities.helper import path_mappings
 from get_providers import get_providers
 from get_subtitle.manual import manual_search, manual_download_subtitle
 from radarr.history import history_log_movie
-from config import settings
-from notifier import send_notifications_movie
-from list_subtitles import store_subtitles_movie
+from app.config import settings
+from app.notifier import send_notifications_movie
+from subtitles.indexer.movies import store_subtitles_movie
 
 from ..utils import authenticate
 

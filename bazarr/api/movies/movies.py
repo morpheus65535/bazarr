@@ -3,9 +3,9 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies
-from list_subtitles import list_missing_subtitles_movies, movies_scan_subtitles
-from event_handler import event_stream
+from app.database import TableMovies
+from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
+from app.event_handler import event_stream
 from get_subtitle.wanted import wanted_search_missing_subtitles_movies
 from get_subtitle.mass_download import movies_download_subtitles
 

@@ -2,8 +2,8 @@
 
 import time
 
-from database import TableBlacklistMovie
-from event_handler import event_stream
+from app.database import TableBlacklistMovie
+from app.event_handler import event_stream
 
 
 def get_blacklist_movie():

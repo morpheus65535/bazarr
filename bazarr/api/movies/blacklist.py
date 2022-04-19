@@ -6,12 +6,12 @@ import pretty
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies, TableBlacklistMovie
-from utils import delete_subtitles
+from app.database import TableMovies, TableBlacklistMovie
+from utilities.utils import delete_subtitles
 from radarr.blacklist import blacklist_log_movie, blacklist_delete_all_movie, blacklist_delete_movie
-from helper import path_mappings
+from utilities.helper import path_mappings
 from get_subtitle.mass_download import movies_download_subtitles
-from event_handler import event_stream
+from app.event_handler import event_stream
 
 from ..utils import authenticate, postprocessMovie
 

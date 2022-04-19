@@ -4,14 +4,14 @@ import logging
 
 from peewee import IntegrityError
 
-from config import settings
+from app.config import settings
 from radarr.info import url_radarr
-from helper import path_mappings
-from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
+from utilities.helper import path_mappings
+from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
 from get_subtitle.mass_download import movies_download_subtitles
-from database import TableMovies
-from event_handler import event_stream, show_progress, hide_progress
+from app.database import TableMovies
+from app.event_handler import event_stream, show_progress, hide_progress
 
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
 from .parser import movieParser

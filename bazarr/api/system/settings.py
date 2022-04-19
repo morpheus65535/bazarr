@@ -5,12 +5,13 @@ import json
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
+from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableShows, TableMovies, \
     TableSettingsNotifier, update_profile_id_list
-from event_handler import event_stream
-from config import settings, save_settings, get_settings
-from scheduler import scheduler
-from list_subtitles import list_missing_subtitles, list_missing_subtitles_movies
+from app.event_handler import event_stream
+from app.config import settings, save_settings, get_settings
+from app.scheduler import scheduler
+from subtitles.indexer.series import list_missing_subtitles
+from subtitles.indexer.movies import list_missing_subtitles_movies
 
 from ..utils import authenticate
 

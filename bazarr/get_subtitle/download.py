@@ -11,10 +11,10 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 from subliminal_patch.score import compute_score
 
-from config import settings, get_array_from
-from helper import get_target_folder, force_unicode
-from get_languages import alpha3_from_alpha2
-from score import movie_score, series_score
+from app.config import settings, get_array_from
+from utilities.helper import get_target_folder, force_unicode
+from languages.get_languages import alpha3_from_alpha2
+from subtitles.score import movie_score, series_score
 
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores

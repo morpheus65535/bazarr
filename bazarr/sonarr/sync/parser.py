@@ -2,7 +2,7 @@
 
 import os
 
-from database import TableShows
+from app.database import TableShows
 from sonarr.info import get_sonarr_info
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec

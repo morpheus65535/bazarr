@@ -3,10 +3,10 @@
 from flask import request
 from flask_restful import Resource
 
-from database import TableMovies
+from app.database import TableMovies
 from get_subtitle.mass_download import movies_download_subtitles
-from list_subtitles import store_subtitles_movie
-from helper import path_mappings
+from subtitles.indexer.movies import store_subtitles_movie
+from utilities.helper import path_mappings
 
 from ..utils import authenticate
 

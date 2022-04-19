@@ -2,8 +2,8 @@
 
 import time
 
-from database import TableHistory
-from event_handler import event_stream
+from app.database import TableHistory
+from app.event_handler import event_stream
 
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,

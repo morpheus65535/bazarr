@@ -7,13 +7,13 @@ import operator
 
 from functools import reduce
 
-from helper import path_mappings
-from list_subtitles import store_subtitles
+from utilities.helper import path_mappings
+from subtitles.indexer.series import store_subtitles
 from sonarr.history import history_log
-from notifier import send_notifications
+from app.notifier import send_notifications
 from get_providers import get_providers
-from database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes
-from event_handler import event_stream, show_progress, hide_progress
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes
+from app.event_handler import event_stream, show_progress, hide_progress
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles

@@ -7,13 +7,13 @@ import operator
 
 from functools import reduce
 
-from helper import path_mappings
-from list_subtitles import store_subtitles_movie
+from utilities.helper import path_mappings
+from subtitles.indexer.movies import store_subtitles_movie
 from radarr.history import history_log_movie
-from notifier import send_notifications_movie
+from app.notifier import send_notifications_movie
 from get_providers import get_providers
-from database import get_exclusion_clause, get_audio_profile_languages, TableMovies
-from event_handler import event_stream, show_progress, hide_progress
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies
+from app.event_handler import event_stream, show_progress, hide_progress
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles

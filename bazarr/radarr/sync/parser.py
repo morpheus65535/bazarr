@@ -3,7 +3,7 @@
 import os
 
 from radarr.info import get_radarr_info
-from get_languages import language_from_alpha2
+from languages.get_languages import language_from_alpha2
 
 from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 

@@ -2,8 +2,8 @@
 
 import time
 
-from database import TableBlacklist
-from event_handler import event_stream
+from app.database import TableBlacklist
+from app.event_handler import event_stream
 
 
 def get_blacklist():

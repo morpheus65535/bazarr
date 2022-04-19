@@ -6,8 +6,8 @@ import os
 from flask import jsonify
 from flask_restful import Resource
 
-from logger import empty_log
-from get_args import args
+from app.logger import empty_log
+from app.get_args import args
 
 from ..utils import authenticate
 

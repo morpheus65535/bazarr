@@ -3,7 +3,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from scheduler import scheduler
+from app.scheduler import scheduler
 
 from ..utils import authenticate
 

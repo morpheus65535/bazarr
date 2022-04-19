@@ -3,7 +3,7 @@
 import requests
 import logging
 
-from config import settings
+from app.config import settings
 from sonarr.info import get_sonarr_info, url_sonarr
 from constants import headers
 

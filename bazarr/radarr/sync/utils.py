@@ -3,7 +3,7 @@
 import requests
 import logging
 
-from config import settings
+from app.config import settings
 from radarr.info import get_radarr_info, url_radarr
 from constants import headers
 

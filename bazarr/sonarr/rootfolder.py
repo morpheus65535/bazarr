@@ -4,9 +4,9 @@ import os
 import requests
 import logging
 
-from config import settings
-from database import TableShowsRootfolder, TableShows
-from helper import path_mappings
+from app.config import settings
+from app.database import TableShowsRootfolder, TableShows
+from utilities.helper import path_mappings
 from sonarr.info import get_sonarr_info, url_sonarr
 from constants import headers
 

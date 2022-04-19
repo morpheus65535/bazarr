@@ -4,12 +4,12 @@ import logging
 
 from peewee import IntegrityError
 
-from database import TableEpisodes
-from config import settings
-from helper import path_mappings
-from list_subtitles import store_subtitles, series_full_scan_subtitles
+from app.database import TableEpisodes
+from app.config import settings
+from utilities.helper import path_mappings
+from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from get_subtitle.mass_download import episode_download_subtitles
-from event_handler import event_stream, show_progress, hide_progress
+from app.event_handler import event_stream, show_progress, hide_progress
 from sonarr.info import get_sonarr_info, url_sonarr
 
 from .parser import episodeParser

@@ -17,10 +17,10 @@ from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
 
-from get_args import args
-from config import settings, get_array_from
-from event_handler import event_stream
-from utils import get_binary
+from app.get_args import args
+from app.config import settings, get_array_from
+from app.event_handler import event_stream
+from utilities.utils import get_binary
 from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
 

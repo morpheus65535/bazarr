@@ -7,12 +7,13 @@ import gc
 from flask import request
 from flask_restful import Resource
 
-from database import TableEpisodes, TableMovies
-from helper import path_mappings
-from subsyncer import SubSyncer
-from utils import translate_subtitles_file, subtitles_apply_mods
-from list_subtitles import store_subtitles, store_subtitles_movie
-from config import settings
+from app.database import TableEpisodes, TableMovies
+from utilities.helper import path_mappings
+from subtitles.subsyncer import SubSyncer
+from utilities.utils import translate_subtitles_file, subtitles_apply_mods
+from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.movies import store_subtitles_movie
+from app.config import settings
 
 from ..utils import authenticate
 

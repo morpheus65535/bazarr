@@ -3,7 +3,7 @@
 from flask import jsonify, request
 from flask_restful import Resource
 
-from backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
+from utilities.backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
 
 from ..utils import authenticate
 

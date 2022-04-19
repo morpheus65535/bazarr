@@ -6,12 +6,12 @@ import pretty
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableEpisodes, TableShows, TableBlacklist
-from utils import delete_subtitles
+from app.database import TableEpisodes, TableShows, TableBlacklist
+from utilities.utils import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
-from helper import path_mappings
+from utilities.helper import path_mappings
 from get_subtitle.mass_download import episode_download_subtitles
-from event_handler import event_stream
+from app.event_handler import event_stream
 
 from ..utils import authenticate, postprocessEpisode
 
