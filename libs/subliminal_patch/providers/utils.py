@@ -9,7 +9,11 @@ from guessit import guessit
 
 from subliminal.subtitle import fix_line_ending
 
+from subliminal_patch.core import Episode
+from subliminal_patch.subtitle import guess_matches
+
 from ._agent_list import FIRST_THOUSAND_OR_SO_USER_AGENTS
+
 
 logger = logging.getLogger(__name__)
 
@@ -90,3 +94,16 @@ def get_archive_from_bytes(content: bytes):
 
     logger.debug("Unknown compression format")
     return None
+
+
+def update_matches(matches, video, release_info: str, **guessit_options):
+    "Update matches set from release info string. New lines are iterated."
+    guessit_options["type"] = "episode" if isinstance(video, Episode) else "movie"
+    logger.debug("Guessit options to update matches: %s", guessit_options)
+
+    for release in release_info.split("\n"):
+        logger.debug("Updating matches from release info: %s", release)
+        matches |= guess_matches(video, guessit(release.strip(), guessit_options))
+        logger.debug("New matches: %s", matches)
+
+    return matches

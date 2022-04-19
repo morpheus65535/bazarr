@@ -45,3 +45,11 @@ def test_get_archive_from_bytes_zip(data, filename):
 
 def test_get_archive_from_bytes_none():
     assert utils.get_archive_from_bytes(bytes()) is None
+
+
+def test_update_matches(movies):
+    matches = set()
+    utils.update_matches(
+        matches, movies["dune"], "Subs for dune 2021 bluray x264\nDune webrip x264"
+    )
+    assert "source" in matches
