@@ -15,17 +15,15 @@ from subliminal_patch.providers.embeddedsubtitles import \
     EmbeddedSubtitlesProvider
 from subzero.language import Language
 
-_DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-
 
 fese.Language = Language
 
 
 @pytest.fixture
-def video_single_language():
+def video_single_language(data):
     # Has only ASS streams in english
     return Episode(
-        os.path.join(_DATA, "file_1.mkv"),
+        os.path.join(data, "file_1.mkv"),
         "Serial Experiments Lain",
         1,
         1,
@@ -34,10 +32,10 @@ def video_single_language():
 
 
 @pytest.fixture
-def video_multiple_languages():
+def video_multiple_languages(data):
     # Has SubRip streams in multiple languages
     return Movie(
-        os.path.join(_DATA, "file_2.mkv"),
+        os.path.join(data, "file_2.mkv"),
         "I'm No Longer Here",
         year=2019,
         source="Web",

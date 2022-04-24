@@ -67,6 +67,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       include_ass: true,
       hi_fallback: false,
       mergerfs_mode: false,
+      timeout: 600,
     },
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
@@ -77,6 +78,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         "Use HI subtitles as a fallback (don't enable it if you have a HI language profile)",
       mergerfs_mode:
         "[EXPERIMENTAL] Ignore cloud video files from rclone/mergerfs",
+      timeout: "Extraction timeout in seconds",
     },
   },
   {
@@ -194,6 +196,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subssabbz",
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",
+  },
+  {
+    key: "subf2m",
+    name: "subf2m.co",
+    description: "Subscene Alternative Provider",
   },
   {
     key: "subs4free",

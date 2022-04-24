@@ -210,7 +210,8 @@ defaults = {
         'include_ass': 'True',
         'include_srt': 'True',
         'hi_fallback': 'False',
-        'mergerfs_mode': 'False'
+        'mergerfs_mode': 'False',
+        'timeout': '600',
     },
     'subsync': {
         'use_subsync': 'False',
