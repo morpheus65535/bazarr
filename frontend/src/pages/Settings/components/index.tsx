@@ -1,8 +1,7 @@
 import api from "@/apis/raw";
 import { Button } from "@mantine/core";
-import { isBoolean, isNumber, isString } from "lodash";
 import { FunctionComponent, useCallback, useState } from "react";
-import { useLatest } from "./hooks";
+import { useSettingValue } from "./hooks";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -10,11 +9,11 @@ export const URLTestButton: FunctionComponent<{
   const [title, setTitle] = useState("Test");
   const [color, setVar] = useState("primary");
 
-  const address = useLatest<string>(`settings-${category}-ip`, isString);
-  const port = useLatest<number>(`settings-${category}-port`, isNumber);
-  const url = useLatest<string>(`settings-${category}-base_url`, isString);
-  const apikey = useLatest<string>(`settings-${category}-apikey`, isString);
-  const ssl = useLatest<boolean>(`settings-${category}-ssl`, isBoolean);
+  const address = useSettingValue<string>(`settings-${category}-ip`);
+  const port = useSettingValue<number>(`settings-${category}-port`);
+  const url = useSettingValue<string>(`settings-${category}-base_url`);
+  const apikey = useSettingValue<string>(`settings-${category}-apikey`);
+  const ssl = useSettingValue<boolean>(`settings-${category}-ssl`);
 
   const click = useCallback(() => {
     if (address && apikey && ssl !== null) {
@@ -28,7 +27,7 @@ export const URLTestButton: FunctionComponent<{
         protocol: ssl ? "https" : "http",
         url: testUrl,
         params: {
-          apikey: apikey,
+          apikey,
         },
       };
 

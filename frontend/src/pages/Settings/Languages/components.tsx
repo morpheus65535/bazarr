@@ -7,12 +7,8 @@ import { Language } from "@/components/bazarr";
 import { useSelectorOptions } from "@/utilities";
 import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import {
-  BaseInput,
-  Selector,
-  SelectorProps,
-  useSingleUpdate,
-} from "../components";
+import { BaseInput, Selector, SelectorProps } from "../components";
+import { useFormActions } from "../utilities/FormValues";
 
 type LanguageSelectorProps = Omit<
   MultiSelectorProps<Language.Info>,
@@ -25,7 +21,7 @@ export const LanguageSelector: FunctionComponent<
   LanguageSelectorProps & BaseInput<string[]>
 > = ({ settingKey, options }) => {
   const enabled = useLatestEnabledLanguages();
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
 
   const wrappedOptions = useSelectorOptions(options, (value) => value.name);
 
@@ -34,9 +30,8 @@ export const LanguageSelector: FunctionComponent<
       {...wrappedOptions}
       value={enabled}
       searchable
-      getkey={(v: Language.Info) => v.name}
       onChange={(val) => {
-        update(val, settingKey);
+        setValue(val, settingKey);
       }}
     ></MultiSelector>
   );

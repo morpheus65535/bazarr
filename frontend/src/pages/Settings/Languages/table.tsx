@@ -11,8 +11,8 @@ import { cloneDeep } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
-import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
+import { useFormActions } from "../utilities/FormValues";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -26,15 +26,15 @@ const Table: FunctionComponent = () => {
     [profiles]
   );
 
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
 
   const modals = useModals();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      update(list, languageProfileKey);
+      setValue(list, languageProfileKey);
     },
-    [update]
+    [setValue]
   );
 
   const updateProfile = useCallback(

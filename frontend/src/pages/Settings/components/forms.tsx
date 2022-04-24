@@ -2,12 +2,14 @@ import {
   Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
+  MultiSelector as GlobalMultiSelector,
+  MultiSelectorProps as GlobalMultiSelectorProps,
   Selector as GlobalSelector,
   SelectorProps as GlobalSelectorProps,
 } from "@/components";
 import { ActionProps as GlobalActionProps } from "@/components/inputs/Action";
 import ChipInput, { ChipInputProps } from "@/components/inputs/ChipInput";
-import { isReactText, useSliderMarks } from "@/utilities";
+import { useSliderMarks } from "@/utilities";
 import {
   NumberInput,
   NumberInputProps,
@@ -19,10 +21,10 @@ import {
   TextInput,
   TextInputProps,
 } from "@mantine/core";
-import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
 import { FunctionComponent, ReactText, useEffect } from "react";
-import { useCollapse, useLatest } from ".";
-import { OverrideFuncType, useSingleUpdate } from "./hooks";
+import { useCollapse, useSettingValue } from ".";
+import { useFormActions } from "../utilities/FormValues";
+import { OverrideFuncType } from "./hooks";
 
 export interface BaseInput<T> {
   disabled?: boolean;
@@ -39,16 +41,16 @@ export const Number: FunctionComponent<NumberProps> = ({
   settingKey,
   ...props
 }) => {
-  const value = useLatest<number>(settingKey, isNumber, override);
+  const value = useSettingValue<number>(settingKey, override);
+  const { setValue } = useFormActions();
 
-  const update = useSingleUpdate();
   return (
     <NumberInput
       {...props}
       value={value ?? undefined}
       onChange={(val = 0) => {
         const value = beforeStaged ? beforeStaged(val) : val;
-        update(value, settingKey);
+        setValue(value, settingKey);
       }}
     ></NumberInput>
   );
@@ -62,9 +64,9 @@ export const Text: FunctionComponent<TextProps> = ({
   settingKey,
   ...props
 }) => {
-  const value = useLatest<ReactText>(settingKey, isReactText, override);
+  const value = useSettingValue<ReactText>(settingKey, override);
+  const { setValue } = useFormActions();
 
-  const update = useSingleUpdate();
   const collapse = useCollapse();
 
   return (
@@ -75,7 +77,7 @@ export const Text: FunctionComponent<TextProps> = ({
         const val = e.currentTarget.value;
         collapse && collapse(val.toString());
         const value = beforeStaged ? beforeStaged(val) : val;
-        update(value, settingKey);
+        setValue(value, settingKey);
       }}
     ></TextInput>
   );
@@ -89,8 +91,8 @@ export const Password: FunctionComponent<PasswordProps> = ({
   beforeStaged,
   ...props
 }) => {
-  const value = useLatest<ReactText>(settingKey, isReactText, override);
-  const update = useSingleUpdate();
+  const value = useSettingValue<ReactText>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
     <PasswordInput
@@ -99,7 +101,7 @@ export const Password: FunctionComponent<PasswordProps> = ({
       onChange={(e) => {
         const val = e.currentTarget.value;
         const value = beforeStaged ? beforeStaged(val) : val;
-        update(value, settingKey);
+        setValue(value, settingKey);
       }}
     ></PasswordInput>
   );
@@ -116,10 +118,9 @@ export const Check: FunctionComponent<CheckProps> = ({
   disabled,
   settingKey,
 }) => {
-  const update = useSingleUpdate();
   const collapse = useCollapse();
-
-  const value = useLatest<boolean>(settingKey, isBoolean, override);
+  const value = useSettingValue<boolean>(settingKey, override);
+  const { setValue } = useFormActions();
 
   useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
@@ -129,7 +130,7 @@ export const Check: FunctionComponent<CheckProps> = ({
       label={label}
       onChange={(e) => {
         const { checked } = e.currentTarget;
-        update(checked, settingKey);
+        setValue(checked, settingKey);
       }}
       disabled={disabled}
       checked={value ?? false}
@@ -137,25 +138,14 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-function selectorValidator<T>(v: unknown): v is T {
-  return isString(v) || isNumber(v);
-}
-
-export type SelectorProps<T> = BaseInput<T> & GlobalSelectorProps<T>;
+export type SelectorProps<T extends string | number> = BaseInput<T> &
+  GlobalSelectorProps<T>;
 
 export function Selector<T extends string | number>(props: SelectorProps<T>) {
-  const update = useSingleUpdate();
-  const collapse = useCollapse();
-
   const { settingKey, override, beforeStaged, ...selector } = props;
 
-  const value = useLatest<T>(settingKey, selectorValidator, override);
-
-  useEffect(() => {
-    if (isString(value) || isNull(value)) {
-      collapse && collapse(value ?? "");
-    }
-  }, [collapse, value]);
+  const value = useSettingValue<T>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
     <GlobalSelector
@@ -163,9 +153,32 @@ export function Selector<T extends string | number>(props: SelectorProps<T>) {
       value={value}
       onChange={(v) => {
         const result = beforeStaged && v ? beforeStaged(v) : v;
-        update(result, settingKey);
+        setValue(result, settingKey);
       }}
     ></GlobalSelector>
+  );
+}
+
+export type MultiSelectorProps<T extends string | number> = BaseInput<T[]> &
+  GlobalMultiSelectorProps<T>;
+
+export function MultiSelector<T extends string | number>(
+  props: MultiSelectorProps<T>
+) {
+  const { settingKey, override, beforeStaged, ...selector } = props;
+
+  const value = useSettingValue<T[]>(settingKey, override);
+  const { setValue } = useFormActions();
+
+  return (
+    <GlobalMultiSelector
+      {...selector}
+      value={value ?? []}
+      onChange={(v) => {
+        const result = beforeStaged && v ? beforeStaged(v) : v;
+        setValue(result, settingKey);
+      }}
+    ></GlobalMultiSelector>
   );
 }
 
@@ -175,19 +188,18 @@ type SliderProps = BaseInput<number> &
 export const Slider: FunctionComponent<SliderProps> = (props) => {
   const { settingKey, override, ...slider } = props;
 
-  const update = useSingleUpdate();
-
-  const defaultValue = useLatest<number>(settingKey, isNumber, override);
+  const value = useSettingValue<number>(settingKey, override);
+  const { setValue } = useFormActions();
 
   const marks = useSliderMarks([(slider.min = 0), (slider.max = 100)]);
 
   return (
     <MantineSlider
       marks={marks}
-      onChangeEnd={(v) => {
-        update(v, settingKey);
+      onChange={(v) => {
+        setValue(v, settingKey);
       }}
-      defaultValue={defaultValue ?? undefined}
+      value={value ?? 0}
       {...slider}
     ></MantineSlider>
   );
@@ -199,15 +211,14 @@ type ChipsProp = BaseInput<string[]> &
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const { settingKey, override, ...chips } = props;
 
-  const update = useSingleUpdate();
-
-  const value = useLatest<string[]>(settingKey, isArray, override);
+  const value = useSettingValue<string[]>(settingKey, override);
+  const { setValue } = useFormActions();
 
   return (
     <ChipInput
       value={value ?? []}
       onChange={(v) => {
-        update(v, settingKey);
+        setValue(v, settingKey);
       }}
       {...chips}
     ></ChipInput>
@@ -227,13 +238,13 @@ export const Action: FunctionComponent<
 > = (props) => {
   const { onClick, settingKey, ...button } = props;
 
-  const value = useLatest<string>(settingKey, isString);
-  const update = useSingleUpdate();
+  const value = useSettingValue<string>(settingKey);
+  const { setValue } = useFormActions();
 
   return (
     <GlobalAction
       onClick={() => {
-        onClick && onClick(update, settingKey, value ?? undefined);
+        onClick?.(setValue, settingKey, value ?? undefined);
       }}
       {...button}
     ></GlobalAction>
@@ -246,14 +257,14 @@ export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
   props
 ) => {
   const { settingKey, override, ...file } = props;
-  const value = useLatest<string>(settingKey, isString);
-  const update = useSingleUpdate();
+  const value = useSettingValue<string>(settingKey);
+  const { setValue } = useFormActions();
 
   return (
     <FileBrowser
       defaultValue={value ?? undefined}
       onChange={(p) => {
-        update(p, settingKey);
+        setValue(p, settingKey);
       }}
       {...file}
     ></FileBrowser>

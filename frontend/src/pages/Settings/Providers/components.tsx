@@ -9,7 +9,7 @@ import {
   Stack,
   Text as MantineText,
 } from "@mantine/core";
-import { capitalize, isArray, isBoolean } from "lodash";
+import { capitalize, isBoolean } from "lodash";
 import {
   forwardRef,
   FunctionComponent,
@@ -22,17 +22,16 @@ import {
   Check,
   Message,
   Password,
-  StagedChangesContext,
   Text,
-  useLatest,
-  useMultiUpdate,
+  useSettingValue,
 } from "../components";
+import { useFormActions } from "../utilities/FormValues";
 import { ProviderInfo, ProviderList } from "./list";
 
 const ProviderKey = "settings-general-enabled_providers";
 
 export const ProviderView: FunctionComponent = () => {
-  const providers = useLatest<string[]>(ProviderKey, isArray);
+  const providers = useSettingValue<string[]>(ProviderKey);
 
   const modals = useModals();
 
@@ -98,9 +97,9 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
-  const providers = useLatest<string[]>(ProviderKey, isArray);
+  const providers = useSettingValue<string[]>(ProviderKey);
 
-  const updateGlobal = useMultiUpdate();
+  const { update } = useFormActions();
 
   const deletePayload = useCallback(() => {
     if (payload && providers) {
@@ -108,11 +107,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
       if (idx !== -1) {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
-        updateGlobal({ [ProviderKey]: newProviders });
+        update({ [ProviderKey]: newProviders });
         modals.closeAll();
       }
     }
-  }, [payload, providers, updateGlobal, modals]);
+  }, [payload, providers, update, modals]);
 
   const addProvider = useCallback(() => {
     if (info && providers) {
@@ -124,10 +123,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
         changes[ProviderKey] = newProviders;
       }
 
-      updateGlobal(changes);
+      update(changes);
       modals.closeAll();
     }
-  }, [info, providers, staged, updateGlobal, modals]);
+  }, [info, providers, staged, update, modals]);
 
   const canSave = info !== null;
 
@@ -221,33 +220,33 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({ payload }) => {
   }, [info]);
 
   return (
-    <StagedChangesContext.Provider value={[staged, setChange]}>
-      <Stack>
-        <Stack spacing="xs">
-          <Selector
-            itemComponent={SelectItem}
-            disabled={payload !== null}
-            {...options}
-            value={info}
-            onChange={onSelect}
-          ></Selector>
-          <Message>{info?.description}</Message>
-          {modification}
-          <div hidden={info?.message === undefined}>
-            <Message>{info?.message}</Message>
-          </div>
-        </Stack>
-        <Divider></Divider>
-        <Group>
-          <Button hidden={!payload} color="danger" onClick={deletePayload}>
-            Delete
-          </Button>
-          <Button disabled={!canSave} onClick={addProvider}>
-            Save
-          </Button>
-        </Group>
+    // <StagedChangesContext.Provider value={[staged, setChange]}>
+    <Stack>
+      <Stack spacing="xs">
+        <Selector
+          itemComponent={SelectItem}
+          disabled={payload !== null}
+          {...options}
+          value={info}
+          onChange={onSelect}
+        ></Selector>
+        <Message>{info?.description}</Message>
+        {modification}
+        <div hidden={info?.message === undefined}>
+          <Message>{info?.message}</Message>
+        </div>
       </Stack>
-    </StagedChangesContext.Provider>
+      <Divider></Divider>
+      <Group>
+        <Button hidden={!payload} color="danger" onClick={deletePayload}>
+          Delete
+        </Button>
+        <Button disabled={!canSave} onClick={addProvider}>
+          Save
+        </Button>
+      </Group>
+    </Stack>
+    // </StagedChangesContext.Provider>
   );
 };
 

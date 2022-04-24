@@ -3,7 +3,7 @@ import { useArrayAction } from "@/utilities";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@mantine/core";
-import { capitalize, isArray, isBoolean } from "lodash";
+import { capitalize, isBoolean } from "lodash";
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Column } from "react-table";
 import {
@@ -12,7 +12,8 @@ import {
   pathMappingsMovieKey,
   seriesEnabledKey,
 } from "../keys";
-import { useExtract, useLatest, useSingleUpdate } from "./hooks";
+import { useFormActions } from "../utilities/FormValues";
+import { useExtract, useSettingValue } from "./hooks";
 import { Message } from "./Message";
 
 type SupportType = "sonarr" | "radarr";
@@ -44,29 +45,28 @@ interface TableProps {
 
 export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   const key = getSupportKey(type);
-  const items = useLatest<[string, string][]>(key, isArray);
+  const items = useSettingValue<[string, string][]>(key);
 
   const enabledKey = getEnabledKey(type);
   const enabled = useExtract<boolean>(enabledKey, isBoolean);
-
-  const update = useSingleUpdate();
+  const { setValue } = useFormActions();
 
   const updateRow = useCallback(
     (newItems: PathMappingItem[]) => {
-      update(
+      setValue(
         newItems.map((v) => [v.from, v.to]),
         key
       );
     },
-    [key, update]
+    [key, setValue]
   );
 
   const addRow = useCallback(() => {
     if (items) {
       const newItems = [...items, ["", ""]];
-      update(newItems, key);
+      setValue(newItems, key);
     }
-  }, [items, key, update]);
+  }, [items, key, setValue]);
 
   const data = useMemo<PathMappingItem[]>(
     () => items?.map((v) => ({ from: v[0], to: v[1] })) ?? [],

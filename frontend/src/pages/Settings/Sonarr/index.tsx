@@ -6,10 +6,10 @@ import {
   CollapseBox,
   Layout,
   Message,
+  MultiSelector,
   Number,
   PathMappingTable,
   Section,
-  Selector,
   Slider,
   Text,
   URLTestButton,
@@ -59,12 +59,11 @@ const SettingsSonarrView: FunctionComponent = () => {
               Episodes from series with those tags (case sensitive) in Sonarr
               will be excluded from automatic download of subtitles.
             </Message>
-            <Selector
+            <MultiSelector
               label="Excluded Series Types"
               settingKey="settings-sonarr-excluded_series_types"
-              multiple
               options={seriesTypeOptions}
-            ></Selector>
+            ></MultiSelector>
             <Message>
               Episodes from series with those types in Sonarr will be excluded
               from automatic download of subtitles.

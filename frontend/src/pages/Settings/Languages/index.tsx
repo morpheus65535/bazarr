@@ -1,6 +1,5 @@
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { isArray } from "lodash";
 import { FunctionComponent } from "react";
 import {
   Check,
@@ -8,7 +7,7 @@ import {
   Layout,
   Message,
   Section,
-  useLatest,
+  useSettingValue,
 } from "../components";
 import { enabledLanguageKey, languageProfileKey } from "../keys";
 import { LanguageSelector, ProfileSelector } from "./components";
@@ -16,7 +15,7 @@ import Table from "./table";
 
 export function useLatestEnabledLanguages() {
   const { data } = useEnabledLanguages();
-  const latest = useLatest<Language.Info[]>(enabledLanguageKey, isArray);
+  const latest = useSettingValue<Language.Info[]>(enabledLanguageKey);
 
   if (latest) {
     return latest;
@@ -27,7 +26,7 @@ export function useLatestEnabledLanguages() {
 
 export function useLatestProfiles() {
   const { data = [] } = useLanguageProfiles();
-  const latest = useLatest<Language.Profile[]>(languageProfileKey, isArray);
+  const latest = useSettingValue<Language.Profile[]>(languageProfileKey);
 
   if (latest) {
     return latest;
