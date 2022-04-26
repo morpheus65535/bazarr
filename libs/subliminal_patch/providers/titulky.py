@@ -35,8 +35,6 @@ logger = logging.getLogger(__name__)
 
 # Check if any element from source array is contained partially or exactly in any element from target array
 # Returns on the first match
-
-
 def _contains_element(_from=None, _in=None, exactly=False):
     source_array = _from
     target_array = _in
@@ -119,7 +117,8 @@ class TitulkySubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         _type = 'movie' if isinstance(video, Movie) else 'episode'
-
+        # Subtitle's names (could be series/episode/movie name) present in the subtitle details page
+        # Consists of the main name and alternative names, stripped of the S00E00 substring
         sub_names = self._remove_season_episode_string(self.names)
 
         if _type == 'episode':
@@ -127,10 +126,8 @@ class TitulkySubtitle(Subtitle):
 
             # match imdb_id of a series
             if video.series_imdb_id and video.series_imdb_id == self.imdb_id:
-                # NOTE: Is matches.add('series_imdb_id') doing anything?
-                #       For now, let's match with the 'series' to not reject
-                #       subs with no name but a correct imdb id.
                 matches.add('series')
+                matches.add('series_imdb_id')
 
             # match season/episode
             if self.season and self.season == video.season:
@@ -142,7 +139,7 @@ class TitulkySubtitle(Subtitle):
             if len(sub_names) > 0:
                 series_names = [video.series] + video.alternative_series
                 logger.debug(
-                    f"Titulky.com: Finding exact match between subtitle names {sub_names} and series names {series_names}"
+                    f"Titulky.com: Finding exact match between subtitle's names {sub_names} and series names {series_names}"
                 )
                 if _contains_element(_from=series_names,
                                      _in=sub_names,
@@ -152,7 +149,7 @@ class TitulkySubtitle(Subtitle):
                 # match episode title
                 episode_titles = [video.title]
                 logger.debug(
-                    f"Titulky.com: Finding exact match between subtitle names {sub_names} and episode titles {episode_titles}"
+                    f"Titulky.com: Finding exact match between subtitle's names {sub_names} and episode titles {episode_titles}"
                 )
                 if _contains_element(_from=episode_titles,
                                      _in=sub_names,
@@ -169,7 +166,7 @@ class TitulkySubtitle(Subtitle):
             # match movie title
             video_titles = [video.title] + video.alternative_titles
             logger.debug(
-                f"Titulky.com: Finding exact match between subtitle names {sub_names} and video titles {video_titles}"
+                f"Titulky.com: Finding exact match between subtitle's names {sub_names} and video titles {video_titles}"
             )
             if _contains_element(_from=video_titles,
                                  _in=sub_names,
@@ -414,8 +411,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return outer_func
 
-    # TODO: Parse name and alternative names of a series / movie
-    # Parse details of an individual subtitle: imdb_id, release, language, uploader, fps and year
+    # Parse details of an individual subtitle: imdb_id, series/movie names, release, language, uploader, fps and year
     @capable_of_multithreading
     def parse_details(self, partial_info, ref_url=None):
         html_src = self.fetch_page(partial_info['details_link'], ref=ref_url)
@@ -438,6 +434,23 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         if not imdb_id:
             logger.debug("Titulky.com: No IMDB ID supplied on details page.")
+
+        # SERIES/MOVIE NAMES
+        names = []
+        try:
+            main_name = details_container.find('h1', id='titulky').contents[0].strip()
+            alt_name = details_container.find('h2').contents[1].strip()
+            if main_name:
+                names.append(main_name)
+            else:
+                logger.debug("Titulky.com: Could not find main series/movie name on details page.")
+            if alt_name:
+                names.append(alt_name)
+        except IndexError:
+            raise ParseResponseError("Index out of range! This should not ever happen, but it just did. Oops.")
+
+        if len(names) == 0:
+            logger.debug("Titulky.com: No names found on details page.")
 
         # RELEASE
         release = None
@@ -529,6 +542,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
         info = {
             'releases': [release],
+            'names': names,
             'language': language,
             'uploader': uploader,
             'fps': fps,
@@ -696,6 +710,7 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
     # Special search only for episodes. Complements the query method of searching.
     def browse_episodes(self,
+                        language,
                         imdb_id=None,
                         season=None,
                         episode=None):
@@ -747,11 +762,6 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                     logger.debug("Titulky.com: No previous episode number!")
                     raise ProviderError("Previous episode number missing, can't parse.")
 
-                # If this row contains the first subtitles to an episode number,
-                # add an empty array into the episodes dict at its place.
-                if not last_ep_num in episodes_dict:
-                    episodes_dict[last_ep_num] = []
-
                 details_link = f"{self.server_url}{details_anchor.get('href')[1:]}"
                 id_match = re.findall(r'id=(\d+)', details_link)
                 sub_id = id_match[0] if len(id_match) > 0 else None
@@ -759,13 +769,33 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 # Approved subtitles have a pbl1 class for their row, others have a pbl0 class
                 approved = True if 'pbl1' in row.get('class') else False
 
+                # Parse language to filter out subtitles that are not in the desired language
+                sub_language = None
+                czech_flag = row.select('img[src*=\'flag-CZ\']')
+                slovak_flag = row.select('img[src*=\'flag-SK\']')
+
+                if czech_flag and not slovak_flag:
+                    sub_language = Language('ces')
+                elif slovak_flag and not czech_flag:
+                    sub_language = Language('slk')
+                else:
+                    logger.debug("Titulky.com: Unknown language while parsing subtitles!")
+                
+                # If the language is not the desired one, skip this row
+                if sub_language and sub_language != language:
+                    continue
+
                 result = {
-                    'names': [],
                     'id': sub_id,
                     'approved': approved,
                     'details_link': details_link,
                     'download_link': download_link
                 }
+
+                # If this row contains the first subtitles to an episode number,
+                # add an empty array into the episodes dict at its place.
+                if not last_ep_num in episodes_dict:
+                    episodes_dict[last_ep_num] = []
 
                 episodes_dict[last_ep_num].append(result)
 
@@ -932,7 +962,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
                 # (0)
                 if video.series_imdb_id:
                     logger.info("Titulky.com: Finding subtitles by browsing TV Series page (0)")
-                    partial_subs = self.browse_episodes(imdb_id=video.series_imdb_id,
+                    partial_subs = self.browse_episodes(language,
+                                                        imdb_id=video.series_imdb_id,
                                                         season=video.season,
                                                         episode=video.episode)
                     if (len(partial_subs) > 0):
