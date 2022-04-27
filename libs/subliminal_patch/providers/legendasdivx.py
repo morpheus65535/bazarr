@@ -47,7 +47,10 @@ class LegendasdivxSubtitle(Subtitle):
 
     @property
     def id(self):
-        return f"legendasdivx_{self.video.imdb_id}_{self.release_info}_{self.uploader}"
+        try:
+            return self.page_link.split("=")[-1]
+        except IndexError:
+            return f"legendasdivx_{self.video.imdb_id}_{self.release_info}_{self.uploader}"
 
     def get_matches(self, video):
         matches = set()
