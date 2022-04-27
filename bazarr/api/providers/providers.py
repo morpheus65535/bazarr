@@ -5,7 +5,7 @@ from flask_restful import Resource
 from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie
-from get_providers import list_throttled_providers, reset_throttled_providers
+from app.get_providers import list_throttled_providers, reset_throttled_providers
 
 from ..utils import authenticate, False_Keys
 

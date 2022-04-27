@@ -4,9 +4,9 @@ from flask import request
 from flask_restful import Resource
 
 from app.database import TableMovies
-from get_subtitle.mass_download import movies_download_subtitles
+from subtitles.mass_download import movies_download_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from utilities.helper import path_mappings
+from utilities.path_mappings import path_mappings
 
 from ..utils import authenticate
 

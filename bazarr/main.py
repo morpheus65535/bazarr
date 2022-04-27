@@ -30,7 +30,7 @@ from languages.get_languages import load_language_in_db  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
 from app.check_update import apply_update, check_releases  # noqa E402
 from app.server import app, webserver  # noqa E402
-from utilities.utils import check_credentials  # noqa E402
+from utilities.helper import check_credentials  # noqa E402
 from constants import headers  # noqa E402
 from sonarr.info import get_sonarr_info, url_sonarr  # noqa E402
 from radarr.info import get_radarr_info, url_radarr  # noqa E402

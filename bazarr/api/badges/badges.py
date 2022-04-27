@@ -7,8 +7,8 @@ from flask import jsonify
 from flask_restful import Resource
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies
-from get_providers import get_throttled_providers
-from utilities.utils import get_health_issues
+from app.get_providers import get_throttled_providers
+from utilities.health import get_health_issues
 
 from ..utils import authenticate
 

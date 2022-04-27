@@ -9,7 +9,7 @@ from operator import itemgetter
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import get_audio_profile_languages, get_desired_languages
-from utilities.helper import path_mappings
+from utilities.path_mappings import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
 

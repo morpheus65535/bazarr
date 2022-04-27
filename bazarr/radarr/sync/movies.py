@@ -6,10 +6,10 @@ from peewee import IntegrityError
 
 from app.config import settings
 from radarr.info import url_radarr
-from utilities.helper import path_mappings
+from utilities.path_mappings import path_mappings
 from subtitles.indexer.movies import store_subtitles_movie, movies_full_scan_subtitles
 from radarr.rootfolder import check_radarr_rootfolder
-from get_subtitle.mass_download import movies_download_subtitles
+from subtitles.mass_download import movies_download_subtitles
 from app.database import TableMovies
 from app.event_handler import event_stream, show_progress, hide_progress
 

@@ -10,7 +10,7 @@ from flask_restful import Resource
 from bs4 import BeautifulSoup as bso
 
 from app.database import TableEpisodes, TableShows, TableMovies
-from get_subtitle.mass_download import episode_download_subtitles, movies_download_subtitles
+from subtitles.mass_download import episode_download_subtitles, movies_download_subtitles
 
 from ..utils import authenticate
 

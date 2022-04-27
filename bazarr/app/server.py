@@ -39,7 +39,10 @@ class Server:
             logging.info(
                 'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
                     args.port) if args.port else str(settings.general.port)) + str(base_url))
-            self.server.run()
+            try:
+                self.server.run()
+            except Exception:
+                pass
         except KeyboardInterrupt:
             self.shutdown()
 

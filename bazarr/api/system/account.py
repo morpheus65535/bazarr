@@ -6,7 +6,7 @@ from flask import request, session
 from flask_restful import Resource
 
 from app.config import settings
-from utilities.utils import check_credentials
+from utilities.helper import check_credentials
 
 
 class SystemAccount(Resource):

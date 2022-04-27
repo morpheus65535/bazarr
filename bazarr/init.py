@@ -14,7 +14,7 @@ from dogpile.cache.region import register_backend as register_cache_backend
 from app.config import settings, configure_captcha_func
 from app.get_args import args
 from app.logger import configure_logging
-from utilities.helper import path_mappings
+from utilities.path_mappings import path_mappings
 from utilities.backup import restore_from_backup
 
 # set start time global variable as epoch
@@ -193,7 +193,7 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 def init_binaries():
-    from utilities.utils import get_binary
+    from utilities.binaries import get_binary
     exe = get_binary("unrar")
 
     rarfile.UNRAR_TOOL = exe

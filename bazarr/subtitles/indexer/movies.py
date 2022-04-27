@@ -11,8 +11,9 @@ from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
 from languages.get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
 from app.config import settings
-from utilities.helper import path_mappings, get_subtitle_destination_folder
-from subtitles.embedded_subs_reader import embedded_subs_reader
+from utilities.helper import get_subtitle_destination_folder
+from utilities.path_mappings import path_mappings
+from subtitles.tools.embedded_subs_reader import embedded_subs_reader
 from app.event_handler import event_stream, show_progress, hide_progress
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 

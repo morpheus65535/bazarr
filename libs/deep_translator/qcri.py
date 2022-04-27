@@ -1,24 +1,30 @@
+from typing import List, Optional
 
 import requests
-from .constants import BASE_URLS, QCRI_LANGUAGE_TO_CODE
-from .exceptions import (ServerException, TranslationNotFound)
+
+from deep_translator.base import BaseTranslator
+from deep_translator.constants import BASE_URLS, QCRI_LANGUAGE_TO_CODE
+from deep_translator.exceptions import ServerException, TranslationNotFound
 
 
-class QCRI(object):
+class QcriTranslator(BaseTranslator):
     """
     class that wraps functions, which use the QRCI translator under the hood to translate word(s)
     """
 
-    def __init__(self, api_key=None, source="en", target="en", **kwargs):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        source: str = "en",
+        target: str = "en",
+        **kwargs,
+    ):
         """
         @param api_key: your qrci api key. Get one for free here https://mt.qcri.org/api/v1/ref
         """
 
         if not api_key:
             raise ServerException(401)
-        self.__base_url = BASE_URLS.get("QCRI")
-        self.source = source
-        self.target = target
         self.api_key = api_key
         self.api_endpoints = {
             "get_languages": "getLanguagePairs",
@@ -26,26 +32,28 @@ class QCRI(object):
             "translate": "translate",
         }
 
-        self.params = {
-            "key": self.api_key
-        }
+        self.params = {"key": self.api_key}
+        super().__init__(
+            base_url=BASE_URLS.get("QCRI"),
+            source=source,
+            target=target,
+            languages=QCRI_LANGUAGE_TO_CODE,
+            **kwargs,
+        )
 
-    def _get(self, endpoint, params=None, return_text=True):
+    def _get(
+        self, endpoint: str, params: Optional[dict] = None, return_text: bool = True
+    ):
         if not params:
             params = self.params
         try:
-            res = requests.get(self.__base_url.format(endpoint=self.api_endpoints[endpoint]), params=params)
+            res = requests.get(
+                self._base_url.format(endpoint=self.api_endpoints[endpoint]),
+                params=params,
+            )
             return res.text if return_text else res
         except Exception as e:
             raise e
-
-    @staticmethod
-    def get_supported_languages(as_dict=False, **kwargs):
-        # Have no use for this as the format is not what we need
-        # Save this for whenever
-        # pairs = self._get("get_languages")
-        # Using a this one instead
-        return [*QCRI_LANGUAGE_TO_CODE.keys()] if not as_dict else QCRI_LANGUAGE_TO_CODE
 
     @property
     def languages(self):
@@ -59,12 +67,12 @@ class QCRI(object):
     def domains(self):
         return self.get_domains()
 
-    def translate(self, text, domain, **kwargs):
+    def translate(self, text: str, **kwargs) -> str:
         params = {
             "key": self.api_key,
-            "langpair": "{}-{}".format(self.source, self.target),
-            "domain": domain,
-            "text": text
+            "langpair": f"{self._source}-{self._target}",
+            "domain": kwargs["domain"],
+            "text": text,
         }
         try:
             response = self._get("translate", params=params, return_text=False)
@@ -81,12 +89,14 @@ class QCRI(object):
                     raise TranslationNotFound(text)
                 return translation
 
-    def translate_batch(self, batch, domain, **kwargs):
+    def translate_file(self, path: str, **kwargs) -> str:
+        return self._translate_file(path, **kwargs)
+
+    def translate_batch(self, batch: List[str], **kwargs) -> List[str]:
         """
         translate a batch of texts
         @domain: domain
         @param batch: list of texts to translate
         @return: list of translations
         """
-        return [self.translate(domain, text, **kwargs) for text in batch]
-
+        return self._translate_batch(batch, **kwargs)

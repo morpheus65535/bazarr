@@ -523,7 +523,7 @@ def save_settings(settings_items):
             pass
 
     if update_path_map:
-        from utilities.helper import path_mappings
+        from utilities.path_mappings import path_mappings
         path_mappings.update()
 
     if configure_proxy:

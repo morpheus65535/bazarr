@@ -11,7 +11,7 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import SqliteMigrator, migrate
 from playhouse.sqlite_ext import RowIDField
 
-from utilities.helper import path_mappings
+from utilities.path_mappings import path_mappings
 
 from .config import settings, get_array_from
 from .get_args import args

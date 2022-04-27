@@ -8,10 +8,10 @@ from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from app.database import TableShows, TableEpisodes, get_audio_profile_languages, get_profile_id
-from utilities.helper import path_mappings
-from get_subtitle.upload import manual_upload_subtitle
-from get_subtitle.download import generate_subtitles
-from utilities.utils import delete_subtitles
+from utilities.path_mappings import path_mappings
+from subtitles.upload import manual_upload_subtitle
+from subtitles.download import generate_subtitles
+from subtitles.tools.delete import delete_subtitles
 from sonarr.history import history_log
 from app.notifier import send_notifications
 from subtitles.indexer.series import store_subtitles

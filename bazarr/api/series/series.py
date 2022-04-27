@@ -8,8 +8,8 @@ from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
-from get_subtitle.mass_download import series_download_subtitles
-from get_subtitle.wanted import wanted_search_missing_subtitles_series
+from subtitles.mass_download import series_download_subtitles
+from subtitles.wanted import wanted_search_missing_subtitles_series
 from app.event_handler import event_stream
 
 from ..utils import authenticate, postprocessSeries, None_Keys
