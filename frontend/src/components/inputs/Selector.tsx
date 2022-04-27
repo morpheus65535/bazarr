@@ -128,8 +128,9 @@ export function Selector<T = string, M extends boolean = false>(
 
             onChange(values as SelectorValueType<T, M>);
           } else {
-            const value = (newValue as OnChangeValue<SelectorOption<T>, false>)
-              ?.value;
+            const value =
+              (newValue as OnChangeValue<SelectorOption<T>, false>)?.value ??
+              null;
 
             onChange(value as SelectorValueType<T, M>);
           }
