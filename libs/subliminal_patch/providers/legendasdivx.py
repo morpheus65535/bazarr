@@ -47,7 +47,7 @@ class LegendasdivxSubtitle(Subtitle):
 
     @property
     def id(self):
-        return self.page_link
+        return f"legendasdivx_{self.video.imdb_id}_{self.release_info}_{self.uploader}"
 
     def get_matches(self, video):
         matches = set()
