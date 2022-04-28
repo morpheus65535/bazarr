@@ -1,6 +1,15 @@
 From newest to oldest:
 {{#each releases}}
+  {{#each merges}}
+    -
+    {{message}}{{#if href}} [#{{id}}]({{href}}){{/if}}
+  {{/each}}
+  {{#each fixes}}
+    -
+    {{commit.subject}}{{#if href}} [#{{id}}]({{href}}){{/if}}
+  {{/each}}
   {{#each commits}}
-    - {{subject}}{{#if href}} [{{shorthash}}]({{href}}){{/if}}
+    -
+    {{subject}}{{#if href}} [{{shorthash}}]({{href}}){{/if}}
   {{/each}}
 {{/each}}
