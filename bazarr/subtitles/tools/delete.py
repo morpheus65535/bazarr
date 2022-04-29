@@ -4,7 +4,7 @@ import os
 import logging
 
 from app.event_handler import event_stream
-from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
+from languages.get_languages import language_from_alpha2
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie

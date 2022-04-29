@@ -20,6 +20,7 @@ from .config import settings
 from .scheduler import scheduler
 from .get_args import args
 
+
 class SonarrSignalrClientLegacy:
     def __init__(self):
         super(SonarrSignalrClientLegacy, self).__init__()

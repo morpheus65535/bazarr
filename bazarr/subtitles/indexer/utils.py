@@ -5,7 +5,7 @@ import logging
 import re
 
 from guess_language import guess_language
-from subliminal_patch import core, search_external_subtitles
+from subliminal_patch import core
 from subzero.language import Language
 from charamel import Detector
 

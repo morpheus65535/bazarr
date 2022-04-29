@@ -8,7 +8,7 @@ import ast
 from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
-from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableMovies
+from app.database import get_profiles_list, get_profile_cutoff, TableMovies
 from languages.get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
 from app.config import settings
 from utilities.helper import get_subtitle_destination_folder

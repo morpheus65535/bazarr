@@ -7,7 +7,7 @@ import hashlib
 from charamel import Detector
 from bs4 import UnicodeDammit
 
-from app.config import settings, get_array_from
+from app.config import settings
 
 
 def check_credentials(user, pw):

@@ -7,7 +7,7 @@ from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
 from languages.custom_lang import CustomLanguage
-from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2
 
 
 def subtitles_apply_mods(language, subtitle_path, mods, use_original_format):

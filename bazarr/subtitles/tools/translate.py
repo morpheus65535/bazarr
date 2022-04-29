@@ -8,7 +8,7 @@ from subzero.language import Language
 from deep_translator import GoogleTranslator
 
 from languages.custom_lang import CustomLanguage
-from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2
 
 
 def translate_subtitles_file(video_path, source_srt_file, to_lang, forced, hi):
