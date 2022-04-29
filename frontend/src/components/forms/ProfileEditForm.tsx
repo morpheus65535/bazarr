@@ -159,6 +159,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 action.mutate(index, {
                   ...item,
                   forced: checked ? "True" : "False",
+                  hi: checked ? "False" : item.hi,
                 });
               }}
             ></Checkbox>
@@ -176,6 +177,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
                 action.mutate(index, {
                   ...item,
                   hi: checked ? "True" : "False",
+                  forced: checked ? "False" : item.forced,
                 });
               }}
             ></Checkbox>

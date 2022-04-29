@@ -202,7 +202,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             <Checkbox
               checked={value}
               onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, { ...original, forced: checked });
+                action.mutate(index, {
+                  ...original,
+                  forced: checked,
+                  hi: checked ? false : original.hi,
+                });
               }}
             ></Checkbox>
           );
@@ -216,7 +220,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             <Checkbox
               checked={value}
               onChange={({ currentTarget: { checked } }) => {
-                action.mutate(index, { ...original, hi: checked });
+                action.mutate(index, {
+                  ...original,
+                  hi: checked,
+                  forced: checked ? false : original.forced,
+                });
               }}
             ></Checkbox>
           );
@@ -255,7 +263,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       },
       {
         id: "episode",
-        Header: "episode",
+        Header: "Episode",
         accessor: "episode",
         Cell: ({ value, row }) => {
           const { classes } = useTableStyles();
