@@ -108,10 +108,6 @@ class SubdivxSubtitlesProvider(Provider):
                 f"{video.series} S{video.season:02}",
             ):
                 subtitles += self._handle_multi_page_search(query, video)
-
-            # Fallback
-            if not subtitles:
-                subtitles += self._handle_multi_page_search(video.series, video)
         else:
             # Subdvix has problems searching foreign movies if the year is
             # appended. A proper solution would be filtering results with the
