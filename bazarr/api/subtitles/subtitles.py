@@ -66,17 +66,6 @@ class Subtitles(Resource):
             result = translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                               to_lang=dest_language,
                                               forced=forced, hi=hi)
-            if result:
-                if media_type == 'episode':
-                    store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
-                    event_stream(type='series', payload=metadata['sonarrSeriesId'])
-                    event_stream(type='episode', payload=int(id))
-                else:
-                    store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
-                    event_stream(type='movie', payload=int(id))
-                return '', 200
-            else:
-                return '', 404
         else:
             use_original_format = True if request.form.get('original_format') == 'true' else False
             subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
@@ -86,5 +75,13 @@ class Subtitles(Resource):
             'win') and settings.general.getboolean('chmod_enabled') else None
         if chmod:
             os.chmod(subtitles_path, chmod)
+
+        if media_type == 'episode':
+            store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
+            event_stream(type='series', payload=metadata['sonarrSeriesId'])
+            event_stream(type='episode', payload=int(id))
+        else:
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
+            event_stream(type='movie', payload=int(id))
 
         return '', 204
