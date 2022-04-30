@@ -398,7 +398,6 @@ def get_exclusion_clause(exclusion_type):
 
 
 def update_profile_id_list():
-    global profile_id_list
     profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
                                                     TableLanguagesProfiles.name,
                                                     TableLanguagesProfiles.cutoff,
@@ -412,12 +411,11 @@ def update_profile_id_list():
         profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
         profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else []
 
+    return profile_id_list
+
 
 def get_profiles_list(profile_id=None):
-    try:
-        len(profile_id_list)
-    except NameError:
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
@@ -429,9 +427,7 @@ def get_profiles_list(profile_id=None):
 
 def get_desired_languages(profile_id):
     languages = []
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
@@ -445,9 +441,7 @@ def get_desired_languages(profile_id):
 
 def get_profile_id_name(profile_id):
     name_from_id = None
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
@@ -461,9 +455,7 @@ def get_profile_id_name(profile_id):
 
 def get_profile_cutoff(profile_id):
     cutoff_language = None
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         cutoff_language = []
