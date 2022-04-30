@@ -18,9 +18,10 @@ from subliminal.providers import ParserBeautifulSoup
 from bs4.element import Tag, NavigableString
 from subliminal.score import get_equivalent_release_groups
 from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal_patch.exceptions import APIThrottled
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode, Movie
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from guessit import guessit
@@ -197,6 +198,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         """
 
         """
+        # TODO: add memoization to this method logic
 
         url = self.server_url + "index.php?tipus=adatlap&azon=a_" + str(sub_id)
         # url = https://www.feliratok.info/index.php?tipus=adatlap&azon=a_1518600916
@@ -212,6 +214,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 # src="img/adatlap/imdb.png"/></a>
                 imdb_id = re.search(r'(?<=www\.imdb\.com/title/).*(?=/")', str(value))
                 imdb_id = imdb_id.group() if imdb_id else ''
+                logger.debug("IMDB ID found: %s", imdb_id)
                 return imdb_id
 
         return None
@@ -391,8 +394,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             results = None
 
         '''
-        The result will be a JSON like this:
-        [{
+        In order to work, the result should be a JSON like this:
+        {
             "10": {
                 "language":"Angol",
                 "nev":"The Flash (Season 5) (1080p)",
@@ -404,15 +407,15 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 "feltolto":"J1GG4",
                 "pontos_talalat":"111",
                 "evadpakk":"1"
-            }
-        },...]
+            }, ...
+        }
         '''
 
         subtitle_list = {}
         season_pack_list = {}
 
-        # Check the results:
-        if results:
+        # Check the results. If a list or a Nonetype is returned, ignore it:
+        if results and not isinstance(results, list):
             for result in results.values():
                 '''
                 Gonna get back multiple records for the same subtitle, in case it is compatible with multiple releases,
@@ -446,6 +449,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                     }
                 else:
                     target[sub_id]['releases'].append(release)
+        else:
+            logger.debug("Invalid results: %s", results)
 
         return subtitle_list, season_pack_list
 
@@ -544,15 +549,15 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(subtitle.page_link, timeout=10)
         r.raise_for_status()
 
-        if ".rar" in subtitle.page_link:
-            logger.debug('Archive identified as rar')
-            archive_stream = io.BytesIO(r.content)
+        archive_stream = io.BytesIO(r.content)
+        archive = None
+
+        if is_rarfile(archive_stream):
             archive = RarFile(archive_stream)
-            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
-        elif ".zip" in subtitle.page_link:
-            logger.debug('Archive identified as zip')
-            archive_stream = io.BytesIO(r.content)
+        elif is_zipfile(archive_stream):
             archive = ZipFile(archive_stream)
-            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
         else:
             subtitle.content = fix_line_ending(r.content)
+
+        if archive is not None:
+            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)

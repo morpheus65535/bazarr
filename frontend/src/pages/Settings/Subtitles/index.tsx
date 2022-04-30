@@ -1,12 +1,12 @@
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import {
   Check,
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
   Slider,
   Text,
 } from "../components";
@@ -33,7 +33,7 @@ const subzeroColorOverride = (settings: Settings) => {
 
 const SettingsSubtitlesView: FunctionComponent = () => {
   return (
-    <SettingsProvider title="Subtitles - Bazarr (Settings)">
+    <Layout name="Subtitles">
       <Group header="Subtitles Options">
         <CollapseBox>
           <CollapseBox.Control>
@@ -514,7 +514,7 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </CollapseBox.Content>
         </CollapseBox>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

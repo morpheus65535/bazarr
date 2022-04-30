@@ -1,8 +1,7 @@
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo } from "react";
 import { Row } from "react-bootstrap";
 import ContentHeaderButton, { ContentHeaderAsyncButton } from "./Button";
 import ContentHeaderGroup from "./Group";
-import "./style.scss";
 
 interface Props {
   scroll?: boolean;
@@ -29,7 +28,7 @@ export const ContentHeader: Header = ({ children, scroll, className }) => {
     return rowCls.join(" ");
   }, [scroll, className]);
 
-  let childItem: React.ReactNode;
+  let childItem: ReactNode;
 
   if (scroll !== false) {
     childItem = (

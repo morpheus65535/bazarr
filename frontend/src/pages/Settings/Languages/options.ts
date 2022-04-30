@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const anyCutoff = 65535;
 
 export const cutoffOptions: SelectorOption<number>[] = [

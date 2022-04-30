@@ -1,14 +1,32 @@
+import { ActionButton, SimpleTable } from "@/components";
+import { useModalControl } from "@/modules/modals";
+import { LOG } from "@/utilities/console";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { ActionButton, SimpleTable, useShowModal } from "components";
 import { cloneDeep } from "lodash";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
+import {
+  createContext,
+  FunctionComponent,
+  useCallback,
+  useContext,
+  useMemo,
+} from "react";
 import { Badge, Button, ButtonGroup } from "react-bootstrap";
-import { Column, TableUpdater } from "react-table";
+import { Column } from "react-table";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { useSingleUpdate } from "../components";
 import { languageProfileKey } from "../keys";
 import Modal from "./modal";
 import { anyCutoff } from "./options";
+
+type ModifyFn = (index: number, item?: Language.Profile) => void;
+
+const RowContext = createContext<ModifyFn>(() => {
+  LOG("error", "RowContext not initialized");
+});
+
+function useRowMutation() {
+  return useContext(RowContext);
+}
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -24,7 +42,7 @@ const Table: FunctionComponent = () => {
 
   const update = useSingleUpdate();
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
@@ -48,17 +66,17 @@ const Table: FunctionComponent = () => {
     [profiles, submitProfiles]
   );
 
-  const updateRow = useCallback<TableUpdater<Language.Profile>>(
-    (row, item?: Language.Profile) => {
+  const mutateRow = useCallback<ModifyFn>(
+    (index, item) => {
       if (item) {
-        showModal("profile", cloneDeep(item));
+        show(Modal, cloneDeep(item));
       } else {
         const list = [...profiles];
-        list.splice(row.index, 1);
+        list.splice(index, 1);
         submitProfiles(list);
       }
     },
-    [submitProfiles, showModal, profiles]
+    [show, profiles, submitProfiles]
   );
 
   const columns = useMemo<Column<Language.Profile>[]>(
@@ -122,20 +140,21 @@ const Table: FunctionComponent = () => {
       },
       {
         accessor: "profileId",
-        Cell: ({ row, update }) => {
+        Cell: ({ row }) => {
           const profile = row.original;
+          const mutate = useRowMutation();
 
           return (
             <ButtonGroup>
               <ActionButton
                 icon={faWrench}
                 onClick={() => {
-                  update && update(row, profile);
+                  mutate(row.index, profile);
                 }}
               ></ActionButton>
               <ActionButton
                 icon={faTrash}
-                onClick={() => update && update(row)}
+                onClick={() => mutate(row.index)}
               ></ActionButton>
             </ButtonGroup>
           );
@@ -148,12 +167,10 @@ const Table: FunctionComponent = () => {
   const canAdd = languages.length !== 0;
 
   return (
-    <React.Fragment>
-      <SimpleTable
-        columns={columns}
-        data={profiles}
-        update={updateRow}
-      ></SimpleTable>
+    <>
+      <RowContext.Provider value={mutateRow}>
+        <SimpleTable columns={columns} data={profiles}></SimpleTable>
+      </RowContext.Provider>
       <Button
         block
         disabled={!canAdd}
@@ -166,14 +183,15 @@ const Table: FunctionComponent = () => {
             cutoff: null,
             mustContain: [],
             mustNotContain: [],
+            originalFormat: false,
           };
-          showModal("profile", profile);
+          show(Modal, profile);
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
       </Button>
-      <Modal update={updateProfile} modalKey="profile"></Modal>
-    </React.Fragment>
+      <Modal update={updateProfile}></Modal>
+    </>
   );
 };
 

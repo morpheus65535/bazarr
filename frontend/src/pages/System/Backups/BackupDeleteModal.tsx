@@ -1,22 +1,21 @@
+import { AsyncButton } from "@/components";
 import {
-  AsyncButton,
-  BaseModal,
-  BaseModalProps,
-  useCloseModal,
-  useModalPayload,
-} from "components";
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
 import React, { FunctionComponent } from "react";
 import { Button } from "react-bootstrap";
 import { useDeleteBackups } from "../../../apis/hooks";
 
-interface Props extends BaseModalProps {}
-
-const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
-  const result = useModalPayload<string>(modal.modalKey);
-
+const SystemBackupDeleteModal: FunctionComponent = () => {
   const { mutateAsync } = useDeleteBackups();
 
-  const closeModal = useCloseModal();
+  const result = usePayload<string>();
+
+  const Modal = useModal();
+  const { hide } = useModalControl();
 
   const footer = (
     <div className="d-flex flex-row-reverse flex-grow-1 justify-content-between">
@@ -24,9 +23,7 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
         <Button
           variant="outline-secondary"
           className="mr-2"
-          onClick={() => {
-            closeModal(modal.modalKey);
-          }}
+          onClick={() => hide()}
         >
           Cancel
         </Button>
@@ -39,7 +36,7 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
               return null;
             }
           }}
-          onSuccess={() => closeModal(modal.modalKey)}
+          onSuccess={() => hide()}
         >
           Delete
         </AsyncButton>
@@ -48,10 +45,10 @@ const SystemBackupDeleteModal: FunctionComponent<Props> = ({ ...modal }) => {
   );
 
   return (
-    <BaseModal title="Delete Backup" footer={footer} {...modal}>
-      Are you sure you want to delete the backup '{result}'?
-    </BaseModal>
+    <Modal title="Delete Backup" footer={footer}>
+      <span>Are you sure you want to delete the backup '{result}'?</span>
+    </Modal>
   );
 };
 
-export default SystemBackupDeleteModal;
+export default withModal(SystemBackupDeleteModal, "delete");

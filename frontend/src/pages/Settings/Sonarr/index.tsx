@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
   Check,
@@ -6,10 +6,10 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
   Selector,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
@@ -17,15 +17,13 @@ import {
 import { seriesEnabledKey } from "../keys";
 import { seriesTypeOptions } from "../options";
 
-interface Props {}
-
-const SettingsSonarrView: FunctionComponent<Props> = () => {
+const SettingsSonarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.sonarr.base_url?.slice(1) ?? "";
   }, []);
 
   return (
-    <SettingsProvider title="Sonarr - Bazarr (Settings)">
+    <Layout name="Sonarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Sonarr">
@@ -41,7 +39,10 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-sonarr-port"></Text>
+              <Text
+                settingKey="settings-sonarr-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Base URL">
               <InputGroup>
@@ -99,6 +100,22 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
             </Input>
             <Input>
               <Check
+                label="Defer searching of subtitles until scheduled task execution"
+                settingKey="settings-sonarr-defer_search_signalr"
+              ></Check>
+              <Message>
+                If enabled, this option will prevent Bazarr from searching
+                subtitles as soon as episodes are imported.
+              </Message>
+              <Message>
+                Search can be triggered using this command: `curl -d
+                "sonarr_episodefile_id=$sonarr_episodefile_id" -H "x-api-key:
+                ###############################" -X POST
+                http://localhost:6767/api/webhooks/sonarr`
+              </Message>
+            </Input>
+            <Input>
+              <Check
                 label="Exclude season zero (extras)"
                 settingKey="settings-sonarr-exclude_season_zero"
               ></Check>
@@ -113,7 +130,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => {
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

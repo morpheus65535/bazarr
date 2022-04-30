@@ -66,6 +66,7 @@ class ProviderEpisodes(Resource):
 
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
+        use_original_format = request.form.get('original_format').capitalize()
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
 
@@ -77,8 +78,7 @@ class ProviderEpisodes(Resource):
 
         try:
             result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
-                                              sceneName, title, 'series',
-                                              profile_id=get_profile_id(episode_id=sonarrEpisodeId))
+                                              sceneName, title, 'series', use_original_format, profile_id=get_profile_id(episode_id=sonarrEpisodeId))
             if result is not None:
                 message = result[0]
                 path = result[1]

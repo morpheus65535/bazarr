@@ -1,12 +1,13 @@
-import { useHistoryStats, useLanguages, useSystemProviders } from "apis/hooks";
+import { useHistoryStats, useSystemProviders } from "@/apis/hooks";
 import {
   ContentHeader,
-  LanguageSelector,
   QueryOverlay,
   Selector,
-} from "components";
+  SelectorOption,
+} from "@/components";
+import Language from "@/components/bazarr/Language";
 import { merge } from "lodash";
-import React, { FunctionComponent, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Col, Container } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import {
@@ -28,8 +29,6 @@ const SelectorContainer: FunctionComponent = ({ children }) => (
 );
 
 const HistoryStats: FunctionComponent = () => {
-  const { data: languages } = useLanguages(true);
-
   const { data: providers } = useSystemProviders(true);
 
   const providerOptions = useMemo<SelectorOption<System.Provider>[]>(
@@ -63,13 +62,12 @@ const HistoryStats: FunctionComponent = () => {
   }, [data]);
 
   return (
-    // TODO: Responsive
     <Container fluid className="vh-75">
       <Helmet>
         <title>History Statistics - Bazarr</title>
       </Helmet>
       <QueryOverlay result={stats}>
-        <React.Fragment>
+        <div className="chart-container">
           <ContentHeader scroll={false}>
             <SelectorContainer>
               <Selector
@@ -98,12 +96,12 @@ const HistoryStats: FunctionComponent = () => {
               ></Selector>
             </SelectorContainer>
             <SelectorContainer>
-              <LanguageSelector
+              <Language.Selector
                 clearable
-                options={languages ?? []}
                 value={lang}
                 onChange={setLanguage}
-              ></LanguageSelector>
+                history
+              ></Language.Selector>
             </SelectorContainer>
           </ContentHeader>
           <ResponsiveContainer height="100%">
@@ -117,7 +115,7 @@ const HistoryStats: FunctionComponent = () => {
               <Bar name="Movies" dataKey="movies" fill="#FFC22F"></Bar>
             </BarChart>
           </ResponsiveContainer>
-        </React.Fragment>
+        </div>
       </QueryOverlay>
     </Container>
   );

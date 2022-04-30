@@ -1,14 +1,12 @@
+import { useResetProvider, useSystemProviders } from "@/apis/hooks";
+import { ContentHeader, QueryOverlay } from "@/components";
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useResetProvider, useSystemProviders } from "apis/hooks";
-import { ContentHeader, QueryOverlay } from "components";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import Table from "./table";
 
-interface Props {}
-
-const SystemProvidersView: FunctionComponent<Props> = () => {
+const SystemProvidersView: FunctionComponent = () => {
   const providers = useSystemProviders();
 
   const { isFetching, data, refetch } = providers;

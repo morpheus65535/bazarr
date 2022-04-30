@@ -34,7 +34,7 @@ class SystemApi extends BaseApi {
     await this.post("/settings", data);
   }
 
-  async languages(history: boolean = false) {
+  async languages(history = false) {
     const response = await this.get<Language.Server[]>("/languages", {
       history,
     });

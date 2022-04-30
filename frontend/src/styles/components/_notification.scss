@@ -1,0 +1,41 @@
+@use "../variables";
+@use "../custom-bootstrap" as bs;
+
+.notification-btn {
+  &.new-item {
+    &::after {
+      position: absolute;
+      background-color: red;
+      content: "";
+      border-radius: 50%;
+      height: 0.4rem;
+      width: 0.4rem;
+      right: 10%;
+      top: 10%;
+    }
+  }
+
+  .dropdown-menu {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  $content-width: 14rem;
+
+  .notification-center-progress {
+    width: $content-width;
+    max-width: $content-width;
+
+    .progress-name {
+      word-wrap: break-word;
+      white-space: normal;
+    }
+  }
+
+  .notification-center-notification {
+    word-wrap: break-word;
+    white-space: normal;
+    width: $content-width;
+    max-width: $content-width;
+  }
+}

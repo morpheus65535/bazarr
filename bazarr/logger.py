@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import sys
 import logging
 import re
 import platform
@@ -79,8 +80,12 @@ def configure_logging(debug=False):
 
     # File Logging
     global fh
-    fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
-                                  backupCount=7, delay=True, encoding='utf-8')
+    if sys.version_info >= (3, 9):
+        fh = PatchedTimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight",
+                                             interval=1, backupCount=7, delay=True, encoding='utf-8')
+    else:
+        fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
+                                      backupCount=7, delay=True, encoding='utf-8')
     f = FileHandlerFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                              '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
@@ -132,3 +137,54 @@ def configure_logging(debug=False):
 def empty_log():
     fh.doRollover()
     logging.info('BAZARR Log file emptied')
+
+
+class PatchedTimedRotatingFileHandler(TimedRotatingFileHandler):
+    # This super classed version of logging.TimedRotatingFileHandler is required to fix a bug in earlier version of
+    # Python 3.9, 3.10 and 3.11 where log rotation isn't working as expected and do not delete backup log files.
+
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False,
+                 atTime=None, errors=None):
+        super(PatchedTimedRotatingFileHandler, self).__init__(filename, when, interval, backupCount, encoding, delay, utc,
+                                                       atTime, errors)
+
+    def getFilesToDelete(self):
+        """
+        Determine the files to delete when rolling over.
+        More specific than the earlier method, which just used glob.glob().
+        """
+        dirName, baseName = os.path.split(self.baseFilename)
+        fileNames = os.listdir(dirName)
+        result = []
+        # See bpo-44753: Don't use the extension when computing the prefix.
+        n, e = os.path.splitext(baseName)
+        prefix = n + '.'
+        plen = len(prefix)
+        for fileName in fileNames:
+            if self.namer is None:
+                # Our files will always start with baseName
+                if not fileName.startswith(baseName):
+                    continue
+            else:
+                # Our files could be just about anything after custom naming, but
+                # likely candidates are of the form
+                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
+                if (not fileName.startswith(baseName) and fileName.endswith(e) and
+                        len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
+                    continue
+
+            if fileName[:plen] == prefix:
+                suffix = fileName[plen:]
+                # See bpo-45628: The date/time suffix could be anywhere in the
+                # filename
+                parts = suffix.split('.')
+                for part in parts:
+                    if self.extMatch.match(part):
+                        result.append(os.path.join(dirName, fileName))
+                        break
+        if len(result) < self.backupCount:
+            result = []
+        else:
+            result.sort()
+            result = result[:len(result) - self.backupCount]
+        return result

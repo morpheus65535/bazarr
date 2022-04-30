@@ -16,13 +16,13 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           ref: development
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "15.x"
 
@@ -35,9 +35,9 @@ jobs:
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.8'
+          python-version: "3.8"
 
       - name: Install Python dependencies
         run: |

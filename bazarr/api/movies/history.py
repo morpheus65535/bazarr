@@ -79,7 +79,8 @@ class MoviesHistory(Resource):
                                                  TableHistoryMovie.score,
                                                  TableHistoryMovie.subs_id,
                                                  TableHistoryMovie.provider,
-                                                 TableHistoryMovie.subtitles_path)\
+                                                 TableHistoryMovie.subtitles_path,
+                                                 TableHistoryMovie.video_path)\
             .join(TableMovies, on=(TableHistoryMovie.radarrId == TableMovies.radarrId))\
             .where(query_condition)\
             .order_by(TableHistoryMovie.timestamp.desc())\
@@ -96,7 +97,8 @@ class MoviesHistory(Resource):
             item.update({"upgradable": False})
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
                 "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:  # noqa: E129
-                if os.path.isfile(path_mappings.path_replace_movie(item['subtitles_path'])):
+                if os.path.exists(path_mappings.path_replace_movie(item['subtitles_path'])) and \
+                        os.path.exists(path_mappings.path_replace_movie(item['video_path'])):
                     item.update({"upgradable": True})
 
             del item['path']

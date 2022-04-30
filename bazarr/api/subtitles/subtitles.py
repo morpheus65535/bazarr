@@ -73,7 +73,8 @@ class Subtitles(Resource):
             else:
                 return '', 404
         else:
-            subtitles_apply_mods(language, subtitles_path, [action])
+            use_original_format = True if request.form.get('original_format') == 'true' else False
+            subtitles_apply_mods(language, subtitles_path, [action], use_original_format)
 
         # apply chmod if required
         chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(

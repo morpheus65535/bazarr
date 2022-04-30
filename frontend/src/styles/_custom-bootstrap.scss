@@ -1,0 +1,20 @@
+@use "variables" as vars;
+
+$primary: #911f93;
+$dark: #4f566f;
+
+@import "bootstrap";
+
+.progress-bar {
+  cursor: default;
+  text-shadow: -0.16rem -0.16rem 0.24rem $primary,
+    0.16rem -0.16rem 0.24rem $primary, -0.16rem 0.16rem 0.24rem $primary,
+    0.16rem 0.16rem 0.24rem $primary;
+  overflow: visible;
+}
+
+.dropdown-toggle {
+  &.hide-arrow::after {
+    display: none;
+  }
+}

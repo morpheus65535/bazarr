@@ -1,32 +1,22 @@
-import api from "apis/raw";
+import api from "@/apis/raw";
+import { AsyncButton, Selector, SelectorOption } from "@/components";
 import {
-  AsyncButton,
-  BaseModal,
-  BaseModalProps,
-  Selector,
-  useModalInformation,
-  useOnModalShow,
-  useShowModal,
-} from "components";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
+import { BuildKey } from "@/utilities";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import { BuildKey } from "utilities";
 import { ColCard, useLatestArray, useUpdateArray } from "../components";
 import { notificationsKey } from "../keys";
 
-interface ModalProps {
+interface Props {
   selections: readonly Settings.NotificationInfo[];
 }
 
-const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
-  selections,
-  ...modal
-}) => {
+const NotificationTool: FunctionComponent<Props> = ({ selections }) => {
   const options = useMemo<SelectorOption<Settings.NotificationInfo>[]>(
     () =>
       selections
@@ -43,16 +33,10 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
     "name"
   );
 
-  const { payload, closeModal } =
-    useModalInformation<Settings.NotificationInfo>(modal.modalKey);
+  const payload = usePayload<Settings.NotificationInfo>();
 
   const [current, setCurrent] =
     useState<Nullable<Settings.NotificationInfo>>(payload);
-
-  useOnModalShow<Settings.NotificationInfo>(
-    (p) => setCurrent(p),
-    modal.modalKey
-  );
 
   const updateUrl = useCallback((url: string) => {
     setCurrent((current) => {
@@ -70,55 +54,60 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
   const canSave =
     current !== null && current?.url !== null && current?.url.length !== 0;
 
-  const footer = useMemo(
-    () => (
-      <React.Fragment>
-        <AsyncButton
-          className="mr-auto"
-          disabled={!canSave}
-          variant="outline-secondary"
-          promise={() => {
-            if (current && current.url) {
-              return api.system.testNotification(current.url);
-            } else {
-              return null;
-            }
-          }}
-        >
-          Test
-        </AsyncButton>
-        <Button
-          hidden={payload === null}
-          variant="danger"
-          onClick={() => {
-            if (current) {
-              update({ ...current, enabled: false });
-            }
-            closeModal();
-          }}
-        >
-          Remove
-        </Button>
-        <Button
-          disabled={!canSave}
-          onClick={() => {
-            if (current) {
-              update({ ...current, enabled: true });
-            }
-            closeModal();
-          }}
-        >
-          Save
-        </Button>
-      </React.Fragment>
-    ),
-    [canSave, closeModal, current, update, payload]
-  );
-
   const getLabel = useCallback((v: Settings.NotificationInfo) => v.name, []);
 
+  const Modal = useModal({
+    onMounted: () => {
+      setCurrent(payload);
+    },
+  });
+
+  const { hide } = useModalControl();
+
+  const footer = (
+    <>
+      <AsyncButton
+        className="mr-auto"
+        disabled={!canSave}
+        variant="outline-secondary"
+        promise={() => {
+          if (current && current.url) {
+            return api.system.testNotification(current.url);
+          } else {
+            return null;
+          }
+        }}
+      >
+        Test
+      </AsyncButton>
+      <Button
+        hidden={payload === null}
+        variant="danger"
+        onClick={() => {
+          if (current) {
+            update({ ...current, enabled: false });
+          }
+          hide();
+        }}
+      >
+        Remove
+      </Button>
+      <Button
+        disabled={!canSave}
+        onClick={() => {
+          if (current) {
+            update({ ...current, enabled: true });
+          }
+          hide();
+        }}
+      >
+        Save
+      </Button>
+    </>
+  );
+
   return (
-    <BaseModal title="Notification" footer={footer} {...modal}>
+    <Modal title="Notification" footer={footer}>
       <Container fluid>
         <Row>
           <Col xs={12}>
@@ -146,9 +135,11 @@ const NotificationModal: FunctionComponent<ModalProps & BaseModalProps> = ({
           </Col>
         </Row>
       </Container>
-    </BaseModal>
+    </Modal>
   );
 };
+
+const NotificationModal = withModal(NotificationTool, "notification-tool");
 
 export const NotificationView: FunctionComponent = () => {
   const notifications = useLatestArray<Settings.NotificationInfo>(
@@ -157,7 +148,7 @@ export const NotificationView: FunctionComponent = () => {
     (s) => s.notifications.providers
   );
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const elements = useMemo(() => {
     return notifications
@@ -166,21 +157,18 @@ export const NotificationView: FunctionComponent = () => {
         <ColCard
           key={BuildKey(idx, v.name)}
           header={v.name}
-          onClick={() => showModal("notifications", v)}
+          onClick={() => show(NotificationModal, v)}
         ></ColCard>
       ));
-  }, [notifications, showModal]);
+  }, [notifications, show]);
 
   return (
     <Container fluid>
       <Row>
         {elements}{" "}
-        <ColCard plus onClick={() => showModal("notifications")}></ColCard>
+        <ColCard plus onClick={() => show(NotificationModal)}></ColCard>
       </Row>
-      <NotificationModal
-        selections={notifications ?? []}
-        modalKey="notifications"
-      ></NotificationModal>
+      <NotificationModal selections={notifications ?? []}></NotificationModal>
     </Container>
   );
 };

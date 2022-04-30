@@ -20,26 +20,24 @@
    $ npm install
    ```
 
-3. Duplicate `.env.development` file and rename to `.env.local`
+3. (Optional) Duplicate `.env.development` file and rename to `.env.development.local`
 
    ```
-   $ cp .env .env.local
+   $ cp .env.development .env.development.local
    ```
 
-4. Update your backend server's API key in `.env.local`
+4. (Optional) Update your backend server's API key in `.env.development.local`
 
    ```
    # API key of your backend
-   REACT_APP_APIKEY="YOUR_SERVER_API_KEY"
+   VITE_API_KEY="YOUR_SERVER_API_KEY"
    ```
 
-5. Change the address of your backend server (Optional)
-
-   > http://localhost:6767 will be used by default
+5. (Optional) Change the address of your backend server
 
    ```
    # Address of your backend
-   REACT_APP_PROXY_URL=http://localhost:6767
+   VITE_PROXY_URL=http://localhost:6767
    ```
 
 6. Run Bazarr backend
@@ -66,17 +64,11 @@ Open `http://localhost:3000` to view it in the browser.
 The page will reload if you make edits.
 You will also see any lint errors in the console.
 
-### `npm test`
-
-Run the Unit Test to validate app state.
-
-Please ensure all tests are passed before uploading the code
-
 ### `npm run build`
 
-Builds the app for production to the `build` folder.
+Builds the app in production mode and save to the `build` folder.
 
-### `npm run lint`
+### `npm run format`
 
 Format code for all files in `frontend` folder
 

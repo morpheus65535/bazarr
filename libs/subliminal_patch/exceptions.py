@@ -25,6 +25,12 @@ class IPAddressBlocked(ProviderError):
     pass
 
 
+class SearchLimitReached(ProviderError):
+    """Exception raised when maximum searches for a provider have been reached."""
+
+    pass
+
+
 class MustGetBlacklisted(ProviderError):
     def __init__(self, id: str, media_type: str):
         super().__init__()

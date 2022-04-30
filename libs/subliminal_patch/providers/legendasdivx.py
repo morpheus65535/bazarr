@@ -6,6 +6,7 @@ import re
 import zipfile
 from time import sleep
 from urllib.parse import quote
+from urllib.parse import parse_qs
 from requests.exceptions import HTTPError
 import rarfile
 
@@ -17,7 +18,7 @@ from subliminal.providers import ParserBeautifulSoup
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode, Movie
-from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
+from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked, SearchLimitReached
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider, reinitialize_on_error
 from subliminal_patch.score import get_scores, framerate_equal
@@ -47,7 +48,10 @@ class LegendasdivxSubtitle(Subtitle):
 
     @property
     def id(self):
-        return self.page_link
+        try:
+            return parse_qs(self.page_link)["lid"][0]
+        except (KeyError, IndexError):
+            return f"legendasdivx_{self.video.imdb_id}_{self.release_info}_{self.uploader}"
 
     def get_matches(self, video):
         matches = set()
@@ -121,6 +125,7 @@ class LegendasdivxProvider(Provider):
     languages = {Language('por', 'BR')} | {Language('por')}
     video_types = (Episode, Movie)
     SEARCH_THROTTLE = 8
+    SAFE_SEARCH_LIMIT = 145  # real limit is 150, but we use 145 to keep a buffer and prevent IPAddressBlocked exception to be raised
     site = 'https://www.legendasdivx.pt'
     headers = {
         'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
@@ -294,10 +299,21 @@ class LegendasdivxProvider(Provider):
             try:
                 # sleep for a 1 second before another request
                 sleep(1)
+                searchLimitReached = False
                 self.headers['Referer'] = self.site + '/index.php'
                 self.session.headers.update(self.headers)
                 res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
                 res.raise_for_status()
+                if res.status_code == 200 and "<!--pesquisas:" in res.text:
+                    searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
+                    if searches_count_groups:
+                        try:
+                            searches_count = int(searches_count_groups.group(1))
+                        except TypeError:
+                            pass
+                        else:
+                            if searches_count >= self.SAFE_SEARCH_LIMIT:
+                                searchLimitReached = True
                 if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
                     logger.warning('Legendasdivx.pt :: query %s return no results!', querytext)
                     # for series, if no results found, try again just with series and season (subtitle packs)
@@ -308,6 +324,16 @@ class LegendasdivxProvider(Provider):
                         sleep(1)
                         res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
                         res.raise_for_status()
+                        if res.status_code == 200 and "<!--pesquisas:" in res.text:
+                            searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
+                            if searches_count_groups:
+                                try:
+                                    searches_count = int(searches_count_groups.group(1))
+                                except TypeError:
+                                    pass
+                                else:
+                                    if searches_count >= self.SAFE_SEARCH_LIMIT:
+                                        searchLimitReached = True
                         if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
                             logger.warning('Legendasdivx.pt :: query {0} return no results for language {1}(for series and season only).'.format(querytext, language_id))
                             continue
@@ -321,6 +347,16 @@ class LegendasdivxProvider(Provider):
                     sleep(1)
                     res = self.session.get(_searchurl.format(query=querytext))
                     res.raise_for_status()
+                    if res.status_code == 200 and "<!--pesquisas:" in res.text:
+                        searches_count_groups = re.search(r'<!--pesquisas: (\d*)-->', res.text)
+                        if searches_count_groups:
+                            try:
+                                searches_count = int(searches_count_groups.group(1))
+                            except TypeError:
+                                pass
+                            else:
+                                if searches_count >= self.SAFE_SEARCH_LIMIT:
+                                    searchLimitReached = True
             except HTTPError as e:
                 if "bloqueado" in res.text.lower():
                     logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
@@ -330,6 +366,10 @@ class LegendasdivxProvider(Provider):
             except Exception as e:
                 logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
                 raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
+
+            if searchLimitReached:
+                raise SearchLimitReached(
+                    "LegendasDivx.pt :: You've reached maximum number of search for the day.")
 
             bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
 

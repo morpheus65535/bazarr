@@ -1,10 +1,11 @@
-import { BaseModal, BaseModalProps, useModalPayload } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { useModal, usePayload, withModal } from "@/modules/modals";
+import { FunctionComponent, useMemo } from "react";
 
-interface Props extends BaseModalProps {}
+const SystemLogModal: FunctionComponent = () => {
+  const stack = usePayload<string>();
 
-const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
-  const stack = useModalPayload<string>(modal.modalKey);
+  const Modal = useModal();
+
   const result = useMemo(
     () =>
       stack?.split("\\n").map((v, idx) => (
@@ -14,13 +15,14 @@ const SystemLogModal: FunctionComponent<Props> = ({ ...modal }) => {
       )),
     [stack]
   );
+
   return (
-    <BaseModal title="Stack traceback" {...modal}>
+    <Modal title="Stack traceback">
       <pre>
-        <code className="zmdi-language-python-alt">{result}</code>
+        <code>{result}</code>
       </pre>
-    </BaseModal>
+    </Modal>
   );
 };
 
-export default SystemLogModal;
+export default withModal(SystemLogModal, "system-log");

@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const securityOptions: SelectorOption<string>[] = [
   {
     label: "Basic",

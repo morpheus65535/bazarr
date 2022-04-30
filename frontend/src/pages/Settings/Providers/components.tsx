@@ -1,12 +1,13 @@
+import { Selector, SelectorComponents, SelectorOption } from "@/components";
 import {
-  BaseModal,
-  Selector,
-  useModalInformation,
-  useOnModalShow,
-  useShowModal,
-} from "components";
+  useModal,
+  useModalControl,
+  usePayload,
+  withModal,
+} from "@/modules/modals";
+import { BuildKey, isReactText } from "@/utilities";
 import { capitalize, isArray, isBoolean } from "lodash";
-import React, {
+import {
   FunctionComponent,
   useCallback,
   useEffect,
@@ -15,8 +16,6 @@ import React, {
 } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 import { components } from "react-select";
-import { SelectComponents } from "react-select/dist/declarations/src/components";
-import { BuildKey, isReactText } from "utilities";
 import {
   Check,
   ColCard,
@@ -28,19 +27,18 @@ import {
 } from "../components";
 import { ProviderInfo, ProviderList } from "./list";
 
-const ModalKey = "provider-modal";
 const ProviderKey = "settings-general-enabled_providers";
 
 export const ProviderView: FunctionComponent = () => {
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const select = useCallback(
     (v?: ProviderInfo) => {
-      showModal(ModalKey, v ?? null);
+      show(ProviderModal, v ?? null);
     },
-    [showModal]
+    [show]
   );
 
   const cards = useMemo(() => {
@@ -73,12 +71,15 @@ export const ProviderView: FunctionComponent = () => {
         {cards}
         <ColCard key="add-card" plus onClick={select}></ColCard>
       </Row>
+      <ProviderModal></ProviderModal>
     </Container>
   );
 };
 
-export const ProviderModal: FunctionComponent = () => {
-  const { payload, closeModal } = useModalInformation<ProviderInfo>(ModalKey);
+const ProviderTool: FunctionComponent = () => {
+  const payload = usePayload<ProviderInfo>();
+  const Modal = useModal();
+  const { hide } = useModalControl();
 
   const [staged, setChange] = useState<LooseObject>({});
 
@@ -87,8 +88,6 @@ export const ProviderModal: FunctionComponent = () => {
   }, [payload]);
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
-
-  useOnModalShow<ProviderInfo>((p) => setInfo(p), ModalKey);
 
   const providers = useLatest<string[]>(ProviderKey, isArray);
 
@@ -101,10 +100,10 @@ export const ProviderModal: FunctionComponent = () => {
         const newProviders = [...providers];
         newProviders.splice(idx, 1);
         updateGlobal({ [ProviderKey]: newProviders });
-        closeModal();
+        hide();
       }
     }
-  }, [payload, providers, updateGlobal, closeModal]);
+  }, [payload, providers, updateGlobal, hide]);
 
   const addProvider = useCallback(() => {
     if (info && providers) {
@@ -117,25 +116,11 @@ export const ProviderModal: FunctionComponent = () => {
       }
 
       updateGlobal(changes);
-      closeModal();
+      hide();
     }
-  }, [info, providers, staged, closeModal, updateGlobal]);
+  }, [info, providers, staged, updateGlobal, hide]);
 
   const canSave = info !== null;
-
-  const footer = useMemo(
-    () => (
-      <React.Fragment>
-        <Button hidden={!payload} variant="danger" onClick={deletePayload}>
-          Delete
-        </Button>
-        <Button disabled={!canSave} onClick={addProvider}>
-          Save
-        </Button>
-      </React.Fragment>
-    ),
-    [canSave, payload, deletePayload, addProvider]
-  );
 
   const onSelect = useCallback((item: Nullable<ProviderInfo>) => {
     if (item) {
@@ -218,12 +203,11 @@ export const ProviderModal: FunctionComponent = () => {
   }, [info]);
 
   const selectorComponents = useMemo<
-    Partial<SelectComponents<ProviderInfo, false, any>>
+    Partial<SelectorComponents<ProviderInfo, false>>
   >(
     () => ({
       Option: ({ data, ...other }) => {
-        const { label, value } =
-          data as unknown as SelectorOption<ProviderInfo>;
+        const { label, value } = data;
         return (
           <components.Option data={data} {...other}>
             {label}
@@ -240,8 +224,19 @@ export const ProviderModal: FunctionComponent = () => {
     []
   );
 
+  const footer = (
+    <>
+      <Button hidden={!payload} variant="danger" onClick={deletePayload}>
+        Delete
+      </Button>
+      <Button disabled={!canSave} onClick={addProvider}>
+        Save
+      </Button>
+    </>
+  );
+
   return (
-    <BaseModal title="Provider" footer={footer} modalKey={ModalKey}>
+    <Modal title="Provider" footer={footer}>
       <StagedChangesContext.Provider value={[staged, setChange]}>
         <Container>
           <Row>
@@ -269,6 +264,8 @@ export const ProviderModal: FunctionComponent = () => {
           </Row>
         </Container>
       </StagedChangesContext.Provider>
-    </BaseModal>
+    </Modal>
   );
 };
+
+const ProviderModal = withModal(ProviderTool, "provider-tool");

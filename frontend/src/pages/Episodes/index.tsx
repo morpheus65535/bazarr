@@ -1,4 +1,18 @@
 import {
+  useEpisodesBySeriesId,
+  useIsAnyActionRunning,
+  useSeriesAction,
+  useSeriesById,
+  useSeriesModification,
+} from "@/apis/hooks";
+import { ContentHeader, LoadingIndicator } from "@/components";
+import ItemOverview from "@/components/ItemOverview";
+import { ItemEditorModal, SeriesUploadModal } from "@/components/modals";
+import { SubtitleToolModal } from "@/components/modals/subtitle-tools";
+import { useModalControl } from "@/modules/modals";
+import { createAndDispatchTask } from "@/modules/task/utilities";
+import { useLanguageProfileBy } from "@/utilities/languages";
+import {
   faAdjust,
   faBriefcase,
   faCloudUploadAlt,
@@ -7,40 +21,15 @@ import {
   faSync,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import {
-  useEpisodesBySeriesId,
-  useIsAnyActionRunning,
-  useSeriesAction,
-  useSeriesById,
-  useSeriesModification,
-} from "apis/hooks";
-import {
-  ContentHeader,
-  ItemEditorModal,
-  LoadingIndicator,
-  SeriesUploadModal,
-  useShowModal,
-} from "components";
-import ItemOverview from "components/ItemOverview";
-import { RouterEmptyPath } from "pages/404";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Alert, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { Redirect, RouteComponentProps, withRouter } from "react-router-dom";
-import { useLanguageProfileBy } from "utilities/languages";
+import { Navigate, useParams } from "react-router-dom";
 import Table from "./table";
 
-interface Params {
-  id: string;
-}
-
-interface Props extends RouteComponentProps<Params> {}
-
-const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
-  const { match } = props;
-  const id = Number.parseInt(match.params.id);
+const SeriesEpisodesView: FunctionComponent = () => {
+  const params = useParams();
+  const id = Number.parseInt(params.id as string);
   const { data: series, isFetched } = useSeriesById(id);
   const { data: episodes } = useEpisodesBySeriesId(id);
 
@@ -63,14 +52,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     [series]
   );
 
-  const showModal = useShowModal();
+  const { show } = useModalControl();
 
   const profile = useLanguageProfileBy(series?.profileId);
 
   const hasTask = useIsAnyActionRunning();
 
   if (isNaN(id) || (isFetched && !series)) {
-    return <Redirect to={RouterEmptyPath}></Redirect>;
+    return <Navigate to="/not-found"></Navigate>;
   }
 
   if (!series) {
@@ -88,11 +77,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             icon={faSync}
             disabled={!available || hasTask}
             onClick={() => {
-              const task = createTask(series.title, id, action, {
+              createAndDispatchTask(series.title, "scan-disk", action, {
                 action: "scan-disk",
                 seriesid: id,
               });
-              dispatchTask("Scanning disk...", [task], "Scanning...");
             }}
           >
             Scan Disk
@@ -100,11 +88,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             icon={faSearch}
             onClick={() => {
-              const task = createTask(series.title, id, action, {
+              createAndDispatchTask(series.title, "search-subtitles", action, {
                 action: "search-missing",
                 seriesid: id,
               });
-              dispatchTask("Searching subtitles...", [task], "Searching...");
             }}
             disabled={
               series.episodeFileCount === 0 ||
@@ -119,7 +106,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           <ContentHeader.Button
             disabled={series.episodeFileCount === 0 || !available || hasTask}
             icon={faBriefcase}
-            onClick={() => showModal("tools", episodes)}
+            onClick={() => show(SubtitleToolModal, episodes)}
           >
             Tools
           </ContentHeader.Button>
@@ -130,14 +117,14 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
               !available
             }
             icon={faCloudUploadAlt}
-            onClick={() => showModal("upload", series)}
+            onClick={() => show(SeriesUploadModal, series)}
           >
             Upload
           </ContentHeader.Button>
           <ContentHeader.Button
             icon={faWrench}
             disabled={hasTask}
-            onClick={() => showModal("edit", series)}
+            onClick={() => show(ItemEditorModal, series)}
           >
             Edit Series
           </ContentHeader.Button>
@@ -168,13 +155,10 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           ></Table>
         )}
       </Row>
-      <ItemEditorModal modalKey="edit" mutation={mutation}></ItemEditorModal>
-      <SeriesUploadModal
-        modalKey="upload"
-        episodes={episodes ?? []}
-      ></SeriesUploadModal>
+      <ItemEditorModal mutation={mutation}></ItemEditorModal>
+      <SeriesUploadModal episodes={episodes ?? []}></SeriesUploadModal>
     </Container>
   );
 };
 
-export default withRouter(SeriesEpisodesView);
+export default SeriesEpisodesView;

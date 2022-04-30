@@ -131,6 +131,7 @@ class TableHistoryMovie(BaseModel):
 
 class TableLanguagesProfiles(BaseModel):
     cutoff = IntegerField(null=True)
+    originalFormat = BooleanField(null=True)
     items = TextField()
     name = TextField()
     profileId = AutoField()
@@ -332,6 +333,7 @@ def migrate_db():
         migrator.add_column('table_history_movie', 'subtitles_path', TextField(null=True)),
         migrator.add_column('table_languages_profiles', 'mustContain', TextField(null=True)),
         migrator.add_column('table_languages_profiles', 'mustNotContain', TextField(null=True)),
+        migrator.add_column('table_languages_profiles', 'originalFormat', BooleanField(null=True)),
     )
 
 
@@ -396,27 +398,24 @@ def get_exclusion_clause(exclusion_type):
 
 
 def update_profile_id_list():
-    global profile_id_list
     profile_id_list = TableLanguagesProfiles.select(TableLanguagesProfiles.profileId,
                                                     TableLanguagesProfiles.name,
                                                     TableLanguagesProfiles.cutoff,
                                                     TableLanguagesProfiles.items,
                                                     TableLanguagesProfiles.mustContain,
-                                                    TableLanguagesProfiles.mustNotContain).dicts()
+                                                    TableLanguagesProfiles.mustNotContain,
+                                                    TableLanguagesProfiles.originalFormat).dicts()
     profile_id_list = list(profile_id_list)
     for profile in profile_id_list:
         profile['items'] = json.loads(profile['items'])
-        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else \
-            profile['mustContain']
-        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else \
-            profile['mustNotContain']
+        profile['mustContain'] = ast.literal_eval(profile['mustContain']) if profile['mustContain'] else []
+        profile['mustNotContain'] = ast.literal_eval(profile['mustNotContain']) if profile['mustNotContain'] else []
+
+    return profile_id_list
 
 
 def get_profiles_list(profile_id=None):
-    try:
-        len(profile_id_list)
-    except NameError:
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
@@ -428,13 +427,11 @@ def get_profiles_list(profile_id=None):
 
 def get_desired_languages(profile_id):
     languages = []
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
             if profileId == int(profile_id):
                 languages = [x['language'] for x in items]
                 break
@@ -444,13 +441,11 @@ def get_desired_languages(profile_id):
 
 def get_profile_id_name(profile_id):
     name_from_id = None
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
             if profileId == int(profile_id):
                 name_from_id = name
                 break
@@ -460,14 +455,12 @@ def get_profile_id_name(profile_id):
 
 def get_profile_cutoff(profile_id):
     cutoff_language = None
-
-    if not len(profile_id_list):
-        update_profile_id_list()
+    profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:

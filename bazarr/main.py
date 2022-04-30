@@ -24,7 +24,8 @@ from notifier import update_notifier  # noqa E402
 
 from urllib.parse import unquote  # noqa E402
 from get_languages import load_language_in_db  # noqa E402
-from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context  # noqa E402
+from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
+    send_from_directory
 from threading import Thread  # noqa E402
 import requests  # noqa E402
 
@@ -110,6 +111,12 @@ def catch_all(path):
         template_url += "/"
 
     return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
+
+
+@app.route('/assets/<path:filename>')
+def web_assets(filename):
+    path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build', 'assets')
+    return send_from_directory(path, filename)
 
 
 @check_login

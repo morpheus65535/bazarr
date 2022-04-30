@@ -1,12 +1,13 @@
-import React, { FunctionComponent, useMemo } from "react";
+import { SelectorOption } from "@/components";
+import { FunctionComponent, useMemo } from "react";
 import {
   Check,
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
 } from "../components";
 import {
   backupOptions,
@@ -29,7 +30,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
   }, []);
 
   return (
-    <SettingsProvider title="Scheduler - Bazarr (Settings)">
+    <Layout name="Scheduler">
       <Group header="Sonarr/Radarr Sync">
         <Input name="Update Series List from Sonarr">
           <Selector
@@ -172,7 +173,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
           </CollapseBox.Content>
         </CollapseBox>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

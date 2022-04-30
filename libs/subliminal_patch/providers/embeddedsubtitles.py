@@ -79,6 +79,7 @@ class EmbeddedSubtitlesProvider(Provider):
         ffmpeg_path=None,
         hi_fallback=False,
         mergerfs_mode=False,
+        timeout=600,
     ):
         self._include_ass = include_ass
         self._include_srt = include_srt
@@ -88,6 +89,7 @@ class EmbeddedSubtitlesProvider(Provider):
         self._hi_fallback = hi_fallback
         self._cached_paths = {}
         self._mergerfs_mode = mergerfs_mode
+        self._timeout = float(timeout)
 
         fese.FFPROBE_PATH = ffprobe_path or fese.FFPROBE_PATH
         fese.FFMPEG_PATH = ffmpeg_path or fese.FFMPEG_PATH
@@ -185,7 +187,9 @@ class EmbeddedSubtitlesProvider(Provider):
             # Extract all subittle streams to avoid reading the entire
             # container over and over
             streams = filter(_check_allowed_extensions, container.get_subtitles())
-            extracted = container.extract_subtitles(list(streams), self._cache_dir)
+            extracted = container.extract_subtitles(
+                list(streams), self._cache_dir, timeout=self._timeout
+            )
             # Add the extracted paths to the containter path key
             self._cached_paths[container.path] = extracted
 

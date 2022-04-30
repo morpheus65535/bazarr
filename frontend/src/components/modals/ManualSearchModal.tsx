@@ -1,3 +1,6 @@
+import { useModal, usePayload, withModal } from "@/modules/modals";
+import { createAndDispatchTask } from "@/modules/task/utilities";
+import { GetItemId, isMovie } from "@/utilities";
 import {
   faCaretDown,
   faCheck,
@@ -6,15 +9,8 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useEpisodesProvider, useMoviesProvider } from "apis/hooks";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import clsx from "clsx";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -25,58 +21,39 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
+import { UseQueryResult } from "react-query";
 import { Column } from "react-table";
-import { GetItemId, isMovie } from "utilities";
-import {
-  BaseModal,
-  BaseModalProps,
-  LanguageText,
-  LoadingIndicator,
-  PageTable,
-  useModalPayload,
-} from "..";
-import "./msmStyle.scss";
+import { LoadingIndicator, PageTable } from "..";
+import Language from "../bazarr/Language";
 
 type SupportType = Item.Movie | Item.Episode;
 
 interface Props<T extends SupportType> {
   download: (item: T, result: SearchResultType) => Promise<void>;
+  query: (
+    id?: number
+  ) => UseQueryResult<SearchResultType[] | undefined, unknown>;
 }
 
-export function ManualSearchModal<T extends SupportType>(
-  props: Props<T> & BaseModalProps
-) {
-  const { download, ...modal } = props;
+function ManualSearchView<T extends SupportType>(props: Props<T>) {
+  const { download, query: useSearch } = props;
 
-  const item = useModalPayload<T>(modal.modalKey);
+  const item = usePayload<T>();
 
-  const [episodeId, setEpisodeId] = useState<number | undefined>(undefined);
-  const [radarrId, setRadarrId] = useState<number | undefined>(undefined);
+  const itemId = useMemo(() => GetItemId(item ?? {}), [item]);
 
-  const episodes = useEpisodesProvider(episodeId);
-  const movies = useMoviesProvider(radarrId);
+  const [id, setId] = useState<number | undefined>(undefined);
 
-  const isInitial = episodeId === undefined && radarrId === undefined;
-  const isFetching = episodes.isFetching || movies.isFetching;
+  const results = useSearch(id);
 
-  const results = useMemo(
-    () => [...(episodes.data ?? []), ...(movies.data ?? [])],
-    [episodes.data, movies.data]
-  );
+  const isStale = results.data === undefined;
 
   const search = useCallback(() => {
-    setEpisodeId(undefined);
-    setRadarrId(undefined);
-    if (item) {
-      if (isMovie(item)) {
-        setRadarrId(item.radarrId);
-        movies.refetch();
-      } else {
-        setEpisodeId(item.sonarrEpisodeId);
-        episodes.refetch();
-      }
+    if (itemId !== undefined) {
+      setId(itemId);
+      results.refetch();
     }
-  }, [episodes, item, movies]);
+  }, [itemId, results]);
 
   const columns = useMemo<Column<SearchResultType>[]>(
     () => [
@@ -95,7 +72,7 @@ export function ManualSearchModal<T extends SupportType>(
           };
           return (
             <Badge variant="secondary">
-              <LanguageText text={lang}></LanguageText>
+              <Language.Text value={lang}></Language.Text>
             </Badge>
           );
         },
@@ -140,19 +117,14 @@ export function ManualSearchModal<T extends SupportType>(
             return <span className="text-muted">Cannot get release info</span>;
           }
 
-          const cls = [
-            "release-container",
-            "d-flex",
-            "justify-content-between",
-            "align-items-center",
-          ];
-
-          if (value.length > 1) {
-            cls.push("release-multi");
-          }
-
           return (
-            <div className={cls.join(" ")} onClick={() => setOpen((o) => !o)}>
+            <div
+              className={clsx(
+                "release-container d-flex justify-content-between align-items-center",
+                { "release-multi": value.length > 1 }
+              )}
+              onClick={() => setOpen((o) => !o)}
+            >
               <div className="text-container">
                 <span className="release-text">{value[0]}</span>
                 <Collapse in={open}>
@@ -194,12 +166,12 @@ export function ManualSearchModal<T extends SupportType>(
               onClick={() => {
                 if (!item) return;
 
-                const id = GetItemId(item);
-                const task = createTask(item.title, id, download, item, result);
-                dispatchTask(
-                  "Downloading subtitles...",
-                  [task],
-                  "Downloading..."
+                createAndDispatchTask(
+                  item.title,
+                  "download-subtitles",
+                  download,
+                  item,
+                  result
                 );
               }}
             >
@@ -213,7 +185,9 @@ export function ManualSearchModal<T extends SupportType>(
   );
 
   const content = () => {
-    if (isInitial) {
+    if (results.isFetching) {
+      return <LoadingIndicator animation="grow"></LoadingIndicator>;
+    } else if (isStale) {
       return (
         <div className="px-4 py-5">
           <p className="mb-3 small">{item?.path ?? ""}</p>
@@ -222,31 +196,19 @@ export function ManualSearchModal<T extends SupportType>(
           </Button>
         </div>
       );
-    } else if (isFetching) {
-      return <LoadingIndicator animation="grow"></LoadingIndicator>;
     } else {
       return (
-        <React.Fragment>
+        <>
           <p className="mb-3 small">{item?.path ?? ""}</p>
           <PageTable
             emptyText="No Result"
             columns={columns}
-            data={results}
+            data={results.data ?? []}
           ></PageTable>
-        </React.Fragment>
+        </>
       );
     }
   };
-
-  const footer = (
-    <Button
-      variant="light"
-      hidden={isFetching === true || isInitial === true}
-      onClick={search}
-    >
-      Search Again
-    </Button>
-  );
 
   const title = useMemo(() => {
     let title = "Unknown";
@@ -263,18 +225,38 @@ export function ManualSearchModal<T extends SupportType>(
     return `Search - ${title}`;
   }, [item]);
 
+  const Modal = useModal({
+    size: "xl",
+    closeable: results.isFetching === false,
+    onMounted: () => {
+      // Cleanup the ID when user switches episode / movie
+      if (itemId !== id) {
+        setId(undefined);
+      }
+    },
+  });
+
+  const footer = (
+    <Button variant="light" hidden={isStale} onClick={search}>
+      Search Again
+    </Button>
+  );
+
   return (
-    <BaseModal
-      closeable={isFetching === false}
-      size="xl"
-      title={title}
-      footer={footer}
-      {...modal}
-    >
+    <Modal title={title} footer={footer}>
       {content()}
-    </BaseModal>
+    </Modal>
   );
 }
+
+export const MovieSearchModal = withModal<Props<Item.Movie>>(
+  ManualSearchView,
+  "movie-manual-search"
+);
+export const EpisodeSearchModal = withModal<Props<Item.Episode>>(
+  ManualSearchView,
+  "episode-manual-search"
+);
 
 const StateIcon: FunctionComponent<{ matches: string[]; dont: string[] }> = ({
   matches,

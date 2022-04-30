@@ -14,7 +14,7 @@ from babelfish import Language
 from babelfish.exceptions import LanguageError
 import pysubs2
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 logger = logging.getLogger(__name__)
 
@@ -134,19 +134,21 @@ class FFprobeSubtitleStream:
         # fixme: we still don't know if "DURATION" is a common tag/key
         if "DURATION" in self.tags:
             try:
-                h, m, s = self.tags["DURATION"].split(":")
-            except ValueError:
-                pass
-            else:
+                h, m, s = [
+                    ts.replace(",", ".").strip()
+                    for ts in self.tags["DURATION"].split(":")
+                ]
                 self.duration = float(s) + float(m) * 60 + float(h) * 60 * 60
                 self.duration_ts = int(self.duration * 1000)
+            except ValueError as error:
+                logger.warning("Couldn't get duration field: %s. Using 0", error)
         else:
             try:
-                self.duration = float(stream.get("duration", 0))
-                self.duration_ts = int(stream.get("duration_ts", 0))
+                self.duration = float(stream.get("duration", "0").replace(",", "."))
+                self.duration_ts = int(stream.get("duration_ts", self.duration * 1000))
             # some subtitles streams miss a duration completely and has "N/A" as value
-            except ValueError:
-                pass
+            except ValueError as error:
+                logger.warning("Couldn't get duration field: %s. Using 0", error)
 
         self.start_pts = int(stream.get("start_pts", 0))
 

@@ -166,7 +166,7 @@ def update_movies(send_event=True):
             logging.debug('BAZARR All movies synced from Radarr into database.')
 
 
-def update_one_movie(movie_id, action):
+def update_one_movie(movie_id, action, defer_search=False):
     logging.debug('BAZARR syncing this specific movie from Radarr: {}'.format(movie_id))
 
     # Check if there's a row in database for this movie ID
@@ -262,9 +262,13 @@ def update_one_movie(movie_id, action):
     store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
     # Downloading missing subtitles
-    logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
-        movie['path'])))
-    movies_download_subtitles(movie_id)
+    if defer_search:
+        logging.debug('BAZARR searching for missing subtitles is deferred until scheduled task execution for this '
+                      'movie: {}'.format(path_mappings.path_replace_movie(movie['path'])))
+    else:
+        logging.debug('BAZARR downloading missing subtitles for this movie: {}'.format(path_mappings.path_replace_movie(
+            movie['path'])))
+        movies_download_subtitles(movie_id)
 
 
 def get_profile_list():

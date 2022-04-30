@@ -1,3 +1,6 @@
+import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
+import { QueryOverlay } from "@/components";
+import { GithubRepoRoot } from "@/utilities/constants";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faDiscord,
@@ -6,20 +9,16 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useSystemHealth, useSystemStatus } from "apis/hooks";
-import { QueryOverlay } from "components";
 import moment from "moment";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, ReactNode, useState } from "react";
 import { Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 import { useIntervalWhen } from "rooks";
-import { GithubRepoRoot } from "utilities/constants";
-import "./style.scss";
 import Table from "./table";
 
 interface InfoProps {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function CRow(props: InfoProps): JSX.Element {
@@ -43,12 +42,12 @@ interface IconProps {
 function Label(props: IconProps): JSX.Element {
   const { icon, link, children } = props;
   return (
-    <React.Fragment>
+    <>
       <FontAwesomeIcon icon={icon} style={{ width: "2rem" }}></FontAwesomeIcon>
       <a href={link} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
-    </React.Fragment>
+    </>
   );
 }
 
@@ -65,9 +64,7 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   );
 };
 
-interface Props {}
-
-const SystemStatusView: FunctionComponent<Props> = () => {
+const SystemStatusView: FunctionComponent = () => {
   const health = useSystemHealth();
   const { data: status } = useSystemStatus();
 
@@ -77,7 +74,7 @@ const SystemStatusView: FunctionComponent<Props> = () => {
   useIntervalWhen(
     () => {
       if (status) {
-        let duration = moment.duration(
+        const duration = moment.duration(
             moment().utc().unix() - status.start_time,
             "seconds"
           ),

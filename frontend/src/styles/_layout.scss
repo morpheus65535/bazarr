@@ -1,0 +1,170 @@
+@use "variables" as vars;
+@use "custom-bootstrap" as bs;
+
+@mixin sidebar-animation {
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+}
+
+@include bs.media-breakpoint-up(sm) {
+  .main-router {
+    max-width: calc(100% - #{vars.$sidebar-width});
+  }
+
+  .header-icon {
+    min-width: vars.$sidebar-width;
+  }
+
+  .sidebar-container {
+    position: sticky;
+  }
+}
+
+@include bs.media-breakpoint-down(sm) {
+  .main-router {
+    max-width: 100%;
+  }
+
+  .header-icon {
+    min-width: 0;
+  }
+
+  .sidebar-container {
+    position: fixed !important;
+    transform: translateX(-100%);
+
+    @include sidebar-animation();
+
+    &.open {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .sidebar-overlay {
+    @include sidebar-animation();
+
+    &.open {
+      display: block !important;
+      opacity: 0.6;
+    }
+  }
+}
+
+@mixin border($side) {
+  border: {
+    #{$side}: {
+      color: rgba(0, 0, 0, 0.125);
+      style: solid;
+      width: 0.08rem;
+    }
+  }
+}
+
+$sidebar-bg-color: #3a3f51;
+$sidebar-active-color: #252833;
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: black;
+  opacity: 0;
+  z-index: 1000;
+}
+
+.sidebar-container {
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: $sidebar-bg-color;
+
+  z-index: 1001;
+
+  min-width: vars.$sidebar-width;
+  max-width: vars.$sidebar-width;
+
+  flex-grow: 2;
+
+  span {
+    font-size: 0.85rem;
+    letter-spacing: 0.04rem;
+  }
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .title {
+    height: vars.$header-height;
+  }
+
+  @mixin active {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0.1rem;
+    z-index: 10;
+    background-color: bs.$primary;
+  }
+
+  .sidebar-collapse-box {
+    position: relative;
+    &.active {
+      &::before {
+        @include active();
+      }
+    }
+  }
+
+  .indent > * {
+    padding-left: 2.5rem;
+  }
+
+  .button {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+
+    border: none;
+    outline: none;
+
+    color: white !important;
+    background-color: $sidebar-bg-color;
+
+    &:hover {
+      background-color: $sidebar-active-color !important;
+    }
+
+    &:active,
+    &:focus {
+      color: white;
+      background-color: $sidebar-bg-color;
+    }
+
+    .icon {
+      margin-right: 1rem;
+      width: 1.5rem;
+    }
+
+    &.active {
+      background-color: $sidebar-active-color;
+      &::before {
+        @include active();
+      }
+    }
+
+    &.collapse {
+      padding-left: 3rem;
+    }
+  }
+}

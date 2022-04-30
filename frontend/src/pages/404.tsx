@@ -1,11 +1,9 @@
 import { faEyeSlash as fasEyeSlash } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Container } from "react-bootstrap";
 
-export const RouterEmptyPath = "/empty-page";
-
-const EmptyPage: FunctionComponent = () => {
+const NotFound: FunctionComponent = () => {
   return (
     <Container className="d-flex flex-column align-items-center my-5">
       <h1>
@@ -17,4 +15,4 @@ const EmptyPage: FunctionComponent = () => {
   );
 };
 
-export default EmptyPage;
+export default NotFound;

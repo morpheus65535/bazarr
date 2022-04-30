@@ -1,18 +1,17 @@
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useEpisodeSubtitleModification } from "apis/hooks";
-import api from "apis/raw";
-import React, { FunctionComponent, useCallback, useMemo } from "react";
-import { Column } from "react-table";
+import { useEpisodeSubtitleModification } from "@/apis/hooks";
+import api from "@/apis/raw";
+import { usePayload, withModal } from "@/modules/modals";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
-} from "utilities/languages";
-import { Selector } from "../inputs";
-import { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
-import SubtitleUploadModal, {
+} from "@/utilities/languages";
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { Column } from "react-table";
+import { Selector, SelectorOption } from "../inputs";
+import SubtitleUploader, {
   PendingSubtitle,
+  useRowMutation,
   Validator,
 } from "./SubtitleUploadModal";
 
@@ -24,13 +23,8 @@ interface SeriesProps {
   episodes: readonly Item.Episode[];
 }
 
-export const TaskGroupName = "Uploading Subtitles...";
-
-const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
-  episodes,
-  ...modal
-}) => {
-  const { payload } = useModalInformation<Item.Series>(modal.modalKey);
+const SeriesUploadModal: FunctionComponent<SeriesProps> = ({ episodes }) => {
+  const payload = usePayload<Item.Series>();
 
   const profile = useLanguageProfileBy(payload?.profileId);
 
@@ -98,9 +92,19 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
       const tasks = items
         .filter((v) => v.payload.instance !== undefined)
         .map((v) => {
-          const { hi, forced, payload, language } = v;
-          const { code2 } = language!;
-          const { sonarrEpisodeId: episodeId } = payload.instance!;
+          const {
+            hi,
+            forced,
+            payload: { instance },
+            language,
+          } = v;
+
+          if (language === null || instance === null) {
+            throw new Error("Invalid state");
+          }
+
+          const { code2 } = language;
+          const { sonarrEpisodeId: episodeId } = instance;
 
           const form: FormType.UploadSubtitle = {
             file: v.file,
@@ -109,14 +113,14 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
             forced: forced,
           };
 
-          return createTask(v.file.name, episodeId, mutateAsync, {
+          return createTask(v.file.name, mutateAsync, {
             seriesId,
             episodeId,
             form,
           });
         });
 
-      dispatchTask(TaskGroupName, tasks, "Uploading subtitles...");
+      dispatchTask(tasks, "upload-subtitles");
     },
     [mutateAsync, payload]
   );
@@ -128,29 +132,26 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
         Header: "Episode",
         accessor: "payload",
         className: "vw-1",
-        Cell: ({ value, row, update }) => {
+        Cell: ({ value, row }) => {
           const options = episodes.map<SelectorOption<Item.Episode>>((ep) => ({
             label: `(${ep.season}x${ep.episode}) ${ep.title}`,
             value: ep,
           }));
 
-          const change = useCallback(
-            (ep: Nullable<Item.Episode>) => {
-              if (ep) {
-                const newInfo = { ...row.original };
-                newInfo.payload.instance = ep;
-                update && update(row, newInfo);
-              }
-            },
-            [row, update]
-          );
+          const mutate = useRowMutation();
 
           return (
             <Selector
               disabled={row.original.state === "fetching"}
               options={options}
               value={value.instance}
-              onChange={change}
+              onChange={(ep: Nullable<Item.Episode>) => {
+                if (ep) {
+                  const newInfo = { ...row.original };
+                  newInfo.payload.instance = ep;
+                  mutate(row.index, newInfo);
+                }
+              }}
             ></Selector>
           );
         },
@@ -160,16 +161,15 @@ const SeriesUploadModal: FunctionComponent<SeriesProps & BaseModalProps> = ({
   );
 
   return (
-    <SubtitleUploadModal
+    <SubtitleUploader
       columns={columns}
       initial={{ instance: null }}
       availableLanguages={availableLanguages}
       upload={upload}
       update={update}
       validate={validate}
-      {...modal}
-    ></SubtitleUploadModal>
+    ></SubtitleUploader>
   );
 };
 
-export default SeriesUploadModal;
+export default withModal(SeriesUploadModal, "series-upload");

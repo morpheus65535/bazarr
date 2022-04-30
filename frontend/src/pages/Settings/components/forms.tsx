@@ -5,17 +5,18 @@ import {
   FileBrowserProps,
   Selector as CSelector,
   SelectorProps as CSelectorProps,
+  SelectorValueType,
   Slider as CSlider,
   SliderProps as CSliderProps,
-} from "components";
+} from "@/components";
+import { isReactText } from "@/utilities";
 import { isArray, isBoolean, isNull, isNumber, isString } from "lodash";
-import React, { FunctionComponent, useEffect } from "react";
+import { FunctionComponent, ReactText, useEffect } from "react";
 import {
   Button as BSButton,
   ButtonProps as BSButtonProps,
   Form,
 } from "react-bootstrap";
-import { isReactText } from "utilities";
 import { useCollapse, useLatest } from ".";
 import { OverrideFuncType, useSingleUpdate } from "./hooks";
 
@@ -32,13 +33,14 @@ export interface BaseInput<T> {
   disabled?: boolean;
   settingKey: string;
   override?: OverrideFuncType<T>;
-  beforeStaged?: (v: T) => any;
+  beforeStaged?: (v: T) => unknown;
 }
 
-export interface TextProps extends BaseInput<React.ReactText> {
-  placeholder?: React.ReactText;
+export interface TextProps extends BaseInput<ReactText> {
+  placeholder?: ReactText;
   password?: boolean;
   controlled?: boolean;
+  numberWithArrows?: boolean;
 }
 
 export const Text: FunctionComponent<TextProps> = ({
@@ -49,22 +51,33 @@ export const Text: FunctionComponent<TextProps> = ({
   override,
   password,
   settingKey,
+  numberWithArrows,
 }) => {
-  const value = useLatest<React.ReactText>(settingKey, isReactText, override);
+  const value = useLatest<ReactText>(settingKey, isReactText, override);
 
   const update = useSingleUpdate();
   const collapse = useCollapse();
 
+  const fieldType = () => {
+    if (password) {
+      return "password";
+    } else if (numberWithArrows) {
+      return "number";
+    } else {
+      return "text";
+    }
+  };
+
   return (
     <Form.Control
-      type={password ? "password" : "text"}
+      type={fieldType()}
       placeholder={placeholder?.toString()}
       disabled={disabled}
       defaultValue={controlled ? undefined : value ?? undefined}
       value={controlled ? value ?? undefined : undefined}
       onChange={(e) => {
         const val = e.currentTarget.value;
-        collapse(val.toString());
+        collapse && collapse(val.toString());
         const value = beforeStaged ? beforeStaged(val) : val;
         update(value, settingKey);
       }}
@@ -89,7 +102,7 @@ export const Check: FunctionComponent<CheckProps> = ({
 
   const value = useLatest<boolean>(settingKey, isBoolean, override);
 
-  useEffect(() => collapse(value ?? false), [collapse, value]);
+  useEffect(() => collapse && collapse(value ?? false), [collapse, value]);
 
   return (
     <Form.Check
@@ -108,7 +121,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-function selectorValidator<T>(v: any): v is T {
+function selectorValidator<T>(v: unknown): v is T {
   return isString(v) || isNumber(v) || isArray(v);
 }
 
@@ -132,7 +145,7 @@ export function Selector<
 
   useEffect(() => {
     if (isString(value) || isNull(value)) {
-      collapse(value ?? "");
+      collapse && collapse(value ?? "");
     }
   });
 
@@ -141,14 +154,14 @@ export function Selector<
       {...selector}
       value={value as SelectorValueType<T, M>}
       onChange={(v) => {
-        v = beforeStaged ? beforeStaged(v) : v;
-        update(v, settingKey);
+        const result = beforeStaged ? beforeStaged(v) : v;
+        update(result, settingKey);
       }}
     ></CSelector>
   );
 }
 
-type SliderProps = {} & BaseInput<number> &
+type SliderProps = BaseInput<number> &
   Omit<CSliderProps, "onChange" | "onAfterChange">;
 
 export const Slider: FunctionComponent<SliderProps> = (props) => {
@@ -169,7 +182,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
   );
 };
 
-type ChipsProp = {} & BaseInput<string[]> &
+type ChipsProp = BaseInput<string[]> &
   Omit<CChipsProps, "onChange" | "defaultValue">;
 
 export const Chips: FunctionComponent<ChipsProp> = (props) => {
@@ -192,7 +205,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
 
 type ButtonProps = {
   onClick?: (
-    update: (v: any, key: string) => void,
+    update: (v: unknown, key: string) => void,
     key: string,
     value?: string
   ) => void;
@@ -216,7 +229,7 @@ export const Button: FunctionComponent<Override<ButtonProps, BSButtonProps>> = (
   );
 };
 
-type FileProps = {} & BaseInput<string>;
+interface FileProps extends BaseInput<string> {}
 
 export const File: FunctionComponent<Override<FileProps, FileBrowserProps>> = (
   props

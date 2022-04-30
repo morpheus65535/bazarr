@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from "react";
+import { FunctionComponent, useCallback } from "react";
 import { InputGroup } from "react-bootstrap";
 import {
   Check,
@@ -6,24 +6,22 @@ import {
   CollapseBox,
   Group,
   Input,
+  Layout,
   Message,
   PathMappingTable,
-  SettingsProvider,
   Slider,
   Text,
   URLTestButton,
 } from "../components";
 import { moviesEnabledKey } from "../keys";
 
-interface Props {}
-
-const SettingsRadarrView: FunctionComponent<Props> = () => {
+const SettingsRadarrView: FunctionComponent = () => {
   const baseUrlOverride = useCallback((settings: Settings) => {
     return settings.radarr.base_url?.slice(1) ?? "";
   }, []);
 
   return (
-    <SettingsProvider title="Radarr - Bazarr (Settings)">
+    <Layout name="Radarr">
       <CollapseBox>
         <CollapseBox.Control>
           <Group header="Use Radarr">
@@ -39,7 +37,10 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
               <Message>Hostname or IPv4 Address</Message>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-radarr-port"></Text>
+              <Text
+                settingKey="settings-radarr-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Base URL">
               <InputGroup>
@@ -84,13 +85,29 @@ const SettingsRadarrView: FunctionComponent<Props> = () => {
                 movies in Radarr.
               </Message>
             </Input>
+            <Input>
+              <Check
+                label="Defer searching of subtitles until scheduled task execution"
+                settingKey="settings-radarr-defer_search_signalr"
+              ></Check>
+              <Message>
+                If enabled, this option will prevent Bazarr from searching
+                subtitles as soon as movies are imported.
+              </Message>
+              <Message>
+                Search can be triggered using this command: `curl -d
+                "radarr_moviefile_id=$radarr_moviefile_id" -H "x-api-key:
+                ###############################" -X POST
+                http://localhost:6767/api/webhooks/radarr`
+              </Message>
+            </Input>
           </Group>
           <Group header="Path Mappings">
             <PathMappingTable type="radarr"></PathMappingTable>
           </Group>
         </CollapseBox.Content>
       </CollapseBox>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

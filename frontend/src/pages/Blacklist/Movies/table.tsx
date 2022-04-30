@@ -1,8 +1,9 @@
+import { useMovieDeleteBlacklist } from "@/apis/hooks";
+import { AsyncButton, PageTable, TextPopover } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useMovieDeleteBlacklist } from "apis/hooks";
-import { AsyncButton, LanguageText, PageTable, TextPopover } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Column } from "react-table";
 
@@ -31,7 +32,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language.Text value={value} long></Language.Text>;
           } else {
             return null;
           }

@@ -59,6 +59,7 @@ class SystemSettings(Resource):
                         TableLanguagesProfiles.items: json.dumps(item['items']),
                         TableLanguagesProfiles.mustContain: item['mustContain'],
                         TableLanguagesProfiles.mustNotContain: item['mustNotContain'],
+                        TableLanguagesProfiles.originalFormat: item['originalFormat'] if item['originalFormat'] != 'null' else None,
                     })\
                         .where(TableLanguagesProfiles.profileId == item['profileId'])\
                         .execute()
@@ -72,6 +73,7 @@ class SystemSettings(Resource):
                         TableLanguagesProfiles.items: json.dumps(item['items']),
                         TableLanguagesProfiles.mustContain: item['mustContain'],
                         TableLanguagesProfiles.mustNotContain: item['mustNotContain'],
+                        TableLanguagesProfiles.originalFormat: item['originalFormat'] if item['originalFormat'] != 'null' else None,
                     }).execute()
             for profileId in existing:
                 # Unassign this profileId from series and movies

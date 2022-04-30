@@ -106,8 +106,7 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
 
     # if we have ffprobe available
     if ffprobe_path:
-        api.initialize({"provider": "ffmpeg", "ffmpeg": ffprobe_path})
-        data["ffprobe"] = api.know(file)
+        data["ffprobe"] = api.know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
     # if not, we use enzyme for mkv files
     else:
         if os.path.splitext(file)[1] == ".mkv":

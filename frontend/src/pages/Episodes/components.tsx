@@ -1,8 +1,9 @@
+import { useEpisodeSubtitleModification } from "@/apis/hooks";
+import { AsyncButton } from "@/components";
+import Language from "@/components/bazarr/Language";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEpisodeSubtitleModification } from "apis/hooks";
-import { AsyncButton, LanguageText } from "components";
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
 
 interface Props {
@@ -52,7 +53,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
         className="mr-1"
         variant={missing ? "primary" : "secondary"}
       >
-        <LanguageText className="pr-1" text={subtitle}></LanguageText>
+        <Language.Text className="pr-1" value={subtitle}></Language.Text>
         <FontAwesomeIcon
           size="sm"
           icon={missing ? faSearch : faTrash}
@@ -62,7 +63,7 @@ export const SubtitleAction: FunctionComponent<Props> = ({
   } else {
     return (
       <Badge className="mr-1" variant="secondary">
-        <LanguageText text={subtitle} long={false}></LanguageText>
+        <Language.Text value={subtitle} long={false}></Language.Text>
       </Badge>
     );
   }

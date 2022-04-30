@@ -8,35 +8,40 @@ import pretty
 import time
 import socket
 import requests
+import tzlocal
 
 from get_args import args
 from config import settings, get_array_from
 from event_handler import event_stream
 from utils import get_binary, blacklist_log, blacklist_log_movie
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, MustGetBlacklisted
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked, \
+    MustGetBlacklisted, SearchLimitReached
 from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
 from subliminal_patch.extensions import provider_registry
 
 
-def time_until_end_of_day(dt=None):
+def time_until_midnight(timezone):
     # type: (datetime.datetime) -> datetime.timedelta
     """
-    Get timedelta until end of day on the datetime passed, or current time.
+    Get timedelta until midnight.
     """
-    if dt is None:
-        dt = datetime.datetime.now()
-    tomorrow = dt + datetime.timedelta(days=1)
-    return datetime.datetime.combine(tomorrow, datetime.time.min) - dt
+    now_in_tz = datetime.datetime.now(tz=timezone)
+    midnight = now_in_tz.replace(hour=0, minute=0, second=0, microsecond=0) + \
+        datetime.timedelta(days=1)
+    return midnight - now_in_tz
 
 
 # Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
 # Needs to convert to offset-naive dt
-titulky_server_local_time = datetime.datetime.now(tz=pytz.timezone('Europe/Prague')).replace(tzinfo=None)
-titulky_limit_reset_datetime = time_until_end_of_day(dt=titulky_server_local_time)
+titulky_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
 
-hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
+# LegendasDivx reset its searches limit at approximately midnight, Lisbon time, everyday.
+legendasdivx_limit_reset_timedelta = time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + \
+                                    datetime.timedelta(minutes=15)
+
+hours_until_end_of_day = time_until_midnight(timezone=tzlocal.get_localzone()).days + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError, IPAddressBlocked)
@@ -71,14 +76,19 @@ PROVIDER_THROTTLE_MAP = {
         IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
     },
     "titulky": {
-        DownloadLimitExceeded: (titulky_limit_reset_datetime, f"{titulky_limit_reset_datetime.seconds // 3600 + 1} hours")
+        DownloadLimitExceeded: (titulky_limit_reset_timedelta, f"{titulky_limit_reset_timedelta.seconds // 3600 + 1} hours")
     },
     "legendasdivx": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (
-            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            legendasdivx_limit_reset_timedelta,
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
         IPAddressBlocked: (
-            datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+            legendasdivx_limit_reset_timedelta,
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
+        SearchLimitReached: (
+            legendasdivx_limit_reset_timedelta,
+            f"{legendasdivx_limit_reset_timedelta.seconds // 3600 + 1} hours"),
     }
 }
 
@@ -215,6 +225,7 @@ def get_providers_auth():
             'cache_dir': os.path.join(args.config_dir, "cache"),
             'ffprobe_path': _FFPROBE_BINARY,
             'ffmpeg_path': _FFMPEG_BINARY,
+            'timeout': settings.embeddedsubtitles.timeout,
         }
     }
 
@@ -297,7 +308,7 @@ def update_throttled_provider():
     for provider in list(tp):
         if provider not in providers_list:
             del tp[provider]
-            settings.general.throtteled_providers = str(tp)
+            set_throttled_providers(str(tp))
 
         reason, until, throttle_desc = tp.get(provider, (None, None, None))
 

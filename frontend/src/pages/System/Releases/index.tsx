@@ -1,13 +1,11 @@
-import { useSystemReleases } from "apis/hooks";
-import { QueryOverlay } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import { useSystemReleases } from "@/apis/hooks";
+import { QueryOverlay } from "@/components";
+import { BuildKey } from "@/utilities";
+import { FunctionComponent, useMemo } from "react";
 import { Badge, Card, Col, Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
-import { BuildKey } from "utilities";
 
-interface Props {}
-
-const SystemReleasesView: FunctionComponent<Props> = () => {
+const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
   const { data } = releases;
 
@@ -18,13 +16,13 @@ const SystemReleasesView: FunctionComponent<Props> = () => {
       </Helmet>
       <Row>
         <QueryOverlay result={releases}>
-          <React.Fragment>
+          <>
             {data?.map((v, idx) => (
               <Col xs={12} key={BuildKey(idx, v.date)}>
                 <InfoElement {...v}></InfoElement>
               </Col>
             ))}
-          </React.Fragment>
+          </>
         </QueryOverlay>
       </Row>
     </Container>

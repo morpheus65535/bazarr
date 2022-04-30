@@ -310,12 +310,24 @@ def process_url(
             url = f"https://{url}"
 
         # Get parsed URL as we might need it later
-        parsed_url = urlsplit(url)
+        try:
+            parsed_url = urlsplit(url)
+        except ValueError as e:
+            if fail_silently:
+                parsed_url = url
+            else:
+                raise e
     else:
         parsed_url = url
 
     # Get (sub) domain name
-    domain_name = parsed_url.hostname
+    try:
+        domain_name = parsed_url.hostname
+    except AttributeError as e:
+        if fail_silently:
+            domain_name = None
+        else:
+            raise e
 
     if not domain_name:
         if fail_silently:

@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const actionOptions: SelectorOption<History.ActionOptions>[] = [
   {
     label: "Automatically Downloaded",

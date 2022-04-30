@@ -165,7 +165,7 @@ def sync_episodes(series_id=None, send_event=True):
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 
 
-def sync_one_episode(episode_id):
+def sync_one_episode(episode_id, defer_search=False):
     logging.debug('BAZARR syncing this specific episode from Sonarr: {}'.format(episode_id))
     url = url_sonarr()
     apikey_sonarr = settings.sonarr.apikey
@@ -239,9 +239,13 @@ def sync_one_episode(episode_id):
     store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
     # Downloading missing subtitles
-    logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
-        episode['path'])))
-    episode_download_subtitles(episode_id)
+    if defer_search:
+        logging.debug('BAZARR searching for missing subtitles is deferred until scheduled task execution for this '
+                      'episode: {}'.format(path_mappings.path_replace(episode['path'])))
+    else:
+        logging.debug('BAZARR downloading missing subtitles for this episode: {}'.format(path_mappings.path_replace(
+            episode['path'])))
+        episode_download_subtitles(episode_id)
 
 
 def SonarrFormatAudioCodec(audio_codec):

@@ -103,7 +103,8 @@ defaults = {
         'excluded_tags': '[]',
         'excluded_series_types': '[]',
         'use_ffprobe_cache': 'True',
-        'exclude_season_zero': 'False'
+        'exclude_season_zero': 'False',
+        'defer_search_signalr': 'False'
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -117,7 +118,8 @@ defaults = {
         'only_monitored': 'False',
         'movies_sync': '60',
         'excluded_tags': '[]',
-        'use_ffprobe_cache': 'True'
+        'use_ffprobe_cache': 'True',
+        'defer_search_signalr': 'False'
     },
     'proxy': {
         'type': 'None',
@@ -208,7 +210,8 @@ defaults = {
         'include_ass': 'True',
         'include_srt': 'True',
         'hi_fallback': 'False',
-        'mergerfs_mode': 'False'
+        'mergerfs_mode': 'False',
+        'timeout': '600',
     },
     'subsync': {
         'use_subsync': 'False',
@@ -256,8 +259,7 @@ base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key',
                'page_size',
-               'page_size_manual_search',
-               'throtteled_providers']
+               'page_size_manual_search']
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
@@ -424,25 +426,43 @@ def save_settings(settings_items):
         if key == 'settings-addic7ed-username':
             if key != settings.addic7ed.username:
                 region.delete('addic7ed_data')
+        elif key == 'settings-addic7ed-password':
+            if key != settings.addic7ed.password:
+                region.delete('addic7ed_data')
 
         if key == 'settings-legendasdivx-username':
             if key != settings.legendasdivx.username:
+                region.delete('legendasdivx_cookies2')
+        elif key == 'settings-legendasdivx-password':
+            if key != settings.legendasdivx.password:
                 region.delete('legendasdivx_cookies2')
 
         if key == 'settings-opensubtitles-username':
             if key != settings.opensubtitles.username:
                 region.delete('os_token')
+        elif key == 'settings-opensubtitles-password':
+            if key != settings.opensubtitles.password:
+                region.delete('os_token')
 
         if key == 'settings-opensubtitlescom-username':
             if key != settings.opensubtitlescom.username:
+                region.delete('oscom_token')
+        elif key == 'settings-opensubtitlescom-password':
+            if key != settings.opensubtitlescom.password:
                 region.delete('oscom_token')
 
         if key == 'settings-subscene-username':
             if key != settings.subscene.username:
                 region.delete('subscene_cookies2')
+        elif key == 'settings-subscene-password':
+            if key != settings.subscene.password:
+                region.delete('subscene_cookies2')
 
         if key == 'settings-titlovi-username':
             if key != settings.titlovi.username:
+                region.delete('titlovi_token')
+        elif key == 'settings-titlovi-password':
+            if key != settings.titlovi.password:
                 region.delete('titlovi_token')
 
         if settings_keys[0] == 'settings':

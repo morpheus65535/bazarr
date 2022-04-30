@@ -1,7 +1,7 @@
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, MouseEvent } from "react";
+import { FunctionComponent, MouseEvent } from "react";
 import { Badge, Button, ButtonProps } from "react-bootstrap";
 
 export const ActionBadge: FunctionComponent<{
@@ -66,7 +66,7 @@ export const ActionButtonItem: FunctionComponent<ActionButtonItemProps> = ({
 }) => {
   const showText = alwaysShowText === true || loading !== true;
   return (
-    <React.Fragment>
+    <>
       <FontAwesomeIcon
         style={{ width: "1rem" }}
         icon={loading ? faCircleNotch : icon}
@@ -75,6 +75,6 @@ export const ActionButtonItem: FunctionComponent<ActionButtonItemProps> = ({
       {children && showText ? (
         <span className="ml-2 font-weight-bold">{children}</span>
       ) : null}
-    </React.Fragment>
+    </>
   );
 };

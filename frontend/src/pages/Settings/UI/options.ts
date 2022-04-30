@@ -1,3 +1,5 @@
+import { SelectorOption } from "@/components";
+
 export const pageSizeOptions: SelectorOption<number>[] = [
   {
     label: "25",

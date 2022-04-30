@@ -79,6 +79,7 @@ class EpisodesHistory(Resource):
                                               TableHistory.score,
                                               TableShows.tags,
                                               TableHistory.action,
+                                              TableHistory.video_path,
                                               TableHistory.subtitles_path,
                                               TableHistory.sonarrEpisodeId,
                                               TableHistory.provider,
@@ -101,7 +102,8 @@ class EpisodesHistory(Resource):
             if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']),
                 "tags": str(item['tags']), "monitored": str(item['monitored']),
                 "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:  # noqa: E129
-                if os.path.isfile(path_mappings.path_replace(item['subtitles_path'])):
+                if os.path.exists(path_mappings.path_replace(item['subtitles_path'])) and \
+                        os.path.exists(path_mappings.path_replace(item['video_path'])):
                     item.update({"upgradable": True})
 
             del item['path']

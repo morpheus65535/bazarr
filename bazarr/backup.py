@@ -33,12 +33,14 @@ def get_restore_path():
 def get_backup_files(fullpath=True):
     backup_file_pattern = os.path.join(get_backup_path(), 'bazarr_backup_v*.zip')
     file_list = glob(backup_file_pattern)
+    file_list.sort(key=os.path.getmtime)
     if fullpath:
         return file_list
     else:
         return [{
             'type': 'backup',
             'filename': os.path.basename(x),
+            'size': sizeof_fmt(os.path.getsize(x)),
             'date': datetime.fromtimestamp(os.path.getmtime(x)).strftime("%b %d %Y")
         } for x in file_list]
 
@@ -178,7 +180,7 @@ def backup_rotation():
 
     logging.debug(f'Cleaning up backup files older than {backup_retention} days')
     for file in backup_files:
-        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=backup_retention) < datetime.utcnow():
+        if datetime.fromtimestamp(os.path.getmtime(file)) + timedelta(days=int(backup_retention)) < datetime.utcnow():
             logging.debug(f'Deleting old backup file {file}')
             try:
                 os.remove(file)
@@ -195,3 +197,11 @@ def delete_backup_file(filename):
     except OSError:
         logging.debug(f'Unable to delete backup file {backup_file_path}')
     return False
+
+
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+        if abs(num) < 1000.0:
+            return f"{num:3.1f} {unit}{suffix}"
+        num /= 1000.0
+    return f"{num:.1f} Y{suffix}"

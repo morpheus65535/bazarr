@@ -3,24 +3,18 @@ import {
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
-} from "apis/hooks";
-import React, { FunctionComponent, useMemo } from "react";
+} from "@/apis/hooks";
+import { useModal, usePayload, withModal } from "@/modules/modals";
+import { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
-import {
-  HistoryIcon,
-  LanguageText,
-  PageTable,
-  QueryOverlay,
-  TextPopover,
-} from "..";
+import { HistoryIcon, PageTable, QueryOverlay, TextPopover } from "..";
+import Language from "../bazarr/Language";
 import { BlacklistButton } from "../inputs/blacklist";
-import BaseModal, { BaseModalProps } from "./BaseModal";
-import { useModalPayload } from "./hooks";
 
-export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
-  const { ...modal } = props;
+const MovieHistoryView: FunctionComponent = () => {
+  const movie = usePayload<Item.Movie>();
 
-  const movie = useModalPayload<Item.Movie>(modal.modalKey);
+  const Modal = useModal({ size: "lg" });
 
   const history = useMovieHistory(movie?.radarrId);
 
@@ -40,7 +34,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language.Text value={value} long></Language.Text>;
           } else {
             return null;
           }
@@ -89,7 +83,7 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 
   return (
-    <BaseModal title={`History - ${movie?.title ?? ""}`} {...modal}>
+    <Modal title={`History - ${movie?.title ?? ""}`}>
       <QueryOverlay result={history}>
         <PageTable
           emptyText="No History Found"
@@ -97,16 +91,16 @@ export const MovieHistoryModal: FunctionComponent<BaseModalProps> = (props) => {
           data={data ?? []}
         ></PageTable>
       </QueryOverlay>
-    </BaseModal>
+    </Modal>
   );
 };
 
-interface EpisodeHistoryProps {}
+export const MovieHistoryModal = withModal(MovieHistoryView, "movie-history");
 
-export const EpisodeHistoryModal: FunctionComponent<
-  BaseModalProps & EpisodeHistoryProps
-> = (props) => {
-  const episode = useModalPayload<Item.Episode>(props.modalKey);
+const EpisodeHistoryView: FunctionComponent = () => {
+  const episode = usePayload<Item.Episode>();
+
+  const Modal = useModal({ size: "lg" });
 
   const history = useEpisodeHistory(episode?.sonarrEpisodeId);
 
@@ -126,7 +120,7 @@ export const EpisodeHistoryModal: FunctionComponent<
         accessor: "language",
         Cell: ({ value }) => {
           if (value) {
-            return <LanguageText text={value} long></LanguageText>;
+            return <Language.Text value={value} long></Language.Text>;
           } else {
             return null;
           }
@@ -182,7 +176,7 @@ export const EpisodeHistoryModal: FunctionComponent<
   );
 
   return (
-    <BaseModal title={`History - ${episode?.title ?? ""}`} {...props}>
+    <Modal title={`History - ${episode?.title ?? ""}`}>
       <QueryOverlay result={history}>
         <PageTable
           emptyText="No History Found"
@@ -190,6 +184,11 @@ export const EpisodeHistoryModal: FunctionComponent<
           data={data ?? []}
         ></PageTable>
       </QueryOverlay>
-    </BaseModal>
+    </Modal>
   );
 };
+
+export const EpisodeHistoryModal = withModal(
+  EpisodeHistoryView,
+  "episode-history"
+);

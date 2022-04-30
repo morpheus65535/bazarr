@@ -1,12 +1,12 @@
+import { copyToClipboard, Environment, toggleState } from "@/utilities";
 import {
   faCheck,
   faClipboard,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { InputGroup } from "react-bootstrap";
-import { copyToClipboard, Environment, toggleState } from "utilities";
 import {
   Button,
   Check,
@@ -15,9 +15,9 @@ import {
   File,
   Group,
   Input,
+  Layout,
   Message,
   Selector,
-  SettingsProvider,
   Text,
 } from "../components";
 import { branchOptions, proxyOptions, securityOptions } from "./options";
@@ -39,14 +39,18 @@ const SettingsGeneralView: FunctionComponent = () => {
   const [copied, setCopy] = useState(false);
 
   return (
-    <SettingsProvider title="General - Bazarr (Settings)">
+    <Layout name="General">
       <Group header="Host">
         <Input name="Address">
           <Text placeholder="0.0.0.0" settingKey="settings-general-ip"></Text>
           <Message>Valid IPv4 address or '0.0.0.0' for all interfaces</Message>
         </Input>
         <Input name="Port">
-          <Text placeholder={6767} settingKey="settings-general-port"></Text>
+          <Text
+            placeholder={6767}
+            settingKey="settings-general-port"
+            numberWithArrows={true}
+          ></Text>
         </Input>
         <Input name="Base URL">
           <InputGroup>
@@ -131,7 +135,10 @@ const SettingsGeneralView: FunctionComponent = () => {
               <Text settingKey="settings-proxy-url"></Text>
             </Input>
             <Input name="Port">
-              <Text settingKey="settings-proxy-port"></Text>
+              <Text
+                settingKey="settings-proxy-port"
+                numberWithArrows={true}
+              ></Text>
             </Input>
             <Input name="Username">
               <Text settingKey="settings-proxy-username"></Text>
@@ -177,8 +184,21 @@ const SettingsGeneralView: FunctionComponent = () => {
         </Input>
       </Group>
       <Group header="Backups">
-        <File settingKey="settings-backup-folder" type="bazarr"></File>
-        <Message>Absolute path to the backup directory</Message>
+        <Input name="Folder">
+          <File settingKey="settings-backup-folder" type="bazarr"></File>
+          <Message>Absolute path to the backup directory</Message>
+        </Input>
+        <Input name="Retention">
+          <InputGroup>
+            <Text
+              settingKey="settings-backup-retention"
+              numberWithArrows={true}
+            ></Text>
+            <InputGroup.Prepend>
+              <InputGroup.Text>Days</InputGroup.Text>
+            </InputGroup.Prepend>
+          </InputGroup>
+        </Input>
       </Group>
       <Group header="Analytics">
         <Input>
@@ -193,7 +213,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           </Message>
         </Input>
       </Group>
-    </SettingsProvider>
+    </Layout>
   );
 };
 

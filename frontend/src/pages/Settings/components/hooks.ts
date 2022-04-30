@@ -1,8 +1,8 @@
-import { useSystemSettings } from "apis/hooks";
+import { useSystemSettings } from "@/apis/hooks";
+import { LOG } from "@/utilities/console";
 import { isArray, uniqBy } from "lodash";
 import { useCallback, useContext, useMemo } from "react";
-import { log } from "utilities/logger";
-import { StagedChangesContext } from "./provider";
+import { StagedChangesContext } from "./Layout";
 
 export function useStagedValues(): LooseObject {
   const [values] = useContext(StagedChangesContext);
@@ -12,12 +12,12 @@ export function useStagedValues(): LooseObject {
 export function useSingleUpdate() {
   const [, update] = useContext(StagedChangesContext);
   return useCallback(
-    (v: any, key: string) => {
+    (v: unknown, key: string) => {
       update((staged) => {
         const changes = { ...staged };
         changes[key] = v;
 
-        log("info", "stage settings", changes);
+        LOG("info", "stage settings", changes);
 
         return changes;
       });
@@ -33,7 +33,7 @@ export function useMultiUpdate() {
       update((staged) => {
         const changes = { ...staged, ...obj };
 
-        log("info", "stage settings", changes);
+        LOG("info", "stage settings", changes);
 
         return changes;
       });
@@ -42,7 +42,7 @@ export function useMultiUpdate() {
   );
 }
 
-type ValidateFuncType<T> = (v: any) => v is T;
+type ValidateFuncType<T> = (v: unknown) => v is T;
 
 export type OverrideFuncType<T> = (settings: Settings) => T;
 

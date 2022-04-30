@@ -1,3 +1,8 @@
+import { BuildKey, isMovie } from "@/utilities";
+import {
+  useLanguageProfileBy,
+  useProfileItemsToLanguages,
+} from "@/utilities/languages";
 import {
   faBookmark as farBookmark,
   faClone as fasClone,
@@ -12,7 +17,7 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useMemo } from "react";
 import {
   Badge,
   Col,
@@ -22,12 +27,7 @@ import {
   Popover,
   Row,
 } from "react-bootstrap";
-import { BuildKey, isMovie } from "utilities";
-import {
-  useLanguageProfileBy,
-  useProfileItemsToLanguages,
-} from "utilities/languages";
-import { LanguageText } from ".";
+import Language from "./bazarr/Language";
 
 interface Props {
   item: Item.Base;
@@ -102,7 +102,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             icon={faLanguage}
             desc="Language"
           >
-            <LanguageText long text={v}></LanguageText>
+            <Language.Text long value={v}></Language.Text>
           </DetailBadge>
         ))
       );

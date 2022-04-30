@@ -73,7 +73,9 @@ def upgrade_subtitles():
 
         episodes_to_upgrade = []
         for episode in upgradable_episodes_not_perfect:
-            if os.path.exists(path_mappings.path_replace(episode['subtitles_path'])) and int(episode['score']) < 357:
+            if os.path.exists(path_mappings.path_replace(episode['subtitles_path'])) and \
+                    os.path.exists(path_mappings.path_replace(episode['video_path'])) and \
+                    int(episode['score']) < 357:
                 episodes_to_upgrade.append(episode)
 
         count_episode_to_upgrade = len(episodes_to_upgrade)
@@ -114,7 +116,9 @@ def upgrade_subtitles():
 
         movies_to_upgrade = []
         for movie in upgradable_movies_not_perfect:
-            if os.path.exists(path_mappings.path_replace_movie(movie['subtitles_path'])) and int(movie['score']) < 117:
+            if os.path.exists(path_mappings.path_replace_movie(movie['subtitles_path'])) and \
+                    os.path.exists(path_mappings.path_replace_movie(movie['video_path'])) and \
+                    int(movie['score']) < 117:
                 movies_to_upgrade.append(movie)
 
         count_movie_to_upgrade = len(movies_to_upgrade)

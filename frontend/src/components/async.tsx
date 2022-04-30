@@ -4,9 +4,10 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, {
+import {
   FunctionComponent,
   PropsWithChildren,
+  ReactElement,
   useCallback,
   useEffect,
   useState,
@@ -18,7 +19,7 @@ import { LoadingIndicator } from ".";
 
 interface QueryOverlayProps {
   result: UseQueryResult<unknown, unknown>;
-  children: React.ReactElement;
+  children: ReactElement;
 }
 
 export const QueryOverlay: FunctionComponent<QueryOverlayProps> = ({
@@ -43,9 +44,7 @@ export function PromiseOverlay<T>({ promise, children }: PromiseProps<T>) {
   const [item, setItem] = useState<T | null>(null);
 
   useEffect(() => {
-    promise()
-      .then(setItem)
-      .catch(() => {});
+    promise().then(setItem);
   }, [promise]);
 
   if (item === null) {

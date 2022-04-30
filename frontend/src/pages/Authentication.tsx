@@ -1,23 +1,21 @@
-import { useReduxStore } from "@redux/hooks/base";
-import logo from "@static/logo128.png";
-import { useSystem } from "apis/hooks";
-import React, { FunctionComponent, useState } from "react";
+import { useSystem } from "@/apis/hooks";
+import { useReduxStore } from "@/modules/redux/hooks/base";
+import { FunctionComponent, useState } from "react";
 import { Button, Card, Form, Image, Spinner } from "react-bootstrap";
-import { Redirect } from "react-router-dom";
-import "./Authentication.scss";
+import { Navigate } from "react-router-dom";
 
-interface Props {}
-
-const Authentication: FunctionComponent<Props> = () => {
+const Authentication: FunctionComponent = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const { login, isWorking } = useSystem();
 
-  const authenticated = useReduxStore((s) => s.status !== "unauthenticated");
+  const authenticated = useReduxStore(
+    (s) => s.site.status !== "unauthenticated"
+  );
 
   if (authenticated) {
-    return <Redirect to="/"></Redirect>;
+    return <Navigate to="/"></Navigate>;
   }
 
   return (
@@ -31,7 +29,7 @@ const Authentication: FunctionComponent<Props> = () => {
         >
           <Card.Body>
             <Form.Group className="mb-5 d-flex justify-content-center">
-              <Image width="64" height="64" src={logo}></Image>
+              <Image width="64" height="64" src="/static/logo128.png"></Image>
             </Form.Group>
             <Form.Group>
               <Form.Control

@@ -1,5 +1,8 @@
-import { LanguageSelector as CLanguageSelector } from "components";
-import React, { FunctionComponent, useMemo } from "react";
+import {
+  LanguageSelector as CLanguageSelector,
+  SelectorOption,
+} from "@/components";
+import { FunctionComponent, useMemo } from "react";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
 import { BaseInput, Selector, useSingleUpdate } from "../components";
 
@@ -25,10 +28,8 @@ export const LanguageSelector: FunctionComponent<
   );
 };
 
-interface ProfileSelectorProps {}
-
 export const ProfileSelector: FunctionComponent<
-  ProfileSelectorProps & BaseInput<Language.Profile>
+  BaseInput<Language.Profile>
 > = ({ settingKey }) => {
   const profiles = useLatestProfiles();
 

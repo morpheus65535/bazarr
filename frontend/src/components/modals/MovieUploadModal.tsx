@@ -1,32 +1,24 @@
-import { dispatchTask } from "@modules/task";
-import { createTask } from "@modules/task/utilities";
-import { useMovieSubtitleModification } from "apis/hooks";
-import React, { FunctionComponent, useCallback } from "react";
+import { useMovieSubtitleModification } from "@/apis/hooks";
+import { usePayload, withModal } from "@/modules/modals";
+import { createTask, dispatchTask } from "@/modules/task/utilities";
 import {
   useLanguageProfileBy,
   useProfileItemsToLanguages,
-} from "utilities/languages";
-import { BaseModalProps } from "./BaseModal";
-import { useModalInformation } from "./hooks";
-import SubtitleUploadModal, {
+} from "@/utilities/languages";
+import { FunctionComponent, useCallback } from "react";
+import SubtitleUploader, {
   PendingSubtitle,
   Validator,
 } from "./SubtitleUploadModal";
 
-interface Payload {}
-
-export const TaskGroupName = "Uploading Subtitles...";
-
-const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
-  const modal = props;
-
-  const { payload } = useModalInformation<Item.Movie>(modal.modalKey);
+const MovieUploadModal: FunctionComponent = () => {
+  const payload = usePayload<Item.Movie>();
 
   const profile = useLanguageProfileBy(payload?.profileId);
 
   const availableLanguages = useProfileItemsToLanguages(profile);
 
-  const update = useCallback(async (list: PendingSubtitle<Payload>[]) => {
+  const update = useCallback(async (list: PendingSubtitle<unknown>[]) => {
     return list;
   }, []);
 
@@ -34,7 +26,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
     upload: { mutateAsync },
   } = useMovieSubtitleModification();
 
-  const validate = useCallback<Validator<Payload>>(
+  const validate = useCallback<Validator<unknown>>(
     (item) => {
       if (item.language === null) {
         return {
@@ -59,7 +51,7 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
   );
 
   const upload = useCallback(
-    (items: PendingSubtitle<Payload>[]) => {
+    (items: PendingSubtitle<unknown>[]) => {
       if (payload === null) {
         return;
       }
@@ -71,24 +63,28 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
         .map((v) => {
           const { file, language, forced, hi } = v;
 
-          return createTask(file.name, radarrId, mutateAsync, {
+          if (language === null) {
+            throw new Error("Language is not selected");
+          }
+
+          return createTask(file.name, mutateAsync, {
             radarrId,
             form: {
               file,
               forced,
               hi,
-              language: language!.code2,
+              language: language.code2,
             },
           });
         });
 
-      dispatchTask(TaskGroupName, tasks, "Uploading...");
+      dispatchTask(tasks, "upload-subtitles");
     },
     [mutateAsync, payload]
   );
 
   return (
-    <SubtitleUploadModal
+    <SubtitleUploader
       hideAllLanguages
       initial={{ forced: false }}
       availableLanguages={availableLanguages}
@@ -96,9 +92,8 @@ const MovieUploadModal: FunctionComponent<BaseModalProps> = (props) => {
       upload={upload}
       update={update}
       validate={validate}
-      {...modal}
-    ></SubtitleUploadModal>
+    ></SubtitleUploader>
   );
 };
 
-export default MovieUploadModal;
+export default withModal(MovieUploadModal, "movie-upload");
