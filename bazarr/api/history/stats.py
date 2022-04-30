@@ -18,7 +18,7 @@ from ..utils import authenticate
 class HistoryStats(Resource):
     @authenticate
     def get(self):
-        timeframe = request.args.get('timeframe') or 'month'
+        timeframe = request.args.get('timeFrame') or 'month'
         action = request.args.get('action') or 'All'
         provider = request.args.get('provider') or 'All'
         language = request.args.get('language') or 'All'
