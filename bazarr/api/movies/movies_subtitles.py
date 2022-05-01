@@ -7,16 +7,18 @@ from flask import request
 from flask_restful import Resource
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from database import TableMovies, get_audio_profile_languages, get_profile_id
+from app.database import TableMovies, get_audio_profile_languages, get_profile_id
+from utilities.path_mappings import path_mappings
+from subtitles.upload import manual_upload_subtitle
+from subtitles.download import generate_subtitles
+from subtitles.tools.delete import delete_subtitles
+from radarr.history import history_log_movie
+from app.notifier import send_notifications_movie
+from subtitles.indexer.movies import store_subtitles_movie
+from app.event_handler import event_stream
+from app.config import settings
+
 from ..utils import authenticate
-from helper import path_mappings
-from get_subtitle.upload import manual_upload_subtitle
-from get_subtitle.download import generate_subtitles
-from utils import history_log_movie, delete_subtitles
-from notifier import send_notifications_movie
-from list_subtitles import store_subtitles_movie
-from event_handler import event_stream
-from config import settings
 
 
 # PATCH: Download Subtitles

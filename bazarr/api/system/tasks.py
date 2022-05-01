@@ -3,8 +3,9 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
+from app.scheduler import scheduler
+
 from ..utils import authenticate
-from scheduler import scheduler
 
 
 class SystemTasks(Resource):

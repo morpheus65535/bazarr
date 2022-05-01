@@ -3,14 +3,14 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
-from helper import path_mappings
-from get_providers import get_providers
-from get_subtitle.manual import manual_search, manual_download_subtitle
-from utils import history_log
-from config import settings
-from notifier import send_notifications
-from list_subtitles import store_subtitles
+from app.database import TableEpisodes, TableShows, get_audio_profile_languages, get_profile_id
+from utilities.path_mappings import path_mappings
+from app.get_providers import get_providers
+from subtitles.manual import manual_search, manual_download_subtitle
+from sonarr.history import history_log
+from app.config import settings
+from app.notifier import send_notifications
+from subtitles.indexer.series import store_subtitles
 
 from ..utils import authenticate
 

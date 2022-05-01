@@ -3,12 +3,13 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
-from database import TableMovies
+from app.database import TableMovies
+from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
+from app.event_handler import event_stream
+from subtitles.wanted import wanted_search_missing_subtitles_movies
+from subtitles.mass_download import movies_download_subtitles
+
 from ..utils import authenticate, postprocessMovie, None_Keys
-from list_subtitles import list_missing_subtitles_movies, movies_scan_subtitles
-from event_handler import event_stream
-from get_subtitle.wanted import wanted_search_missing_subtitles_movies
-from get_subtitle.mass_download import movies_download_subtitles
 
 
 class Movies(Resource):
