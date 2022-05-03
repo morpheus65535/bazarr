@@ -216,12 +216,13 @@ class SubdivxSubtitlesProvider(Provider):
             if not any(item in datos for item in ("Cds:</b> 1", "SubRip")):
                 continue
 
-            spain = "/pais/7.gif" in datos
-            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
-
             # description
             sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
             description = sub_details.replace(",", " ")
+
+            # language
+            spain = "/pais/7.gif" in datos or "españa" in description.lower()
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
             # uploader
             uploader = body_soup.find("a", {"class": "link1"}).text

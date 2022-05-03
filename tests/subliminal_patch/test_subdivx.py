@@ -27,6 +27,12 @@ def test_list_subtitles_episode(episodes, episode_key, expected):
         assert len(subtitles) >= expected
 
 
+def test_list_subtitles_castillian_spanish(episodes):
+    item = episodes["better_call_saul_s06e04"]
+    with SubdivxSubtitlesProvider() as provider:
+        assert provider.list_subtitles(item, {Language.fromietf("es")})
+
+
 def test_download_subtitle(movies):
     subtitle = SubdivxSubtitle(
         Language("spa", "MX"),
