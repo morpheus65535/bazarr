@@ -48,7 +48,7 @@ def get_binary(name):
         return installed_exe
     else:
         logging.debug('BAZARR binary not found in path, searching for it...')
-        binaries_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bin'))
+        binaries_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'bin'))
         system = platform.system()
         machine = platform.machine()
         dir_name = name
