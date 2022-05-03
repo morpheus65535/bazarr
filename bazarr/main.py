@@ -18,6 +18,9 @@ import requests  # noqa E402
 from threading import Thread  # noqa E402
 from functools import wraps  # noqa E402
 from urllib.parse import unquote  # noqa E402
+
+import mimetypes  # noqa E402
+
 from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
     send_from_directory  # noqa E402
 
@@ -109,6 +112,14 @@ def catch_all(path):
 
 @app.route('/assets/<path:filename>')
 def web_assets(filename):
+    # forcing mimetypes to prevent bad configuration in Windows registry to prevent Bazarr UI from showing
+    mimetypes.add_type('application/javascript', '.js')
+    mimetypes.add_type('text/css', '.css')
+    mimetypes.add_type('font/woff2', '.woff2')
+    mimetypes.add_type('image/svg+xml', '.svg')
+    mimetypes.add_type('image/png', '.png')
+    mimetypes.add_type('image/x-icon', '.ico')
+
     path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build', 'assets')
     return send_from_directory(path, filename)
 
