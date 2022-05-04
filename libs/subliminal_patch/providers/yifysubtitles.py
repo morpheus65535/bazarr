@@ -25,13 +25,12 @@ class YifySubtitle(Subtitle):
     """YIFY Subtitles"""
     provider_name = 'yifysubtitles'
 
-    def __init__(self, language, page_link, release, uploader, sub_link, rating, hi):
+    def __init__(self, language, page_link, release, uploader, rating, hi):
         super(YifySubtitle, self).__init__(language)
         self.page_link = page_link
         self.hearing_impaired = hi
         self.release_info = release
         self.uploader = uploader
-        self.sub_link = sub_link
         self.rating = rating
 
     @property
@@ -96,7 +95,7 @@ class YifySubtitlesProvider(Provider):
 
     languages = {Language(l, c) for (_, l, c) in YifyLanguages}
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
-    server_urls = ['https://yifysubtitles.org']
+    server_url = 'https://yifysubtitles.org'
     video_types = (Movie,)
 
     def initialize(self):
@@ -118,9 +117,7 @@ class YifySubtitlesProvider(Provider):
         rating = int(td[0].text)
         sub_lang = td[1].text
         release = re.sub(r'^subtitle ', '', td[2].text)
-        sub_link = td[2].find('a').get('href')
-        page_link = server_url + sub_link
-        sub_link = re.sub(r'^/subtitles/', server_url + '/subtitle/', sub_link) + '.zip'
+        page_link = server_url + td[2].find('a').get('href')
         hi = True if td[3].find('span', {'class': 'hi-subtitle'}) else False
         uploader = td[4].text
 
@@ -132,7 +129,7 @@ class YifySubtitlesProvider(Provider):
             lang = Language.rebuild(lang, hi=True)
 
         if languages & {lang}:
-            return [YifySubtitle(lang, page_link, release, uploader, sub_link, rating, hi)]
+            return [YifySubtitle(lang, page_link, release, uploader, rating, hi)]
 
         return []
 
@@ -140,12 +137,9 @@ class YifySubtitlesProvider(Provider):
         subtitles = []
 
         logger.info('Searching subtitle %r', imdb_id)
-        for server_url in self.server_urls:
-            response = self.session.get(server_url + '/movie-imdb/' + imdb_id,
-                                        allow_redirects=False, timeout=10,
-                                        headers={'Referer': server_url})
-            if response.status_code == 200:
-                break
+        response = self.session.get(self.server_url + '/movie-imdb/' + imdb_id,
+                                    allow_redirects=False, timeout=10,
+                                    headers={'Referer': self.server_url})
 
         # 404 is returned if the imdb_id was not found
         if response.status_code != 404:
@@ -162,7 +156,7 @@ class YifySubtitlesProvider(Provider):
 
         for row in rows:
             try:
-                subtitles = subtitles + self._parse_row(row, languages, server_url)
+                subtitles = subtitles + self._parse_row(row, languages, self.server_url)
             except Exception as e:
                 pass
 
@@ -173,11 +167,11 @@ class YifySubtitlesProvider(Provider):
         return self.query(languages, video.imdb_id) if isinstance(video, Movie) and video.imdb_id else []
 
     def download_subtitle(self, subtitle):
-        logger.info('Downloading subtitle %r', subtitle.sub_link)
-        cache_key = sha1(subtitle.sub_link.encode("utf-8")).digest()
+        logger.info('Downloading subtitle %r', subtitle.page_link)
+        cache_key = sha1(subtitle.page_link.encode("utf-8")).digest()
         request = region.get(cache_key)
         if request is NO_VALUE:
-            request = self.session.get(subtitle.sub_link, headers={
+            request = self.session.get(subtitle.page_link, headers={
                 'Referer': subtitle.page_link
                 })
             request.raise_for_status()
@@ -185,12 +179,25 @@ class YifySubtitlesProvider(Provider):
         else:
             logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
 
-        archive_stream = io.BytesIO(request.content)
-        if is_zipfile(archive_stream):
-            self._process_archive(ZipFile(archive_stream), subtitle)
+        soup = BeautifulSoup(request.content, 'lxml')
+        download_button = soup.find('a', {'class': 'download-subtitle'})
+        if download_button:
+            download_link = self.server_url + download_button['href']
+
+            request = self.session.get(download_link, headers={
+                'Referer': subtitle.page_link
+            })
+            request.raise_for_status()
+
+            archive_stream = io.BytesIO(request.content)
+            if is_zipfile(archive_stream):
+                self._process_archive(ZipFile(archive_stream), subtitle)
+            else:
+                logger.error('Ignore unsupported archive %r', request.headers)
+                region.delete(cache_key)
         else:
-            logger.error('Ignore unsupported archive %r', request.headers)
-            region.delete(cache_key)
+            logger.error('Cannot find download link on this page: %r', subtitle.page_link)
+            return
 
     def _process_archive(self, archive_stream, subtitle):
         for file_name in archive_stream.namelist():
