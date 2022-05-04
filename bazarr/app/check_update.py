@@ -169,7 +169,7 @@ def apply_update():
 
     if is_updated:
         logging.debug('BAZARR new release have been installed, now we restart')
-        from server import webserver
+        from .server import webserver
         webserver.restart()
 
 
