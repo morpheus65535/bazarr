@@ -20,27 +20,29 @@ logger = logging.getLogger(__name__)
 
 def _get_matching_sub(sub_names, forced=False, episode=None):
     matching_sub = None
-    for sub_name in sub_names:
-        guess = guessit(sub_name, options={"single_value": True})
-        is_movie = not guess.get("episode") or not episode
 
+    guess_options = {"single_value": True}
+    if episode is not None:
+        guess_options["type"] = "episode"  # type: ignore
+
+    for sub_name in sub_names:
         if not forced and os.path.splitext(sub_name.lower())[0].endswith("forced"):
             logger.debug("Ignoring forced subtitle: %s", sub_name)
             continue
 
         # If it's a movie then get the first subtitle
-        if is_movie:
+        if episode is None:
             logger.debug("Movie subtitle found: %s", sub_name)
             matching_sub = sub_name
             break
 
-        # Get episode info
-        guess_episode = guess.get("episode")
-        if guess_episode is None:
+        guess = guessit(sub_name, options=guess_options)
+
+        if guess.get("episode") is None:
             logger.debug("No episode info found in file: %s", sub_name)
             continue
 
-        if episode == guess_episode:
+        if episode == guess["episode"]:
             logger.debug("Episode matched: %s", sub_name)
             matching_sub = sub_name
             break

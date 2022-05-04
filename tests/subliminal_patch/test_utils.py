@@ -19,7 +19,7 @@ from rarfile import RarFile
             1,
             "breaking.bad.s01e01.srt",
         ),
-        (("dummy.forced.srt",), True, 1, "dummy.forced.srt"),
+        (("dummy.forced.srt",), True, None, "dummy.forced.srt"),
         (("dummy.forced.srt",), False, 1, None),
     ],
 )
