@@ -120,7 +120,8 @@ def web_assets(filename):
     mimetypes.add_type('image/png', '.png')
     mimetypes.add_type('image/x-icon', '.ico')
 
-    path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build', 'assets')
+    # send_from_directory needs an absolute path then we'll use realpath() here
+    path = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'build', 'assets'))
     return send_from_directory(path, filename)
 
 
