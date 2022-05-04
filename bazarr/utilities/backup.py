@@ -164,7 +164,7 @@ def prepare_restore(filename):
 
     if success:
         logging.debug('time to restart')
-        from server import webserver
+        from app.server import webserver
         webserver.restart()
 
 

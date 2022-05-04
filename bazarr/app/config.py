@@ -496,27 +496,27 @@ def save_settings(settings_items):
 
     # Reconfigure Bazarr to reflect changes
     if configure_debug:
-        from logger import configure_logging
+        from .logger import configure_logging
         configure_logging(settings.general.getboolean('debug') or args.debug)
 
     if configure_captcha:
         configure_captcha_func()
 
     if update_schedule:
-        from scheduler import scheduler
-        from event_handler import event_stream
+        from .scheduler import scheduler
+        from .event_handler import event_stream
         scheduler.update_configurable_tasks()
         event_stream(type='task')
 
     if sonarr_changed:
-        from signalr_client import sonarr_signalr_client
+        from .signalr_client import sonarr_signalr_client
         try:
             sonarr_signalr_client.restart()
         except Exception:
             pass
 
     if radarr_changed:
-        from signalr_client import radarr_signalr_client
+        from .signalr_client import radarr_signalr_client
         try:
             radarr_signalr_client.restart()
         except Exception:
@@ -530,7 +530,7 @@ def save_settings(settings_items):
         configure_proxy_func()
 
     if exclusion_updated:
-        from event_handler import event_stream
+        from .event_handler import event_stream
         event_stream(type='badges')
         if sonarr_exclusion_updated:
             event_stream(type='reset-episode-wanted')
