@@ -117,6 +117,8 @@ class EmbeddedSubtitlesProvider(Provider):
             self._blacklist.add(path)
             streams = []
 
+        streams = _discard_possible_incomplete_subtitles(list(streams))
+
         if not streams:
             logger.debug("No subtitles found for container: %s", video)
 
@@ -258,6 +260,39 @@ def _check_hi_fallback(streams, languages):
 
         else:
             logger.debug("HI fallback not needed: %s", compatible_streams)
+
+
+def _discard_possible_incomplete_subtitles(streams):
+    """Check number_of_frames attributes from subtitle streams in order to find
+    supposedly incomplete subtitles"""
+    try:
+        max_frames = max(stream.number_of_frames for stream in streams)
+    except ValueError:
+        return []
+
+    # Blatantly assume there's nothing to discard as some ffprobe streams don't
+    # have number_of_frames tags
+    if not max_frames:
+        return streams
+
+    logger.debug("Checking possible incomplete subtitles (max frames: %d)", max_frames)
+
+    valid_streams = []
+
+    for stream in streams:
+        # 500 < 1200
+        if stream.number_of_frames < max_frames // 2:
+            logger.debug(
+                "Possible bad subtitle found: %s (%s frames - %s frames)",
+                stream,
+                stream.number_of_frames,
+                max_frames,
+            )
+            continue
+
+        valid_streams.append(stream)
+
+    return valid_streams
 
 
 def _is_fuse_rclone_mount(path: str):
