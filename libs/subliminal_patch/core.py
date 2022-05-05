@@ -105,10 +105,12 @@ class SZProviderPool(ProviderPool):
         # Check if the pool was initialized enough hours ago
         self._check_lifetime()
 
+        providers = set(providers or [])
+
         # Check if any new provider has been added
-        updated = set(providers) != self.providers or ban_list != self.ban_list
-        removed_providers = list(sorted(self.providers - set(providers)))
-        new_providers = list(sorted(set(providers) - self.providers))
+        updated = providers != self.providers or ban_list != self.ban_list
+        removed_providers = list(sorted(self.providers - providers))
+        new_providers = list(sorted(providers - self.providers))
 
         # Terminate and delete removed providers from instance
         for removed in removed_providers:
@@ -127,8 +129,6 @@ class SZProviderPool(ProviderPool):
             self.discarded_providers.difference_update(new_providers)
             self.providers.difference_update(removed_providers)
             self.providers.update(list(providers))
-
-        self.blacklist = blacklist
 
         # Restart providers with new configs
         for key, val in provider_configs.items():
@@ -153,6 +153,9 @@ class SZProviderPool(ProviderPool):
                 updated = True
 
         self.provider_configs = provider_configs
+
+        self.blacklist = blacklist or []
+        self.ban_list = ban_list or {'must_contain': [], 'must_not_contain': []}
 
         return updated
 
