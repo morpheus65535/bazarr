@@ -108,10 +108,6 @@ class SubdivxSubtitlesProvider(Provider):
                 f"{video.series} S{video.season:02}",
             ):
                 subtitles += self._handle_multi_page_search(query, video)
-
-            # Fallback
-            if not subtitles:
-                subtitles += self._handle_multi_page_search(video.series, video)
         else:
             # Subdvix has problems searching foreign movies if the year is
             # appended. A proper solution would be filtering results with the
@@ -220,12 +216,13 @@ class SubdivxSubtitlesProvider(Provider):
             if not any(item in datos for item in ("Cds:</b> 1", "SubRip")):
                 continue
 
-            spain = "/pais/7.gif" in datos
-            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
-
             # description
             sub_details = body_soup.find("div", {"id": "buscador_detalle_sub"}).text
             description = sub_details.replace(",", " ")
+
+            # language
+            spain = "/pais/7.gif" in datos or "españa" in description.lower()
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
             # uploader
             uploader = body_soup.find("a", {"class": "link1"}).text

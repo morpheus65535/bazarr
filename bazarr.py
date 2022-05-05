@@ -8,7 +8,7 @@ import sys
 import time
 import atexit
 
-from bazarr.get_args import args
+from bazarr.app.get_args import args
 
 
 def check_python_version():

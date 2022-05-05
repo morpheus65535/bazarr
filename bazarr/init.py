@@ -5,17 +5,17 @@ import io
 import rarfile
 import sys
 import subprocess
-
-from config import settings, configure_captcha_func
-from get_args import args
-from logger import configure_logging
-from helper import path_mappings
-from backup import restore_from_backup
-
-from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
 import datetime
 import time
+
+from dogpile.cache.region import register_backend as register_cache_backend
+
+from app.config import settings, configure_captcha_func
+from app.get_args import args
+from app.logger import configure_logging
+from utilities.path_mappings import path_mappings
+from utilities.backup import restore_from_backup
 
 # set start time global variable as epoch
 global startTime
@@ -26,12 +26,6 @@ restore_from_backup()
 
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/{}".format(os.environ["BAZARR_VERSION"])
-
-# set subliminal_patch hearing-impaired extension to use when naming subtitles
-os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
-
-# set anti-captcha provider and key
-configure_captcha_func()
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -50,9 +44,18 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
+if not os.path.exists(os.path.join(args.config_dir, 'backup')):
+    os.mkdir(os.path.join(args.config_dir, 'backup'))
 if not os.path.exists(os.path.join(args.config_dir, 'restore')):
     os.mkdir(os.path.join(args.config_dir, 'restore'))
 
+# set subliminal_patch hearing-impaired extension to use when naming subtitles
+os.environ["SZ_HI_EXTENSION"] = settings.general.hi_extension
+
+# set anti-captcha provider and key
+configure_captcha_func()
+
+# configure logging
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging  # noqa E402
 
@@ -95,7 +98,7 @@ if not args.no_update:
                 try:
                     restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
                 except Exception as e:
-                    logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+                    logging.error('BAZARR Cannot create restart file: ' + repr(e))
                 else:
                     logging.info('Bazarr is being restarted...')
                     restart_file.write(str(''))
@@ -163,11 +166,12 @@ if os.path.isfile(package_info_file):
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
 subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
-                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir})
+                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir},
+                            replace_existing_backend=True)
 subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
-    from check_update import check_releases
+    from app.check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
@@ -189,7 +193,7 @@ with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini')
 
 
 def init_binaries():
-    from utils import get_binary
+    from utilities.binaries import get_binary
     exe = get_binary("unrar")
 
     rarfile.UNRAR_TOOL = exe
@@ -205,7 +209,7 @@ def init_binaries():
     return unrar
 
 
-from database import init_db, migrate_db  # noqa E402
+from app.database import init_db, migrate_db  # noqa E402
 init_db()
 migrate_db()
 init_binaries()

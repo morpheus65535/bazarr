@@ -6,10 +6,12 @@ import platform
 from flask import jsonify
 from flask_restful import Resource
 
-from ..utils import authenticate
-from utils import get_sonarr_info, get_radarr_info
-from get_args import args
+from radarr.info import get_radarr_info
+from sonarr.info import get_sonarr_info
+from app.get_args import args
 from init import startTime
+
+from ..utils import authenticate
 
 
 class SystemStatus(Resource):

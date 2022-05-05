@@ -9,7 +9,7 @@ from ..utils import authenticate
 class System(Resource):
     @authenticate
     def post(self):
-        from server import webserver
+        from app.server import webserver
         action = request.args.get('action')
         if action == "shutdown":
             webserver.shutdown()

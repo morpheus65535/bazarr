@@ -3,9 +3,10 @@
 from flask import request, jsonify
 from flask_restful import Resource
 
+from app.config import settings
+from app.database import TableShows, TableMovies
+
 from ..utils import authenticate
-from config import settings
-from database import TableShows, TableMovies
 
 
 class Searches(Resource):

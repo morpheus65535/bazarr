@@ -10,7 +10,7 @@ from flask_restful import Resource
 from functools import reduce
 from peewee import fn
 
-from database import TableHistory, TableHistoryMovie
+from app.database import TableHistory, TableHistoryMovie
 
 from ..utils import authenticate
 
@@ -18,7 +18,7 @@ from ..utils import authenticate
 class HistoryStats(Resource):
     @authenticate
     def get(self):
-        timeframe = request.args.get('timeframe') or 'month'
+        timeframe = request.args.get('timeFrame') or 'month'
         action = request.args.get('action') or 'All'
         provider = request.args.get('provider') or 'All'
         language = request.args.get('language') or 'All'

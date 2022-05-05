@@ -12,32 +12,31 @@ if os.path.isfile(version_file):
 
 os.environ["BAZARR_VERSION"] = bazarr_version.lstrip('v')
 
-import libs  # noqa W0611
-
-from get_args import args  # noqa E402
-from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url  # noqa E402
-
-from init import *  # noqa E402
-from database import System  # noqa E402
-
-from notifier import update_notifier  # noqa E402
-
-from urllib.parse import unquote  # noqa E402
-from get_languages import load_language_in_db  # noqa E402
-from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
-    send_from_directory
-from threading import Thread  # noqa E402
+import app.libs  # noqa W0611
 import requests  # noqa E402
 
-from get_series import *  # noqa E402
-from get_episodes import *  # noqa E402
-from get_movies import *  # noqa E402
-from signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
-
-from check_update import apply_update, check_releases  # noqa E402
-from server import app, webserver  # noqa E402
+from threading import Thread  # noqa E402
 from functools import wraps  # noqa E402
-from utils import check_credentials, get_sonarr_info, get_radarr_info  # noqa E402
+from urllib.parse import unquote  # noqa E402
+
+import mimetypes  # noqa E402
+
+from flask import request, redirect, abort, render_template, Response, session, send_file, stream_with_context, \
+    send_from_directory  # noqa E402
+
+from app.get_args import args  # noqa E402
+from app.config import settings, configure_proxy_func, base_url  # noqa E402
+from init import *  # noqa E402
+from app.database import System  # noqa E402
+from app.notifier import update_notifier  # noqa E402
+from languages.get_languages import load_language_in_db  # noqa E402
+from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
+from app.check_update import apply_update, check_releases  # noqa E402
+from app.server import app, webserver  # noqa E402
+from utilities.helper import check_credentials  # noqa E402
+from constants import headers  # noqa E402
+from sonarr.info import get_sonarr_info, url_sonarr  # noqa E402
+from radarr.info import get_radarr_info, url_radarr  # noqa E402
 
 # Install downloaded update
 if bazarr_version != '':
@@ -56,8 +55,6 @@ login_auth = settings.auth.type
 
 update_notifier()
 
-headers = {"User-Agent": os.environ["SZ_USER_AGENT"]}
-
 
 def check_login(actual_method):
     @wraps(actual_method)
@@ -75,7 +72,7 @@ def check_login(actual_method):
 
 
 @app.errorhandler(404)
-def page_not_found(e):
+def page_not_found():
     return redirect(base_url, code=302)
 
 
@@ -115,7 +112,16 @@ def catch_all(path):
 
 @app.route('/assets/<path:filename>')
 def web_assets(filename):
-    path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build', 'assets')
+    # forcing mimetypes to prevent bad configuration in Windows registry to prevent Bazarr UI from showing
+    mimetypes.add_type('application/javascript', '.js')
+    mimetypes.add_type('text/css', '.css')
+    mimetypes.add_type('font/woff2', '.woff2')
+    mimetypes.add_type('image/svg+xml', '.svg')
+    mimetypes.add_type('image/png', '.png')
+    mimetypes.add_type('image/x-icon', '.ico')
+
+    # send_from_directory needs an absolute path then we'll use realpath() here
+    path = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'build', 'assets'))
     return send_from_directory(path, filename)
 
 
@@ -160,15 +166,6 @@ def movies_images(url):
         return '', 404
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
-
-
-# @app.route('/check_update')
-# @authenticate
-# def check_update():
-#     if not args.no_update:
-#         check_and_apply_update()
-
-#     return '', 200
 
 
 def configured():

@@ -10,6 +10,7 @@ import socket
 import traceback
 import time
 import operator
+import unicodedata
 
 import itertools
 from six.moves.http_client import ResponseNotReady
@@ -784,7 +785,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         if not entry.is_file(follow_symlinks=False):
             continue
 
-        p = entry.name
+        p = unicodedata.normalize('NFC', entry.name)
 
         # keep only valid subtitle filenames
         if not p.lower().endswith(SUBTITLE_EXTENSIONS):

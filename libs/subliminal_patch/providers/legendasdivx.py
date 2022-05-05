@@ -6,6 +6,7 @@ import re
 import zipfile
 from time import sleep
 from urllib.parse import quote
+from urllib.parse import parse_qs
 from requests.exceptions import HTTPError
 import rarfile
 
@@ -47,7 +48,10 @@ class LegendasdivxSubtitle(Subtitle):
 
     @property
     def id(self):
-        return self.page_link
+        try:
+            return parse_qs(self.page_link)["lid"][0]
+        except (KeyError, IndexError):
+            return f"legendasdivx_{self.video.imdb_id}_{self.release_info}_{self.uploader}"
 
     def get_matches(self, video):
         matches = set()

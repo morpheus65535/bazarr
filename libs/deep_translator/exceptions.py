@@ -30,9 +30,11 @@ class NotValidPayload(BaseError):
     exception thrown if the user enters an invalid payload
     """
 
-    def __init__(self,
-                 val,
-                 message='text must be a valid text with maximum 5000 character, otherwise it cannot be translated'):
+    def __init__(
+        self,
+        val,
+        message="text must be a valid text with maximum 5000 character, otherwise it cannot be translated",
+    ):
         super(NotValidPayload, self).__init__(val, message)
 
 
@@ -41,11 +43,8 @@ class InvalidSourceOrTargetLanguage(BaseError):
     exception thrown if the user enters an invalid payload
     """
 
-    def __init__(self,
-                 val,
-                 message="source and target language can't be the same"):
+    def __init__(self, val, message="Invalid source or target language!"):
         super(InvalidSourceOrTargetLanguage, self).__init__(val, message)
-
 
 
 class TranslationNotFound(BaseError):
@@ -53,9 +52,11 @@ class TranslationNotFound(BaseError):
     exception thrown if no translation was found for the text provided by the user
     """
 
-    def __init__(self,
-                 val,
-                 message='No translation was found using the current translator. Try another translator?'):
+    def __init__(
+        self,
+        val,
+        message="No translation was found using the current translator. Try another translator?",
+    ):
         super(TranslationNotFound, self).__init__(val, message)
 
 
@@ -64,9 +65,9 @@ class ElementNotFoundInGetRequest(BaseError):
     exception thrown if the html element was not found in the body parsed by beautifulsoup
     """
 
-    def __init__(self,
-                 val,
-                 message='Required element was not found in the API response'):
+    def __init__(
+        self, val, message="Required element was not found in the API response"
+    ):
         super(ElementNotFoundInGetRequest, self).__init__(val, message)
 
 
@@ -76,7 +77,9 @@ class NotValidLength(BaseError):
     """
 
     def __init__(self, val, min_chars, max_chars):
-        message = "Text length need to be between {} and {} characters".format(min_chars, max_chars)
+        message = (
+            f"Text length need to be between {min_chars} and {max_chars} characters"
+        )
         super(NotValidLength, self).__init__(val, message)
 
 
@@ -85,8 +88,11 @@ class RequestError(Exception):
     exception thrown if an error occurred during the request call, e.g a connection problem.
     """
 
-    def __init__(self, message="Request exception can happen due to an api connection error. "
-                               "Please check your connection and try again"):
+    def __init__(
+        self,
+        message="Request exception can happen due to an api connection error. "
+        "Please check your connection and try again",
+    ):
         self.message = message
 
     def __str__(self):
@@ -100,7 +106,7 @@ class MicrosoftAPIerror(Exception):
 
     def __init__(self, api_message):
         self.api_message = str(api_message)
-        self.message="Microsoft API returned the following error"
+        self.message = "Microsoft API returned the following error"
 
     def __str__(self):
         return "{}: {}".format(self.message, self.api_message)
@@ -111,7 +117,10 @@ class TooManyRequests(Exception):
     exception thrown if an error occurred during the request call, e.g a connection problem.
     """
 
-    def __init__(self, message="Server Error: You made too many requests to the server. According to google, you are allowed to make 5 requests per second and up to 200k requests per day. You can wait and try again later or you can try the translate_batch function"):
+    def __init__(
+        self,
+        message="Server Error: You made too many requests to the server. According to google, you are allowed to make 5 requests per second and up to 200k requests per day. You can wait and try again later or you can try the translate_batch function",
+    ):
         self.message = message
 
     def __str__(self):
@@ -122,6 +131,7 @@ class ServerException(Exception):
     """
     Default YandexTranslate exception from the official website
     """
+
     errors = {
         400: "ERR_BAD_REQUEST",
         401: "ERR_KEY_INVALID",
@@ -143,5 +153,5 @@ class ServerException(Exception):
 
 class AuthorizationException(Exception):
     def __init__(self, api_key, *args):
-        msg = 'Unauthorized access with the api key ' + api_key
+        msg = "Unauthorized access with the api key " + api_key
         super().__init__(msg, *args)

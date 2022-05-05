@@ -1,81 +1,48 @@
 """
 mymemory translator API
 """
-import logging
-import warnings
+from typing import List, Optional, Union
 
-from .constants import BASE_URLS, GOOGLE_LANGUAGES_TO_CODES
-from .exceptions import (NotValidPayload,
-                        TranslationNotFound,
-                        LanguageNotSupportedException,
-                        RequestError,
-                        TooManyRequests)
-from .parent import BaseTranslator
 import requests
-from time import sleep
+
+from deep_translator.base import BaseTranslator
+from deep_translator.constants import BASE_URLS
+from deep_translator.exceptions import (
+    RequestError,
+    TooManyRequests,
+    TranslationNotFound,
+)
+from deep_translator.validate import is_empty, is_input_valid
 
 
 class MyMemoryTranslator(BaseTranslator):
     """
     class that uses the mymemory translator to translate texts
     """
-    _languages = GOOGLE_LANGUAGES_TO_CODES
-    supported_languages = list(_languages.keys())
 
-    def __init__(self, source="auto", target="en", proxies=None, **kwargs):
+    def __init__(
+        self,
+        source: str = "auto",
+        target: str = "en",
+        proxies: Optional[dict] = None,
+        **kwargs,
+    ):
         """
         @param source: source language to translate from
         @param target: target language to translate to
         """
-        self.__base_url = BASE_URLS.get("MYMEMORY")
         self.proxies = proxies
-        if self.is_language_supported(source, target):
-            self._source, self._target = self._map_language_to_code(source.lower(), target.lower())
-            self._source = self._source if self._source != 'auto' else 'Lao'
+        self.email = kwargs.get("email", None)
+        super().__init__(
+            base_url=BASE_URLS.get("MYMEMORY"),
+            source=source,
+            target=target,
+            payload_key="q",
+        )
 
-        self.email = kwargs.get('email', None)
-        super(MyMemoryTranslator, self).__init__(base_url=self.__base_url,
-                                                 source=self._source,
-                                                 target=self._target,
-                                                 payload_key='q',
-                                                 langpair='{}|{}'.format(self._source, self._target))
-
-    @staticmethod
-    def get_supported_languages(as_dict=False, **kwargs):
-        """
-         return the supported languages by the mymemory translator
-         @param as_dict: if True, the languages will be returned as a dictionary mapping languages to their abbreviations
-         @return: list or dict
-         """
-        return MyMemoryTranslator.supported_languages if not as_dict else MyMemoryTranslator._languages
-
-    def _map_language_to_code(self, *languages):
-        """
-          map language to its corresponding code (abbreviation) if the language was passed by its full name by the user
-          @param languages: list of languages
-          @return: mapped value of the language or raise an exception if the language is not supported
-        """
-        for language in languages:
-            if language in self._languages.values() or language == 'auto':
-                yield language
-            elif language in self._languages.keys():
-                yield self._languages[language]
-            else:
-                raise LanguageNotSupportedException(language)
-
-    def is_language_supported(self, *languages):
-        """
-        check if the language is supported by the translator
-        @param languages: list of languages
-        @return: bool or raise an Exception
-        """
-        for lang in languages:
-            if lang != 'auto' and lang not in self._languages.keys():
-                if lang != 'auto' and lang not in self._languages.values():
-                    raise LanguageNotSupportedException(lang)
-        return True
-
-    def translate(self, text, return_all=False, **kwargs):
+    def translate(
+        self, text: str, return_all: bool = False, **kwargs
+    ) -> Union[str, List[str]]:
         """
         function that uses the mymemory translator to translate a text
         @param text: desired text to translate
@@ -83,19 +50,20 @@ class MyMemoryTranslator(BaseTranslator):
         @param return_all: set to True to return all synonym/similars of the translated text
         @return: str or list
         """
-
-        if self._validate_payload(text, max_chars=500):
+        if is_input_valid(text, max_chars=500):
             text = text.strip()
+            if self._same_source_target() or is_empty(text):
+                return text
 
+            self._url_params["langpair"] = f"{self._source}|{self._target}"
             if self.payload_key:
                 self._url_params[self.payload_key] = text
             if self.email:
-                self._url_params['de'] = self.email
+                self._url_params["de"] = self.email
 
-            response = requests.get(self.__base_url,
-                                    params=self._url_params,
-                                    headers=self.headers,
-                                    proxies=self.proxies)
+            response = requests.get(
+                self._base_url, params=self._url_params, proxies=self.proxies
+            )
 
             if response.status_code == 429:
                 raise TooManyRequests()
@@ -106,71 +74,30 @@ class MyMemoryTranslator(BaseTranslator):
             if not data:
                 TranslationNotFound(text)
 
-            translation = data.get('responseData').get('translatedText')
+            translation = data.get("responseData").get("translatedText")
             if translation:
                 return translation
 
             elif not translation:
-                all_matches = data.get('matches')
-                matches = (match['translation'] for match in all_matches)
+                all_matches = data.get("matches")
+                matches = (match["translation"] for match in all_matches)
                 next_match = next(matches)
                 return next_match if not return_all else list(all_matches)
 
-    def translate_sentences(self, sentences=None, **kwargs):
+    def translate_file(self, path: str, **kwargs) -> str:
         """
-        translate many sentences together. This makes sense if you have sentences with different languages
-        and you want to translate all to unified language. This is handy because it detects
-        automatically the language of each sentence and then translate it.
-
-        @param sentences: list of sentences to translate
-        @return: list of all translated sentences
+        translate directly from file
+        @param path: path to the target file
+        @type path: str
+        @param kwargs: additional args
+        @return: str
         """
-        warn_msg = "deprecated. Use the translate_batch function instead"
-        warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
-        logging.warning(warn_msg)
-        if not sentences:
-            raise NotValidPayload(sentences)
+        return self._translate_file(path, **kwargs)
 
-        translated_sentences = []
-        try:
-            for sentence in sentences:
-                translated = self.translate(text=sentence, **kwargs)
-                translated_sentences.append(translated)
-
-            return translated_sentences
-
-        except Exception as e:
-            raise e
-
-    def translate_file(self, path, **kwargs):
-        """
-         translate directly from file
-         @param path: path to the target file
-         @type path: str
-         @param kwargs: additional args
-         @return: str
-         """
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                text = f.read().strip()
-
-            return self.translate(text=text)
-        except Exception as e:
-            raise e
-
-    def translate_batch(self, batch=None, **kwargs):
+    def translate_batch(self, batch: List[str], **kwargs) -> List[str]:
         """
         translate a list of texts
         @param batch: list of texts you want to translate
         @return: list of translations
         """
-        if not batch:
-            raise Exception("Enter your text list that you want to translate")
-
-        arr = []
-        for text in batch:
-            translated = self.translate(text, **kwargs)
-            arr.append(translated)
-            sleep(2)
-
-        return arr
+        return self._translate_batch(batch, **kwargs)
