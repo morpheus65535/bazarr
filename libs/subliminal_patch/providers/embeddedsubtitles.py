@@ -40,7 +40,7 @@ class EmbeddedSubtitle(Subtitle):
         self.container: FFprobeVideoContainer = container
         self.forced = stream.disposition.forced
         self.page_link = self.container.path
-        self.release_info = os.path.basename(self.page_link)
+        self.release_info = _get_pretty_release_name(stream, container)
         self.media_type = media_type
 
         self._matches: set = matches
@@ -272,3 +272,8 @@ def _is_fuse_rclone_mount(path: str):
     # https://forum.rclone.org/t/fuse-inode-number-aufs/215/5
     # https://pkg.go.dev/bazil.org/fuse/fs?utm_source=godoc#GenerateDynamicInode
     return len(str(os.stat(path).st_ino)) > 18
+
+
+def _get_pretty_release_name(stream, container):
+    bname = os.path.basename(container.path)
+    return f"{os.path.splitext(bname)[0]}.{stream.suffix}"
