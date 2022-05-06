@@ -14,7 +14,7 @@ from babelfish import Language
 from babelfish.exceptions import LanguageError
 import pysubs2
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +127,11 @@ class FFprobeSubtitleStream:
         self.time_base = stream.get("time_base")
         self.tags = stream.get("tags", {})
         self.start_time = float(stream.get("start_time", 0))
+        # TODO: separate tags
+        self.number_of_frames = int(self.tags.get("NUMBER_OF_FRAMES", 0))
+        self.number_of_frames_eng = int(
+            self.tags.get("NUMBER_OF_FRAMES-eng", self.number_of_frames)
+        )
 
         self.duration, self.duration_ts = 0, 0
 

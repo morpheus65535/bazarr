@@ -9,10 +9,11 @@ import subliminal_patch
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import MustGetBlacklisted
-from subliminal_patch.providers.embeddedsubtitles import \
-    _MemoizedFFprobeVideoContainer
-from subliminal_patch.providers.embeddedsubtitles import \
-    EmbeddedSubtitlesProvider
+from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
+from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
+from subliminal_patch.providers.embeddedsubtitles import (
+    _discard_possible_incomplete_subtitles,
+)
 from subzero.language import Language
 
 
@@ -249,3 +250,30 @@ def test_memoized(video_single_language, mocker):
             ]
             is not None
         )
+
+
+@pytest.mark.parametrize(
+    "number_of_frames,expected_len",
+    [((34, 811), 1), ((0, 0), 2), ((811, 34), 1), ((900, 1000), 2), ((0, 900), 1)],
+)
+def test_discard_possible_incomplete_subtitles(number_of_frames, expected_len):
+    subtitle_1 = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "codec_long_name": "SubRip subtitle",
+            "disposition": {},
+            "tags": {"language": "eng", "NUMBER_OF_FRAMES": number_of_frames[0]},
+        }
+    )
+    subtitle_2 = FFprobeSubtitleStream(
+        {
+            "index": 2,
+            "codec_name": "subrip",
+            "codec_long_name": "SubRip subtitle",
+            "disposition": {},
+            "tags": {"language": "eng", "NUMBER_OF_FRAMES": number_of_frames[1]},
+        }
+    )
+    new_list = _discard_possible_incomplete_subtitles([subtitle_1, subtitle_2])
+    assert len(new_list) == expected_len
